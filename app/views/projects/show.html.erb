@@ -135,7 +135,7 @@
             <td><%= event.occurred_at&.strftime("%Y-%m-%d %H:%M") %></td>
             <td><%= event.event_type %></td>
             <td><%= event.level.presence || "-" %></td>
-            <td><%= truncate(event.message, length: 140) %></td>
+            <td><%= link_to truncate(event.message, length: 140), project_event_path(@project, event) %></td>
           </tr>
         <% end %>
       </tbody>
