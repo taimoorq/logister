@@ -1,0 +1,105 @@
+<section class="card">
+  <h1><%= @project.name %></h1>
+  <p class="muted">
+    slug: <code><%= @project.slug %></code>
+  </p>
+  <% if @project.description.present? %>
+    <p><%= @project.description %></p>
+  <% end %>
+</section>
+
+<section class="card">
+  <h2>Create API key</h2>
+  <%= form_with model: [@project, ApiKey.new] do |f| %>
+    <p>
+      <%= f.label :name, "Key label" %><br>
+      <%= f.text_field :name, required: true, placeholder: "production" %>
+    </p>
+    <%= f.submit "Generate key" %>
+  <% end %>
+
+  <% if flash[:new_api_key_token].present? %>
+    <p class="flash notice">
+      New API token: <code><%= flash[:new_api_key_token] %></code>
+    </p>
+  <% end %>
+
+  <h3>Existing keys</h3>
+  <% if @api_keys.any? %>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Last used</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @api_keys.each do |api_key| %>
+          <tr>
+            <td><%= api_key.name %></td>
+            <td><%= api_key.active? ? "active" : "revoked" %></td>
+            <td><%= api_key.last_used_at&.strftime("%Y-%m-%d %H:%M") || "never" %></td>
+            <td>
+              <% if api_key.active? %>
+                <%= button_to "Revoke", project_api_key_path(@project, api_key), method: :delete %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="muted">No API keys yet.</p>
+  <% end %>
+</section>
+
+<section class="card">
+  <h2>Ingest endpoint</h2>
+  <p>POST to <code>/api/v1/ingest_events</code> with header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+  <pre><code>{
+  "event": {
+    "event_type": "error",
+    "level": "error",
+    "message": "NoMethodError in CheckoutService",
+    "fingerprint": "checkout-nomethoderror",
+    "occurred_at": "2026-02-14T12:00:00Z",
+    "context": {
+      "environment": "production",
+      "request_id": "abc123",
+      "metadata": {
+        "user_id": 42
+      }
+    }
+  }
+}</code></pre>
+</section>
+
+<section class="card">
+  <h2>Latest events</h2>
+  <% if @events.any? %>
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Type</th>
+          <th>Level</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @events.each do |event| %>
+          <tr>
+            <td><%= event.occurred_at&.strftime("%Y-%m-%d %H:%M") %></td>
+            <td><%= event.event_type %></td>
+            <td><%= event.level.presence || "-" %></td>
+            <td><%= truncate(event.message, length: 140) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="muted">No events yet for this project.</p>
+  <% end %>
+</section>

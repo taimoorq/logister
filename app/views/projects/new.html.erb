@@ -1,0 +1,29 @@
+<section class="card">
+  <h1>Create a project</h1>
+  <p class="muted">A project represents one monitored Rails app.</p>
+
+  <%= form_with model: @project do |f| %>
+    <p>
+      <%= f.label :name %><br>
+      <%= f.text_field :name, required: true %>
+    </p>
+
+    <p>
+      <%= f.label :slug %><br>
+      <%= f.text_field :slug, placeholder: "my-production-app" %>
+    </p>
+
+    <p>
+      <%= f.label :description %><br>
+      <%= f.text_area :description, rows: 4 %>
+    </p>
+
+    <% if @project.errors.any? %>
+      <div class="flash alert">
+        <%= @project.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
+
+    <%= f.submit "Create project" %>
+  <% end %>
+</section>

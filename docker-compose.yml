@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: logister-postgres
+    environment:
+      POSTGRES_USER: logister
+      POSTGRES_PASSWORD: logister
+      POSTGRES_DB: logister_development
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: logister-clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - chdata:/var/lib/clickhouse
+
+  redis:
+    image: redis:7
+    container_name: logister-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  chdata:
+  redisdata:

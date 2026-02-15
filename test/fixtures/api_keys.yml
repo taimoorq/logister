@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  project: one
+  name: primary
+  token_digest: <%= Digest::SHA256.hexdigest("test-token-one") %>
+  last_used_at: 2026-02-14 21:50:30
+  revoked_at:
+
+two:
+  user: two
+  project: two
+  name: backup
+  token_digest: <%= Digest::SHA256.hexdigest("test-token-two") %>
+  last_used_at: 2026-02-14 21:50:30
+  revoked_at:

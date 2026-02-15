@@ -1,0 +1,53 @@
+<div class="card">
+  <h1>Your Logister Dashboard</h1>
+  <p class="muted">Track errors and metrics coming from your Rails apps.</p>
+</div>
+
+<div class="grid">
+  <section class="card">
+    <p class="muted">Projects</p>
+    <p class="stat"><%= @projects_count %></p>
+  </section>
+  <section class="card">
+    <p class="muted">Active API keys</p>
+    <p class="stat"><%= @api_keys_count %></p>
+  </section>
+  <section class="card">
+    <p class="muted">Events (24h)</p>
+    <p class="stat"><%= @events_last_24h %></p>
+  </section>
+</div>
+
+<section class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+    <h2>Recent events</h2>
+    <%= link_to "Create project", new_project_path %>
+  </div>
+
+  <% if @recent_events.any? %>
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Project</th>
+          <th>Type</th>
+          <th>Level</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @recent_events.each do |event| %>
+          <tr>
+            <td><%= event.occurred_at&.strftime("%Y-%m-%d %H:%M") %></td>
+            <td><%= link_to event.project.name, project_path(event.project) %></td>
+            <td><%= event.event_type %></td>
+            <td><%= event.level.presence || "-" %></td>
+            <td><%= truncate(event.message, length: 120) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="muted">No events yet. Create a project, then an API key, and start sending data from your gem.</p>
+  <% end %>
+</section>

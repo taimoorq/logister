@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  project: one
+  api_key: one
+  event_type: 0
+  level: error
+  message: Example error one
+  fingerprint: error-one
+  context: {}
+  occurred_at: 2026-02-14 21:50:30
+
+two:
+  project: two
+  api_key: two
+  event_type: 1
+  level: info
+  message: Example metric two
+  fingerprint: metric-two
+  context: {}
+  occurred_at: 2026-02-14 21:50:30
