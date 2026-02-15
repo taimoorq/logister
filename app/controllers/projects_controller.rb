@@ -28,7 +28,7 @@ class ProjectsController < ApplicationController
   private
 
   def set_project
-    @project = current_user.projects.find(params[:id])
+    @project = current_user.projects.find_by!(uuid: params[:uuid])
   end
 
   def project_params

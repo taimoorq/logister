@@ -10,8 +10,8 @@ Rails.application.routes.draw do
   get "dashboard", to: "dashboard#index"
   get "health/clickhouse", to: "health#clickhouse"
 
-  resources :projects, only: [ :index, :show, :new, :create ] do
-    resources :api_keys, only: [ :create, :destroy ]
+  resources :projects, only: [ :index, :show, :new, :create ], param: :uuid do
+    resources :api_keys, only: [ :create, :destroy ], param: :uuid
   end
 
   namespace :api do

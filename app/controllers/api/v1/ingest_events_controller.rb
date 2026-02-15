@@ -12,7 +12,7 @@ class Api::V1::IngestEventsController < ApplicationController
       ClickhouseIngestJob.perform_later(event.id, request_context)
 
       @api_key.touch_last_used!
-      render json: { id: event.id, status: "accepted" }, status: :created
+      render json: { id: event.uuid, legacy_id: event.id, status: "accepted" }, status: :created
     else
       render json: { errors: event.errors.full_messages }, status: :unprocessable_entity
     end

@@ -15,7 +15,8 @@ class ApiKeysController < ApplicationController
   end
 
   def destroy
-    api_key = @project.api_keys.find(params[:id])
+    api_key_identifier = params[:uuid] || params[:id]
+    api_key = @project.api_keys.find_by!(uuid: api_key_identifier)
     api_key.revoke!
 
     redirect_to project_path(@project), notice: "API key revoked."
@@ -24,7 +25,8 @@ class ApiKeysController < ApplicationController
   private
 
   def set_project
-    @project = current_user.projects.find(params[:project_id])
+    project_identifier = params[:project_uuid] || params[:project_id]
+    @project = current_user.projects.find_by!(uuid: project_identifier)
   end
 
   def api_key_params

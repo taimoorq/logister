@@ -6,10 +6,16 @@ class ApiKey < ApplicationRecord
 
   scope :active, -> { where(revoked_at: nil) }
 
+  before_validation :ensure_uuid
   before_validation :ensure_token_digest, on: :create
 
+  validates :uuid, presence: true, uniqueness: true
   validates :name, presence: true
   validates :token_digest, presence: true, uniqueness: true
+
+  def to_param
+    uuid
+  end
 
   def revoke!
     update!(revoked_at: Time.current)
@@ -40,5 +46,9 @@ class ApiKey < ApplicationRecord
 
     @plain_token = "logister_#{SecureRandom.hex(24)}"
     self.token_digest = self.class.digest(@plain_token)
+  end
+
+  def ensure_uuid
+    self.uuid ||= SecureRandom.uuid
   end
 end
