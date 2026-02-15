@@ -36,6 +36,7 @@
           <% if user_signed_in? %>
             <%= link_to "Dashboard", dashboard_path, class: "nav-item" %>
             <%= link_to "Projects", projects_path, class: "nav-item" %>
+            <%= link_to "Account", profile_path, class: "nav-item" %>
             <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "nav-item nav-button" %>
           <% else %>
             <%= link_to "Sign in", new_user_session_path, class: "nav-item", data: { turbo: false } %>

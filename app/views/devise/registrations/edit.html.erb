@@ -1,0 +1,42 @@
+<section class="card">
+  <h1>Security settings</h1>
+  <p class="muted">Change your login email and password.</p>
+
+  <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, data: { turbo: false } }) do |f| %>
+    <p>
+      <%= f.label :name %><br>
+      <%= f.text_field :name, maxlength: 100 %>
+    </p>
+
+    <p>
+      <%= f.label :email %><br>
+      <%= f.email_field :email, autocomplete: "email", required: true %>
+    </p>
+
+    <p>
+      <%= f.label :password, "New password" %>
+      <span class="muted">(leave blank to keep current)</span><br>
+      <%= f.password_field :password, autocomplete: "new-password" %>
+    </p>
+
+    <p>
+      <%= f.label :password_confirmation, "Confirm new password" %><br>
+      <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
+    </p>
+
+    <p>
+      <%= f.label :current_password, "Current password" %>
+      <span class="muted">(required to save)</span><br>
+      <%= f.password_field :current_password, autocomplete: "current-password", required: true %>
+    </p>
+
+    <% if resource.errors.any? %>
+      <p class="flash alert"><%= resource.errors.full_messages.to_sentence %></p>
+    <% end %>
+
+    <p>
+      <%= f.submit "Update account" %>
+      <%= link_to "Back to profile", profile_path, class: "action-link" %>
+    </p>
+  <% end %>
+</section>

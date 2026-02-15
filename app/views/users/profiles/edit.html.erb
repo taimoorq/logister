@@ -1,0 +1,20 @@
+<section class="card">
+  <h1>Edit profile</h1>
+  <p class="muted">Update your public account details.</p>
+
+  <%= form_with model: @user, url: profile_path, method: :patch, data: { turbo: false } do |f| %>
+    <p>
+      <%= f.label :name %><br>
+      <%= f.text_field :name, maxlength: 100, placeholder: "Your name" %>
+    </p>
+
+    <% if @user.errors.any? %>
+      <p class="flash alert"><%= @user.errors.full_messages.to_sentence %></p>
+    <% end %>
+
+    <p>
+      <%= f.submit "Save profile" %>
+      <%= link_to "Cancel", profile_path, class: "action-link" %>
+    </p>
+  <% end %>
+</section>

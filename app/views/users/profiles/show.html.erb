@@ -1,0 +1,16 @@
+<section class="card">
+  <h1>Your profile</h1>
+  <p class="muted">Manage your account details and login credentials.</p>
+</section>
+
+<section class="card">
+  <h2>Account details</h2>
+  <p><strong>Name:</strong> <%= current_user.name.presence || "Not set" %></p>
+  <p><strong>Email:</strong> <%= current_user.email %></p>
+  <p><strong>User ID:</strong> <code><%= current_user.uuid %></code></p>
+
+  <div class="section-head" style="justify-content:flex-start;">
+    <%= link_to "Edit profile", edit_profile_path, class: "action-link" %>
+    <%= link_to "Security settings", edit_user_registration_path, class: "action-link", data: { turbo: false } %>
+  </div>
+</section>

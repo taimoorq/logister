@@ -9,6 +9,8 @@ Rails.application.routes.draw do
 
   get "dashboard", to: "dashboard#index"
   get "health/clickhouse", to: "health#clickhouse"
+  resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
+  get "account/security", to: redirect("/users/edit"), as: :account_security
 
   resources :projects, only: [ :index, :show, :new, :create ], param: :uuid do
     resources :api_keys, only: [ :create, :destroy ], param: :uuid

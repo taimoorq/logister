@@ -8,7 +8,9 @@ class User < ApplicationRecord
   has_many :api_keys, dependent: :destroy
 
   before_validation :ensure_uuid
+  before_validation :normalize_name
 
+  validates :name, length: { maximum: 100 }, allow_blank: true
   validates :uuid, presence: true, uniqueness: true
 
   def to_param
@@ -23,5 +25,9 @@ class User < ApplicationRecord
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid
+  end
+
+  def normalize_name
+    self.name = name.to_s.strip.presence
   end
 end
