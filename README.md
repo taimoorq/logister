@@ -21,6 +21,8 @@ bin/rails db:prepare
 bin/dev
 ```
 
+`LOGISTER_EMAIL_FROM` defaults to `support@logister.org` and is used by both app mailers and Devise emails.
+
 ## Local infrastructure with Docker
 
 Use Docker Compose for local Postgres, ClickHouse, and Redis:
