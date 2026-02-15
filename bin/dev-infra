@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required for bin/dev-infra. Install Docker or run ./bin/dev directly."
+  exit 1
+fi
+
+if [[ "${1:-}" == "--with-postgres" ]]; then
+  docker compose --profile docker-db up -d postgres clickhouse redis
+  shift
+else
+  docker compose up -d clickhouse redis
+fi
+
+exec ./bin/dev "$@"

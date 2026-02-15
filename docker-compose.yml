@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16
     container_name: logister-postgres
+    profiles: ["docker-db"]
     environment:
       POSTGRES_USER: logister
       POSTGRES_PASSWORD: logister

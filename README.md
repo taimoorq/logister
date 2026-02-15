@@ -98,6 +98,10 @@ LOGISTER_CLICKHOUSE_PASSWORD=
 REDIS_URL=redis://127.0.0.1:6379/0
 ```
 
+`LOGISTER_CLICKHOUSE_URL` supports both:
+- native ClickHouse HTTP endpoint (for example `https://<host>:8443`)
+- ClickHouse Query API endpoint (for example `https://queries.clickhouse.cloud/service/<id>/run?format=JSONEachRow`)
+
 ### Schema and dashboard SQL
 
 - Schema and materialized view: `docs/clickhouse_schema.sql`
