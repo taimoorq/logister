@@ -33,6 +33,7 @@
         </div>
 
         <nav class="sidebar-nav">
+          <p class="nav-label">Navigation</p>
           <% if user_signed_in? %>
             <%= link_to "Dashboard", dashboard_path, class: "nav-item" %>
             <%= link_to "Projects", projects_path, class: "nav-item" %>
@@ -46,6 +47,16 @@
       </aside>
 
       <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="topbar-title">Logister Admin</p>
+            <p class="topbar-subtitle">Monitor errors and metrics across your apps.</p>
+          </div>
+          <% if user_signed_in? %>
+            <p class="topbar-user"><%= current_user.email %></p>
+          <% end %>
+        </header>
+
         <div class="content-shell">
           <% if notice %>
             <p class="flash notice"><%= notice %></p>
