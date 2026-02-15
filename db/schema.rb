@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_15_084500) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_15_093000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -50,6 +50,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_084500) do
     t.index ["uuid"], name: "index_ingest_events_on_uuid", unique: true
   end
 
+  create_table "project_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.integer "role", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["project_id", "user_id"], name: "index_project_memberships_on_project_id_and_user_id", unique: true
+    t.index ["project_id"], name: "index_project_memberships_on_project_id"
+    t.index ["user_id"], name: "index_project_memberships_on_user_id"
+    t.index ["uuid"], name: "index_project_memberships_on_uuid", unique: true
+  end
+
   create_table "projects", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
@@ -87,5 +100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_084500) do
   add_foreign_key "api_keys", "users"
   add_foreign_key "ingest_events", "api_keys"
   add_foreign_key "ingest_events", "projects"
+  add_foreign_key "project_memberships", "projects"
+  add_foreign_key "project_memberships", "users"
   add_foreign_key "projects", "users"
 end

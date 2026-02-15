@@ -14,6 +14,7 @@ Rails.application.routes.draw do
 
   resources :projects, only: [ :index, :show, :new, :create ], param: :uuid do
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
+    resources :project_memberships, only: [ :create, :destroy ], param: :uuid
   end
 
   namespace :api do

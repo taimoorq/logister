@@ -2,12 +2,12 @@
 
 one:
   user: one
-  name: MyString
-  slug: MyString
-  description: MyText
+  name: Storefront App
+  slug: storefront-app
+  description: Primary production app
 
 two:
   user: two
-  name: MyString
-  slug: MyString
-  description: MyText
+  name: Billing Service
+  slug: billing-service
+  description: Billing worker app

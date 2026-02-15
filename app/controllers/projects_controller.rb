@@ -3,10 +3,12 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: :show
 
   def index
-    @projects = current_user.projects.order(created_at: :desc)
+    @projects = current_user.accessible_projects.order(created_at: :desc)
   end
 
   def show
+    @owner = @project.user
+    @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
     @api_keys = @project.api_keys.order(created_at: :desc)
     @events = @project.ingest_events.order(occurred_at: :desc).limit(50)
   end
@@ -28,7 +30,7 @@ class ProjectsController < ApplicationController
   private
 
   def set_project
-    @project = current_user.projects.find_by!(uuid: params[:uuid])
+    @project = current_user.accessible_projects.find_by!(uuid: params[:uuid])
   end
 
   def project_params

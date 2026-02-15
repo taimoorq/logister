@@ -13,6 +13,7 @@
         <tr>
           <th>Name</th>
           <th>Slug</th>
+          <th>Access</th>
           <th>API keys</th>
           <th>Events</th>
           <th></th>
@@ -23,6 +24,7 @@
           <tr>
             <td><%= project.name %></td>
             <td><code><%= project.slug %></code></td>
+            <td><%= project.owned_by?(current_user) ? "Owner" : "Shared" %></td>
             <td><%= project.api_keys.active.count %></td>
             <td><%= project.ingest_events.count %></td>
             <td><%= link_to "Open", project_path(project) %></td>

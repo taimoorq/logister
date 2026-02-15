@@ -6,6 +6,8 @@ class User < ApplicationRecord
 
   has_many :projects, dependent: :destroy
   has_many :api_keys, dependent: :destroy
+  has_many :project_memberships, dependent: :destroy
+  has_many :shared_projects, through: :project_memberships, source: :project
 
   before_validation :ensure_uuid
   before_validation :normalize_name
@@ -19,6 +21,10 @@ class User < ApplicationRecord
 
   def send_devise_notification(notification, *args)
     devise_mailer.send(notification, self, *args).deliver_later
+  end
+
+  def accessible_projects
+    Project.accessible_to(self)
   end
 
   private
