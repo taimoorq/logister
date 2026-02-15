@@ -24,31 +24,39 @@
   </head>
 
   <body>
-    <header class="topbar">
-      <div class="shell topbar-inner">
-        <%= link_to "logister.org", root_path, class: "brand" %>
-        <nav>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <%= link_to root_path, class: "brand" do %>
+            <span class="brand-mark">L</span>
+            <span>logister.org</span>
+          <% end %>
+        </div>
+
+        <nav class="sidebar-nav">
           <% if user_signed_in? %>
-            <%= link_to "Dashboard", dashboard_path %>
-            <%= link_to "Projects", projects_path %>
-            <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "link-button" %>
+            <%= link_to "Dashboard", dashboard_path, class: "nav-item" %>
+            <%= link_to "Projects", projects_path, class: "nav-item" %>
+            <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "nav-item nav-button" %>
           <% else %>
-            <%= link_to "Sign in", new_user_session_path %>
-            <%= link_to "Sign up", new_user_registration_path %>
+            <%= link_to "Sign in", new_user_session_path, class: "nav-item" %>
+            <%= link_to "Sign up", new_user_registration_path, class: "nav-item" %>
           <% end %>
         </nav>
-      </div>
-    </header>
+      </aside>
 
-    <main class="shell">
-      <% if notice %>
-        <p class="flash notice"><%= notice %></p>
-      <% end %>
-      <% if alert %>
-        <p class="flash alert"><%= alert %></p>
-      <% end %>
+      <main class="main-panel">
+        <div class="content-shell">
+          <% if notice %>
+            <p class="flash notice"><%= notice %></p>
+          <% end %>
+          <% if alert %>
+            <p class="flash alert"><%= alert %></p>
+          <% end %>
 
-      <%= yield %>
-    </main>
+          <%= yield %>
+        </div>
+      </main>
+    </div>
   </body>
 </html>

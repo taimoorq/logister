@@ -29,6 +29,20 @@ bin/dev-infra
 
 `LOGISTER_EMAIL_FROM` defaults to `support@logister.org` and is used by both app mailers and Devise emails.
 
+## Cloudflare Turnstile
+
+This app uses the `rails_cloudflare_turnstile` gem with Devise custom controllers.
+
+Turnstile is enabled on Devise sign-in and sign-up when these env vars are set:
+
+```bash
+LOGISTER_TURNSTILE_ENABLED=true
+LOGISTER_TURNSTILE_SITE_KEY=
+LOGISTER_TURNSTILE_SECRET_KEY=
+```
+
+The widget is rendered in the Devise forms via `cloudflare_turnstile`, and tokens are verified server-side via `validate_cloudflare_turnstile`.
+
 ## Local infrastructure with Docker
 
 If you use Postgres.app locally, run only ClickHouse and Redis:
@@ -132,3 +146,11 @@ REDIS_URL=redis://127.0.0.1:6379/0
 ## Next milestone
 
 - Build a companion gem (`logister-ruby`) that captures app exceptions and metrics and submits events to this endpoint.
+
+## Companion gem scaffold
+
+The starter gem lives in `gems/logister-ruby` and includes:
+
+- Rails middleware for automatic unhandled exception reporting
+- Manual helpers for `Logister.report_error` and `Logister.report_metric`
+- Configurable endpoint/API key defaults for `logister.org`

@@ -19,9 +19,9 @@
 </div>
 
 <section class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+  <div class="section-head">
     <h2>Recent events</h2>
-    <%= link_to "Create project", new_project_path %>
+    <%= link_to "Create project", new_project_path, class: "action-link" %>
   </div>
 
   <% if @recent_events.any? %>

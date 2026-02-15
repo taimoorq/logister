@@ -16,13 +16,21 @@ class Api::V1::IngestEventsControllerTest < ActionDispatch::IntegrationTest
                level: "error",
                message: "NoMethodError",
                fingerprint: "nomethoderror-checkout",
-               context: {
-                 environment: "production",
-                 service: "checkout-app",
-                 tags: { region: "us-east-1" }
-               }
-             }
-           },
+                context: {
+                  environment: "production",
+                  service: "checkout-app",
+                  tags: { region: "us-east-1" },
+                  exception: {
+                    class: "NoMethodError",
+                    backtrace: [ "app/services/checkout_service.rb:12", "app/controllers/checkout_controller.rb:8" ]
+                  },
+                  metadata: {
+                    order_id: 123,
+                    feature_flags: [ "new-checkout" ]
+                  }
+                }
+              }
+            },
            as: :json,
            headers: {
              "Authorization" => "Bearer test-token-one",
@@ -36,6 +44,8 @@ class Api::V1::IngestEventsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @api_key.project_id, created.project_id
     assert_equal @api_key.id, created.api_key_id
     assert_equal "error", created.event_type
+    assert_equal "NoMethodError", created.context.dig("exception", "class")
+    assert_equal "new-checkout", created.context.dig("metadata", "feature_flags", 0)
   end
 
   test "rejects unauthorized token" do

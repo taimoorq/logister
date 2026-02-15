@@ -35,7 +35,10 @@ class Api::V1::IngestEventsController < ApplicationController
   end
 
   def event_params
-    params.require(:event).permit(:event_type, :level, :message, :fingerprint, :occurred_at, context: {})
+    permitted = params.require(:event).permit(:event_type, :level, :message, :fingerprint, :occurred_at)
+    raw_context = params.dig(:event, :context)
+    permitted[:context] = raw_context.is_a?(ActionController::Parameters) ? raw_context.to_unsafe_h : raw_context
+    permitted
   end
 
   def request_context
