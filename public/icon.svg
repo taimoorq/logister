@@ -1,3 +1,61 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="red"/>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logister icon">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="35%" r="68%">
+      <stop offset="0%" stop-color="#1976ff"/>
+      <stop offset="58%" stop-color="#5427d9"/>
+      <stop offset="100%" stop-color="#9014b9"/>
+    </radialGradient>
+    <linearGradient id="barBlue" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0d6bff"/>
+      <stop offset="100%" stop-color="#3ac6ff"/>
+    </linearGradient>
+    <linearGradient id="barCyan" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#14b8d4"/>
+      <stop offset="100%" stop-color="#4df2ff"/>
+    </linearGradient>
+    <linearGradient id="barGreen" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#53d62d"/>
+      <stop offset="100%" stop-color="#a2f85a"/>
+    </linearGradient>
+    <linearGradient id="wingLeft" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff6d1f"/>
+      <stop offset="100%" stop-color="#ef1a22"/>
+    </linearGradient>
+    <linearGradient id="wingRight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff4027"/>
+      <stop offset="100%" stop-color="#c90d20"/>
+    </linearGradient>
+    <linearGradient id="warn" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="36" y="36" width="440" height="440" rx="92" fill="url(#bgGlow)"/>
+
+  <rect x="246" y="286" width="68" height="88" rx="6" fill="url(#barBlue)" stroke="#6ad8ff" stroke-opacity="0.4"/>
+  <rect x="328" y="246" width="68" height="128" rx="6" fill="url(#barCyan)" stroke="#94f6ff" stroke-opacity="0.4"/>
+  <rect x="410" y="198" width="66" height="176" rx="6" fill="url(#barGreen)" stroke="#d3ff9a" stroke-opacity="0.35"/>
+
+  <path d="M306 146l58 18-14 46" fill="none" stroke="#ffd11a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M218 292l40-52 44 2 38-40 34 10 46-56" fill="none" stroke="#ffb300" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="258" cy="242" r="14" fill="#ffb300" stroke="#ffe46a" stroke-width="4"/>
+  <circle cx="342" cy="202" r="14" fill="#ffb300" stroke="#ffe46a" stroke-width="4"/>
+
+  <ellipse cx="158" cy="252" rx="48" ry="74" fill="#010629"/>
+  <ellipse cx="158" cy="228" rx="56" ry="38" fill="#020b3d"/>
+  <circle cx="142" cy="214" r="8" fill="#1b2a7a"/>
+  <circle cx="174" cy="214" r="8" fill="#1b2a7a"/>
+  <path d="M110 200l-18-16" stroke="#030b31" stroke-width="12" stroke-linecap="round"/>
+  <path d="M206 200l18-16" stroke="#030b31" stroke-width="12" stroke-linecap="round"/>
+  <path d="M102 240H76" stroke="#030b31" stroke-width="12" stroke-linecap="round"/>
+  <path d="M214 240h26" stroke="#030b31" stroke-width="12" stroke-linecap="round"/>
+  <path d="M102 280l-24 16" stroke="#030b31" stroke-width="12" stroke-linecap="round"/>
+  <path d="M214 280l24 16" stroke="#030b31" stroke-width="12" stroke-linecap="round"/>
+  <path d="M118 248c26-18 52-18 78 0-8 22-14 36-39 52-25-16-31-30-39-52z" fill="url(#wingLeft)"/>
+  <path d="M196 248c-26-18-52-18-78 0 8 22 14 36 39 52 25-16 31-30 39-52z" fill="url(#wingRight)" transform="translate(78 0) scale(-1 1)"/>
+
+  <path d="M367 325h70l38 68h-146z" fill="url(#warn)" stroke="#ffd60a" stroke-width="5"/>
+  <rect x="401" y="347" width="10" height="26" rx="4" fill="#6b1f00"/>
+  <circle cx="406" cy="381" r="6" fill="#6b1f00"/>
 </svg>

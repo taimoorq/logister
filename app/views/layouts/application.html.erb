@@ -28,8 +28,7 @@
       <aside class="sidebar">
         <div class="sidebar-head">
           <%= link_to root_path, class: "brand" do %>
-            <span class="brand-mark">L</span>
-            <span>logister.org</span>
+            <%= image_tag "logister-logo.svg", alt: "logister.org", class: "brand-logo" %>
           <% end %>
         </div>
 
@@ -39,8 +38,8 @@
             <%= link_to "Projects", projects_path, class: "nav-item" %>
             <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "nav-item nav-button" %>
           <% else %>
-            <%= link_to "Sign in", new_user_session_path, class: "nav-item" %>
-            <%= link_to "Sign up", new_user_registration_path, class: "nav-item" %>
+            <%= link_to "Sign in", new_user_session_path, class: "nav-item", data: { turbo: false } %>
+            <%= link_to "Sign up", new_user_registration_path, class: "nav-item", data: { turbo: false } %>
           <% end %>
         </nav>
       </aside>
