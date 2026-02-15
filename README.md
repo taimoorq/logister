@@ -21,16 +21,33 @@ bin/rails db:prepare
 bin/dev
 ```
 
+Or start infra + app together:
+
+```bash
+bin/dev-infra
+```
+
 `LOGISTER_EMAIL_FROM` defaults to `support@logister.org` and is used by both app mailers and Devise emails.
 
 ## Local infrastructure with Docker
 
-Use Docker Compose for local Postgres, ClickHouse, and Redis:
+If you use Postgres.app locally, run only ClickHouse and Redis:
 
 ```bash
-docker compose up -d
+docker compose up -d clickhouse redis
 bin/rails db:prepare
 ```
+
+Equivalent one-command startup (infra + Rails): `bin/dev-infra`
+
+If you want Postgres in Docker too:
+
+```bash
+docker compose --profile docker-db up -d
+bin/rails db:prepare
+```
+
+Equivalent one-command startup with Docker Postgres: `bin/dev-infra --with-postgres`
 
 Then initialize ClickHouse schema:
 
