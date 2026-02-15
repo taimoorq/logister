@@ -1,4 +1,4 @@
-class Users::SessionsController < Devise::SessionsController
+class Users::ConfirmationsController < Devise::ConfirmationsController
   include DeviseTurnstileGuard
 
   prepend_before_action :validate_cloudflare_turnstile, only: :create
@@ -7,6 +7,6 @@ class Users::SessionsController < Devise::SessionsController
   private
 
   def turnstile_failed
-    turnstile_failed_redirect(new_user_session_path)
+    turnstile_failed_redirect(new_user_confirmation_path)
   end
 end

@@ -55,4 +55,36 @@ class Users::TurnstileTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_registration_path
     assert_match("verification challenge", flash[:alert])
   end
+
+  test "blocks password reset request when turnstile verification fails" do
+    post user_password_path,
+         params: {
+           user: {
+             email: users(:one).email
+           }
+         }
+
+    assert_redirected_to new_user_password_path
+    assert_match("verification challenge", flash[:alert])
+  end
+
+  test "blocks resend confirmation request when turnstile verification fails" do
+    post user_confirmation_path,
+         params: {
+           user: {
+             email: users(:one).email
+           }
+         }
+
+    assert_redirected_to new_user_confirmation_path
+    assert_match("verification challenge", flash[:alert])
+  end
+
+  test "renders turnstile widget on protected devise forms" do
+    [ new_user_session_path, new_user_registration_path, new_user_password_path, new_user_confirmation_path ].each do |path|
+      get path
+      assert_response :success
+      assert_includes response.body, "cf-turnstile"
+    end
+  end
 end

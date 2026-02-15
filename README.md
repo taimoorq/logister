@@ -29,6 +29,12 @@ bin/dev-infra
 
 `LOGISTER_EMAIL_FROM` defaults to `support@logister.org` and is used by both app mailers and Devise emails.
 
+For confirmation emails in production, configure SendGrid API key:
+
+```bash
+SENDGRID_API_KEY=<sendgrid_api_key>
+```
+
 ## Cloudflare Turnstile
 
 This app uses the `rails_cloudflare_turnstile` gem with Devise custom controllers.

@@ -10,4 +10,8 @@
   <% if devise_mapping.recoverable? && controller_name != "passwords" %>
     <%= link_to "Forgot password?", new_password_path(resource_name) %>
   <% end %>
+
+  <% if devise_mapping.confirmable? && controller_name != "confirmations" %>
+    <%= link_to "Resend confirmation", new_confirmation_path(resource_name) %>
+  <% end %>
 </div>

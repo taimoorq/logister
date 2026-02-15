@@ -29,6 +29,7 @@ gem "bootsnap", require: false
 gem "devise"
 gem "sidekiq"
 gem "rails_cloudflare_turnstile"
+gem "sendgrid-ruby"
 
 # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
 gem "kamal", require: false

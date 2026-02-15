@@ -1,0 +1,20 @@
+<section class="card">
+  <h1>Resend confirmation instructions</h1>
+
+  <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
+    <p>
+      <%= f.label :email %><br>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true %>
+    </p>
+
+    <p>
+      <%= render "devise/shared/turnstile" %>
+    </p>
+
+    <p>
+      <%= f.submit "Resend confirmation" %>
+    </p>
+  <% end %>
+
+  <%= render "devise/shared/links" %>
+</section>
