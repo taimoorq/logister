@@ -1,8 +1,6 @@
 require "sendgrid-ruby"
 
 class SendgridDeliveryMethod
-  include SendGrid
-
   def initialize(options = {})
     @api_key = options[:api_key] || ENV["SENDGRID_API_KEY"]
   end
@@ -26,6 +24,7 @@ class SendgridDeliveryMethod
     add_content_parts(payload, mail)
 
     response = SendGrid::API.new(api_key: @api_key).client.mail._("send").post(request_body: payload.to_json)
+    Rails.logger.info("sendgrid_mail status=#{response.status_code} to=#{Array(mail.to).join(',')}")
     return if response.status_code.to_i.between?(200, 299)
 
     raise "SendGrid API error: #{response.status_code} #{response.body}"
@@ -52,9 +51,9 @@ class SendgridDeliveryMethod
 
   def each_address(list)
     Array(list).each do |raw|
-      parsed = Mail::Address.new(raw.to_s)
+      parsed = ::Mail::Address.new(raw.to_s)
       yield(parsed.address) if parsed.address.present?
-    rescue Mail::Field::ParseError
+    rescue ::Mail::Field::ParseError
       next
     end
   end
