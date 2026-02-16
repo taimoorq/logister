@@ -104,6 +104,8 @@ Example payload:
 
 Supported `event_type` values: `error`, `metric`.
 
+For database load metrics from the companion gem, metric events use `message: "db.query"` and context fields like `duration_ms`, `name`, and `sql`.
+
 ## ClickHouse (optional, recommended for scale)
 
 ### Environment variables

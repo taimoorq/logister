@@ -19,3 +19,16 @@ two:
   fingerprint: metric-two
   context: {}
   occurred_at: 2026-02-14 21:50:30
+
+three:
+  project: one
+  api_key: one
+  event_type: 1
+  level: info
+  message: db.query
+  fingerprint: db-query-one
+  context:
+    duration_ms: 42.75
+    name: User Load
+    sql: SELECT "users".* FROM "users" WHERE "users"."id" = 1
+  occurred_at: 2026-02-14 21:55:30

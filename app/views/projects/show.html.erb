@@ -144,3 +144,53 @@
     <p class="muted">No events yet for this project.</p>
   <% end %>
 </section>
+
+<section class="card">
+  <div class="section-head">
+    <h2>Database load (24h)</h2>
+    <p class="muted"><%= @db_stats[:count] %> queries captured</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <p class="muted">Average query time</p>
+      <p class="stat"><%= @db_stats[:avg_ms] %> ms</p>
+    </div>
+    <div class="card">
+      <p class="muted">P95 query time</p>
+      <p class="stat"><%= @db_stats[:p95_ms] %> ms</p>
+    </div>
+  </div>
+
+  <h3>Slowest queries</h3>
+  <% if @slow_db_queries.any? %>
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Duration</th>
+          <th>Name</th>
+          <th>SQL</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @slow_db_queries.each do |event| %>
+          <% ctx = event.context.is_a?(Hash) ? event.context : {} %>
+          <% duration = (ctx["duration_ms"] || ctx[:duration_ms]).to_f %>
+          <% sql_name = (ctx["name"] || ctx[:name]).to_s %>
+          <% sql_text = (ctx["sql"] || ctx[:sql]).to_s %>
+          <tr>
+            <td><%= event.occurred_at&.strftime("%Y-%m-%d %H:%M") %></td>
+            <td><%= format("%.2f", duration) %> ms</td>
+            <td><%= sql_name.presence || "SQL" %></td>
+            <td><%= truncate(sql_text, length: 120) %></td>
+            <td><%= link_to "Details", project_event_path(@project, event) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="muted">No database timing metrics yet. Enable database metrics in the gem to populate this section.</p>
+  <% end %>
+</section>
