@@ -1,8 +1,9 @@
-require_relative "logister/version"
-require_relative "logister/configuration"
-require_relative "logister/client"
-require_relative "logister/reporter"
-require_relative "logister/middleware"
+require_relative 'logister/version'
+require_relative 'logister/configuration'
+require_relative 'logister/client'
+require_relative 'logister/reporter'
+require_relative 'logister/middleware'
+require_relative 'logister/sql_subscriber'
 
 module Logister
   class << self
@@ -12,6 +13,7 @@ module Logister
 
     def configure
       yield(configuration)
+      @reporter = nil
     end
 
     def reporter
@@ -25,7 +27,15 @@ module Logister
     def report_metric(**kwargs)
       reporter.report_metric(**kwargs)
     end
+
+    def flush(timeout: 2)
+      reporter.flush(timeout: timeout)
+    end
+
+    def shutdown
+      reporter.shutdown
+    end
   end
 end
 
-require_relative "logister/railtie" if defined?(Rails::Railtie)
+require_relative 'logister/railtie' if defined?(Rails::Railtie)

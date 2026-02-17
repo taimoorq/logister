@@ -151,14 +151,24 @@ REDIS_URL=redis://127.0.0.1:6379/0
 - `tags` <- `event.context.tags`
 - `context_json` <- full `event.context`
 
-## Next milestone
+## Companion gem
 
-- Build a companion gem (`logister-ruby`) that captures app exceptions and metrics and submits events to this endpoint.
+`logister-ruby` is released at `0.1.2` and provides error + metric reporting for Rails apps.
 
-## Companion gem scaffold
+To upgrade a client app:
 
-The starter gem lives in `gems/logister-ruby` and includes:
+```ruby
+gem "logister-ruby", "~> 0.1.2"
+```
 
-- Rails middleware for automatic unhandled exception reporting
-- Manual helpers for `Logister.report_error` and `Logister.report_metric`
-- Configurable endpoint/API key defaults for `logister.org`
+Enable database timing metrics in the client initializer:
+
+```ruby
+Logister.configure do |config|
+  config.capture_db_metrics = true
+  config.db_metric_min_duration_ms = 10.0
+  config.db_metric_sample_rate = 1.0
+end
+```
+
+The embedded starter copy lives in `gems/logister-ruby` and is synced with the released gem.
