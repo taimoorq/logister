@@ -16,18 +16,27 @@
             <tr id="<%= dom_id(group) %>"
                 class="inbox-row<%= " is-selected" if selected_uuid.present? && selected_uuid == group.uuid %>">
               <td class="col-error">
-                <%= link_to project_event_path(project, group.latest_event,
-                              filter: filter, q: query, group_uuid: group.uuid),
-                            class: "error-row-link",
-                            data: {
-                              turbo_frame: "error_detail",
-                              turbo_action: "advance",
-                              action: "click->inbox#selectRow"
-                            } do %>
-                  <span class="error-title"><%= truncate(group.title, length: 96) %></span>
-                  <% if group.subtitle.present? %>
-                    <span class="error-subtitle"><%= group.subtitle %></span>
+                <% if group.latest_event %>
+                  <%= link_to project_event_path(project, group.latest_event,
+                                filter: filter, q: query, group_uuid: group.uuid),
+                              class: "error-row-link",
+                              data: {
+                                turbo_frame: "error_detail",
+                                turbo_action: "advance",
+                                action: "click->inbox#selectRow"
+                              } do %>
+                    <span class="error-title"><%= truncate(group.title, length: 96) %></span>
+                    <% if group.subtitle.present? %>
+                      <span class="error-subtitle"><%= group.subtitle %></span>
+                    <% end %>
                   <% end %>
+                <% else %>
+                  <span class="error-row-link error-row-link--orphan">
+                    <span class="error-title"><%= truncate(group.title, length: 96) %></span>
+                    <% if group.subtitle.present? %>
+                      <span class="error-subtitle"><%= group.subtitle %></span>
+                    <% end %>
+                  </span>
                 <% end %>
                 <span class="error-meta">
                   first seen <%= time_ago_in_words(group.first_seen_at) %> ago

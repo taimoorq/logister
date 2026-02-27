@@ -33,27 +33,30 @@ class ProjectEventsController < ApplicationController
                          &.recent_first
                          &.limit(50) || []
 
+    @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
+    @query  = params[:q].to_s.strip
+
     if turbo_frame_request?
       render partial: "project_events/event_detail", locals: {
         project:     @project,
         event:       @event,
         group:       @group,
-        occurrences: @occurrences
+        occurrences: @occurrences,
+        filter:      @filter,
+        query:       @query
       }
     else
-      redirect_to project_path(@project, group_uuid: @group&.uuid, filter: params[:filter], q: params[:q])
+      redirect_to project_path(@project, group_uuid: @group&.uuid, filter: @filter, q: @query)
     end
   end
 
   private
 
   def set_project
-    project_identifier = params[:project_uuid] || params[:project_id]
-    @project = current_user.accessible_projects.find_by!(uuid: project_identifier)
+    @project = current_user.accessible_projects.find_by!(uuid: params[:project_uuid])
   end
 
   def set_event
-    event_identifier = params[:uuid] || params[:id]
-    @event = @project.ingest_events.find_by!(uuid: event_identifier)
+    @event = @project.ingest_events.find_by!(uuid: params[:uuid])
   end
 end

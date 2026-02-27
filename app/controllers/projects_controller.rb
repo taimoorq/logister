@@ -30,6 +30,7 @@ class ProjectsController < ApplicationController
                                .where("occurred_at >= ?", 24.hours.ago)
                                .order(occurred_at: :desc)
                                .limit(300)
+                               .to_a
     @db_stats        = build_db_stats(@db_query_events)
     @slow_db_queries = @db_query_events.sort_by { |e| -db_duration_ms(e) }.first(20)
   end
