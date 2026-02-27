@@ -46,7 +46,15 @@ class ProjectEventsController < ApplicationController
         query:       @query
       }
     else
-      redirect_to project_path(@project, group_uuid: @group&.uuid, filter: @filter, q: @query)
+      # Full page load (e.g. direct URL, page refresh after Turbo advance).
+      # Redirect to the project workbench with the group pre-selected.
+      # Use "all" filter so the group is visible in the inbox regardless of status.
+      redirect_to project_path(
+        @project,
+        group_uuid: @group&.uuid,
+        filter:     @group ? group_inbox_filter(@group) : @filter,
+        q:          @query
+      )
     end
   end
 
@@ -58,5 +66,16 @@ class ProjectEventsController < ApplicationController
 
   def set_event
     @event = @project.ingest_events.find_by!(uuid: params[:uuid])
+  end
+
+  # Pick the inbox filter tab that will actually show this group so the
+  # workbench doesn't land on "unresolved" while the group is resolved/ignored.
+  def group_inbox_filter(group)
+    case group.status
+    when "resolved" then "resolved"
+    when "ignored"  then "ignored"
+    when "archived" then "archived"
+    else "unresolved"
+    end
   end
 end
