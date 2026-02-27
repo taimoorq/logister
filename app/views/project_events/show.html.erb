@@ -1,0 +1,177 @@
+<%# ── Standalone event detail page ──────────────────────────────────────── %>
+<% exception_data = @event.context.is_a?(Hash) ? (@event.context["exception"] || @event.context[:exception]) : nil %>
+<% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
+
+<div class="event-page-layout">
+
+  <%# ── Left sidebar ──────────────────────────────────────────────────────── %>
+  <aside class="event-page-sidebar">
+    <%# Breadcrumb %>
+    <nav class="event-breadcrumb">
+      <%= link_to projects_path, class: "breadcrumb-link" do %>
+        &larr; All projects
+      <% end %>
+      <%= link_to @project.name, project_path(@project), class: "breadcrumb-link" %>
+    </nav>
+
+    <%# Group summary card (if grouped) %>
+    <% if @group %>
+      <div class="card event-group-card">
+        <p class="kicker">Error group</p>
+        <p class="event-group-title"><%= truncate(@group.title, length: 80) %></p>
+        <% if @group.subtitle.present? %>
+          <p class="muted" style="font-size:0.85rem;margin-top:0.2rem"><%= @group.subtitle %></p>
+        <% end %>
+
+        <div class="event-group-stats">
+          <div>
+            <span class="kicker">Status</span>
+            <span class="detail-status-badge status-<%= @group.status %>"><%= @group.status.upcase %></span>
+          </div>
+          <div>
+            <span class="kicker">Occurrences</span>
+            <strong><%= @group.occurrence_count %></strong>
+          </div>
+          <div>
+            <span class="kicker">First seen</span>
+            <span><%= @group.first_seen_at&.strftime("%b %-d, %Y") %></span>
+          </div>
+          <div>
+            <span class="kicker">Last seen</span>
+            <span><%= @group.last_seen_at&.strftime("%b %-d, %Y") %></span>
+          </div>
+        </div>
+
+        <div class="event-group-actions">
+          <% if @group.unresolved? %>
+            <%= button_to "Mark as fixed",
+                          resolve_project_error_group_path(@project, @group),
+                          method: :patch,
+                          class: "btn btn-resolve btn-sm",
+                          form: { data: { turbo: false } } %>
+            <%= button_to "Ignore",
+                          ignore_project_error_group_path(@project, @group),
+                          method: :patch,
+                          class: "btn btn-ghost btn-sm",
+                          form: { data: { turbo: false } } %>
+            <%= button_to "Archive",
+                          archive_project_error_group_path(@project, @group),
+                          method: :patch,
+                          class: "btn btn-ghost btn-sm",
+                          form: { data: { turbo: false } } %>
+          <% else %>
+            <%= button_to "Reopen",
+                          reopen_project_error_group_path(@project, @group),
+                          method: :patch,
+                          class: "btn btn-reopen btn-sm",
+                          form: { data: { turbo: false } } %>
+          <% end %>
+          <%= link_to "View all in inbox",
+                      project_path(@project, group_uuid: @group.uuid, filter: @group.status == "unresolved" ? "unresolved" : @group.status),
+                      class: "btn btn-ghost btn-sm" %>
+        </div>
+      </div>
+    <% else %>
+      <div class="card">
+        <p class="kicker">Error group</p>
+        <p class="muted" style="font-size:0.88rem">This event has not been grouped yet.</p>
+        <%= link_to "Back to inbox", project_path(@project), class: "btn btn-ghost btn-sm" %>
+      </div>
+    <% end %>
+
+    <%# Event metadata %>
+    <div class="card event-meta-card">
+      <p class="kicker">Event</p>
+      <dl class="event-meta-list">
+        <dt>ID</dt>
+        <dd><code style="font-size:0.78rem;word-break:break-all"><%= @event.uuid %></code></dd>
+        <dt>Occurred</dt>
+        <dd><%= @event.occurred_at&.strftime("%b %-d, %Y %H:%M:%S UTC") %></dd>
+        <dt>Level</dt>
+        <dd><%= render "shared/widgets/severity_badge", level: @event.level.presence || "error" %></dd>
+        <dt>Stage</dt>
+        <dd><span class="stage-tag"><%= @group&.stage || @event.context&.dig("environment") || "—" %></span></dd>
+        <% if @event.fingerprint.present? %>
+          <dt>Fingerprint</dt>
+          <dd><code style="font-size:0.78rem;word-break:break-all"><%= @event.fingerprint %></code></dd>
+        <% end %>
+      </dl>
+    </div>
+  </aside>
+
+  <%# ── Main content ───────────────────────────────────────────────────────── %>
+  <main class="event-page-main">
+    <%# Header %>
+    <header class="detail-actionbar card">
+      <div class="detail-actionbar-left">
+        <h1 class="detail-title"><%= @group&.title || @event.message.to_s.lines.first %></h1>
+        <% if @group&.subtitle.present? %>
+          <p class="muted detail-subtitle"><%= @group.subtitle %></p>
+        <% end %>
+        <p class="muted" style="font-size:0.85rem">
+          <%= @project.name %>
+          &middot; <%= @event.occurred_at&.strftime("%b %-d, %Y at %H:%M:%S UTC") %>
+        </p>
+      </div>
+    </header>
+
+    <%# Tabs %>
+    <div class="detail-tabs-wrap card" data-controller="tabs">
+      <nav class="detail-tabs" role="tablist">
+        <button class="detail-tab is-active" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-stacktrace" role="tab">
+          Stacktrace
+        </button>
+        <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-context" role="tab">
+          Context
+        </button>
+        <% if @occurrences.any? %>
+          <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-occurrences" role="tab">
+            Occurrences (<%= @occurrences.size %>)
+          </button>
+        <% end %>
+      </nav>
+
+      <%# Stacktrace panel %>
+      <section id="tab-stacktrace" class="detail-panel" data-tabs-target="panel">
+        <% if backtrace.respond_to?(:any?) && backtrace.any? %>
+          <pre class="stacktrace"><code><%= Array(backtrace).join("\n") %></code></pre>
+        <% else %>
+          <pre class="stacktrace"><code><%= @event.message %></code></pre>
+        <% end %>
+      </section>
+
+      <%# Context panel %>
+      <section id="tab-context" class="detail-panel is-hidden" data-tabs-target="panel">
+        <pre class="stacktrace"><code><%= JSON.pretty_generate(@event.context || {}) rescue @event.context.to_s %></code></pre>
+      </section>
+
+      <%# Occurrences panel %>
+      <% if @occurrences.any? %>
+        <section id="tab-occurrences" class="detail-panel is-hidden" data-tabs-target="panel">
+          <table class="occurrences-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Message</th>
+                <th>Severity</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @occurrences.each do |occ| %>
+                <% ev = occ.ingest_event %>
+                <tr>
+                  <td><%= ev.occurred_at&.strftime("%b %-d, %H:%M:%S") %></td>
+                  <td><%= truncate(ev.message.to_s.lines.first, length: 80) %></td>
+                  <td><%= render "shared/widgets/severity_badge", level: ev.level.presence || "error" %></td>
+                  <td><%= link_to "View", project_event_path(@project, ev), class: "inline-link" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </section>
+      <% end %>
+    </div>
+  </main>
+
+</div>

@@ -10,7 +10,7 @@
     </div>
 
     <div class="card sidebar-search-card">
-      <%= form_with url: project_events_path(@project), method: :get,
+      <%= form_with url: project_path(@project), method: :get,
                     data: { turbo_frame: "project_inbox",
                             turbo_action: "advance",
                             inbox_target: "searchForm",

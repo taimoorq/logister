@@ -56,7 +56,7 @@
         <p class="muted">No errors matching this filter.</p>
         <% if query.present? %>
           <%= link_to "Clear search",
-                      project_events_path(project, filter: filter),
+                      project_path(project, filter: filter),
                       class: "inline-link",
                       data: { turbo_frame: "project_inbox" } %>
         <% end %>

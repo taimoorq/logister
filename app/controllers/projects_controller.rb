@@ -11,13 +11,27 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    @filter  = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
-    @query   = params[:q].to_s.strip
+    @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
+    @query  = params[:q].to_s.strip
+    @groups = inbox_groups(@project, filter: @filter, query: @query)
+
+    # Turbo Frame request targeting the inbox list — return only the table partial.
+    if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
+      @selected_uuid = params[:group_uuid]
+      return render partial: "projects/inbox_table", locals: {
+        project:       @project,
+        groups:        @groups,
+        selected_uuid: @selected_uuid,
+        filter:        @filter,
+        query:         @query
+      }
+    end
+
+    # Full page load — build everything the workbench needs.
+    @counts  = inbox_counts(@project)
     @owner   = @project.user
     @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
     @api_keys = @project.api_keys.order(created_at: :desc)
-    @groups   = inbox_groups(@project, filter: @filter, query: @query)
-    @counts   = inbox_counts(@project)
 
     @selected_group = if params[:group_uuid].present?
       @project.error_groups.find_by(uuid: params[:group_uuid])
