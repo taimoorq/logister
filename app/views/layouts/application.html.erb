@@ -24,50 +24,44 @@
   </head>
 
   <body>
-    <div class="app-shell">
-      <aside class="sidebar">
-        <div class="sidebar-head">
-          <%= link_to root_path, class: "brand" do %>
-            <%= image_tag "logister-logo.svg", alt: "logister.org", class: "brand-logo" %>
-          <% end %>
-        </div>
+    <header class="global-nav">
+      <div class="global-nav-inner">
+        <%= link_to root_path, class: "brand" do %>
+          <%= image_tag "logister-logo.svg", alt: "logister.org", class: "brand-logo" %>
+          <span class="brand-text">Logister</span>
+        <% end %>
 
-        <nav class="sidebar-nav">
-          <p class="nav-label">Navigation</p>
+        <nav class="global-links">
           <% if user_signed_in? %>
-            <%= link_to "Dashboard", dashboard_path, class: "nav-item" %>
-            <%= link_to "Projects", projects_path, class: "nav-item" %>
-            <%= link_to "Account", profile_path, class: "nav-item" %>
-            <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "nav-item nav-button" %>
+            <%= link_to "Overview", dashboard_path, class: "global-link #{"is-active" if current_page?(dashboard_path)}" %>
+            <%= link_to "Projects", projects_path, class: "global-link #{"is-active" if current_page?(projects_path)}" %>
+            <%= link_to "Account", profile_path, class: "global-link #{"is-active" if current_page?(profile_path)}" %>
           <% else %>
-            <%= link_to "Sign in", new_user_session_path, class: "nav-item", data: { turbo: false } %>
-            <%= link_to "Sign up", new_user_registration_path, class: "nav-item", data: { turbo: false } %>
+            <%= link_to "Sign in", new_user_session_path, class: "global-link", data: { turbo: false } %>
+            <%= link_to "Sign up", new_user_registration_path, class: "global-link", data: { turbo: false } %>
           <% end %>
         </nav>
-      </aside>
 
-      <main class="main-panel">
-        <header class="topbar">
-          <div>
-            <p class="topbar-title">Logister Admin</p>
-            <p class="topbar-subtitle">Monitor errors and metrics across your apps.</p>
-          </div>
+        <div class="global-actions">
           <% if user_signed_in? %>
-            <p class="topbar-user"><%= current_user.email %></p>
+            <p class="global-user"><%= current_user.email %></p>
+            <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "ghost-button" %>
           <% end %>
-        </header>
-
-        <div class="content-shell">
-          <% if notice %>
-            <p class="flash notice"><%= notice %></p>
-          <% end %>
-          <% if alert %>
-            <p class="flash alert"><%= alert %></p>
-          <% end %>
-
-          <%= yield %>
         </div>
-      </main>
-    </div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <div class="content-shell">
+        <% if notice %>
+          <p class="flash notice"><%= notice %></p>
+        <% end %>
+        <% if alert %>
+          <p class="flash alert"><%= alert %></p>
+        <% end %>
+
+        <%= yield %>
+      </div>
+    </main>
   </body>
 </html>

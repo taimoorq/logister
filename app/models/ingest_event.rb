@@ -1,6 +1,8 @@
 class IngestEvent < ApplicationRecord
   belongs_to :project
   belongs_to :api_key
+  belongs_to :error_group, optional: true
+  has_one    :error_occurrence, dependent: :destroy
 
   before_validation :ensure_uuid
 

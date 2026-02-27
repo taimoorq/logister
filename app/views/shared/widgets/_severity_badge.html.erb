@@ -1,0 +1,3 @@
+<% level = local_assigns.fetch(:level, "error").to_s %>
+<span class="severity-dot <%= "is-critical" if level == "error" %>"></span>
+<span class="pill"><%= level.upcase %></span>

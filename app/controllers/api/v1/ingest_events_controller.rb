@@ -9,6 +9,7 @@ class Api::V1::IngestEventsController < ApplicationController
     event.occurred_at ||= Time.current
 
     if event.save
+      ErrorGroupingService.call(event)
       ClickhouseIngestJob.perform_later(event.id, request_context)
 
       @api_key.touch_last_used!

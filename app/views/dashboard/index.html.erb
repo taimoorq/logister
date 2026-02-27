@@ -1,48 +1,79 @@
-<div class="card">
-  <h1>Your Logister Dashboard</h1>
-  <p class="muted">Track errors and metrics coming from your Rails apps.</p>
+<div class="section-head projects-head">
+  <div>
+    <h1>Overview</h1>
+    <p class="muted">Track cross-project reliability, triage trends, and newly introduced issues.</p>
+  </div>
+  <%= link_to "Create project", new_project_path, class: "action-link" %>
 </div>
 
-<div class="grid">
-  <section class="card">
-    <p class="muted">Projects</p>
+<section class="stat-strip">
+  <article class="card stat-card">
+    <p class="kicker">Projects</p>
     <p class="stat"><%= @projects_count %></p>
-  </section>
-  <section class="card">
-    <p class="muted">Active API keys</p>
+  </article>
+  <article class="card stat-card">
+    <p class="kicker">Active API keys</p>
     <p class="stat"><%= @api_keys_count %></p>
-  </section>
-  <section class="card">
-    <p class="muted">Events (24h)</p>
+  </article>
+  <article class="card stat-card">
+    <p class="kicker">Events (24h)</p>
     <p class="stat"><%= @events_last_24h %></p>
-  </section>
-</div>
+  </article>
+</section>
+
+<section class="section-head">
+  <h2>Error views</h2>
+  <%= link_to "Open all projects", projects_path, class: "inline-link" %>
+</section>
+
+<section class="error-view-grid">
+  <% if @error_views.any? %>
+    <% @error_views.each do |view| %>
+      <article class="error-view-card">
+        <div class="error-view-head">
+          <h3><%= truncate(view[:title], length: 72) %></h3>
+          <span class="pill"><%= view[:stage].presence || "production" %></span>
+        </div>
+        <p class="muted"><%= view[:project].name %> · last 7 days</p>
+
+        <%= render "shared/widgets/sparkline", points: view[:trend] %>
+
+        <div class="error-view-foot">
+          <strong><%= view[:events_count] %> events</strong>
+          <%= link_to "View in inbox", project_path(view[:project]), class: "inline-link" %>
+        </div>
+      </article>
+    <% end %>
+  <% else %>
+    <article class="card">
+      <p class="muted">No errors captured in the last 7 days.</p>
+    </article>
+  <% end %>
+</section>
 
 <section class="card">
   <div class="section-head">
     <h2>Recent events</h2>
-    <%= link_to "Create project", new_project_path, class: "action-link" %>
+    <%= link_to "View projects", projects_path, class: "inline-link" %>
   </div>
 
   <% if @recent_events.any? %>
     <table>
       <thead>
         <tr>
-          <th>When</th>
+          <th>Error</th>
           <th>Project</th>
-          <th>Type</th>
-          <th>Level</th>
-          <th>Message</th>
+          <th>When</th>
+          <th>Severity</th>
         </tr>
       </thead>
       <tbody>
         <% @recent_events.each do |event| %>
           <tr>
-            <td><%= event.occurred_at&.strftime("%Y-%m-%d %H:%M") %></td>
-            <td><%= link_to event.project.name, project_path(event.project) %></td>
-            <td><%= event.event_type %></td>
-            <td><%= event.level.presence || "-" %></td>
-            <td><%= truncate(event.message, length: 120) %></td>
+            <td><%= link_to truncate(event.message.to_s.lines.first, length: 96), project_event_path(event.project, event) %></td>
+            <td><%= event.project.name %></td>
+            <td><%= event.occurred_at&.strftime("%b %-d, %H:%M") %></td>
+            <td><%= render "shared/widgets/severity_badge", level: event.level.presence || "error" %></td>
           </tr>
         <% end %>
       </tbody>

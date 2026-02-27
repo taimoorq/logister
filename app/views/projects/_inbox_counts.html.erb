@@ -1,0 +1,49 @@
+<nav id="inbox_counts" class="inbox-filters">
+  <%= link_to project_events_path(project, filter: "unresolved", q: query),
+              class: "inbox-filter-link #{"is-active" if filter == "unresolved"}",
+              data: { turbo_frame: "project_inbox", turbo_action: "advance",
+                      action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
+    <span class="filter-label">Open</span>
+    <span class="filter-count"><%= counts[:unresolved] %></span>
+  <% end %>
+
+  <%= link_to project_events_path(project, filter: "introduced_today", q: query),
+              class: "inbox-filter-link #{"is-active" if filter == "introduced_today"}",
+              data: { turbo_frame: "project_inbox", turbo_action: "advance",
+                      action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
+    <span class="filter-label">Introduced today</span>
+    <span class="filter-count"><%= counts[:introduced_today] %></span>
+  <% end %>
+
+  <%= link_to project_events_path(project, filter: "resolved", q: query),
+              class: "inbox-filter-link #{"is-active" if filter == "resolved"}",
+              data: { turbo_frame: "project_inbox", turbo_action: "advance",
+                      action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
+    <span class="filter-label">Resolved</span>
+    <span class="filter-count"><%= counts[:resolved] %></span>
+  <% end %>
+
+  <%= link_to project_events_path(project, filter: "ignored", q: query),
+              class: "inbox-filter-link #{"is-active" if filter == "ignored"}",
+              data: { turbo_frame: "project_inbox", turbo_action: "advance",
+                      action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
+    <span class="filter-label">Ignored</span>
+    <span class="filter-count"><%= counts[:ignored] %></span>
+  <% end %>
+
+  <%= link_to project_events_path(project, filter: "archived", q: query),
+              class: "inbox-filter-link #{"is-active" if filter == "archived"}",
+              data: { turbo_frame: "project_inbox", turbo_action: "advance",
+                      action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
+    <span class="filter-label">Archived</span>
+    <span class="filter-count"><%= counts[:archived] %></span>
+  <% end %>
+
+  <%= link_to project_events_path(project, filter: "all", q: query),
+              class: "inbox-filter-link #{"is-active" if filter == "all"}",
+              data: { turbo_frame: "project_inbox", turbo_action: "advance",
+                      action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
+    <span class="filter-label">All</span>
+    <span class="filter-count"><%= counts[:all] %></span>
+  <% end %>
+</nav>

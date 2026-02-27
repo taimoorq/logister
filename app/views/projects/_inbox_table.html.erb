@@ -1,0 +1,57 @@
+<turbo-frame id="project_inbox">
+  <div class="inbox-table-wrap">
+    <% if groups.any? %>
+      <table class="inbox-table">
+        <thead>
+          <tr>
+            <th class="col-error">Error</th>
+            <th class="col-num">Events</th>
+            <th class="col-trend">Trend</th>
+            <th class="col-stage">Stage</th>
+            <th class="col-severity">Severity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% groups.each do |group| %>
+            <tr id="<%= dom_id(group) %>"
+                class="inbox-row<%= " is-selected" if selected_uuid.present? && selected_uuid == group.uuid %>">
+              <td class="col-error">
+                <%= link_to project_event_path(project, group.latest_event,
+                              filter: filter, q: query, group_uuid: group.uuid),
+                            class: "error-row-link",
+                            data: {
+                              turbo_frame: "error_detail",
+                              turbo_action: "advance",
+                              action: "click->inbox#selectRow"
+                            } do %>
+                  <span class="error-title"><%= truncate(group.title, length: 96) %></span>
+                  <% if group.subtitle.present? %>
+                    <span class="error-subtitle"><%= group.subtitle %></span>
+                  <% end %>
+                <% end %>
+                <span class="error-meta">
+                  first seen <%= time_ago_in_words(group.first_seen_at) %> ago
+                  &middot; last seen <%= time_ago_in_words(group.last_seen_at) %> ago
+                </span>
+              </td>
+              <td class="col-num"><strong><%= group.occurrence_count %></strong></td>
+              <td class="col-trend"><%= render "shared/widgets/sparkline", points: group.trend, compact: true %></td>
+              <td class="col-stage"><span class="stage-tag"><%= group.stage %></span></td>
+              <td class="col-severity"><%= render "shared/widgets/severity_badge", level: group.severity %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="inbox-empty">
+        <p class="muted">No errors matching this filter.</p>
+        <% if query.present? %>
+          <%= link_to "Clear search",
+                      project_events_path(project, filter: filter),
+                      class: "inline-link",
+                      data: { turbo_frame: "project_inbox" } %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</turbo-frame>

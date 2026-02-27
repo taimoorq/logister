@@ -1,0 +1,10 @@
+<% points = Array(local_assigns.fetch(:points, [])) %>
+<% compact = local_assigns.fetch(:compact, false) %>
+<% max_value = points.max.to_i %>
+<% max_value = 1 if max_value.zero? %>
+<div class="sparkline <%= "compact" if compact %>" aria-hidden="true">
+  <% points.each do |point| %>
+    <% height = (point.to_f / max_value * 100).round %>
+    <span style="--height: <%= [height, 8].max %>%;"></span>
+  <% end %>
+</div>

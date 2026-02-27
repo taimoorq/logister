@@ -1,0 +1,126 @@
+<turbo-frame id="error_detail">
+  <% exception_data = event.context.is_a?(Hash) ? (event.context["exception"] || event.context[:exception]) : nil %>
+  <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
+  <% filter_param = local_assigns[:filter] || "unresolved" %>
+  <% query_param  = local_assigns[:query]  || "" %>
+
+  <%# ── Action bar ──────────────────────────────────────────────────────── %>
+  <header class="detail-actionbar card">
+    <div class="detail-actionbar-left">
+      <span class="detail-status-badge status-<%= group&.status || "unresolved" %>">
+        <%= (group&.status || "unresolved").upcase %>
+      </span>
+      <h2 class="detail-title"><%= truncate(group&.title || event.message.to_s.lines.first, length: 120) %></h2>
+      <% if group&.subtitle.present? %>
+        <p class="muted detail-subtitle"><%= group.subtitle %></p>
+      <% end %>
+      <p class="muted">
+        <%= project.name %>
+        · <%= event.occurred_at&.strftime("%b %-d, %Y %H:%M:%S %Z") %>
+        <% if group %>
+          · <strong><%= group.occurrence_count %></strong> total occurrences
+          · first seen <%= group.first_seen_at&.strftime("%b %-d") %>
+          · last seen <%= group.last_seen_at&.strftime("%b %-d") %>
+        <% end %>
+      </p>
+    </div>
+
+    <% if group %>
+      <div class="detail-actionbar-actions">
+        <% if group.unresolved? %>
+          <%= button_to "Mark as fixed",
+                        resolve_project_error_group_path(project, group, filter: filter_param, q: query_param),
+                        method: :patch,
+                        class: "btn btn-resolve",
+                        data: { turbo_stream: true } %>
+          <%= button_to "Ignore",
+                        ignore_project_error_group_path(project, group, filter: filter_param, q: query_param),
+                        method: :patch,
+                        class: "btn btn-ghost",
+                        data: { turbo_stream: true } %>
+          <%= button_to "Archive",
+                        archive_project_error_group_path(project, group, filter: filter_param, q: query_param),
+                        method: :patch,
+                        class: "btn btn-ghost",
+                        data: { turbo_stream: true } %>
+        <% else %>
+          <%= button_to "Reopen",
+                        reopen_project_error_group_path(project, group, filter: filter_param, q: query_param),
+                        method: :patch,
+                        class: "btn btn-reopen",
+                        data: { turbo_stream: true } %>
+        <% end %>
+      </div>
+    <% end %>
+  </header>
+
+  <%# ── Tabs ──────────────────────────────────────────────────────────── %>
+  <div class="detail-tabs-wrap card" data-controller="tabs">
+    <nav class="detail-tabs" role="tablist">
+      <button class="detail-tab is-active" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-stacktrace" role="tab">
+        Stacktrace
+      </button>
+      <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-context" role="tab">
+        Context
+      </button>
+      <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-occurrences" role="tab">
+        Occurrences (<%= occurrences.size %>)
+      </button>
+    </nav>
+
+    <%# ── Stacktrace panel ─────────────────────────────────────────────── %>
+    <section id="tab-stacktrace" class="detail-panel" data-tabs-target="panel">
+      <div class="detail-meta-strip">
+        <div><span class="kicker">Event ID</span><code><%= event.uuid %></code></div>
+        <div><span class="kicker">Fingerprint</span><code><%= event.fingerprint.presence || group&.fingerprint || "—" %></code></div>
+        <div><span class="kicker">Severity</span><%= render "shared/widgets/severity_badge", level: event.level.presence || "error" %></div>
+        <div><span class="kicker">Stage</span><span class="stage-tag"><%= group&.stage || "production" %></span></div>
+      </div>
+
+      <% if backtrace.respond_to?(:any?) && backtrace.any? %>
+        <pre class="stacktrace"><code><%= Array(backtrace).join("\n") %></code></pre>
+      <% else %>
+        <pre class="stacktrace"><code><%= event.message %></code></pre>
+      <% end %>
+    </section>
+
+    <%# ── Context panel ────────────────────────────────────────────────── %>
+    <section id="tab-context" class="detail-panel is-hidden" data-tabs-target="panel">
+      <pre class="stacktrace"><code><%= JSON.pretty_generate(event.context || {}) rescue event.context.to_s %></code></pre>
+    </section>
+
+    <%# ── Occurrences panel ───────────────────────────────────────────── %>
+    <section id="tab-occurrences" class="detail-panel is-hidden" data-tabs-target="panel">
+      <% if occurrences.any? %>
+        <table class="occurrences-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Message</th>
+              <th>Severity</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% occurrences.each do |occ| %>
+              <% ev = occ.ingest_event %>
+              <tr>
+                <td><%= ev.occurred_at&.strftime("%b %-d, %H:%M:%S") %></td>
+                <td><%= truncate(ev.message.to_s.lines.first, length: 80) %></td>
+                <td><%= render "shared/widgets/severity_badge", level: ev.level.presence || "error" %></td>
+                <td>
+                  <%= link_to "View",
+                              project_event_path(project, ev, filter: filter_param, q: query_param, group_uuid: group&.uuid),
+                              class: "inline-link",
+                              data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No occurrences recorded yet.</p>
+      <% end %>
+    </section>
+  </div>
+</turbo-frame>

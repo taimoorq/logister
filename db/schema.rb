@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_15_093000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_26_120002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -31,10 +31,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_093000) do
     t.index ["uuid"], name: "index_api_keys_on_uuid", unique: true
   end
 
+  create_table "error_groups", force: :cascade do |t|
+    t.datetime "archived_at"
+    t.datetime "created_at", null: false
+    t.string "fingerprint", null: false
+    t.datetime "first_seen_at"
+    t.datetime "ignored_at"
+    t.datetime "last_reopened_at"
+    t.datetime "last_seen_at"
+    t.bigint "latest_event_id"
+    t.integer "occurrence_count", default: 0, null: false
+    t.bigint "project_id", null: false
+    t.integer "reopen_count", default: 0, null: false
+    t.datetime "resolved_at"
+    t.string "severity", default: "error", null: false
+    t.string "stage", default: "production", null: false
+    t.integer "status", default: 0, null: false
+    t.string "subtitle"
+    t.string "title", default: "", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["latest_event_id"], name: "index_error_groups_on_latest_event_id"
+    t.index ["project_id", "fingerprint"], name: "index_error_groups_on_project_id_and_fingerprint", unique: true
+    t.index ["project_id", "last_seen_at"], name: "index_error_groups_on_project_id_and_last_seen_at"
+    t.index ["project_id", "status"], name: "index_error_groups_on_project_id_and_status"
+    t.index ["project_id"], name: "index_error_groups_on_project_id"
+    t.index ["uuid"], name: "index_error_groups_on_uuid", unique: true
+  end
+
+  create_table "error_occurrences", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "error_group_id", null: false
+    t.bigint "ingest_event_id", null: false
+    t.datetime "occurred_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["error_group_id", "ingest_event_id"], name: "index_error_occurrences_on_error_group_id_and_ingest_event_id", unique: true
+    t.index ["error_group_id", "occurred_at"], name: "index_error_occurrences_on_error_group_id_and_occurred_at"
+    t.index ["error_group_id"], name: "index_error_occurrences_on_error_group_id"
+    t.index ["ingest_event_id"], name: "index_error_occurrences_on_ingest_event_id"
+    t.index ["uuid"], name: "index_error_occurrences_on_uuid", unique: true
+  end
+
   create_table "ingest_events", force: :cascade do |t|
     t.bigint "api_key_id", null: false
     t.jsonb "context", default: {}, null: false
     t.datetime "created_at", null: false
+    t.bigint "error_group_id"
     t.integer "event_type", null: false
     t.string "fingerprint"
     t.string "level"
@@ -44,6 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_093000) do
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["api_key_id"], name: "index_ingest_events_on_api_key_id"
+    t.index ["error_group_id"], name: "index_ingest_events_on_error_group_id"
     t.index ["project_id", "event_type"], name: "index_ingest_events_on_project_id_and_event_type"
     t.index ["project_id", "occurred_at"], name: "index_ingest_events_on_project_id_and_occurred_at"
     t.index ["project_id"], name: "index_ingest_events_on_project_id"
@@ -98,7 +142,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_093000) do
 
   add_foreign_key "api_keys", "projects"
   add_foreign_key "api_keys", "users"
+  add_foreign_key "error_groups", "ingest_events", column: "latest_event_id"
+  add_foreign_key "error_groups", "projects"
+  add_foreign_key "error_occurrences", "error_groups"
+  add_foreign_key "error_occurrences", "ingest_events"
   add_foreign_key "ingest_events", "api_keys"
+  add_foreign_key "ingest_events", "error_groups"
   add_foreign_key "ingest_events", "projects"
   add_foreign_key "project_memberships", "projects"
   add_foreign_key "project_memberships", "users"

@@ -15,7 +15,16 @@ Rails.application.routes.draw do
   resources :projects, only: [ :index, :show, :new, :create ], param: :uuid do
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
-    resources :events, only: [ :show ], controller: "project_events", param: :uuid
+    resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
+
+    resources :error_groups, only: [], param: :uuid do
+      member do
+        patch :resolve
+        patch :ignore
+        patch :archive
+        patch :reopen
+      end
+    end
   end
 
   namespace :api do

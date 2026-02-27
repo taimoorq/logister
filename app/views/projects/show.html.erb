@@ -1,196 +1,176 @@
-<section class="card">
-  <h1><%= @project.name %></h1>
-  <p class="muted">
-    slug: <code><%= @project.slug %></code>
-  </p>
-  <p class="muted">
-    owner: <%= @owner.email %>
-  </p>
-  <% if @project.description.present? %>
-    <p><%= @project.description %></p>
-  <% end %>
+<%# ── Project inbox workbench ──────────────────────────────────────────── %>
+<div class="project-workbench" data-controller="inbox"
+     data-inbox-project-uuid-value="<%= @project.uuid %>">
+
+  <%# ── Left sidebar ──────────────────────────────────────────────────── %>
+  <aside class="inbox-sidebar">
+    <div class="sidebar-project-header card">
+      <h1 class="sidebar-project-name"><%= @project.name %></h1>
+      <p class="muted"><code><%= @project.slug %></code></p>
+    </div>
+
+    <div class="card sidebar-search-card">
+      <%= form_with url: project_events_path(@project), method: :get,
+                    data: { turbo_frame: "project_inbox",
+                            turbo_action: "advance",
+                            inbox_target: "searchForm",
+                            action: "submit->inbox#onSearchSubmit" } do |f| %>
+        <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
+        <%= f.search_field :q, value: @query,
+                           placeholder: "Search errors…",
+                           class: "inbox-search-input",
+                           data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
+      <% end %>
+    </div>
+
+    <%= render "inbox_counts",
+               project: @project,
+               counts:  @counts,
+               filter:  @filter,
+               query:   @query %>
+
+    <div class="card sidebar-links">
+      <p class="kicker">Project</p>
+      <%= link_to "API keys &amp; settings", "#project-configuration", class: "sidebar-action-link" %>
+      <%= link_to "All projects", projects_path, class: "sidebar-action-link" %>
+    </div>
+  </aside>
+
+  <%# ── Main workbench area ───────────────────────────────────────────── %>
+  <div class="workbench-columns">
+
+    <%# Inbox list — Turbo Frame %>
+    <%= render "inbox_table",
+               project:       @project,
+               groups:        @groups,
+               selected_uuid: @selected_group&.uuid,
+               filter:        @filter,
+               query:         @query %>
+
+    <%# Error detail — Turbo Frame %>
+    <% if @selected_group&.latest_event %>
+      <%= render "project_events/event_detail",
+                 project:     @project,
+                 event:       @selected_group.latest_event,
+                 group:       @selected_group,
+                 occurrences: @selected_group.error_occurrences.includes(:ingest_event).recent_first.limit(50),
+                 filter:      @filter,
+                 query:       @query %>
+    <% else %>
+      <%= render "empty_detail" %>
+    <% end %>
+
+  </div>
+</div>
+
+<%# ── Project configuration (below the fold) ─────────────────────────── %>
+<section class="section-head" id="project-configuration" style="margin-top:2rem">
+  <h2>Project configuration</h2>
+  <span class="muted"><code><%= @project.slug %></code></span>
 </section>
 
-<% if @project.owned_by?(current_user) %>
-  <section class="card">
-    <h2>Create API key</h2>
-    <%= form_with model: [@project, ApiKey.new] do |f| %>
-      <p>
-        <%= f.label :name, "Key label" %><br>
-        <%= f.text_field :name, required: true, placeholder: "production" %>
-      </p>
-      <%= f.submit "Generate key" %>
-    <% end %>
+<section class="project-config-grid">
+  <% if @project.owned_by?(current_user) %>
+    <article class="card" id="api-key-form">
+      <h3>Create API key</h3>
+      <%= form_with model: [@project, ApiKey.new] do |f| %>
+        <p>
+          <%= f.label :name, "Key label" %>
+          <%= f.text_field :name, required: true, placeholder: "production" %>
+        </p>
+        <%= f.submit "Generate key" %>
+      <% end %>
 
-    <% if flash[:new_api_key_token].present? %>
-      <p class="flash notice">
-        New API token: <code><%= flash[:new_api_key_token] %></code>
-      </p>
-    <% end %>
+      <% if flash[:new_api_key_token].present? %>
+        <p class="flash notice">New API token: <code><%= flash[:new_api_key_token] %></code></p>
+      <% end %>
 
-    <h3>Existing keys</h3>
-    <% if @api_keys.any? %>
+      <h3>Existing keys</h3>
+      <% if @api_keys.any? %>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Status</th><th>Last used</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% @api_keys.each do |key| %>
+              <tr>
+                <td><%= key.name %></td>
+                <td><%= key.active? ? "active" : "revoked" %></td>
+                <td><%= key.last_used_at&.strftime("%Y-%m-%d %H:%M") || "never" %></td>
+                <td><%= button_to "Revoke", project_api_key_path(@project, key), method: :delete if key.active? %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No API keys yet.</p>
+      <% end %>
+    </article>
+
+    <article class="card">
+      <h3>Project access</h3>
+      <%= form_with model: [@project, ProjectMembership.new] do |f| %>
+        <p>
+          <%= f.label :email, "Invite by email" %>
+          <%= f.email_field :email, required: true, placeholder: "teammate@example.com" %>
+        </p>
+        <%= f.submit "Share project" %>
+      <% end %>
+
+      <h3>Members</h3>
       <table>
         <thead>
-          <tr>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Last used</th>
-            <th></th>
-          </tr>
+          <tr><th>Email</th><th>Role</th><th></th></tr>
         </thead>
         <tbody>
-          <% @api_keys.each do |api_key| %>
+          <tr>
+            <td><%= @owner.email %></td>
+            <td>owner</td>
+            <td></td>
+          </tr>
+          <% @project_memberships.each do |m| %>
             <tr>
-              <td><%= api_key.name %></td>
-              <td><%= api_key.active? ? "active" : "revoked" %></td>
-              <td><%= api_key.last_used_at&.strftime("%Y-%m-%d %H:%M") || "never" %></td>
-              <td>
-                <% if api_key.active? %>
-                  <%= button_to "Revoke", project_api_key_path(@project, api_key), method: :delete %>
-                <% end %>
-              </td>
+              <td><%= m.user.email %></td>
+              <td><%= m.role %></td>
+              <td><%= button_to "Remove", project_project_membership_path(@project, m), method: :delete %></td>
             </tr>
           <% end %>
         </tbody>
       </table>
-    <% else %>
-      <p class="muted">No API keys yet.</p>
-    <% end %>
-  </section>
+    </article>
+  <% end %>
 
-  <section class="card">
-    <h2>Project access</h2>
-    <%= form_with model: [@project, ProjectMembership.new] do |f| %>
-      <p>
-        <%= f.label :email, "Invite by email" %><br>
-        <%= f.email_field :email, required: true, placeholder: "teammate@example.com" %>
-      </p>
-      <%= f.submit "Share project" %>
-    <% end %>
-
-    <h3>Members</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Role</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><%= @owner.email %></td>
-          <td>owner</td>
-          <td></td>
-        </tr>
-        <% @project_memberships.each do |membership| %>
-          <tr>
-            <td><%= membership.user.email %></td>
-            <td><%= membership.role %></td>
-            <td><%= button_to "Remove", project_project_membership_path(@project, membership), method: :delete %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </section>
-<% end %>
-
-<section class="card">
-  <h2>Ingest endpoint</h2>
-  <p>POST to <code>/api/v1/ingest_events</code> with header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
-  <pre><code>{
+  <article class="card">
+    <h3>Ingest endpoint</h3>
+    <p>POST to <code>/api/v1/ingest_events</code> with header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+    <pre><code>{
   "event": {
     "event_type": "error",
     "level": "error",
     "message": "NoMethodError in CheckoutService",
     "fingerprint": "checkout-nomethoderror",
     "occurred_at": "2026-02-14T12:00:00Z",
-    "context": {
-      "environment": "production",
-      "request_id": "abc123",
-      "metadata": {
-        "user_id": 42
-      }
-    }
+    "context": { "environment": "production" }
   }
 }</code></pre>
+  </article>
 </section>
 
-<section class="card">
-  <h2>Latest events</h2>
-  <% if @events.any? %>
-    <table>
-      <thead>
-        <tr>
-          <th>When</th>
-          <th>Type</th>
-          <th>Level</th>
-          <th>Message</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @events.each do |event| %>
-          <tr>
-            <td><%= event.occurred_at&.strftime("%Y-%m-%d %H:%M") %></td>
-            <td><%= event.event_type %></td>
-            <td><%= event.level.presence || "-" %></td>
-            <td><%= link_to truncate(event.message, length: 140), project_event_path(@project, event) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% else %>
-    <p class="muted">No events yet for this project.</p>
-  <% end %>
-</section>
-
-<section class="card">
-  <div class="section-head">
-    <h2>Database load (24h)</h2>
-    <p class="muted"><%= @db_stats[:count] %> queries captured</p>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <p class="muted">Average query time</p>
-      <p class="stat"><%= @db_stats[:avg_ms] %> ms</p>
+<% if @db_stats[:count] > 0 %>
+  <section class="card">
+    <div class="section-head">
+      <h2>Database load (24h)</h2>
+      <p class="muted"><%= @db_stats[:count] %> queries captured</p>
     </div>
-    <div class="card">
-      <p class="muted">P95 query time</p>
-      <p class="stat"><%= @db_stats[:p95_ms] %> ms</p>
+    <div class="stat-strip">
+      <article class="card stat-card">
+        <p class="kicker">Avg query time</p>
+        <p class="stat"><%= @db_stats[:avg_ms] %> ms</p>
+      </article>
+      <article class="card stat-card">
+        <p class="kicker">P95 query time</p>
+        <p class="stat"><%= @db_stats[:p95_ms] %> ms</p>
+      </article>
     </div>
-  </div>
-
-  <h3>Slowest queries</h3>
-  <% if @slow_db_queries.any? %>
-    <table>
-      <thead>
-        <tr>
-          <th>When</th>
-          <th>Duration</th>
-          <th>Name</th>
-          <th>SQL</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @slow_db_queries.each do |event| %>
-          <% ctx = event.context.is_a?(Hash) ? event.context : {} %>
-          <% duration = (ctx["duration_ms"] || ctx[:duration_ms]).to_f %>
-          <% sql_name = (ctx["name"] || ctx[:name]).to_s %>
-          <% sql_text = (ctx["sql"] || ctx[:sql]).to_s %>
-          <tr>
-            <td><%= event.occurred_at&.strftime("%Y-%m-%d %H:%M") %></td>
-            <td><%= format("%.2f", duration) %> ms</td>
-            <td><%= sql_name.presence || "SQL" %></td>
-            <td><%= truncate(sql_text, length: 120) %></td>
-            <td><%= link_to "Details", project_event_path(@project, event) %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  <% else %>
-    <p class="muted">No database timing metrics yet. Enable database metrics in the gem to populate this section.</p>
-  <% end %>
-</section>
+  </section>
+<% end %>
