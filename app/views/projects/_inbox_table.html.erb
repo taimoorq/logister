@@ -25,14 +25,14 @@
                                 turbo_action: "advance",
                                 action: "click->inbox#selectRow"
                               } do %>
-                    <span class="error-title"><%= truncate(group.title, length: 96) %></span>
+                    <span class="error-title"><%= group.title %></span>
                     <% if group.subtitle.present? %>
                       <span class="error-subtitle"><%= group.subtitle %></span>
                     <% end %>
                   <% end %>
                 <% else %>
                   <span class="error-row-link error-row-link--orphan">
-                    <span class="error-title"><%= truncate(group.title, length: 96) %></span>
+                    <span class="error-title"><%= group.title %></span>
                     <% if group.subtitle.present? %>
                       <span class="error-subtitle"><%= group.subtitle %></span>
                     <% end %>

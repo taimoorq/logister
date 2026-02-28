@@ -31,10 +31,12 @@
     <% @error_views.each do |view| %>
       <article class="error-view-card">
         <div class="error-view-head">
-          <h3><%= truncate(view[:title], length: 72) %></h3>
+          <h3><%= view[:title] %></h3>
+        </div>
+        <div class="error-view-meta">
+          <p class="muted"><%= view[:project].name %> · last 7 days</p>
           <span class="pill"><%= view[:stage].presence || "production" %></span>
         </div>
-        <p class="muted"><%= view[:project].name %> · last 7 days</p>
 
         <%= render "shared/widgets/sparkline", points: view[:trend] %>
 
