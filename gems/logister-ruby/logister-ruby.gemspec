@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = 'Send Rails errors and metrics to logister.org'
   spec.description = 'Client gem for reporting errors and custom metrics from Ruby and Rails apps to logister.org'
-  spec.homepage = 'https://logister.org'
+  spec.homepage = 'https://github.com/taimoorq/logister-ruby'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'
 

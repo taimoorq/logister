@@ -5,7 +5,10 @@ Rails.application.routes.draw do
     passwords: "users/passwords",
     confirmations: "users/confirmations"
   }
-  root "dashboard#index"
+  root "home#show"
+  get "about", to: "home#about"
+  get "privacy", to: "home#privacy"
+  get "terms", to: "home#terms"
 
   get "dashboard", to: "dashboard#index"
   get "health/clickhouse", to: "health#clickhouse"

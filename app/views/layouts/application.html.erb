@@ -40,6 +40,10 @@
               <%= link_to "Admin", admin_users_path, class: "global-link #{"is-active" if request.path.start_with?("/admin")}" %>
             <% end %>
           <% else %>
+            <%= link_to "Home", root_path, class: "global-link #{"is-active" if current_page?(root_path)}" %>
+            <%= link_to "About", about_path, class: "global-link #{"is-active" if current_page?(about_path)}" %>
+            <%= link_to "Privacy", privacy_path, class: "global-link #{"is-active" if current_page?(privacy_path)}" %>
+            <%= link_to "Terms", terms_path, class: "global-link #{"is-active" if current_page?(terms_path)}" %>
             <%= link_to "Sign in", new_user_session_path, class: "global-link", data: { turbo: false } %>
             <%= link_to "Sign up", new_user_registration_path, class: "global-link", data: { turbo: false } %>
           <% end %>
