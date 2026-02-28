@@ -160,6 +160,14 @@ SENDGRID_API_KEY=<sendgrid_api_key>
    - Turn on Turnstile (`LOGISTER_TURNSTILE_ENABLED=true`)
    - Enable SSL/host authorization in `config/environments/production.rb`
 
+## Provider-specific config files
+
+This repo keeps safe provider config in git and avoids committing secrets.
+
+- Fly.io config: `fly.toml` (tracked, non-secret deployment config)
+- Fly.io template: `fly.toml.example` (reference copy)
+- Keep secrets in GitHub Actions/Fly secrets, not in repo files.
+
 ## Cloudflare Turnstile
 
 This app uses the `rails_cloudflare_turnstile` gem with Devise custom controllers.

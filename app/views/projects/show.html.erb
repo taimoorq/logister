@@ -138,6 +138,16 @@
         </tbody>
       </table>
     </article>
+
+    <article class="card">
+      <h3>Danger zone</h3>
+      <p class="muted">Deleting a project permanently removes its API keys, memberships, and event data.</p>
+      <%= button_to "Delete project",
+                    project_path(@project),
+                    method: :delete,
+                    class: "btn btn-ghost",
+                    form: { data: { turbo_confirm: "Delete this project permanently?" } } %>
+    </article>
   <% end %>
 
   <article class="card">

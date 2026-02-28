@@ -31,6 +31,17 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
+  test "non-admin cannot delete users" do
+    ENV["LOGISTER_ADMIN_EMAILS"] = users(:one).email
+    sign_in users(:two)
+
+    assert_no_difference("User.count") do
+      delete admin_user_path(users(:one))
+    end
+
+    assert_redirected_to root_path
+  end
+
   test "admin can confirm an unconfirmed user" do
     ENV["LOGISTER_ADMIN_EMAILS"] = users(:one).email
     sign_in users(:one)
@@ -66,5 +77,27 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to admin_user_path(user)
+  end
+
+  test "admin can delete another user" do
+    ENV["LOGISTER_ADMIN_EMAILS"] = users(:one).email
+    sign_in users(:one)
+
+    assert_difference("User.count", -1) do
+      delete admin_user_path(users(:two))
+    end
+
+    assert_redirected_to admin_users_path
+  end
+
+  test "admin cannot delete themselves" do
+    ENV["LOGISTER_ADMIN_EMAILS"] = users(:one).email
+    sign_in users(:one)
+
+    assert_no_difference("User.count") do
+      delete admin_user_path(users(:one))
+    end
+
+    assert_redirected_to admin_user_path(users(:one))
   end
 end

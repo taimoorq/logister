@@ -51,4 +51,24 @@ class ProjectsAccessTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "1 queries captured"
     assert_includes response.body, "42.75 ms"
   end
+
+  test "owner can delete project" do
+    sign_in users(:one)
+
+    assert_difference("Project.count", -1) do
+      delete project_path(projects(:one))
+    end
+
+    assert_redirected_to projects_path
+  end
+
+  test "shared user cannot delete project" do
+    sign_in users(:two)
+
+    assert_no_difference("Project.count") do
+      delete project_path(projects(:one))
+    end
+
+    assert_response :not_found
+  end
 end

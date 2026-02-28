@@ -1,5 +1,5 @@
 class Admin::UsersController < Admin::BaseController
-  before_action :set_user, only: [ :show, :confirm, :resend_confirmation ]
+  before_action :set_user, only: [ :show, :confirm, :resend_confirmation, :destroy ]
 
   def index
     @query = params[:q].to_s.strip
@@ -41,6 +41,17 @@ class Admin::UsersController < Admin::BaseController
 
     @user.send_confirmation_instructions
     redirect_to admin_user_path(@user), notice: "Confirmation instructions sent."
+  end
+
+  def destroy
+    if @user == current_user
+      redirect_to admin_user_path(@user), alert: "You cannot delete your own account from admin."
+      return
+    end
+
+    deleted_email = @user.email
+    @user.destroy!
+    redirect_to admin_users_path, notice: "User #{deleted_email} was deleted."
   end
 
   private
