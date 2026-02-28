@@ -1,0 +1,21 @@
+# Logister
+
+Logister is a free bug capture and triage tool for Ruby on Rails applications.
+
+## Public pages
+- Home: /
+- About: /about
+- Privacy Policy: /privacy
+- Terms of Use: /terms
+
+## Product summary
+- Captures and groups Rails errors.
+- Shows stacktrace, request context, and occurrence history.
+- Uses the `logister-ruby` gem for instrumentation and delivery.
+
+## Primary audience
+- Rails developers and teams looking for lightweight error tracking.
+
+## Companion gem
+- RubyGems: https://rubygems.org/gems/logister-ruby
+- Source: https://github.com/taimoorq/logister-ruby

@@ -1,3 +1,22 @@
+<% content_for :title, "Free Rails Bug Capture Tool" %>
+<% content_for :meta_description, "Logister is a free bug capture tool for Ruby on Rails apps. Install the logister-ruby gem and triage issues with grouped errors and request context." %>
+<% content_for :canonical_path, root_path %>
+<% content_for :og_type, "website" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "SoftwareApplication",
+  "name" => "Logister",
+  "applicationCategory" => "DeveloperApplication",
+  "operatingSystem" => "Web",
+  "description" => "Free bug capture and triage for Ruby on Rails apps via the logister-ruby gem.",
+  "url" => "#{request.base_url}#{root_path}",
+  "offers" => {
+    "@type" => "Offer",
+    "price" => "0",
+    "priceCurrency" => "USD"
+  }
+}) %>
+
 <section class="landing-hero card">
   <p class="kicker">Free for use.<br>
   Open source self hosted version coming soon.</p>
@@ -11,6 +30,9 @@
     <%= link_to "Get started free", new_user_registration_path, class: "action-link", data: { turbo: false } %>
     <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost", data: { turbo: false } %>
   </div>
+  <p class="muted" style="margin-top: 0.75rem;">
+    AI/agent-friendly docs: <a href="/llms.txt"><code>/llms.txt</code></a>
+  </p>
 </section>
 
 <section class="landing-grid">

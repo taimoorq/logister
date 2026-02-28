@@ -1,3 +1,15 @@
+<% content_for :title, "Privacy Policy" %>
+<% content_for :meta_description, "Read Logister's privacy policy for how account and application telemetry data is handled." %>
+<% content_for :canonical_path, privacy_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "WebPage",
+  "name" => "Logister Privacy Policy",
+  "url" => "#{request.base_url}#{privacy_path}",
+  "description" => "Privacy policy for Logister."
+}) %>
+
 <section class="card legal-page">
   <h1>Privacy Policy</h1>
   <p class="muted"><strong>Last updated:</strong> February 28, 2026</p>

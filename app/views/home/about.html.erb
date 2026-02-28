@@ -1,3 +1,15 @@
+<% content_for :title, "About" %>
+<% content_for :meta_description, "About Logister, a free bug capture and triage tool for Ruby on Rails applications." %>
+<% content_for :canonical_path, about_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "AboutPage",
+  "name" => "About Logister",
+  "url" => "#{request.base_url}#{about_path}",
+  "description" => "About Logister and its Rails-focused bug capture workflow."
+}) %>
+
 <section class="card">
   <h1>About Logister</h1>
   <p class="muted">

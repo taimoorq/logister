@@ -50,7 +50,58 @@ module ApplicationHelper
     value.to_s
   end
 
+  def seo_title
+    page_title = content_for(:title).to_s.strip
+    return "Logister" if page_title.blank?
+
+    "#{page_title} | Logister"
+  end
+
+  def seo_description
+    content_for(:meta_description).to_s.strip.presence ||
+      "Logister is a free bug capture tool for Ruby on Rails apps using the logister-ruby gem."
+  end
+
+  def seo_robots
+    explicit = content_for(:meta_robots).to_s.strip
+    return explicit if explicit.present?
+
+    user_signed_in? ? "noindex, nofollow" : "index, follow"
+  end
+
+  def seo_canonical_url
+    canonical_path = content_for(:canonical_path).to_s.strip
+    if canonical_path.present?
+      absolute_url_for(canonical_path)
+    else
+      "#{request.base_url}#{request.path}"
+    end
+  end
+
+  def seo_og_type
+    content_for(:og_type).to_s.strip.presence || "website"
+  end
+
+  def seo_og_image
+    image_path = content_for(:og_image).to_s.strip.presence || "/icon.png"
+    absolute_url_for(image_path)
+  end
+
+  def seo_json_ld
+    content_for(:json_ld).to_s
+  end
+
+  def json_ld(value)
+    value.to_json
+  end
+
   private
+
+  def absolute_url_for(path)
+    return path if path.start_with?("http://", "https://")
+
+    "#{request.base_url}#{path.start_with?("/") ? path : "/#{path}"}"
+  end
 
   def event_context_hash(event)
     raw = event.respond_to?(:context) ? event.context : event

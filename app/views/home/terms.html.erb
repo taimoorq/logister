@@ -1,3 +1,15 @@
+<% content_for :title, "Terms of Use" %>
+<% content_for :meta_description, "Read Logister's terms of use for service access, account responsibilities, and data submission rules." %>
+<% content_for :canonical_path, terms_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "WebPage",
+  "name" => "Logister Terms of Use",
+  "url" => "#{request.base_url}#{terms_path}",
+  "description" => "Terms of use for Logister."
+}) %>
+
 <section class="card legal-page">
   <h1>Terms of Use</h1>
   <p class="muted"><strong>Last updated:</strong> February 28, 2026</p>
