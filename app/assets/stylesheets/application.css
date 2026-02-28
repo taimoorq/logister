@@ -683,7 +683,7 @@ pre {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Project workbench — 3-column layout: sidebar | inbox list | error detail
+   Project workbench — sidebar + stacked inbox/detail
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .project-workbench {
@@ -691,13 +691,11 @@ pre {
   grid-template-columns: 240px 1fr;
   gap: 1rem;
   align-items: start;
-  /* Stick the whole workbench to the top so the two inner frames scroll
-     independently while the sidebar stays visible */
 }
 
 .workbench-columns {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(400px, 1.6fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
 }
