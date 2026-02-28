@@ -1,7 +1,7 @@
 class CreateErrorGroups < ActiveRecord::Migration[8.1]
   def change
     create_table :error_groups do |t|
-      t.uuid   :uuid,             null: false, default: -> { "gen_random_uuid()" }
+      t.uuid :uuid,             null: false, default: -> { "gen_random_uuid()" }
       t.references :project,      null: false, foreign_key: true, index: true
       t.references :latest_event, null: true,  foreign_key: { to_table: :ingest_events }, index: true
 

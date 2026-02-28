@@ -24,7 +24,7 @@ class LogisterRequestSubscriberTest < ActiveSupport::TestCase
         view_runtime: 8.1,
         allocations: 1200
       }
-    ) {}
+    ) { }
 
     ActiveSupport::Notifications.instrument(
       "sql.active_record",
@@ -33,7 +33,7 @@ class LogisterRequestSubscriberTest < ActiveSupport::TestCase
         sql: "SELECT * FROM orders WHERE id = 123",
         cached: false
       }
-    ) {}
+    ) { }
 
     summary = Logister::ContextStore.request_summary("req-123")
     breadcrumbs = Logister::ContextStore.breadcrumbs
