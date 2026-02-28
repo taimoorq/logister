@@ -5,7 +5,10 @@ module Logister
     attr_accessor :api_key, :endpoint, :environment, :service, :release, :enabled, :timeout_seconds, :logger,
                   :ignore_exceptions, :ignore_environments, :ignore_paths, :before_notify,
                   :async, :queue_size, :max_retries, :retry_base_interval,
-                  :capture_db_metrics, :db_metric_min_duration_ms, :db_metric_sample_rate
+                  :capture_db_metrics, :db_metric_min_duration_ms, :db_metric_sample_rate,
+                  :feature_flags_resolver, :dependency_resolver, :anonymize_ip,
+                  :max_breadcrumbs, :max_dependencies,
+                  :capture_sql_breadcrumbs, :sql_breadcrumb_min_duration_ms
 
     def initialize
       @api_key = ENV['LOGISTER_API_KEY']
@@ -31,6 +34,14 @@ module Logister
       @capture_db_metrics = false
       @db_metric_min_duration_ms = 0.0
       @db_metric_sample_rate = 1.0
+
+      @feature_flags_resolver = nil
+      @dependency_resolver = nil
+      @anonymize_ip = false
+      @max_breadcrumbs = 40
+      @max_dependencies = 20
+      @capture_sql_breadcrumbs = true
+      @sql_breadcrumb_min_duration_ms = 25.0
     end
   end
 end

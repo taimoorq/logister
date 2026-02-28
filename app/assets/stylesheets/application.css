@@ -976,6 +976,47 @@ pre {
   padding: 1rem;
 }
 
+/* ── Context details ────────────────────────────────────────────────────── */
+
+.context-details {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.context-detail-list {
+  display: grid;
+  grid-template-columns: minmax(130px, auto) 1fr;
+  gap: 0.4rem 0.75rem;
+  margin: 0;
+  align-items: start;
+}
+
+.context-detail-list dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.context-detail-list dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.context-json {
+  background: #f8faff;
+  color: #1b2b55;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  max-height: 360px;
+  overflow: auto;
+  padding: 0.85rem;
+}
+
 /* ── Occurrences table ───────────────────────────────────────────────────── */
 
 .occurrences-table td,

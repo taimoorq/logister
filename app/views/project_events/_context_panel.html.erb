@@ -1,0 +1,55 @@
+<% details = request_context_details(event) %>
+
+<div class="context-details">
+  <p class="kicker">Request details</p>
+
+  <dl class="context-detail-list">
+    <% if details[:client_ip].present? %>
+      <dt>clientIp</dt>
+      <dd><code><%= details[:client_ip] %></code></dd>
+    <% end %>
+
+    <% if details[:http_method].present? %>
+      <dt>httpMethod</dt>
+      <dd><code><%= details[:http_method] %></code></dd>
+    <% end %>
+
+    <% if details[:http_version].present? %>
+      <dt>httpVersion</dt>
+      <dd><code><%= details[:http_version] %></code></dd>
+    <% end %>
+
+    <% if details[:rails_action].present? %>
+      <dt>railsAction</dt>
+      <dd><code><%= details[:rails_action] %></code></dd>
+    <% end %>
+
+    <% if details[:referer].present? %>
+      <dt>referer</dt>
+      <dd><%= details[:referer] %></dd>
+    <% end %>
+
+    <% if details[:request_id].present? %>
+      <dt>requestId</dt>
+      <dd><code><%= details[:request_id] %></code></dd>
+    <% end %>
+
+    <% if details[:url].present? %>
+      <dt>url</dt>
+      <dd><%= details[:url] %></dd>
+    <% end %>
+  </dl>
+
+  <% if details[:headers].present? %>
+    <p class="kicker">headers</p>
+    <pre class="context-json"><code><%= pretty_context_json(details[:headers]) %></code></pre>
+  <% end %>
+
+  <% if details[:params].present? %>
+    <p class="kicker">params</p>
+    <pre class="context-json"><code><%= pretty_context_json(details[:params]) %></code></pre>
+  <% end %>
+
+  <p class="kicker">full context</p>
+  <pre class="context-json"><code><%= pretty_context_json(event.context || {}) %></code></pre>
+</div>

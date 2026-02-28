@@ -86,7 +86,7 @@
 
     <%# ── Context panel ────────────────────────────────────────────────── %>
     <section id="tab-context" class="detail-panel is-hidden" data-tabs-target="panel">
-      <pre class="stacktrace"><code><%= JSON.pretty_generate(event.context || {}) rescue event.context.to_s %></code></pre>
+      <%= render "project_events/context_panel", event: event %>
     </section>
 
     <%# ── Occurrences panel ───────────────────────────────────────────── %>

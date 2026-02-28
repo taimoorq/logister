@@ -23,6 +23,21 @@ Logister.configure do |config|
   config.environment = Rails.env
   config.service = Rails.application.class.module_parent_name.underscore
   config.release = ENV["RELEASE_SHA"]
+
+  # Optional richer context hooks
+  config.anonymize_ip = false
+  config.max_breadcrumbs = 40
+  config.max_dependencies = 20
+  config.capture_sql_breadcrumbs = true
+  config.sql_breadcrumb_min_duration_ms = 25.0
+
+  config.feature_flags_resolver = lambda do |request:, user:, **|
+    { new_checkout: user&.respond_to?(:beta?) && user.beta? }
+  end
+
+  config.dependency_resolver = lambda do |**|
+    [] # or return [{ name:, host:, method:, status:, durationMs:, kind: }]
+  end
 end
 ```
 
@@ -55,6 +70,7 @@ end
 ## Rails auto-reporting
 
 If Rails is present, the gem installs middleware that reports unhandled exceptions automatically.
+It also attaches richer context (trace IDs, route/response/performance info, breadcrumbs, dependency calls, and user metadata when available).
 
 ## Database load metrics (ActiveRecord)
 
@@ -69,6 +85,37 @@ end
 ```
 
 This emits metric events with `message: "db.query"` and context fields such as `duration_ms`, `name`, `sql`, and `binds_count`.
+
+## Breadcrumbs and dependencies
+
+You can add manual breadcrumbs and dependency calls that will be attached to captured errors:
+
+```ruby
+Logister.add_breadcrumb(
+  category: "checkout",
+  message: "Starting payment authorization",
+  data: { order_id: 123 }
+)
+
+Logister.add_dependency(
+  name: "stripe.charge",
+  host: "api.stripe.com",
+  method: "POST",
+  status: 200,
+  duration_ms: 184.7,
+  kind: "http"
+)
+```
+
+The gem also captures request and SQL breadcrumbs automatically in Rails.
+
+## ActiveJob error context
+
+Failed ActiveJob executions are auto-reported with `job` context:
+- job class/id/queue/retries/schedule
+- filtered job arguments (using `filter_parameters`)
+- runtime/deployment metadata
+- breadcrumbs/dependency calls collected during the job
 
 ## Manual reporting
 
