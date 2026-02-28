@@ -1,7 +1,7 @@
 <div class="section-head projects-head">
   <div>
     <h1>User: <%= @user.email %></h1>
-    <p class="muted">Manage confirmation and inspect ownership/activity.</p>
+    <p class="muted">Manage confirmation, deletion, and inspect ownership/activity.</p>
   </div>
   <%= link_to "Back to users", admin_users_path, class: "btn btn-ghost" %>
 </div>
@@ -37,6 +37,16 @@
                     resend_confirmation_admin_user_path(@user),
                     method: :post,
                     class: "btn btn-ghost" %>
+    </div>
+  <% end %>
+
+  <% if @user != current_user %>
+    <div class="detail-actionbar-actions" style="margin-top: 0.85rem;">
+      <%= button_to "Delete user",
+                    admin_user_path(@user),
+                    method: :delete,
+                    class: "btn btn-ghost",
+                    form: { data: { turbo_confirm: "Delete this user and all owned data permanently?" } } %>
     </div>
   <% end %>
 </div>

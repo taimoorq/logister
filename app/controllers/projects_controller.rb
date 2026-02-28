@@ -3,6 +3,7 @@ class ProjectsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :set_project, only: :show
+  before_action :set_owned_project, only: :destroy
 
   def index
     @projects      = current_user.accessible_projects.order(created_at: :desc)
@@ -62,10 +63,24 @@ class ProjectsController < ApplicationController
     end
   end
 
+  def destroy
+    project_name = @project.name
+
+    if @project.destroy
+      redirect_to projects_path, notice: "Project #{project_name} was deleted."
+    else
+      redirect_to project_path(@project), alert: @project.errors.full_messages.to_sentence.presence || "Project could not be deleted."
+    end
+  end
+
   private
 
   def set_project
     @project = current_user.accessible_projects.find_by!(uuid: params[:uuid])
+  end
+
+  def set_owned_project
+    @project = current_user.projects.find_by!(uuid: params[:uuid])
   end
 
   def project_params

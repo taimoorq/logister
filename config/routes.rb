@@ -16,7 +16,7 @@ Rails.application.routes.draw do
   get "account/security", to: redirect("/users/edit"), as: :account_security
 
   namespace :admin do
-    resources :users, only: [ :index, :show ], param: :uuid do
+    resources :users, only: [ :index, :show, :destroy ], param: :uuid do
       member do
         patch :confirm
         post :resend_confirmation
@@ -24,7 +24,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :projects, only: [ :index, :show, :new, :create ], param: :uuid do
+  resources :projects, only: [ :index, :show, :new, :create, :destroy ], param: :uuid do
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
