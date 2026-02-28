@@ -40,3 +40,7 @@
 
 # Ignore key files for decrypting credentials and more.
 /config/*.key
+
+# Keep deployment/provider-specific local files private.
+/config/dockerfile.yml
+/\.kamal/secrets
