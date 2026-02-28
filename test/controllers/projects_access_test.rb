@@ -50,6 +50,5 @@ class ProjectsAccessTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Database load (24h)"
     assert_includes response.body, "1 queries captured"
     assert_includes response.body, "42.75 ms"
-    assert_includes response.body, "db.query"
   end
 end

@@ -12,6 +12,15 @@ Rails.application.routes.draw do
   resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
   get "account/security", to: redirect("/users/edit"), as: :account_security
 
+  namespace :admin do
+    resources :users, only: [ :index, :show ], param: :uuid do
+      member do
+        patch :confirm
+        post :resend_confirmation
+      end
+    end
+  end
+
   resources :projects, only: [ :index, :show, :new, :create ], param: :uuid do
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid

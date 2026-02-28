@@ -21,6 +21,8 @@ bin/rails db:prepare
 bin/dev
 ```
 
+`bin/dev` now attempts to ensure a local Redis instance is running (via `docker compose up -d redis`) so cache + Sidekiq-backed features can run locally.
+
 Or start infra + app together:
 
 ```bash
@@ -118,6 +120,8 @@ LOGISTER_CLICKHOUSE_EVENTS_TABLE=events_raw
 LOGISTER_CLICKHOUSE_USERNAME=default
 LOGISTER_CLICKHOUSE_PASSWORD=
 REDIS_URL=redis://127.0.0.1:6379/0
+# For Redis Cloud / redis.io in production:
+# REDIS_URL=rediss://default:<password>@<host>:<port>/0
 ```
 
 `LOGISTER_CLICKHOUSE_URL` supports both:

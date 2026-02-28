@@ -46,7 +46,18 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  config.cache_store = :memory_store
+  redis_url = ENV.fetch("REDIS_URL", "redis://127.0.0.1:6379/0")
+  config.cache_store = :redis_cache_store, {
+    url: redis_url,
+    namespace: "logister:cache:production",
+    connect_timeout: 2,
+    read_timeout: 2,
+    write_timeout: 2,
+    reconnect_attempts: 2,
+    error_handler: ->(method:, returning:, exception:) do
+      Rails.logger.warn("Redis cache error in production: #{method} => #{returning.inspect} (#{exception.class}: #{exception.message})")
+    end
+  }
   config.active_job.queue_adapter = :sidekiq
 
   config.action_mailer.perform_deliveries = true

@@ -1,0 +1,96 @@
+<div class="section-head projects-head">
+  <div>
+    <h1>User: <%= @user.email %></h1>
+    <p class="muted">Manage confirmation and inspect ownership/activity.</p>
+  </div>
+  <%= link_to "Back to users", admin_users_path, class: "btn btn-ghost" %>
+</div>
+
+<div class="card">
+  <p class="kicker">Profile</p>
+  <dl class="event-meta-list">
+    <dt>User ID</dt>
+    <dd><code><%= @user.uuid %></code></dd>
+    <dt>Name</dt>
+    <dd><%= @user.name.presence || "—" %></dd>
+    <dt>Email</dt>
+    <dd><%= @user.email %></dd>
+    <dt>Joined</dt>
+    <dd><%= @user.created_at&.strftime("%b %-d, %Y %H:%M:%S UTC") %></dd>
+    <dt>Status</dt>
+    <dd>
+      <% if @user.confirmed? %>
+        <span class="pill">Confirmed</span>
+      <% else %>
+        <span class="pill">Pending confirmation</span>
+      <% end %>
+    </dd>
+  </dl>
+
+  <% unless @user.confirmed? %>
+    <div class="detail-actionbar-actions" style="margin-top: 0.85rem;">
+      <%= button_to "Confirm user",
+                    confirm_admin_user_path(@user),
+                    method: :patch,
+                    class: "btn btn-resolve" %>
+      <%= button_to "Resend confirmation",
+                    resend_confirmation_admin_user_path(@user),
+                    method: :post,
+                    class: "btn btn-ghost" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <p class="kicker">Owned projects (<%= @owned_projects.size %>)</p>
+  <% if @owned_projects.any? %>
+    <ul>
+      <% @owned_projects.each do |project| %>
+        <li><%= link_to project.name, project_path(project), class: "inline-link" %></li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No owned projects.</p>
+  <% end %>
+</div>
+
+<div class="card">
+  <p class="kicker">Shared projects (<%= @shared_projects.size %>)</p>
+  <% if @shared_projects.any? %>
+    <ul>
+      <% @shared_projects.each do |project| %>
+        <li><%= link_to project.name, project_path(project), class: "inline-link" %></li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No shared projects.</p>
+  <% end %>
+</div>
+
+<div class="card">
+  <p class="kicker">API keys created by this user (<%= @api_keys.size %>)</p>
+  <% if @api_keys.any? %>
+    <table class="inbox-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Project</th>
+          <th>Created</th>
+          <th>Last used</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @api_keys.each do |api_key| %>
+          <tr class="inbox-row">
+            <td><%= api_key.name %></td>
+            <td><%= link_to api_key.project.name, project_path(api_key.project), class: "inline-link" %></td>
+            <td><%= api_key.created_at&.strftime("%b %-d, %Y") %></td>
+            <td><%= api_key.last_used_at&.strftime("%b %-d, %Y %H:%M") || "Never" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="muted">No API keys.</p>
+  <% end %>
+</div>

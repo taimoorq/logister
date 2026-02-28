@@ -7,7 +7,7 @@ class ProjectsController < ApplicationController
   def index
     @projects      = current_user.accessible_projects.order(created_at: :desc)
     project_ids    = @projects.pluck(:id)
-    @project_stats = project_ids.any? ? build_project_stats(project_ids) : {}
+    @project_stats = project_ids.any? ? cached_project_stats(project_ids) : {}
   end
 
   def show
@@ -94,6 +94,20 @@ class ProjectsController < ApplicationController
       end
 
     stats
+  end
+
+  def cached_project_stats(project_ids)
+    cache_key = [ "projects_stats", current_user.id, projects_stats_cache_version(project_ids) ]
+    safe_cache_fetch(cache_key, expires_in: 45.seconds) { build_project_stats(project_ids) }
+  end
+
+  def projects_stats_cache_version(project_ids)
+    latest_group = ErrorGroup.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0
+    latest_event = IngestEvent.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0
+    latest_occurrence = ErrorOccurrence.joins(:error_group)
+                                       .where(error_groups: { project_id: project_ids })
+                                       .maximum(:updated_at)&.utc&.to_i || 0
+    [ latest_group, latest_event, latest_occurrence ]
   end
 
   def build_db_stats(events)

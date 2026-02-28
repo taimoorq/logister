@@ -36,6 +36,9 @@
             <%= link_to "Overview", dashboard_path, class: "global-link #{"is-active" if current_page?(dashboard_path)}" %>
             <%= link_to "Projects", projects_path, class: "global-link #{"is-active" if current_page?(projects_path)}" %>
             <%= link_to "Account", profile_path, class: "global-link #{"is-active" if current_page?(profile_path)}" %>
+            <% if admin_user? %>
+              <%= link_to "Admin", admin_users_path, class: "global-link #{"is-active" if request.path.start_with?("/admin")}" %>
+            <% end %>
           <% else %>
             <%= link_to "Sign in", new_user_session_path, class: "global-link", data: { turbo: false } %>
             <%= link_to "Sign up", new_user_registration_path, class: "global-link", data: { turbo: false } %>

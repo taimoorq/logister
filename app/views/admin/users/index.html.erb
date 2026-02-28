@@ -1,0 +1,58 @@
+<div class="section-head projects-head">
+  <div>
+    <h1>User Management</h1>
+    <p class="muted">Admin-only list of users signed up for Logister.</p>
+  </div>
+</div>
+
+<div class="card">
+  <%= form_with url: admin_users_path, method: :get, local: true do |f| %>
+    <div class="inbox-toolbar">
+      <%= f.text_field :q,
+                       value: @query,
+                       placeholder: "Search by email or name",
+                       class: "inbox-search-input" %>
+      <div>
+        <%= f.submit "Search" %>
+        <% if @query.present? %>
+          <%= link_to "Clear", admin_users_path, class: "btn btn-ghost" %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div class="inbox-table-wrap">
+  <table class="inbox-table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Projects</th>
+        <th>API keys</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr class="inbox-row">
+          <td><%= user.email %></td>
+          <td><%= user.name.presence || "—" %></td>
+          <td>
+            <% if user.confirmed? %>
+              <span class="pill">Confirmed</span>
+            <% else %>
+              <span class="pill">Pending</span>
+            <% end %>
+          </td>
+          <td><%= user.created_at&.strftime("%b %-d, %Y") %></td>
+          <td><%= user.read_attribute(:projects_count).to_i %></td>
+          <td><%= user.read_attribute(:api_keys_count).to_i %></td>
+          <td><%= link_to "Manage", admin_user_path(user), class: "inline-link" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
