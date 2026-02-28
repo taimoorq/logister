@@ -19,7 +19,7 @@
 
 <section class="landing-hero card">
   <p class="kicker">Free for use.<br>
-  Open source self hosted version coming soon.</p>
+  Open source and self-hostable.</p>
   <h1>Catch Rails bugs before your users do.</h1>
   <p class="muted">
     Logister is a free bug capture tool for Ruby on Rails apps. Install the
@@ -69,6 +69,43 @@
     <li>Structured error detail with stacktrace, headers, params, and request IDs.</li>
     <li>Project-level inbox to track unresolved, resolved, ignored, and archived issues.</li>
     <li>Simple setup, no vendor lock-in, and freely available for use.</li>
-    <li>Open source self hosted version coming soon.</li>
+    <li>Open source repo with self-host docs and Docker support.</li>
+  </ul>
+
+  <div class="landing-cta-row">
+    <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener" class="btn btn-ghost">View self-host repo</a>
+    <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="btn btn-ghost">View gem repo</a>
+  </div>
+</section>
+
+<section class="card">
+  <p class="kicker">Self-host in minutes</p>
+  <pre><code>git clone https://github.com/taimoorq/logister.git
+cd logister
+cp .env.sample .env
+bundle install
+bin/rails db:prepare
+bin/dev</code></pre>
+  <p class="muted">
+    Full deployment and production setup steps are documented in the project README.
+  </p>
+</section>
+
+<section class="card">
+  <p class="kicker">Self-host stack</p>
+  <ul class="landing-bullets">
+    <li>Ruby on Rails + Puma web/API app</li>
+    <li>PostgreSQL for users, projects, API keys, and events</li>
+    <li>Redis for cache and Sidekiq job processing</li>
+    <li>Optional ClickHouse for high-scale analytics queries</li>
+  </ul>
+</section>
+
+<section class="card">
+  <p class="kicker">What you provide</p>
+  <ul class="landing-bullets">
+    <li>Required: <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>LOGISTER_ADMIN_EMAILS</code></li>
+    <li>Email: <code>LOGISTER_EMAIL_FROM</code> and optionally <code>SENDGRID_API_KEY</code></li>
+    <li>Optional: ClickHouse and Cloudflare Turnstile variables (see README)</li>
   </ul>
 </section>

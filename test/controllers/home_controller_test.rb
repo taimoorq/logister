@@ -40,6 +40,6 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     get "/llms.txt"
 
     assert_response :success
-    assert_includes response.body, "Logister is a free bug capture"
+    assert_includes response.body, "Logister is a free, open source bug capture"
   end
 end

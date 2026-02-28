@@ -4,6 +4,106 @@ Logister is a Rails + PostgreSQL service for collecting application errors and m
 
 PostgreSQL is the control-plane database (users/projects/api keys). Event analytics can be dual-written to ClickHouse for high-scale querying.
 
+## Open source and self-hosting
+
+This repository is open source and can be self-hosted.
+
+- Source: https://github.com/taimoorq/logister
+- Companion gem: https://github.com/taimoorq/logister-ruby
+- RubyGems: https://rubygems.org/gems/logister-ruby
+
+## Self-host quickstart (local)
+
+### Requirements
+
+- Ruby `4.0.1`
+- PostgreSQL `>= 14`
+- Redis `>= 7`
+- (Optional) ClickHouse for analytics
+
+## Runtime stack
+
+Logister runs as a Rails web app with these components:
+
+- Web/API: Ruby on Rails (Puma)
+- Primary database: PostgreSQL
+- Cache + job backend: Redis
+- Background processing: Sidekiq
+- Optional analytics store: ClickHouse
+- Optional bot protection: Cloudflare Turnstile
+- Optional transactional email: SendGrid API
+
+## What operators must provide
+
+At minimum (production):
+
+- `RAILS_MASTER_KEY` (Rails credentials decryption)
+- `DATABASE_URL` (PostgreSQL connection)
+- `REDIS_URL` (Redis/Redis Cloud connection)
+- `LOGISTER_ADMIN_EMAILS` (bootstrap admin access, comma-separated emails)
+
+Typically also provided:
+
+- `LOGISTER_EMAIL_FROM` (sender for auth/system emails)
+- `SENDGRID_API_KEY` (if sending email via SendGrid)
+
+Optional integrations:
+
+- ClickHouse:
+  `LOGISTER_CLICKHOUSE_ENABLED`,
+  `LOGISTER_CLICKHOUSE_URL`,
+  `LOGISTER_CLICKHOUSE_DATABASE`,
+  `LOGISTER_CLICKHOUSE_EVENTS_TABLE`,
+  `LOGISTER_CLICKHOUSE_USERNAME`,
+  `LOGISTER_CLICKHOUSE_PASSWORD`
+- Turnstile:
+  `LOGISTER_TURNSTILE_ENABLED`,
+  `LOGISTER_TURNSTILE_SITE_KEY`,
+  `LOGISTER_TURNSTILE_SECRET_KEY`
+
+### 1) Clone and configure
+
+```bash
+git clone https://github.com/taimoorq/logister.git
+cd logister
+cp .env.sample .env
+bundle install
+```
+
+### 2) Prepare database
+
+```bash
+bin/rails db:prepare
+```
+
+### 3) Start app
+
+```bash
+bin/dev
+```
+
+`bin/dev` attempts to ensure local Redis is running (via `docker compose up -d redis`) so cache and Sidekiq-backed features work locally.
+
+### 4) Optional local infra
+
+- Start ClickHouse + Redis:
+
+```bash
+bin/dev-infra
+```
+
+- Start ClickHouse + Redis + Postgres in Docker:
+
+```bash
+bin/dev-infra --with-postgres
+```
+
+- Initialize ClickHouse schema (if enabled):
+
+```bash
+cat docs/clickhouse_schema.sql | curl "http://127.0.0.1:8123" --data-binary @-
+```
+
 ## Core flow
 
 1. Users sign up at `logister.org` (Devise authentication).
@@ -12,7 +112,7 @@ PostgreSQL is the control-plane database (users/projects/api keys). Event analyt
 4. Client apps send events to `POST /api/v1/ingest_events` using an API token.
 5. Events are stored and visible in the dashboard.
 
-## Setup
+## Local development setup
 
 ```bash
 cp .env.sample .env
@@ -36,6 +136,29 @@ For confirmation emails in production, configure SendGrid API key:
 ```bash
 SENDGRID_API_KEY=<sendgrid_api_key>
 ```
+
+## Production self-hosting checklist
+
+1. Set required secrets:
+   - `RAILS_MASTER_KEY`
+   - `DATABASE_URL`
+   - `REDIS_URL` (Redis Cloud example: `rediss://default:<password>@<host>:<port>/0`)
+2. Configure outbound email:
+   - `SENDGRID_API_KEY`
+   - `LOGISTER_EMAIL_FROM`
+3. Choose deployment method:
+   - Use included `Dockerfile`, or
+   - Use Kamal config in `config/deploy.yml`
+4. Run migrations on deploy:
+   - `bin/rails db:migrate`
+5. Enable background jobs in production:
+   - Sidekiq already configured to use `REDIS_URL`
+6. Optional: enable ClickHouse dual-write with `LOGISTER_CLICKHOUSE_ENABLED=true`
+7. Set at least one admin email:
+   - `LOGISTER_ADMIN_EMAILS=you@example.com`
+8. Optional security hardening:
+   - Turn on Turnstile (`LOGISTER_TURNSTILE_ENABLED=true`)
+   - Enable SSL/host authorization in `config/environments/production.rb`
 
 ## Cloudflare Turnstile
 
@@ -158,6 +281,9 @@ REDIS_URL=redis://127.0.0.1:6379/0
 ## Companion gem
 
 `logister-ruby` is released at `0.1.2` and provides error + metric reporting for Rails apps.
+
+- GitHub: https://github.com/taimoorq/logister-ruby
+- RubyGems: https://rubygems.org/gems/logister-ruby
 
 To upgrade a client app:
 

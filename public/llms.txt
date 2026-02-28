@@ -1,6 +1,6 @@
 # Logister
 
-Logister is a free bug capture and triage tool for Ruby on Rails applications.
+Logister is a free, open source bug capture and triage tool for Ruby on Rails applications.
 
 ## Public pages
 - Home: /
@@ -19,3 +19,6 @@ Logister is a free bug capture and triage tool for Ruby on Rails applications.
 ## Companion gem
 - RubyGems: https://rubygems.org/gems/logister-ruby
 - Source: https://github.com/taimoorq/logister-ruby
+
+## Self-host source
+- App source: https://github.com/taimoorq/logister
