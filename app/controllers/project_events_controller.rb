@@ -60,6 +60,4 @@ class ProjectEventsController < ApplicationController
   def set_event
     @event = @project.ingest_events.find_by!(uuid: params[:uuid])
   end
-
-
 end

@@ -96,7 +96,7 @@ module Logister
 
         "#{segments[0]}.#{segments[1]}.#{segments[2]}.0"
       else
-        "#{parsed.mask(64).to_s}/64"
+        "#{parsed.mask(64)}/64"
       end
     rescue StandardError
       ip.to_s
