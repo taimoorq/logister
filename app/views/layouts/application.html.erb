@@ -23,6 +23,10 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <% if Rails.application.config.x.logister.cookie_script_id.present? %>
+      <script type="text/javascript" charset="UTF-8" src="https://cdn.cookie-script.com/s/<%= Rails.application.config.x.logister.cookie_script_id %>.js" crossorigin="anonymous"></script>
+    <% end %>
+
     <%= yield :head %>
     <% if seo_json_ld.present? %>
       <script type="application/ld+json"><%= raw seo_json_ld %></script>
