@@ -23,7 +23,9 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <script type="text/javascript" charset="UTF-8" src="//cdn.cookie-script.com/s/508b202c755ae8c25a504f130bcbfc3f.js"></script>
+    <% if Rails.application.config.x.logister.cookie_script_id.present? %>
+      <script type="text/javascript" charset="UTF-8" src="https://cdn.cookie-script.com/s/<%= Rails.application.config.x.logister.cookie_script_id %>.js" crossorigin="anonymous"></script>
+    <% end %>
 
     <%= yield :head %>
     <% if seo_json_ld.present? %>

@@ -6,4 +6,6 @@ Rails.application.configure do
   config.x.logister.clickhouse_username = ENV["LOGISTER_CLICKHOUSE_USERNAME"]
   config.x.logister.clickhouse_password = ENV["LOGISTER_CLICKHOUSE_PASSWORD"]
   config.x.logister.redis_url = ENV.fetch("REDIS_URL", "redis://127.0.0.1:6379/0")
+  # Cookie Script (GDPR) – set LOGISTER_COOKIE_SCRIPT_ID to your script ID; leave unset to disable
+  config.x.logister.cookie_script_id = ENV["LOGISTER_COOKIE_SCRIPT_ID"]
 end
