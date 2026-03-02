@@ -23,6 +23,25 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%# Google Analytics (gtag.js) — loaded only in production and gated by CookieScript consent %>
+    <% if Rails.env.production? %>
+      <!-- Google tag (gtag.js) -->
+      <script type="text/plain"
+              data-cookiescript="accepted"
+              data-cookiecategory="analytics"
+              async
+              src="https://www.googletagmanager.com/gtag/js?id=G-3R8CQ5X7XG"></script>
+      <script type="text/plain"
+              data-cookiescript="accepted"
+              data-cookiecategory="analytics">
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-3R8CQ5X7XG');
+      </script>
+    <% end %>
+
     <%# Turbo 8: view transitions (crossfade/slide on navigation and morph). Ignored on Turbo 7. %>
     <meta name="turbo-view-transition" content="true">
     <%# Turbo 8: morphing refresh + preserve scroll when redirecting back to same page. Ignored on Turbo 7. %>
