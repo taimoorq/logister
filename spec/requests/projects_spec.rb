@@ -179,6 +179,40 @@ RSpec.describe "Projects", type: :request do
     end
   end
 
+  describe "GET /projects/:uuid/activity" do
+    it "requires authentication" do
+      get activity_project_path(projects(:one))
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    context "when signed in as owner" do
+      before { sign_in users(:one) }
+
+      it "returns success and shows activity page" do
+        get activity_project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("Custom events")
+      end
+
+      it "returns 404 for project user cannot access" do
+        get activity_project_path(projects(:two))
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context "when signed in as shared member" do
+      before { sign_in users(:two) }
+
+      it "returns success and shows activity page" do
+        get activity_project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("Custom events")
+      end
+    end
+  end
+
   describe "POST /projects" do
     before { sign_in users(:one) }
 

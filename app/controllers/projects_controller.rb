@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   include ProjectInboxData
 
   before_action :authenticate_user!
-  before_action :set_project, only: [ :show, :settings, :performance, :monitors ]
+  before_action :set_project, only: [ :show, :settings, :performance, :monitors, :activity ]
   before_action :set_owned_project, only: :destroy
 
   def index
@@ -55,6 +55,14 @@ class ProjectsController < ApplicationController
   def monitors
     @check_in_monitors = @project.check_in_monitors.recent_first.limit(10)
     @missed_check_ins_count = @check_in_monitors.count { |monitor| monitor.status == "missed" }
+  end
+
+  # Custom events sent via the logister-ruby gem: metrics, logs, transactions, check-ins.
+  def activity
+    @activity_events = @project.ingest_events
+                               .where.not(event_type: :error)
+                               .order(occurred_at: :desc)
+                               .limit(200)
   end
 
   def new
