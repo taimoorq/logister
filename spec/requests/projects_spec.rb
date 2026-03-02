@@ -44,6 +44,67 @@ RSpec.describe "Projects", type: :request do
         get project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
       end
+    end
+
+    context "when signed in as shared member" do
+      before { sign_in users(:two) }
+
+      it "can view shared project" do
+        get project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+      end
+    end
+  end
+
+  describe "GET /projects/:uuid/settings" do
+    it "requires authentication" do
+      get settings_project_path(projects(:one))
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    context "when signed in as owner" do
+      before { sign_in users(:one) }
+
+      it "returns success and shows settings (API keys, project access)" do
+        get settings_project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("API keys")
+        expect(response.body).to include("Project access")
+      end
+
+      it "returns 404 for project user cannot access" do
+        get settings_project_path(projects(:two))
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context "when signed in as shared member" do
+      before { sign_in users(:two) }
+
+      it "returns success and shows project (read-only settings)" do
+        get settings_project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+      end
+    end
+  end
+
+  describe "GET /projects/:uuid/performance" do
+    it "requires authentication" do
+      get performance_project_path(projects(:one))
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    context "when signed in as owner" do
+      before { sign_in users(:one) }
+
+      it "returns success and shows performance page" do
+        get performance_project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+      end
 
       it "renders database load stats when db.query metrics exist" do
         IngestEvent.create!(
@@ -60,21 +121,60 @@ RSpec.describe "Projects", type: :request do
           },
           occurred_at: Time.current
         )
-        get project_path(projects(:one))
+        get performance_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Database load (24h)")
         expect(response.body).to include("1 queries captured")
         expect(response.body).to include("42.75 ms")
+      end
+
+      it "returns 404 for project user cannot access" do
+        get performance_project_path(projects(:two))
+        expect(response).to have_http_status(:not_found)
       end
     end
 
     context "when signed in as shared member" do
       before { sign_in users(:two) }
 
-      it "can view shared project" do
-        get project_path(projects(:one))
+      it "returns success and shows performance page" do
+        get performance_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
+      end
+    end
+  end
+
+  describe "GET /projects/:uuid/monitors" do
+    it "requires authentication" do
+      get monitors_project_path(projects(:one))
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    context "when signed in as owner" do
+      before { sign_in users(:one) }
+
+      it "returns success and shows monitors page" do
+        get monitors_project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("Cron and uptime monitors")
+      end
+
+      it "returns 404 for project user cannot access" do
+        get monitors_project_path(projects(:two))
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context "when signed in as shared member" do
+      before { sign_in users(:two) }
+
+      it "returns success and shows monitors page" do
+        get monitors_project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("Cron and uptime monitors")
       end
     end
   end

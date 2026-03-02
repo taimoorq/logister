@@ -39,4 +39,30 @@ RSpec.describe "Routes", type: :routing do
       )
     end
   end
+
+  describe "projects" do
+    it "routes GET /projects/:uuid/settings to projects#settings" do
+      expect(get: "/projects/abc/settings").to route_to(
+        controller: "projects",
+        action: "settings",
+        uuid: "abc"
+      )
+    end
+
+    it "routes GET /projects/:uuid/performance to projects#performance" do
+      expect(get: "/projects/abc/performance").to route_to(
+        controller: "projects",
+        action: "performance",
+        uuid: "abc"
+      )
+    end
+
+    it "routes GET /projects/:uuid/monitors to projects#monitors" do
+      expect(get: "/projects/abc/monitors").to route_to(
+        controller: "projects",
+        action: "monitors",
+        uuid: "abc"
+      )
+    end
+  end
 end
