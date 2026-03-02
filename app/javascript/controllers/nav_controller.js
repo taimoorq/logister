@@ -27,6 +27,7 @@ export default class extends Controller {
 
   close() {
     if (this.hasPanelTarget) this.panelTarget.classList.add("hidden")
+    this.closeOpenMenus()
     if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "false")
     if (this.hasIconOpenTarget) this.iconOpenTarget.classList.remove("hidden")
     if (this.hasIconCloseTarget) this.iconCloseTarget.classList.add("hidden")
@@ -52,5 +53,13 @@ export default class extends Controller {
 
   closeOnNavLink(event) {
     if (event.target.closest?.(".nav-link")) this.close()
+  }
+
+  closeOpenMenus() {
+    if (!this.hasPanelTarget) return
+
+    this.panelTarget.querySelectorAll("details[open]").forEach((el) => {
+      el.removeAttribute("open")
+    })
   }
 }
