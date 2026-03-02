@@ -1,4 +1,6 @@
 <%# ── Project inbox workbench ──────────────────────────────────────────── %>
+<%= render "nav" %>
+
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start" data-controller="inbox"
      data-inbox-project-uuid-value="<%= @project.uuid %>">
 
@@ -8,9 +10,6 @@
       <h1 class="text-lg font-bold text-slate-900 mb-0.5"><%= @project.name %></h1>
       <p class="text-slate-500 text-sm"><code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code></p>
     </div>
-
-    <%= render "nav" %>
-
     <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-3">
       <%= form_with url: project_path(@project), method: :get,
                     data: { turbo_frame: "project_inbox",
