@@ -1,11 +1,28 @@
-Rails.application.configure do
-  config.x.logister.clickhouse_enabled = ENV.fetch("LOGISTER_CLICKHOUSE_ENABLED", "false") == "true"
-  config.x.logister.clickhouse_url = ENV.fetch("LOGISTER_CLICKHOUSE_URL", "http://127.0.0.1:8123")
-  config.x.logister.clickhouse_database = ENV.fetch("LOGISTER_CLICKHOUSE_DATABASE", "logister")
-  config.x.logister.clickhouse_events_table = ENV.fetch("LOGISTER_CLICKHOUSE_EVENTS_TABLE", "events_raw")
-  config.x.logister.clickhouse_username = ENV["LOGISTER_CLICKHOUSE_USERNAME"]
-  config.x.logister.clickhouse_password = ENV["LOGISTER_CLICKHOUSE_PASSWORD"]
-  config.x.logister.redis_url = ENV.fetch("REDIS_URL", "redis://127.0.0.1:6379/0")
-  # Cookie Script (GDPR) – set LOGISTER_COOKIE_SCRIPT_ID to your script ID; leave unset to disable
-  config.x.logister.cookie_script_id = ENV["LOGISTER_COOKIE_SCRIPT_ID"]
+Logister.configure do |config|
+  config.api_key = ENV["LOGISTER_API_KEY"]
+  config.endpoint = ENV.fetch("LOGISTER_ENDPOINT", "https://logister.org/api/v1/ingest_events")
+  config.environment = Rails.env
+  config.service = Rails.application.class.module_parent_name.underscore
+  config.release = ENV["LOGISTER_RELEASE"]
+
+  config.enabled = true
+  config.timeout_seconds = 2
+
+  config.async = true
+  config.queue_size = 1000
+  config.max_retries = 3
+  config.retry_base_interval = 0.5
+
+  config.ignore_environments = []
+  config.ignore_exceptions = []
+  config.ignore_paths = []
+
+  # Optional ActiveRecord SQL instrumentation.
+  config.capture_db_metrics = false
+  config.db_metric_min_duration_ms = 10.0
+  config.db_metric_sample_rate = 1.0
+
+  config.before_notify = lambda do |payload|
+    payload
+  end
 end
