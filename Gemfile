@@ -75,4 +75,4 @@ gem "dockerfile-rails", ">= 1.7", group: :development
 
 gem "redis", "~> 5.4"
 
-gem 'vite_rails'
+gem "vite_rails"
