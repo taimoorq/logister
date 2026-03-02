@@ -1,3 +1,6 @@
 <% level = local_assigns.fetch(:level, "error").to_s %>
-<span class="severity-dot <%= "is-critical" if level == "error" %>"></span>
-<span class="pill"><%= level.upcase %></span>
+<% dot_class = level == "error" ? "bg-red-500" : "bg-slate-400" %>
+<span class="inline-flex items-center gap-1.5">
+  <span class="inline-block w-2 h-2 rounded-full <%= dot_class %>" aria-hidden="true"></span>
+  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold <%= level == 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-slate-100 text-slate-700 border border-slate-200' %>"><%= level.upcase %></span>
+</span>

@@ -1,6 +1,6 @@
 require "test_helper"
 require "rack/mock"
-require Rails.root.join("gems/logister-ruby/lib/logister")
+require "logister-ruby"
 require "ostruct"
 
 class LogisterMiddlewareTest < ActiveSupport::TestCase

@@ -1,16 +1,21 @@
-<section class="card">
-  <h1>Your profile</h1>
-  <p class="muted">Manage your account details and login credentials.</p>
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
+  <h1 class="text-2xl font-bold text-slate-900 mb-2">Your profile</h1>
+  <p class="text-slate-600 text-sm">Manage your account details and login credentials.</p>
 </section>
 
-<section class="card">
-  <h2>Account details</h2>
-  <p><strong>Name:</strong> <%= current_user.name.presence || "Not set" %></p>
-  <p><strong>Email:</strong> <%= current_user.email %></p>
-  <p><strong>User ID:</strong> <code><%= current_user.uuid %></code></p>
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
+  <h2 class="text-lg font-bold text-slate-900 mb-4">Account details</h2>
+  <dl class="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm mb-6">
+    <dt class="text-slate-500 font-medium">Name</dt>
+    <dd class="text-slate-900"><%= current_user.name.presence || "Not set" %></dd>
+    <dt class="text-slate-500 font-medium">Email</dt>
+    <dd class="text-slate-900"><%= current_user.email %></dd>
+    <dt class="text-slate-500 font-medium">User ID</dt>
+    <dd class="text-slate-900"><code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-xs break-all"><%= current_user.uuid %></code></dd>
+  </dl>
 
-  <div class="section-head inline-actions">
-    <%= link_to "Edit profile", edit_profile_path, class: "action-link" %>
-    <%= link_to "Security settings", edit_user_registration_path, class: "action-link", data: { turbo: false } %>
+  <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-200">
+    <%= link_to "Edit profile", edit_profile_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" %>
+    <%= link_to "Security settings", edit_user_registration_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline", data: { turbo: false } %>
   </div>
 </section>

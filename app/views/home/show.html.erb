@@ -17,83 +17,71 @@
   }
 }) %>
 
-<section class="landing-hero card">
-  <p class="kicker">Free for use.<br>
-  Open source and self-hostable.</p>
-  <h1>Catch Rails bugs before your users do.</h1>
-  <p class="muted">
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8 mb-6 bg-gradient-to-br from-white to-slate-50/50">
+  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Free for use.<br>Open source and self-hostable.</p>
+  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Catch Rails bugs before your users do.</h1>
+  <p class="text-slate-600 mb-4 max-w-2xl">
     Logister is a free bug capture tool for Ruby on Rails apps. Install the
-    <code><a href="https://rubygems.org/gems/logister-ruby" target="_blank">logister-ruby</a></code> gem, send errors in minutes, and triage issues
+    <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-sm"><a href="https://rubygems.org/gems/logister-ruby" target="_blank" class="text-blue-600 hover:underline">logister-ruby</a></code> gem, send errors in minutes, and triage issues
     with grouped stack traces, request context, and occurrence history.
   </p>
-  <div class="landing-cta-row">
-    <%= link_to "Get started free", new_user_registration_path, class: "action-link", data: { turbo: false } %>
-    <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost", data: { turbo: false } %>
+  <div class="flex flex-wrap gap-3 mb-4">
+    <%= link_to "Get started free", new_user_registration_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline", data: { turbo: false } %>
+    <%= link_to "Sign in", new_user_session_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline", data: { turbo: false } %>
   </div>
-  <p class="muted" style="margin-top: 0.75rem;">
-    AI/agent-friendly docs: <a href="/llms.txt"><code>/llms.txt</code></a>
+  <p class="text-slate-500 text-sm">
+    AI/agent-friendly docs: <a href="/llms.txt" class="text-blue-600 hover:underline"><code class="px-1 py-0.5 rounded bg-slate-100">/llms.txt</code></a>
   </p>
 </section>
 
-<section class="landing-grid">
-  <article class="card">
-    <p class="kicker">Step 1</p>
-    <h2>Create a project</h2>
-    <p class="muted">
-      Add your app in Logister and generate an API key.
-    </p>
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Step 1</p>
+    <h2 class="text-lg font-bold text-slate-900 mb-2">Create a project</h2>
+    <p class="text-slate-600 text-sm">Add your app in Logister and generate an API key.</p>
   </article>
-
-  <article class="card">
-    <p class="kicker">Step 2</p>
-    <h2>Install the gem</h2>
-    <pre><code><a href="https://rubygems.org/gems/logister-ruby" target="_blank">gem "logister-ruby"</a></code></pre>
-    <p class="muted">
-      Auto-capture unhandled exceptions and send custom events when needed.
-    </p>
+  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Step 2</p>
+    <h2 class="text-lg font-bold text-slate-900 mb-2">Install the gem</h2>
+    <pre class="rounded-lg bg-slate-100 border border-slate-200 p-3 text-sm overflow-x-auto mb-2"><code><a href="https://rubygems.org/gems/logister-ruby" target="_blank" class="text-blue-600 hover:underline">gem "logister-ruby"</a></code></pre>
+    <p class="text-slate-600 text-sm">Auto-capture unhandled exceptions and send custom events when needed.</p>
   </article>
-
-  <article class="card">
-    <p class="kicker">Step 3</p>
-    <h2>Fix faster</h2>
-    <p class="muted">
-      Group similar errors, inspect request details, and prioritize by recurrence.
-    </p>
+  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Step 3</p>
+    <h2 class="text-lg font-bold text-slate-900 mb-2">Fix faster</h2>
+    <p class="text-slate-600 text-sm">Group similar errors, inspect request details, and prioritize by recurrence.</p>
   </article>
 </section>
 
-<section class="card">
-  <p class="kicker">Why teams use Logister</p>
-  <ul class="landing-bullets">
-    <li>Built for Rails workflows and the <code>logister-ruby</code> gem.</li>
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
+  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Why teams use Logister</p>
+  <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+    <li>Built for Rails workflows and the <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">logister-ruby</code> gem.</li>
     <li>Structured error detail with stacktrace, headers, params, and request IDs.</li>
     <li>Project-level inbox to track unresolved, resolved, ignored, and archived issues.</li>
     <li>Simple setup, no vendor lock-in, and freely available for use.</li>
     <li>Open source repo with self-host docs and Docker support.</li>
   </ul>
-
-  <div class="landing-cta-row">
-    <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener" class="btn btn-ghost">View self-host repo</a>
-    <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="btn btn-ghost">View gem repo</a>
+  <div class="flex flex-wrap gap-3">
+    <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline">View self-host repo</a>
+    <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline">View gem repo</a>
   </div>
 </section>
 
-<section class="card">
-  <p class="kicker">Self-host in minutes</p>
-  <pre><code>git clone https://github.com/taimoorq/logister.git
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
+  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Self-host in minutes</p>
+  <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono mb-3">git clone https://github.com/taimoorq/logister.git
 cd logister
 cp .env.sample .env
 bundle install
 bin/rails db:prepare
-bin/dev</code></pre>
-  <p class="muted">
-    Full deployment and production setup steps are documented in the project README.
-  </p>
+bin/dev</pre>
+  <p class="text-slate-600 text-sm">Full deployment and production setup steps are documented in the project README.</p>
 </section>
 
-<section class="card">
-  <p class="kicker">Self-host stack</p>
-  <ul class="landing-bullets">
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
+  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Self-host stack</p>
+  <ul class="list-disc pl-5 space-y-2 text-slate-600">
     <li>Ruby on Rails + Puma web/API app</li>
     <li>PostgreSQL for users, projects, API keys, and events</li>
     <li>Redis for cache and Sidekiq job processing</li>
@@ -101,11 +89,11 @@ bin/dev</code></pre>
   </ul>
 </section>
 
-<section class="card">
-  <p class="kicker">What you provide</p>
-  <ul class="landing-bullets">
-    <li>Required: <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>LOGISTER_ADMIN_EMAILS</code></li>
-    <li>Email: <code>LOGISTER_EMAIL_FROM</code> and optionally <code>SENDGRID_API_KEY</code></li>
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
+  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">What you provide</p>
+  <ul class="list-disc pl-5 space-y-2 text-slate-600">
+    <li>Required: <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">RAILS_MASTER_KEY</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">DATABASE_URL</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">REDIS_URL</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">LOGISTER_ADMIN_EMAILS</code></li>
+    <li>Email: <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">LOGISTER_EMAIL_FROM</code> and optionally <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">SENDGRID_API_KEY</code></li>
     <li>Optional: ClickHouse and Cloudflare Turnstile variables (see README)</li>
   </ul>
 </section>

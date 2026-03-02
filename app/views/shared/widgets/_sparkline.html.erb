@@ -2,9 +2,10 @@
 <% compact = local_assigns.fetch(:compact, false) %>
 <% max_value = points.max.to_i %>
 <% max_value = 1 if max_value.zero? %>
-<div class="sparkline <%= "compact" if compact %>" aria-hidden="true">
+<div class="flex items-end gap-0.5 <%= compact ? 'h-7' : 'h-12' %> mt-2" aria-hidden="true">
   <% points.each do |point| %>
-    <% height = (point.to_f / max_value * 100).round %>
-    <span style="--height: <%= [height, 8].max %>%;"></span>
+    <% height_pct = (point.to_f / max_value * 100).round %>
+    <% height_pct = [height_pct, 8].max %>
+    <span class="flex-1 min-w-[3px] rounded-t bg-gradient-to-t from-blue-600 to-blue-400" style="height: <%= height_pct %>%;"></span>
   <% end %>
 </div>

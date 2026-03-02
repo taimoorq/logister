@@ -309,4 +309,4 @@ Logister.configure do |config|
 end
 ```
 
-The embedded starter copy lives in `gems/logister-ruby` and is synced with the released gem.
+

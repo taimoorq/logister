@@ -1,5 +1,5 @@
 require "test_helper"
-require Rails.root.join("gems/logister-ruby/lib/logister")
+require "logister-ruby"
 
 class LogisterActiveJobReporterTest < ActiveSupport::TestCase
   class ExplodingJob < ActiveJob::Base
