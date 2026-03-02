@@ -17,7 +17,7 @@
   <% if @projects.any? %>
     <% @projects.each do |project| %>
       <% stats = @project_stats[project.id] || { total_events: 0, open_groups: 0, trend: Array.new(7, 0) } %>
-      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>">
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden project-card" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>" style="view-transition-name: <%= dom_id(project) %>; view-transition-class: project-card;">
         <div class="flex justify-between items-start gap-3 mb-4">
           <div class="min-w-0">
             <h2 class="text-lg font-bold text-slate-900 truncate"><%= project.name %></h2>

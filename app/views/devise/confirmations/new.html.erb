@@ -3,7 +3,7 @@
     <h1 class="text-2xl font-bold text-slate-900 mb-2">Resend confirmation instructions</h1>
     <p class="text-slate-600 text-sm mb-6">Enter your email to receive confirmation instructions again.</p>
 
-    <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
+    <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post, data: { turbo: false } }) do |f| %>
       <div class="space-y-4">
         <div>
           <%= f.label :email, class: "form-label" %>

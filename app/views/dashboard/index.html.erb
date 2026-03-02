@@ -28,8 +28,8 @@
 
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
   <% if @error_views.any? %>
-    <% @error_views.each do |view| %>
-      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden">
+    <% @error_views.each_with_index do |view, idx| %>
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden" style="view-transition-name: dashboard-error-view-<%= view[:project].id %>-<%= idx %>; view-transition-class: dashboard-error-card;">
         <div class="min-w-0 mb-2">
           <h3 class="text-base font-bold text-slate-900 truncate"><%= view[:title] %></h3>
         </div>

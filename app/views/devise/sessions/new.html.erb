@@ -3,7 +3,7 @@
     <h1 class="text-2xl font-bold text-slate-900 mb-2">Sign in</h1>
     <p class="text-slate-600 text-sm mb-6">Sign in to your Logister account.</p>
 
-    <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { data: { turbo: false } }) do |f| %>
       <div class="space-y-4">
         <div>
           <%= f.label :email, class: "form-label" %>

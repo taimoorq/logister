@@ -3,7 +3,7 @@
     <h1 class="text-2xl font-bold text-slate-900 mb-2">Create your account</h1>
     <p class="text-slate-600 text-sm mb-6">Sign up to start capturing and triaging errors from your Rails apps.</p>
 
-    <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { data: { turbo: false } }) do |f| %>
       <div class="space-y-4">
         <div>
           <%= f.label :email, class: "form-label" %>

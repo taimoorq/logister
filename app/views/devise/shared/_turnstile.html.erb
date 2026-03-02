@@ -1,2 +1,3 @@
+<%# Turnstile script + widget. Devise forms that include this partial use data: { turbo: false } so that on validation errors the response is a full page load and this script runs again (Turbo would inject HTML without re-running scripts, so the widget would disappear). %>
 <%= cloudflare_turnstile_script_tag %>
 <%= cloudflare_turnstile %>

@@ -13,6 +13,15 @@ This document describes how the app is structured so agents and contributors can
 
 ## Hotwire / Turbo usage
 
+### Turbo 8 enhancements (morphing + view transitions)
+
+When using **Turbo 8**, the layout enables:
+
+- **View transitions** (`<meta name="turbo-view-transition" content="true">`): navigations and morphs are wrapped in the View Transitions API so the browser can crossfade/slide between states.
+- **Morphing refresh** (`turbo-refresh-method: morph`, `turbo-refresh-scroll: preserve`): when a redirect returns HTML for the same page, Turbo diffs the new body and patches the DOM instead of replacing it, preserving scroll and focus.
+
+Elements that move or appear/disappear have `view-transition-name` (and optionally `view-transition-class`) so they animate: project cards on the projects index, error rows in the inbox table, the error detail pane, and dashboard error-view cards. Custom duration is set in `application.tailwind.css` via `::view-transition-group(.project-card)` etc. On Turbo 7 these meta tags and styles are ignored (progressive enhancement).
+
 ### Turbo Drive (app-wide)
 
 - Enabled by default. All `<a>` and `<form>` are handled by Turbo; the main content is replaced without a full reload.

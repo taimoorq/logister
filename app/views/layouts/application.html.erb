@@ -23,6 +23,12 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%# Turbo 8: view transitions (crossfade/slide on navigation and morph). Ignored on Turbo 7. %>
+    <meta name="turbo-view-transition" content="true">
+    <%# Turbo 8: morphing refresh + preserve scroll when redirecting back to same page. Ignored on Turbo 7. %>
+    <meta name="turbo-refresh-method" content="morph">
+    <meta name="turbo-refresh-scroll" content="preserve">
+
     <% if Rails.application.config.x.logister.cookie_script_id.present? %>
       <script type="text/javascript" charset="UTF-8" src="https://cdn.cookie-script.com/s/<%= Rails.application.config.x.logister.cookie_script_id %>.js" crossorigin="anonymous"></script>
     <% end %>
