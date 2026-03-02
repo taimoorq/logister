@@ -1,5 +1,5 @@
 require "test_helper"
-require Rails.root.join("gems/logister-ruby/lib/logister")
+require "logister-ruby"
 
 class LogisterRequestSubscriberTest < ActiveSupport::TestCase
   test "captures request summary and sql breadcrumbs" do

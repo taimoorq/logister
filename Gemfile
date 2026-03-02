@@ -67,6 +67,8 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  # Local path to logister-ruby for testing gem behavior (set LOGISTER_RUBY_PATH or use ~/dev/logister-ruby)
+  gem "logister-ruby"
 end
 
 gem "dockerfile-rails", ">= 1.7", group: :development
