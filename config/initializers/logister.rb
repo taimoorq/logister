@@ -1,9 +1,9 @@
 Logister.configure do |config|
-  config.api_key = ENV['LOGISTER_API_KEY']
-  config.endpoint = ENV.fetch('LOGISTER_ENDPOINT', 'https://logister.org/api/v1/ingest_events')
+  config.api_key = ENV["LOGISTER_API_KEY"]
+  config.endpoint = ENV.fetch("LOGISTER_ENDPOINT", "https://logister.org/api/v1/ingest_events")
   config.environment = Rails.env
   config.service = Rails.application.class.module_parent_name.underscore
-  config.release = ENV['LOGISTER_RELEASE']
+  config.release = ENV["LOGISTER_RELEASE"]
 
   config.enabled = true
   config.timeout_seconds = 2
