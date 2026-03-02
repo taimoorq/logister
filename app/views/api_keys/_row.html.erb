@@ -1,0 +1,14 @@
+<tr id="<%= dom_id(api_key) %>">
+  <td class="px-3 py-2 text-sm text-slate-900"><%= api_key.name %></td>
+  <td class="px-3 py-2 text-sm text-slate-600"><%= api_key.active? ? "active" : "revoked" %></td>
+  <td class="px-3 py-2 text-sm text-slate-600"><%= api_key.last_used_at ? local_time_tag(api_key.last_used_at) : "never" %></td>
+  <td class="px-3 py-2">
+    <% if api_key.active? %>
+      <%= button_to "Revoke",
+                    project_api_key_path(project, api_key),
+                    method: :delete,
+                    class: "text-sm font-medium text-red-600 hover:text-red-700",
+                    form: { data: { turbo_confirm: "Revoke this API key? It will stop working immediately.", turbo_stream: true } } %>
+    <% end %>
+  </td>
+</tr>

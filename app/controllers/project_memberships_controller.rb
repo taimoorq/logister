@@ -4,15 +4,28 @@ class ProjectMembershipsController < ApplicationController
 
   def create
     user = User.find_by(email: membership_params[:email].to_s.downcase)
-    return redirect_with_alert("User not found.") unless user
-    return redirect_with_alert("You already own this project.") if user == @project.user
+
+    if user.blank?
+      return respond_with_membership_error("User not found.")
+    end
+    if user == @project.user
+      return respond_with_membership_error("You already own this project.")
+    end
 
     membership = @project.project_memberships.new(user: user, role: :viewer)
 
     if membership.save
-      redirect_to project_path(@project), notice: "Project shared with #{user.email}."
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.append("project_memberships_tbody", partial: "project_memberships/row", locals: { membership: membership, project: @project }),
+            turbo_stream.replace("project_membership_message", partial: "project_memberships/success_message", locals: { email: user.email })
+          ]
+        end
+        format.html { redirect_to project_path(@project), notice: "Project shared with #{user.email}." }
+      end
     else
-      redirect_to project_path(@project), alert: membership.errors.full_messages.to_sentence
+      respond_with_membership_error(membership.errors.full_messages.to_sentence)
     end
   end
 
@@ -21,7 +34,10 @@ class ProjectMembershipsController < ApplicationController
     membership = @project.project_memberships.find_by!(uuid: membership_identifier)
     membership.destroy!
 
-    redirect_to project_path(@project), notice: "Access removed."
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.remove(membership) }
+      format.html { redirect_to project_path(@project), notice: "Access removed." }
+    end
   end
 
   private
@@ -36,5 +52,16 @@ class ProjectMembershipsController < ApplicationController
 
   def redirect_with_alert(message)
     redirect_to project_path(@project), alert: message
+  end
+
+  def respond_with_membership_error(message)
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace("project_membership_message",
+          partial: "project_memberships/error_message",
+          locals: { message: message }), status: :unprocessable_entity
+      end
+      format.html { redirect_to project_path(@project), alert: message }
+    end
   end
 end

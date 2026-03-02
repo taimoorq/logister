@@ -6,17 +6,18 @@
   <%= link_to "New project", new_project_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline shrink-0" %>
 </div>
 
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 mb-6">
-  <input type="search" placeholder="Search projects" aria-label="Search projects"
-         class="form-input max-w-md"
-         data-controller="project-search" data-action="input->project-search#filter">
-</section>
+<div data-controller="project-search">
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 mb-6">
+    <input type="search" placeholder="Search projects" aria-label="Search projects"
+           class="form-input max-w-md"
+           data-action="input->project-search#filter">
+  </section>
 
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
   <% if @projects.any? %>
     <% @projects.each do |project| %>
       <% stats = @project_stats[project.id] || { total_events: 0, open_groups: 0, trend: Array.new(7, 0) } %>
-      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden" data-project-name="<%= project.name.downcase %>">
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>">
         <div class="flex justify-between items-start gap-3 mb-4">
           <div class="min-w-0">
             <h2 class="text-lg font-bold text-slate-900 truncate"><%= project.name %></h2>
@@ -62,4 +63,5 @@
       <%= link_to "Create project", new_project_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" %>
     </div>
   <% end %>
-</section>
+  </section>
+</div>
