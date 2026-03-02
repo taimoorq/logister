@@ -95,6 +95,21 @@ module ApplicationHelper
     value.to_json
   end
 
+  # Renders a <time> tag with UTC datetime; JS (local_time_controller) formats it in the user's timezone.
+  # format: :short (date + time), :long (+ seconds), :date_only
+  def local_time_tag(time, format: :short)
+    return "" if time.blank?
+
+    utc_time = time.utc
+    iso = utc_time.iso8601(3)
+    fallback = case format
+    when :date_only then utc_time.strftime("%b %-d, %Y")
+    when :long then utc_time.strftime("%b %-d, %Y %H:%M:%S")
+    else utc_time.strftime("%b %-d, %H:%M")
+    end
+    content_tag(:time, fallback, datetime: iso, data: { local_time: "true", format: format }, class: "local-time")
+  end
+
   # True when tailwindcss-rails has built app/assets/builds/tailwind.css.
   # Lets request specs pass without running bin/rails tailwindcss:build.
   def tailwind_built?

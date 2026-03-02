@@ -34,11 +34,11 @@
           </div>
           <div>
             <span class="kicker">First seen</span>
-            <span><%= @group.first_seen_at&.strftime("%b %-d, %Y") %></span>
+            <span><%= local_time_tag(@group.first_seen_at, format: :date_only) %></span>
           </div>
           <div>
             <span class="kicker">Last seen</span>
-            <span><%= @group.last_seen_at&.strftime("%b %-d, %Y") %></span>
+            <span><%= local_time_tag(@group.last_seen_at, format: :date_only) %></span>
           </div>
         </div>
 
@@ -86,7 +86,7 @@
         <dt>ID</dt>
         <dd><code class="text-xs break-all"><%= @event.uuid %></code></dd>
         <dt>Occurred</dt>
-        <dd><%= @event.occurred_at&.strftime("%b %-d, %Y %H:%M:%S UTC") %></dd>
+        <dd><%= local_time_tag(@event.occurred_at, format: :long) %></dd>
         <dt>Level</dt>
         <dd><%= render "shared/widgets/severity_badge", level: @event.level.presence || "error" %></dd>
         <dt>Stage</dt>
@@ -110,7 +110,7 @@
         <% end %>
         <p class="text-slate-600 text-sm mt-1">
           <%= @project.name %>
-          &middot; <%= @event.occurred_at&.strftime("%b %-d, %Y at %H:%M:%S UTC") %>
+          &middot; <%= local_time_tag(@event.occurred_at, format: :long) %>
         </p>
       </div>
     </header>
@@ -161,7 +161,7 @@
               <% @occurrences.each do |occ| %>
                 <% ev = occ.ingest_event %>
                 <tr>
-                  <td><%= ev.occurred_at&.strftime("%b %-d, %H:%M:%S") %></td>
+                  <td><%= local_time_tag(ev.occurred_at, format: :long) %></td>
                   <td><%= truncate(ev.message.to_s.lines.first, length: 80) %></td>
                   <td><%= render "shared/widgets/severity_badge", level: ev.level.presence || "error" %></td>
                   <td><%= link_to "View", project_event_path(@project, ev), class: "inline-link" %></td>

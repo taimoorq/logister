@@ -16,7 +16,7 @@
     <dt>Email</dt>
     <dd><%= @user.email %></dd>
     <dt>Joined</dt>
-    <dd><%= @user.created_at&.strftime("%b %-d, %Y %H:%M:%S UTC") %></dd>
+    <dd><%= local_time_tag(@user.created_at, format: :long) %></dd>
     <dt>Status</dt>
     <dd>
       <% if @user.confirmed? %>
@@ -95,8 +95,8 @@
             <tr class="inbox-row">
               <td class="text-slate-900"><%= api_key.name %></td>
               <td><%= link_to api_key.project.name, project_path(api_key.project), class: "inline-link" %></td>
-              <td class="text-slate-600"><%= api_key.created_at&.strftime("%b %-d, %Y") %></td>
-              <td class="text-slate-600"><%= api_key.last_used_at&.strftime("%b %-d, %Y %H:%M") || "Never" %></td>
+              <td class="text-slate-600"><%= local_time_tag(api_key.created_at, format: :date_only) %></td>
+              <td class="text-slate-600"><%= api_key.last_used_at ? local_time_tag(api_key.last_used_at) : "Never" %></td>
             </tr>
           <% end %>
         </tbody>
