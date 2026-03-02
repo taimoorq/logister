@@ -40,14 +40,9 @@ class ProjectsController < ApplicationController
       @groups.first
     end
 
-    @db_query_events = @project.ingest_events.metric
-                               .where(message: "db.query")
-                               .where("occurred_at >= ?", 24.hours.ago)
-                               .order(occurred_at: :desc)
-                               .limit(300)
-                               .to_a
-    @db_stats        = build_db_stats(@db_query_events)
-    @slow_db_queries = @db_query_events.sort_by { |e| -db_duration_ms(e) }.first(20)
+    @db_query_events  = @project.ingest_events.recent_db_queries(24.hours.ago).to_a
+    @db_stats        = IngestEvent.db_stats_from_events(@db_query_events)
+    @slow_db_queries = @db_query_events.sort_by { |e| -IngestEvent.duration_ms(e) }.first(20)
   end
 
   def new
@@ -87,55 +82,8 @@ class ProjectsController < ApplicationController
     params.require(:project).permit(:name, :slug, :description)
   end
 
-  def build_project_stats(project_ids)
-    stats = Hash.new { |h, k| h[k] = { total_events: 0, open_groups: 0, trend: Array.new(7, 0) } }
-
-    ErrorGroup.where(project_id: project_ids).unresolved.group(:project_id).count
-              .each { |pid, c| stats[pid][:open_groups] = c }
-
-    IngestEvent.where(project_id: project_ids).group(:project_id).count
-               .each { |pid, c| stats[pid][:total_events] = c }
-
-    trend_dates = 7.times.map { |i| Date.current - (6 - i) }
-    ErrorOccurrence
-      .joins(:error_group)
-      .where(error_groups: { project_id: project_ids })
-      .where("error_occurrences.occurred_at >= ?", 7.days.ago)
-      .group("error_groups.project_id", "DATE(error_occurrences.occurred_at)")
-      .count
-      .each do |(pid, date), count|
-        idx = trend_dates.index(date.to_date)
-        stats[pid][:trend][idx] = count if idx
-      end
-
-    stats
-  end
-
   def cached_project_stats(project_ids)
-    cache_key = [ "projects_stats", current_user.id, projects_stats_cache_version(project_ids) ]
-    safe_cache_fetch(cache_key, expires_in: 45.seconds) { build_project_stats(project_ids) }
-  end
-
-  def projects_stats_cache_version(project_ids)
-    latest_group = ErrorGroup.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0
-    latest_event = IngestEvent.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0
-    latest_occurrence = ErrorOccurrence.joins(:error_group)
-                                       .where(error_groups: { project_id: project_ids })
-                                       .maximum(:updated_at)&.utc&.to_i || 0
-    [ latest_group, latest_event, latest_occurrence ]
-  end
-
-  def build_db_stats(events)
-    durations = events.map { |e| db_duration_ms(e) }.select(&:positive?)
-    return { count: 0, avg_ms: 0.0, p95_ms: 0.0 } if durations.empty?
-
-    sorted    = durations.sort
-    p95_index = [ (sorted.length * 0.95).ceil - 1, 0 ].max
-    { count: durations.length, avg_ms: (durations.sum / durations.length).round(2), p95_ms: sorted[p95_index].round(2) }
-  end
-
-  def db_duration_ms(event)
-    value = event.context.is_a?(Hash) ? (event.context["duration_ms"] || event.context[:duration_ms]) : nil
-    value.to_f
+    cache_key = [ "projects_stats", current_user.id, Project.stats_cache_version(project_ids) ]
+    safe_cache_fetch(cache_key, expires_in: 45.seconds) { Project.stats_for(project_ids) }
   end
 end
