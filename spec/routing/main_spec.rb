@@ -1,0 +1,35 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe "Routes", type: :routing do
+  describe "public" do
+    it "routes GET / to home#show" do
+      expect(get: "/").to route_to(controller: "home", action: "show")
+    end
+    it "routes GET /about to home#about" do
+      expect(get: "/about").to route_to(controller: "home", action: "about")
+    end
+    it "routes GET /up to rails/health#show" do
+      expect(get: "/up").to route_to(controller: "rails/health", action: "show")
+    end
+  end
+
+  describe "API" do
+    it "routes POST /api/v1/ingest_events to api/v1/ingest_events#create" do
+      expect(post: "/api/v1/ingest_events").to route_to(
+        controller: "api/v1/ingest_events",
+        action: "create"
+      )
+    end
+  end
+
+  describe "health" do
+    it "routes GET /health/clickhouse to health#clickhouse" do
+      expect(get: "/health/clickhouse").to route_to(
+        controller: "health",
+        action: "clickhouse"
+      )
+    end
+  end
+end
