@@ -95,6 +95,12 @@ module ApplicationHelper
     value.to_json
   end
 
+  # True when tailwindcss-rails has built app/assets/builds/tailwind.css.
+  # Lets request specs pass without running bin/rails tailwindcss:build.
+  def tailwind_built?
+    File.exist?(Rails.root.join("app/assets/builds/tailwind.css"))
+  end
+
   private
 
   def absolute_url_for(path)
