@@ -86,4 +86,33 @@ RSpec.describe Project, type: :model do
       expect(projects(:one).to_param).to eq(projects(:one).uuid)
     end
   end
+
+  describe ".stats_for" do
+    it "returns empty hash when project_ids blank" do
+      expect(described_class.stats_for([])).to eq({})
+      expect(described_class.stats_for(nil)).to eq({})
+    end
+
+    it "returns per-project stats with total_events, open_groups, trend" do
+      ids = [ projects(:one).id ]
+      stats = described_class.stats_for(ids)
+      expect(stats).to be_a(Hash)
+      expect(stats[ids.first]).to include(:total_events, :open_groups, :trend)
+      expect(stats[ids.first][:trend].size).to eq(7)
+    end
+  end
+
+  describe ".stats_cache_version" do
+    it "returns empty array when project_ids blank" do
+      expect(described_class.stats_cache_version([])).to eq([])
+    end
+
+    it "returns array of three integers for project_ids" do
+      ids = [ projects(:one).id ]
+      version = described_class.stats_cache_version(ids)
+      expect(version).to be_an(Array)
+      expect(version.size).to eq(3)
+      expect(version).to all(be_a(Integer))
+    end
+  end
 end
