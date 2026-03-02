@@ -4,9 +4,21 @@ require "rails_helper"
 
 RSpec.describe ApiKey, type: :model do
   describe "associations" do
-    it { is_expected.to belong_to(:user) }
-    it { is_expected.to belong_to(:project) }
-    it { is_expected.to have_many(:ingest_events).dependent(:destroy) }
+    it "belongs to user" do
+      association = described_class.reflect_on_association(:user)
+      expect(association.macro).to eq(:belongs_to)
+    end
+
+    it "belongs to project" do
+      association = described_class.reflect_on_association(:project)
+      expect(association.macro).to eq(:belongs_to)
+    end
+
+    it "has many ingest_events dependent destroy" do
+      association = described_class.reflect_on_association(:ingest_events)
+      expect(association.macro).to eq(:has_many)
+      expect(association.options[:dependent]).to eq(:destroy)
+    end
   end
 
   describe "scopes" do
@@ -70,7 +82,7 @@ RSpec.describe ApiKey, type: :model do
   describe "#touch_last_used!" do
     it "updates last_used_at" do
       key = api_keys(:one)
-      freeze_time do
+      travel_to Time.current do
         key.touch_last_used!
         expect(key.reload.last_used_at).to be_within(1.second).of(Time.current)
       end

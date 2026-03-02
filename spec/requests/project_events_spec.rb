@@ -6,9 +6,9 @@ RSpec.describe "Project events", type: :request do
   describe "GET /projects/:project_uuid/events" do
     before { sign_in users(:one) }
 
-    it "returns success and event list for project" do
+    it "redirects to project when not a Turbo Frame request" do
       get project_events_path(projects(:one))
-      expect(response).to have_http_status(:success)
+      expect(response).to redirect_to(project_path(projects(:one), filter: "unresolved"))
     end
   end
 

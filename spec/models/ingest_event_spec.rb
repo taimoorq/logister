@@ -4,10 +4,25 @@ require "rails_helper"
 
 RSpec.describe IngestEvent, type: :model do
   describe "associations" do
-    it { is_expected.to belong_to(:project) }
-    it { is_expected.to belong_to(:api_key) }
-    it { is_expected.to belong_to(:error_group).optional }
-    it { is_expected.to have_one(:error_occurrence).dependent(:destroy) }
+    it "belongs to project" do
+      expect(described_class.reflect_on_association(:project).macro).to eq(:belongs_to)
+    end
+
+    it "belongs to api_key" do
+      expect(described_class.reflect_on_association(:api_key).macro).to eq(:belongs_to)
+    end
+
+    it "belongs to error_group optional" do
+      a = described_class.reflect_on_association(:error_group)
+      expect(a.macro).to eq(:belongs_to)
+      expect(a.optional?).to be true
+    end
+
+    it "has one error_occurrence dependent destroy" do
+      a = described_class.reflect_on_association(:error_occurrence)
+      expect(a.macro).to eq(:has_one)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
   end
 
   describe "enums" do

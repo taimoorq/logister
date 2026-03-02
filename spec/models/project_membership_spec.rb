@@ -4,8 +4,13 @@ require "rails_helper"
 
 RSpec.describe ProjectMembership, type: :model do
   describe "associations" do
-    it { is_expected.to belong_to(:project) }
-    it { is_expected.to belong_to(:user) }
+    it "belongs to project" do
+      expect(described_class.reflect_on_association(:project).macro).to eq(:belongs_to)
+    end
+
+    it "belongs to user" do
+      expect(described_class.reflect_on_association(:user).macro).to eq(:belongs_to)
+    end
   end
 
   describe "validations" do

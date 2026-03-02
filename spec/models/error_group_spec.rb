@@ -7,10 +7,28 @@ RSpec.describe ErrorGroup, type: :model do
   let(:api_key) { api_keys(:one) }
 
   describe "associations" do
-    it { is_expected.to belong_to(:project) }
-    it { is_expected.to belong_to(:latest_event).class_name("IngestEvent").optional }
-    it { is_expected.to have_many(:error_occurrences).dependent(:destroy) }
-    it { is_expected.to have_many(:ingest_events).through(:error_occurrences) }
+    it "belongs to project" do
+      expect(described_class.reflect_on_association(:project).macro).to eq(:belongs_to)
+    end
+
+    it "belongs to latest_event (IngestEvent) optional" do
+      a = described_class.reflect_on_association(:latest_event)
+      expect(a.macro).to eq(:belongs_to)
+      expect(a.class_name).to eq("IngestEvent")
+      expect(a.optional?).to be true
+    end
+
+    it "has many error_occurrences dependent destroy" do
+      a = described_class.reflect_on_association(:error_occurrences)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many ingest_events through error_occurrences" do
+      a = described_class.reflect_on_association(:ingest_events)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:through]).to eq(:error_occurrences)
+    end
   end
 
   describe "scopes" do

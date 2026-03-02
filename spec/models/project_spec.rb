@@ -4,12 +4,40 @@ require "rails_helper"
 
 RSpec.describe Project, type: :model do
   describe "associations" do
-    it { is_expected.to belong_to(:user) }
-    it { is_expected.to have_many(:api_keys).dependent(:destroy) }
-    it { is_expected.to have_many(:ingest_events).dependent(:destroy) }
-    it { is_expected.to have_many(:error_groups).dependent(:destroy) }
-    it { is_expected.to have_many(:project_memberships).dependent(:destroy) }
-    it { is_expected.to have_many(:members).through(:project_memberships).source(:user) }
+    it "belongs to user" do
+      expect(described_class.reflect_on_association(:user).macro).to eq(:belongs_to)
+    end
+
+    it "has many api_keys dependent destroy" do
+      a = described_class.reflect_on_association(:api_keys)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many ingest_events dependent destroy" do
+      a = described_class.reflect_on_association(:ingest_events)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many error_groups dependent destroy" do
+      a = described_class.reflect_on_association(:error_groups)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many project_memberships dependent destroy" do
+      a = described_class.reflect_on_association(:project_memberships)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many members through project_memberships" do
+      a = described_class.reflect_on_association(:members)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:through]).to eq(:project_memberships)
+      expect(a.options[:source]).to eq(:user)
+    end
   end
 
   describe "validations" do

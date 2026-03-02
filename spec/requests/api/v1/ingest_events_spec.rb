@@ -63,7 +63,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
     it "accepts X-Api-Key header" do
       expect {
         post api_v1_ingest_events_path,
-             params: { event: { event_type: "metric", message: "ping", occurred_at: Time.current.iso8601 } },
+             params: { event: { event_type: "metric", message: "ping", occurred_at: Time.current.iso8601, context: {} } },
              as: :json,
              headers: { "X-Api-Key" => "test-token-one" }
       }.to change(IngestEvent, :count).by(1)
@@ -76,7 +76,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
            as: :json,
            headers: auth_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(422)
       expect(response.parsed_body["errors"]).to be_present
     end
   end
