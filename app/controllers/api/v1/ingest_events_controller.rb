@@ -38,16 +38,16 @@ class Api::V1::IngestEventsController < ApplicationController
 
   def event_params
     raw_event = params.require(:event)
-    permitted = raw_event.permit(:event_type, :level, :message, :fingerprint, :occurred_at)
-    # Read context from raw params so nested keys (exception, metadata, etc.) are not stripped by strong params
+    # Build a plain hash so :context (and its nested keys) are not stripped when passed to Model.new
+    safe = raw_event.permit(:event_type, :level, :message, :fingerprint, :occurred_at).to_h
     raw_context = raw_event.to_unsafe_h["context"] || raw_event.to_unsafe_h[:context] || {}
     context_hash = raw_context.respond_to?(:to_unsafe_h) ? raw_context.to_unsafe_h : raw_context.to_h
-    permitted[:context] = context_hash.deep_stringify_keys
-    normalize_event_payload(permitted)
+    safe["context"] = context_hash.deep_stringify_keys
+    normalize_event_payload(safe)
   end
 
-  def normalize_event_payload(permitted)
-    context = permitted[:context].is_a?(Hash) ? permitted[:context].deep_dup : {}
+  def normalize_event_payload(attrs)
+    context = attrs["context"].is_a?(Hash) ? attrs["context"].deep_dup : {}
     raw_event = params.require(:event)
 
     merge_context_value!(context, "environment", raw_event[:environment], fallback: Rails.env)
@@ -63,8 +63,8 @@ class Api::V1::IngestEventsController < ApplicationController
     merge_context_value!(context, "check_in_status", raw_event[:check_in_status] || raw_event[:status])
 
     context["environment"] ||= Rails.env
-    permitted[:context] = context
-    permitted
+    attrs["context"] = context
+    attrs
   end
 
   def merge_context_value!(context, key, value, fallback: nil)
