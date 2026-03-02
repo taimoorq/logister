@@ -60,4 +60,74 @@ RSpec.describe IngestEvent, type: :model do
       expect(ingest_events(:one).to_param).to eq(ingest_events(:one).uuid)
     end
   end
+
+  describe ".db_queries" do
+    it "returns only metric events with message db.query" do
+      expect(ingest_events(:three)).to be_metric
+      expect(ingest_events(:three).message).to eq("db.query")
+      expect(described_class.db_queries).to include(ingest_events(:three))
+      expect(described_class.db_queries).not_to include(ingest_events(:one))
+    end
+  end
+
+  describe ".recent_db_queries" do
+    it "scopes by since and limit" do
+      scope = described_class.where(project: projects(:one)).recent_db_queries(1.day.ago, 10)
+      expect(scope.limit_value).to eq(10)
+    end
+  end
+
+  describe ".duration_ms" do
+    it "returns 0 for nil" do
+      expect(described_class.duration_ms(nil)).to eq(0.0)
+    end
+
+    it "extracts duration_ms from context hash" do
+      event = Struct.new(:context).new({ "duration_ms" => 42.5 })
+      expect(described_class.duration_ms(event)).to eq(42.5)
+    end
+
+    it "accepts symbol key" do
+      event = Struct.new(:context).new({ duration_ms: 10.0 })
+      expect(described_class.duration_ms(event)).to eq(10.0)
+    end
+  end
+
+  describe ".db_stats_from_events" do
+    it "returns zero stats for empty list" do
+      expect(described_class.db_stats_from_events([])).to eq(
+        count: 0, avg_ms: 0.0, p95_ms: 0.0
+      )
+    end
+
+    it "computes count, avg_ms, p95_ms from event contexts" do
+      event_struct = Struct.new(:context)
+      events = [
+        event_struct.new({ duration_ms: 10.0 }),
+        event_struct.new({ duration_ms: 20.0 }),
+        event_struct.new({ duration_ms: 30.0 })
+      ]
+      stats = described_class.db_stats_from_events(events)
+      expect(stats[:count]).to eq(3)
+      expect(stats[:avg_ms]).to eq(20.0)
+      expect(stats[:p95_ms]).to eq(30.0)
+    end
+  end
+
+  describe ".dashboard_error_views" do
+    it "returns at most 6 view hashes" do
+      events = IngestEvent.where(project: projects(:one), event_type: :error)
+                         .includes(:project)
+                         .to_a
+      views = described_class.dashboard_error_views(events)
+      expect(views.size).to be <= 6
+      views.each do |v|
+        expect(v).to include(:project, :latest_event, :title, :events_count, :trend, :stage)
+      end
+    end
+
+    it "returns empty array for empty events" do
+      expect(described_class.dashboard_error_views([])).to eq([])
+    end
+  end
 end

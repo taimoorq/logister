@@ -16,6 +16,11 @@ RSpec.describe "Dashboard", type: :request do
         get dashboard_path
         expect(response).to have_http_status(:success)
       end
+
+      it "shows overview content and project count" do
+        get dashboard_path
+        expect(response.body).to include(projects(:one).name)
+      end
     end
   end
 end
