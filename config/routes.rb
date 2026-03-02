@@ -29,6 +29,7 @@ Rails.application.routes.draw do
       get :settings
       get :performance
       get :monitors
+      get :activity
     end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
