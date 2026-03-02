@@ -38,7 +38,13 @@
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
 
-        gtag('config', 'G-3R8CQ5X7XG');
+        // Initial page view
+        gtag('config', 'G-3R8CQ5X7XG', { page_path: location.pathname + location.search });
+
+        // Track subsequent Turbo-driven navigations
+        document.addEventListener("turbo:load", function() {
+          gtag('config', 'G-3R8CQ5X7XG', { page_path: location.pathname + location.search });
+        });
       </script>
     <% end %>
 
