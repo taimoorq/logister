@@ -3,6 +3,7 @@
   <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
   <% filter_param = local_assigns[:filter] || "unresolved" %>
   <% query_param  = local_assigns[:query]  || "" %>
+  <% related_logs = local_assigns[:related_logs] || [] %>
 
   <%# ── Action bar ──────────────────────────────────────────────────────── %>
   <header class="detail-actionbar card">
@@ -19,6 +20,12 @@
         · <%= local_time_tag(event.occurred_at, format: :long) %>
         <% if group %>
           · <strong><%= group.occurrence_count %></strong> total occurrences
+          <% if group.introduced_in_release.present? %>
+            · introduced in <code><%= group.introduced_in_release %></code>
+          <% end %>
+          <% if group.regressed_in_release.present? %>
+            · regressed in <code><%= group.regressed_in_release %></code>
+          <% end %>
           · first seen <%= local_time_tag(group.first_seen_at, format: :date_only) %>
           · last seen <%= local_time_tag(group.last_seen_at, format: :date_only) %>
         <% end %>
@@ -65,6 +72,9 @@
       </button>
       <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-occurrences" role="tab">
         Occurrences (<%= occurrences.size %>)
+      </button>
+      <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-related-logs" role="tab">
+        Related logs (<%= related_logs.size %>)
       </button>
     </nav>
 
@@ -120,6 +130,38 @@
         </table>
       <% else %>
         <p class="muted">No occurrences recorded yet.</p>
+      <% end %>
+    </section>
+
+    <section id="tab-related-logs" class="detail-panel is-hidden" data-tabs-target="panel">
+      <% if related_logs.any? %>
+        <table class="occurrences-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Level</th>
+              <th>Message</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% related_logs.each do |log_event| %>
+              <tr>
+                <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
+                <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
+                <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
+                <td>
+                  <%= link_to "View",
+                              project_event_path(project, log_event, filter: filter_param, q: query_param, group_uuid: group&.uuid),
+                              class: "inline-link",
+                              data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No logs found in the correlation window.</p>
       <% end %>
     </section>
   </div>

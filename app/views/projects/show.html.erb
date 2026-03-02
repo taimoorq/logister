@@ -54,6 +54,7 @@
                  event:       @selected_group.latest_event,
                  group:       @selected_group,
                  occurrences: @selected_group.error_occurrences.includes(:ingest_event).recent_first.limit(50),
+                 related_logs: IngestEvent.related_logs(project: @project, event: @selected_group.latest_event, window: 5.minutes, limit: 50),
                  filter:      @filter,
                  query:       @query %>
     <% else %>
@@ -197,3 +198,124 @@
     </div>
   </section>
 <% end %>
+
+<% if @release_cards.any? %>
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 mt-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+      <h2 class="text-lg font-bold text-slate-900">Release health</h2>
+      <p class="text-slate-500 text-sm">Introduced/regressed issue tracking</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <% @release_cards.each do |card| %>
+        <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+          <p class="kicker mb-1"><%= card[:release] %></p>
+          <p class="text-slate-600 text-sm mb-2">Last seen <%= local_time_tag(card[:last_seen_at]) %></p>
+          <div class="text-sm text-slate-700 space-y-1">
+            <p><strong><%= card[:total_events] %></strong> total events</p>
+            <p><strong><%= card[:error_events] %></strong> error events</p>
+            <p><strong><%= card[:introduced_issues] %></strong> introduced issues</p>
+            <p><strong><%= card[:regressed_issues] %></strong> regressed issues</p>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 mt-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+    <h2 class="text-lg font-bold text-slate-900">Transactions (24h)</h2>
+    <p class="text-slate-500 text-sm"><%= @transaction_stats[:count] %> transactions captured</p>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+      <p class="kicker mb-1">P50 latency</p>
+      <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:p50_ms] %> ms</p>
+    </article>
+    <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+      <p class="kicker mb-1">P95 latency</p>
+      <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:p95_ms] %> ms</p>
+    </article>
+    <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+      <p class="kicker mb-1">Throughput / min</p>
+      <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:throughput_per_minute] %></p>
+    </article>
+    <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+      <p class="kicker mb-1">Error rate</p>
+      <p class="text-xl font-bold text-slate-900"><%= (@transaction_stats[:error_rate] * 100.0).round(1) %>%</p>
+    </article>
+    <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+      <p class="kicker mb-1">Apdex</p>
+      <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:apdex] %></p>
+    </article>
+  </div>
+
+  <% if @slow_transactions.any? %>
+    <div class="overflow-x-auto mt-4">
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Transaction</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Duration</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Related errors</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 bg-white">
+          <% @slow_transactions.each do |tx| %>
+            <tr>
+              <td class="px-3 py-2 text-sm text-slate-900"><%= tx[:transaction_name] %></td>
+              <td class="px-3 py-2 text-sm text-slate-700"><%= tx[:duration_ms] %> ms</td>
+              <td class="px-3 py-2 text-sm text-slate-700"><%= tx[:related_error_count] %></td>
+              <td class="px-3 py-2 text-sm">
+                <% if tx[:related_error_event] %>
+                  <%= link_to "Open error", project_event_path(@project, tx[:related_error_event]), class: "text-blue-600 hover:underline" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>
+
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 mt-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+    <h2 class="text-lg font-bold text-slate-900">Cron and uptime monitors</h2>
+    <p class="text-slate-500 text-sm"><%= @missed_check_ins_count %> missed</p>
+  </div>
+  <% if @check_in_monitors.any? %>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Monitor</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Environment</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Last check-in</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Expected interval</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 bg-white">
+          <% @check_in_monitors.each do |monitor| %>
+            <% monitor_status = monitor.status %>
+            <tr>
+              <td class="px-3 py-2 text-sm text-slate-900"><%= monitor.slug %></td>
+              <td class="px-3 py-2 text-sm text-slate-700"><%= monitor.environment %></td>
+              <td class="px-3 py-2 text-sm">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold <%= monitor_status == "ok" ? "bg-blue-50 text-blue-800 border border-blue-200" : "bg-red-50 text-red-800 border border-red-200" %>">
+                  <%= monitor_status %>
+                </span>
+              </td>
+              <td class="px-3 py-2 text-sm text-slate-700"><%= monitor.last_check_in_at ? local_time_tag(monitor.last_check_in_at, format: :long) : "never" %></td>
+              <td class="px-3 py-2 text-sm text-slate-700"><%= monitor.expected_interval_seconds %>s</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-slate-600 text-sm">No check-ins yet. Send heartbeats to <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/check_ins</code>.</p>
+  <% end %>
+</section>

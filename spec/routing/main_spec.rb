@@ -22,6 +22,13 @@ RSpec.describe "Routes", type: :routing do
         action: "create"
       )
     end
+
+    it "routes POST /api/v1/check_ins to api/v1/check_ins#create" do
+      expect(post: "/api/v1/check_ins").to route_to(
+        controller: "api/v1/check_ins",
+        action: "create"
+      )
+    end
   end
 
   describe "health" do

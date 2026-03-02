@@ -48,6 +48,8 @@ class ErrorGroupingService
         subtitle:        exc.is_a?(Hash) ? (exc["class"].presence || exc[:class].presence) : nil,
         stage:           ctx["environment"].presence || ctx[:environment].presence || "production",
         severity:        @event.level.presence || "error",
+        introduced_in_release: IngestEvent.release(@event),
+        last_seen_release: IngestEvent.release(@event),
         status:          :unresolved,
         first_seen_at:   @event.occurred_at,
         last_seen_at:    @event.occurred_at,

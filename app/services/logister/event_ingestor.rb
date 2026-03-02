@@ -25,7 +25,7 @@ module Logister
         api_key_id: @event.api_key_id,
         occurred_at: @event.occurred_at.utc.iso8601(3),
         received_at: Time.current.utc.iso8601(3),
-        event_type: @event.event_type,
+        event_type: normalized_event_type,
         level: @event.level.to_s,
         environment: context_value("environment", Rails.env),
         service: context_value("service", @event.project.slug),
@@ -82,6 +82,13 @@ module Logister
 
     def fallback_fingerprint
       Digest::SHA256.hexdigest([ @event.event_type, @event.message, @event.level ].join("|"))[0, 32]
+    end
+
+    def normalized_event_type
+      value = @event.event_type.to_s
+      return value if value.in?(%w[error metric transaction log check_in])
+
+      "metric"
     end
   end
 end

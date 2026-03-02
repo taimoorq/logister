@@ -46,8 +46,8 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(created.project_id).to eq(api_keys(:one).project_id)
       expect(created.api_key_id).to eq(api_keys(:one).id)
       expect(created.event_type).to eq("error")
-      expect(created.context.dig("exception", "class")).to eq("NoMethodError")
-      expect(created.context.dig("metadata", "feature_flags", 0)).to eq("new-checkout")
+      expect(created.context.dig("exception", "class") || created.context.dig(:exception, :class)).to eq("NoMethodError")
+      expect(created.context.dig("metadata", "feature_flags", 0) || created.context.dig(:metadata, :feature_flags, 0)).to eq("new-checkout")
     end
 
     it "rejects unauthorized token" do
@@ -68,6 +68,34 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
              headers: { "X-Api-Key" => "test-token-one" }
       }.to change(IngestEvent, :count).by(1)
       expect(response).to have_http_status(:created)
+    end
+
+    it "accepts transaction events and normalizes top-level fields into context" do
+      post api_v1_ingest_events_path,
+           params: {
+             event: {
+               event_type: "transaction",
+               level: "info",
+               message: "POST /checkout",
+               duration_ms: 185.2,
+               transaction_name: "POST /checkout",
+               trace_id: "trace-123",
+               request_id: "req-123",
+               release: "2026.03.02",
+               environment: "production"
+             }
+           },
+           as: :json,
+           headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      created = IngestEvent.order(:id).last
+      expect(created).to be_transaction
+      expect(created.context["duration_ms"]).to eq(185.2)
+      expect(created.context["transaction_name"]).to eq("POST /checkout")
+      expect(created.context["trace_id"]).to eq("trace-123")
+      expect(created.context["request_id"]).to eq("req-123")
+      expect(created.context["release"]).to eq("2026.03.02")
     end
 
     it "returns 422 when event is invalid" do

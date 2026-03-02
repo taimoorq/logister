@@ -26,9 +26,10 @@ RSpec.describe IngestEvent, type: :model do
   end
 
   describe "enums" do
-    it "defines event_type error and metric" do
+    it "defines event_type error, metric, transaction, log and check_in" do
       expect(ingest_events(:one)).to be_error
       expect(ingest_events(:two)).to be_metric
+      expect(described_class.event_types.keys).to include("transaction", "log", "check_in")
     end
   end
 
@@ -128,6 +129,34 @@ RSpec.describe IngestEvent, type: :model do
 
     it "returns empty array for empty events" do
       expect(described_class.dashboard_error_views([])).to eq([])
+    end
+  end
+
+  describe ".related_logs" do
+    it "matches logs by trace and request identifiers" do
+      project = projects(:one)
+      api_key = api_keys(:one)
+      error_event = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        level: "error",
+        message: "Checkout failed",
+        occurred_at: Time.current,
+        context: { "trace_id" => "trace-123", "request_id" => "req-abc" }
+      )
+      related_log = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "checkout step",
+        occurred_at: Time.current,
+        context: { "trace_id" => "trace-123" }
+      )
+
+      results = described_class.related_logs(project: project, event: error_event)
+      expect(results).to include(related_log)
     end
   end
 end

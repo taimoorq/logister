@@ -235,9 +235,32 @@ Example payload:
 }
 ```
 
-Supported `event_type` values: `error`, `metric`.
+Supported `event_type` values: `error`, `metric`, `transaction`, `log`, `check_in`.
 
 For database load metrics from the companion gem, metric events use `message: "db.query"` and context fields like `duration_ms`, `name`, and `sql`.
+
+Transaction events should include `transaction_name`, `duration_ms`, and correlation fields (`trace_id`, `request_id`) in context.
+
+Log events should include correlation identifiers in context when available (`trace_id`, `request_id`, `session_id`, `user_id`) so error views can pivot to surrounding logs.
+
+## Check-in API
+
+- Endpoint: `POST /api/v1/check_ins`
+- Auth header: `Authorization: Bearer <api_token>`
+
+Example payload:
+
+```json
+{
+  "check_in": {
+    "slug": "nightly-reconcile",
+    "status": "ok",
+    "expected_interval_seconds": 900,
+    "environment": "production",
+    "release": "2026.03.02"
+  }
+}
+```
 
 ## ClickHouse (optional, recommended for scale)
 
@@ -308,5 +331,4 @@ Logister.configure do |config|
   config.db_metric_sample_rate = 1.0
 end
 ```
-
 
