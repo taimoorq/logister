@@ -1,13 +1,6 @@
-<section class="max-w-5xl mx-auto space-y-6">
-  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
-      <p class="text-slate-500 text-sm"><code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code></p>
-    </div>
-  </header>
+<%= render "header" %>
 
-  <%= render "nav" %>
-
+<section class="space-y-6">
   <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <% if @project.owned_by?(current_user) %>
       <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5" id="api-key-form">
