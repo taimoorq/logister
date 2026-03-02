@@ -13,7 +13,7 @@ class BackfillErrorGroupsJob < ApplicationJob
     # Process only error-type events that haven't been grouped yet,
     # oldest first so first_seen_at is correct.
     scope = IngestEvent
-      .error
+      .where(event_type: :error)
       .where(error_group_id: nil)
       .order(:occurred_at)
 

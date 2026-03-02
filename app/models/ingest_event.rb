@@ -75,7 +75,8 @@ class IngestEvent < ApplicationRecord
   end
 
   def self.released_error_groups(project, lookback: 30.days, limit: 6)
-    releases = released.where(project: project).where("occurred_at >= ?", lookback)
+    since = lookback.is_a?(ActiveSupport::Duration) ? lookback.ago : lookback
+    releases = released.where(project: project).where("occurred_at >= ?", since)
                        .group(Arel.sql("context->>'release'"))
                        .maximum(:occurred_at)
                        .sort_by { |_rel, seen_at| seen_at || Time.zone.at(0) }

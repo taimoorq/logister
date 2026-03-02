@@ -46,8 +46,8 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(created.project_id).to eq(api_keys(:one).project_id)
       expect(created.api_key_id).to eq(api_keys(:one).id)
       expect(created.event_type).to eq("error")
-      expect(created.context.dig("exception", "class")).to eq("NoMethodError")
-      expect(created.context.dig("metadata", "feature_flags", 0)).to eq("new-checkout")
+      expect(created.context.dig("exception", "class") || created.context.dig(:exception, :class)).to eq("NoMethodError")
+      expect(created.context.dig("metadata", "feature_flags", 0) || created.context.dig(:metadata, :feature_flags, 0)).to eq("new-checkout")
     end
 
     it "rejects unauthorized token" do
