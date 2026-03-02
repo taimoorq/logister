@@ -25,6 +25,11 @@ Rails.application.routes.draw do
   end
 
   resources :projects, only: [ :index, :show, :new, :create, :destroy ], param: :uuid do
+    member do
+      get :settings
+      get :performance
+      get :monitors
+    end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid

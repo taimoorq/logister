@@ -1,0 +1,15 @@
+<nav class="mb-4 flex flex-wrap items-center gap-2 text-sm">
+  <% tabs = [
+    ["Inbox", project_path(@project)],
+    ["Performance", performance_project_path(@project)],
+    ["Monitors", monitors_project_path(@project)],
+    ["Settings", settings_project_path(@project)]
+  ] %>
+
+  <% tabs.each do |label, path| %>
+    <% active = current_page?(path) %>
+    <%= link_to label, path,
+                class: "inline-flex items-center px-2.5 py-1.5 rounded-lg border text-xs font-medium #{active ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}" %>
+  <% end %>
+</nav>
+

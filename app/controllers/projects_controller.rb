@@ -2,7 +2,7 @@ class ProjectsController < ApplicationController
   include ProjectInboxData
 
   before_action :authenticate_user!
-  before_action :set_project, only: :show
+  before_action :set_project, only: [ :show, :settings, :performance, :monitors ]
   before_action :set_owned_project, only: :destroy
 
   def index
@@ -28,24 +28,31 @@ class ProjectsController < ApplicationController
       }
     end
 
-    # Full page load — build everything the workbench needs.
+    # Full page load — build everything the workbench needs for the inbox.
     @counts  = inbox_counts(@project)
-    @owner   = @project.user
-    @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
-    @api_keys = @project.api_keys.order(created_at: :desc)
-
     @selected_group = if params[:group_uuid].present?
       @project.error_groups.find_by(uuid: params[:group_uuid])
     else
       @groups.first
     end
+  end
 
+  def settings
+    @owner   = @project.user
+    @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
+    @api_keys = @project.api_keys.order(created_at: :desc)
+  end
+
+  def performance
     @db_query_events  = @project.ingest_events.recent_db_queries(24.hours.ago).to_a
     @db_stats        = IngestEvent.db_stats_from_events(@db_query_events)
     @slow_db_queries = @db_query_events.sort_by { |e| -IngestEvent.duration_ms(e) }.first(20)
     @release_cards = IngestEvent.released_error_groups(@project, lookback: 45.days, limit: 6)
     @transaction_stats = IngestEvent.transaction_stats(@project, since: 24.hours.ago)
     @slow_transactions = IngestEvent.slow_transactions_with_errors(@project, since: 24.hours.ago, limit: 20)
+  end
+
+  def monitors
     @check_in_monitors = @project.check_in_monitors.recent_first.limit(10)
     @missed_check_ins_count = @check_in_monitors.count { |monitor| monitor.status == "missed" }
   end

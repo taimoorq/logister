@@ -1,0 +1,111 @@
+<section class="max-w-5xl mx-auto space-y-6">
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
+      <p class="text-slate-500 text-sm"><code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code></p>
+    </div>
+  </header>
+
+  <%= render "nav" %>
+
+  <% if @db_stats[:count] > 0 %>
+    <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h2 class="text-lg font-bold text-slate-900">Database load (24h)</h2>
+        <p class="text-slate-500 text-sm"><%= @db_stats[:count] %> queries captured</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+          <p class="kicker mb-1">Avg query time</p>
+          <p class="text-xl font-bold text-slate-900"><%= @db_stats[:avg_ms] %> ms</p>
+        </article>
+        <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+          <p class="kicker mb-1">P95 query time</p>
+          <p class="text-xl font-bold text-slate-900"><%= @db_stats[:p95_ms] %> ms</p>
+        </article>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @release_cards.any? %>
+    <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h2 class="text-lg font-bold text-slate-900">Release health</h2>
+        <p class="text-slate-500 text-sm">Introduced/regressed issue tracking</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% @release_cards.each do |card| %>
+          <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+            <p class="kicker mb-1"><%= card[:release] %></p>
+            <p class="text-slate-600 text-sm mb-2">Last seen <%= local_time_tag(card[:last_seen_at]) %></p>
+            <div class="text-sm text-slate-700 space-y-1">
+              <p><strong><%= card[:total_events] %></strong> total events</p>
+              <p><strong><%= card[:error_events] %></strong> error events</p>
+              <p><strong><%= card[:introduced_issues] %></strong> introduced issues</p>
+              <p><strong><%= card[:regressed_issues] %></strong> regressed issues</p>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+      <h2 class="text-lg font-bold text-slate-900">Transactions (24h)</h2>
+      <p class="text-slate-500 text-sm"><%= @transaction_stats[:count] %> transactions captured</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="kicker mb-1">P50 latency</p>
+        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:p50_ms] %> ms</p>
+      </article>
+      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="kicker mb-1">P95 latency</p>
+        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:p95_ms] %> ms</p>
+      </article>
+      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="kicker mb-1">Throughput / min</p>
+        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:throughput_per_minute] %></p>
+      </article>
+      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="kicker mb-1">Error rate</p>
+        <p class="text-xl font-bold text-slate-900"><%= (@transaction_stats[:error_rate] * 100.0).round(1) %>%</p>
+      </article>
+      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="kicker mb-1">Apdex</p>
+        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:apdex] %></p>
+      </article>
+    </div>
+
+    <% if @slow_transactions.any? %>
+      <div class="overflow-x-auto mt-4">
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Transaction</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Duration</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Related errors</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 bg-white">
+            <% @slow_transactions.each do |tx| %>
+              <tr>
+                <td class="px-3 py-2 text-sm text-slate-900"><%= tx[:transaction_name] %></td>
+                <td class="px-3 py-2 text-sm text-slate-700"><%= tx[:duration_ms] %> ms</td>
+                <td class="px-3 py-2 text-sm text-slate-700"><%= tx[:related_error_count] %></td>
+                <td class="px-3 py-2 text-sm">
+                  <% if tx[:related_error_event] %>
+                    <%= link_to "Open error", project_event_path(@project, tx[:related_error_event]), class: "text-blue-600 hover:underline" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+</section>
+

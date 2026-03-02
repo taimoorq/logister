@@ -1,0 +1,129 @@
+<section class="max-w-5xl mx-auto space-y-6">
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
+      <p class="text-slate-500 text-sm"><code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code></p>
+    </div>
+  </header>
+
+  <%= render "nav" %>
+
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <% if @project.owned_by?(current_user) %>
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5" id="api-key-form">
+        <turbo-frame id="project_api_keys">
+          <h2 class="text-base font-bold text-slate-900 mb-3">API keys</h2>
+          <%= form_with model: [@project, ApiKey.new] do |f| %>
+            <div class="space-y-3 mb-4">
+              <%= f.label :name, "Key label", class: "form-label" %>
+              <%= f.text_field :name, required: true, placeholder: "production", class: "form-input" %>
+            </div>
+            <%= f.submit "Generate key", class: "btn-primary" %>
+          <% end %>
+
+          <div id="api_key_new_token" class="mt-3">
+            <% if flash[:new_api_key_token].present? %>
+              <div class="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 mb-4">
+                New API token:
+                <code class="font-mono text-xs break-all"><%= flash[:new_api_key_token] %></code>
+                — copy it now; it will not be shown again.
+              </div>
+            <% end %>
+          </div>
+
+          <h3 class="text-sm font-semibold text-slate-900 mt-6 mb-2">Existing keys</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Name</th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Last used</th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
+                </tr>
+              </thead>
+              <tbody id="api_keys_tbody" class="divide-y divide-slate-200 bg-white">
+                <% if @api_keys.any? %>
+                  <% @api_keys.each do |key| %>
+                    <%= render "api_keys/row", api_key: key, project: @project %>
+                  <% end %>
+                <% else %>
+                  <tr id="api_keys_empty"><td colspan="4" class="px-3 py-2 text-slate-600 text-sm">No API keys yet.</td></tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </turbo-frame>
+      </article>
+
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+        <h2 class="text-base font-bold text-slate-900 mb-3">Project access</h2>
+        <%= form_with model: [@project, ProjectMembership.new] do |f| %>
+          <div class="space-y-3 mb-4">
+            <%= f.label :email, "Invite by email", class: "form-label" %>
+            <%= f.email_field :email, required: true, placeholder: "teammate@example.com", class: "form-input" %>
+          </div>
+          <%= f.submit "Share project", class: "btn-primary" %>
+        <% end %>
+
+        <div id="project_membership_message" class="mt-3"></div>
+
+        <h3 class="text-sm font-semibold text-slate-900 mt-6 mb-2">Members</h3>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50">
+              <tr>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Email</th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Role</th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
+              </tr>
+            </thead>
+            <tbody id="project_memberships_tbody" class="divide-y divide-slate-200 bg-white">
+              <tr>
+                <td class="px-3 py-2 text-sm text-slate-900"><%= @owner.email %></td>
+                <td class="px-3 py-2 text-sm text-slate-600">owner</td>
+                <td class="px-3 py-2"></td>
+              </tr>
+              <% @project_memberships.each do |m| %>
+                <%= render "project_memberships/row", membership: m, project: @project %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2">
+        <h2 class="text-base font-bold text-slate-900 mb-2">Danger zone</h2>
+        <p class="text-slate-600 text-sm mb-3">
+          Deleting a project permanently removes its API keys, memberships, and event data.
+        </p>
+        <%= button_to "Delete project",
+                      project_path(@project),
+                      method: :delete,
+                      class: "btn-ghost text-red-600 border-red-300 hover:bg-red-50",
+                      form: { data: { turbo_confirm: "Delete this project permanently?" } } %>
+      </article>
+    <% end %>
+
+    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 <%= 'lg:col-span-2' unless @project.owned_by?(current_user) %>">
+      <h2 class="text-base font-bold text-slate-900 mb-2">Ingest endpoint</h2>
+      <p class="text-slate-600 text-sm mb-3">
+        POST to
+        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/ingest_events</code>
+        with header
+        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Authorization: Bearer &lt;token&gt;</code>.
+      </p>
+      <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>{
+  "event": {
+    "event_type": "error",
+    "level": "error",
+    "message": "NoMethodError in CheckoutService",
+    "fingerprint": "checkout-nomethoderror",
+    "occurred_at": "2026-02-14T12:00:00Z",
+    "context": { "environment": "production" }
+  }
+}</code></pre>
+    </article>
+  </section>
+</section>
+
