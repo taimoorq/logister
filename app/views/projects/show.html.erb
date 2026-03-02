@@ -73,21 +73,23 @@
 <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
   <% if @project.owned_by?(current_user) %>
     <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5" id="api-key-form">
-      <h3 class="text-base font-bold text-slate-900 mb-3">Create API key</h3>
-      <%= form_with model: [@project, ApiKey.new] do |f| %>
-        <div class="space-y-3 mb-4">
-          <%= f.label :name, "Key label", class: "form-label" %>
-          <%= f.text_field :name, required: true, placeholder: "production", class: "form-input" %>
+      <turbo-frame id="project_api_keys">
+        <h3 class="text-base font-bold text-slate-900 mb-3">Create API key</h3>
+        <%= form_with model: [@project, ApiKey.new] do |f| %>
+          <div class="space-y-3 mb-4">
+            <%= f.label :name, "Key label", class: "form-label" %>
+            <%= f.text_field :name, required: true, placeholder: "production", class: "form-input" %>
+          </div>
+          <%= f.submit "Generate key", class: "btn-primary" %>
+        <% end %>
+
+        <div id="api_key_new_token">
+          <% if flash[:new_api_key_token].present? %>
+            <div class="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 mb-4">New API token: <code class="font-mono text-xs break-all"><%= flash[:new_api_key_token] %></code> — copy it now; it will not be shown again.</div>
+          <% end %>
         </div>
-        <%= f.submit "Generate key", class: "btn-primary" %>
-      <% end %>
 
-      <% if flash[:new_api_key_token].present? %>
-        <div class="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 mb-4">New API token: <code class="font-mono text-xs break-all"><%= flash[:new_api_key_token] %></code></div>
-      <% end %>
-
-      <h3 class="text-base font-bold text-slate-900 mt-6 mb-3">Existing keys</h3>
-      <% if @api_keys.any? %>
+        <h3 class="text-base font-bold text-slate-900 mt-6 mb-3">Existing keys</h3>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50">
@@ -98,21 +100,18 @@
                 <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 bg-white">
-              <% @api_keys.each do |key| %>
-                <tr>
-                  <td class="px-3 py-2 text-sm text-slate-900"><%= key.name %></td>
-                  <td class="px-3 py-2 text-sm text-slate-600"><%= key.active? ? "active" : "revoked" %></td>
-                  <td class="px-3 py-2 text-sm text-slate-600"><%= key.last_used_at ? local_time_tag(key.last_used_at) : "never" %></td>
-                  <td class="px-3 py-2"><%= button_to "Revoke", project_api_key_path(@project, key), method: :delete, class: "text-sm font-medium text-red-600 hover:text-red-700" if key.active? %></td>
-                </tr>
+            <tbody id="api_keys_tbody" class="divide-y divide-slate-200 bg-white">
+              <% if @api_keys.any? %>
+                <% @api_keys.each do |key| %>
+                  <%= render "api_keys/row", api_key: key, project: @project %>
+                <% end %>
+              <% else %>
+                <tr id="api_keys_empty"><td colspan="4" class="px-3 py-2 text-slate-600 text-sm">No API keys yet.</td></tr>
               <% end %>
             </tbody>
           </table>
         </div>
-      <% else %>
-        <p class="text-slate-600 text-sm">No API keys yet.</p>
-      <% end %>
+      </turbo-frame>
     </article>
 
     <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
@@ -125,6 +124,8 @@
         <%= f.submit "Share project", class: "btn-primary" %>
       <% end %>
 
+      <div id="project_membership_message"></div>
+
       <h3 class="text-base font-bold text-slate-900 mt-6 mb-3">Members</h3>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200">
@@ -135,18 +136,14 @@
               <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200 bg-white">
+          <tbody id="project_memberships_tbody" class="divide-y divide-slate-200 bg-white">
             <tr>
               <td class="px-3 py-2 text-sm text-slate-900"><%= @owner.email %></td>
               <td class="px-3 py-2 text-sm text-slate-600">owner</td>
               <td class="px-3 py-2"></td>
             </tr>
             <% @project_memberships.each do |m| %>
-              <tr>
-                <td class="px-3 py-2 text-sm text-slate-900"><%= m.user.email %></td>
-                <td class="px-3 py-2 text-sm text-slate-600"><%= m.role %></td>
-                <td class="px-3 py-2"><%= button_to "Remove", project_project_membership_path(@project, m), method: :delete, class: "text-sm font-medium text-red-600 hover:text-red-700" %></td>
-              </tr>
+              <%= render "project_memberships/row", membership: m, project: @project %>
             <% end %>
           </tbody>
         </table>
