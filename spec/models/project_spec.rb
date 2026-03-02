@@ -1,0 +1,89 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe Project, type: :model do
+  describe "associations" do
+    it "belongs to user" do
+      expect(described_class.reflect_on_association(:user).macro).to eq(:belongs_to)
+    end
+
+    it "has many api_keys dependent destroy" do
+      a = described_class.reflect_on_association(:api_keys)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many ingest_events dependent destroy" do
+      a = described_class.reflect_on_association(:ingest_events)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many error_groups dependent destroy" do
+      a = described_class.reflect_on_association(:error_groups)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many project_memberships dependent destroy" do
+      a = described_class.reflect_on_association(:project_memberships)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:dependent]).to eq(:destroy)
+    end
+
+    it "has many members through project_memberships" do
+      a = described_class.reflect_on_association(:members)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:through]).to eq(:project_memberships)
+      expect(a.options[:source]).to eq(:user)
+    end
+  end
+
+  describe "validations" do
+    it "validates presence of name, slug, uuid" do
+      project = Project.new(user: users(:one))
+      expect(project).not_to be_valid
+      expect(project.errors[:name]).to be_present
+    end
+
+    it "parameterizes slug from name" do
+      project = Project.new(user: users(:one), name: "My Cool App")
+      project.valid?
+      expect(project.slug).to eq("my-cool-app")
+    end
+  end
+
+  describe ".accessible_to" do
+    it "includes projects owned by the user" do
+      user = users(:one)
+      expect(Project.accessible_to(user)).to include(projects(:one))
+    end
+
+    it "includes projects shared with the user" do
+      member = users(:two)
+      expect(Project.accessible_to(member)).to include(projects(:one))
+    end
+
+    it "excludes projects the user has no access to" do
+      user = users(:one)
+      expect(Project.accessible_to(user)).not_to include(projects(:two))
+    end
+  end
+
+  describe "#owned_by?" do
+    it "returns true for the owner" do
+      expect(projects(:one).owned_by?(users(:one))).to be true
+    end
+
+    it "returns false for a member" do
+      expect(projects(:one).owned_by?(users(:two))).to be false
+    end
+  end
+
+  describe "#to_param" do
+    it "returns uuid" do
+      expect(projects(:one).to_param).to eq(projects(:one).uuid)
+    end
+  end
+end

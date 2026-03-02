@@ -26,5 +26,11 @@ module Logister
 
     # Tailwind CSS build output (must be in application.rb so Propshaft sees it at boot)
     config.assets.paths << Rails.root.join("app/assets/builds")
+
+    # Generate RSpec specs instead of Minitest tests
+    config.generators do |g|
+      g.test_framework :rspec
+      g.fixture_replacement nil
+    end
   end
 end

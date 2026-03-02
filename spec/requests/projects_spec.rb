@@ -1,0 +1,124 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe "Projects", type: :request do
+  describe "GET /projects" do
+    it "requires authentication" do
+      get projects_path
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    context "when signed in as owner" do
+      before { sign_in users(:one) }
+
+      it "returns success and lists projects" do
+        get projects_path
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+      end
+    end
+
+    context "when signed in as shared member" do
+      before { sign_in users(:two) }
+
+      it "includes shared project in list" do
+        get projects_path
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+      end
+    end
+  end
+
+  describe "GET /projects/:uuid" do
+    context "when signed in as owner" do
+      before { sign_in users(:one) }
+
+      it "returns success and shows project" do
+        get project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+      end
+
+      it "returns 404 for project user cannot access" do
+        get project_path(projects(:two))
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "renders database load stats when db.query metrics exist" do
+        IngestEvent.create!(
+          project: projects(:one),
+          api_key: api_keys(:one),
+          event_type: :metric,
+          level: "info",
+          message: "db.query",
+          fingerprint: "db-query-fresh",
+          context: {
+            duration_ms: 42.75,
+            name: "User Load",
+            sql: "SELECT \"users\".* FROM \"users\" WHERE \"users\".\"id\" = 1"
+          },
+          occurred_at: Time.current
+        )
+        get project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Database load (24h)")
+        expect(response.body).to include("1 queries captured")
+        expect(response.body).to include("42.75 ms")
+      end
+    end
+
+    context "when signed in as shared member" do
+      before { sign_in users(:two) }
+
+      it "can view shared project" do
+        get project_path(projects(:one))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:one).name)
+      end
+    end
+  end
+
+  describe "POST /projects" do
+    before { sign_in users(:one) }
+
+    it "creates project and redirects" do
+      expect {
+        post projects_path, params: { project: { name: "New App", description: "Desc" } }
+      }.to change(Project, :count).by(1)
+      expect(response).to redirect_to(project_path(Project.last))
+      follow_redirect!
+      expect(response.body).to include("Project created")
+    end
+
+    it "renders new with errors when invalid" do
+      post projects_path, params: { project: { name: "" } }
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
+  describe "DELETE /projects/:uuid" do
+    context "when owner" do
+      before { sign_in users(:one) }
+
+      it "deletes project and redirects" do
+        project = projects(:one)
+        expect {
+          delete project_path(project)
+        }.to change(Project, :count).by(-1)
+        expect(response).to redirect_to(projects_path)
+      end
+    end
+
+    context "when shared member" do
+      before { sign_in users(:two) }
+
+      it "returns 404 and does not delete" do
+        expect {
+          delete project_path(projects(:one))
+        }.not_to change(Project, :count)
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+end
