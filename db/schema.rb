@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_26_120002) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -31,19 +31,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_120002) do
     t.index ["uuid"], name: "index_api_keys_on_uuid", unique: true
   end
 
+  create_table "check_in_monitors", force: :cascade do |t|
+    t.integer "consecutive_missed_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.string "environment", default: "production", null: false
+    t.integer "expected_interval_seconds", default: 300, null: false
+    t.datetime "last_check_in_at"
+    t.datetime "last_error_at"
+    t.bigint "last_event_id"
+    t.string "last_status", default: "ok", null: false
+    t.bigint "project_id", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index ["last_event_id"], name: "index_check_in_monitors_on_last_event_id"
+    t.index ["project_id", "slug", "environment"], name: "idx_check_in_monitors_uniqueness", unique: true
+    t.index ["project_id"], name: "index_check_in_monitors_on_project_id"
+  end
+
   create_table "error_groups", force: :cascade do |t|
     t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.string "fingerprint", null: false
     t.datetime "first_seen_at"
     t.datetime "ignored_at"
+    t.string "introduced_in_release"
     t.datetime "last_reopened_at"
     t.datetime "last_seen_at"
+    t.string "last_seen_release"
     t.bigint "latest_event_id"
     t.integer "occurrence_count", default: 0, null: false
     t.bigint "project_id", null: false
+    t.string "regressed_in_release"
+    t.integer "regression_count", default: 0, null: false
     t.integer "reopen_count", default: 0, null: false
     t.datetime "resolved_at"
+    t.string "resolved_in_release"
     t.string "severity", default: "error", null: false
     t.string "stage", default: "production", null: false
     t.integer "status", default: 0, null: false
@@ -53,7 +75,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_120002) do
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["latest_event_id"], name: "index_error_groups_on_latest_event_id"
     t.index ["project_id", "fingerprint"], name: "index_error_groups_on_project_id_and_fingerprint", unique: true
+    t.index ["project_id", "introduced_in_release"], name: "index_error_groups_on_project_id_and_introduced_in_release"
     t.index ["project_id", "last_seen_at"], name: "index_error_groups_on_project_id_and_last_seen_at"
+    t.index ["project_id", "regressed_in_release"], name: "index_error_groups_on_project_id_and_regressed_in_release"
     t.index ["project_id", "status"], name: "index_error_groups_on_project_id_and_status"
     t.index ["project_id"], name: "index_error_groups_on_project_id"
     t.index ["uuid"], name: "index_error_groups_on_uuid", unique: true
@@ -142,6 +166,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_26_120002) do
 
   add_foreign_key "api_keys", "projects"
   add_foreign_key "api_keys", "users"
+  add_foreign_key "check_in_monitors", "ingest_events", column: "last_event_id"
+  add_foreign_key "check_in_monitors", "projects"
   add_foreign_key "error_groups", "ingest_events", column: "latest_event_id"
   add_foreign_key "error_groups", "projects"
   add_foreign_key "error_occurrences", "error_groups"

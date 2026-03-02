@@ -32,6 +32,7 @@ class ProjectEventsController < ApplicationController
                          &.includes(:ingest_event)
                          &.recent_first
                          &.limit(50) || []
+    @related_logs = IngestEvent.related_logs(project: @project, event: @event, window: 5.minutes, limit: 50)
 
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
@@ -42,6 +43,7 @@ class ProjectEventsController < ApplicationController
         event:       @event,
         group:       @group,
         occurrences: @occurrences,
+        related_logs: @related_logs,
         filter:      @filter,
         query:       @query
       }

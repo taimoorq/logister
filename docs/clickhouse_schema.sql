@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS logister.events_raw
   occurred_at DateTime64(3, 'UTC'),
   received_at DateTime64(3, 'UTC') DEFAULT now64(3),
 
-  event_type Enum8('error' = 1, 'metric' = 2),
+  event_type Enum8('error' = 1, 'metric' = 2, 'transaction' = 3, 'log' = 4, 'check_in' = 5),
   level LowCardinality(String),
   environment LowCardinality(String),
   service LowCardinality(String),
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS logister.events_1m
 (
   bucket DateTime('UTC'),
   project_id UInt64,
-  event_type Enum8('error' = 1, 'metric' = 2),
+  event_type Enum8('error' = 1, 'metric' = 2, 'transaction' = 3, 'log' = 4, 'check_in' = 5),
   level LowCardinality(String),
   count AggregateFunction(sum, UInt64)
 )

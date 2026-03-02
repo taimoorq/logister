@@ -40,6 +40,18 @@
             <span class="kicker">Last seen</span>
             <span><%= local_time_tag(@group.last_seen_at, format: :date_only) %></span>
           </div>
+          <% if @group.introduced_in_release.present? %>
+            <div>
+              <span class="kicker">Introduced</span>
+              <span><code><%= @group.introduced_in_release %></code></span>
+            </div>
+          <% end %>
+          <% if @group.regressed_in_release.present? %>
+            <div>
+              <span class="kicker">Regressed</span>
+              <span><code><%= @group.regressed_in_release %></code></span>
+            </div>
+          <% end %>
         </div>
 
         <div class="event-group-actions">
@@ -129,6 +141,9 @@
             Occurrences (<%= @occurrences.size %>)
           </button>
         <% end %>
+        <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-related-logs" role="tab">
+          Related logs (<%= @related_logs.size %>)
+        </button>
       </nav>
 
       <%# Stacktrace panel %>
@@ -171,6 +186,33 @@
           </table>
         </section>
       <% end %>
+
+      <section id="tab-related-logs" class="detail-panel is-hidden" data-tabs-target="panel">
+        <% if @related_logs.any? %>
+          <table class="occurrences-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Level</th>
+                <th>Message</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @related_logs.each do |log_event| %>
+                <tr>
+                  <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
+                  <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
+                  <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
+                  <td><%= link_to "View", project_event_path(@project, log_event), class: "inline-link" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="muted">No logs found in the correlation window.</p>
+        <% end %>
+      </section>
     </div>
   </main>
 

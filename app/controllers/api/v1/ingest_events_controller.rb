@@ -10,6 +10,7 @@ class Api::V1::IngestEventsController < ApplicationController
 
     if event.save
       ErrorGroupingService.call(event)
+      CheckInMonitor.record!(project: @api_key.project, event: event) if event.check_in?
       ClickhouseIngestJob.perform_later(event.id, request_context)
 
       @api_key.touch_last_used!
@@ -36,10 +37,40 @@ class Api::V1::IngestEventsController < ApplicationController
   end
 
   def event_params
-    permitted = params.require(:event).permit(:event_type, :level, :message, :fingerprint, :occurred_at)
-    raw_context = params.dig(:event, :context)
+    raw_event = params.require(:event)
+    permitted = raw_event.permit(:event_type, :level, :message, :fingerprint, :occurred_at)
+    raw_context = raw_event[:context]
     permitted[:context] = raw_context.is_a?(ActionController::Parameters) ? raw_context.to_unsafe_h : raw_context
+    normalize_event_payload(permitted)
+  end
+
+  def normalize_event_payload(permitted)
+    context = permitted[:context].is_a?(Hash) ? permitted[:context].deep_dup : {}
+    raw_event = params.require(:event)
+
+    merge_context_value!(context, "environment", raw_event[:environment], fallback: Rails.env)
+    merge_context_value!(context, "release", raw_event[:release])
+    merge_context_value!(context, "trace_id", raw_event[:trace_id] || raw_event[:traceId])
+    merge_context_value!(context, "request_id", raw_event[:request_id] || raw_event[:requestId])
+    merge_context_value!(context, "session_id", raw_event[:session_id] || raw_event[:sessionId])
+    merge_context_value!(context, "user_id", raw_event[:user_id] || raw_event[:userId])
+    merge_context_value!(context, "transaction_name", raw_event[:transaction_name] || raw_event[:transactionName])
+    merge_context_value!(context, "duration_ms", raw_event[:duration_ms] || raw_event[:durationMs])
+    merge_context_value!(context, "expected_interval_seconds", raw_event[:expected_interval_seconds])
+    merge_context_value!(context, "check_in_slug", raw_event[:check_in_slug] || raw_event[:monitor_slug])
+    merge_context_value!(context, "check_in_status", raw_event[:check_in_status] || raw_event[:status])
+
+    context["environment"] ||= Rails.env
+    permitted[:context] = context
     permitted
+  end
+
+  def merge_context_value!(context, key, value, fallback: nil)
+    final_value = value.presence || fallback
+    return if final_value.blank?
+    return if context[key].present? || context[key.to_sym].present?
+
+    context[key] = final_value
   end
 
   def request_context

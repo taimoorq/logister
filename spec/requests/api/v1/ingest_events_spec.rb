@@ -70,6 +70,34 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(response).to have_http_status(:created)
     end
 
+    it "accepts transaction events and normalizes top-level fields into context" do
+      post api_v1_ingest_events_path,
+           params: {
+             event: {
+               event_type: "transaction",
+               level: "info",
+               message: "POST /checkout",
+               duration_ms: 185.2,
+               transaction_name: "POST /checkout",
+               trace_id: "trace-123",
+               request_id: "req-123",
+               release: "2026.03.02",
+               environment: "production"
+             }
+           },
+           as: :json,
+           headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      created = IngestEvent.order(:id).last
+      expect(created).to be_transaction
+      expect(created.context["duration_ms"]).to eq(185.2)
+      expect(created.context["transaction_name"]).to eq("POST /checkout")
+      expect(created.context["trace_id"]).to eq("trace-123")
+      expect(created.context["request_id"]).to eq("req-123")
+      expect(created.context["release"]).to eq("2026.03.02")
+    end
+
     it "returns 422 when event is invalid" do
       post api_v1_ingest_events_path,
            params: { event: { event_type: "error" } }, # missing message, occurred_at

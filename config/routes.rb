@@ -42,6 +42,7 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :ingest_events, only: :create
+      resources :check_ins, only: :create
     end
   end
 

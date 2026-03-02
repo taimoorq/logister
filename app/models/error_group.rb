@@ -46,7 +46,11 @@ class ErrorGroup < ApplicationRecord
 
   # ── Lifecycle transitions ─────────────────────────────────────────────────
   def mark_resolved!
-    update!(status: :resolved, resolved_at: Time.current)
+    update!(
+      status: :resolved,
+      resolved_at: Time.current,
+      resolved_in_release: IngestEvent.release(latest_event)
+    )
   end
 
   def ignore!
@@ -72,6 +76,7 @@ class ErrorGroup < ApplicationRecord
   # Reopens the group if it was previously resolved/ignored/archived.
   def record_occurrence!(event)
     was_closed = !unresolved?
+    event_release = IngestEvent.release(event)
 
     with_lock do
       reopen! if was_closed
@@ -83,7 +88,10 @@ class ErrorGroup < ApplicationRecord
         title:            derive_title(event),
         subtitle:         derive_subtitle(event),
         stage:            derive_stage(event),
-        severity:         event.level.presence || severity
+        severity:         event.level.presence || severity,
+        last_seen_release: event_release.presence || last_seen_release,
+        regressed_in_release: was_closed ? (event_release.presence || regressed_in_release) : regressed_in_release,
+        regression_count: was_closed ? regression_count + 1 : regression_count
       )
     end
   end
