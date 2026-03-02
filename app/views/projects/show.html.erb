@@ -102,7 +102,7 @@
                 <tr>
                   <td class="px-3 py-2 text-sm text-slate-900"><%= key.name %></td>
                   <td class="px-3 py-2 text-sm text-slate-600"><%= key.active? ? "active" : "revoked" %></td>
-                  <td class="px-3 py-2 text-sm text-slate-600"><%= key.last_used_at&.strftime("%Y-%m-%d %H:%M") || "never" %></td>
+                  <td class="px-3 py-2 text-sm text-slate-600"><%= key.last_used_at ? local_time_tag(key.last_used_at) : "never" %></td>
                   <td class="px-3 py-2"><%= button_to "Revoke", project_api_key_path(@project, key), method: :delete, class: "text-sm font-medium text-red-600 hover:text-red-700" if key.active? %></td>
                 </tr>
               <% end %>

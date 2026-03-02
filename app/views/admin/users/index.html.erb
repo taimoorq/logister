@@ -48,7 +48,7 @@
                 <span class="pill bg-amber-50 text-amber-800 border-amber-200">Pending</span>
               <% end %>
             </td>
-            <td class="text-slate-600"><%= user.created_at&.strftime("%b %-d, %Y") %></td>
+            <td class="text-slate-600"><%= local_time_tag(user.created_at, format: :date_only) %></td>
             <td class="text-slate-600"><%= user.read_attribute(:projects_count).to_i %></td>
             <td class="text-slate-600"><%= user.read_attribute(:api_keys_count).to_i %></td>
             <td><%= link_to "Manage", admin_user_path(user), class: "inline-link" %></td>

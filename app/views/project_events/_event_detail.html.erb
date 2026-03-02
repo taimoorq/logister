@@ -16,11 +16,11 @@
       <% end %>
       <p class="muted">
         <%= project.name %>
-        · <%= event.occurred_at&.strftime("%b %-d, %Y %H:%M:%S %Z") %>
+        · <%= local_time_tag(event.occurred_at, format: :long) %>
         <% if group %>
           · <strong><%= group.occurrence_count %></strong> total occurrences
-          · first seen <%= group.first_seen_at&.strftime("%b %-d") %>
-          · last seen <%= group.last_seen_at&.strftime("%b %-d") %>
+          · first seen <%= local_time_tag(group.first_seen_at, format: :date_only) %>
+          · last seen <%= local_time_tag(group.last_seen_at, format: :date_only) %>
         <% end %>
       </p>
     </div>
@@ -105,7 +105,7 @@
             <% occurrences.each do |occ| %>
               <% ev = occ.ingest_event %>
               <tr>
-                <td><%= ev.occurred_at&.strftime("%b %-d, %H:%M:%S") %></td>
+                <td><%= local_time_tag(ev.occurred_at, format: :long) %></td>
                 <td><%= truncate(ev.message.to_s.lines.first, length: 80) %></td>
                 <td><%= render "shared/widgets/severity_badge", level: ev.level.presence || "error" %></td>
                 <td>
