@@ -242,3 +242,13 @@
     }
   }
 }
+
+/* View Transitions (Turbo 8): snappier duration for cards and list rows */
+@supports (view-transition-name: none) {
+  ::view-transition-group(.project-card),
+  ::view-transition-group(.inbox-row),
+  ::view-transition-group(.error-detail-pane),
+  ::view-transition-group(.dashboard-error-card) {
+    animation-duration: 0.25s;
+  }
+}

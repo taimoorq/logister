@@ -1,4 +1,4 @@
-<turbo-frame id="error_detail">
+<turbo-frame id="error_detail" style="view-transition-name: error-detail-pane; view-transition-class: error-detail-pane;">
   <% exception_data = event.context.is_a?(Hash) ? (event.context["exception"] || event.context[:exception]) : nil %>
   <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
   <% filter_param = local_assigns[:filter] || "unresolved" %>
