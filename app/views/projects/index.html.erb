@@ -1,62 +1,65 @@
-<div class="section-head projects-head">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <div>
-    <h1>Projects</h1>
-    <p class="muted">Browse project health, open errors, and activity at a glance.</p>
+    <h1 class="text-2xl font-bold text-slate-900">Projects</h1>
+    <p class="text-slate-600 text-sm mt-1">Browse project health, open errors, and activity at a glance.</p>
   </div>
-  <%= link_to "New project", new_project_path, class: "action-link" %>
+  <%= link_to "New project", new_project_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline shrink-0" %>
 </div>
 
-<section class="projects-toolbar card">
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 mb-6">
   <input type="search" placeholder="Search projects" aria-label="Search projects"
+         class="form-input max-w-md"
          data-controller="project-search" data-action="input->project-search#filter">
 </section>
 
-<section class="project-grid">
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
   <% if @projects.any? %>
     <% @projects.each do |project| %>
       <% stats = @project_stats[project.id] || { total_events: 0, open_groups: 0, trend: Array.new(7, 0) } %>
-      <article class="project-card" data-project-name="<%= project.name.downcase %>">
-        <div class="project-card-top">
-          <div>
-            <h2><%= project.name %></h2>
-            <p class="muted"><%= project.slug %></p>
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden" data-project-name="<%= project.name.downcase %>">
+        <div class="flex justify-between items-start gap-3 mb-4">
+          <div class="min-w-0">
+            <h2 class="text-lg font-bold text-slate-900 truncate"><%= project.name %></h2>
+            <p class="text-slate-500 text-sm truncate"><%= project.slug %></p>
           </div>
-          <span class="pill"><%= project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+            <%= project.owned_by?(current_user) ? "Owner" : "Shared" %>
+          </span>
         </div>
 
-        <div class="project-metrics">
+        <div class="grid grid-cols-3 gap-4 py-4 border-y border-slate-200 mb-4">
           <div>
-            <p class="kicker">Open errors</p>
-            <p class="metric-value"><%= stats[:open_groups] %></p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Open errors</p>
+            <p class="text-xl font-bold text-slate-900"><%= stats[:open_groups] %></p>
           </div>
           <div>
-            <p class="kicker">Total events</p>
-            <p class="metric-value"><%= stats[:total_events] %></p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Total events</p>
+            <p class="text-xl font-bold text-slate-900"><%= stats[:total_events] %></p>
           </div>
           <div>
-            <p class="kicker">Errors (7d)</p>
-            <p class="metric-value"><%= stats[:trend].sum %></p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Errors (7d)</p>
+            <p class="text-xl font-bold text-slate-900"><%= stats[:trend].sum %></p>
           </div>
         </div>
 
         <%= render "shared/widgets/sparkline", points: stats[:trend] %>
 
-        <div class="project-card-foot">
-          <p class="muted">
+        <div class="flex items-center justify-between gap-3 pt-4 border-t border-slate-200">
+          <p class="text-sm text-slate-600">
             <% if stats[:open_groups] > 0 %>
-              <strong class="text-danger"><%= stats[:open_groups] %> open</strong> error <%= "group".pluralize(stats[:open_groups]) %>
+              <strong class="text-red-600"><%= stats[:open_groups] %> open</strong> error <%= "group".pluralize(stats[:open_groups]) %>
             <% else %>
               No open errors
             <% end %>
           </p>
-          <%= link_to "Open inbox →", project_path(project), class: "inline-link" %>
+          <%= link_to "Open inbox →", project_path(project), class: "text-sm font-medium text-blue-600 hover:text-blue-700 no-underline shrink-0" %>
         </div>
       </article>
     <% end %>
   <% else %>
-    <section class="card">
-      <p class="muted">No projects yet. Create your first project to start ingesting events.</p>
-      <%= link_to "Create project", new_project_path, class: "action-link" %>
-    </section>
+    <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:col-span-2 lg:col-span-3">
+      <p class="text-slate-600 mb-4">No projects yet. Create your first project to start ingesting events.</p>
+      <%= link_to "Create project", new_project_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" %>
+    </div>
   <% end %>
 </section>

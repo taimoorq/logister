@@ -1,42 +1,48 @@
-<section class="card">
-  <h1>Security settings</h1>
-  <p class="muted">Change your login email and password.</p>
+<section class="max-w-xl mx-auto">
+  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
+    <h1 class="text-2xl font-bold text-slate-900 mb-2">Security settings</h1>
+    <p class="text-slate-600 text-sm mb-6">Change your login email and password.</p>
 
-  <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, data: { turbo: false } }) do |f| %>
-    <p>
-      <%= f.label :name %><br>
-      <%= f.text_field :name, maxlength: 100 %>
-    </p>
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, data: { turbo: false } }) do |f| %>
+      <div class="space-y-4">
+        <div>
+          <%= f.label :name, class: "form-label" %>
+          <%= f.text_field :name, maxlength: 100, class: "form-input" %>
+        </div>
 
-    <p>
-      <%= f.label :email %><br>
-      <%= f.email_field :email, autocomplete: "email", required: true %>
-    </p>
+        <div>
+          <%= f.label :email, class: "form-label" %>
+          <%= f.email_field :email, autocomplete: "email", required: true, class: "form-input" %>
+        </div>
 
-    <p>
-      <%= f.label :password, "New password" %>
-      <span class="muted">(leave blank to keep current)</span><br>
-      <%= f.password_field :password, autocomplete: "new-password" %>
-    </p>
+        <div>
+          <%= f.label :password, "New password", class: "form-label" %>
+          <span class="text-slate-500 text-sm">(leave blank to keep current)</span>
+          <%= f.password_field :password, autocomplete: "new-password", class: "form-input mt-1" %>
+        </div>
 
-    <p>
-      <%= f.label :password_confirmation, "Confirm new password" %><br>
-      <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
-    </p>
+        <div>
+          <%= f.label :password_confirmation, "Confirm new password", class: "form-label" %>
+          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-input" %>
+        </div>
 
-    <p>
-      <%= f.label :current_password, "Current password" %>
-      <span class="muted">(required to save)</span><br>
-      <%= f.password_field :current_password, autocomplete: "current-password", required: true %>
-    </p>
+        <div>
+          <%= f.label :current_password, "Current password", class: "form-label" %>
+          <span class="text-slate-500 text-sm">(required to save)</span>
+          <%= f.password_field :current_password, autocomplete: "current-password", required: true, class: "form-input mt-1" %>
+        </div>
 
-    <% if resource.errors.any? %>
-      <p class="flash alert"><%= resource.errors.full_messages.to_sentence %></p>
+        <% if resource.errors.any? %>
+          <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+            <%= resource.errors.full_messages.to_sentence %>
+          </div>
+        <% end %>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+          <%= f.submit "Update account", class: "btn-primary" %>
+          <%= link_to "Back to profile", profile_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline" %>
+        </div>
+      </div>
     <% end %>
-
-    <p>
-      <%= f.submit "Update account" %>
-      <%= link_to "Back to profile", profile_path, class: "action-link" %>
-    </p>
-  <% end %>
+  </div>
 </section>

@@ -1,20 +1,25 @@
-<section class="card">
-  <h1>Resend confirmation instructions</h1>
+<section class="max-w-md mx-auto">
+  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
+    <h1 class="text-2xl font-bold text-slate-900 mb-2">Resend confirmation instructions</h1>
+    <p class="text-slate-600 text-sm mb-6">Enter your email to receive confirmation instructions again.</p>
 
-  <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-    <p>
-      <%= f.label :email %><br>
-      <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true %>
-    </p>
+    <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
+      <div class="space-y-4">
+        <div>
+          <%= f.label :email, class: "form-label" %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "form-input" %>
+        </div>
 
-    <p>
-      <%= render "devise/shared/turnstile" %>
-    </p>
+        <div>
+          <%= render "devise/shared/turnstile" %>
+        </div>
 
-    <p>
-      <%= f.submit "Resend confirmation" %>
-    </p>
-  <% end %>
+        <div class="pt-2">
+          <%= f.submit "Resend confirmation", class: "btn-primary w-full sm:w-auto" %>
+        </div>
+      </div>
+    <% end %>
 
-  <%= render "devise/shared/links" %>
+    <%= render "devise/shared/links" %>
+  </div>
 </section>

@@ -1,15 +1,15 @@
 <%# ── Project inbox workbench ──────────────────────────────────────────── %>
-<div class="project-workbench" data-controller="inbox"
+<div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start" data-controller="inbox"
      data-inbox-project-uuid-value="<%= @project.uuid %>">
 
   <%# ── Left sidebar ──────────────────────────────────────────────────── %>
-  <aside class="inbox-sidebar">
-    <div class="sidebar-project-header card">
-      <h1 class="sidebar-project-name"><%= @project.name %></h1>
-      <p class="muted"><code><%= @project.slug %></code></p>
+  <aside class="flex flex-col gap-4 lg:sticky lg:top-24">
+    <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-4">
+      <h1 class="text-lg font-bold text-slate-900 mb-0.5"><%= @project.name %></h1>
+      <p class="text-slate-500 text-sm"><code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code></p>
     </div>
 
-    <div class="card sidebar-search-card">
+    <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-3">
       <%= form_with url: project_path(@project), method: :get,
                     data: { turbo_frame: "project_inbox",
                             turbo_action: "advance",
@@ -18,7 +18,7 @@
         <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
         <%= f.search_field :q, value: @query,
                            placeholder: "Search errors…",
-                           class: "inbox-search-input",
+                           class: "form-input",
                            data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
       <% end %>
     </div>
@@ -29,15 +29,15 @@
                filter:  @filter,
                query:   @query %>
 
-    <div class="card sidebar-links">
-      <p class="kicker">Project</p>
+    <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-4">
+      <p class="kicker mb-2">Project</p>
       <%= link_to "API keys &amp; settings", "#project-configuration", class: "sidebar-action-link" %>
       <%= link_to "All projects", projects_path, class: "sidebar-action-link" %>
     </div>
   </aside>
 
   <%# ── Main workbench area ───────────────────────────────────────────── %>
-  <div class="workbench-columns">
+  <div class="min-w-0 flex flex-col gap-4">
 
     <%# Inbox list — Turbo Frame %>
     <%= render "inbox_table",
@@ -64,96 +64,109 @@
 </div>
 
 <%# ── Project configuration (below the fold) ─────────────────────────── %>
-<section class="section-head" id="project-configuration" style="margin-top:2rem">
-  <h2>Project configuration</h2>
-  <span class="muted"><code><%= @project.slug %></code></span>
+<section class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-8 mb-4" id="project-configuration">
+  <h2 class="text-lg font-bold text-slate-900">Project configuration</h2>
+  <span class="text-slate-500 text-sm"><code class="px-1.5 py-0.5 rounded bg-slate-100"><%= @project.slug %></code></span>
 </section>
 
-<section class="project-config-grid">
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
   <% if @project.owned_by?(current_user) %>
-    <article class="card" id="api-key-form">
-      <h3>Create API key</h3>
+    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5" id="api-key-form">
+      <h3 class="text-base font-bold text-slate-900 mb-3">Create API key</h3>
       <%= form_with model: [@project, ApiKey.new] do |f| %>
-        <p>
-          <%= f.label :name, "Key label" %>
-          <%= f.text_field :name, required: true, placeholder: "production" %>
-        </p>
-        <%= f.submit "Generate key" %>
+        <div class="space-y-3 mb-4">
+          <%= f.label :name, "Key label", class: "form-label" %>
+          <%= f.text_field :name, required: true, placeholder: "production", class: "form-input" %>
+        </div>
+        <%= f.submit "Generate key", class: "btn-primary" %>
       <% end %>
 
       <% if flash[:new_api_key_token].present? %>
-        <p class="flash notice">New API token: <code><%= flash[:new_api_key_token] %></code></p>
+        <div class="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 mb-4">New API token: <code class="font-mono text-xs break-all"><%= flash[:new_api_key_token] %></code></div>
       <% end %>
 
-      <h3>Existing keys</h3>
+      <h3 class="text-base font-bold text-slate-900 mt-6 mb-3">Existing keys</h3>
       <% if @api_keys.any? %>
-        <table>
-          <thead>
-            <tr><th>Name</th><th>Status</th><th>Last used</th><th></th></tr>
-          </thead>
-          <tbody>
-            <% @api_keys.each do |key| %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50">
               <tr>
-                <td><%= key.name %></td>
-                <td><%= key.active? ? "active" : "revoked" %></td>
-                <td><%= key.last_used_at&.strftime("%Y-%m-%d %H:%M") || "never" %></td>
-                <td><%= button_to "Revoke", project_api_key_path(@project, key), method: :delete if key.active? %></td>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Name</th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Last used</th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 bg-white">
+              <% @api_keys.each do |key| %>
+                <tr>
+                  <td class="px-3 py-2 text-sm text-slate-900"><%= key.name %></td>
+                  <td class="px-3 py-2 text-sm text-slate-600"><%= key.active? ? "active" : "revoked" %></td>
+                  <td class="px-3 py-2 text-sm text-slate-600"><%= key.last_used_at&.strftime("%Y-%m-%d %H:%M") || "never" %></td>
+                  <td class="px-3 py-2"><%= button_to "Revoke", project_api_key_path(@project, key), method: :delete, class: "text-sm font-medium text-red-600 hover:text-red-700" if key.active? %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p class="text-slate-600 text-sm">No API keys yet.</p>
+      <% end %>
+    </article>
+
+    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+      <h3 class="text-base font-bold text-slate-900 mb-3">Project access</h3>
+      <%= form_with model: [@project, ProjectMembership.new] do |f| %>
+        <div class="space-y-3 mb-4">
+          <%= f.label :email, "Invite by email", class: "form-label" %>
+          <%= f.email_field :email, required: true, placeholder: "teammate@example.com", class: "form-input" %>
+        </div>
+        <%= f.submit "Share project", class: "btn-primary" %>
+      <% end %>
+
+      <h3 class="text-base font-bold text-slate-900 mt-6 mb-3">Members</h3>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50">
+            <tr>
+              <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Email</th>
+              <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Role</th>
+              <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 bg-white">
+            <tr>
+              <td class="px-3 py-2 text-sm text-slate-900"><%= @owner.email %></td>
+              <td class="px-3 py-2 text-sm text-slate-600">owner</td>
+              <td class="px-3 py-2"></td>
+            </tr>
+            <% @project_memberships.each do |m| %>
+              <tr>
+                <td class="px-3 py-2 text-sm text-slate-900"><%= m.user.email %></td>
+                <td class="px-3 py-2 text-sm text-slate-600"><%= m.role %></td>
+                <td class="px-3 py-2"><%= button_to "Remove", project_project_membership_path(@project, m), method: :delete, class: "text-sm font-medium text-red-600 hover:text-red-700" %></td>
               </tr>
             <% end %>
           </tbody>
         </table>
-      <% else %>
-        <p class="muted">No API keys yet.</p>
-      <% end %>
+      </div>
     </article>
 
-    <article class="card">
-      <h3>Project access</h3>
-      <%= form_with model: [@project, ProjectMembership.new] do |f| %>
-        <p>
-          <%= f.label :email, "Invite by email" %>
-          <%= f.email_field :email, required: true, placeholder: "teammate@example.com" %>
-        </p>
-        <%= f.submit "Share project" %>
-      <% end %>
-
-      <h3>Members</h3>
-      <table>
-        <thead>
-          <tr><th>Email</th><th>Role</th><th></th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><%= @owner.email %></td>
-            <td>owner</td>
-            <td></td>
-          </tr>
-          <% @project_memberships.each do |m| %>
-            <tr>
-              <td><%= m.user.email %></td>
-              <td><%= m.role %></td>
-              <td><%= button_to "Remove", project_project_membership_path(@project, m), method: :delete %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </article>
-
-    <article class="card">
-      <h3>Danger zone</h3>
-      <p class="muted">Deleting a project permanently removes its API keys, memberships, and event data.</p>
+    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2">
+      <h3 class="text-base font-bold text-slate-900 mb-2">Danger zone</h3>
+      <p class="text-slate-600 text-sm mb-3">Deleting a project permanently removes its API keys, memberships, and event data.</p>
       <%= button_to "Delete project",
                     project_path(@project),
                     method: :delete,
-                    class: "btn btn-ghost",
+                    class: "btn-ghost text-red-600 border-red-300 hover:bg-red-50",
                     form: { data: { turbo_confirm: "Delete this project permanently?" } } %>
     </article>
   <% end %>
 
-  <article class="card">
-    <h3>Ingest endpoint</h3>
-    <p>POST to <code>/api/v1/ingest_events</code> with header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
-    <pre><code>{
+  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 <%= 'lg:col-span-2' unless @project.owned_by?(current_user) %>">
+    <h3 class="text-base font-bold text-slate-900 mb-2">Ingest endpoint</h3>
+    <p class="text-slate-600 text-sm mb-3">POST to <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/ingest_events</code> with header <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Authorization: Bearer &lt;token&gt;</code>.</p>
+    <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>{
   "event": {
     "event_type": "error",
     "level": "error",
@@ -167,19 +180,19 @@
 </section>
 
 <% if @db_stats[:count] > 0 %>
-  <section class="card">
-    <div class="section-head">
-      <h2>Database load (24h)</h2>
-      <p class="muted"><%= @db_stats[:count] %> queries captured</p>
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 mt-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+      <h2 class="text-lg font-bold text-slate-900">Database load (24h)</h2>
+      <p class="text-slate-500 text-sm"><%= @db_stats[:count] %> queries captured</p>
     </div>
-    <div class="stat-strip">
-      <article class="card stat-card">
-        <p class="kicker">Avg query time</p>
-        <p class="stat"><%= @db_stats[:avg_ms] %> ms</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="kicker mb-1">Avg query time</p>
+        <p class="text-xl font-bold text-slate-900"><%= @db_stats[:avg_ms] %> ms</p>
       </article>
-      <article class="card stat-card">
-        <p class="kicker">P95 query time</p>
-        <p class="stat"><%= @db_stats[:p95_ms] %> ms</p>
+      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+        <p class="kicker mb-1">P95 query time</p>
+        <p class="text-xl font-bold text-slate-900"><%= @db_stats[:p95_ms] %> ms</p>
       </article>
     </div>
   </section>

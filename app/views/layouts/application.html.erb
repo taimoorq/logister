@@ -38,58 +38,158 @@
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+          }
+        }
+      }
+    </script>
+    <style type="text/tailwindcss">
+      @layer components {
+        .card { @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5; }
+        .btn-ghost { @apply inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline; }
+        .btn-primary { @apply inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 border border-transparent cursor-pointer; }
+        .action-link { @apply inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline; }
+        .inline-link { @apply text-sm font-medium text-blue-600 hover:text-blue-700 no-underline; }
+        .muted { @apply text-slate-600; }
+        .kicker { @apply text-xs font-semibold uppercase tracking-wider text-slate-500; }
+        .form-label { @apply block text-sm font-medium text-slate-700 mb-1; }
+        .form-input { @apply block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500; }
+        .sidebar-action-link { @apply block py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 no-underline; }
+        .inbox-filters { @apply flex flex-col gap-0.5; }
+        .inbox-filter-link { @apply flex justify-between items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline text-slate-600 hover:bg-slate-100; }
+        .inbox-filter-link.is-active { @apply bg-blue-50 text-blue-700 font-medium; }
+        .filter-count { @apply text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 min-w-[1.5rem] text-center; }
+        .inbox-filter-link.is-active .filter-count { @apply bg-blue-100 border-blue-200 text-blue-700; }
+        .inbox-table-wrap { @apply rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden; }
+        .inbox-table { @apply min-w-full divide-y divide-slate-200; }
+        .inbox-table thead { @apply bg-slate-50; }
+        .inbox-table th { @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider; }
+        .inbox-table .inbox-row { @apply border-b border-slate-200 transition-colors; }
+        .inbox-table .inbox-row:hover { @apply bg-slate-50; }
+        .inbox-table .inbox-row.is-selected { @apply bg-blue-50 border-l-4 border-l-blue-600; }
+        .inbox-table td { @apply px-4 py-3 text-sm; }
+        .col-error { @apply max-w-0 w-2/5; }
+        .error-row-link { @apply block no-underline text-slate-900; }
+        .error-row-link:hover { @apply text-blue-600; }
+        .error-title { @apply font-semibold block; }
+        .error-subtitle { @apply block text-slate-500 text-sm mt-0.5; }
+        .error-meta { @apply block text-slate-400 text-xs mt-1; }
+        .stage-tag { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200; }
+        .inbox-empty { @apply p-6 text-center text-slate-600; }
+        .empty-detail { @apply flex items-center justify-center min-h-[200px] rounded-xl bg-white border border-slate-200 shadow-sm p-6; }
+        .pill { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200; }
+        .detail-actionbar { @apply flex flex-wrap justify-between items-start gap-4 rounded-xl bg-white border border-slate-200 shadow-sm p-5; }
+        .detail-actionbar-left { @apply min-w-0 flex-1; }
+        .detail-actionbar-actions { @apply flex flex-wrap gap-2 shrink-0; }
+        .detail-title { @apply text-base font-bold text-slate-900 mt-1 mb-0.5 break-words; }
+        .detail-subtitle { @apply text-slate-600 text-sm; }
+        .detail-status-badge { @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider; }
+        .detail-status-badge.status-unresolved { @apply bg-amber-50 text-amber-800 border border-amber-200; }
+        .detail-status-badge.status-resolved { @apply bg-emerald-50 text-emerald-800 border border-emerald-200; }
+        .detail-status-badge.status-ignored { @apply bg-slate-100 text-slate-700 border border-slate-200; }
+        .detail-status-badge.status-archived { @apply bg-violet-50 text-violet-800 border border-violet-200; }
+        .detail-tabs-wrap { @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5; }
+        .detail-tabs { @apply flex gap-1 border-b border-slate-200 pb-3 mb-4 flex-wrap; }
+        .detail-tab { @apply px-3 py-2 rounded-lg text-sm font-medium text-slate-600 bg-transparent border border-transparent cursor-pointer; }
+        .detail-tab:hover { @apply bg-slate-100 text-slate-900; }
+        .detail-tab.is-active { @apply bg-blue-50 text-blue-800 border-blue-200 font-semibold; }
+        .detail-panel { @apply block; }
+        .detail-panel.is-hidden { @apply hidden; }
+        .detail-meta-strip { @apply flex flex-wrap gap-4 py-3 border-b border-slate-200 mb-4; }
+        .detail-meta-strip > div { @apply flex flex-col gap-0.5; }
+        .stacktrace { @apply rounded-lg bg-slate-900 text-slate-100 p-4 text-sm font-mono overflow-auto max-h-[420px] border-0; }
+        .stacktrace code { @apply bg-transparent p-0 text-inherit whitespace-pre; }
+        .event-meta-list { @apply grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm; }
+        .event-meta-list dt { @apply text-slate-500 font-semibold text-xs uppercase tracking-wider; }
+        .event-meta-list dd { @apply text-slate-900 break-all m-0; }
+        .event-group-card { @apply flex flex-col gap-3 rounded-xl bg-white border border-slate-200 shadow-sm p-5; }
+        .event-group-title { @apply font-bold text-slate-900 text-sm m-0 break-words; }
+        .event-group-stats { @apply grid grid-cols-2 gap-2 text-sm; }
+        .event-group-actions { @apply flex flex-col gap-2 pt-3 border-t border-slate-200; }
+        .event-meta-card { @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5 text-sm; }
+        .event-breadcrumb { @apply flex flex-col gap-1 py-2; }
+        .breadcrumb-link { @apply text-sm text-blue-600 hover:underline no-underline; }
+        .context-details { @apply space-y-4; }
+        .context-detail-list { @apply grid grid-cols-[minmax(8rem,auto)_1fr] gap-x-3 gap-y-2 text-sm; }
+        .context-detail-list dt { @apply text-slate-500 font-semibold text-xs uppercase; }
+        .context-detail-list dd { @apply text-slate-900 break-all m-0; }
+        .context-json { @apply rounded-lg bg-slate-50 border border-slate-200 p-4 text-sm font-mono overflow-auto max-h-[360px] text-slate-800; }
+        .occurrences-table { @apply min-w-full divide-y divide-slate-200; }
+        .occurrences-table thead { @apply bg-slate-50; }
+        .occurrences-table th { @apply px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider; }
+        .occurrences-table td { @apply px-3 py-2 text-sm; }
+        .btn-resolve { @apply inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 border border-emerald-700 cursor-pointer; }
+        .btn-reopen { @apply inline-flex items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 border border-amber-700 cursor-pointer; }
+        .btn-sm { @apply px-3 py-1.5 text-xs; }
+      }
+    </style>
     <%= javascript_importmap_tags %>
+    <%= vite_client_tag %>
+    <%= vite_javascript_tag 'application' %>
+    <!--
+      If using a TypeScript entrypoint file:
+        vite_typescript_tag 'application'
+
+      If using a .jsx or .tsx entrypoint, add the extension:
+        vite_javascript_tag 'application.jsx'
+
+      Visit the guide for more information: https://vite-ruby.netlify.app/guide/rails
+    -->
+
   </head>
 
-  <body>
-    <header class="global-nav">
-      <div class="global-nav-inner">
-        <%= link_to root_path, class: "brand" do %>
-          <%= image_tag "logister-logo.svg", alt: "logister.org", class: "brand-logo" %>
-          <span class="brand-text">Logister</span>
-        <% end %>
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <%= link_to root_path, class: "flex items-center gap-2 text-slate-800 hover:text-slate-600 no-underline font-semibold" do %>
+            <%= image_tag "logister-logo.svg", alt: "Logister", class: "h-6 w-auto" %>
+            <span>Logister</span>
+          <% end %>
 
-        <nav class="global-links">
-          <% if user_signed_in? %>
-            <%= link_to "Overview", dashboard_path, class: "global-link #{"is-active" if current_page?(dashboard_path)}" %>
-            <%= link_to "Projects", projects_path, class: "global-link #{"is-active" if current_page?(projects_path)}" %>
-            <%= link_to "Account", profile_path, class: "global-link #{"is-active" if current_page?(profile_path)}" %>
-            <% if admin_user? %>
-              <%= link_to "Admin", admin_users_path, class: "global-link #{"is-active" if request.path.start_with?("/admin")}" %>
+          <div class="flex items-center gap-1 sm:gap-2">
+            <% if user_signed_in? %>
+              <%= link_to "Overview", dashboard_path, class: "px-3 py-2 rounded-lg text-sm font-medium #{current_page?(dashboard_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <%= link_to "Projects", projects_path, class: "px-3 py-2 rounded-lg text-sm font-medium #{current_page?(projects_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <%= link_to "Account", profile_path, class: "px-3 py-2 rounded-lg text-sm font-medium #{current_page?(profile_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <% if admin_user? %>
+                <%= link_to "Admin", admin_users_path, class: "px-3 py-2 rounded-lg text-sm font-medium #{request.path.start_with?('/admin') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <% end %>
+              <div class="flex items-center gap-3 ml-2 sm:ml-4 pl-2 sm:pl-4 border-l border-slate-200">
+                <span class="text-sm text-slate-500 hidden sm:inline"><%= current_user.email %></span>
+                <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "px-3 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50" %>
+              </div>
+            <% else %>
+              <%= link_to "Home", root_path, class: "px-3 py-2 rounded-lg text-sm font-medium #{current_page?(root_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <%= link_to "About", about_path, class: "px-3 py-2 rounded-lg text-sm font-medium #{current_page?(about_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <%= link_to "Privacy", privacy_path, class: "hidden sm:block px-3 py-2 rounded-lg text-sm font-medium #{current_page?(privacy_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <%= link_to "Terms", terms_path, class: "hidden sm:block px-3 py-2 rounded-lg text-sm font-medium #{current_page?(terms_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" %>
+              <%= link_to "Sign in", new_user_session_path, class: "px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100", data: { turbo: false } %>
+              <%= link_to "Sign up", new_user_registration_path, class: "px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700", data: { turbo: false } %>
             <% end %>
-          <% else %>
-            <%= link_to "Home", root_path, class: "global-link #{"is-active" if current_page?(root_path)}" %>
-            <%= link_to "About", about_path, class: "global-link #{"is-active" if current_page?(about_path)}" %>
-            <%= link_to "Privacy", privacy_path, class: "global-link #{"is-active" if current_page?(privacy_path)}" %>
-            <%= link_to "Terms", terms_path, class: "global-link #{"is-active" if current_page?(terms_path)}" %>
-            <%= link_to "Sign in", new_user_session_path, class: "global-link", data: { turbo: false } %>
-            <%= link_to "Sign up", new_user_registration_path, class: "global-link", data: { turbo: false } %>
-          <% end %>
-        </nav>
-
-        <div class="global-actions">
-          <% if user_signed_in? %>
-            <p class="global-user"><%= current_user.email %></p>
-            <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "ghost-button" %>
-          <% end %>
+          </div>
         </div>
       </div>
-    </header>
+    </nav>
 
-    <main class="workspace">
-      <div class="content-shell">
-        <% if notice %>
-          <p class="flash notice"><%= notice %></p>
-        <% end %>
-        <% if alert %>
-          <p class="flash alert"><%= alert %></p>
-        <% end %>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <% if notice %>
+        <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800"><%= notice %></div>
+      <% end %>
+      <% if alert %>
+        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800"><%= alert %></div>
+      <% end %>
 
-        <%= yield %>
-      </div>
+      <%= yield %>
     </main>
   </body>
 </html>

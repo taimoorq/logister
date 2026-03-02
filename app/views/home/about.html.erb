@@ -10,40 +10,38 @@
   "description" => "About Logister and its Rails-focused bug capture workflow."
 }) %>
 
-<section class="card">
-  <h1>About Logister</h1>
-  <p class="muted">
+<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
+  <h1 class="text-2xl font-bold text-slate-900 mb-4">About Logister</h1>
+  <p class="text-slate-600 mb-3">
     Logister is a bug capture and triage tool focused on Ruby on Rails apps.
     Our goal is to make production errors easier to understand and fix, with
-    minimal setup through the <code>logister-ruby</code> gem.
+    minimal setup through the <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">logister-ruby</code> gem.
   </p>
-  <p class="muted">
+  <p class="text-slate-600 mb-3">
     Today, Logister supports error and metric ingestion, grouped issue inboxes,
     request-level context, and team-friendly project access controls. The service
     is currently free while we continue building the platform.
   </p>
-
-  <p class="muted">
+  <p class="text-slate-600 mb-3">
     Logister is open source and self-hostable.
-    Source code: <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener">github.com/taimoorq/logister</a>.
-    Rails gem: <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener">github.com/taimoorq/logister-ruby</a>.
+    Source code: <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener" class="text-blue-600 hover:underline">github.com/taimoorq/logister</a>.
+    Rails gem: <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="text-blue-600 hover:underline">github.com/taimoorq/logister-ruby</a>.
   </p>
-
-  <p class="muted">
+  <p class="text-slate-600 mb-6">
     For setup, infrastructure, and production deployment steps, follow the README in the repository.
   </p>
 
-  <h2>Self-host stack</h2>
-  <p class="muted">
+  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Self-host stack</h2>
+  <p class="text-slate-600 mb-6">
     Logister runs on Ruby on Rails (Puma) with PostgreSQL and Redis/Sidekiq,
     plus optional ClickHouse for analytics and optional Turnstile + SendGrid integrations.
   </p>
 
-  <h2>Operator-provided configuration</h2>
-  <p class="muted">
-    Production operators should provide <code>RAILS_MASTER_KEY</code>,
-    <code>DATABASE_URL</code>, <code>REDIS_URL</code>, and
-    <code>LOGISTER_ADMIN_EMAILS</code> at minimum, with optional email/analytics/security
+  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Operator-provided configuration</h2>
+  <p class="text-slate-600">
+    Production operators should provide <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">RAILS_MASTER_KEY</code>,
+    <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">DATABASE_URL</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">REDIS_URL</code>, and
+    <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">LOGISTER_ADMIN_EMAILS</code> at minimum, with optional email/analytics/security
     variables depending on deployment needs.
   </p>
 </section>

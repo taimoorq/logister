@@ -23,5 +23,8 @@ module Logister
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Tailwind CSS build output (must be in application.rb so Propshaft sees it at boot)
+    config.assets.paths << Rails.root.join("app/assets/builds")
   end
 end

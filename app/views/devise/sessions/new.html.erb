@@ -1,32 +1,37 @@
-<section class="card">
-  <h1>Sign in</h1>
+<section class="max-w-md mx-auto">
+  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
+    <h1 class="text-2xl font-bold text-slate-900 mb-2">Sign in</h1>
+    <p class="text-slate-600 text-sm mb-6">Sign in to your Logister account.</p>
 
-  <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-    <p>
-      <%= f.label :email %><br>
-      <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true %>
-    </p>
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+      <div class="space-y-4">
+        <div>
+          <%= f.label :email, class: "form-label" %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "form-input" %>
+        </div>
 
-    <p>
-      <%= f.label :password %><br>
-      <%= f.password_field :password, autocomplete: "current-password", required: true %>
-    </p>
+        <div>
+          <%= f.label :password, class: "form-label" %>
+          <%= f.password_field :password, autocomplete: "current-password", required: true, class: "form-input" %>
+        </div>
 
-    <% if devise_mapping.rememberable? %>
-      <p>
-        <%= f.check_box :remember_me %>
-        <%= f.label :remember_me %>
-      </p>
+        <% if devise_mapping.rememberable? %>
+          <div class="flex items-center gap-2">
+            <%= f.check_box :remember_me, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+            <%= f.label :remember_me, class: "text-sm text-slate-700" %>
+          </div>
+        <% end %>
+
+        <div>
+          <%= render "devise/shared/turnstile" %>
+        </div>
+
+        <div class="pt-2">
+          <%= f.submit "Sign in", class: "btn-primary w-full sm:w-auto" %>
+        </div>
+      </div>
     <% end %>
 
-    <p>
-      <%= render "devise/shared/turnstile" %>
-    </p>
-
-    <p>
-      <%= f.submit "Sign in" %>
-    </p>
-  <% end %>
-
-  <%= render "devise/shared/links" %>
+    <%= render "devise/shared/links" %>
+  </div>
 </section>

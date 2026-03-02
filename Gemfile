@@ -4,6 +4,8 @@ source "https://rubygems.org"
 gem "rails", "~> 8.1.2"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
+# Tailwind CSS for Rails asset pipeline [https://github.com/rails/tailwindcss-rails]
+gem "tailwindcss-rails", "~> 3.3"
 # Use postgresql as the database for Active Record
 gem "pg", "~> 1.1"
 # Use the Puma web server [https://github.com/puma/puma]
@@ -57,6 +59,8 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  # Run multiple processes (e.g. rails server + tailwindcss:watch) via bin/dev
+  gem "foreman"
 end
 
 group :test do
@@ -68,3 +72,5 @@ end
 gem "dockerfile-rails", ">= 1.7", group: :development
 
 gem "redis", "~> 5.4"
+
+gem 'vite_rails'

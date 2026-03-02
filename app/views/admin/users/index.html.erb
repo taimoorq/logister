@@ -1,58 +1,60 @@
-<div class="section-head projects-head">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <div>
-    <h1>User Management</h1>
-    <p class="muted">Admin-only list of users signed up for Logister.</p>
+    <h1 class="text-2xl font-bold text-slate-900">User Management</h1>
+    <p class="text-slate-600 text-sm mt-1">Admin-only list of users signed up for Logister.</p>
   </div>
 </div>
 
-<div class="card">
+<div class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 mb-6">
   <%= form_with url: admin_users_path, method: :get, local: true do |f| %>
-    <div class="inbox-toolbar">
+    <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
       <%= f.text_field :q,
                        value: @query,
                        placeholder: "Search by email or name",
-                       class: "inbox-search-input" %>
-      <div>
-        <%= f.submit "Search" %>
+                       class: "form-input sm:max-w-md" %>
+      <div class="flex gap-2">
+        <%= f.submit "Search", class: "btn-primary" %>
         <% if @query.present? %>
-          <%= link_to "Clear", admin_users_path, class: "btn btn-ghost" %>
+          <%= link_to "Clear", admin_users_path, class: "btn-ghost" %>
         <% end %>
       </div>
     </div>
   <% end %>
 </div>
 
-<div class="inbox-table-wrap">
-  <table class="inbox-table">
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Name</th>
-        <th>Status</th>
-        <th>Created</th>
-        <th>Projects</th>
-        <th>API keys</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @users.each do |user| %>
-        <tr class="inbox-row">
-          <td><%= user.email %></td>
-          <td><%= user.name.presence || "—" %></td>
-          <td>
-            <% if user.confirmed? %>
-              <span class="pill">Confirmed</span>
-            <% else %>
-              <span class="pill">Pending</span>
-            <% end %>
-          </td>
-          <td><%= user.created_at&.strftime("%b %-d, %Y") %></td>
-          <td><%= user.read_attribute(:projects_count).to_i %></td>
-          <td><%= user.read_attribute(:api_keys_count).to_i %></td>
-          <td><%= link_to "Manage", admin_user_path(user), class: "inline-link" %></td>
+<div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="inbox-table min-w-full">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Projects</th>
+          <th>API keys</th>
+          <th></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @users.each do |user| %>
+          <tr class="inbox-row">
+            <td class="text-slate-900"><%= user.email %></td>
+            <td class="text-slate-600"><%= user.name.presence || "—" %></td>
+            <td>
+              <% if user.confirmed? %>
+                <span class="pill">Confirmed</span>
+              <% else %>
+                <span class="pill bg-amber-50 text-amber-800 border-amber-200">Pending</span>
+              <% end %>
+            </td>
+            <td class="text-slate-600"><%= user.created_at&.strftime("%b %-d, %Y") %></td>
+            <td class="text-slate-600"><%= user.read_attribute(:projects_count).to_i %></td>
+            <td class="text-slate-600"><%= user.read_attribute(:api_keys_count).to_i %></td>
+            <td><%= link_to "Manage", admin_user_path(user), class: "inline-link" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>

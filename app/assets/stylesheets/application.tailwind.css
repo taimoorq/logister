@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Legacy class support for views not yet converted to Tailwind utilities */
+  .card {
+    @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline;
+  }
+  .action-link {
+    @apply inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline;
+  }
+  .inline-link {
+    @apply text-sm font-medium text-blue-600 hover:text-blue-700 no-underline;
+  }
+  .muted {
+    @apply text-slate-600;
+  }
+  .kicker {
+    @apply text-xs font-semibold uppercase tracking-wider text-slate-500;
+  }
+}
