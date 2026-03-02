@@ -15,7 +15,7 @@ RSpec.describe IngestEvent, type: :model do
     it "belongs to error_group optional" do
       a = described_class.reflect_on_association(:error_group)
       expect(a.macro).to eq(:belongs_to)
-      expect(a.optional?).to be true
+      expect(a.options[:optional]).to be true
     end
 
     it "has one error_occurrence dependent destroy" do

@@ -8,7 +8,7 @@ RSpec.describe "Project events", type: :request do
 
     it "redirects to project when not a Turbo Frame request" do
       get project_events_path(projects(:one))
-      expect(response).to redirect_to(project_path(projects(:one), filter: "unresolved"))
+      expect(response).to redirect_to(project_path(projects(:one), filter: "unresolved", q: ""))
     end
   end
 

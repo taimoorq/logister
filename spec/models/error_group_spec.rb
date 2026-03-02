@@ -15,7 +15,7 @@ RSpec.describe ErrorGroup, type: :model do
       a = described_class.reflect_on_association(:latest_event)
       expect(a.macro).to eq(:belongs_to)
       expect(a.class_name).to eq("IngestEvent")
-      expect(a.optional?).to be true
+      expect(a.options[:optional]).to be true
     end
 
     it "has many error_occurrences dependent destroy" do
