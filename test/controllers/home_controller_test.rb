@@ -7,8 +7,8 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "Catch Rails bugs before your users do."
     assert_includes response.body, "logister-ruby"
-    assert_includes response.body, '<meta name="description"'
-    assert_includes response.body, '<link rel="canonical" href="http://www.example.com/"'
+    assert_includes response.body, "<meta name=\"description\""
+    assert_includes response.body, "<link rel=\"canonical\" href=\"http://www.example.com/\""
     assert_includes response.body, "application/ld+json"
     assert_includes response.body, "/llms.txt"
   end
