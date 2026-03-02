@@ -1,10 +1,10 @@
 <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
-  <h1 class="text-2xl font-bold text-slate-900 mb-2">Your profile</h1>
+  <h1 class="text-2xl font-bold text-slate-900 mb-2 inline-flex items-center gap-2"><%= app_icon(:account, css: "w-6 h-6") %><span>Your profile</span></h1>
   <p class="text-slate-600 text-sm">Manage your account details and login credentials.</p>
 </section>
 
 <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
-  <h2 class="text-lg font-bold text-slate-900 mb-4">Account details</h2>
+  <h2 class="text-lg font-bold text-slate-900 mb-4 inline-flex items-center gap-2"><%= app_icon(:settings) %><span>Account details</span></h2>
   <dl class="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm mb-6">
     <dt class="text-slate-500 font-medium">Name</dt>
     <dd class="text-slate-900"><%= current_user.name.presence || "Not set" %></dd>
@@ -15,7 +15,11 @@
   </dl>
 
   <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-200">
-    <%= link_to "Edit profile", edit_profile_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" %>
-    <%= link_to "Security settings", edit_user_registration_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline", data: { turbo: false } %>
+    <%= link_to edit_profile_path, class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" do %>
+      <%= app_icon(:pencil) %><span>Edit profile</span>
+    <% end %>
+    <%= link_to edit_user_registration_path, class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline", data: { turbo: false } do %>
+      <%= app_icon(:lock) %><span>Security settings</span>
+    <% end %>
   </div>
 </section>

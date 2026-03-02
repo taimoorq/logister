@@ -1,6 +1,6 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <div>
-    <h1 class="text-2xl font-bold text-slate-900">User Management</h1>
+    <h1 class="text-2xl font-bold text-slate-900 inline-flex items-center gap-2"><%= app_icon(:users, css: "w-6 h-6") %><span>User Management</span></h1>
     <p class="text-slate-600 text-sm mt-1">Admin-only list of users signed up for Logister.</p>
   </div>
 </div>
@@ -13,9 +13,13 @@
                        placeholder: "Search by email or name",
                        class: "form-input sm:max-w-md" %>
       <div class="flex gap-2">
-        <%= f.submit "Search", class: "btn-primary" %>
+        <%= f.button class: "btn-primary inline-flex items-center gap-2" do %>
+          <%= app_icon(:search) %><span>Search</span>
+        <% end %>
         <% if @query.present? %>
-          <%= link_to "Clear", admin_users_path, class: "btn-ghost" %>
+          <%= link_to admin_users_path, class: "btn-ghost inline-flex items-center gap-2" do %>
+            <%= app_icon(:x) %><span>Clear</span>
+          <% end %>
         <% end %>
       </div>
     </div>
@@ -51,7 +55,7 @@
             <td class="text-slate-600"><%= local_time_tag(user.created_at, format: :date_only) %></td>
             <td class="text-slate-600"><%= user.read_attribute(:projects_count).to_i %></td>
             <td class="text-slate-600"><%= user.read_attribute(:api_keys_count).to_i %></td>
-            <td><%= link_to "Manage", admin_user_path(user), class: "inline-link" %></td>
+            <td><%= link_to admin_user_path(user), class: "inline-link inline-flex items-center gap-1.5" do %><%= app_icon(:settings, css: "w-4 h-4") %><span>Manage</span><% end %></td>
           </tr>
         <% end %>
       </tbody>

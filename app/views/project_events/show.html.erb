@@ -9,7 +9,7 @@
     <%# Breadcrumb %>
     <nav class="event-breadcrumb">
       <%= link_to projects_path, class: "breadcrumb-link" do %>
-        &larr; All projects
+        <span class="inline-flex items-center gap-1.5"><%= app_icon(:arrow_left, css: "w-4 h-4") %><span>All projects</span></span>
       <% end %>
       <%= link_to @project.name, project_path(@project), class: "breadcrumb-link" %>
     </nav>
@@ -56,38 +56,45 @@
 
         <div class="event-group-actions">
           <% if @group.unresolved? %>
-            <%= button_to "Mark as fixed",
-                          resolve_project_error_group_path(@project, @group),
+            <%= button_to resolve_project_error_group_path(@project, @group),
                           method: :patch,
-                          class: "btn btn-resolve btn-sm",
-                          form: { data: { turbo: false } } %>
-            <%= button_to "Ignore",
-                          ignore_project_error_group_path(@project, @group),
+                          class: "btn btn-resolve btn-sm inline-flex items-center gap-1.5",
+                          form: { data: { turbo: false } } do %>
+              <%= app_icon(:check, css: "w-3.5 h-3.5") %><span>Mark as fixed</span>
+            <% end %>
+            <%= button_to ignore_project_error_group_path(@project, @group),
                           method: :patch,
-                          class: "btn btn-ghost btn-sm",
-                          form: { data: { turbo: false } } %>
-            <%= button_to "Archive",
-                          archive_project_error_group_path(@project, @group),
+                          class: "btn btn-ghost btn-sm inline-flex items-center gap-1.5",
+                          form: { data: { turbo: false } } do %>
+              <%= app_icon(:x, css: "w-3.5 h-3.5") %><span>Ignore</span>
+            <% end %>
+            <%= button_to archive_project_error_group_path(@project, @group),
                           method: :patch,
-                          class: "btn btn-ghost btn-sm",
-                          form: { data: { turbo: false } } %>
+                          class: "btn btn-ghost btn-sm inline-flex items-center gap-1.5",
+                          form: { data: { turbo: false } } do %>
+              <%= app_icon(:archive, css: "w-3.5 h-3.5") %><span>Archive</span>
+            <% end %>
           <% else %>
-            <%= button_to "Reopen",
-                          reopen_project_error_group_path(@project, @group),
+            <%= button_to reopen_project_error_group_path(@project, @group),
                           method: :patch,
-                          class: "btn btn-reopen btn-sm",
-                          form: { data: { turbo: false } } %>
+                          class: "btn btn-reopen btn-sm inline-flex items-center gap-1.5",
+                          form: { data: { turbo: false } } do %>
+              <%= app_icon(:upload, css: "w-3.5 h-3.5") %><span>Reopen</span>
+            <% end %>
           <% end %>
-          <%= link_to "View all in inbox",
-                      project_path(@project, group_uuid: @group.uuid, filter: @group.status == "unresolved" ? "unresolved" : @group.status),
-                      class: "btn btn-ghost btn-sm" %>
+          <%= link_to project_path(@project, group_uuid: @group.uuid, filter: @group.status == "unresolved" ? "unresolved" : @group.status),
+                      class: "btn btn-ghost btn-sm inline-flex items-center gap-1.5" do %>
+            <%= app_icon(:folder_open, css: "w-3.5 h-3.5") %><span>View all in inbox</span>
+          <% end %>
         </div>
       </div>
     <% else %>
       <div class="card">
         <p class="kicker">Error group</p>
         <p class="text-slate-600 text-sm">This event has not been grouped yet.</p>
-        <%= link_to "Back to inbox", project_path(@project), class: "btn-ghost btn-sm mt-2 inline-block" %>
+        <%= link_to project_path(@project), class: "btn-ghost btn-sm mt-2 inline-flex items-center gap-1.5" do %>
+          <%= app_icon(:arrow_left, css: "w-3.5 h-3.5") %><span>Back to inbox</span>
+        <% end %>
       </div>
     <% end %>
 

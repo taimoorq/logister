@@ -1,16 +1,21 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <div>
-    <h1 class="text-2xl font-bold text-slate-900">Projects</h1>
+    <h1 class="text-2xl font-bold text-slate-900 inline-flex items-center gap-2"><%= app_icon(:projects, css: "w-6 h-6") %><span>Projects</span></h1>
     <p class="text-slate-600 text-sm mt-1">Browse project health, open errors, and activity at a glance.</p>
   </div>
-  <%= link_to "New project", new_project_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline shrink-0" %>
+  <%= link_to new_project_path, class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline shrink-0" do %>
+    <%= app_icon(:plus) %><span>New project</span>
+  <% end %>
 </div>
 
 <div data-controller="project-search">
   <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 mb-6">
-    <input type="search" placeholder="Search projects" aria-label="Search projects"
-           class="form-input max-w-md"
-           data-action="input->project-search#filter">
+    <div class="relative max-w-md">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%= app_icon(:search) %></span>
+      <input type="search" placeholder="Search projects" aria-label="Search projects"
+             class="form-input max-w-md pl-10"
+             data-action="input->project-search#filter">
+    </div>
   </section>
 
   <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -53,14 +58,18 @@
               No open errors
             <% end %>
           </p>
-          <%= link_to "Open inbox →", project_path(project), class: "text-sm font-medium text-blue-600 hover:text-blue-700 no-underline shrink-0" %>
+          <%= link_to project_path(project), class: "text-sm font-medium text-blue-600 hover:text-blue-700 no-underline shrink-0 inline-flex items-center gap-1.5" do %>
+            <%= app_icon(:folder_open, css: "w-4 h-4") %><span>Open inbox</span>
+          <% end %>
         </div>
       </article>
     <% end %>
   <% else %>
     <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:col-span-2 lg:col-span-3">
       <p class="text-slate-600 mb-4">No projects yet. Create your first project to start ingesting events.</p>
-      <%= link_to "Create project", new_project_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" %>
+      <%= link_to new_project_path, class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" do %>
+        <%= app_icon(:plus) %><span>Create project</span>
+      <% end %>
     </div>
   <% end %>
   </section>

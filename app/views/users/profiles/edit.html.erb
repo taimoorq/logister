@@ -1,6 +1,6 @@
 <section class="max-w-xl mx-auto">
   <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-    <h1 class="text-2xl font-bold text-slate-900 mb-2">Edit profile</h1>
+    <h1 class="text-2xl font-bold text-slate-900 mb-2 inline-flex items-center gap-2"><%= app_icon(:pencil, css: "w-6 h-6") %><span>Edit profile</span></h1>
     <p class="text-slate-600 text-sm mb-6">Update your public account details.</p>
 
     <%= form_with model: @user, url: profile_path, method: :patch, data: { turbo: false } do |f| %>
@@ -17,8 +17,12 @@
         <% end %>
 
         <div class="flex flex-wrap gap-3 pt-2">
-          <%= f.submit "Save profile", class: "btn-primary" %>
-          <%= link_to "Cancel", profile_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline" %>
+          <%= f.button class: "btn-primary inline-flex items-center gap-2" do %>
+            <%= app_icon(:check) %><span>Save profile</span>
+          <% end %>
+          <%= link_to profile_path, class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline" do %>
+            <%= app_icon(:x) %><span>Cancel</span>
+          <% end %>
         </div>
       </div>
     <% end %>

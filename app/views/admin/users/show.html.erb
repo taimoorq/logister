@@ -1,9 +1,11 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <div>
-    <h1 class="text-2xl font-bold text-slate-900">User: <%= @user.email %></h1>
+    <h1 class="text-2xl font-bold text-slate-900 inline-flex items-center gap-2"><%= app_icon(:account, css: "w-6 h-6") %><span>User: <%= @user.email %></span></h1>
     <p class="text-slate-600 text-sm mt-1">Manage confirmation, deletion, and inspect ownership/activity.</p>
   </div>
-  <%= link_to "Back to users", admin_users_path, class: "btn-ghost shrink-0" %>
+  <%= link_to admin_users_path, class: "btn-ghost shrink-0 inline-flex items-center gap-2" do %>
+    <%= app_icon(:arrow_left) %><span>Back to users</span>
+  <% end %>
 </div>
 
 <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
@@ -32,21 +34,26 @@
       <%= button_to "Confirm user",
                     confirm_admin_user_path(@user),
                     method: :patch,
-                    class: "btn-resolve" %>
+                    class: "btn-resolve inline-flex items-center gap-2" do %>
+        <%= app_icon(:check) %><span>Confirm user</span>
+      <% end %>
       <%= button_to "Resend confirmation",
                     resend_confirmation_admin_user_path(@user),
                     method: :post,
-                    class: "btn-ghost" %>
+                    class: "btn-ghost inline-flex items-center gap-2" do %>
+        <%= app_icon(:upload) %><span>Resend confirmation</span>
+      <% end %>
     </div>
   <% end %>
 
   <% if @user != current_user %>
     <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-200">
-      <%= button_to "Delete user",
-                    admin_user_path(@user),
+      <%= button_to admin_user_path(@user),
                     method: :delete,
-                    class: "btn-ghost text-red-600 border-red-300 hover:bg-red-50",
-                    form: { data: { turbo_confirm: "Delete this user and all owned data permanently?" } } %>
+                    class: "btn-ghost text-red-600 border-red-300 hover:bg-red-50 inline-flex items-center gap-2",
+                    form: { data: { turbo_confirm: "Delete this user and all owned data permanently?" } } do %>
+        <%= app_icon(:warning) %><span>Delete user</span>
+      <% end %>
     </div>
   <% end %>
 </div>
