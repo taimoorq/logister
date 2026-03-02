@@ -30,7 +30,7 @@ ENV RAILS_ENV="production" \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems and frontend (Node for Vite)
+# Install packages needed to build gems (and Node for Tailwind CSS build if needed)
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libffi-dev libpq-dev libyaml-dev pkg-config nodejs npm && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
@@ -51,10 +51,7 @@ COPY . .
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
 
-# Install Node deps and Vite binstub so assets:precompile can run Vite
-RUN npm ci && bundle binstub vite_ruby
-
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
+# Precompiling assets for production (Tailwind CSS + importmap; no Vite)
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 
