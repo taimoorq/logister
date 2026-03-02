@@ -17,11 +17,11 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
             tags: { region: "us-east-1" },
             exception: {
               class: "NoMethodError",
-              backtrace: ["app/services/checkout_service.rb:12", "app/controllers/checkout_controller.rb:8"]
+              backtrace: [ "app/services/checkout_service.rb:12", "app/controllers/checkout_controller.rb:8" ]
             },
             metadata: {
               order_id: 123,
-              feature_flags: ["new-checkout"]
+              feature_flags: [ "new-checkout" ]
             }
           }
         }
