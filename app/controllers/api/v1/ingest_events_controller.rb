@@ -39,8 +39,9 @@ class Api::V1::IngestEventsController < ApplicationController
   def event_params
     raw_event = params.require(:event)
     permitted = raw_event.permit(:event_type, :level, :message, :fingerprint, :occurred_at)
-    raw_context = raw_event[:context]
-    context_hash = raw_context.is_a?(ActionController::Parameters) ? raw_context.to_unsafe_h : (raw_context || {})
+    # Read context from raw params so nested keys (exception, metadata, etc.) are not stripped by strong params
+    raw_context = raw_event.to_unsafe_h["context"] || raw_event.to_unsafe_h[:context] || {}
+    context_hash = raw_context.respond_to?(:to_unsafe_h) ? raw_context.to_unsafe_h : raw_context.to_h
     permitted[:context] = context_hash.deep_stringify_keys
     normalize_event_payload(permitted)
   end
