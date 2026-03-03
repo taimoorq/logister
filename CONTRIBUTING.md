@@ -31,8 +31,8 @@ Use GitHub Issues and include:
 
 ## Security vulnerabilities
 
-Do not open public issues for security problems. Follow `SECURITY.md`.
+Do not open public issues for security problems. See [SECURITY.md](SECURITY.md).
 
 ## Communication
 
-Please keep reports precise and respectful. Actionable reproduction details are the fastest way to get a fix.
+Please keep reports precise and respectful. Actionable reproduction details are the fastest way to get a fix. By participating, you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).

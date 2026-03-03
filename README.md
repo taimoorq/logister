@@ -12,6 +12,17 @@ This repository is open source and can be self-hosted.
 - Companion gem: https://github.com/taimoorq/logister-ruby
 - RubyGems: https://rubygems.org/gems/logister-ruby
 
+## Project documentation
+
+| Document | Description |
+|----------|-------------|
+| [TESTING.md](TESTING.md) | Running tests with RSpec, test layout, and system specs |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, report bugs, and submit changes |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards and expected behavior |
+| [SECURITY.md](SECURITY.md) | Security policy and how to report vulnerabilities |
+| [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
+| [docs/RAILS_ARCHITECTURE_REVIEW.md](docs/RAILS_ARCHITECTURE_REVIEW.md) | Rails/DHH-style architecture review of the app |
+
 ## Self-host quickstart (local)
 
 ### Requirements

@@ -1,6 +1,6 @@
 # Logister — Architecture and conventions for agents
 
-This document describes how the app is structured so agents and contributors can follow the same patterns (Rails way, Hotwire, Turbo).
+This document describes how the app is structured so agents and contributors can follow the same patterns (Rails way, Hotwire, Turbo). For setup, deployment, and API details, see the [README](README.md).
 
 ## Rails way (DHH / Basecamp style)
 
