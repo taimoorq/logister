@@ -1,6 +1,6 @@
 # Testing
 
-This project uses **RSpec** for tests ([rspec-rails](https://github.com/rspec/rspec-rails)).
+This project uses **RSpec** for tests ([rspec-rails](https://github.com/rspec/rspec-rails)). For setup, see [README.md](README.md).
 
 ## Running tests
 

@@ -1,6 +1,6 @@
 # Rails Architecture Review (DHH-style)
 
-A review of the Logister app against the conventions and preferences that David Heinemeier Hansson (Rails creator) advocates: **convention over configuration**, **majestic monolith**, **Hotwire (Turbo + Stimulus)**, **server-rendered HTML first**, and **omakase** (the default stack).
+A review of the Logister app against the conventions and preferences that David Heinemeier Hansson (Rails creator) advocates: **convention over configuration**, **majestic monolith**, **Hotwire (Turbo + Stimulus)**, **server-rendered HTML first**, and **omakase** (the default stack). See also [AGENTS.md](../AGENTS.md) for implementation conventions.
 
 ---
 
