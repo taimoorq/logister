@@ -10,37 +10,83 @@
   "description" => "Terms of use for Logister."
 }) %>
 
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-  <h1 class="text-2xl font-bold text-slate-900 mb-2">Terms of Use</h1>
-  <p class="text-slate-500 text-sm mb-6"><strong>Last updated:</strong> February 28, 2026</p>
+<div class="marketing-home legal-page">
+  <section class="legal-hero" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-hero; view-transition-class: public-panel;">
+    <p class="hero-kicker">Legal</p>
+    <h1 class="hero-title">Terms of Use</h1>
+    <p class="hero-copy max-w-3xl">
+      These terms govern access to and use of Logister, including account security,
+      acceptable service usage, and responsibilities for submitted application data.
+    </p>
+    <p class="legal-updated"><strong>Last updated:</strong> February 28, 2026</p>
+  </section>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Use of service</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    You may use Logister to monitor and troubleshoot your applications in accordance
-    with applicable law. You must not misuse the service, attempt unauthorized access,
-    or disrupt platform operations.
-  </p>
+  <section class="legal-summary-grid" style="view-transition-name: public-stats; view-transition-class: public-panel;">
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="stat-label">Use of service</p>
+      <p class="about-pill-value">Use lawfully and avoid platform abuse</p>
+    </article>
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
+      <p class="stat-label">Accounts and keys</p>
+      <p class="about-pill-value">You secure credentials and API tokens</p>
+    </article>
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
+      <p class="stat-label">Availability</p>
+      <p class="about-pill-value">Service may evolve with reasonable notice</p>
+    </article>
+  </section>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Account responsibilities</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    You are responsible for safeguarding your account credentials and API keys, and for
-    all activity that occurs under your account.
-  </p>
+  <section class="legal-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-workflow; view-transition-class: public-panel;">
+    <article class="legal-section">
+      <h2>Use of service</h2>
+      <p>
+        You may use Logister to monitor and troubleshoot your applications in accordance
+        with applicable law. You must not misuse the service, attempt unauthorized access,
+        or disrupt platform operations.
+      </p>
+    </article>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Data submission</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    You are responsible for the data your applications send to Logister, including any
-    personal or sensitive data included in error payloads.
-  </p>
+    <article class="legal-section">
+      <h2>Account responsibilities</h2>
+      <p>
+        You are responsible for safeguarding your account credentials and API keys, and for
+        all activity that occurs under your account.
+      </p>
+    </article>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Service availability</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    Logister is provided on an “as is” basis. We may change or discontinue features,
-    including free usage terms, with reasonable notice.
-  </p>
+    <article class="legal-section">
+      <h2>Data submission</h2>
+      <p>
+        You are responsible for the data your applications send to Logister, including any
+        personal or sensitive data included in error payloads.
+      </p>
+    </article>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Contact</h2>
-  <p class="text-slate-600 text-sm">
-    For legal questions, contact <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">support@logister.org</code>.
-  </p>
-</section>
+    <article class="legal-section">
+      <h2>Service availability</h2>
+      <p>
+        Logister is provided on an "as is" basis. We may change or discontinue features,
+        including free usage terms, with reasonable notice.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Contact</h2>
+      <p>
+        For legal questions, contact
+        <code>support@logister.org</code>.
+      </p>
+    </article>
+  </section>
+
+  <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-cta; view-transition-class: public-panel;">
+    <div>
+      <p class="workflow-kicker">Related pages</p>
+      <h2>Need policy or product context?</h2>
+    </div>
+    <div class="hero-actions">
+      <%= link_to "Privacy policy", privacy_path, class: "hero-btn hero-btn-primary" %>
+      <%= link_to "About Logister", about_path, class: "hero-btn hero-btn-secondary" %>
+    </div>
+  </section>
+</div>

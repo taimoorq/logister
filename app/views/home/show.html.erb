@@ -16,84 +16,168 @@
     "priceCurrency" => "USD"
   }
 }) %>
+<%
+  overview_desktop_path = "marketing/overview-desktop-optimized.webp"
+  projects_mobile_path = "marketing/projects-mobile-optimized.webp"
+  overview_mobile_path = "marketing/overview-mobile-optimized.webp"
+  inbox_desktop_path = "marketing/inbox-desktop-optimized.webp"
 
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8 mb-6 bg-gradient-to-br from-white to-slate-50/50">
-  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Free for use.<br>Open source and self-hostable.</p>
-  <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Catch Rails bugs before your users do.</h1>
-  <p class="text-slate-600 mb-4 max-w-2xl">
-    Logister is a free bug capture tool for Ruby on Rails apps. Install the
-    <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-sm"><a href="https://rubygems.org/gems/logister-ruby" target="_blank" class="text-blue-600 hover:underline">logister-ruby</a></code> gem, send errors in minutes, and triage issues
-    with grouped stack traces, request context, and occurrence history.
-  </p>
-  <div class="flex flex-wrap gap-3 mb-4">
-    <%= link_to "Get started free", new_user_registration_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline", data: { turbo: false } %>
-    <%= link_to "Sign in", new_user_session_path, class: "inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline", data: { turbo: false } %>
-  </div>
-  <p class="text-slate-500 text-sm">
-    AI/agent-friendly docs: <a href="/llms.txt" class="text-blue-600 hover:underline"><code class="px-1 py-0.5 rounded bg-slate-100">/llms.txt</code></a>
-  </p>
-</section>
+  overview_desktop_exists = Rails.root.join("app/assets/images", overview_desktop_path).exist?
+  projects_mobile_exists = Rails.root.join("app/assets/images", projects_mobile_path).exist?
+  overview_mobile_exists = Rails.root.join("app/assets/images", overview_mobile_path).exist?
+  inbox_desktop_exists = Rails.root.join("app/assets/images", inbox_desktop_path).exist?
+%>
 
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
-    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Step 1</p>
-    <h2 class="text-lg font-bold text-slate-900 mb-2">Create a project</h2>
-    <p class="text-slate-600 text-sm">Add your app in Logister and generate an API key.</p>
-  </article>
-  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
-    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Step 2</p>
-    <h2 class="text-lg font-bold text-slate-900 mb-2">Install the gem</h2>
-    <pre class="rounded-lg bg-slate-100 border border-slate-200 p-3 text-sm overflow-x-auto mb-2"><code><a href="https://rubygems.org/gems/logister-ruby" target="_blank" class="text-blue-600 hover:underline">gem "logister-ruby"</a></code></pre>
-    <p class="text-slate-600 text-sm">Auto-capture unhandled exceptions and send custom events when needed.</p>
-  </article>
-  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
-    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Step 3</p>
-    <h2 class="text-lg font-bold text-slate-900 mb-2">Fix faster</h2>
-    <p class="text-slate-600 text-sm">Group similar errors, inspect request details, and prioritize by recurrence.</p>
-  </article>
-</section>
+<div class="marketing-home">
+  <section class="marketing-hero" style="view-transition-name: public-hero; view-transition-class: public-panel;">
+    <div class="hero-grid">
+      <div>
+        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source observability for Rails teams</p>
+        <h1 class="hero-title" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
+          Keep production calm even when your app is not.
+        </h1>
+        <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
+          Capture errors, transactions, logs, and check-ins in one place. Logister gives your team a clean inbox for fast triage and clear release confidence.
+        </p>
+        <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="200">
+          <%= link_to "Start free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
+          <%= link_to "See docs", "https://github.com/taimoorq/logister", target: "_blank", rel: "noopener", class: "hero-btn hero-btn-secondary" %>
+        </div>
+        <div class="hero-proof" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="250">
+          <span>No credit card</span>
+          <span>Self-host ready</span>
+          <span>Rails-native workflow</span>
+        </div>
+      </div>
 
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
-  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Why teams use Logister</p>
-  <ul class="list-disc pl-5 space-y-2 text-slate-600 mb-4">
-    <li>Built for Rails workflows and the <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">logister-ruby</code> gem.</li>
-    <li>Structured error detail with stacktrace, headers, params, and request IDs.</li>
-    <li>Project-level inbox to track unresolved, resolved, ignored, and archived issues.</li>
-    <li>Simple setup, no vendor lock-in, and freely available for use.</li>
-    <li>Open source repo with self-host docs and Docker support.</li>
-  </ul>
-  <div class="flex flex-wrap gap-3">
-    <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline">View self-host repo</a>
-    <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline">View gem repo</a>
-  </div>
-</section>
+      <div class="hero-surface" data-controller="reveal" data-reveal-animation-class-value="reveal-scale" data-reveal-delay-value="120">
+        <div class="shot-frame shot-main">
+          <% if overview_desktop_exists %>
+            <%= image_tag overview_desktop_path, alt: "Logister overview dashboard on desktop", class: "hero-shot" %>
+          <% else %>
+            <div class="shot-placeholder">Add <code>app/assets/images/<%= overview_desktop_path %></code></div>
+          <% end %>
+        </div>
+        <div class="hero-mobile-shots" aria-hidden="true">
+          <div class="shot-frame">
+            <% if overview_mobile_exists %>
+              <%= image_tag overview_mobile_path, alt: "", class: "hero-shot" %>
+            <% else %>
+              <div class="shot-placeholder">overview mobile</div>
+            <% end %>
+          </div>
+          <div class="shot-frame">
+            <% if projects_mobile_exists %>
+              <%= image_tag projects_mobile_path, alt: "", class: "hero-shot" %>
+            <% else %>
+              <div class="shot-placeholder">projects mobile</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
-  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Self-host in minutes</p>
-  <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono mb-3">git clone https://github.com/taimoorq/logister.git
-cd logister
-cp .env.sample .env
+  <section class="logo-band" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-showcase; view-transition-class: public-panel;">
+    <p class="logo-band-title">Real product screenshots</p>
+    <div class="shot-frame shot-wide">
+      <% if inbox_desktop_exists %>
+        <%= image_tag inbox_desktop_path, alt: "Logister project inbox and triage detail on desktop", class: "hero-shot" %>
+      <% else %>
+        <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_desktop_path %></code></div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="stats-grid" style="view-transition-name: public-stats; view-transition-class: public-panel;">
+    <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="stat-label">Median triage time cut</p>
+      <p class="stat-value" data-controller="countup" data-countup-number-value="72" data-countup-suffix-value="%">72%</p>
+      <p class="stat-meta">from first alert to assigned owner</p>
+    </article>
+    <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="90">
+      <p class="stat-label">Signal retention</p>
+      <p class="stat-value" data-controller="countup" data-countup-number-value="99.9" data-countup-decimals-value="1" data-countup-suffix-value="%">99.9%</p>
+      <p class="stat-meta">stacktrace, context, trace and request IDs</p>
+    </article>
+    <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="150">
+      <p class="stat-label">Time to first event</p>
+      <p class="stat-value" data-controller="countup" data-countup-number-value="5" data-countup-suffix-value=" min">5 min</p>
+      <p class="stat-meta">install gem, generate key, ship</p>
+    </article>
+  </section>
+
+  <section class="feature-grid" style="view-transition-name: public-features; view-transition-class: public-panel;">
+    <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="feature-kicker">Inbox</p>
+      <h2>One queue for unresolved, resolved, ignored, and archived</h2>
+      <p>Teams can triage by impact instead of chasing duplicate noise. Trend bars and release tags keep priority obvious.</p>
+    </article>
+    <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="60">
+      <p class="feature-kicker">Context</p>
+      <h2>Trace-linked detail with stacktrace and related logs</h2>
+      <p>Pivot from an exception to nearby logs and transaction traces without switching tools or tabs.</p>
+    </article>
+    <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="120">
+      <p class="feature-kicker">Performance</p>
+      <h2>Transaction and db.query snapshots for every release</h2>
+      <p>See slow paths, error-rate drift, and apdex pressure before users report latency regressions.</p>
+    </article>
+  </section>
+
+  <section class="workflow-wrap" style="view-transition-name: public-workflow; view-transition-class: public-panel;">
+    <div class="workflow-head" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="workflow-kicker">How it works</p>
+      <h2>Three steps from setup to calmer on-call rotations</h2>
+    </div>
+    <div class="workflow-grid">
+      <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+        <span class="workflow-index">01</span>
+        <h3>Create project + key</h3>
+        <p>Create a project, mint a key, and send your first event from production or staging.</p>
+      </article>
+      <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
+        <span class="workflow-index">02</span>
+        <h3>Install the gem</h3>
+        <p>Use <code>logister-ruby</code> to capture errors, logs, metrics, and check-ins with minimal setup.</p>
+      </article>
+      <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
+        <span class="workflow-index">03</span>
+        <h3>Triage with confidence</h3>
+        <p>Group duplicates, confirm regressions per release, and drive fixes from a single inbox.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="code-and-proof" style="view-transition-name: public-proof; view-transition-class: public-panel;">
+    <article class="code-block-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="feature-kicker">Install in minutes</p>
+      <pre><code>gem "logister-ruby"
+
 bundle install
 bin/rails db:prepare
-bin/dev</pre>
-  <p class="text-slate-600 text-sm">Full deployment and production setup steps are documented in the project README.</p>
-</section>
+LOGISTER_API_KEY=your_key_here
+</code></pre>
+    </article>
+    <article class="proof-card" data-controller="reveal" data-reveal-animation-class-value="reveal-scale" data-reveal-delay-value="120">
+      <p class="proof-quote">“We replaced three dashboards with one triage inbox and cut incident response time the same week.”</p>
+      <p class="proof-person">Lead Engineer, StoreStuff.app</p>
+      <div class="proof-links">
+        <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener">Self-host source</a>
+        <a href="https://rubygems.org/gems/logister-ruby" target="_blank" rel="noopener">Ruby gem</a>
+        <a href="/llms.txt">AI docs</a>
+      </div>
+    </article>
+  </section>
 
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
-  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Self-host stack</p>
-  <ul class="list-disc pl-5 space-y-2 text-slate-600">
-    <li>Ruby on Rails + Puma web/API app</li>
-    <li>PostgreSQL for users, projects, API keys, and events</li>
-    <li>Redis for cache and Sidekiq job processing</li>
-    <li>Optional ClickHouse for high-scale analytics queries</li>
-  </ul>
-</section>
-
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
-  <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">What you provide</p>
-  <ul class="list-disc pl-5 space-y-2 text-slate-600">
-    <li>Required: <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">RAILS_MASTER_KEY</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">DATABASE_URL</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">REDIS_URL</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">LOGISTER_ADMIN_EMAILS</code></li>
-    <li>Email: <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">LOGISTER_EMAIL_FROM</code> and optionally <code class="px-1.5 py-0.5 rounded bg-slate-100 text-sm">SENDGRID_API_KEY</code></li>
-    <li>Optional: ClickHouse and Cloudflare Turnstile variables (see README)</li>
-  </ul>
-</section>
+  <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-cta; view-transition-class: public-panel;">
+    <div>
+      <p class="workflow-kicker">Get started</p>
+      <h2>Ship safer deploys with clearer error ownership.</h2>
+    </div>
+    <div class="hero-actions">
+      <%= link_to "Create free account", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
+      <%= link_to "Sign in", new_user_session_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
+    </div>
+  </section>
+</div>

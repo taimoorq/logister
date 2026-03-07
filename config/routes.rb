@@ -24,7 +24,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :projects, only: [ :index, :show, :new, :create, :destroy ], param: :uuid do
+  resources :projects, only: [ :index, :show, :new, :create, :edit, :update, :destroy ], param: :uuid do
     member do
       get :settings
       get :performance

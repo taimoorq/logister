@@ -1,6 +1,14 @@
 <%= render "header" %>
 
 <section class="space-y-6">
+  <% if @project.owned_by?(current_user) %>
+    <div class="flex flex-wrap items-center gap-2">
+      <%= link_to edit_project_path(@project), class: "btn-ghost inline-flex items-center gap-2" do %>
+        <%= app_icon(:pencil) %><span>Edit project</span>
+      <% end %>
+    </div>
+  <% end %>
+
   <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <% if @project.owned_by?(current_user) %>
       <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5" id="api-key-form">

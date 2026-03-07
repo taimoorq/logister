@@ -3,7 +3,7 @@ class ProjectsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :set_project, only: [ :show, :settings, :performance, :monitors, :activity ]
-  before_action :set_owned_project, only: :destroy
+  before_action :set_owned_project, only: [ :edit, :update, :destroy ]
 
   def index
     @projects      = current_user.accessible_projects.order(created_at: :desc)
@@ -75,6 +75,17 @@ class ProjectsController < ApplicationController
       redirect_to project_path(@project), notice: "Project created. Add an API key to start ingesting events."
     else
       render :new, status: :unprocessable_entity
+    end
+  end
+
+  def edit
+  end
+
+  def update
+    if @project.update(project_params)
+      redirect_to settings_project_path(@project), notice: "Project updated."
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
