@@ -4,6 +4,26 @@ Logister is a Rails + PostgreSQL service for collecting application errors and m
 
 PostgreSQL is the control-plane database (users/projects/api keys). Event analytics can be dual-written to ClickHouse for high-scale querying.
 
+## Table of contents
+
+- [Open source and self-hosting](#open-source-and-self-hosting)
+- [Project documentation](#project-documentation)
+- [Core flow](#core-flow)
+- [Runtime stack](#runtime-stack)
+- [Prerequisites](#prerequisites)
+- [Self-host quickstart (local)](#self-host-quickstart-local)
+- [Local development setup](#local-development-setup)
+- [Development seed data](#development-seed-data)
+- [What operators must provide](#what-operators-must-provide)
+- [Production self-hosting checklist](#production-self-hosting-checklist)
+- [Provider-specific config files](#provider-specific-config-files)
+- [Local infrastructure with Docker](#local-infrastructure-with-docker)
+- [Cloudflare Turnstile](#cloudflare-turnstile)
+- [Ingest API](#ingest-api)
+- [Check-in API](#check-in-api)
+- [ClickHouse (optional, recommended for scale)](#clickhouse-optional-recommended-for-scale)
+- [Companion gem](#companion-gem)
+
 ## Open source and self-hosting
 
 This repository is open source and can be self-hosted.
@@ -23,14 +43,13 @@ This repository is open source and can be self-hosted.
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [docs/RAILS_ARCHITECTURE_REVIEW.md](docs/RAILS_ARCHITECTURE_REVIEW.md) | Rails/DHH-style architecture review of the app |
 
-## Self-host quickstart (local)
+## Core flow
 
-### Requirements
-
-- Ruby `4.0.1`
-- PostgreSQL `>= 14`
-- Redis `>= 7`
-- (Optional) ClickHouse for analytics
+1. Users sign up at `logister.org` (Devise authentication).
+2. Users create one or more projects (each project maps to a monitored app).
+3. Users generate API keys per project.
+4. Client apps send events to `POST /api/v1/ingest_events` using an API token.
+5. Events are stored and visible in the dashboard.
 
 ## Runtime stack
 
@@ -44,33 +63,14 @@ Logister runs as a Rails web app with these components:
 - Optional bot protection: Cloudflare Turnstile
 - Optional transactional email: SendGrid API
 
-## What operators must provide
+## Prerequisites
 
-At minimum (production):
+- Ruby `4.0.1`
+- PostgreSQL `>= 14`
+- Redis `>= 7`
+- (Optional) ClickHouse for analytics
 
-- `RAILS_MASTER_KEY` (Rails credentials decryption)
-- `DATABASE_URL` (PostgreSQL connection)
-- `REDIS_URL` (Redis/Redis Cloud connection)
-- `LOGISTER_ADMIN_EMAILS` (bootstrap admin access, comma-separated emails)
-
-Typically also provided:
-
-- `LOGISTER_EMAIL_FROM` (sender for auth/system emails)
-- `SENDGRID_API_KEY` (if sending email via SendGrid)
-
-Optional integrations:
-
-- ClickHouse:
-  `LOGISTER_CLICKHOUSE_ENABLED`,
-  `LOGISTER_CLICKHOUSE_URL`,
-  `LOGISTER_CLICKHOUSE_DATABASE`,
-  `LOGISTER_CLICKHOUSE_EVENTS_TABLE`,
-  `LOGISTER_CLICKHOUSE_USERNAME`,
-  `LOGISTER_CLICKHOUSE_PASSWORD`
-- Turnstile:
-  `LOGISTER_TURNSTILE_ENABLED`,
-  `LOGISTER_TURNSTILE_SITE_KEY`,
-  `LOGISTER_TURNSTILE_SECRET_KEY`
+## Self-host quickstart (local)
 
 ### 1) Clone and configure
 
@@ -115,14 +115,6 @@ bin/dev-infra --with-postgres
 cat docs/clickhouse_schema.sql | curl "http://127.0.0.1:8123" --data-binary @-
 ```
 
-## Core flow
-
-1. Users sign up at `logister.org` (Devise authentication).
-2. Users create one or more projects (each project maps to a monitored app).
-3. Users generate API keys per project.
-4. Client apps send events to `POST /api/v1/ingest_events` using an API token.
-5. Events are stored and visible in the dashboard.
-
 ## Local development setup
 
 ```bash
@@ -147,6 +139,59 @@ For confirmation emails in production, configure SendGrid API key:
 ```bash
 SENDGRID_API_KEY=<sendgrid_api_key>
 ```
+
+## Development seed data
+
+The app ships with idempotent sample seeds for development only.
+
+Run:
+
+```bash
+bin/rails db:seed
+```
+
+What gets seeded:
+
+- 3 confirmed users (`alice`, `bob`, `carol`)
+- 3 projects with shared memberships
+- Active and revoked API keys
+- Sample events across `error`, `metric`, `transaction`, `log`, and `check_in`
+- Error groups in multiple states (`unresolved`, `resolved`, `ignored`, `archived`)
+- Check-in monitor scenarios (`ok`, `missed`, `error`)
+
+Demo sign-in credentials:
+
+- `alice@example.com / password123`
+- `bob@example.com / password123`
+- `carol@example.com / password123`
+
+## What operators must provide
+
+At minimum (production):
+
+- `RAILS_MASTER_KEY` (Rails credentials decryption)
+- `DATABASE_URL` (PostgreSQL connection)
+- `REDIS_URL` (Redis/Redis Cloud connection)
+- `LOGISTER_ADMIN_EMAILS` (bootstrap admin access, comma-separated emails)
+
+Typically also provided:
+
+- `LOGISTER_EMAIL_FROM` (sender for auth/system emails)
+- `SENDGRID_API_KEY` (if sending email via SendGrid)
+
+Optional integrations:
+
+- ClickHouse:
+  `LOGISTER_CLICKHOUSE_ENABLED`,
+  `LOGISTER_CLICKHOUSE_URL`,
+  `LOGISTER_CLICKHOUSE_DATABASE`,
+  `LOGISTER_CLICKHOUSE_EVENTS_TABLE`,
+  `LOGISTER_CLICKHOUSE_USERNAME`,
+  `LOGISTER_CLICKHOUSE_PASSWORD`
+- Turnstile:
+  `LOGISTER_TURNSTILE_ENABLED`,
+  `LOGISTER_TURNSTILE_SITE_KEY`,
+  `LOGISTER_TURNSTILE_SECRET_KEY`
 
 ## Production self-hosting checklist
 
@@ -179,20 +224,6 @@ This repo keeps safe provider config in git and avoids committing secrets.
 - Fly.io template: `fly.toml.example` (reference copy)
 - Keep secrets in GitHub Actions/Fly secrets, not in repo files.
 
-## Cloudflare Turnstile
-
-This app uses the `rails_cloudflare_turnstile` gem with Devise custom controllers.
-
-Turnstile is enabled on Devise sign-in and sign-up when these env vars are set:
-
-```bash
-LOGISTER_TURNSTILE_ENABLED=true
-LOGISTER_TURNSTILE_SITE_KEY=
-LOGISTER_TURNSTILE_SECRET_KEY=
-```
-
-The widget is rendered in the Devise forms via `cloudflare_turnstile`, and tokens are verified server-side via `validate_cloudflare_turnstile`.
-
 ## Local infrastructure with Docker
 
 If you use Postgres.app locally, run only ClickHouse and Redis:
@@ -218,6 +249,20 @@ Then initialize ClickHouse schema:
 ```bash
 cat docs/clickhouse_schema.sql | curl "http://127.0.0.1:8123" --data-binary @-
 ```
+
+## Cloudflare Turnstile
+
+This app uses the `rails_cloudflare_turnstile` gem with Devise custom controllers.
+
+Turnstile is enabled on Devise sign-in and sign-up when these env vars are set:
+
+```bash
+LOGISTER_TURNSTILE_ENABLED=true
+LOGISTER_TURNSTILE_SITE_KEY=
+LOGISTER_TURNSTILE_SECRET_KEY=
+```
+
+The widget is rendered in the Devise forms via `cloudflare_turnstile`, and tokens are verified server-side via `validate_cloudflare_turnstile`.
 
 ## Ingest API
 
@@ -342,4 +387,3 @@ Logister.configure do |config|
   config.db_metric_sample_rate = 1.0
 end
 ```
-
