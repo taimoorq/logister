@@ -10,36 +10,82 @@
   "description" => "Privacy policy for Logister."
 }) %>
 
-<section class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-  <h1 class="text-2xl font-bold text-slate-900 mb-2">Privacy Policy</h1>
-  <p class="text-slate-500 text-sm mb-6"><strong>Last updated:</strong> February 28, 2026</p>
+<div class="marketing-home legal-page">
+  <section class="legal-hero" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+    <p class="hero-kicker">Legal</p>
+    <h1 class="hero-title">Privacy Policy</h1>
+    <p class="hero-copy max-w-3xl">
+      This policy explains what information Logister collects, how it is used,
+      and what controls you have when using the hosted service and related APIs.
+    </p>
+    <p class="legal-updated"><strong>Last updated:</strong> February 28, 2026</p>
+  </section>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Information we collect</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    We collect account information you provide (such as email and profile name),
-    plus error and telemetry data sent by your applications through our ingest API.
-  </p>
+  <section class="legal-summary-grid">
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="stat-label">What we collect</p>
+      <p class="about-pill-value">Account details + telemetry payloads</p>
+    </article>
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
+      <p class="stat-label">What we do with it</p>
+      <p class="about-pill-value">Operate, improve, and secure the service</p>
+    </article>
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
+      <p class="stat-label">Your responsibility</p>
+      <p class="about-pill-value">Control what event data your apps send</p>
+    </article>
+  </section>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">How we use information</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    We use collected data to operate Logister, provide error monitoring features,
-    improve product reliability, and communicate service-related updates.
-  </p>
+  <section class="legal-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+    <article class="legal-section">
+      <h2>Information we collect</h2>
+      <p>
+        We collect account information you provide (such as email and profile name),
+        plus error and telemetry data sent by your applications through our ingest API.
+      </p>
+    </article>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Data controls</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    You are responsible for configuring what your applications send. Avoid sending
-    secrets or sensitive personal data in event payloads unless required and properly protected.
-  </p>
+    <article class="legal-section">
+      <h2>How we use information</h2>
+      <p>
+        We use collected data to operate Logister, provide error monitoring features,
+        improve product reliability, and communicate service-related updates.
+      </p>
+    </article>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Security</h2>
-  <p class="text-slate-600 text-sm mb-4">
-    We use reasonable administrative and technical measures to protect data, but no
-    internet transmission or storage system is guaranteed to be fully secure.
-  </p>
+    <article class="legal-section">
+      <h2>Data controls</h2>
+      <p>
+        You are responsible for configuring what your applications send. Avoid sending
+        secrets or sensitive personal data in event payloads unless required and properly protected.
+      </p>
+    </article>
 
-  <h2 class="text-lg font-bold text-slate-900 mt-6 mb-2">Contact</h2>
-  <p class="text-slate-600 text-sm">
-    For privacy questions, contact <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">support@logister.org</code>.
-  </p>
-</section>
+    <article class="legal-section">
+      <h2>Security</h2>
+      <p>
+        We use reasonable administrative and technical measures to protect data, but no
+        internet transmission or storage system is guaranteed to be fully secure.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Contact</h2>
+      <p>
+        For privacy questions, contact
+        <code>support@logister.org</code>.
+      </p>
+    </article>
+  </section>
+
+  <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+    <div>
+      <p class="workflow-kicker">Related pages</p>
+      <h2>Need legal or product details?</h2>
+    </div>
+    <div class="hero-actions">
+      <%= link_to "Terms of use", terms_path, class: "hero-btn hero-btn-primary" %>
+      <%= link_to "About Logister", about_path, class: "hero-btn hero-btn-secondary" %>
+    </div>
+  </section>
+</div>
