@@ -8,8 +8,9 @@ RSpec.describe "Home", type: :request do
       it "returns success and shows landing content" do
         get root_path
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("Catch Rails bugs before your users do.")
+        expect(response.body).to include("Keep production calm even when your app is not.")
         expect(response.body).to include("logister-ruby")
+        expect(response.body).to include("Start free")
         expect(response.body).to include("<meta name=\"description\"")
         expect(response.body).to include("application/ld+json")
         expect(response.body).to include("/llms.txt")

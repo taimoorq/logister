@@ -29,7 +29,7 @@
 %>
 
 <div class="marketing-home">
-  <section class="marketing-hero">
+  <section class="marketing-hero" style="view-transition-name: public-hero; view-transition-class: public-panel;">
     <div class="hero-grid">
       <div>
         <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source observability for Rails teams</p>
@@ -78,7 +78,7 @@
     </div>
   </section>
 
-  <section class="logo-band" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+  <section class="logo-band" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-showcase; view-transition-class: public-panel;">
     <p class="logo-band-title">Real product screenshots</p>
     <div class="shot-frame shot-wide">
       <% if inbox_desktop_exists %>
@@ -89,7 +89,7 @@
     </div>
   </section>
 
-  <section class="stats-grid">
+  <section class="stats-grid" style="view-transition-name: public-stats; view-transition-class: public-panel;">
     <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="stat-label">Median triage time cut</p>
       <p class="stat-value" data-controller="countup" data-countup-number-value="72" data-countup-suffix-value="%">72%</p>
@@ -107,7 +107,7 @@
     </article>
   </section>
 
-  <section class="feature-grid">
+  <section class="feature-grid" style="view-transition-name: public-features; view-transition-class: public-panel;">
     <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="feature-kicker">Inbox</p>
       <h2>One queue for unresolved, resolved, ignored, and archived</h2>
@@ -125,7 +125,7 @@
     </article>
   </section>
 
-  <section class="workflow-wrap">
+  <section class="workflow-wrap" style="view-transition-name: public-workflow; view-transition-class: public-panel;">
     <div class="workflow-head" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="workflow-kicker">How it works</p>
       <h2>Three steps from setup to calmer on-call rotations</h2>
@@ -149,7 +149,7 @@
     </div>
   </section>
 
-  <section class="code-and-proof">
+  <section class="code-and-proof" style="view-transition-name: public-proof; view-transition-class: public-panel;">
     <article class="code-block-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="feature-kicker">Install in minutes</p>
       <pre><code>gem "logister-ruby"
@@ -170,7 +170,7 @@ LOGISTER_API_KEY=your_key_here
     </article>
   </section>
 
-  <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+  <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-cta; view-transition-class: public-panel;">
     <div>
       <p class="workflow-kicker">Get started</p>
       <h2>Ship safer deploys with clearer error ownership.</h2>
