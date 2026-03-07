@@ -167,18 +167,6 @@
                 </svg>
                 <span>About</span>
               <% end %>
-              <%= link_to privacy_path, class: "nav-link inline-flex items-center gap-2 py-3 md:py-2 px-3 rounded-lg text-sm font-medium #{current_page?(privacy_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" do %>
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2.75 4.5 5.9v5.35c0 4.7 3.11 8.98 7.5 10 4.39-1.02 7.5-5.3 7.5-10V5.9L12 2.75Zm0 5.25a2.5 2.5 0 0 1 2.5 2.5V12h.25A1.25 1.25 0 0 1 16 13.25v3.5A1.25 1.25 0 0 1 14.75 18h-5.5A1.25 1.25 0 0 1 8 16.75v-3.5A1.25 1.25 0 0 1 9.25 12h.25v-1.5A2.5 2.5 0 0 1 12 8Z"/>
-                </svg>
-                <span>Privacy</span>
-              <% end %>
-              <%= link_to terms_path, class: "nav-link inline-flex items-center gap-2 py-3 md:py-2 px-3 rounded-lg text-sm font-medium #{current_page?(terms_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" do %>
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M6 3.75A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6Zm2.25 4.5h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5Zm0 3.5h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5Zm0 3.5h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5Z"/>
-                </svg>
-                <span>Terms</span>
-              <% end %>
               <div class="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-200">
                 <%= link_to new_user_session_path, class: "nav-link py-3 md:py-2 px-4 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 text-center min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-2", data: { turbo: false } do %>
                   <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -209,5 +197,15 @@
 
       <%= yield %>
     </main>
+
+    <footer class="border-t border-slate-200 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <p class="text-sm text-slate-500">© <%= Time.current.year %> Logister</p>
+        <div class="flex items-center gap-4 text-sm">
+          <%= link_to "Privacy", privacy_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(privacy_path) ? 'font-semibold text-slate-900' : ''}" %>
+          <%= link_to "Terms", terms_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(terms_path) ? 'font-semibold text-slate-900' : ''}" %>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>
