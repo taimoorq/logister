@@ -177,7 +177,7 @@ module Seeds
       context: error_context(release: "v1.3.9", env: "production")
     )
 
-    [120.5, 95.4, 310.2, 460.0, 220.4, 540.8, 88.0, 135.3].each_with_index do |duration, i|
+    [ 120.5, 95.4, 310.2, 460.0, 220.4, 540.8, 88.0, 135.3 ].each_with_index do |duration, i|
       create_event!(
         project: storefront,
         api_key: storefront_key,
@@ -197,7 +197,7 @@ module Seeds
       )
     end
 
-    [18.2, 25.8, 42.1, 75.0, 210.7, 32.9].each_with_index do |duration, i|
+    [ 18.2, 25.8, 42.1, 75.0, 210.7, 32.9 ].each_with_index do |duration, i|
       create_event!(
         project: storefront,
         api_key: storefront_key,
