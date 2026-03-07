@@ -77,7 +77,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased" data-controller="local-time">
+  <body class="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased" data-controller="local-time">
     <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10" data-controller="nav">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-14 min-h-[3.5rem] sm:h-16">
@@ -187,7 +187,7 @@
       </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 min-h-[50vh]">
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       <% if notice %>
         <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800"><%= notice %></div>
       <% end %>
