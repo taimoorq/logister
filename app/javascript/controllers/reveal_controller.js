@@ -8,13 +8,25 @@ export default class extends Controller {
 
   connect() {
     this.element.classList.add(this.animationClassValue)
-    if (this.delayValue > 0) {
-      this.element.style.transitionDelay = `${this.delayValue}ms`
-    }
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
       this.element.classList.add("is-visible")
       return
+    }
+
+    const rect = this.element.getBoundingClientRect()
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+    const initiallyVisible = rect.top < viewportHeight * 0.9 && rect.bottom > 0
+
+    // Render above-the-fold content immediately to avoid load-time layout jank.
+    if (initiallyVisible) {
+      this.element.style.transitionDelay = "0ms"
+      this.element.classList.add("is-visible")
+      return
+    }
+
+    if (this.delayValue > 0) {
+      this.element.style.transitionDelay = `${this.delayValue}ms`
     }
 
     this.observer = new IntersectionObserver(
