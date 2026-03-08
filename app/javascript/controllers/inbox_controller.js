@@ -11,6 +11,7 @@ export default class extends Controller {
 
   connect() {
     this._searchTimer = null
+    this.shouldAutoScrollDetail = false
     this.boundDetailLoaded = this.onDetailLoaded.bind(this)
     document.addEventListener("turbo:frame-load", this.boundDetailLoaded)
   }
@@ -56,6 +57,7 @@ export default class extends Controller {
     const link = event.currentTarget
     const row = link && typeof link.closest === "function" ? link.closest("tr") : null
     if (row) this.setSelectedRow(row)
+    this.shouldAutoScrollDetail = true
   }
 
   openRow(event) {
@@ -69,6 +71,7 @@ export default class extends Controller {
     if (!link) return
 
     this.setSelectedRow(row)
+    this.shouldAutoScrollDetail = true
     this.visitDetail(link.href)
   }
 
@@ -97,9 +100,11 @@ export default class extends Controller {
     const frame = event.target
     if (!(frame instanceof HTMLElement) || frame.id !== "error_detail") return
 
-    if (window.matchMedia("(max-width: 1023px)").matches) {
+    if (this.shouldAutoScrollDetail && window.matchMedia("(max-width: 1023px)").matches) {
       frame.scrollIntoView({ behavior: "smooth", block: "start" })
     }
+
+    this.shouldAutoScrollDetail = false
   }
 
   setSelectedRow(row) {
