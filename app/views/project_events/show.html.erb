@@ -165,11 +165,14 @@
 
       <%# Stacktrace panel %>
       <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
-        <% if backtrace.respond_to?(:any?) && backtrace.any? %>
-          <pre class="stacktrace"><code><%= Array(backtrace).join("\n") %></code></pre>
-        <% else %>
-          <pre class="stacktrace"><code><%= @event.message %></code></pre>
-        <% end %>
+        <% stacktrace_text = backtrace.respond_to?(:any?) && backtrace.any? ? Array(backtrace).join("\n") : @event.message %>
+        <div class="copy-block" data-controller="copy" data-copy-text-value="<%= stacktrace_text %>">
+          <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
+            <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+            <span data-copy-target="buttonLabel">Copy</span>
+          </button>
+          <pre class="stacktrace" data-copy-target="source"><code><%= stacktrace_text %></code></pre>
+        </div>
       </section>
 
       <%# Occurrences panel %>

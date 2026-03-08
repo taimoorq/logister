@@ -71,6 +71,22 @@
   .sidebar-action-link {
     @apply block py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 no-underline;
   }
+  .inbox-workbench {
+    @apply grid grid-cols-1 xl:grid-cols-[16rem_minmax(22rem,30rem)_minmax(0,1fr)] gap-4 items-start;
+  }
+  .inbox-workbench-sidebar {
+    @apply xl:sticky xl:top-[5.2rem];
+  }
+  .inbox-sidebar-card {
+    @apply rounded-xl bg-white border border-slate-200 shadow-sm p-4;
+  }
+  .inbox-workbench-list,
+  .inbox-workbench-detail {
+    @apply min-w-0;
+  }
+  .inbox-pane-header {
+    @apply flex items-center justify-between gap-2 rounded-t-xl border border-slate-200 border-b-0 bg-white px-4 py-3;
+  }
   .inbox-toolbar {
     @apply rounded-xl bg-white border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col gap-3 md:gap-4;
   }
@@ -121,10 +137,10 @@
     @apply bg-blue-100 border-blue-200 text-blue-700;
   }
   .inbox-table-wrap {
-    @apply rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden;
+    @apply rounded-b-xl bg-white border border-slate-200 shadow-sm overflow-hidden;
   }
   .inbox-list-scroll {
-    @apply max-h-[12rem] md:max-h-[13.5rem] overflow-y-auto;
+    @apply max-h-[62vh] overflow-y-auto;
   }
   .inbox-table {
     @apply min-w-full divide-y divide-slate-200;
@@ -247,6 +263,21 @@
   }
   .stacktrace code {
     @apply bg-transparent p-0 text-inherit whitespace-pre;
+  }
+  .copy-block {
+    @apply relative;
+  }
+  .copy-block-tight .copy-block-btn {
+    @apply top-2;
+  }
+  .copy-block-btn {
+    @apply absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white/95 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 cursor-pointer shadow-sm;
+  }
+  .copy-block.is-copied .copy-block-btn {
+    @apply border-emerald-300 text-emerald-700 bg-emerald-50;
+  }
+  .copy-block.is-copy-failed .copy-block-btn {
+    @apply border-rose-300 text-rose-700 bg-rose-50;
   }
   .better-errors-shell {
     @apply rounded-xl border border-slate-300 overflow-hidden bg-slate-100;
@@ -409,6 +440,10 @@
   }
 
   @media (max-width: 1023px) {
+    .inbox-workbench {
+      @apply grid-cols-1;
+    }
+
     .inbox-table th.col-num,
     .inbox-table td.col-num,
     .inbox-table th.col-trend,
@@ -431,7 +466,7 @@
     }
 
     .inbox-list-scroll {
-      @apply max-h-[8.8rem];
+      @apply max-h-[55vh];
     }
 
     .inbox-table th,

@@ -42,14 +42,32 @@
 
   <% if details[:headers].present? %>
     <p class="kicker">headers</p>
-    <pre class="context-json"><code><%= pretty_context_json(details[:headers]) %></code></pre>
+    <div class="copy-block" data-controller="copy" data-copy-text-value="<%= pretty_context_json(details[:headers]) %>">
+      <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy headers JSON">
+        <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+        <span data-copy-target="buttonLabel">Copy</span>
+      </button>
+      <pre class="context-json" data-copy-target="source"><code><%= pretty_context_json(details[:headers]) %></code></pre>
+    </div>
   <% end %>
 
   <% if details[:params].present? %>
     <p class="kicker">params</p>
-    <pre class="context-json"><code><%= pretty_context_json(details[:params]) %></code></pre>
+    <div class="copy-block" data-controller="copy" data-copy-text-value="<%= pretty_context_json(details[:params]) %>">
+      <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy params JSON">
+        <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+        <span data-copy-target="buttonLabel">Copy</span>
+      </button>
+      <pre class="context-json" data-copy-target="source"><code><%= pretty_context_json(details[:params]) %></code></pre>
+    </div>
   <% end %>
 
   <p class="kicker">full context</p>
-  <pre class="context-json"><code><%= pretty_context_json(event.context || {}) %></code></pre>
+  <div class="copy-block" data-controller="copy" data-copy-text-value="<%= pretty_context_json(event.context || {}) %>">
+    <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy full context JSON">
+      <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+      <span data-copy-target="buttonLabel">Copy</span>
+    </button>
+    <pre class="context-json" data-copy-target="source"><code><%= pretty_context_json(event.context || {}) %></code></pre>
+  </div>
 </div>

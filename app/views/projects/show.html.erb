@@ -1,88 +1,73 @@
-<%# ── Project inbox workbench ──────────────────────────────────────────── %>
-<%= render "header" %>
+<% detail_event = @selected_event || @selected_group&.latest_event %>
+<% detail_group = @selected_group || detail_event&.error_group %>
 
-<div class="min-w-0 flex flex-col gap-4" data-controller="inbox"
-     data-inbox-project-uuid-value="<%= @project.uuid %>">
-  <% filter_labels = {
-       "unresolved" => "Open",
-       "introduced_today" => "Introduced today",
-       "resolved" => "Resolved",
-       "ignored" => "Ignored",
-       "archived" => "Archived",
-       "all" => "All"
-     } %>
-
-  <% filter_counts = {
-       "unresolved" => @counts[:unresolved],
-       "introduced_today" => @counts[:introduced_today],
-       "resolved" => @counts[:resolved],
-       "ignored" => @counts[:ignored],
-       "archived" => @counts[:archived],
-       "all" => @counts[:all]
-     } %>
-
-  <div class="inbox-toolbar">
-    <%= form_with url: project_path(@project), method: :get,
-                  class: "inbox-toolbar-form",
-                  data: { turbo_frame: "project_inbox",
-                          turbo_action: "advance",
-                          inbox_target: "searchForm",
-                          action: "submit->inbox#onSearchSubmit" } do |f| %>
-      <div class="inbox-toolbar-search">
-        <%= f.hidden_field :filter, value: @filter %>
-        <%= f.label :q, "Search", class: "kicker" %>
-        <%= f.search_field :q, value: @query,
-                           placeholder: "Search errors…",
-                           class: "form-input",
-                           data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
-      </div>
-      <div class="inbox-toolbar-filter">
-        <p class="kicker">Filter</p>
-        <details class="inbox-filter-menu">
-          <summary class="form-input inbox-filter-summary">
-            <span><%= filter_labels[@filter] || "Open" %> (<%= filter_counts[@filter] || 0 %>)</span>
-            <span aria-hidden="true">▾</span>
-          </summary>
-          <div class="inbox-filter-menu-list">
-            <% ProjectInboxData::INBOX_FILTERS.each do |filter_key| %>
-              <% active = (@filter == filter_key) %>
-              <%= link_to project_path(@project, filter: filter_key, q: @query),
-                          class: "inbox-filter-menu-item #{'is-active' if active}",
-                          data: { turbo_action: "advance" } do %>
-                <span><%= filter_labels[filter_key] %></span>
-                <span class="filter-count"><%= filter_counts[filter_key] || 0 %></span>
-              <% end %>
-            <% end %>
-          </div>
-        </details>
-      </div>
+<section class="rounded-xl border border-slate-200 bg-white shadow-sm px-4 py-3 mb-4">
+  <div class="flex items-center justify-between gap-2 mb-3">
+    <h1 class="text-lg font-semibold text-slate-900"><%= @project.name %> inbox</h1>
+    <% if @project.owned_by?(current_user) %>
+      <%= link_to "Project settings", settings_project_path(@project), class: "text-sm font-semibold text-blue-600 hover:text-blue-700 no-underline" %>
     <% end %>
   </div>
+  <%= render "nav" %>
+</section>
 
-  <%# Inbox list — Turbo Frame %>
-  <%= render "inbox_table",
-             project:       @project,
-             groups:        @groups,
-             selected_uuid: @selected_group&.uuid,
-             filter:        @filter,
-             query:         @query %>
+<div class="inbox-workbench min-w-0" data-controller="inbox" data-inbox-project-uuid-value="<%= @project.uuid %>">
+  <aside class="inbox-workbench-sidebar">
+    <div class="inbox-sidebar-card">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold text-slate-900 truncate"><%= @project.name %></h1>
+          <p class="text-xs text-slate-500"><%= @project.slug %></p>
+        </div>
+        <%= link_to "All projects", projects_path, class: "text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline whitespace-nowrap" %>
+      </div>
 
-  <%# Error detail — Turbo Frame %>
-  <% detail_event = @selected_event || @selected_group&.latest_event %>
-  <% detail_group = @selected_group || detail_event&.error_group %>
-  <% if detail_event.present? %>
-    <%= render "project_events/event_detail",
-               project:     @project,
-               event:       detail_event,
-               group:       detail_group,
-               occurrences: detail_group&.error_occurrences&.includes(:ingest_event)&.recent_first&.limit(50) || [],
-               related_logs: IngestEvent.related_logs(project: @project, event: detail_event, window: 5.minutes, limit: 50),
-               filter:      @filter,
-               query:       @query,
-               tab:         @tab,
-               frame_scope: params[:frame_scope],
-               frame:       params[:frame] %>
-  <% else %>
-    <%= render "empty_detail" %>
-  <% end %>
+      <%= form_with url: project_path(@project), method: :get,
+                    class: "space-y-3",
+                    data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "searchForm", action: "submit->inbox#onSearchSubmit" } do |f| %>
+        <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
+        <div>
+          <%= f.label :q, "Search inbox", class: "kicker mb-1 block" %>
+          <%= f.search_field :q, value: @query, placeholder: "Search errors...",
+                             class: "form-input",
+                             data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
+        </div>
+      <% end %>
+
+      <div class="mt-4">
+        <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query %>
+      </div>
+    </div>
+  </aside>
+
+  <section class="inbox-workbench-list">
+    <header class="inbox-pane-header">
+      <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]">Error groups</h2>
+      <p class="text-xs text-slate-500"><%= @groups.size %> shown</p>
+    </header>
+    <%= render "inbox_table",
+               project:       @project,
+               groups:        @groups,
+               selected_uuid: @selected_group&.uuid,
+               filter:        @filter,
+               query:         @query %>
+  </section>
+
+  <section class="inbox-workbench-detail">
+    <% if detail_event.present? %>
+      <%= render "project_events/event_detail",
+                 project:     @project,
+                 event:       detail_event,
+                 group:       detail_group,
+                 occurrences: detail_group&.error_occurrences&.includes(:ingest_event)&.recent_first&.limit(50) || [],
+                 related_logs: IngestEvent.related_logs(project: @project, event: detail_event, window: 5.minutes, limit: 50),
+                 filter:      @filter,
+                 query:       @query,
+                 tab:         @tab,
+                 frame_scope: params[:frame_scope],
+                 frame:       params[:frame] %>
+    <% else %>
+      <%= render "empty_detail" %>
+    <% end %>
+  </section>
 </div>

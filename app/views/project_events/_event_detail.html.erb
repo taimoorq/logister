@@ -156,13 +156,32 @@
             <section class="better-errors-code card">
               <% if source_excerpt.present? %>
                 <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
-                <pre class="better-errors-source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
+                <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
+                  <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy source excerpt">
+                    <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+                    <span data-copy-target="buttonLabel">Copy</span>
+                  </button>
+                  <pre class="better-errors-source" data-copy-target="source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
 <% end %></code></pre>
+                </div>
               <% elsif selected_frame.present? %>
                 <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
-                <pre class="stacktrace"><code><%= selected_frame[:raw] %></code></pre>
+                <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:raw] %>">
+                  <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stack frame">
+                    <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+                    <span data-copy-target="buttonLabel">Copy</span>
+                  </button>
+                  <pre class="stacktrace" data-copy-target="source"><code><%= selected_frame[:raw] %></code></pre>
+                </div>
               <% else %>
-                <pre class="stacktrace"><code><%= Array(backtrace).presence&.join("\n") || event.message %></code></pre>
+                <% fallback_stacktrace = Array(backtrace).presence&.join("\n") || event.message %>
+                <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= fallback_stacktrace %>">
+                  <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
+                    <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+                    <span data-copy-target="buttonLabel">Copy</span>
+                  </button>
+                  <pre class="stacktrace" data-copy-target="source"><code><%= fallback_stacktrace %></code></pre>
+                </div>
               <% end %>
             </section>
 
