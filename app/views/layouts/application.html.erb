@@ -224,5 +224,78 @@
         </div>
       </div>
     </footer>
+
+    <script>
+      (function() {
+        function initNavFallback() {
+          var nav = document.querySelector("nav[data-controller~='nav']")
+          if (!nav || nav.dataset.navFallbackBound === "1") return
+
+          var toggle = nav.querySelector("[data-nav-target='toggle']")
+          var panel = nav.querySelector("[data-nav-target='panel']")
+          if (!toggle || !panel) return
+
+          var iconOpen = nav.querySelector("[data-nav-target='iconOpen']")
+          var iconClose = nav.querySelector("[data-nav-target='iconClose']")
+
+          function isStimulusConnected() {
+            return nav.dataset.navConnected === "1"
+          }
+
+          function isOpen() {
+            return !panel.classList.contains("hidden")
+          }
+
+          function openMenu() {
+            panel.classList.remove("hidden")
+            toggle.setAttribute("aria-expanded", "true")
+            if (iconOpen) iconOpen.classList.add("hidden")
+            if (iconClose) iconClose.classList.remove("hidden")
+          }
+
+          function closeMenu() {
+            panel.classList.add("hidden")
+            toggle.setAttribute("aria-expanded", "false")
+            if (iconOpen) iconOpen.classList.remove("hidden")
+            if (iconClose) iconClose.classList.add("hidden")
+          }
+
+          function onToggleClick(event) {
+            if (isStimulusConnected()) return
+            event.preventDefault()
+            event.stopPropagation()
+            if (isOpen()) closeMenu()
+            else openMenu()
+          }
+
+          function onDocClick(event) {
+            if (isStimulusConnected() || !isOpen()) return
+            if (panel.contains(event.target) || toggle.contains(event.target)) return
+            closeMenu()
+          }
+
+          function onKeyDown(event) {
+            if (isStimulusConnected() || !isOpen()) return
+            if (event.key === "Escape") closeMenu()
+          }
+
+          function onPanelClick(event) {
+            if (isStimulusConnected()) return
+            var target = event && event.target
+            if (target && typeof target.closest === "function" && target.closest(".nav-link")) closeMenu()
+          }
+
+          toggle.addEventListener("click", onToggleClick)
+          document.addEventListener("click", onDocClick)
+          document.addEventListener("keydown", onKeyDown)
+          panel.addEventListener("click", onPanelClick)
+
+          nav.dataset.navFallbackBound = "1"
+        }
+
+        document.addEventListener("turbo:load", initNavFallback)
+        document.addEventListener("DOMContentLoaded", initNavFallback)
+      })()
+    </script>
   </body>
 </html>

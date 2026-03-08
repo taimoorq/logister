@@ -2,12 +2,22 @@ import { Controller } from "@hotwired/stimulus"
 
 // Toggles the mobile nav panel (hamburger menu). Keeps one source of truth for nav JS.
 export default class extends Controller {
-  static targets = ["toggle", "panel", "iconOpen", "iconClose"]
+  static get targets() {
+    return ["toggle", "panel", "iconOpen", "iconClose"]
+  }
 
   connect() {
+    this.element.dataset.navConnected = "1"
     this.boundClose = this.closeOnClickOutside.bind(this)
     this.boundCloseOnEscape = this.closeOnEscape.bind(this)
     this.boundCloseOnNavLink = this.closeOnNavLink.bind(this)
+  }
+
+  disconnect() {
+    delete this.element.dataset.navConnected
+    document.removeEventListener("click", this.boundClose)
+    document.removeEventListener("keydown", this.boundCloseOnEscape)
+    if (this.hasPanelTarget) this.panelTarget.removeEventListener("click", this.boundCloseOnNavLink)
   }
 
   toggle(event) {
@@ -52,7 +62,8 @@ export default class extends Controller {
   }
 
   closeOnNavLink(event) {
-    if (event.target.closest?.(".nav-link")) this.close()
+    const target = event && event.target
+    if (target && typeof target.closest === "function" && target.closest(".nav-link")) this.close()
   }
 
   closeOpenMenus() {

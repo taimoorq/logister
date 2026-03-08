@@ -6,7 +6,9 @@ import { Controller } from "@hotwired/stimulus"
 //   data-tabs-target="tab"    data-action="click->tabs#show"  data-panel="panel-id"
 //   data-tabs-target="panel"  id="panel-id"
 export default class extends Controller {
-  static targets = ["tab", "panel"]
+  static get targets() {
+    return ["tab", "panel"]
+  }
 
   connect() {
     // Ensure the first active tab/panel pair is correct on initial load
