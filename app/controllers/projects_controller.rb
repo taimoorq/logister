@@ -14,7 +14,7 @@ class ProjectsController < ApplicationController
   def show
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
-    @tab    = params[:tab].presence_in(%w[stacktrace context occurrences related_logs]) || "stacktrace"
+    @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
     @groups = inbox_groups(@project, filter: @filter, query: @query)
 
     # Turbo Frame request targeting the inbox list — return only the table partial.

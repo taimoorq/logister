@@ -248,6 +248,99 @@
   .stacktrace code {
     @apply bg-transparent p-0 text-inherit whitespace-pre;
   }
+  .better-errors-shell {
+    @apply rounded-xl border border-slate-300 overflow-hidden bg-slate-100;
+  }
+  .better-errors-header {
+    @apply bg-slate-900 text-slate-100 px-5 py-4;
+  }
+  .better-errors-kicker {
+    @apply text-sm text-slate-300 mb-1;
+  }
+  .better-errors-message {
+    @apply text-2xl font-semibold text-white leading-tight m-0;
+  }
+  .better-errors-workbench {
+    @apply grid grid-cols-1 xl:grid-cols-[22rem_1fr] gap-4 p-4;
+  }
+  .better-errors-frames {
+    @apply bg-white border border-slate-300 rounded-lg overflow-hidden flex flex-col min-h-[26rem];
+  }
+  .better-errors-frame-scope {
+    @apply flex gap-2 px-3 py-2 border-b border-slate-200 bg-slate-50;
+  }
+  .frame-scope-pill {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-slate-600 border border-slate-300 bg-white no-underline;
+  }
+  .frame-scope-pill.is-active {
+    @apply bg-slate-700 text-white border-slate-700;
+  }
+  .frame-list {
+    @apply list-none m-0 p-0 overflow-auto;
+  }
+  .frame-item {
+    @apply border-b border-slate-200;
+  }
+  .frame-item.is-active {
+    @apply bg-cyan-700;
+  }
+  .frame-link {
+    @apply block no-underline px-3 py-2;
+  }
+  .frame-item.is-active .frame-link {
+    @apply text-white;
+  }
+  .frame-method {
+    @apply block font-semibold text-sm;
+  }
+  .frame-file {
+    @apply block text-xs text-slate-500;
+  }
+  .frame-item.is-active .frame-file {
+    @apply text-cyan-100;
+  }
+  .better-errors-main {
+    @apply min-w-0 flex flex-col gap-4;
+  }
+  .better-errors-code {
+    @apply p-0 overflow-hidden border border-slate-300 shadow-none;
+  }
+  .better-errors-code-header {
+    @apply px-3 py-2 text-sm font-semibold border-b border-slate-200 bg-slate-50 text-slate-700;
+  }
+  .better-errors-source {
+    @apply m-0 text-sm font-mono overflow-auto max-h-[26rem] bg-white text-slate-900;
+  }
+  .code-line {
+    @apply grid grid-cols-[4rem_1fr] items-start min-w-full;
+  }
+  .code-line.is-highlight {
+    @apply bg-rose-50;
+  }
+  .code-line-no {
+    @apply text-right px-3 py-0.5 text-slate-500 border-r border-slate-200 select-none;
+  }
+  .code-line-src {
+    @apply px-3 py-0.5 whitespace-pre;
+  }
+  .better-errors-section {
+    @apply border-t border-slate-300 pt-4;
+  }
+  .better-errors-section h4 {
+    @apply text-cyan-700 text-2xl font-semibold mb-2;
+  }
+  .better-errors-dl {
+    @apply grid grid-cols-[13rem_1fr] gap-x-4 gap-y-2 text-sm;
+  }
+  .better-errors-dl dt {
+    @apply font-semibold text-slate-700;
+  }
+  .better-errors-dl dd {
+    @apply m-0 text-slate-800 break-all;
+  }
+  .better-errors-dl dd code {
+    @apply whitespace-pre-wrap;
+  }
   .event-meta-list {
     @apply grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm;
   }
@@ -391,6 +484,18 @@
 
     .detail-tab {
       @apply shrink-0 text-xs;
+    }
+
+    .better-errors-message {
+      @apply text-xl;
+    }
+
+    .better-errors-workbench {
+      @apply p-3;
+    }
+
+    .better-errors-dl {
+      @apply grid-cols-1 gap-y-1.5;
     }
   }
 
