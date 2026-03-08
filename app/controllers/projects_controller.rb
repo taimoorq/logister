@@ -14,6 +14,7 @@ class ProjectsController < ApplicationController
   def show
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
+    @tab    = params[:tab].presence_in(%w[stacktrace context occurrences related_logs]) || "stacktrace"
     @groups = inbox_groups(@project, filter: @filter, query: @query)
 
     # Turbo Frame request targeting the inbox list — return only the table partial.
@@ -34,6 +35,15 @@ class ProjectsController < ApplicationController
       @project.error_groups.find_by(uuid: params[:group_uuid])
     else
       @groups.first
+    end
+
+    @selected_event = if params[:event_uuid].present?
+      @project.ingest_events.find_by(uuid: params[:event_uuid])
+    end
+
+    # Safety: if the requested event does not belong to the selected group, ignore it.
+    if @selected_event && @selected_group && @selected_event.error_group_id != @selected_group.id
+      @selected_event = nil
     end
   end
 

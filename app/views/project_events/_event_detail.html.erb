@@ -1,9 +1,10 @@
-<turbo-frame id="error_detail" style="view-transition-name: error-detail-pane; view-transition-class: error-detail-pane;">
+<turbo-frame id="error_detail" target="error_detail" style="view-transition-name: error-detail-pane; view-transition-class: error-detail-pane;">
   <% exception_data = event.context.is_a?(Hash) ? (event.context["exception"] || event.context[:exception]) : nil %>
   <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
   <% filter_param = local_assigns[:filter] || "unresolved" %>
   <% query_param  = local_assigns[:query]  || "" %>
   <% related_logs = local_assigns[:related_logs] || [] %>
+  <% active_tab   = local_assigns[:tab].presence_in(%w[stacktrace context occurrences related_logs]) || "stacktrace" %>
 
   <%# ── Action bar ──────────────────────────────────────────────────────── %>
   <header class="detail-actionbar card">
@@ -62,24 +63,32 @@
   </header>
 
   <%# ── Tabs ──────────────────────────────────────────────────────────── %>
-  <div class="detail-tabs-wrap card" data-controller="tabs">
+  <div class="detail-tabs-wrap card">
     <nav class="detail-tabs" role="tablist">
-      <button class="detail-tab is-active" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-stacktrace" role="tab">
-        Stacktrace
-      </button>
-      <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-context" role="tab">
-        Context
-      </button>
-      <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-occurrences" role="tab">
-        Occurrences (<%= occurrences.size %>)
-      </button>
-      <button class="detail-tab" data-tabs-target="tab" data-action="click->tabs#show" data-panel="tab-related-logs" role="tab">
-        Related logs (<%= related_logs.size %>)
-      </button>
+      <%= link_to "Stacktrace",
+                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
+                  class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
+                  role: "tab",
+                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+      <%= link_to "Context",
+                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "context"),
+                  class: "detail-tab #{'is-active' if active_tab == 'context'}",
+                  role: "tab",
+                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+      <%= link_to "Occurrences (#{occurrences.size})",
+                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "occurrences"),
+                  class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
+                  role: "tab",
+                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+      <%= link_to "Related logs (#{related_logs.size})",
+                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "related_logs"),
+                  class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
+                  role: "tab",
+                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
     </nav>
 
     <%# ── Stacktrace panel ─────────────────────────────────────────────── %>
-    <section id="tab-stacktrace" class="detail-panel" data-tabs-target="panel">
+    <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
       <div class="detail-meta-strip">
         <div><span class="kicker">Event ID</span><code><%= event.uuid %></code></div>
         <div><span class="kicker">Fingerprint</span><code><%= event.fingerprint.presence || group&.fingerprint || "—" %></code></div>
@@ -95,12 +104,12 @@
     </section>
 
     <%# ── Context panel ────────────────────────────────────────────────── %>
-    <section id="tab-context" class="detail-panel is-hidden" data-tabs-target="panel">
+    <section id="tab-context" class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>">
       <%= render "project_events/context_panel", event: event %>
     </section>
 
     <%# ── Occurrences panel ───────────────────────────────────────────── %>
-    <section id="tab-occurrences" class="detail-panel is-hidden" data-tabs-target="panel">
+    <section id="tab-occurrences" class="detail-panel<%= ' is-hidden' unless active_tab == 'occurrences' %>">
       <% if occurrences.any? %>
         <table class="occurrences-table">
           <thead>
@@ -133,7 +142,7 @@
       <% end %>
     </section>
 
-    <section id="tab-related-logs" class="detail-panel is-hidden" data-tabs-target="panel">
+    <section id="tab-related-logs" class="detail-panel<%= ' is-hidden' unless active_tab == 'related_logs' %>">
       <% if related_logs.any? %>
         <table class="occurrences-table">
           <thead>

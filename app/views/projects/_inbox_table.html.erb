@@ -1,4 +1,4 @@
-<turbo-frame id="project_inbox">
+<turbo-frame id="project_inbox" target="error_detail">
   <div class="inbox-table-wrap">
     <% if groups.any? %>
       <div class="inbox-list-scroll">
@@ -14,8 +14,12 @@
           </thead>
           <tbody>
             <% groups.each do |group| %>
+              <% row_clickable = group.latest_event.present? %>
               <tr id="<%= dom_id(group) %>"
-                  class="inbox-row<%= " is-selected" if selected_uuid.present? && selected_uuid == group.uuid %>"
+                  class="inbox-row<%= " is-selected" if selected_uuid.present? && selected_uuid == group.uuid %><%= " is-clickable" if row_clickable %>"
+                  data-action="<%= row_clickable ? 'click->inbox#openRow keydown.enter->inbox#openRowKey keydown.space->inbox#openRowKey' : '' %>"
+                  tabindex="<%= row_clickable ? 0 : -1 %>"
+                  aria-label="<%= row_clickable ? "Open error details for #{group.title}" : nil %>"
                   style="view-transition-name: <%= dom_id(group) %>; view-transition-class: inbox-row;">
                 <td class="col-error">
                   <% if group.latest_event %>
@@ -25,7 +29,7 @@
                                 data: {
                                   turbo_frame: "error_detail",
                                   turbo_action: "advance",
-                                  action: "click->inbox#selectRow"
+                                  action: "click->inbox#openDetail"
                                 } do %>
                       <span class="error-title"><%= group.title %></span>
                       <% if group.subtitle.present? %>
