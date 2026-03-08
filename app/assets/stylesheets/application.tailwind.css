@@ -410,6 +410,7 @@
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-4xl sm:text-5xl font-bold leading-none mb-2;
     color: #122247;
+    font-variant-numeric: tabular-nums;
   }
 
   .stat-meta {

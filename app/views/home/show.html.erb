@@ -53,7 +53,14 @@
       <div class="hero-surface" data-controller="reveal" data-reveal-animation-class-value="reveal-scale" data-reveal-delay-value="120">
         <div class="shot-frame shot-main">
           <% if overview_desktop_exists %>
-            <%= image_tag overview_desktop_path, alt: "Logister overview dashboard on desktop", class: "hero-shot" %>
+            <%= image_tag overview_desktop_path,
+                          alt: "Logister overview dashboard on desktop",
+                          class: "hero-shot",
+                          width: 2534,
+                          height: 1138,
+                          loading: "eager",
+                          fetchpriority: "high",
+                          decoding: "async" %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= overview_desktop_path %></code></div>
           <% end %>
@@ -61,14 +68,28 @@
         <div class="hero-mobile-shots" aria-hidden="true">
           <div class="shot-frame">
             <% if overview_mobile_exists %>
-              <%= image_tag overview_mobile_path, alt: "", class: "hero-shot" %>
+              <%= image_tag overview_mobile_path,
+                            alt: "",
+                            class: "hero-shot",
+                            width: 760,
+                            height: 1151,
+                            loading: "lazy",
+                            fetchpriority: "low",
+                            decoding: "async" %>
             <% else %>
               <div class="shot-placeholder">overview mobile</div>
             <% end %>
           </div>
           <div class="shot-frame">
             <% if projects_mobile_exists %>
-              <%= image_tag projects_mobile_path, alt: "", class: "hero-shot" %>
+              <%= image_tag projects_mobile_path,
+                            alt: "",
+                            class: "hero-shot",
+                            width: 802,
+                            height: 1184,
+                            loading: "lazy",
+                            fetchpriority: "low",
+                            decoding: "async" %>
             <% else %>
               <div class="shot-placeholder">projects mobile</div>
             <% end %>
@@ -82,7 +103,14 @@
     <p class="logo-band-title">Real product screenshots</p>
     <div class="shot-frame shot-wide">
       <% if inbox_desktop_exists %>
-        <%= image_tag inbox_desktop_path, alt: "Logister project inbox and triage detail on desktop", class: "hero-shot" %>
+        <%= image_tag inbox_desktop_path,
+                      alt: "Logister project inbox and triage detail on desktop",
+                      class: "hero-shot",
+                      width: 2474,
+                      height: 1712,
+                      loading: "lazy",
+                      fetchpriority: "low",
+                      decoding: "async" %>
       <% else %>
         <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_desktop_path %></code></div>
       <% end %>
