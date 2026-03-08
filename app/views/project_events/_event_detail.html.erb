@@ -1,10 +1,27 @@
 <turbo-frame id="error_detail" target="error_detail" style="view-transition-name: error-detail-pane; view-transition-class: error-detail-pane;">
   <% exception_data = event.context.is_a?(Hash) ? (event.context["exception"] || event.context[:exception]) : nil %>
   <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
+  <% parsed_frames = parse_backtrace_frames(backtrace) %>
+  <% app_frames = parsed_frames.select { |frame| frame[:application_frame] } %>
+  <% frame_scope = local_assigns[:frame_scope].presence_in(%w[application all]) || "application" %>
+  <% visible_frames = (frame_scope == "application" && app_frames.any?) ? app_frames : parsed_frames %>
+  <% selected_frame_index = local_assigns[:frame].to_i %>
+  <% selected_frame_index = 0 if selected_frame_index.negative? || selected_frame_index >= visible_frames.size %>
+  <% selected_frame = visible_frames[selected_frame_index] %>
+  <% source_excerpt = source_excerpt_for_frame(selected_frame) %>
+  <% request_details = request_context_details(event) %>
+  <% local_variables = if exception_data.is_a?(Hash)
+       exception_data["locals"] || exception_data[:locals] || exception_data["local_variables"] || exception_data[:local_variables]
+     end %>
+  <% instance_variables = if exception_data.is_a?(Hash)
+       exception_data["instance_variables"] || exception_data[:instance_variables]
+     end %>
+  <% local_variables = {} unless local_variables.is_a?(Hash) %>
+  <% instance_variables = {} unless instance_variables.is_a?(Hash) %>
   <% filter_param = local_assigns[:filter] || "unresolved" %>
   <% query_param  = local_assigns[:query]  || "" %>
   <% related_logs = local_assigns[:related_logs] || [] %>
-  <% active_tab   = local_assigns[:tab].presence_in(%w[stacktrace context occurrences related_logs]) || "stacktrace" %>
+  <% active_tab   = local_assigns[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
 
   <%# ── Action bar ──────────────────────────────────────────────────────── %>
   <header class="detail-actionbar card">
@@ -65,14 +82,14 @@
   <%# ── Tabs ──────────────────────────────────────────────────────────── %>
   <div class="detail-tabs-wrap card">
     <nav class="detail-tabs" role="tablist" data-turbo-frame="error_detail">
-      <%= link_to "Stacktrace",
-                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
-                  class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
-                  role: "tab",
-                  data: { turbo_frame: "error_detail" } %>
       <%= link_to "Context",
                   project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "context"),
                   class: "detail-tab #{'is-active' if active_tab == 'context'}",
+                  role: "tab",
+                  data: { turbo_frame: "error_detail" } %>
+      <%= link_to "Stacktrace",
+                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
+                  class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
                   role: "tab",
                   data: { turbo_frame: "error_detail" } %>
       <%= link_to "Occurrences (#{occurrences.size})",
@@ -87,25 +104,116 @@
                   data: { turbo_frame: "error_detail" } %>
     </nav>
 
-    <%# ── Stacktrace panel ─────────────────────────────────────────────── %>
-    <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
-      <div class="detail-meta-strip">
-        <div><span class="kicker">Event ID</span><code><%= event.uuid %></code></div>
-        <div><span class="kicker">Fingerprint</span><code><%= event.fingerprint.presence || group&.fingerprint || "—" %></code></div>
-        <div><span class="kicker">Severity</span><%= render "shared/widgets/severity_badge", level: event.level.presence || "error" %></div>
-        <div><span class="kicker">Stage</span><span class="stage-tag"><%= group&.stage || "production" %></span></div>
-      </div>
-
-      <% if backtrace.respond_to?(:any?) && backtrace.any? %>
-        <pre class="stacktrace"><code><%= Array(backtrace).join("\n") %></code></pre>
-      <% else %>
-        <pre class="stacktrace"><code><%= event.message %></code></pre>
-      <% end %>
-    </section>
-
     <%# ── Context panel ────────────────────────────────────────────────── %>
     <section id="tab-context" class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>">
       <%= render "project_events/context_panel", event: event %>
+    </section>
+
+    <%# ── Stacktrace panel ─────────────────────────────────────────────── %>
+    <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
+      <div class="better-errors-shell">
+        <header class="better-errors-header">
+          <p class="better-errors-kicker">
+            <strong><%= exception_data.is_a?(Hash) ? (exception_data["class"] || exception_data[:class] || "RuntimeError") : "RuntimeError" %></strong>
+            in <%= request_details[:rails_action].presence || "unknown#action" %>
+          </p>
+          <h3 class="better-errors-message"><%= event.message.to_s.lines.first.to_s.strip.presence || "Error event" %></h3>
+        </header>
+
+        <div class="better-errors-workbench">
+          <aside class="better-errors-frames">
+            <div class="better-errors-frame-scope">
+              <%= link_to "Application Frames",
+                          project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "application", frame: 0),
+                          class: "frame-scope-pill #{'is-active' if frame_scope == 'application'}",
+                          data: { turbo_frame: "error_detail" } %>
+              <%= link_to "All Frames",
+                          project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "all", frame: 0),
+                          class: "frame-scope-pill #{'is-active' if frame_scope == 'all'}",
+                          data: { turbo_frame: "error_detail" } %>
+            </div>
+
+            <% if visible_frames.any? %>
+              <ol class="frame-list">
+                <% visible_frames.each_with_index do |frame_data, index| %>
+                  <% frame_label = frame_data[:method_name].presence || "unknown" %>
+                  <li class="frame-item <%= "is-active" if index == selected_frame_index %>">
+                    <%= link_to project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: frame_scope, frame: index),
+                                class: "frame-link",
+                                data: { turbo_frame: "error_detail" } do %>
+                      <span class="frame-method"><%= frame_label %></span>
+                      <span class="frame-file"><%= frame_data[:file] %>, line <%= frame_data[:line_number] %></span>
+                    <% end %>
+                  </li>
+                <% end %>
+              </ol>
+            <% else %>
+              <p class="muted">No stack frames were captured for this event.</p>
+            <% end %>
+          </aside>
+
+          <div class="better-errors-main">
+            <section class="better-errors-code card">
+              <% if source_excerpt.present? %>
+                <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
+                <pre class="better-errors-source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
+<% end %></code></pre>
+              <% elsif selected_frame.present? %>
+                <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
+                <pre class="stacktrace"><code><%= selected_frame[:raw] %></code></pre>
+              <% else %>
+                <pre class="stacktrace"><code><%= Array(backtrace).presence&.join("\n") || event.message %></code></pre>
+              <% end %>
+            </section>
+
+            <section class="better-errors-section">
+              <h4>Request info</h4>
+              <dl class="better-errors-dl">
+                <% if request_details[:params].present? %>
+                  <dt>Request parameters</dt>
+                  <dd><code><%= pretty_context_json(request_details[:params]) %></code></dd>
+                <% end %>
+                <% if request_details[:request_id].present? %>
+                  <dt>Request ID</dt>
+                  <dd><code><%= request_details[:request_id] %></code></dd>
+                <% end %>
+                <% if request_details[:url].present? %>
+                  <dt>URL</dt>
+                  <dd><%= request_details[:url] %></dd>
+                <% end %>
+              </dl>
+            </section>
+
+            <section class="better-errors-section">
+              <h4>Local Variables</h4>
+              <% if local_variables.any? %>
+                <dl class="better-errors-dl">
+                  <% local_variables.each do |key, value| %>
+                    <dt><code><%= key %></code></dt>
+                    <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+                  <% end %>
+                </dl>
+              <% else %>
+                <p class="muted">No local variables captured.</p>
+              <% end %>
+            </section>
+
+            <section class="better-errors-section">
+              <h4>Instance Variables</h4>
+              <% if instance_variables.any? %>
+                <dl class="better-errors-dl">
+                  <% instance_variables.each do |key, value| %>
+                    <dt><code><%= key %></code></dt>
+                    <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+                  <% end %>
+                </dl>
+              <% else %>
+                <p class="muted">No instance variables captured.</p>
+              <% end %>
+            </section>
+          </div>
+        </div>
+      </div>
     </section>
 
     <%# ── Occurrences panel ───────────────────────────────────────────── %>

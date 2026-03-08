@@ -64,6 +64,8 @@ group :development do
   gem "web-console"
   # Run multiple processes (e.g. rails server + tailwindcss:watch) via bin/dev
   gem "foreman"
+  gem "better_errors"
+  gem "binding_of_caller"
 end
 
 group :test do

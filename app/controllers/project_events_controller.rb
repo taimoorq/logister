@@ -36,7 +36,9 @@ class ProjectEventsController < ApplicationController
 
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
-    @tab    = params[:tab].presence_in(%w[stacktrace context occurrences related_logs]) || "stacktrace"
+    @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
+    @frame_scope = params[:frame_scope].presence_in(%w[application all]) || "application"
+    @frame = params[:frame].to_i
 
     if turbo_frame_request?
       render partial: "project_events/event_detail", locals: {
@@ -47,7 +49,9 @@ class ProjectEventsController < ApplicationController
         related_logs: @related_logs,
         filter:      @filter,
         query:       @query,
-        tab:         @tab
+        tab:         @tab,
+        frame_scope: @frame_scope,
+        frame:       @frame
       }
     else
       # Fallback: if this came from the project inbox workflow, keep users in that workbench.

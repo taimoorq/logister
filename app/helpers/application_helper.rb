@@ -74,6 +74,48 @@ module ApplicationHelper
     value.to_s
   end
 
+  # Parses Ruby-style backtrace lines into frame hashes usable by the debugger-like UI.
+  def parse_backtrace_frames(backtrace)
+    Array(backtrace).filter_map do |line|
+      parsed = parse_backtrace_line(line.to_s)
+      next if parsed.blank?
+
+      absolute_path = absolute_source_path(parsed[:file])
+      app_frame = application_frame_path?(parsed[:file], absolute_path)
+
+      {
+        raw: line.to_s,
+        file: parsed[:file],
+        line_number: parsed[:line_number],
+        method_name: parsed[:method_name],
+        absolute_path: absolute_path,
+        application_frame: app_frame
+      }
+    end
+  end
+
+  def source_excerpt_for_frame(frame, radius: 4)
+    return nil unless frame.is_a?(Hash)
+
+    absolute_path = frame[:absolute_path]
+    line_number = frame[:line_number].to_i
+    return nil if absolute_path.blank? || line_number <= 0 || !File.file?(absolute_path)
+
+    lines = File.readlines(absolute_path, chomp: true)
+    return nil if lines.empty?
+
+    start_line = [ line_number - radius, 1 ].max
+    end_line = [ line_number + radius, lines.length ].min
+
+    {
+      path: frame[:file],
+      highlight_line: line_number,
+      lines: (start_line..end_line).map { |n| { number: n, code: lines[n - 1].to_s } }
+    }
+  rescue StandardError
+    nil
+  end
+
   def seo_title
     page_title = content_for(:title).to_s.strip
     return "Logister" if page_title.blank?
@@ -203,5 +245,42 @@ module ApplicationHelper
 
   def scalarish?(value)
     value.is_a?(String) || value.is_a?(Numeric) || value == true || value == false
+  end
+
+  def parse_backtrace_line(line)
+    patterns = [
+      /\A(?<file>.+?):(?<line>\d+)(?::in `(?<method>[^']+)')?\z/,
+      /\A(?<file>.+?):(?<line>\d+)(?::in (?<method>.+))?\z/
+    ]
+
+    match = patterns.lazy.map { |pattern| pattern.match(line) }.find(&:present?)
+    return nil unless match
+
+    {
+      file: match[:file].to_s,
+      line_number: match[:line].to_i,
+      method_name: match[:method].to_s.presence
+    }
+  end
+
+  def absolute_source_path(file_path)
+    return nil if file_path.blank?
+
+    root = Rails.root.to_s
+    if file_path.start_with?("/")
+      return file_path if file_path.start_with?(root)
+
+      return nil
+    end
+
+    return nil unless file_path.start_with?("app/", "lib/", "config/", "db/")
+
+    Rails.root.join(file_path).to_s
+  end
+
+  def application_frame_path?(relative_path, absolute_path)
+    return true if relative_path.to_s.start_with?("app/")
+
+    absolute_path.to_s.start_with?(Rails.root.join("app").to_s)
   end
 end

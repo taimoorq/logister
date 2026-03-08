@@ -79,7 +79,9 @@
                related_logs: IngestEvent.related_logs(project: @project, event: detail_event, window: 5.minutes, limit: 50),
                filter:      @filter,
                query:       @query,
-               tab:         @tab %>
+               tab:         @tab,
+               frame_scope: params[:frame_scope],
+               frame:       params[:frame] %>
   <% else %>
     <%= render "empty_detail" %>
   <% end %>
