@@ -1,7 +1,6 @@
 <%# ── Standalone event detail page ──────────────────────────────────────── %>
 <% exception_data = @event.context.is_a?(Hash) ? (@event.context["exception"] || @event.context[:exception]) : nil %>
 <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
-<% active_tab = @tab.presence_in(%w[stacktrace context occurrences related_logs]) || "stacktrace" %>
 
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
 

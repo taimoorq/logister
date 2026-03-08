@@ -64,7 +64,7 @@
 
   <%# ── Tabs ──────────────────────────────────────────────────────────── %>
   <div class="detail-tabs-wrap card">
-    <nav class="detail-tabs" role="tablist">
+    <nav class="detail-tabs" role="tablist" data-turbo-frame="error_detail">
       <%= link_to "Stacktrace",
                   project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
                   class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
