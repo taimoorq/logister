@@ -5,7 +5,9 @@ import { Controller } from "@hotwired/stimulus"
 //   - Filter tab active-state sync
 //   - Row selection highlight
 export default class extends Controller {
-  static targets = ["filterLink", "filterField", "searchForm", "searchInput"]
+  static get targets() {
+    return ["filterLink", "filterField", "searchForm", "searchInput"]
+  }
 
   connect() {
     this._searchTimer = null

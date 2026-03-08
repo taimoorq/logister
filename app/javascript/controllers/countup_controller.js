@@ -1,12 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static values = {
-    number: Number,
-    duration: { type: Number, default: 1300 },
-    decimals: { type: Number, default: 0 },
-    suffix: { type: String, default: "" },
-    prefix: { type: String, default: "" }
+  static get values() {
+    return {
+      number: Number,
+      duration: { type: Number, default: 1300 },
+      decimals: { type: Number, default: 0 },
+      suffix: { type: String, default: "" },
+      prefix: { type: String, default: "" }
+    }
   }
 
   connect() {

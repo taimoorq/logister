@@ -1,5 +1,5 @@
 const googleTagIdMeta = document.querySelector('meta[name="logister-google-tag-id"]')
-const googleTagId = googleTagIdMeta?.content?.trim()
+const googleTagId = googleTagIdMeta && googleTagIdMeta.content ? googleTagIdMeta.content.trim() : null
 
 if (googleTagId) {
   let initialized = false

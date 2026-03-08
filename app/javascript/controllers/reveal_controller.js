@@ -1,9 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static values = {
-    animationClass: { type: String, default: "reveal-up" },
-    delay: { type: Number, default: 0 }
+  static get values() {
+    return {
+      animationClass: { type: String, default: "reveal-up" },
+      delay: { type: Number, default: 0 }
+    }
   }
 
   connect() {

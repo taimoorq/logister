@@ -4,7 +4,9 @@ import { Controller } from "@hotwired/stimulus"
 // Use with data-controller="project-search" on a wrapper and data-action="input->project-search#filter"
 // on the search input. Each card should have data-project-name and optionally data-project-slug.
 export default class extends Controller {
-  static values = { selector: { type: String, default: "[data-project-name]" } }
+  static get values() {
+    return { selector: { type: String, default: "[data-project-name]" } }
+  }
 
   filter(event) {
     const query = (event.target.value || "").trim().toLowerCase()
