@@ -2,6 +2,8 @@
   <div>
     <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
     <p class="text-slate-500 text-sm">
+      
+      <%= link_to "All projects", projects_path, class: "sidebar-action-link" %>
       <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code>
       <% if @project.owned_by?(current_user) %>
         <%= link_to "Edit", edit_project_path(@project), class: "ml-2 text-sm text-blue-600 hover:underline" %>

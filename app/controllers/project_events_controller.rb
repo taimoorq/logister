@@ -36,6 +36,7 @@ class ProjectEventsController < ApplicationController
 
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
+    @tab    = params[:tab].presence_in(%w[stacktrace context occurrences related_logs]) || "stacktrace"
 
     if turbo_frame_request?
       render partial: "project_events/event_detail", locals: {
@@ -45,11 +46,24 @@ class ProjectEventsController < ApplicationController
         occurrences: @occurrences,
         related_logs: @related_logs,
         filter:      @filter,
-        query:       @query
+        query:       @query,
+        tab:         @tab
       }
     else
-      # Full page load — render the standalone event page.
-      render :show
+      # Fallback: if this came from the project inbox workflow, keep users in that workbench.
+      if params[:group_uuid].present? || params[:filter].present? || params[:q].present?
+        redirect_to project_path(
+          @project,
+          filter: @filter,
+          q: @query,
+          group_uuid: @group&.uuid || params[:group_uuid],
+          event_uuid: @event.uuid,
+          tab: @tab
+        )
+      else
+        # Full page load — standalone event page.
+        render :show
+      end
     end
   end
 

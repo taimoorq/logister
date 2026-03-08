@@ -33,6 +33,40 @@
   .sidebar-action-link {
     @apply block py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 no-underline;
   }
+  .inbox-toolbar {
+    @apply rounded-xl bg-white border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col gap-3 md:gap-4;
+  }
+  .inbox-breadcrumb {
+    @apply flex items-center;
+  }
+  .inbox-toolbar-form {
+    @apply grid grid-cols-1 md:grid-cols-[1fr_260px] gap-3 md:gap-4;
+  }
+  .inbox-toolbar-search {
+    @apply min-w-0;
+  }
+  .inbox-toolbar-filter {
+    @apply flex flex-col gap-1;
+  }
+  .inbox-filter-menu {
+    @apply relative;
+  }
+  .inbox-filter-summary {
+    @apply flex items-center justify-between cursor-pointer select-none;
+    list-style: none;
+  }
+  .inbox-filter-summary::-webkit-details-marker {
+    display: none;
+  }
+  .inbox-filter-menu-list {
+    @apply absolute right-0 mt-2 w-full min-w-[16rem] rounded-lg border border-slate-200 bg-white shadow-sm z-20 overflow-hidden;
+  }
+  .inbox-filter-menu-item {
+    @apply flex items-center justify-between gap-3 px-3 py-2 text-sm text-slate-700 no-underline hover:bg-slate-50;
+  }
+  .inbox-filter-menu-item.is-active {
+    @apply bg-blue-50 text-blue-700 font-medium;
+  }
   .inbox-filters {
     @apply flex flex-col gap-0.5;
   }
@@ -52,7 +86,7 @@
     @apply rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden;
   }
   .inbox-list-scroll {
-    @apply h-[30rem] md:h-[34rem] overflow-y-auto;
+    @apply max-h-[30rem] md:max-h-[34rem] overflow-y-auto;
   }
   .inbox-table {
     @apply min-w-full divide-y divide-slate-200;
@@ -67,6 +101,12 @@
   }
   .inbox-table .inbox-row {
     @apply border-b border-slate-200 transition-colors;
+  }
+  .inbox-table .inbox-row.is-clickable {
+    @apply cursor-pointer;
+  }
+  .inbox-table .inbox-row.is-clickable:focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-inset;
   }
   .inbox-table .inbox-row:hover {
     @apply bg-slate-50;
@@ -235,6 +275,85 @@
   }
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
+  }
+
+  @media (max-width: 1023px) {
+    .inbox-table th.col-num,
+    .inbox-table td.col-num,
+    .inbox-table th.col-trend,
+    .inbox-table td.col-trend,
+    .inbox-table th.col-stage,
+    .inbox-table td.col-stage,
+    .inbox-table th.col-severity,
+    .inbox-table td.col-severity {
+      display: none;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .inbox-toolbar-form {
+      @apply grid-cols-1;
+    }
+
+    .inbox-filter-menu-list {
+      @apply left-0 right-auto w-full min-w-0;
+    }
+
+    .inbox-list-scroll {
+      @apply max-h-[22rem];
+    }
+
+    .inbox-table th,
+    .inbox-table td {
+      @apply px-2 py-2;
+    }
+
+    .col-error {
+      width: auto;
+    }
+
+    .error-title {
+      @apply text-sm leading-tight;
+      word-break: break-word;
+    }
+
+    .error-subtitle {
+      @apply text-xs;
+      word-break: break-word;
+    }
+
+    .error-meta {
+      @apply text-[11px];
+    }
+
+    .detail-actionbar {
+      @apply flex-col items-stretch gap-3 p-4;
+    }
+
+    .detail-actionbar-left {
+      @apply w-full;
+    }
+
+    .detail-actionbar-actions {
+      @apply w-full;
+    }
+
+    .detail-actionbar-actions .btn {
+      @apply flex-1 justify-center;
+    }
+
+    .detail-tabs-wrap {
+      @apply p-4;
+    }
+
+    .detail-tabs {
+      @apply flex-nowrap overflow-x-auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .detail-tab {
+      @apply shrink-0 text-xs;
+    }
   }
 
   .marketing-home {
