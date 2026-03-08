@@ -23,14 +23,16 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <% cookie_script_id = Rails.application.config.x.logister.cookie_script_id %>
+    <% google_tag_id = Rails.application.config.x.logister.google_tag_id %>
     <%# Google Analytics (gtag.js) — loaded only in production and gated by CookieScript consent %>
-    <% if Rails.env.production? %>
+    <% if Rails.env.production? && cookie_script_id.present? && google_tag_id.present? %>
       <!-- Google tag (gtag.js) -->
       <script type="text/plain"
               data-cookiescript="accepted"
               data-cookiecategory="analytics"
               async
-              src="https://www.googletagmanager.com/gtag/js?id=G-3R8CQ5X7XG"></script>
+              src="https://www.googletagmanager.com/gtag/js?id=<%= ERB::Util.url_encode(google_tag_id) %>"></script>
       <script type="text/plain"
               data-cookiescript="accepted"
               data-cookiecategory="analytics">
@@ -39,11 +41,11 @@
         gtag('js', new Date());
 
         // Initial page view
-        gtag('config', 'G-3R8CQ5X7XG', { page_path: location.pathname + location.search });
+        gtag('config', '<%= j google_tag_id %>', { page_path: location.pathname + location.search });
 
         // Track subsequent Turbo-driven navigations
         document.addEventListener("turbo:load", function() {
-          gtag('config', 'G-3R8CQ5X7XG', { page_path: location.pathname + location.search });
+          gtag('config', '<%= j google_tag_id %>', { page_path: location.pathname + location.search });
         });
       </script>
     <% end %>
@@ -54,8 +56,8 @@
     <meta name="turbo-refresh-method" content="morph">
     <meta name="turbo-refresh-scroll" content="preserve">
 
-    <% if Rails.application.config.x.logister.cookie_script_id.present? %>
-      <script type="text/javascript" charset="UTF-8" src="https://cdn.cookie-script.com/s/<%= Rails.application.config.x.logister.cookie_script_id %>.js" crossorigin="anonymous"></script>
+    <% if cookie_script_id.present? %>
+      <script type="text/javascript" charset="UTF-8" src="https://cdn.cookie-script.com/s/<%= cookie_script_id %>.js" crossorigin="anonymous"></script>
     <% end %>
 
     <%= yield :head %>
