@@ -194,10 +194,10 @@ Optional integrations:
   `LOGISTER_TURNSTILE_SECRET_KEY`
 - CookieScript + Google Analytics:
   `LOGISTER_COOKIE_SCRIPT_ID`,
-  `LOGISTER_GOOGLE_TAG_ID`
+  `GOOGLE_TAG_ID`
 
 Google Analytics is consent-gated in the app and only enabled when both
-`LOGISTER_COOKIE_SCRIPT_ID` and `LOGISTER_GOOGLE_TAG_ID` are set.
+`LOGISTER_COOKIE_SCRIPT_ID` and `GOOGLE_TAG_ID` are set.
 
 ## Production self-hosting checklist
 
@@ -223,7 +223,7 @@ Google Analytics is consent-gated in the app and only enabled when both
    - Enable SSL/host authorization in `config/environments/production.rb`
 9. Optional consent + analytics setup:
    - Configure CookieScript: `LOGISTER_COOKIE_SCRIPT_ID=<your_cookie_script_id>`
-   - Configure your Google tag ID: `LOGISTER_GOOGLE_TAG_ID=G-XXXXXXXXXX`
+   - Configure your Google tag ID: `GOOGLE_TAG_ID=G-XXXXXXXXXX`
    - In self-hosted/open-source deployments, always use your own IDs
 
 ## Provider-specific config files

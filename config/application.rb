@@ -27,8 +27,8 @@ module Logister
     # Tailwind CSS build output (must be in application.rb so Propshaft sees it at boot)
     config.assets.paths << Rails.root.join("app/assets/builds")
 
-    config.x.logister.cookie_script_id = ENV["LOGISTER_COOKIE_SCRIPT_ID"]
-    config.x.logister.google_tag_id = ENV["LOGISTER_GOOGLE_TAG_ID"]
+    config.x.logister.cookie_script_id = ENV["LOGISTER_COOKIE_SCRIPT_ID"].presence || ENV["COOKIE_SCRIPT_ID"].presence
+    config.x.logister.google_tag_id = ENV["GOOGLE_TAG_ID"].presence
 
     # Generate RSpec specs instead of Minitest tests
     config.generators do |g|

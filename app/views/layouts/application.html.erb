@@ -23,8 +23,8 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <% cookie_script_id = Rails.application.config.x.logister.cookie_script_id %>
-    <% google_tag_id = Rails.application.config.x.logister.google_tag_id %>
+    <% cookie_script_id = Rails.application.config.x.logister.cookie_script_id.to_s.strip.presence %>
+    <% google_tag_id = Rails.application.config.x.logister.google_tag_id.to_s.strip.presence %>
     <%# Google Analytics (gtag.js) — loaded only in production and gated by CookieScript consent %>
     <% if Rails.env.production? && cookie_script_id.present? && google_tag_id.present? %>
       <!-- Google tag (gtag.js) -->
