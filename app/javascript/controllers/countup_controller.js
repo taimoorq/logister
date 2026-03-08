@@ -12,6 +12,15 @@ export default class extends Controller {
   connect() {
     if (!this.hasNumberValue) return
 
+    // Keep above-the-fold metrics stable to avoid load-time layout shift.
+    const rect = this.element.getBoundingClientRect()
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+    const initiallyVisible = rect.top < viewportHeight * 0.9 && rect.bottom > 0
+    if (initiallyVisible) {
+      this.render(this.numberValue)
+      return
+    }
+
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
       this.render(this.numberValue)
       return
