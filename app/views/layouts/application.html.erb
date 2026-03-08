@@ -25,6 +25,9 @@
 
     <% cookie_script_id = Rails.application.config.x.logister.cookie_script_id.to_s.strip.presence %>
     <% google_tag_id = Rails.application.config.x.logister.google_tag_id.to_s.strip.presence %>
+    <% if google_tag_id.present? %>
+      <meta name="logister-google-tag-id" content="<%= google_tag_id %>">
+    <% end %>
     <%# Google Analytics (gtag.js) — loaded only in production and gated by CookieScript consent %>
     <% if Rails.env.production? && cookie_script_id.present? && google_tag_id.present? %>
       <!-- Google tag (gtag.js) -->
@@ -33,21 +36,6 @@
               data-cookiecategory="analytics"
               async
               src="https://www.googletagmanager.com/gtag/js?id=<%= ERB::Util.url_encode(google_tag_id) %>"></script>
-      <script type="text/plain"
-              data-cookiescript="accepted"
-              data-cookiecategory="analytics">
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-
-        // Initial page view
-        gtag('config', '<%= j google_tag_id %>', { page_path: location.pathname + location.search });
-
-        // Track subsequent Turbo-driven navigations
-        document.addEventListener("turbo:load", function() {
-          gtag('config', '<%= j google_tag_id %>', { page_path: location.pathname + location.search });
-        });
-      </script>
     <% end %>
 
     <%# Turbo 8: view transitions (crossfade/slide on navigation and morph). Ignored on Turbo 7. %>
