@@ -1,37 +1,36 @@
-<section class="max-w-md mx-auto">
-  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-    <h1 class="text-2xl font-bold text-slate-900 mb-2">Sign in</h1>
-    <p class="text-slate-600 text-sm mb-6">Sign in to your Logister account.</p>
+<%= render "devise/shared/auth_shell",
+           title: "Welcome back",
+           subtitle: "Sign in to monitor errors, triage incidents, and keep releases stable." do %>
+  <h2 class="auth-form-title">Sign in</h2>
 
-    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { data: { turbo: false } }) do |f| %>
-      <div class="space-y-4">
-        <div>
-          <%= f.label :email, class: "form-label" %>
-          <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "form-input" %>
-        </div>
-
-        <div>
-          <%= f.label :password, class: "form-label" %>
-          <%= f.password_field :password, autocomplete: "current-password", required: true, class: "form-input" %>
-        </div>
-
-        <% if devise_mapping.rememberable? %>
-          <div class="flex items-center gap-2">
-            <%= f.check_box :remember_me, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
-            <%= f.label :remember_me, class: "text-sm text-slate-700" %>
-          </div>
-        <% end %>
-
-        <div>
-          <%= render "devise/shared/turnstile" %>
-        </div>
-
-        <div class="pt-2">
-          <%= f.submit "Sign in", class: "btn-primary w-full sm:w-auto" %>
-        </div>
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { data: { turbo: false } }) do |f| %>
+    <div class="space-y-4">
+      <div>
+        <%= f.label :email, class: "form-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "form-input" %>
       </div>
-    <% end %>
 
-    <%= render "devise/shared/links" %>
-  </div>
-</section>
+      <div>
+        <%= f.label :password, class: "form-label" %>
+        <%= f.password_field :password, autocomplete: "current-password", required: true, class: "form-input" %>
+      </div>
+
+      <% if devise_mapping.rememberable? %>
+        <div class="flex items-center gap-2">
+          <%= f.check_box :remember_me, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+          <%= f.label :remember_me, class: "text-sm text-slate-700" %>
+        </div>
+      <% end %>
+
+      <div>
+        <%= render "devise/shared/turnstile" %>
+      </div>
+
+      <div class="pt-2">
+        <%= f.submit "Sign in", class: "btn-primary w-full" %>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render "devise/shared/links" %>
+<% end %>

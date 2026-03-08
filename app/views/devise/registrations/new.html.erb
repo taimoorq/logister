@@ -1,38 +1,37 @@
-<section class="max-w-md mx-auto">
-  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-    <h1 class="text-2xl font-bold text-slate-900 mb-2">Create your account</h1>
-    <p class="text-slate-600 text-sm mb-6">Sign up to start capturing and triaging errors from your Rails apps.</p>
+<%= render "devise/shared/auth_shell",
+           title: "Start with Logister",
+           subtitle: "Create your account and begin tracking production issues in minutes." do %>
+  <h2 class="auth-form-title">Create account</h2>
 
-    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { data: { turbo: false } }) do |f| %>
-      <div class="space-y-4">
-        <div>
-          <%= f.label :email, class: "form-label" %>
-          <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "form-input" %>
-        </div>
-
-        <div>
-          <%= f.label :password, class: "form-label" %>
-          <% if @minimum_password_length %>
-            <span class="text-slate-500 text-sm">(<%= @minimum_password_length %> characters minimum)</span>
-          <% end %>
-          <%= f.password_field :password, autocomplete: "new-password", required: true, class: "form-input mt-1" %>
-        </div>
-
-        <div>
-          <%= f.label :password_confirmation, class: "form-label" %>
-          <%= f.password_field :password_confirmation, autocomplete: "new-password", required: true, class: "form-input" %>
-        </div>
-
-        <div>
-          <%= render "devise/shared/turnstile" %>
-        </div>
-
-        <div class="pt-2">
-          <%= f.submit "Sign up", class: "btn-primary w-full sm:w-auto" %>
-        </div>
+  <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { data: { turbo: false } }) do |f| %>
+    <div class="space-y-4">
+      <div>
+        <%= f.label :email, class: "form-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "form-input" %>
       </div>
-    <% end %>
 
-    <%= render "devise/shared/links" %>
-  </div>
-</section>
+      <div>
+        <%= f.label :password, class: "form-label" %>
+        <% if @minimum_password_length %>
+          <span class="text-slate-500 text-sm">(<%= @minimum_password_length %> characters minimum)</span>
+        <% end %>
+        <%= f.password_field :password, autocomplete: "new-password", required: true, class: "form-input mt-1" %>
+      </div>
+
+      <div>
+        <%= f.label :password_confirmation, class: "form-label" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", required: true, class: "form-input" %>
+      </div>
+
+      <div>
+        <%= render "devise/shared/turnstile" %>
+      </div>
+
+      <div class="pt-2">
+        <%= f.submit "Sign up", class: "btn-primary w-full" %>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render "devise/shared/links" %>
+<% end %>

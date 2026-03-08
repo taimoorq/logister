@@ -1,0 +1,21 @@
+<section class="auth-shell">
+  <div class="auth-panel">
+    <aside class="auth-brand-panel">
+      <div class="auth-brand-badge">
+        <span class="auth-brand-dot" aria-hidden="true"></span>
+        <span>Logister account</span>
+      </div>
+      <h1 class="auth-brand-title"><%= title %></h1>
+      <p class="auth-brand-copy"><%= subtitle %></p>
+      <ul class="auth-brand-list">
+        <li>Rails-first error capture and triage</li>
+        <li>Hosted and self-hosted deployment paths</li>
+        <li>Fast incident workflow for production teams</li>
+      </ul>
+    </aside>
+
+    <div class="auth-form-panel">
+      <%= yield %>
+    </div>
+  </div>
+</section>
