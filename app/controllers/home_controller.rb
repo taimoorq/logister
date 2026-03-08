@@ -11,4 +11,21 @@ class HomeController < ApplicationController
 
   def terms
   end
+
+  def sitemap
+    @pages = [
+      { url: root_url, lastmod: view_mtime("show") },
+      { url: about_url, lastmod: view_mtime("about") },
+      { url: privacy_url, lastmod: view_mtime("privacy") },
+      { url: terms_url, lastmod: view_mtime("terms") }
+    ]
+
+    render layout: false
+  end
+
+  private
+
+  def view_mtime(name)
+    Rails.root.join("app/views/home/#{name}.html.erb").mtime.to_date.iso8601
+  end
 end

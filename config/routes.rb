@@ -6,6 +6,7 @@ Rails.application.routes.draw do
     confirmations: "users/confirmations"
   }
   root "home#show"
+  get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }
   get "about", to: "home#about"
   get "privacy", to: "home#privacy"
   get "terms", to: "home#terms"

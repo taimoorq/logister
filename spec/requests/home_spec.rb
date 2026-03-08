@@ -58,4 +58,18 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("Logister is a free, open source bug capture")
     end
   end
+
+  describe "GET /sitemap.xml" do
+    it "returns sitemap xml with public pages" do
+      get "/sitemap.xml"
+
+      expect(response).to have_http_status(:success)
+      expect(response.media_type).to eq("application/xml")
+      expect(response.body).to include("<urlset")
+      expect(response.body).to include(root_url)
+      expect(response.body).to include(about_url)
+      expect(response.body).to include(privacy_url)
+      expect(response.body).to include(terms_url)
+    end
+  end
 end

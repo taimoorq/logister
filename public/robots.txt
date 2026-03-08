@@ -5,3 +5,5 @@ Disallow: /api
 
 # AI-friendly plain text context
 Allow: /llms.txt
+
+Sitemap: https://logister.org/sitemap.xml
