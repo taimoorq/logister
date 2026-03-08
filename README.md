@@ -192,12 +192,18 @@ Optional integrations:
   `LOGISTER_TURNSTILE_ENABLED`,
   `LOGISTER_TURNSTILE_SITE_KEY`,
   `LOGISTER_TURNSTILE_SECRET_KEY`
-- CookieScript + Google Analytics:
-  `LOGISTER_COOKIE_SCRIPT_ID`,
+- TermsFeed Cookie Consent + Google Analytics:
+  `LOGISTER_COOKIE_CONSENT_ENABLED`,
+  `LOGISTER_ANALYTICS_ENABLED`,
+  `COOKIECONSENT_SCRIPT_URL`,
+  `COOKIECONSENT_WEBSITE_NAME`,
+  `COOKIECONSENT_PRIVACY_POLICY_URL`,
   `GOOGLE_TAG_ID`
 
 Google Analytics is consent-gated in the app and only enabled when both
-`LOGISTER_COOKIE_SCRIPT_ID` and `GOOGLE_TAG_ID` are set.
+`LOGISTER_COOKIE_CONSENT_ENABLED=true` and `GOOGLE_TAG_ID` are set.
+Analytics tags render automatically in production. For local/staging verification,
+set `LOGISTER_ANALYTICS_ENABLED=true`.
 
 ## Production self-hosting checklist
 
@@ -222,8 +228,12 @@ Google Analytics is consent-gated in the app and only enabled when both
    - Turn on Turnstile (`LOGISTER_TURNSTILE_ENABLED=true`)
    - Enable SSL/host authorization in `config/environments/production.rb`
 9. Optional consent + analytics setup:
-   - Configure CookieScript: `LOGISTER_COOKIE_SCRIPT_ID=<your_cookie_script_id>`
+   - Configure TermsFeed consent banner:
+     - `LOGISTER_COOKIE_CONSENT_ENABLED=true`
+     - `COOKIECONSENT_WEBSITE_NAME=<your_website_name>`
+     - `COOKIECONSENT_PRIVACY_POLICY_URL=https://your-domain.example/privacy`
    - Configure your Google tag ID: `GOOGLE_TAG_ID=G-XXXXXXXXXX`
+   - For non-production testing, set: `LOGISTER_ANALYTICS_ENABLED=true`
    - In self-hosted/open-source deployments, always use your own IDs
 
 ## Provider-specific config files

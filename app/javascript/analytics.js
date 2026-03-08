@@ -62,6 +62,6 @@ if (googleTagId) {
     bindScriptLoadListeners()
     trackPageView()
 
-    if (initialized || retries >= 20) window.clearInterval(timer)
+    if (initialized || retries >= 60) window.clearInterval(timer)
   }, 1000)
 }
