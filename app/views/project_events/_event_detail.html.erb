@@ -69,22 +69,22 @@
                   project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
                   class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
                   role: "tab",
-                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                  data: { turbo_frame: "error_detail" } %>
       <%= link_to "Context",
                   project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "context"),
                   class: "detail-tab #{'is-active' if active_tab == 'context'}",
                   role: "tab",
-                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                  data: { turbo_frame: "error_detail" } %>
       <%= link_to "Occurrences (#{occurrences.size})",
                   project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "occurrences"),
                   class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
                   role: "tab",
-                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                  data: { turbo_frame: "error_detail" } %>
       <%= link_to "Related logs (#{related_logs.size})",
                   project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "related_logs"),
                   class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
                   role: "tab",
-                  data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                  data: { turbo_frame: "error_detail" } %>
     </nav>
 
     <%# ── Stacktrace panel ─────────────────────────────────────────────── %>
@@ -131,7 +131,7 @@
                   <%= link_to "View",
                               project_event_path(project, ev, filter: filter_param, q: query_param, group_uuid: group&.uuid),
                               class: "inline-link",
-                              data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                              data: { turbo_frame: "error_detail" } %>
                 </td>
               </tr>
             <% end %>
@@ -163,7 +163,7 @@
                   <%= link_to "View",
                               project_event_path(project, log_event, filter: filter_param, q: query_param, group_uuid: group&.uuid),
                               class: "inline-link",
-                              data: { turbo_frame: "error_detail", turbo_action: "advance" } %>
+                              data: { turbo_frame: "error_detail" } %>
                 </td>
               </tr>
             <% end %>

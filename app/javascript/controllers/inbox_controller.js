@@ -11,14 +11,18 @@ export default class extends Controller {
 
   connect() {
     this._searchTimer = null
-    this.shouldAutoScrollDetail = false
+    this.savedPageScrollY = null
+    this.savedListScrollTop = null
     this.boundDetailLoaded = this.onDetailLoaded.bind(this)
+    this.boundBeforeFetch = this.onBeforeFetch.bind(this)
     document.addEventListener("turbo:frame-load", this.boundDetailLoaded)
+    document.addEventListener("turbo:before-fetch-request", this.boundBeforeFetch)
   }
 
   disconnect() {
     clearTimeout(this._searchTimer)
     document.removeEventListener("turbo:frame-load", this.boundDetailLoaded)
+    document.removeEventListener("turbo:before-fetch-request", this.boundBeforeFetch)
   }
 
   // ── Debounced search ─────────────────────────────────────────────────────
@@ -57,7 +61,6 @@ export default class extends Controller {
     const link = event.currentTarget
     const row = link && typeof link.closest === "function" ? link.closest("tr") : null
     if (row) this.setSelectedRow(row)
-    this.shouldAutoScrollDetail = true
   }
 
   openRow(event) {
@@ -71,7 +74,6 @@ export default class extends Controller {
     if (!link) return
 
     this.setSelectedRow(row)
-    this.shouldAutoScrollDetail = true
     this.visitDetail(link.href)
   }
 
@@ -81,34 +83,54 @@ export default class extends Controller {
   }
 
   visitDetail(url) {
-    const turbo = window.Turbo
-    if (turbo && typeof turbo.visit === "function") {
-      turbo.visit(url, { frame: "error_detail", action: "advance" })
-      return
-    }
-
     const frame = document.getElementById("error_detail")
-    if (frame && "src" in frame) {
+    if (frame) {
       frame.setAttribute("src", url)
       return
     }
 
-    window.location.href = url
+    const turbo = window.Turbo
+    if (turbo && typeof turbo.visit === "function") {
+      turbo.visit(url)
+      return
+    }
+
+    window.location.assign(url)
   }
 
   onDetailLoaded(event) {
     const frame = event.target
     if (!(frame instanceof HTMLElement) || frame.id !== "error_detail") return
 
-    if (this.shouldAutoScrollDetail && window.matchMedia("(max-width: 1023px)").matches) {
-      frame.scrollIntoView({ behavior: "smooth", block: "start" })
+    if (typeof this.savedListScrollTop === "number") {
+      const list = this.findListScroller()
+      if (list) list.scrollTop = this.savedListScrollTop
     }
 
-    this.shouldAutoScrollDetail = false
+    if (typeof this.savedPageScrollY === "number") {
+      window.scrollTo({ top: this.savedPageScrollY, left: 0, behavior: "auto" })
+    }
+
+    this.savedListScrollTop = null
+    this.savedPageScrollY = null
   }
 
   setSelectedRow(row) {
     this.element.querySelectorAll(".inbox-table tbody tr").forEach(r => r.classList.remove("is-selected"))
     row.classList.add("is-selected")
+  }
+
+  onBeforeFetch(event) {
+    const target = event.target
+    if (!(target instanceof HTMLElement)) return
+    if (target.id !== "error_detail") return
+
+    this.savedPageScrollY = window.scrollY
+    const list = this.findListScroller()
+    this.savedListScrollTop = list ? list.scrollTop : null
+  }
+
+  findListScroller() {
+    return this.element.querySelector(".inbox-list-scroll")
   }
 }

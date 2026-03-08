@@ -30,6 +30,44 @@
   .form-input {
     @apply block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500;
   }
+  .auth-shell {
+    @apply w-full max-w-5xl mx-auto;
+  }
+  .auth-panel {
+    @apply overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm grid grid-cols-1 lg:grid-cols-[1.05fr_1fr];
+  }
+  .auth-brand-panel {
+    @apply relative bg-slate-900 text-slate-100 p-8 sm:p-10 lg:p-12;
+    background-image: radial-gradient(circle at 10% 0%, rgba(96, 165, 250, 0.26), transparent 45%),
+                      radial-gradient(circle at 90% 100%, rgba(45, 212, 191, 0.18), transparent 48%);
+  }
+  .auth-brand-badge {
+    @apply inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-100;
+  }
+  .auth-brand-dot {
+    @apply h-2 w-2 rounded-full bg-blue-400;
+  }
+  .auth-brand-title {
+    @apply mt-5 text-3xl sm:text-4xl font-semibold tracking-tight text-white;
+  }
+  .auth-brand-copy {
+    @apply mt-4 text-sm sm:text-base text-slate-300 leading-relaxed max-w-md;
+  }
+  .auth-brand-list {
+    @apply mt-6 space-y-2 text-sm text-slate-200 list-disc pl-5;
+  }
+  .auth-form-panel {
+    @apply p-6 sm:p-8 lg:p-10;
+  }
+  .auth-form-title {
+    @apply text-2xl font-semibold text-slate-900 mb-6;
+  }
+  .auth-links {
+    @apply flex flex-wrap gap-2 mt-6 pt-6 border-t border-slate-200;
+  }
+  .auth-link {
+    @apply inline-flex items-center rounded-full border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:text-blue-700 hover:border-blue-200 hover:bg-blue-50 no-underline;
+  }
   .sidebar-action-link {
     @apply block py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 no-underline;
   }
@@ -86,7 +124,7 @@
     @apply rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden;
   }
   .inbox-list-scroll {
-    @apply max-h-[30rem] md:max-h-[34rem] overflow-y-auto;
+    @apply max-h-[12rem] md:max-h-[13.5rem] overflow-y-auto;
   }
   .inbox-table {
     @apply min-w-full divide-y divide-slate-200;
@@ -300,7 +338,7 @@
     }
 
     .inbox-list-scroll {
-      @apply max-h-[22rem];
+      @apply max-h-[8.8rem];
     }
 
     .inbox-table th,
