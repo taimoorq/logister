@@ -692,6 +692,58 @@
     color: #627397;
   }
 
+  .logo-band-head {
+    @apply flex items-center justify-between gap-3 mb-3;
+  }
+
+  .logo-band-head .logo-band-title {
+    @apply mb-0;
+  }
+
+  .screenshots-slider {
+    @apply overflow-hidden;
+  }
+
+  .screenshots-slider-track {
+    @apply flex;
+    transition: transform 320ms ease;
+    will-change: transform;
+  }
+
+  .screenshots-slide {
+    flex: 0 0 100%;
+  }
+
+  .screenshots-slider-controls {
+    @apply inline-flex items-center gap-2;
+  }
+
+  .screenshots-slider-arrow {
+    @apply inline-flex items-center justify-center rounded-lg w-8 h-8 sm:w-9 sm:h-9 border;
+    color: #2f4b8f;
+    border-color: rgba(94, 121, 184, 0.35);
+    background: rgba(255, 255, 255, 0.85);
+  }
+
+  .screenshots-slider-arrow:hover {
+    background: rgba(255, 255, 255, 1);
+  }
+
+  .screenshots-slider-dots {
+    @apply mt-3 flex items-center justify-center gap-2;
+  }
+
+  .screenshots-slider-dot {
+    @apply rounded-full;
+    width: 0.55rem;
+    height: 0.55rem;
+    background: rgba(86, 110, 157, 0.35);
+  }
+
+  .screenshots-slider-dot.is-active {
+    background: #355fca;
+  }
+
   .stats-grid {
     @apply grid md:grid-cols-3 gap-3 sm:gap-4 mb-6;
   }

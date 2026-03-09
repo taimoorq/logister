@@ -18,11 +18,13 @@
 }) %>
 <%
   overview_desktop_path = "marketing/overview-desktop-optimized.webp"
+  projects_desktop_path = "marketing/projects-desktop-optimized.webp"
   projects_mobile_path = "marketing/projects-mobile-optimized.webp"
   overview_mobile_path = "marketing/overview-mobile-optimized.webp"
   inbox_desktop_path = "marketing/inbox-desktop-optimized.webp"
 
   overview_desktop_exists = Rails.root.join("app/assets/images", overview_desktop_path).exist?
+  projects_desktop_exists = Rails.root.join("app/assets/images", projects_desktop_path).exist?
   projects_mobile_exists = Rails.root.join("app/assets/images", projects_mobile_path).exist?
   overview_mobile_exists = Rails.root.join("app/assets/images", overview_mobile_path).exist?
   inbox_desktop_exists = Rails.root.join("app/assets/images", inbox_desktop_path).exist?
@@ -99,21 +101,72 @@
     </div>
   </section>
 
-  <section class="logo-band" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-showcase; view-transition-class: public-panel;">
-    <p class="logo-band-title">Real product screenshots</p>
-    <div class="shot-frame shot-wide">
-      <% if inbox_desktop_exists %>
-        <%= image_tag inbox_desktop_path,
-                      alt: "Logister project inbox and triage detail on desktop",
-                      class: "hero-shot",
-                      width: 2474,
-                      height: 1712,
-                      loading: "lazy",
-                      fetchpriority: "low",
-                      decoding: "async" %>
-      <% else %>
-        <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_desktop_path %></code></div>
-      <% end %>
+  <section class="logo-band" data-controller="reveal screenshots-slider" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-showcase; view-transition-class: public-panel;">
+    <div class="logo-band-head">
+      <p class="logo-band-title">Real product screenshots</p>
+      <div class="screenshots-slider-controls" aria-label="Screenshot slider controls">
+        <button type="button" class="screenshots-slider-arrow" data-action="click->screenshots-slider#prev" aria-label="Previous screenshot">
+          <%= app_icon(:arrow_left, css: "w-4 h-4") %>
+        </button>
+        <button type="button" class="screenshots-slider-arrow" data-action="click->screenshots-slider#next" aria-label="Next screenshot">
+          <%= app_icon(:arrow_left, css: "w-4 h-4 rotate-180") %>
+        </button>
+      </div>
+    </div>
+
+    <div class="shot-frame shot-wide screenshots-slider" aria-label="Logister product screenshots" role="region">
+      <div class="screenshots-slider-track" data-screenshots-slider-target="track">
+        <div class="screenshots-slide" data-screenshots-slider-target="slide">
+          <% if overview_desktop_exists %>
+            <%= image_tag overview_desktop_path,
+                          alt: "Logister overview dashboard on desktop",
+                          class: "hero-shot",
+                          width: 2534,
+                          height: 1138,
+                          loading: "lazy",
+                          fetchpriority: "low",
+                          decoding: "async" %>
+          <% else %>
+            <div class="shot-placeholder">Add <code>app/assets/images/<%= overview_desktop_path %></code></div>
+          <% end %>
+        </div>
+
+        <div class="screenshots-slide" data-screenshots-slider-target="slide">
+          <% if projects_desktop_exists %>
+            <%= image_tag projects_desktop_path,
+                          alt: "Logister projects index on desktop",
+                          class: "hero-shot",
+                          width: 2534,
+                          height: 1138,
+                          loading: "lazy",
+                          fetchpriority: "low",
+                          decoding: "async" %>
+          <% else %>
+            <div class="shot-placeholder">Add <code>app/assets/images/<%= projects_desktop_path %></code></div>
+          <% end %>
+        </div>
+
+        <div class="screenshots-slide" data-screenshots-slider-target="slide">
+          <% if inbox_desktop_exists %>
+            <%= image_tag inbox_desktop_path,
+                          alt: "Logister project inbox and triage detail on desktop",
+                          class: "hero-shot",
+                          width: 2474,
+                          height: 1712,
+                          loading: "lazy",
+                          fetchpriority: "low",
+                          decoding: "async" %>
+          <% else %>
+            <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_desktop_path %></code></div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="screenshots-slider-dots" role="tablist" aria-label="Select screenshot">
+      <button type="button" class="screenshots-slider-dot" data-screenshots-slider-target="dot" data-slide-index="0" data-action="click->screenshots-slider#go" aria-label="Show overview screenshot"></button>
+      <button type="button" class="screenshots-slider-dot" data-screenshots-slider-target="dot" data-slide-index="1" data-action="click->screenshots-slider#go" aria-label="Show projects screenshot"></button>
+      <button type="button" class="screenshots-slider-dot" data-screenshots-slider-target="dot" data-slide-index="2" data-action="click->screenshots-slider#go" aria-label="Show inbox screenshot"></button>
     </div>
   </section>
 

@@ -31,12 +31,12 @@
     <table class="inbox-table min-w-full">
       <thead>
         <tr>
-          <th>Email</th>
-          <th>Name</th>
-          <th>Status</th>
-          <th>Created</th>
-          <th>Projects</th>
-          <th>API keys</th>
+          <th><span class="inline-flex items-center gap-1.5"><%= app_icon(:mail, css: "w-3.5 h-3.5") %><span>Email</span></span></th>
+          <th><span class="inline-flex items-center gap-1.5"><%= app_icon(:account, css: "w-3.5 h-3.5") %><span>Name</span></span></th>
+          <th><span class="inline-flex items-center gap-1.5"><%= app_icon(:info, css: "w-3.5 h-3.5") %><span>Status</span></span></th>
+          <th><span class="inline-flex items-center gap-1.5"><%= app_icon(:calendar, css: "w-3.5 h-3.5") %><span>Created</span></span></th>
+          <th><span class="inline-flex items-center gap-1.5"><%= app_icon(:projects, css: "w-3.5 h-3.5") %><span>Projects</span></span></th>
+          <th><span class="inline-flex items-center gap-1.5"><%= app_icon(:key, css: "w-3.5 h-3.5") %><span>API keys</span></span></th>
           <th></th>
         </tr>
       </thead>
@@ -55,7 +55,14 @@
             <td class="text-slate-600"><%= local_time_tag(user.created_at, format: :date_only) %></td>
             <td class="text-slate-600"><%= user.read_attribute(:projects_count).to_i %></td>
             <td class="text-slate-600"><%= user.read_attribute(:api_keys_count).to_i %></td>
-            <td><%= link_to admin_user_path(user), class: "inline-link inline-flex items-center gap-1.5" do %><%= app_icon(:settings, css: "w-4 h-4") %><span>Manage</span><% end %></td>
+            <td>
+              <%= link_to admin_user_path(user),
+                          class: "inline-link inline-flex items-center gap-1.5",
+                          aria: { label: "Manage user #{user.email}" } do %>
+                <%= app_icon(:settings, css: "w-4 h-4") %>
+                <span class="hidden sm:inline">Manage</span>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>

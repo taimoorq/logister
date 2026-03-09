@@ -124,11 +124,14 @@
                class="<%= user_signed_in? ? 'hidden md:flex flex-col md:flex-row md:items-center gap-0 md:gap-1 absolute md:relative top-full left-0 right-0 md:top-0 bg-[#09195d] md:bg-transparent border-b border-[#31458f] md:border-0 shadow-lg md:shadow-none py-3 md:py-0 px-4 md:px-0' : 'hidden md:flex flex-col md:flex-row md:items-center gap-0 md:gap-1 lg:gap-2 absolute md:relative top-full left-0 right-0 md:top-0 bg-white md:bg-transparent border-b md:border-b-0 border-slate-200 md:border-0 shadow-lg md:shadow-none py-3 md:py-0 px-4 md:px-0' %>"
                data-nav-target="panel">
             <% if user_signed_in? %>
-              <%= link_to "Overview", dashboard_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(dashboard_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" %>
-              <%= link_to "Projects", projects_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(projects_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" %>
-              <% inbox_active = defined?(@project) && @project.present? %>
-              <% inbox_path = inbox_active ? project_path(@project) : projects_path %>
-              <%= link_to "Inbox", inbox_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{inbox_active ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" %>
+              <%= link_to dashboard_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(dashboard_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" do %>
+                <%= app_icon(:dashboard, css: "w-4 h-4") %>
+                <span>Overview</span>
+              <% end %>
+              <%= link_to projects_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(projects_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" do %>
+                <%= app_icon(:projects, css: "w-4 h-4") %>
+                <span>Projects</span>
+              <% end %>
 
               <div class="mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-[#31458f] md:border-l md:border-[#31458f] md:pl-3">
                 <details class="relative">
@@ -139,26 +142,40 @@
                     </svg>
                   </summary>
                   <div class="md:absolute md:right-0 mt-1 md:mt-2 w-full md:w-56 rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden z-10">
-                    <%= link_to "Account", profile_path, class: "nav-link block px-3 py-2.5 text-sm font-medium #{current_page?(profile_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}" %>
+                    <%= link_to profile_path, class: "nav-link block px-3 py-2.5 text-sm font-medium #{current_page?(profile_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}" do %>
+                      <span class="inline-flex items-center gap-2"><%= app_icon(:account, css: "w-4 h-4") %><span>Account</span></span>
+                    <% end %>
                     <% if admin_user? %>
-                      <%= link_to "Admin", admin_users_path, class: "nav-link block px-3 py-2.5 text-sm font-medium #{request.path.start_with?('/admin') ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}" %>
+                      <%= link_to admin_users_path, class: "nav-link block px-3 py-2.5 text-sm font-medium #{request.path.start_with?('/admin') ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}" do %>
+                        <span class="inline-flex items-center gap-2"><%= app_icon(:shield, css: "w-4 h-4") %><span>Admin</span></span>
+                      <% end %>
                     <% end %>
                     <div class="border-t border-slate-200 p-2">
-                      <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "nav-link w-full text-left px-3 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 min-h-[44px] md:min-h-0" %>
+                      <%= button_to destroy_user_session_path, method: :delete, class: "nav-link w-full text-left px-3 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 min-h-[44px] md:min-h-0" do %>
+                        <span class="inline-flex items-center gap-2"><%= app_icon(:x, css: "w-4 h-4") %><span>Sign out</span></span>
+                      <% end %>
                     </div>
                   </div>
                 </details>
               </div>
             <% else %>
               <%= link_to root_path, class: "nav-link inline-flex items-center gap-2 py-3 md:py-2 px-3 rounded-lg text-sm font-medium #{current_page?(root_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" do %>
+                <%= app_icon(:dashboard, css: "w-4 h-4") %>
                 <span>Home</span>
               <% end %>
               <%= link_to about_path, class: "nav-link inline-flex items-center gap-2 py-3 md:py-2 px-3 rounded-lg text-sm font-medium #{current_page?(about_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" do %>
+                <%= app_icon(:info, css: "w-4 h-4") %>
                 <span>About</span>
               <% end %>
               <div class="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-200">
-                <%= link_to "Sign in", new_user_session_path, class: "nav-link py-3 md:py-2 px-4 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 text-center min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-2", data: { turbo: false } %>
-                <%= link_to "Sign up", new_user_registration_path, class: "nav-link py-3 md:py-2 px-4 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 text-center min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-2", data: { turbo: false } %>
+                <%= link_to new_user_session_path, class: "nav-link py-3 md:py-2 px-4 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 text-center min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-2", data: { turbo: false } do %>
+                  <%= app_icon(:account, css: "w-4 h-4") %>
+                  <span>Sign in</span>
+                <% end %>
+                <%= link_to new_user_registration_path, class: "nav-link py-3 md:py-2 px-4 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 text-center min-h-[44px] md:min-h-0 inline-flex items-center justify-center gap-2", data: { turbo: false } do %>
+                  <%= app_icon(:plus, css: "w-4 h-4") %>
+                  <span>Sign up</span>
+                <% end %>
               </div>
             <% end %>
           </div>
