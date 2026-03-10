@@ -13,6 +13,8 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include("Start free")
         expect(response.body).to include("<meta name=\"description\"")
         expect(response.body).to include("application/ld+json")
+        # JSON-LD must not be HTML-escaped (Google Search Console "Unparsable structured data" fix)
+        expect(response.body).to include('"@context":"https://schema.org"')
         expect(response.body).to include("/llms.txt")
       end
     end

@@ -163,7 +163,7 @@ module ApplicationHelper
   end
 
   def json_ld(value)
-    value.to_json
+    value.to_json.html_safe
   end
 
   # Renders a <time> tag with UTC datetime; JS (local_time_controller) formats it in the user's timezone.

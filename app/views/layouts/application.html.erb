@@ -40,7 +40,7 @@
 
     <%= yield :head %>
     <% if seo_json_ld.present? %>
-      <script type="application/ld+json"><%= raw seo_json_ld %></script>
+      <script type="application/ld+json"><%= seo_json_ld %></script>
     <% end %>
 
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
