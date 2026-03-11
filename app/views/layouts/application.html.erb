@@ -29,6 +29,7 @@
     <% cookie_consent_website_name = ENV["COOKIECONSENT_WEBSITE_NAME"].to_s.strip.presence || "Logister" %>
     <% cookie_consent_privacy_url = ENV["COOKIECONSENT_PRIVACY_POLICY_URL"].to_s.strip.presence || "#{request.base_url}#{privacy_path}" %>
     <% google_tag_id = ENV["GOOGLE_TAG_ID"].to_s.strip.presence %>
+    <% cloudflare_web_analytics_token = ENV["CLOUDFLARE_WEB_ANALYTICS_TOKEN"].to_s.strip.presence %>
     <% if google_tag_id.present? %>
       <meta name="logister-google-tag-id" content="<%= google_tag_id %>">
     <% end %>
@@ -251,24 +252,32 @@
     <%# Cookie Consent by TermsFeed %>
     <% if cookie_consent_enabled %>
       <!-- Cookie Consent by TermsFeed https://www.TermsFeed.com -->
-      <script type="text/javascript" src="https://www.termsfeed.com/public/cookie-consent/4.2.0/cookie-consent.js" charset="UTF-8"></script>
+      <script type="text/javascript" src="<%= cookie_consent_script_url %>" charset="UTF-8"></script>
       <script type="text/javascript" charset="UTF-8">
       document.addEventListener('DOMContentLoaded', function () {
       cookieconsent.run({"notice_banner_type":"headline","consent_type":"express","palette":"dark","language":"en","page_load_consent_levels":["strictly-necessary"],"notice_banner_reject_button_hide":false,"preferences_center_close_button_hide":false,"page_refresh_confirmation_buttons":false});
       });
       </script>
 
-      <!-- Google Analytics -->
-      <!-- Google tag (gtag.js) -->
-      <script type="text/plain" data-cookie-consent="tracking" async src="https://www.googletagmanager.com/gtag/js?id=G-3R8CQ5X7XG"></script>
-      <script type="text/plain" data-cookie-consent="tracking">
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
+      <% if analytics_enabled && google_tag_id.present? %>
+        <!-- Google Analytics -->
+        <!-- Google tag (gtag.js) -->
+        <script type="text/plain" data-cookie-consent="tracking" async src="https://www.googletagmanager.com/gtag/js?id=<%= google_tag_id %>"></script>
+        <script type="text/plain" data-cookie-consent="tracking">
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
 
-        gtag('config', 'G-3R8CQ5X7XG');
-      </script>
-      <!-- end of Google Analytics-->
+          gtag('config', '<%= google_tag_id %>');
+        </script>
+        <!-- end of Google Analytics-->
+      <% end %>
+
+      <% if analytics_enabled && cloudflare_web_analytics_token.present? %>
+        <!-- Cloudflare Web Analytics -->
+        <script type="text/plain" data-cookie-consent="tracking" defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='<%= { token: cloudflare_web_analytics_token }.to_json %>'></script>
+        <!-- End Cloudflare Web Analytics -->
+      <% end %>
 
       <noscript>Free cookie consent management tool by <a href="https://www.termsfeed.com/">TermsFeed</a></noscript>
       <!-- End Cookie Consent by TermsFeed https://www.TermsFeed.com -->

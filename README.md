@@ -193,15 +193,18 @@ Optional integrations:
   `LOGISTER_TURNSTILE_SITE_KEY`,
   `LOGISTER_TURNSTILE_SECRET_KEY`
 - TermsFeed Cookie Consent + Google Analytics:
+- TermsFeed Cookie Consent + analytics:
   `LOGISTER_COOKIE_CONSENT_ENABLED`,
   `LOGISTER_ANALYTICS_ENABLED`,
   `COOKIECONSENT_SCRIPT_URL`,
   `COOKIECONSENT_WEBSITE_NAME`,
   `COOKIECONSENT_PRIVACY_POLICY_URL`,
-  `GOOGLE_TAG_ID`
+  `GOOGLE_TAG_ID`,
+  `CLOUDFLARE_WEB_ANALYTICS_TOKEN`
 
-Google Analytics is consent-gated in the app and only enabled when both
-`LOGISTER_COOKIE_CONSENT_ENABLED=true` and `GOOGLE_TAG_ID` are set.
+Google Analytics and Cloudflare Web Analytics are consent-gated in the app and
+only enabled when `LOGISTER_COOKIE_CONSENT_ENABLED=true` plus their respective
+ID/token env var is set.
 Analytics tags render automatically in production. For local/staging verification,
 set `LOGISTER_ANALYTICS_ENABLED=true`.
 
@@ -233,8 +236,10 @@ set `LOGISTER_ANALYTICS_ENABLED=true`.
      - `COOKIECONSENT_WEBSITE_NAME=<your_website_name>`
      - `COOKIECONSENT_PRIVACY_POLICY_URL=https://your-domain.example/privacy`
    - Configure your Google tag ID: `GOOGLE_TAG_ID=G-XXXXXXXXXX`
+   - Configure your Cloudflare token:
+     `CLOUDFLARE_WEB_ANALYTICS_TOKEN=<your_token>`
    - For non-production testing, set: `LOGISTER_ANALYTICS_ENABLED=true`
-   - In self-hosted/open-source deployments, always use your own IDs
+   - In self-hosted/open-source deployments, always use your own IDs/tokens
 
 ## Provider-specific config files
 
