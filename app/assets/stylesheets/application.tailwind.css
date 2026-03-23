@@ -1,7 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer components {
   .card {
     @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5;
