@@ -32,7 +32,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <% if @error_views.any? %>
           <% @error_views.each_with_index do |project_view, idx| %>
-            <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 overflow-hidden" style="view-transition-name: dashboard-error-view-<%= project_view[:project].id %>-<%= idx %>; view-transition-class: dashboard-error-card;">
+            <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 overflow-hidden flex flex-col max-h-[34rem]" style="view-transition-name: dashboard-error-view-<%= project_view[:project].id %>-<%= idx %>; view-transition-class: dashboard-error-card;">
               <div class="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <h3 class="text-base font-semibold text-slate-900 truncate"><%= project_view[:project].name %></h3>
@@ -43,7 +43,7 @@
                 <p class="text-xs text-slate-500 whitespace-nowrap"><%= time_ago_in_words(project_view[:latest_event].occurred_at) %> ago</p>
               </div>
 
-              <div class="space-y-4">
+              <div class="space-y-4 flex-1 overflow-y-auto pr-1">
                 <% project_view[:error_views].each do |view| %>
                   <section class="rounded-lg border border-slate-200 bg-slate-50/70 p-3">
                     <div class="flex items-center justify-between gap-2 mb-2">
