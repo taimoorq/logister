@@ -190,7 +190,7 @@ class IngestEvent < ApplicationRecord
       [ event.project_id, event.fingerprint.presence || event.message.to_s.lines.first.to_s.strip.presence || event.uuid ]
     end
 
-    grouped.map do |(_, _fingerprint), grouped_events|
+    project_views = grouped.map do |(_, _fingerprint), grouped_events|
       latest = grouped_events.max_by { |e| e.occurred_at || Time.zone.at(0) }
       project = latest.project
       trend_points = 7.times.map do |index|
@@ -209,7 +209,23 @@ class IngestEvent < ApplicationRecord
         trend: trend_points,
         stage: stage
       }
-    end.sort_by { |v| v[:latest_event].occurred_at || Time.zone.at(0) }.reverse.first(6)
+    end
+
+    project_views
+      .group_by { |view| view[:project] }
+      .map do |project, views|
+        sorted_views = views.sort_by { |view| view[:latest_event].occurred_at || Time.zone.at(0) }.reverse
+
+        {
+          project: project,
+          latest_event: sorted_views.first[:latest_event],
+          events_count: sorted_views.sum { |view| view[:events_count] },
+          error_views: sorted_views
+        }
+      end
+      .sort_by { |project_view| project_view[:latest_event].occurred_at || Time.zone.at(0) }
+      .reverse
+      .first(6)
   end
 
   private

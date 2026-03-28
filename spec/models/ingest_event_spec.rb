@@ -123,12 +123,66 @@ RSpec.describe IngestEvent, type: :model do
       views = described_class.dashboard_error_views(events)
       expect(views.size).to be <= 6
       views.each do |v|
-        expect(v).to include(:project, :latest_event, :title, :events_count, :trend, :stage)
+        expect(v).to include(:project, :latest_event, :events_count, :error_views)
       end
     end
 
     it "returns empty array for empty events" do
       expect(described_class.dashboard_error_views([])).to eq([])
+    end
+
+    it "returns one dashboard entry per project with grouped errors sorted newest first" do
+      user = create(:user)
+      recent_project = create(:project, user: user, name: "Recent Project")
+      older_project = create(:project, user: user, name: "Older Project")
+      recent_key = create(:api_key, user: user, project: recent_project)
+      older_key = create(:api_key, user: user, project: older_project)
+
+      newest_group_latest = create(
+        :ingest_event,
+        project: recent_project,
+        api_key: recent_key,
+        fingerprint: "checkout-failed",
+        message: "Checkout failed",
+        occurred_at: 15.minutes.ago
+      )
+      newest_group_older = create(
+        :ingest_event,
+        project: recent_project,
+        api_key: recent_key,
+        fingerprint: "checkout-failed",
+        message: "Checkout failed",
+        occurred_at: 2.hours.ago
+      )
+      older_group_latest = create(
+        :ingest_event,
+        project: recent_project,
+        api_key: recent_key,
+        fingerprint: "billing-timeout",
+        message: "Billing timeout",
+        occurred_at: 45.minutes.ago
+      )
+      older_project_event = create(
+        :ingest_event,
+        project: older_project,
+        api_key: older_key,
+        fingerprint: "job-failed",
+        message: "Job failed",
+        occurred_at: 3.hours.ago
+      )
+
+      views = described_class.dashboard_error_views([
+        newest_group_latest,
+        newest_group_older,
+        older_group_latest,
+        older_project_event
+      ])
+
+      expect(views.map { |view| view[:project] }).to eq([ recent_project, older_project ])
+      expect(views.first[:events_count]).to eq(3)
+      expect(views.first[:error_views].size).to eq(2)
+      expect(views.first[:error_views].map { |view| view[:title] }).to eq([ "Checkout failed", "Billing timeout" ])
+      expect(views.first[:error_views].map { |view| view[:latest_event] }).to eq([ newest_group_latest, older_group_latest ])
     end
   end
 
