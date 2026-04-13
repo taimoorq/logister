@@ -3,6 +3,13 @@
 require "rails_helper"
 
 RSpec.describe "Home", type: :request do
+  around do |example|
+    original_url_options = Rails.application.routes.default_url_options.dup
+    example.run
+  ensure
+    Rails.application.routes.default_url_options = original_url_options
+  end
+
   describe "GET /" do
     context "when unauthenticated" do
       it "returns success and shows landing content" do
@@ -16,6 +23,17 @@ RSpec.describe "Home", type: :request do
         # JSON-LD must not be HTML-escaped (Google Search Console "Unparsable structured data" fix)
         expect(response.body).to include('"@context":"https://schema.org"')
         expect(response.body).to include("/llms.txt")
+      end
+
+      it "uses the configured https canonical URL even for http requests" do
+        Rails.application.routes.default_url_options = { host: "logister.org", protocol: "https" }
+
+        get root_path, headers: { "HOST" => "logister.org" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('<link rel="canonical" href="https://logister.org/">')
+        expect(response.body).to include('<meta property="og:url" content="https://logister.org/">')
+        expect(response.body).to include('"url":"https://logister.org/"')
       end
     end
 
@@ -72,6 +90,18 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include(about_url)
       expect(response.body).to include(privacy_url)
       expect(response.body).to include(terms_url)
+    end
+
+    it "uses the configured https host for sitemap entries" do
+      Rails.application.routes.default_url_options = { host: "logister.org", protocol: "https" }
+
+      get "/sitemap.xml", headers: { "HOST" => "logister.org" }
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("<loc>https://logister.org/</loc>")
+      expect(response.body).to include("<loc>https://logister.org/about</loc>")
+      expect(response.body).to include("<loc>https://logister.org/privacy</loc>")
+      expect(response.body).to include("<loc>https://logister.org/terms</loc>")
     end
   end
 end

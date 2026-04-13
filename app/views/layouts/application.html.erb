@@ -27,7 +27,7 @@
     <% analytics_enabled = Rails.env.production? || ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_ANALYTICS_ENABLED", "false")) %>
     <% cookie_consent_script_url = ENV.fetch("COOKIECONSENT_SCRIPT_URL", "https://www.termsfeed.com/public/cookie-consent/4.2.0/cookie-consent.js") %>
     <% cookie_consent_website_name = ENV["COOKIECONSENT_WEBSITE_NAME"].to_s.strip.presence || "Logister" %>
-    <% cookie_consent_privacy_url = ENV["COOKIECONSENT_PRIVACY_POLICY_URL"].to_s.strip.presence || "#{request.base_url}#{privacy_path}" %>
+    <% cookie_consent_privacy_url = ENV["COOKIECONSENT_PRIVACY_POLICY_URL"].to_s.strip.presence || absolute_url_for(privacy_path) %>
     <% google_tag_id = ENV["GOOGLE_TAG_ID"].to_s.strip.presence %>
     <% cloudflare_web_analytics_token = ENV["CLOUDFLARE_WEB_ANALYTICS_TOKEN"].to_s.strip.presence %>
     <% if google_tag_id.present? %>

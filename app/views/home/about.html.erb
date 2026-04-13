@@ -6,7 +6,7 @@
   "@context" => "https://schema.org",
   "@type" => "AboutPage",
   "name" => "About Logister",
-  "url" => "#{request.base_url}#{about_path}",
+  "url" => absolute_url_for(about_path),
   "description" => "About Logister and its Rails-focused bug capture workflow."
 }) %>
 <%

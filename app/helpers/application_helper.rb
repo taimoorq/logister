@@ -145,7 +145,7 @@ module ApplicationHelper
     if canonical_path.present?
       absolute_url_for(canonical_path)
     else
-      "#{request.base_url}#{request.path}"
+      absolute_url_for(request.path)
     end
   end
 
@@ -201,7 +201,20 @@ module ApplicationHelper
   def absolute_url_for(path)
     return path if path.start_with?("http://", "https://")
 
-    "#{request.base_url}#{path.start_with?("/") ? path : "/#{path}"}"
+    "#{public_base_url}#{path.start_with?("/") ? path : "/#{path}"}"
+  end
+
+  def public_base_url
+    url_options = Rails.application.routes.default_url_options.symbolize_keys
+    host = url_options[:host].presence
+    return request.base_url if host.blank?
+
+    protocol = url_options[:protocol].presence || request.protocol.delete_suffix("://")
+    port = url_options[:port].presence
+
+    base_url = +"#{protocol}://#{host}"
+    base_url << ":#{port}" if port.present?
+    base_url
   end
 
   def event_context_hash(event)

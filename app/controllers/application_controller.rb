@@ -7,6 +7,10 @@ class ApplicationController < ActionController::Base
 
   helper_method :admin_user?
 
+  def default_url_options
+    super.merge(Rails.application.routes.default_url_options)
+  end
+
   private
 
   def admin_user?
