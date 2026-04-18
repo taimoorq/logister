@@ -16,7 +16,7 @@ class Api::V1::IngestEventsController < ApplicationController
       @api_key.touch_last_used!
       render json: { id: event.uuid, legacy_id: event.id, status: "accepted" }, status: :created
     else
-      render json: { errors: event.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: event.errors.full_messages }, status: :unprocessable_content
     end
   end
 

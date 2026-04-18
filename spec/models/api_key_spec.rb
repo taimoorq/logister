@@ -97,5 +97,15 @@ RSpec.describe ApiKey, type: :model do
       expect(key.plain_token).to start_with("logister_")
       expect(ApiKey.authenticate(key.plain_token)).to eq(key)
     end
+
+    it "supports a configurable token prefix" do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("LOGISTER_API_KEY_PREFIX", "logister").and_return("prod")
+
+      key = described_class.create!(user: users(:one), project: projects(:one), name: "Prefixed key")
+
+      expect(key.plain_token).to start_with("prod_")
+      expect(ApiKey.authenticate(key.plain_token)).to eq(key)
+    end
   end
 end

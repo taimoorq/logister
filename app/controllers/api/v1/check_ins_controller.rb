@@ -29,7 +29,7 @@ class Api::V1::CheckInsController < ApplicationController
       @api_key.touch_last_used!
       render json: { id: event.uuid, status: "accepted" }, status: :created
     else
-      render json: { errors: event.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: event.errors.full_messages }, status: :unprocessable_content
     end
   end
 

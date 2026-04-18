@@ -4,16 +4,19 @@ class Dashboard
   def self.summary_for(project_ids)
     return empty_summary if project_ids.blank?
 
+    events_scope = IngestEvent.where(project_id: project_ids)
+    api_keys_scope = ApiKey.where(project_id: project_ids)
+
     {
-      projects_count: Project.where(id: project_ids).count,
-      api_keys_count: ApiKey.where(project_id: project_ids).count,
-      events_last_24h: IngestEvent.where(project_id: project_ids).where("occurred_at >= ?", 24.hours.ago).count,
-      recent_event_ids: IngestEvent.where(project_id: project_ids).order(occurred_at: :desc).limit(20).pluck(:id),
-      error_event_ids: IngestEvent.where(project_id: project_ids, event_type: :error)
-                                  .where("occurred_at >= ?", 7.days.ago)
-                                  .order(occurred_at: :desc)
-                                  .limit(320)
-                                  .pluck(:id)
+      projects_count: project_ids.size,
+      api_keys_count: relation_count(api_keys_scope),
+      events_last_24h: relation_count(events_scope.where("occurred_at >= ?", 24.hours.ago)),
+      recent_event_ids: events_scope.order(occurred_at: :desc).limit(20).pluck(:id),
+      error_event_ids: events_scope.where(event_type: IngestEvent.event_types[:error])
+                                   .where("occurred_at >= ?", 7.days.ago)
+                                   .order(occurred_at: :desc)
+                                   .limit(320)
+                                   .pluck(:id)
     }
   end
 
@@ -35,4 +38,9 @@ class Dashboard
       error_event_ids: []
     }
   end
+
+  def self.relation_count(relation)
+    relation.count(:all)
+  end
+  private_class_method :relation_count
 end

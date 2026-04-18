@@ -269,7 +269,7 @@ RSpec.describe "Projects", type: :request do
 
       it "renders edit with errors when invalid" do
         patch project_path(projects(:one)), params: { project: { name: "" } }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.body).to include("Edit project")
       end
     end
@@ -299,7 +299,7 @@ RSpec.describe "Projects", type: :request do
 
     it "renders new with errors when invalid" do
       post projects_path, params: { project: { name: "" } }
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

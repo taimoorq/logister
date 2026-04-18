@@ -115,6 +115,53 @@ RSpec.describe IngestEvent, type: :model do
     end
   end
 
+  describe ".released_error_groups" do
+    it "returns release summaries with grouped event and issue counts" do
+      user = create(:user)
+      project = create(:project, user: user)
+      api_key = create(:api_key, user: user, project: project)
+
+      create(:ingest_event,
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "checkout failed",
+        occurred_at: 30.minutes.ago,
+        context: { "release" => "2026.04.17", "environment" => "production" })
+      create(:ingest_event,
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        message: "checkout info",
+        occurred_at: 10.minutes.ago,
+        context: { "release" => "2026.04.17", "environment" => "production" })
+      ErrorGroup.create!(
+        project: project,
+        fingerprint: "introduced-checkout-failure",
+        title: "Checkout failed",
+        status: :unresolved,
+        introduced_in_release: "2026.04.17"
+      )
+      ErrorGroup.create!(
+        project: project,
+        fingerprint: "regressed-checkout-failure",
+        title: "Checkout failed again",
+        status: :unresolved,
+        regressed_in_release: "2026.04.17"
+      )
+
+      releases = described_class.released_error_groups(project, lookback: 2.days, limit: 6)
+
+      expect(releases.first).to include(
+        release: "2026.04.17",
+        total_events: 2,
+        error_events: 1,
+        introduced_issues: 1,
+        regressed_issues: 1
+      )
+    end
+  end
+
   describe ".dashboard_error_views" do
     it "returns at most 6 view hashes" do
       events = IngestEvent.where(project: projects(:one), event_type: :error)

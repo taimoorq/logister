@@ -23,7 +23,7 @@ class ApiKeysController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render turbo_stream: turbo_stream.replace("api_key_new_token", partial: "api_keys/error_message", locals: { message: api_key.errors.full_messages.to_sentence }), status: :unprocessable_entity }
+        format.turbo_stream { render turbo_stream: turbo_stream.replace("api_key_new_token", partial: "api_keys/error_message", locals: { message: api_key.errors.full_messages.to_sentence }), status: :unprocessable_content }
         format.html { redirect_to project_path(@project), alert: api_key.errors.full_messages.to_sentence }
       end
     end

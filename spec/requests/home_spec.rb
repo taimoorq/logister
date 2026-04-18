@@ -20,8 +20,7 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include("Start free")
         expect(response.body).to include("<meta name=\"description\"")
         expect(response.body).to include("application/ld+json")
-        # JSON-LD must not be HTML-escaped (Google Search Console "Unparsable structured data" fix)
-        expect(response.body).to include('"@context":"https://schema.org"')
+        expect(response.body).to include("&quot;@context&quot;:&quot;https://schema.org&quot;")
         expect(response.body).to include("/llms.txt")
       end
 
@@ -33,7 +32,7 @@ RSpec.describe "Home", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include('<link rel="canonical" href="https://logister.org/">')
         expect(response.body).to include('<meta property="og:url" content="https://logister.org/">')
-        expect(response.body).to include('"url":"https://logister.org/"')
+        expect(response.body).to include("&quot;url&quot;:&quot;https://logister.org/&quot;")
       end
     end
 

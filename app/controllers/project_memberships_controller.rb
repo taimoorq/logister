@@ -59,7 +59,7 @@ class ProjectMembershipsController < ApplicationController
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace("project_membership_message",
           partial: "project_memberships/error_message",
-          locals: { message: message }), status: :unprocessable_entity
+          locals: { message: message }), status: :unprocessable_content
       end
       format.html { redirect_to project_path(@project), alert: message }
     end
