@@ -92,6 +92,42 @@ RSpec.describe IngestEvent, type: :model do
       event = Struct.new(:context).new({ duration_ms: 10.0 })
       expect(described_class.duration_ms(event)).to eq(10.0)
     end
+
+    it "falls back to camelCase duration keys" do
+      event = Struct.new(:context).new({ "durationMs" => 15.5 })
+      expect(described_class.duration_ms(event)).to eq(15.5)
+    end
+  end
+
+  describe "context helpers" do
+    it "extracts environment with a default fallback" do
+      event = Struct.new(:context).new({ "environment" => "staging" })
+      missing = Struct.new(:context).new({})
+
+      expect(described_class.environment(event)).to eq("staging")
+      expect(described_class.environment(missing, "production")).to eq("production")
+    end
+
+    it "extracts release and transaction names from mixed key styles" do
+      event = Struct.new(:context).new({ release: "2026.04.17", "transactionName" => "POST /checkout" })
+
+      expect(described_class.release(event)).to eq("2026.04.17")
+      expect(described_class.transaction_name(event)).to eq("POST /checkout")
+    end
+
+    it "extracts nested trace and request identifiers" do
+      event = Struct.new(:context).new({ "trace" => { "traceId" => "trace-123", "requestId" => "req-456" } })
+
+      expect(described_class.trace_id(event)).to eq("trace-123")
+      expect(described_class.request_id(event)).to eq("req-456")
+    end
+
+    it "extracts session and user identifiers from fallback keys" do
+      event = Struct.new(:context).new({ "sessionId" => "session-789", "user" => { "id" => "user-42" } })
+
+      expect(described_class.session_id(event)).to eq("session-789")
+      expect(described_class.user_identifier(event)).to eq("user-42")
+    end
   end
 
   describe ".db_stats_from_events" do

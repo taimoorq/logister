@@ -28,9 +28,8 @@ class IngestEvent < ApplicationRecord
   scope :recent_transactions, ->(since, limit = 300) {
     transactions.where("occurred_at >= ?", since).order(occurred_at: :desc).limit(limit)
   }
-  scope :released, -> {
-    where("COALESCE(context->>'release', '') <> ''")
-  }
+  scope :released, -> { where("COALESCE(context->>'release', '') <> ''") }
+
   def self.released_error_groups(project, lookback: 30.days, limit: 6)
     since = lookback.is_a?(ActiveSupport::Duration) ? lookback.ago : lookback
     release_sql = Arel.sql("context->>'release'")
@@ -192,9 +191,7 @@ class IngestEvent < ApplicationRecord
 
   private
 
-  def ensure_uuid
-    self.uuid ||= SecureRandom.uuid
-  end
+  def ensure_uuid = self.uuid ||= SecureRandom.uuid
 
   def self.grouped_count(relation, field)
     relation.group(field).count(:all)

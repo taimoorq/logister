@@ -27,10 +27,10 @@ Rails.application.routes.draw do
 
   resources :projects, only: [ :index, :show, :new, :create, :edit, :update, :destroy ], param: :uuid do
     member do
-      get :settings
-      get :performance
-      get :monitors
-      get :activity
+      get :settings, to: "project_settings#show"
+      get :performance, to: "project_performance#show"
+      get :monitors, to: "project_monitors#show"
+      get :activity, to: "project_activity#show"
     end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
