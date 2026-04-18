@@ -66,6 +66,7 @@ group :development do
   gem "foreman"
   gem "better_errors"
   gem "binding_of_caller"
+  gem "railsforge"
 end
 
 group :test do
