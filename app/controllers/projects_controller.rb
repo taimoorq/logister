@@ -84,7 +84,7 @@ class ProjectsController < ApplicationController
     if @project.save
       redirect_to project_path(@project), notice: "Project created. Add an API key to start ingesting events."
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
@@ -95,7 +95,7 @@ class ProjectsController < ApplicationController
     if @project.update(project_params)
       redirect_to settings_project_path(@project), notice: "Project updated."
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
