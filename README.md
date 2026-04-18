@@ -41,7 +41,6 @@ This repository is open source and can be self-hosted.
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards and expected behavior |
 | [SECURITY.md](SECURITY.md) | Security policy and how to report vulnerabilities |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
-| [docs/RAILS_ARCHITECTURE_REVIEW.md](docs/RAILS_ARCHITECTURE_REVIEW.md) | Rails/DHH-style architecture review of the app |
 
 ## Core flow
 
