@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_17_113000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -25,7 +25,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["last_used_at"], name: "index_api_keys_on_last_used_at"
     t.index ["project_id"], name: "index_api_keys_on_project_id"
+    t.index ["revoked_at"], name: "index_api_keys_on_revoked_at"
     t.index ["token_digest"], name: "index_api_keys_on_token_digest", unique: true
     t.index ["user_id"], name: "index_api_keys_on_user_id"
     t.index ["uuid"], name: "index_api_keys_on_uuid", unique: true
@@ -43,7 +45,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
     t.bigint "project_id", null: false
     t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.index ["last_error_at"], name: "index_check_in_monitors_on_last_error_at"
     t.index ["last_event_id"], name: "index_check_in_monitors_on_last_event_id"
+    t.index ["project_id", "last_check_in_at"], name: "index_check_in_monitors_on_project_id_and_last_check_in_at"
     t.index ["project_id", "slug", "environment"], name: "idx_check_in_monitors_uniqueness", unique: true
     t.index ["project_id"], name: "index_check_in_monitors_on_project_id"
   end
@@ -73,13 +77,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
     t.string "title", default: "", null: false
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["archived_at"], name: "index_error_groups_on_archived_at"
+    t.index ["ignored_at"], name: "index_error_groups_on_ignored_at"
+    t.index ["last_reopened_at"], name: "index_error_groups_on_last_reopened_at"
     t.index ["latest_event_id"], name: "index_error_groups_on_latest_event_id"
     t.index ["project_id", "fingerprint"], name: "index_error_groups_on_project_id_and_fingerprint", unique: true
+    t.index ["project_id", "first_seen_at"], name: "index_error_groups_on_project_id_and_first_seen_at"
     t.index ["project_id", "introduced_in_release"], name: "index_error_groups_on_project_id_and_introduced_in_release"
     t.index ["project_id", "last_seen_at"], name: "index_error_groups_on_project_id_and_last_seen_at"
     t.index ["project_id", "regressed_in_release"], name: "index_error_groups_on_project_id_and_regressed_in_release"
     t.index ["project_id", "status"], name: "index_error_groups_on_project_id_and_status"
     t.index ["project_id"], name: "index_error_groups_on_project_id"
+    t.index ["resolved_at"], name: "index_error_groups_on_resolved_at"
     t.index ["uuid"], name: "index_error_groups_on_uuid", unique: true
   end
 
@@ -158,8 +167,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_100000) do
     t.string "unconfirmed_email"
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["confirmation_sent_at"], name: "index_users_on_confirmation_sent_at"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
+    t.index ["confirmed_at"], name: "index_users_on_confirmed_at"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["remember_created_at"], name: "index_users_on_remember_created_at"
+    t.index ["reset_password_sent_at"], name: "index_users_on_reset_password_sent_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["uuid"], name: "index_users_on_uuid", unique: true
   end

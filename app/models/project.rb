@@ -37,12 +37,16 @@ class Project < ApplicationRecord
     return {} if project_ids.blank?
 
     stats = Hash.new { |h, k| h[k] = { total_events: 0, open_groups: 0, trend: Array.new(7, 0) } }
+    project_error_groups = ErrorGroup.where(project_id: project_ids)
+    project_events = IngestEvent.where(project_id: project_ids)
 
-    ErrorGroup.where(project_id: project_ids).unresolved.group(:project_id).count
-              .each { |pid, c| stats[pid][:open_groups] = c }
+    project_error_groups.unresolved.group(:project_id).count.each do |pid, count|
+      stats[pid][:open_groups] = count
+    end
 
-    IngestEvent.where(project_id: project_ids).group(:project_id).count
-               .each { |pid, c| stats[pid][:total_events] = c }
+    project_events.group(:project_id).count.each do |pid, count|
+      stats[pid][:total_events] = count
+    end
 
     trend_dates = 7.times.map { |i| Date.current - (6 - i) }
     ErrorOccurrence

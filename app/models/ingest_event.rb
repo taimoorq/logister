@@ -1,4 +1,6 @@
 class IngestEvent < ApplicationRecord
+  include IngestEventContext
+
   belongs_to :project
   belongs_to :api_key
   belongs_to :error_group, optional: true
@@ -29,69 +31,33 @@ class IngestEvent < ApplicationRecord
   scope :released, -> {
     where("COALESCE(context->>'release', '') <> ''")
   }
-
-  # Duration in ms from event context (for db.query metrics).
-  def self.duration_ms(event)
-    return 0.0 unless event
-
-    value = context_value(event, "duration_ms")
-    value = context_value(event, "durationMs") if value.blank?
-    value.to_f
-  end
-
-  def self.environment(event, default = "production")
-    context_value(event, "environment").presence || default
-  end
-
-  def self.release(event)
-    context_value(event, "release").to_s.presence
-  end
-
-  def self.transaction_name(event)
-    context_value(event, "transaction_name").presence ||
-      context_value(event, "transactionName").presence
-  end
-
-  def self.trace_id(event)
-    context_value(event, "trace_id").presence ||
-      context_value(event, "traceId").presence ||
-      nested_context_value(event, "trace", "traceId").presence
-  end
-
-  def self.request_id(event)
-    context_value(event, "request_id").presence ||
-      context_value(event, "requestId").presence ||
-      nested_context_value(event, "trace", "requestId").presence
-  end
-
-  def self.session_id(event)
-    context_value(event, "session_id").presence || context_value(event, "sessionId").presence
-  end
-
-  def self.user_identifier(event)
-    context_value(event, "user_id").presence ||
-      context_value(event, "userId").presence ||
-      nested_context_value(event, "user", "id").presence
-  end
-
   def self.released_error_groups(project, lookback: 30.days, limit: 6)
     since = lookback.is_a?(ActiveSupport::Duration) ? lookback.ago : lookback
-    releases = released.where(project: project).where("occurred_at >= ?", since)
-                       .group(Arel.sql("context->>'release'"))
+    release_sql = Arel.sql("context->>'release'")
+    releases = released.where(project: project)
+                       .where("occurred_at >= ?", since)
+                       .group(release_sql)
                        .maximum(:occurred_at)
                        .sort_by { |_rel, seen_at| seen_at || Time.zone.at(0) }
                        .reverse
                        .first(limit)
+    return [] if releases.empty?
 
-    releases.map do |(release_name, last_seen_at)|
-      events_scope = where(project: project).where("context->>'release' = ?", release_name)
+    release_names = releases.map(&:first)
+    events_scope = where(project: project).where("context->>'release' IN (?)", release_names)
+    total_events_by_release = grouped_count(events_scope, release_sql)
+    error_events_by_release = grouped_count(events_scope.where(event_type: event_types[:error]), release_sql)
+    introduced_issues_by_release = grouped_count(project.error_groups.where(introduced_in_release: release_names), :introduced_in_release)
+    regressed_issues_by_release = grouped_count(project.error_groups.where(regressed_in_release: release_names), :regressed_in_release)
+
+    releases.map do |release_name, last_seen_at|
       {
         release: release_name,
         last_seen_at: last_seen_at,
-        total_events: events_scope.count,
-        error_events: events_scope.where(event_type: :error).count,
-        introduced_issues: project.error_groups.where(introduced_in_release: release_name).count,
-        regressed_issues: project.error_groups.where(regressed_in_release: release_name).count
+        total_events: total_events_by_release.fetch(release_name, 0),
+        error_events: error_events_by_release.fetch(release_name, 0),
+        introduced_issues: introduced_issues_by_release.fetch(release_name, 0),
+        regressed_issues: regressed_issues_by_release.fetch(release_name, 0)
       }
     end
   end
@@ -169,8 +135,6 @@ class IngestEvent < ApplicationRecord
       matches.any?
     end.first(limit)
   end
-
-  # Aggregate stats from a list of db.query events: count, avg_ms, p95_ms.
   def self.db_stats_from_events(events)
     durations = events.map { |e| duration_ms(e) }.select(&:positive?)
     return { count: 0, avg_ms: 0.0, p95_ms: 0.0 } if durations.empty?
@@ -183,8 +147,6 @@ class IngestEvent < ApplicationRecord
       p95_ms: sorted[p95_index].round(2)
     }
   end
-
-  # Build dashboard error view hashes from a list of error events (e.g. last 7 days).
   def self.dashboard_error_views(events)
     grouped = events.group_by do |event|
       [ event.project_id, event.fingerprint.presence || event.message.to_s.lines.first.to_s.strip.presence || event.uuid ]
@@ -234,24 +196,8 @@ class IngestEvent < ApplicationRecord
     self.uuid ||= SecureRandom.uuid
   end
 
-  def self.context_hash(event)
-    event.context.is_a?(Hash) ? event.context : {}
+  def self.grouped_count(relation, field)
+    relation.group(field).count(:all)
   end
-
-  def self.context_value(event, key)
-    ctx = context_hash(event)
-    value = ctx[key]
-    value = ctx[key.to_sym] if value.blank?
-    value
-  end
-
-  def self.nested_context_value(event, *keys)
-    current = context_hash(event)
-    keys.each do |key|
-      return nil unless current.is_a?(Hash)
-
-      current = current[key] || current[key.to_sym]
-    end
-    current
-  end
+  private_class_method :grouped_count
 end
