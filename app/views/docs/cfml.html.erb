@@ -1,0 +1,104 @@
+<% content_for :title, "CFML Integration Docs" %>
+<% content_for :meta_description, "Set up a Lucee or Adobe ColdFusion site with Logister using cfhttp, Application.cfc.onError(), and structured exception data." %>
+<% content_for :canonical_path, docs_cfml_integration_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "TechArticle",
+  "name" => "Logister CFML integration",
+  "url" => absolute_url_for(docs_cfml_integration_path),
+  "description" => "Set up a Lucee or Adobe ColdFusion site with Logister."
+}) %>
+
+<div class="docs-page">
+  <section class="docs-hero docs-hero-compact">
+    <div>
+      <p class="hero-kicker">Documentation / CFML</p>
+      <h1 class="hero-title">Integrate a Lucee or ColdFusion site with Logister.</h1>
+      <p class="hero-copy">
+        CFML apps can send events directly to Logister with <code>cfhttp</code>. The best path is a small
+        <code>LogisterClient.cfc</code> wrapper plus <code>Application.cfc.onError()</code> for uncaught exceptions.
+      </p>
+    </div>
+  </section>
+
+  <div class="docs-shell">
+    <%= render "sidebar" %>
+
+    <div class="docs-content">
+      <section class="docs-section">
+        <p class="docs-eyebrow">Before you start</p>
+        <h2>Create the project with the `CFML` integration type.</h2>
+        <p>
+          In Logister, choose <strong>CFML</strong> for the project integration type. That makes the project settings page
+          show CFML-specific setup guidance and links back to this public guide.
+        </p>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Setup flow</p>
+        <h2>Recommended installation path</h2>
+        <ol class="docs-list docs-list-numbered">
+          <li>Create the project, choose <code>CFML</code>, and generate an API key.</li>
+          <li>Add a small <code>LogisterClient.cfc</code> wrapper around <code>cfhttp</code>.</li>
+          <li>Hook uncaught exceptions into <code>Application.cfc.onError()</code>.</li>
+          <li>Send request timings as <code>transaction</code> events and query timings as <code>metric</code> events.</li>
+        </ol>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Start with</p>
+        <h2>Send a structured error event</h2>
+        <pre class="docs-code"><code>application.logister.sendEvent(
+  eventType = "error",
+  level = "error",
+  message = exception.message ?: "Unhandled CFML exception",
+  context = {
+    exception = {
+      type = exception.type ?: "Exception",
+      detail = exception.detail ?: "",
+      tagContext = exception.tagContext ?: []
+    }
+  }
+);</code></pre>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Error handling</p>
+        <h2>Capture uncaught exceptions with `Application.cfc.onError()`</h2>
+        <p>
+          The CFML error view in Logister is optimized for structured exception data. Include fields like
+          <code>exception.type</code>, <code>exception.detail</code>, <code>exception.tagContext</code>, and
+          <code>context.cgi</code> for the best result.
+        </p>
+        <ul class="docs-list">
+          <li><code>exception.type</code> and <code>exception.message</code> drive the exception summary</li>
+          <li><code>exception.detail</code> improves the ColdFusion exception panel</li>
+          <li><code>exception.tagContext</code> populates template frames</li>
+          <li><code>context.cgi.script_name</code> and related CGI fields improve request context</li>
+        </ul>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Event types</p>
+        <h2>Use structured event types consistently</h2>
+        <ul class="docs-list">
+          <li><code>transaction</code> for request timings and remote CFC method timings</li>
+          <li><code>metric</code> for <code>db.query</code>, HTTP client timings, cache timings, and queue latency</li>
+          <li><code>log</code> for structured application logs with correlation fields</li>
+          <li><code>check_in</code> or <code>/api/v1/check_ins</code> for scheduled jobs</li>
+        </ul>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">More detail</p>
+        <h2>Need the longer write-up?</h2>
+        <p>
+          The repository also includes a longer internal guide at
+          <a href="https://github.com/taimoorq/logister/blob/main/docs/cfml_ingestion_guide.md" target="_blank" rel="noopener" class="docs-inline-link">docs/cfml_ingestion_guide.md</a>
+          with additional payload examples and rollout advice.
+        </p>
+      </section>
+    </div>
+  </div>
+</div>

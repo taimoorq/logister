@@ -29,7 +29,7 @@ RSpec.describe "Project memberships", type: :request do
                params: { project_membership: { email: "three@example.com" } }
         }.to change(ProjectMembership, :count).by(1)
 
-        expect(response).to redirect_to(project_path(project))
+        expect(response).to redirect_to(settings_project_path(project))
         follow_redirect!
         expect(response.body).to include("Project shared with three@example.com")
         expect(project.members).to include(user_three)
@@ -39,7 +39,7 @@ RSpec.describe "Project memberships", type: :request do
         post project_project_memberships_path(project),
              params: { project_membership: { email: "nobody@example.com" } }
 
-        expect(response).to redirect_to(project_path(project))
+        expect(response).to redirect_to(settings_project_path(project))
         expect(flash[:alert]).to include("User not found")
       end
 
@@ -47,7 +47,7 @@ RSpec.describe "Project memberships", type: :request do
         post project_project_memberships_path(project),
              params: { project_membership: { email: users(:one).email } }
 
-        expect(response).to redirect_to(project_path(project))
+        expect(response).to redirect_to(settings_project_path(project))
         expect(flash[:alert]).to include("already own")
       end
     end
@@ -77,7 +77,7 @@ RSpec.describe "Project memberships", type: :request do
         expect {
           delete project_project_membership_path(project, membership)
         }.to change(ProjectMembership, :count).by(-1)
-        expect(response).to redirect_to(project_path(project))
+        expect(response).to redirect_to(settings_project_path(project))
         follow_redirect!
         expect(response.body).to include("Access removed")
       end

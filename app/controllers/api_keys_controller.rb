@@ -36,7 +36,7 @@ class ApiKeysController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream { render turbo_stream: turbo_stream.remove(api_key) }
-      format.html { redirect_to project_path(@project), notice: "API key revoked." }
+      format.html { redirect_to settings_project_path(@project), notice: "API key revoked." }
     end
   end
 

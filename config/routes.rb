@@ -6,6 +6,9 @@ Rails.application.routes.draw do
     confirmations: "users/confirmations"
   }
   root "home#show"
+  get "docs", to: "docs#index", as: :docs
+  get "docs/integrations/ruby", to: "docs#ruby", as: :docs_ruby_integration
+  get "docs/integrations/cfml", to: "docs#cfml", as: :docs_cfml_integration
   get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }
   get "about", to: "home#about"
   get "privacy", to: "home#privacy"

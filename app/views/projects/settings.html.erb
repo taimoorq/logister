@@ -143,8 +143,8 @@
 
           <p class="text-sm text-slate-600">
             Full setup guide:
-            <%= link_to "CFML ingestion guide",
-                        "/docs/cfml_ingestion_guide.md",
+            <%= link_to "CFML integration docs",
+                        docs_cfml_integration_path,
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
@@ -170,10 +170,8 @@ end</code></pre>
           </div>
 
           <p class="text-sm text-slate-600">
-            Package links:
-            <a href="https://rubygems.org/gems/logister-ruby" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 no-underline font-semibold">RubyGems</a>
-            and
-            <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 no-underline font-semibold">GitHub</a>.
+            Public setup guide:
+            <%= link_to "Ruby integration docs", docs_ruby_integration_path, class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% end %>

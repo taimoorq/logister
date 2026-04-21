@@ -4,7 +4,10 @@
   <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
       <h2 class="text-lg font-bold text-slate-900">Cron and uptime monitors</h2>
-      <p class="text-slate-500 text-sm"><%= @missed_check_ins_count %> missed</p>
+      <p class="text-slate-500 text-sm">
+        <%= @missed_check_ins_count %> missed.
+        <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), class: "text-blue-600 hover:underline" %>
+      </p>
     </div>
     <% if @check_in_monitors.any? %>
       <div class="overflow-x-auto">
@@ -40,6 +43,9 @@
       <p class="text-slate-600 text-sm">
         No check-ins yet. Send heartbeats to
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/check_ins</code>.
+        The
+        <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), class: "text-blue-600 hover:underline" %>
+        show examples for scheduling these check-ins.
       </p>
     <% end %>
   </section>

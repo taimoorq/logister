@@ -71,8 +71,10 @@ RSpec.describe "Api keys", type: :request do
       it "revokes api key and redirects" do
         key = api_keys(:one)
         delete project_api_key_path(project, key)
-        expect(response).to redirect_to(project_path(project))
+        expect(response).to redirect_to(settings_project_path(project))
         expect(key.reload.revoked_at).to be_present
+        follow_redirect!
+        expect(response.body).to include("API key revoked")
       end
     end
 

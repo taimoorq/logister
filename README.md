@@ -41,7 +41,7 @@ This repository is open source and can be self-hosted.
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards and expected behavior |
 | [SECURITY.md](SECURITY.md) | Security policy and how to report vulnerabilities |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
-| [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | Guide for sending Lucee / ColdFusion CFML events into Logister |
+| [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | Guide for sending Lucee / ColdFusion CFML events into Logister, including project setup and CFML error capture |
 
 ## Core flow
 
@@ -326,177 +326,11 @@ Log events should include correlation identifiers in context when available (`tr
 
 ## CFML / Lucee integration
 
-Logister's ingest API is generic, so Lucee and Adobe ColdFusion apps can send events directly without a custom server adapter. A Lucee app can post JSON to `POST /api/v1/ingest_events` with `cfhttp` and capture uncaught exceptions from `Application.cfc`.
+Logister supports both Ruby and CFML projects. When a project is marked as `CFML`, the settings page shows a CFML-specific integration guide and the error detail view switches to a ColdFusion-oriented presentation that emphasizes exception type, detail, `tagContext` template frames, and CGI/request fields.
 
-Minimal Lucee client component:
+CFML apps do not need a custom server adapter. They can post JSON directly to `POST /api/v1/ingest_events` with `cfhttp`, typically using a small `LogisterClient.cfc` plus `Application.cfc.onError()` for uncaught exceptions.
 
-```cfml
-component output="false" {
-  variables.endpoint = "https://your-logister-host.example/api/v1/ingest_events";
-  variables.apiToken = "your-project-api-token";
-  variables.environment = "production";
-  variables.service = "storefront-cfml";
-  variables.release = "2026.04.21";
-
-  public struct function sendEvent(
-    required string eventType,
-    required string message,
-    string level = "info",
-    struct context = {},
-    string fingerprint = "",
-    string occurredAt = ""
-  ) {
-    var payload = {
-      event = {
-        event_type = arguments.eventType,
-        message = arguments.message,
-        level = arguments.level,
-        fingerprint = len(arguments.fingerprint) ? arguments.fingerprint : javacast("null", ""),
-        occurred_at = len(arguments.occurredAt) ? arguments.occurredAt : dateTimeFormat(dateConvert("local2utc", now()), "yyyy-mm-dd'T'HH:nn:ss'Z'"),
-        context = duplicate(arguments.context)
-      }
-    };
-
-    payload.event.context.environment = structKeyExists(payload.event.context, "environment") ? payload.event.context.environment : variables.environment;
-    payload.event.context.service = structKeyExists(payload.event.context, "service") ? payload.event.context.service : variables.service;
-    payload.event.context.release = structKeyExists(payload.event.context, "release") ? payload.event.context.release : variables.release;
-
-    cfhttp(
-      url = variables.endpoint,
-      method = "post",
-      result = "httpResult",
-      timeout = 5,
-      throwOnError = false
-    ) {
-      cfhttpparam(type = "header", name = "Authorization", value = "Bearer " & variables.apiToken);
-      cfhttpparam(type = "header", name = "Content-Type", value = "application/json");
-      cfhttpparam(type = "body", value = serializeJSON(payload));
-    }
-
-    return {
-      statusCode = httpResult.statusCode,
-      responseBody = httpResult.fileContent
-    };
-  }
-}
-```
-
-Capture a transaction timing:
-
-```cfml
-<cfscript>
-startTick = getTickCount();
-
-try {
-  include "checkout.cfm";
-}
-finally {
-  durationMs = getTickCount() - startTick;
-
-  application.logister.sendEvent(
-    eventType = "transaction",
-    level = "info",
-    message = cgi.request_method & " " & cgi.script_name,
-    context = {
-      transaction_name = cgi.request_method & " " & cgi.script_name,
-      duration_ms = durationMs,
-      request_id = cgi.http_x_request_id ?: "",
-      trace_id = cgi.http_x_trace_id ?: "",
-      status = getPageContext().getResponse().getStatus()
-    }
-  );
-}
-</cfscript>
-```
-
-Capture a database metric:
-
-```cfml
-<cfscript>
-queryStart = getTickCount();
-queryExecute(
-  "SELECT id, email FROM users WHERE id = :id",
-  { id = { value = userId, cfsqltype = "cf_sql_integer" } },
-  { datasource = application.datasource }
-);
-queryDurationMs = getTickCount() - queryStart;
-
-application.logister.sendEvent(
-  eventType = "metric",
-  level = "info",
-  message = "db.query",
-  context = {
-    duration_ms = queryDurationMs,
-    name = "users.by_id",
-    sql = "SELECT id, email FROM users WHERE id = :id",
-    datasource = application.datasource
-  }
-);
-</cfscript>
-```
-
-Capture uncaught exceptions in `Application.cfc`:
-
-```cfml
-component {
-  this.name = "my-lucee-app";
-
-  function onApplicationStart() {
-    application.logister = new path.to.LogisterClient();
-    return true;
-  }
-
-  function onError(required struct exception, string eventName = "") {
-    application.logister.sendEvent(
-      eventType = "error",
-      level = "error",
-      message = exception.message ?: "Unhandled CFML exception",
-      fingerprint = (exception.type ?: "Exception") & ":" & (listFirst(exception.tagContext[1].template ?: "", "/") ?: ""),
-      context = {
-        environment = server.lucee.environment ?: "production",
-        event_name = arguments.eventName,
-        exception = {
-          class = exception.type ?: "Exception",
-          message = exception.message ?: "",
-          detail = exception.detail ?: "",
-          stacktrace = exception.stackTrace ?: "",
-          backtrace = isArray(exception.tagContext) ? exception.tagContext.map(function(frame) {
-            return (frame.template ?: "unknown") & ":" & (frame.line ?: 0);
-          }) : []
-        },
-        url = duplicate(url),
-        form = duplicate(form),
-        cgi = {
-          script_name = cgi.script_name ?: "",
-          query_string = cgi.query_string ?: "",
-          remote_addr = cgi.remote_addr ?: "",
-          http_user_agent = cgi.http_user_agent ?: "",
-          request_method = cgi.request_method ?: ""
-        }
-      }
-    );
-  }
-}
-```
-
-Recommended event mapping for CFML apps:
-
-- `error`: uncaught exceptions, failed scheduled tasks, template/render failures
-- `transaction`: request timings for key routes or remote CFC methods
-- `metric`: database timings, external HTTP calls, cache timings, queue durations
-- `log`: structured application logs with `trace_id`, `request_id`, `session_id`, or `user_id`
-- `check_in`: scheduled jobs, feeds, or batch processes hitting `POST /api/v1/check_ins`
-
-The most important fields for useful dashboards are:
-
-- `message`: human-readable title for the event
-- `occurred_at`: ISO-8601 timestamp
-- `context.environment`: `production`, `staging`, etc.
-- `context.release`: deploy or build identifier
-- `context.duration_ms`: for `metric` and `transaction`
-- `context.transaction_name`: for request timing rollups
-- `context.trace_id` and `context.request_id`: for linking logs and errors
-- `context.exception.class` and `context.exception.backtrace`: for error views
+For the current setup flow, payload examples, and CFML error-capture recommendations, see [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md).
 
 ## Check-in API
 

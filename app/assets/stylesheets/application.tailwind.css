@@ -976,6 +976,144 @@
     color: #596c91;
   }
 
+  .docs-page {
+    @apply space-y-6;
+  }
+
+  .docs-hero {
+    @apply rounded-2xl p-6 sm:p-8 border;
+    border-color: rgba(94, 121, 184, 0.25);
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .docs-hero-compact {
+    @apply py-6;
+  }
+
+  .docs-shell {
+    @apply grid grid-cols-1 lg:grid-cols-[17rem_minmax(0,1fr)] gap-4 sm:gap-6 items-start;
+  }
+
+  .docs-sidebar {
+    @apply rounded-2xl p-5 border space-y-4 lg:sticky lg:top-24;
+    border-color: rgba(94, 121, 184, 0.25);
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 16px 34px -30px rgba(20, 43, 94, 0.62);
+  }
+
+  .docs-sidebar-kicker {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em];
+    color: #4f6590;
+  }
+
+  .docs-sidebar-nav {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .docs-sidebar-link {
+    @apply rounded-xl px-3 py-2.5 text-sm font-medium no-underline;
+    color: #596c91;
+  }
+
+  .docs-sidebar-link:hover {
+    background: rgba(239, 246, 255, 0.9);
+    color: #173d8d;
+  }
+
+  .docs-sidebar-link.is-active {
+    background: #e9f1ff;
+    color: #173d8d;
+    border: 1px solid #d4e2ff;
+  }
+
+  .docs-sidebar-card {
+    @apply rounded-xl p-4 border;
+    border-color: rgba(94, 121, 184, 0.18);
+    background: rgba(243, 247, 255, 0.82);
+  }
+
+  .docs-sidebar-card-title {
+    @apply text-sm font-semibold;
+    color: #152749;
+  }
+
+  .docs-sidebar-card-copy {
+    @apply mt-1 text-sm leading-6;
+    color: #5d7094;
+  }
+
+  .docs-content {
+    @apply space-y-4;
+  }
+
+  .docs-section {
+    @apply rounded-2xl p-5 sm:p-6 border;
+    border-color: rgba(94, 121, 184, 0.25);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 16px 34px -30px rgba(20, 43, 94, 0.62);
+  }
+
+  .docs-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em];
+    color: #2354b5;
+  }
+
+  .docs-section h2 {
+    font-family: "Space Grotesk", "Inter", sans-serif;
+    @apply text-2xl font-bold mt-2;
+    color: #152749;
+  }
+
+  .docs-section p {
+    @apply text-sm sm:text-base leading-relaxed mt-3;
+    color: #576a90;
+  }
+
+  .docs-card-grid {
+    @apply grid md:grid-cols-2 gap-3 sm:gap-4;
+  }
+
+  .docs-card {
+    @apply rounded-2xl p-5 border;
+    border-color: rgba(94, 121, 184, 0.25);
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .docs-card h3 {
+    font-family: "Space Grotesk", "Inter", sans-serif;
+    @apply text-xl font-bold mt-2;
+    color: #152749;
+  }
+
+  .docs-card p {
+    @apply text-sm sm:text-base leading-relaxed mt-3;
+    color: #576a90;
+  }
+
+  .docs-inline-link {
+    @apply inline-flex items-center mt-4 text-sm font-semibold no-underline;
+    color: #2354b5;
+  }
+
+  .docs-inline-link:hover {
+    color: #173d8d;
+  }
+
+  .docs-list {
+    @apply mt-4 space-y-2 pl-5 text-sm sm:text-base leading-relaxed list-disc;
+    color: #576a90;
+  }
+
+  .docs-list-numbered {
+    @apply list-decimal;
+  }
+
+  .docs-code {
+    @apply mt-4 rounded-xl p-4 text-sm overflow-x-auto;
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+
   .legal-page {
     @apply space-y-6;
   }

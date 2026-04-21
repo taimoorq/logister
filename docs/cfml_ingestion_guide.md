@@ -4,6 +4,18 @@ This guide shows how to send events from a CFML application running on Lucee or 
 
 Logister does not require a CFML-specific agent. Your app can send JSON directly to the ingest API with `cfhttp`.
 
+## Before you start
+
+In Logister, create the project with the `CFML` integration type. That makes the project settings page show the CFML-specific integration guide instead of the Ruby gem instructions.
+
+The basic setup flow is:
+
+1. Create a project and choose `CFML` as the integration type
+2. Generate an API key from the project settings page
+3. Add a small `LogisterClient.cfc` wrapper around `cfhttp`
+4. Hook uncaught errors into `Application.cfc.onError()`
+5. Add transaction, metric, log, and check-in events as needed
+
 ## What Logister accepts
 
 Send events to:
@@ -59,7 +71,27 @@ Use these fields consistently so Logister can group and display CFML events well
 | `event.context.transaction_name` | request method + template/path | Used for transaction rollups |
 | `event.context.duration_ms` | request/query timing | Used for transaction and metric charts |
 | `event.context.exception.class` | `exception.type` | Exception type/class |
+| `event.context.exception.detail` | `exception.detail` | Useful for the ColdFusion-focused exception summary |
 | `event.context.exception.backtrace` | `exception.tagContext` | Array is best |
+| `event.context.cgi` | `cgi` scope | Helps the CFML error view show template and request info |
+
+## How Logister shows CFML errors
+
+When a project is marked as `CFML`, Logister uses a CFML-specific error presentation instead of the Ruby-style stacktrace view.
+
+The CFML error view is optimized for data like:
+
+- `exception.type`
+- `exception.message`
+- `exception.detail`
+- `exception.tagContext`
+- `cgi.script_name`
+- `cgi.request_method`
+- `cgi.query_string`
+- `cgi.remote_addr`
+- `cgi.http_user_agent`
+
+That means you get a better result if your error payload includes structured ColdFusion exception and CGI/request data instead of only a flat message string.
 
 ## Event types to send from a CFML app
 
@@ -279,7 +311,8 @@ component {
           message = exception.message ?: "",
           detail = exception.detail ?: "",
           stacktrace = exception.stackTrace ?: "",
-          backtrace = frames
+          backtrace = frames,
+          tagContext = exception.tagContext ?: []
         },
         cgi = {
           script_name = cgi.script_name ?: "",
@@ -470,6 +503,16 @@ Check that:
 - `transaction` events include `context.transaction_name`
 - `metric` events include `context.duration_ms`
 - `error` events include exception details in `context.exception`
+
+### CFML error view looks too generic
+
+Check that your error payload includes:
+
+- `context.exception.type`
+- `context.exception.detail`
+- `context.exception.tagContext`
+- `context.cgi.script_name`
+- `context.cgi.request_method`
 
 ### Duplicate noise
 

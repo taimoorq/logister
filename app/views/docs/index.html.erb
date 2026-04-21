@@ -1,0 +1,73 @@
+<% content_for :title, "Documentation" %>
+<% content_for :meta_description, "Public Logister documentation for integrations, setup flows, and product usage." %>
+<% content_for :canonical_path, docs_path %>
+<% content_for :og_type, "website" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "CollectionPage",
+  "name" => "Logister Documentation",
+  "url" => absolute_url_for(docs_path),
+  "description" => "Public Logister documentation for integrations and setup flows."
+}) %>
+
+<div class="docs-page">
+  <section class="docs-hero">
+    <div>
+      <p class="hero-kicker">Documentation</p>
+      <h1 class="hero-title">Public setup guides for Logister and its integrations.</h1>
+      <p class="hero-copy">
+        This is the public documentation section for Logister. It is where integration guides, setup instructions,
+        and future app documentation should live so users can access them without signing in.
+      </p>
+      <div class="hero-actions">
+        <%= link_to "Ruby integration", docs_ruby_integration_path, class: "hero-btn hero-btn-primary" %>
+        <%= link_to "CFML integration", docs_cfml_integration_path, class: "hero-btn hero-btn-secondary" %>
+      </div>
+    </div>
+  </section>
+
+  <div class="docs-shell">
+    <%= render "sidebar" %>
+
+    <div class="docs-content">
+      <section class="docs-section">
+        <p class="docs-eyebrow">Overview</p>
+        <h2>Choose the guide that matches your project type.</h2>
+        <p>
+          Logister currently has public documentation for Ruby and CFML integrations. Each project in the app can be tagged
+          with an integration type so the in-app setup guidance matches the public docs here.
+        </p>
+      </section>
+
+      <section class="docs-card-grid">
+        <article class="docs-card">
+          <p class="feature-kicker">Ruby</p>
+          <h3>Install the `logister-ruby` gem</h3>
+          <p>Best for Rails apps that want native error, metric, log, and check-in capture.</p>
+          <%= link_to "Read Ruby docs", docs_ruby_integration_path, class: "docs-inline-link" %>
+        </article>
+
+        <article class="docs-card">
+          <p class="feature-kicker">CFML</p>
+          <h3>Send events from Lucee or ColdFusion</h3>
+          <p>Best for CFML sites using `cfhttp`, `Application.cfc.onError()`, and structured exception payloads.</p>
+          <%= link_to "Read CFML docs", docs_cfml_integration_path, class: "docs-inline-link" %>
+        </article>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Growing the section</p>
+        <h2>This is the foundation for broader Logister docs.</h2>
+        <p>
+          New product documentation should be added under this public docs section going forward so setup, feature usage,
+          and integration guidance all live in one consistent place.
+        </p>
+        <ul class="docs-list">
+          <li>Integration guides</li>
+          <li>Public setup instructions linked from project settings</li>
+          <li>Future feature docs for the Logister app itself</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>

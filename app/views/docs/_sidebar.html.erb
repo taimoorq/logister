@@ -1,0 +1,13 @@
+<aside class="docs-sidebar">
+  <p class="docs-sidebar-kicker">Documentation</p>
+  <nav class="docs-sidebar-nav" aria-label="Documentation navigation">
+    <% docs_navigation_items.each do |label, path| %>
+      <%= link_to label, path, class: "docs-sidebar-link #{current_page?(path) ? 'is-active' : ''}" %>
+    <% end %>
+  </nav>
+
+  <div class="docs-sidebar-card">
+    <p class="docs-sidebar-card-title">Project-aware setup</p>
+    <p class="docs-sidebar-card-copy">Projects can be labeled by integration type so the in-app setup guidance matches Ruby and CFML workflows.</p>
+  </div>
+</aside>

@@ -17,6 +17,8 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Ruby gem")
+        expect(response.body).to include(">Docs<")
+        expect(response.body).to include("documentation section")
       end
     end
 
@@ -97,7 +99,7 @@ RSpec.describe "Projects", type: :request do
         get settings_project_path(projects(:two))
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Integration guide")
-        expect(response.body).to include("CFML ingestion guide")
+        expect(response.body).to include("CFML integration docs")
         expect(response.body).to include("Application.cfc.onError()")
       end
     end
@@ -116,6 +118,8 @@ RSpec.describe "Projects", type: :request do
         get performance_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("Instrumentation help")
+        expect(response.body).to include("Ruby integration docs")
       end
 
       it "renders database load stats when db.query metrics exist" do
@@ -171,6 +175,7 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Cron and uptime monitors")
+        expect(response.body).to include("Ruby integration docs")
       end
 
       it "returns 404 for project user cannot access" do
@@ -205,6 +210,7 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Custom events")
+        expect(response.body).to include("Ruby integration docs")
       end
 
       it "returns 404 for project user cannot access" do
@@ -221,6 +227,12 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Custom events")
+      end
+
+      it "shows CFML integration docs on CFML activity pages" do
+        get activity_project_path(projects(:two))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("CFML integration docs")
       end
     end
   end

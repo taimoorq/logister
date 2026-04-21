@@ -5,8 +5,9 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
       <h2 class="text-lg font-bold text-slate-900">Custom events</h2>
       <p class="text-slate-500 text-sm">
-        Metrics, logs, transactions, and check-ins sent via the
-        <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="text-blue-600 hover:underline">logister-ruby</a> gem (last 200)
+        Metrics, logs, transactions, and check-ins sent from your
+        <%= @project.integration_label %> integration (last 200).
+        <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), class: "text-blue-600 hover:underline" %>
       </p>
     </div>
     <% if @activity_events.any? %>
@@ -47,12 +48,19 @@
       </div>
     <% else %>
       <p class="text-slate-600 text-sm">
-        No custom events yet. Use
-        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_metric</code>,
-        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_log</code>,
-        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_transaction</code>, or
-        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_check_in</code>
-        from the logister-ruby gem to send events here.
+        <% if @project.integration_cfml? %>
+          No custom events yet. Follow the
+          <%= link_to "CFML integration docs", docs_cfml_integration_path, class: "text-blue-600 hover:underline" %>
+          to send metrics, logs, transactions, and check-ins from your Lucee or ColdFusion app.
+        <% else %>
+          No custom events yet. Use
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_metric</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_log</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_transaction</code>, or
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_check_in</code>
+          from the logister-ruby gem to send events here. You can also start with the
+          <%= link_to "Ruby integration docs", docs_ruby_integration_path, class: "text-blue-600 hover:underline" %>.
+        <% end %>
       </p>
     <% end %>
   </section>

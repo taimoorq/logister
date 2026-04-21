@@ -22,7 +22,7 @@ class ProjectMembershipsController < ApplicationController
             turbo_stream.replace("project_membership_message", partial: "project_memberships/success_message", locals: { email: user.email })
           ]
         end
-        format.html { redirect_to project_path(@project), notice: "Project shared with #{user.email}." }
+        format.html { redirect_to settings_project_path(@project), notice: "Project shared with #{user.email}." }
       end
     else
       respond_with_membership_error(membership.errors.full_messages.to_sentence)
@@ -36,7 +36,7 @@ class ProjectMembershipsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream { render turbo_stream: turbo_stream.remove(membership) }
-      format.html { redirect_to project_path(@project), notice: "Access removed." }
+      format.html { redirect_to settings_project_path(@project), notice: "Access removed." }
     end
   end
 
@@ -51,7 +51,7 @@ class ProjectMembershipsController < ApplicationController
   end
 
   def redirect_with_alert(message)
-    redirect_to project_path(@project), alert: message
+    redirect_to settings_project_path(@project), alert: message
   end
 
   def respond_with_membership_error(message)
@@ -61,7 +61,7 @@ class ProjectMembershipsController < ApplicationController
           partial: "project_memberships/error_message",
           locals: { message: message }), status: :unprocessable_content
       end
-      format.html { redirect_to project_path(@project), alert: message }
+      format.html { redirect_to settings_project_path(@project), alert: message }
     end
   end
 end

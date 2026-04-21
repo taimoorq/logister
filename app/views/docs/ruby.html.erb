@@ -1,0 +1,82 @@
+<% content_for :title, "Ruby Integration Docs" %>
+<% content_for :meta_description, "Set up a Ruby or Rails app with Logister using the logister-ruby gem." %>
+<% content_for :canonical_path, docs_ruby_integration_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "TechArticle",
+  "name" => "Logister Ruby integration",
+  "url" => absolute_url_for(docs_ruby_integration_path),
+  "description" => "Set up a Ruby or Rails app with Logister using the logister-ruby gem."
+}) %>
+
+<div class="docs-page">
+  <section class="docs-hero docs-hero-compact">
+    <div>
+      <p class="hero-kicker">Documentation / Ruby</p>
+      <h1 class="hero-title">Integrate a Ruby or Rails app with Logister.</h1>
+      <p class="hero-copy">
+        The best path for Ruby projects is the <code>logister-ruby</code> gem. It matches the Ruby-specific setup
+        experience in the app and is the recommended integration for Rails applications.
+      </p>
+    </div>
+  </section>
+
+  <div class="docs-shell">
+    <%= render "sidebar" %>
+
+    <div class="docs-content">
+      <section class="docs-section">
+        <p class="docs-eyebrow">Before you start</p>
+        <h2>Create the project with the `Ruby gem` integration type.</h2>
+        <p>
+          In Logister, choose <strong>Ruby gem</strong> for the project integration type. That makes the project settings
+          page show Ruby-specific setup instructions and links back to this public guide.
+        </p>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Setup flow</p>
+        <h2>Recommended installation path</h2>
+        <ol class="docs-list docs-list-numbered">
+          <li>Create the project and generate an API key.</li>
+          <li>Add <code>logister-ruby</code> to the application.</li>
+          <li>Configure the API key and Logister ingest endpoint.</li>
+          <li>Optionally enable DB metrics for performance visibility.</li>
+        </ol>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Install</p>
+        <h2>Add the gem</h2>
+        <pre class="docs-code"><code>gem "logister-ruby", "~> 0.1.2"</code></pre>
+        <p>
+          Package links:
+          <a href="https://rubygems.org/gems/logister-ruby" target="_blank" rel="noopener" class="docs-inline-link">RubyGems</a>
+          and
+          <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="docs-inline-link">GitHub</a>.
+        </p>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Configure</p>
+        <h2>Point the gem at your Logister project</h2>
+        <pre class="docs-code"><code>Logister.configure do |config|
+  config.api_key = "your-project-api-token"
+  config.endpoint = "https://your-logister-host.example/api/v1/ingest_events"
+end</code></pre>
+      </section>
+
+      <section class="docs-section">
+        <p class="docs-eyebrow">Metrics</p>
+        <h2>Enable DB timing metrics when needed</h2>
+        <pre class="docs-code"><code>Logister.configure do |config|
+  config.capture_db_metrics = true
+  config.db_metric_min_duration_ms = 10.0
+  config.db_metric_sample_rate = 1.0
+end</code></pre>
+        <p>This is the easiest way to populate the Logister performance view with `db.query` timing data.</p>
+      </section>
+    </div>
+  </div>
+</div>
