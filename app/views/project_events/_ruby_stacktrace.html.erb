@@ -1,0 +1,122 @@
+<div class="better-errors-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-kicker">
+      <strong><%= exception_data.is_a?(Hash) ? (exception_data["class"] || exception_data[:class] || "RuntimeError") : "RuntimeError" %></strong>
+      in <%= request_details[:rails_action].presence || "unknown#action" %>
+    </p>
+    <h3 class="better-errors-message"><%= event.message.to_s.lines.first.to_s.strip.presence || "Error event" %></h3>
+  </header>
+
+  <div class="better-errors-workbench">
+    <aside class="better-errors-frames">
+      <div class="better-errors-frame-scope">
+        <%= link_to "Application Frames",
+                    project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "application", frame: 0),
+                    class: "frame-scope-pill #{'is-active' if frame_scope == 'application'}",
+                    data: { turbo_frame: "error_detail" } %>
+        <%= link_to "All Frames",
+                    project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "all", frame: 0),
+                    class: "frame-scope-pill #{'is-active' if frame_scope == 'all'}",
+                    data: { turbo_frame: "error_detail" } %>
+      </div>
+
+      <% if visible_frames.any? %>
+        <ol class="frame-list">
+          <% visible_frames.each_with_index do |frame_data, index| %>
+            <% frame_label = frame_data[:method_name].presence || "unknown" %>
+            <li class="frame-item <%= "is-active" if index == selected_frame_index %>">
+              <%= link_to project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: frame_scope, frame: index),
+                          class: "frame-link",
+                          data: { turbo_frame: "error_detail" } do %>
+                <span class="frame-method"><%= frame_label %></span>
+                <span class="frame-file"><%= frame_data[:file] %>, line <%= frame_data[:line_number] %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="muted">No stack frames were captured for this event.</p>
+      <% end %>
+    </aside>
+
+    <div class="better-errors-main">
+      <section class="better-errors-code card">
+        <% if source_excerpt.present? %>
+          <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy source excerpt">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="better-errors-source" data-copy-target="source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
+<% end %></code></pre>
+          </div>
+        <% elsif selected_frame.present? %>
+          <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:raw] %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stack frame">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= selected_frame[:raw] %></code></pre>
+          </div>
+        <% else %>
+          <% fallback_stacktrace = Array(backtrace).presence&.join("\n") || event.message %>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= fallback_stacktrace %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= fallback_stacktrace %></code></pre>
+          </div>
+        <% end %>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Request info</h4>
+        <dl class="better-errors-dl">
+          <% if request_details[:params].present? %>
+            <dt>Request parameters</dt>
+            <dd><code><%= pretty_context_json(request_details[:params]) %></code></dd>
+          <% end %>
+          <% if request_details[:request_id].present? %>
+            <dt>Request ID</dt>
+            <dd><code><%= request_details[:request_id] %></code></dd>
+          <% end %>
+          <% if request_details[:url].present? %>
+            <dt>URL</dt>
+            <dd><%= request_details[:url] %></dd>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Local Variables</h4>
+        <% if local_variables.any? %>
+          <dl class="better-errors-dl">
+            <% local_variables.each do |key, value| %>
+              <dt><code><%= key %></code></dt>
+              <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="muted">No local variables captured.</p>
+        <% end %>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Instance Variables</h4>
+        <% if instance_variables.any? %>
+          <dl class="better-errors-dl">
+            <% instance_variables.each do |key, value| %>
+              <dt><code><%= key %></code></dt>
+              <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="muted">No instance variables captured.</p>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</div>

@@ -6,5 +6,6 @@ FactoryBot.define do
     sequence(:name) { |n| "Project #{n}" }
     sequence(:slug) { |n| "project-#{n}" }
     description { nil }
+    integration_kind { "ruby" }
   end
 end

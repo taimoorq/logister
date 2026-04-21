@@ -165,14 +165,36 @@
 
       <%# Stacktrace panel %>
       <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
-        <% stacktrace_text = backtrace.respond_to?(:any?) && backtrace.any? ? Array(backtrace).join("\n") : @event.message %>
-        <div class="copy-block" data-controller="copy" data-copy-text-value="<%= stacktrace_text %>">
-          <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
-            <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-            <span data-copy-target="buttonLabel">Copy</span>
-          </button>
-          <pre class="stacktrace" data-copy-target="source"><code><%= stacktrace_text %></code></pre>
-        </div>
+        <% if @project.integration_cfml? %>
+          <% cfml_summary = cfml_exception_summary(exception_data, @event.message) %>
+          <% cfml_frames = cfml_exception_frames(exception_data) %>
+          <div class="card space-y-4">
+            <div>
+              <p class="kicker">ColdFusion exception</p>
+              <h3 class="text-lg font-semibold text-slate-900"><%= cfml_summary[:class_name] %></h3>
+              <p class="text-slate-700 mt-1"><%= cfml_summary[:message] %></p>
+              <% if cfml_summary[:detail].present? %>
+                <p class="text-slate-600 text-sm mt-2"><%= cfml_summary[:detail] %></p>
+              <% end %>
+            </div>
+
+            <% if cfml_frames.any? %>
+              <div>
+                <p class="kicker mb-2">Template frames</p>
+                <pre class="stacktrace"><code><%= cfml_frames.map { |frame| "#{frame[:file]}:#{frame[:line_number]}" }.join("\n") %></code></pre>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <% stacktrace_text = backtrace.respond_to?(:any?) && backtrace.any? ? Array(backtrace).join("\n") : @event.message %>
+          <div class="copy-block" data-controller="copy" data-copy-text-value="<%= stacktrace_text %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= stacktrace_text %></code></pre>
+          </div>
+        <% end %>
       </section>
 
       <%# Occurrences panel %>

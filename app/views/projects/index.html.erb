@@ -21,6 +21,11 @@
             <div class="min-w-0">
               <h2 class="text-xl font-semibold text-slate-900 truncate"><%= project.name %></h2>
               <p class="text-sm text-slate-500 truncate"><%= project.slug %></p>
+              <div class="mt-2">
+                <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200">
+                  <%= project.integration_label %>
+                </span>
+              </div>
             </div>
             <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 border border-slate-200">
               <%= project.owned_by?(current_user) ? "Owner" : "Shared" %>
@@ -60,7 +65,7 @@
       <% end %>
     <% else %>
       <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 xl:col-span-2 2xl:col-span-3">
-        <p class="text-slate-600 mb-4">No projects yet. Create your first project to start ingesting events.</p>
+        <p class="text-slate-600 mb-4">No projects yet. Create your first project to start ingesting events from Ruby or CFML apps.</p>
         <%= link_to "Create project", new_project_path, class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" %>
       </div>
     <% end %>

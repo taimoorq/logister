@@ -34,6 +34,51 @@ RSpec.describe "Project events", type: :request do
       end
     end
 
+    context "when viewing a CFML project error" do
+      before { sign_in users(:two) }
+
+      it "renders the CFML-focused exception view" do
+        event = IngestEvent.create!(
+          project: projects(:two),
+          api_key: api_keys(:two),
+          event_type: :error,
+          level: "error",
+          message: "Variable CUSTOMER is undefined.",
+          fingerprint: "cfml-expression-customer",
+          context: {
+            exception: {
+              type: "Expression",
+              message: "Variable CUSTOMER is undefined.",
+              detail: "The error occurred while evaluating the expression.",
+              tagContext: [
+                {
+                  template: "/srv/www/app/orders/show.cfm",
+                  line: 27,
+                  type: "Expression",
+                  codePrintPlain: "writeOutput(customer.name)"
+                }
+              ]
+            },
+            cgi: {
+              script_name: "/orders/show.cfm",
+              request_method: "GET",
+              query_string: "id=42",
+              remote_addr: "203.0.113.8",
+              http_user_agent: "LuceeTest/1.0"
+            }
+          },
+          occurred_at: Time.current
+        )
+
+        get project_event_path(projects(:two), event)
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("ColdFusion exception")
+        expect(response.body).to include("Variable CUSTOMER is undefined.")
+        expect(response.body).to include("/srv/www/app/orders/show.cfm")
+        expect(response.body).to include("Template frames")
+      end
+    end
+
     context "when non-member" do
       before { sign_in users(:one) }
 

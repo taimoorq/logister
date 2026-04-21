@@ -2,9 +2,11 @@
   <div>
     <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
     <p class="text-slate-500 text-sm">
-      
       <%= link_to "All projects", projects_path, class: "sidebar-action-link" %>
       <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code>
+      <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200 ml-2 align-middle">
+        <%= @project.integration_label %>
+      </span>
       <% if @project.owned_by?(current_user) %>
         <%= link_to "Edit", edit_project_path(@project), class: "ml-2 text-sm text-blue-600 hover:underline" %>
       <% end %>

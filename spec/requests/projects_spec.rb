@@ -16,6 +16,7 @@ RSpec.describe "Projects", type: :request do
         get projects_path
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("Ruby gem")
       end
     end
 
@@ -72,6 +73,9 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("API keys")
         expect(response.body).to include("Project access")
+        expect(response.body).to include("Integration guide")
+        expect(response.body).to include("Ruby gem")
+        expect(response.body).to include("logister-ruby")
       end
 
       it "returns 404 for project user cannot access" do
@@ -87,6 +91,14 @@ RSpec.describe "Projects", type: :request do
         get settings_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
+      end
+
+      it "shows CFML-specific integration guidance for CFML projects" do
+        get settings_project_path(projects(:two))
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Integration guide")
+        expect(response.body).to include("CFML ingestion guide")
+        expect(response.body).to include("Application.cfc.onError()")
       end
     end
   end
@@ -256,10 +268,11 @@ RSpec.describe "Projects", type: :request do
 
       it "updates project and redirects to settings" do
         project = projects(:one)
-        patch project_path(project), params: { project: { name: "Renamed App", description: "New desc" } }
+        patch project_path(project), params: { project: { name: "Renamed App", description: "New desc", integration_kind: "cfml" } }
         expect(response).to redirect_to(settings_project_path(project))
         expect(project.reload.name).to eq("Renamed App")
         expect(project.description).to eq("New desc")
+        expect(project.integration_kind).to eq("cfml")
       end
 
       it "returns 404 for project user cannot access" do
@@ -290,9 +303,10 @@ RSpec.describe "Projects", type: :request do
 
     it "creates project and redirects" do
       expect {
-        post projects_path, params: { project: { name: "New App", description: "Desc" } }
+        post projects_path, params: { project: { name: "New App", description: "Desc", integration_kind: "cfml" } }
       }.to change(Project, :count).by(1)
       expect(response).to redirect_to(project_path(Project.last))
+      expect(Project.last.integration_kind).to eq("cfml")
       follow_redirect!
       expect(response.body).to include("Project created")
     end

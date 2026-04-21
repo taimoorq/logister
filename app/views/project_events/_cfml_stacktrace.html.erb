@@ -1,0 +1,130 @@
+<% cfml_summary = cfml_exception_summary(exception_data, event.message) %>
+<% cfml_frames = cfml_exception_frames(exception_data) %>
+<% selected_cfml_frame = cfml_frames.first %>
+<% cfml_request = cfml_request_details(event) %>
+
+<div class="better-errors-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-kicker">
+      <strong><%= cfml_summary[:class_name] %></strong>
+      <% if selected_cfml_frame.present? %>
+        in <%= selected_cfml_frame[:file] %>, line <%= selected_cfml_frame[:line_number] %>
+      <% elsif cfml_request[:script_name].present? %>
+        in <%= cfml_request[:script_name] %>
+      <% end %>
+    </p>
+    <h3 class="better-errors-message"><%= cfml_summary[:message] %></h3>
+    <% if cfml_summary[:detail].present? %>
+      <p class="muted mt-2"><%= cfml_summary[:detail] %></p>
+    <% end %>
+  </header>
+
+  <div class="better-errors-workbench">
+    <aside class="better-errors-frames">
+      <div class="better-errors-frame-scope">
+        <span class="frame-scope-pill is-active">Template Frames</span>
+      </div>
+
+      <% if cfml_frames.any? %>
+        <ol class="frame-list">
+          <% cfml_frames.each do |frame_data| %>
+            <li class="frame-item <%= "is-active" if frame_data == selected_cfml_frame %>">
+              <div class="frame-link">
+                <span class="frame-method"><%= frame_data[:method_name].presence || "template" %></span>
+                <span class="frame-file"><%= frame_data[:file] %>, line <%= frame_data[:line_number] %></span>
+              </div>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="muted">No ColdFusion template frames were captured for this event.</p>
+      <% end %>
+    </aside>
+
+    <div class="better-errors-main">
+      <section class="better-errors-code card">
+        <% if source_excerpt.present? %>
+          <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
+          <pre class="better-errors-source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
+<% end %></code></pre>
+        <% elsif selected_cfml_frame.present? && selected_cfml_frame[:code_context].present? %>
+          <div class="better-errors-code-header"><%= selected_cfml_frame[:file] %></div>
+          <pre class="stacktrace"><code><%= selected_cfml_frame[:code_context] %></code></pre>
+        <% elsif cfml_frames.any? %>
+          <div class="better-errors-code-header">Raw template trace</div>
+          <pre class="stacktrace"><code><%= cfml_frames.map { |frame| "#{frame[:file]}:#{frame[:line_number]}" }.join("\n") %></code></pre>
+        <% else %>
+          <pre class="stacktrace"><code><%= event.message %></code></pre>
+        <% end %>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>ColdFusion exception</h4>
+        <dl class="better-errors-dl">
+          <dt>Type</dt>
+          <dd><code><%= cfml_summary[:class_name] %></code></dd>
+          <% if cfml_summary[:detail].present? %>
+            <dt>Detail</dt>
+            <dd><%= cfml_summary[:detail] %></dd>
+          <% end %>
+          <% if cfml_summary[:error_code].present? %>
+            <dt>Error code</dt>
+            <dd><code><%= cfml_summary[:error_code] %></code></dd>
+          <% end %>
+          <% if cfml_summary[:extended_info].present? && cfml_summary[:extended_info] != cfml_summary[:detail] %>
+            <dt>Extended info</dt>
+            <dd><%= cfml_summary[:extended_info] %></dd>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Request info</h4>
+        <dl class="better-errors-dl">
+          <% if cfml_request[:request_method].present? %>
+            <dt>Method</dt>
+            <dd><code><%= cfml_request[:request_method] %></code></dd>
+          <% end %>
+          <% if cfml_request[:script_name].present? %>
+            <dt>Template</dt>
+            <dd><code><%= cfml_request[:script_name] %></code></dd>
+          <% end %>
+          <% if cfml_request[:url].present? %>
+            <dt>URL</dt>
+            <dd><%= cfml_request[:url] %></dd>
+          <% end %>
+          <% if cfml_request[:query_string].present? %>
+            <dt>Query string</dt>
+            <dd><code><%= cfml_request[:query_string] %></code></dd>
+          <% end %>
+          <% if cfml_request[:remote_addr].present? %>
+            <dt>Remote address</dt>
+            <dd><code><%= cfml_request[:remote_addr] %></code></dd>
+          <% end %>
+          <% if cfml_request[:http_user_agent].present? %>
+            <dt>User agent</dt>
+            <dd><code><%= cfml_request[:http_user_agent] %></code></dd>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Captured variables</h4>
+        <% if local_variables.any? || instance_variables.any? %>
+          <dl class="better-errors-dl">
+            <% local_variables.each do |key, value| %>
+              <dt><code><%= key %></code></dt>
+              <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+            <% end %>
+            <% instance_variables.each do |key, value| %>
+              <dt><code><%= key %></code></dt>
+              <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="muted">No ColdFusion scope variables were captured.</p>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</div>

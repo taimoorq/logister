@@ -10,6 +10,8 @@ class Project < ApplicationRecord
   before_validation :ensure_uuid
   before_validation :normalize_slug
 
+  enum :integration_kind, { ruby: "ruby", cfml: "cfml" }, default: :ruby, validate: true, prefix: :integration
+
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: { scope: :user_id }
   validates :uuid, presence: true, uniqueness: true
@@ -30,6 +32,20 @@ class Project < ApplicationRecord
 
   def owned_by?(viewer)
     user_id == viewer.id
+  end
+
+  def integration_label
+    {
+      "ruby" => "Ruby gem",
+      "cfml" => "CFML"
+    }.fetch(integration_kind, integration_kind.to_s.humanize)
+  end
+
+  def self.integration_options
+    [
+      [ "Ruby gem", "ruby" ],
+      [ "CFML", "cfml" ]
+    ]
   end
 
   # Stats for project index: total_events, open_groups, trend (7-day counts) per project.

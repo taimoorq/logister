@@ -52,6 +52,12 @@ RSpec.describe Project, type: :model do
       project.valid?
       expect(project.slug).to eq("my-cool-app")
     end
+
+    it "defaults integration_kind to ruby" do
+      project = Project.create!(user: users(:one), name: "Integration App")
+      expect(project.integration_kind).to eq("ruby")
+      expect(project.integration_label).to eq("Ruby gem")
+    end
   end
 
   describe ".accessible_to" do
@@ -84,6 +90,12 @@ RSpec.describe Project, type: :model do
   describe "#to_param" do
     it "returns uuid" do
       expect(projects(:one).to_param).to eq(projects(:one).uuid)
+    end
+  end
+
+  describe ".integration_options" do
+    it "includes ruby and cfml integrations" do
+      expect(described_class.integration_options).to include([ "Ruby gem", "ruby" ], [ "CFML", "cfml" ])
     end
   end
 

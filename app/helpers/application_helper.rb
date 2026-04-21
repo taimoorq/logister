@@ -82,7 +82,11 @@ module ApplicationHelper
   # Parses Ruby-style backtrace lines into frame hashes usable by the debugger-like UI.
   def parse_backtrace_frames(backtrace)
     Array(backtrace).filter_map do |line|
-      parsed = parse_backtrace_line(line.to_s)
+      parsed = if line.is_a?(Hash)
+        parse_structured_backtrace_frame(line)
+      else
+        parse_backtrace_line(line.to_s)
+      end
       next if parsed.blank?
 
       absolute_path = absolute_source_path(parsed[:file])
@@ -93,10 +97,58 @@ module ApplicationHelper
         file: parsed[:file],
         line_number: parsed[:line_number],
         method_name: parsed[:method_name],
+        code_context: parsed[:code_context],
         absolute_path: absolute_path,
         application_frame: app_frame
       }
     end
+  end
+
+  def cfml_exception_frames(exception_data)
+    exception_hash = normalize_hash(exception_data)
+    tag_context = exception_hash["tagContext"] || exception_hash[:tagContext] ||
+      exception_hash["tag_context"] || exception_hash[:tag_context]
+    return parse_backtrace_frames(tag_context) if tag_context.present?
+
+    backtrace = exception_hash["backtrace"] || exception_hash[:backtrace]
+    parse_backtrace_frames(backtrace)
+  end
+
+  def cfml_exception_summary(exception_data, fallback_message = nil)
+    exception_hash = normalize_hash(exception_data)
+
+    {
+      class_name: exception_hash["class"].presence ||
+        exception_hash[:class].presence ||
+        exception_hash["type"].presence ||
+        exception_hash[:type].presence ||
+        "ColdFusion Exception",
+      message: exception_hash["message"].presence ||
+        exception_hash[:message].presence ||
+        fallback_message.to_s.lines.first.to_s.strip.presence ||
+        "Unhandled CFML exception",
+      detail: exception_hash["detail"].presence ||
+        exception_hash[:detail].presence ||
+        exception_hash["extendedInfo"].presence ||
+        exception_hash[:extendedInfo].presence,
+      error_code: exception_hash["errorCode"].presence || exception_hash[:errorCode].presence,
+      extended_info: exception_hash["extendedInfo"].presence || exception_hash[:extendedInfo].presence
+    }
+  end
+
+  def cfml_request_details(event)
+    context = event_context_hash(event)
+    cgi = normalize_hash(context["cgi"] || context[:cgi] || context["CGI"] || context[:CGI])
+    generic_request = request_context_details(event)
+
+    {
+      script_name: value_from_hash(cgi, "script_name") || value_from_hash(cgi, "SCRIPT_NAME"),
+      request_method: value_from_hash(cgi, "request_method") || value_from_hash(cgi, "REQUEST_METHOD") || generic_request[:http_method],
+      query_string: value_from_hash(cgi, "query_string") || value_from_hash(cgi, "QUERY_STRING"),
+      remote_addr: value_from_hash(cgi, "remote_addr") || value_from_hash(cgi, "REMOTE_ADDR") || generic_request[:client_ip],
+      http_user_agent: value_from_hash(cgi, "http_user_agent") || value_from_hash(cgi, "HTTP_USER_AGENT"),
+      url: generic_request[:url]
+    }
   end
 
   def source_excerpt_for_frame(frame, radius: 4)
@@ -278,6 +330,28 @@ module ApplicationHelper
       file: match[:file].to_s,
       line_number: match[:line].to_i,
       method_name: match[:method].to_s.presence
+    }
+  end
+
+  def parse_structured_backtrace_frame(frame)
+    file = value_from_hash(frame, "template") ||
+      value_from_hash(frame, "file") ||
+      value_from_hash(frame, "path")
+    line_number = value_from_hash(frame, "line") ||
+      value_from_hash(frame, "line_number") ||
+      value_from_hash(frame, "lineNumber")
+    return nil if file.blank? || line_number.to_i <= 0
+
+    {
+      file: file.to_s,
+      line_number: line_number.to_i,
+      method_name: value_from_hash(frame, "function") ||
+        value_from_hash(frame, "method") ||
+        value_from_hash(frame, "type"),
+      code_context: value_from_hash(frame, "codePrintPlain") ||
+        value_from_hash(frame, "code_print_plain") ||
+        value_from_hash(frame, "codePrintHTML"),
+      raw: "#{file}:#{line_number}"
     }
   end
 

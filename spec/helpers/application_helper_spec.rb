@@ -11,4 +11,42 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(rendered).not_to include("</script>")
     end
   end
+
+  describe "#parse_backtrace_frames" do
+    it "parses structured CFML tagContext frames" do
+      frames = helper.parse_backtrace_frames([
+        {
+          "template" => "/var/www/app/views/orders/show.cfm",
+          "line" => 42,
+          "type" => "Expression",
+          "codePrintPlain" => "customer = order.getCustomer()"
+        }
+      ])
+
+      expect(frames.size).to eq(1)
+      expect(frames.first[:file]).to eq("/var/www/app/views/orders/show.cfm")
+      expect(frames.first[:line_number]).to eq(42)
+      expect(frames.first[:method_name]).to eq("Expression")
+      expect(frames.first[:code_context]).to include("order.getCustomer")
+    end
+  end
+
+  describe "#cfml_exception_summary" do
+    it "prefers CFML exception fields" do
+      summary = helper.cfml_exception_summary(
+        {
+          "type" => "Expression",
+          "message" => "Element CUSTOMER is undefined in ORDER.",
+          "detail" => "The error occurred while processing the template.",
+          "errorCode" => "expression"
+        },
+        "fallback message"
+      )
+
+      expect(summary[:class_name]).to eq("Expression")
+      expect(summary[:message]).to eq("Element CUSTOMER is undefined in ORDER.")
+      expect(summary[:detail]).to eq("The error occurred while processing the template.")
+      expect(summary[:error_code]).to eq("expression")
+    end
+  end
 end

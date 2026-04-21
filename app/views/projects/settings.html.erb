@@ -107,12 +107,94 @@
     <% end %>
 
     <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 <%= 'lg:col-span-2' unless @project.owned_by?(current_user) %>">
+      <h2 class="text-base font-bold text-slate-900 mb-2">Integration guide</h2>
+      <p class="text-slate-600 text-sm mb-4">
+        Recommended setup for
+        <strong class="text-slate-900"><%= @project.integration_label %></strong>
+        projects.
+      </p>
+
+      <% if @project.integration_cfml? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Use a small `LogisterClient.cfc` wrapper around `cfhttp`.</li>
+              <li>Capture uncaught exceptions in `Application.cfc.onError()`.</li>
+              <li>Send request timings as `transaction` events and query timings as `metric` events.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
+            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>application.logister.sendEvent(
+  eventType = "error",
+  level = "error",
+  message = exception.message ?: "Unhandled CFML exception",
+  context = {
+    exception = {
+      type = exception.type ?: "Exception",
+      detail = exception.detail ?: "",
+      tagContext = exception.tagContext ?: []
+    }
+  }
+);</code></pre>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Full setup guide:
+            <%= link_to "CFML ingestion guide",
+                        "/docs/cfml_ingestion_guide.md",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% else %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install the `logister-ruby` gem in the Rails app you want to monitor.</li>
+              <li>Configure the project API token and ingest endpoint in the initializer.</li>
+              <li>Enable database metrics if you want query timing in the performance view.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
+            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>gem "logister-ruby", "~> 0.1.2"
+
+Logister.configure do |config|
+  config.api_key = "your-project-api-token"
+  config.endpoint = "https://your-logister-host.example/api/v1/ingest_events"
+end</code></pre>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Package links:
+            <a href="https://rubygems.org/gems/logister-ruby" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 no-underline font-semibold">RubyGems</a>
+            and
+            <a href="https://github.com/taimoorq/logister-ruby" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 no-underline font-semibold">GitHub</a>.
+          </p>
+        </div>
+      <% end %>
+    </article>
+
+    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 <%= 'lg:col-span-2' unless @project.owned_by?(current_user) %>">
       <h2 class="text-base font-bold text-slate-900 mb-2">Ingest endpoint</h2>
       <p class="text-slate-600 text-sm mb-3">
         POST to
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/ingest_events</code>
         with header
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Authorization: Bearer &lt;token&gt;</code>.
+      </p>
+      <p class="text-slate-600 text-sm mb-3">
+        This project uses
+        <strong class="text-slate-900"><%= @project.integration_label %></strong>.
+        <% if @project.integration_cfml? %>
+          Send JSON from Lucee or ColdFusion with `cfhttp`.
+        <% else %>
+          Send events through the Ruby gem integration.
+        <% end %>
       </p>
       <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>{
   "event": {

@@ -5,9 +5,11 @@ one:
   name: Storefront App
   slug: storefront-app
   description: Primary production app
+  integration_kind: ruby
 
 two:
   user: two
   name: Billing Service
   slug: billing-service
   description: Billing worker app
+  integration_kind: cfml

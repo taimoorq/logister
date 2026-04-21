@@ -19,10 +19,23 @@ RSpec.describe "Api keys", type: :request do
           post project_api_keys_path(project), params: { api_key: { name: "CI key" } }
         }.to change(ApiKey, :count).by(1)
 
-        expect(response).to redirect_to(project_path(project))
+        expect(response).to redirect_to(settings_project_path(project))
         follow_redirect!
         expect(response.body).to include("API key created")
+        expect(response.body).to include("New API token:")
         expect(flash[:new_api_key_token]).to be_present
+      end
+
+      it "renders the generated token on the settings page after redirect" do
+        post project_api_keys_path(project), params: { api_key: { name: "Deploy key" } }
+
+        generated_token = flash[:new_api_key_token]
+        expect(generated_token).to be_present
+        expect(response).to redirect_to(settings_project_path(project))
+
+        follow_redirect!
+        expect(response.body).to include("New API token:")
+        expect(response.body).to include(generated_token)
       end
 
       it "assigns key to current user and project" do
