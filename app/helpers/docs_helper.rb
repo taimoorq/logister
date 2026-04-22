@@ -92,8 +92,8 @@ module DocsHelper
   end
 
   def docs_code_block(snippet, language: nil, shell: false, aria_label: "Copy code")
-    code_classes = [language.presence, "docs-code-content"].compact.join(" ")
-    pre_classes = ["docs-code"]
+    code_classes = [ language.presence, "docs-code-content" ].compact.join(" ")
+    pre_classes = [ "docs-code" ]
     pre_classes << "docs-code-shell" if shell
 
     content_tag(:div, class: "copy-block docs-code-block not-prose", data: { controller: "copy" }) do

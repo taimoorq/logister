@@ -64,7 +64,9 @@ RSpec.describe "Docs", type: :request do
 
       expect(response).to have_http_status(:success)
       expect(response.body).to include(%(rel="stylesheet"))
-      expect(response.body).to include("/assets/tailwind")
+      if File.exist?(Rails.root.join("app/assets/builds/tailwind.css"))
+        expect(response.body).to include("/assets/tailwind")
+      end
       expect(response.body).to include(%(type="importmap"))
     end
 
