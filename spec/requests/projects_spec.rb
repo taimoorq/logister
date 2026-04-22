@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "nokogiri"
 
 RSpec.describe "Projects", type: :request do
   describe "GET /projects" do
@@ -49,6 +50,90 @@ RSpec.describe "Projects", type: :request do
       it "returns 404 for project user cannot access" do
         get project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "renders the selected group's latest event in the inbox detail pane" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python Inbox")
+        api_key = create(:api_key, user: users(:one), project: project, name: "python-inbox")
+        latest_event = create(:ingest_event,
+                              project: project,
+                              api_key: api_key,
+                              event_type: :error,
+                              message: "Latest grouped error",
+                              fingerprint: "python-inbox-error")
+        error_group = ErrorGroup.create!(
+          project: project,
+          latest_event: latest_event,
+          fingerprint: "python-inbox-error",
+          title: "Latest grouped error",
+          status: :unresolved,
+          first_seen_at: latest_event.occurred_at,
+          last_seen_at: latest_event.occurred_at,
+          occurrence_count: 1
+        )
+        latest_event.update!(error_group: error_group)
+        ErrorOccurrence.create!(error_group: error_group, ingest_event: latest_event, occurred_at: latest_event.occurred_at)
+
+        get project_path(project, group_uuid: error_group.uuid)
+
+        expect(response).to have_http_status(:success)
+        detail_frame = Nokogiri::HTML.parse(response.body).at_css('turbo-frame#error_detail')
+
+        expect(detail_frame).to be_present
+        expect(detail_frame.text).to include("Latest grouped error")
+        expect(detail_frame.text).to include("Related logs")
+      end
+
+      it "ignores a selected event when it does not belong to the selected group" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python Inbox")
+        api_key = create(:api_key, user: users(:one), project: project, name: "python-inbox")
+
+        selected_group_event = create(:ingest_event,
+                                      project: project,
+                                      api_key: api_key,
+                                      event_type: :error,
+                                      message: "Grouped event detail",
+                                      fingerprint: "selected-group-error")
+        selected_group = ErrorGroup.create!(
+          project: project,
+          latest_event: selected_group_event,
+          fingerprint: "selected-group-error",
+          title: "Grouped event detail",
+          status: :unresolved,
+          first_seen_at: selected_group_event.occurred_at,
+          last_seen_at: selected_group_event.occurred_at,
+          occurrence_count: 1
+        )
+        selected_group_event.update!(error_group: selected_group)
+        ErrorOccurrence.create!(error_group: selected_group, ingest_event: selected_group_event, occurred_at: selected_group_event.occurred_at)
+
+        mismatched_event = create(:ingest_event,
+                                  project: project,
+                                  api_key: api_key,
+                                  event_type: :error,
+                                  message: "Wrong event detail",
+                                  fingerprint: "other-group-error")
+        other_group = ErrorGroup.create!(
+          project: project,
+          latest_event: mismatched_event,
+          fingerprint: "other-group-error",
+          title: "Wrong event detail",
+          status: :unresolved,
+          first_seen_at: mismatched_event.occurred_at,
+          last_seen_at: mismatched_event.occurred_at,
+          occurrence_count: 1
+        )
+        mismatched_event.update!(error_group: other_group)
+        ErrorOccurrence.create!(error_group: other_group, ingest_event: mismatched_event, occurred_at: mismatched_event.occurred_at)
+
+        get project_path(project, group_uuid: selected_group.uuid, event_uuid: mismatched_event.uuid)
+
+        expect(response).to have_http_status(:success)
+        detail_frame = Nokogiri::HTML.parse(response.body).at_css('turbo-frame#error_detail')
+
+        expect(detail_frame).to be_present
+        expect(detail_frame.text).to include("Grouped event detail")
+        expect(detail_frame.text).not_to include("Wrong event detail")
       end
     end
 

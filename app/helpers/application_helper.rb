@@ -263,6 +263,55 @@ module ApplicationHelper
     normalize_hash(context["log_record"] || context[:log_record])
   end
 
+  def event_exception_data(event)
+    context = event_context_hash(event)
+    normalize_hash(context["exception"] || context[:exception])
+  end
+
+  def event_backtrace(exception_data)
+    exception_hash = normalize_hash(exception_data)
+    exception_hash["backtrace"] || exception_hash[:backtrace]
+  end
+
+  def event_local_variables(exception_data)
+    exception_hash = normalize_hash(exception_data)
+    normalize_hash(
+      exception_hash["locals"] ||
+      exception_hash[:locals] ||
+      exception_hash["local_variables"] ||
+      exception_hash[:local_variables]
+    )
+  end
+
+  def event_instance_variables(exception_data)
+    exception_hash = normalize_hash(exception_data)
+    normalize_hash(exception_hash["instance_variables"] || exception_hash[:instance_variables])
+  end
+
+  def event_stacktrace_tab_label(project, event)
+    if (project.integration_python? || project.integration_javascript?) && event.log?
+      "Details"
+    else
+      "Stacktrace"
+    end
+  end
+
+  def event_stacktrace_partial(project, event)
+    if project.integration_python? && event.log?
+      "project_events/python_log_event"
+    elsif project.integration_javascript? && event.log?
+      "project_events/javascript_log_event"
+    elsif project.integration_cfml?
+      "project_events/cfml_stacktrace"
+    elsif project.integration_javascript?
+      "project_events/javascript_stacktrace"
+    elsif project.integration_python?
+      "project_events/python_stacktrace"
+    else
+      "project_events/ruby_stacktrace"
+    end
+  end
+
   def python_activity_summary(event)
     return nil unless event.respond_to?(:context)
 

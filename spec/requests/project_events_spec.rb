@@ -22,6 +22,15 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("Stacktrace")
         expect(response.body).to include(ingest_events(:one).message)
       end
+
+      it "renders the Turbo detail frame when requested from the inbox" do
+        get project_event_path(projects(:one), ingest_events(:one)), headers: { "Turbo-Frame" => "error_detail" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('<turbo-frame id="error_detail"')
+        expect(response.body).to include("Context")
+        expect(response.body).to include("Related logs")
+      end
     end
 
     context "when shared member" do
@@ -75,7 +84,7 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("ColdFusion exception")
         expect(response.body).to include("Variable CUSTOMER is undefined.")
         expect(response.body).to include("/srv/www/app/orders/show.cfm")
-        expect(response.body).to include("Template frames")
+        expect(response.body).to include("Template Frames")
       end
     end
 
@@ -156,6 +165,8 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("Exception chain")
         expect(response.body).to include("KeyError")
         expect(response.body).to include("Frame locals")
+        expect(response.body).to include('data-action="copy#copy"')
+        expect(response.body).not_to include("onclick=")
       end
     end
 

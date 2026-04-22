@@ -1,0 +1,119 @@
+<% filter_param = local_assigns[:filter_param] || "unresolved" %>
+<% query_param = local_assigns[:query_param] || "" %>
+<% active_tab = local_assigns[:active_tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
+<% turbo_frame_id = local_assigns[:turbo_frame_id].presence %>
+<% wrapper_classes = local_assigns[:wrapper_classes].presence || "detail-tabs-wrap" %>
+<% link_data = turbo_frame_id.present? ? { turbo_frame: turbo_frame_id } : {} %>
+
+<div class="<%= wrapper_classes %>">
+  <nav class="detail-tabs" role="tablist" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
+    <%= link_to "Context",
+                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "context"),
+                class: "detail-tab #{'is-active' if active_tab == 'context'}",
+                role: "tab",
+                data: link_data %>
+    <%= link_to stacktrace_tab_label,
+                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
+                class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
+                role: "tab",
+                data: link_data %>
+    <%= link_to "Occurrences (#{occurrences.size})",
+                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "occurrences"),
+                class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
+                role: "tab",
+                data: link_data %>
+    <%= link_to "Related logs (#{related_logs.size})",
+                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "related_logs"),
+                class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
+                role: "tab",
+                data: link_data %>
+  </nav>
+
+  <section id="tab-context" class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>">
+    <%= render "project_events/context_panel", event: event %>
+  </section>
+
+  <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
+    <%= render stacktrace_partial,
+               project: project,
+               event: event,
+               group: group,
+               exception_data: exception_data,
+               request_details: request_details,
+               filter_param: filter_param,
+               query_param: query_param,
+               source_excerpt: source_excerpt,
+               frame_scope: frame_scope,
+               visible_frames: visible_frames,
+               selected_frame_index: selected_frame_index,
+               selected_frame: selected_frame,
+               backtrace: backtrace,
+               local_variables: local_variables,
+               instance_variables: instance_variables %>
+  </section>
+
+  <section id="tab-occurrences" class="detail-panel<%= ' is-hidden' unless active_tab == 'occurrences' %>">
+    <% if occurrences.any? %>
+      <table class="occurrences-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Message</th>
+            <th>Severity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% occurrences.each do |occ| %>
+            <% occurrence_event = occ.ingest_event %>
+            <tr>
+              <td><%= local_time_tag(occurrence_event.occurred_at, format: :long) %></td>
+              <td><%= truncate(occurrence_event.message.to_s.lines.first, length: 80) %></td>
+              <td><%= render "shared/widgets/severity_badge", level: occurrence_event.level.presence || "error" %></td>
+              <td>
+                <%= link_to "View",
+                            project_event_path(project, occurrence_event, filter: filter_param, q: query_param, group_uuid: group&.uuid),
+                            class: "inline-link",
+                            data: link_data %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="muted">No occurrences recorded yet.</p>
+    <% end %>
+  </section>
+
+  <section id="tab-related-logs" class="detail-panel<%= ' is-hidden' unless active_tab == 'related_logs' %>">
+    <% if related_logs.any? %>
+      <table class="occurrences-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Level</th>
+            <th>Message</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% related_logs.each do |log_event| %>
+            <tr>
+              <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
+              <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
+              <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
+              <td>
+                <%= link_to "View",
+                            project_event_path(project, log_event, filter: filter_param, q: query_param, group_uuid: group&.uuid),
+                            class: "inline-link",
+                            data: link_data %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="muted">No logs found in the correlation window.</p>
+    <% end %>
+  </section>
+</div>

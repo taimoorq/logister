@@ -6,20 +6,6 @@ export default class extends Controller {
     return ["toggle", "panel", "iconOpen", "iconClose"]
   }
 
-  connect() {
-    this.element.dataset.navConnected = "1"
-    this.boundClose = this.closeOnClickOutside.bind(this)
-    this.boundCloseOnEscape = this.closeOnEscape.bind(this)
-    this.boundCloseOnNavLink = this.closeOnNavLink.bind(this)
-  }
-
-  disconnect() {
-    delete this.element.dataset.navConnected
-    document.removeEventListener("click", this.boundClose)
-    document.removeEventListener("keydown", this.boundCloseOnEscape)
-    if (this.hasPanelTarget) this.panelTarget.removeEventListener("click", this.boundCloseOnNavLink)
-  }
-
   toggle(event) {
     event.stopPropagation()
     this.isOpen() ? this.close() : this.open()
@@ -30,9 +16,6 @@ export default class extends Controller {
     if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "true")
     if (this.hasIconOpenTarget) this.iconOpenTarget.classList.add("hidden")
     if (this.hasIconCloseTarget) this.iconCloseTarget.classList.remove("hidden")
-    document.addEventListener("click", this.boundClose)
-    document.addEventListener("keydown", this.boundCloseOnEscape)
-    if (this.hasPanelTarget) this.panelTarget.addEventListener("click", this.boundCloseOnNavLink)
   }
 
   close() {
@@ -41,9 +24,6 @@ export default class extends Controller {
     if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "false")
     if (this.hasIconOpenTarget) this.iconOpenTarget.classList.remove("hidden")
     if (this.hasIconCloseTarget) this.iconCloseTarget.classList.add("hidden")
-    document.removeEventListener("click", this.boundClose)
-    document.removeEventListener("keydown", this.boundCloseOnEscape)
-    if (this.hasPanelTarget) this.panelTarget.removeEventListener("click", this.boundCloseOnNavLink)
   }
 
   isOpen() {

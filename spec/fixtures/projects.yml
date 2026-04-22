@@ -13,3 +13,10 @@ two:
   slug: billing-service
   description: Billing worker app
   integration_kind: cfml
+
+system_inbox:
+  user: one
+  name: System Inbox App
+  slug: system-inbox-app
+  description: Dedicated system spec inbox project
+  integration_kind: ruby

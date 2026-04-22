@@ -1,12 +1,20 @@
 <%# ── Standalone event detail page ──────────────────────────────────────── %>
-<% exception_data = @event.context.is_a?(Hash) ? (@event.context["exception"] || @event.context[:exception]) : nil %>
-<% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
+<% exception_data = event_exception_data(@event) %>
+<% backtrace = event_backtrace(exception_data) %>
 <% active_tab = @tab.presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
-<% stacktrace_tab_label = if (@project.integration_python? || @project.integration_javascript?) && @event.log?
-     "Details"
-   else
-     "Stacktrace"
-   end %>
+<% stacktrace_tab_label = event_stacktrace_tab_label(@project, @event) %>
+<% stacktrace_partial = event_stacktrace_partial(@project, @event) %>
+<% request_details = request_context_details(@event) %>
+<% parsed_frames = parse_backtrace_frames(backtrace) %>
+<% app_frames = parsed_frames.select { |frame| frame[:application_frame] } %>
+<% frame_scope = params[:frame_scope].presence_in(%w[application all]) || "application" %>
+<% visible_frames = (frame_scope == "application" && app_frames.any?) ? app_frames : parsed_frames %>
+<% selected_frame_index = params[:frame].to_i %>
+<% selected_frame_index = 0 if selected_frame_index.negative? || selected_frame_index >= visible_frames.size %>
+<% selected_frame = visible_frames[selected_frame_index] %>
+<% source_excerpt = source_excerpt_for_frame(selected_frame) %>
+<% local_variables = event_local_variables(exception_data) %>
+<% instance_variables = event_instance_variables(exception_data) %>
 
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
 
@@ -140,150 +148,28 @@
       </div>
     </header>
 
-    <%# Tabs %>
-    <div class="detail-tabs-wrap">
-      <nav class="detail-tabs" role="tablist">
-        <%= link_to "Context",
-                    project_event_path(@project, @event, tab: "context"),
-                    class: "detail-tab #{'is-active' if active_tab == 'context'}",
-                    role: "tab" %>
-        <%= link_to stacktrace_tab_label,
-                    project_event_path(@project, @event, tab: "stacktrace"),
-                    class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
-                    role: "tab" %>
-        <% if @occurrences.any? %>
-          <%= link_to "Occurrences (#{@occurrences.size})",
-                      project_event_path(@project, @event, tab: "occurrences"),
-                      class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
-                      role: "tab" %>
-        <% end %>
-        <%= link_to "Related logs (#{@related_logs.size})",
-                    project_event_path(@project, @event, tab: "related_logs"),
-                    class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
-                    role: "tab" %>
-      </nav>
-
-      <%# Context panel %>
-      <section id="tab-context" class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>">
-        <%= render "project_events/context_panel", event: @event %>
-      </section>
-
-      <%# Stacktrace panel %>
-      <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
-        <% if @project.integration_python? && @event.log? %>
-          <%= render "project_events/python_log_event",
-                     project: @project,
-                     event: @event,
-                     request_details: request_context_details(@event) %>
-        <% elsif @project.integration_javascript? && @event.log? %>
-          <%= render "project_events/javascript_log_event",
-                     project: @project,
-                     event: @event,
-                     request_details: request_context_details(@event) %>
-        <% elsif @project.integration_cfml? %>
-          <% cfml_summary = cfml_exception_summary(exception_data, @event.message) %>
-          <% cfml_frames = cfml_exception_frames(exception_data) %>
-          <div class="card space-y-4">
-            <div>
-              <p class="kicker">ColdFusion exception</p>
-              <h3 class="text-lg font-semibold text-slate-900"><%= cfml_summary[:class_name] %></h3>
-              <p class="text-slate-700 mt-1"><%= cfml_summary[:message] %></p>
-              <% if cfml_summary[:detail].present? %>
-                <p class="text-slate-600 text-sm mt-2"><%= cfml_summary[:detail] %></p>
-              <% end %>
-            </div>
-
-            <% if cfml_frames.any? %>
-              <div>
-                <p class="kicker mb-2">Template frames</p>
-                <pre class="stacktrace"><code><%= cfml_frames.map { |frame| "#{frame[:file]}:#{frame[:line_number]}" }.join("\n") %></code></pre>
-              </div>
-            <% end %>
-          </div>
-        <% elsif @project.integration_javascript? %>
-          <%= render "project_events/javascript_stacktrace",
-                     project: @project,
-                     event: @event,
-                     group: @group,
-                     exception_data: exception_data,
-                     filter_param: nil,
-                     query_param: nil %>
-        <% elsif @project.integration_python? %>
-          <%= render "project_events/python_stacktrace",
-                     project: @project,
-                     event: @event,
-                     group: @group,
-                     exception_data: exception_data,
-                     request_details: request_context_details(@event),
-                     filter_param: nil,
-                     query_param: nil,
-                     source_excerpt: nil %>
-        <% else %>
-          <% stacktrace_text = backtrace.respond_to?(:any?) && backtrace.any? ? Array(backtrace).join("\n") : @event.message %>
-          <div class="copy-block" data-controller="copy" data-copy-text-value="<%= stacktrace_text %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="stacktrace" data-copy-target="source"><code><%= stacktrace_text %></code></pre>
-          </div>
-        <% end %>
-      </section>
-
-      <%# Occurrences panel %>
-      <% if @occurrences.any? %>
-        <section id="tab-occurrences" class="detail-panel<%= ' is-hidden' unless active_tab == 'occurrences' %>">
-          <table class="occurrences-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Message</th>
-                <th>Severity</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @occurrences.each do |occ| %>
-                <% ev = occ.ingest_event %>
-                <tr>
-                  <td><%= local_time_tag(ev.occurred_at, format: :long) %></td>
-                  <td><%= truncate(ev.message.to_s.lines.first, length: 80) %></td>
-                  <td><%= render "shared/widgets/severity_badge", level: ev.level.presence || "error" %></td>
-                  <td><%= link_to "View", project_event_path(@project, ev), class: "inline-link" %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </section>
-      <% end %>
-
-      <section id="tab-related-logs" class="detail-panel<%= ' is-hidden' unless active_tab == 'related_logs' %>">
-        <% if @related_logs.any? %>
-          <table class="occurrences-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Level</th>
-                <th>Message</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @related_logs.each do |log_event| %>
-                <tr>
-                  <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
-                  <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
-                  <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
-                  <td><%= link_to "View", project_event_path(@project, log_event), class: "inline-link" %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% else %>
-          <p class="muted">No logs found in the correlation window.</p>
-        <% end %>
-      </section>
-    </div>
+    <%= render "project_events/event_detail_tabs",
+               project: @project,
+               event: @event,
+               group: @group,
+               occurrences: @occurrences,
+               related_logs: @related_logs,
+               filter_param: nil,
+               query_param: nil,
+               active_tab: active_tab,
+               stacktrace_tab_label: stacktrace_tab_label,
+               stacktrace_partial: stacktrace_partial,
+               exception_data: exception_data,
+               request_details: request_details,
+               frame_scope: frame_scope,
+               visible_frames: visible_frames,
+               selected_frame_index: selected_frame_index,
+               selected_frame: selected_frame,
+               source_excerpt: source_excerpt,
+               backtrace: backtrace,
+               local_variables: local_variables,
+               instance_variables: instance_variables,
+               wrapper_classes: "detail-tabs-wrap" %>
   </main>
 
 </div>

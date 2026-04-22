@@ -43,7 +43,7 @@
   <% if details[:headers].present? %>
     <p class="kicker">headers</p>
     <div class="copy-block" data-controller="copy" data-copy-text-value="<%= pretty_context_json(details[:headers]) %>">
-      <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy headers JSON">
+      <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy headers JSON">
         <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
         <span data-copy-target="buttonLabel">Copy</span>
       </button>
@@ -54,7 +54,7 @@
   <% if details[:params].present? %>
     <p class="kicker">params</p>
     <div class="copy-block" data-controller="copy" data-copy-text-value="<%= pretty_context_json(details[:params]) %>">
-      <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy params JSON">
+      <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy params JSON">
         <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
         <span data-copy-target="buttonLabel">Copy</span>
       </button>
@@ -64,7 +64,7 @@
 
   <p class="kicker">full context</p>
   <div class="copy-block" data-controller="copy" data-copy-text-value="<%= pretty_context_json(event.context || {}) %>">
-    <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy full context JSON">
+    <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy full context JSON">
       <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
       <span data-copy-target="buttonLabel">Copy</span>
     </button>

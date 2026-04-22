@@ -1,6 +1,6 @@
 <turbo-frame id="error_detail" target="error_detail" style="view-transition-name: error-detail-pane; view-transition-class: error-detail-pane;">
-  <% exception_data = event.context.is_a?(Hash) ? (event.context["exception"] || event.context[:exception]) : nil %>
-  <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
+  <% exception_data = event_exception_data(event) %>
+  <% backtrace = event_backtrace(exception_data) %>
   <% parsed_frames = parse_backtrace_frames(backtrace) %>
   <% app_frames = parsed_frames.select { |frame| frame[:application_frame] } %>
   <% frame_scope = local_assigns[:frame_scope].presence_in(%w[application all]) || "application" %>
@@ -10,23 +10,14 @@
   <% selected_frame = visible_frames[selected_frame_index] %>
   <% source_excerpt = source_excerpt_for_frame(selected_frame) %>
   <% request_details = request_context_details(event) %>
-  <% local_variables = if exception_data.is_a?(Hash)
-       exception_data["locals"] || exception_data[:locals] || exception_data["local_variables"] || exception_data[:local_variables]
-     end %>
-  <% instance_variables = if exception_data.is_a?(Hash)
-       exception_data["instance_variables"] || exception_data[:instance_variables]
-     end %>
-  <% local_variables = {} unless local_variables.is_a?(Hash) %>
-  <% instance_variables = {} unless instance_variables.is_a?(Hash) %>
+  <% local_variables = event_local_variables(exception_data) %>
+  <% instance_variables = event_instance_variables(exception_data) %>
   <% filter_param = local_assigns[:filter] || "unresolved" %>
   <% query_param  = local_assigns[:query]  || "" %>
   <% related_logs = local_assigns[:related_logs] || [] %>
   <% active_tab   = local_assigns[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
-  <% stacktrace_tab_label = if (project.integration_python? || project.integration_javascript?) && event.log?
-       "Details"
-     else
-       "Stacktrace"
-     end %>
+  <% stacktrace_tab_label = event_stacktrace_tab_label(project, event) %>
+  <% stacktrace_partial = event_stacktrace_partial(project, event) %>
 
   <%# ── Action bar ──────────────────────────────────────────────────────── %>
   <header class="detail-actionbar card">
@@ -84,159 +75,27 @@
     <% end %>
   </header>
 
-  <%# ── Tabs ──────────────────────────────────────────────────────────── %>
-  <div class="detail-tabs-wrap card">
-    <nav class="detail-tabs" role="tablist" data-turbo-frame="error_detail">
-      <%= link_to "Context",
-                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "context"),
-                  class: "detail-tab #{'is-active' if active_tab == 'context'}",
-                  role: "tab",
-                  data: { turbo_frame: "error_detail" } %>
-      <%= link_to stacktrace_tab_label,
-                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
-                  class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
-                  role: "tab",
-                  data: { turbo_frame: "error_detail" } %>
-      <%= link_to "Occurrences (#{occurrences.size})",
-                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "occurrences"),
-                  class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
-                  role: "tab",
-                  data: { turbo_frame: "error_detail" } %>
-      <%= link_to "Related logs (#{related_logs.size})",
-                  project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "related_logs"),
-                  class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
-                  role: "tab",
-                  data: { turbo_frame: "error_detail" } %>
-    </nav>
-
-    <%# ── Context panel ────────────────────────────────────────────────── %>
-    <section id="tab-context" class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>">
-      <%= render "project_events/context_panel", event: event %>
-    </section>
-
-    <%# ── Stacktrace panel ─────────────────────────────────────────────── %>
-    <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
-      <% if project.integration_python? && event.log? %>
-        <%= render "project_events/python_log_event",
-                   project: project,
-                   event: event,
-                   request_details: request_details %>
-      <% elsif project.integration_javascript? && event.log? %>
-        <%= render "project_events/javascript_log_event",
-                   project: project,
-                   event: event,
-                   request_details: request_details %>
-      <% elsif project.integration_cfml? %>
-        <%= render "project_events/cfml_stacktrace",
-                   project: project,
-                   event: event,
-                   group: group,
-                   exception_data: exception_data,
-                   local_variables: local_variables,
-                   instance_variables: instance_variables,
-                   source_excerpt: source_excerpt %>
-      <% elsif project.integration_javascript? %>
-        <%= render "project_events/javascript_stacktrace",
-                   project: project,
-                   event: event,
-                   group: group,
-                   exception_data: exception_data,
-                   filter_param: filter_param,
-                   query_param: query_param %>
-      <% elsif project.integration_python? %>
-        <%= render "project_events/python_stacktrace",
-                   project: project,
-                   event: event,
-                   group: group,
-                   exception_data: exception_data,
-                   request_details: request_details,
-                   filter_param: filter_param,
-                   query_param: query_param,
-                   source_excerpt: source_excerpt %>
-      <% else %>
-        <%= render "project_events/ruby_stacktrace",
-                   project: project,
-                   event: event,
-                   group: group,
-                   exception_data: exception_data,
-                   request_details: request_details,
-                   filter_param: filter_param,
-                   query_param: query_param,
-                   frame_scope: frame_scope,
-                   visible_frames: visible_frames,
-                   selected_frame_index: selected_frame_index,
-                   selected_frame: selected_frame,
-                   source_excerpt: source_excerpt,
-                   backtrace: backtrace,
-                   local_variables: local_variables,
-                   instance_variables: instance_variables %>
-      <% end %>
-    </section>
-
-    <%# ── Occurrences panel ───────────────────────────────────────────── %>
-    <section id="tab-occurrences" class="detail-panel<%= ' is-hidden' unless active_tab == 'occurrences' %>">
-      <% if occurrences.any? %>
-        <table class="occurrences-table">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Message</th>
-              <th>Severity</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% occurrences.each do |occ| %>
-              <% ev = occ.ingest_event %>
-              <tr>
-                <td><%= local_time_tag(ev.occurred_at, format: :long) %></td>
-                <td><%= truncate(ev.message.to_s.lines.first, length: 80) %></td>
-                <td><%= render "shared/widgets/severity_badge", level: ev.level.presence || "error" %></td>
-                <td>
-                  <%= link_to "View",
-                              project_event_path(project, ev, filter: filter_param, q: query_param, group_uuid: group&.uuid),
-                              class: "inline-link",
-                              data: { turbo_frame: "error_detail" } %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% else %>
-        <p class="muted">No occurrences recorded yet.</p>
-      <% end %>
-    </section>
-
-    <section id="tab-related-logs" class="detail-panel<%= ' is-hidden' unless active_tab == 'related_logs' %>">
-      <% if related_logs.any? %>
-        <table class="occurrences-table">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Level</th>
-              <th>Message</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% related_logs.each do |log_event| %>
-              <tr>
-                <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
-                <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
-                <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
-                <td>
-                  <%= link_to "View",
-                              project_event_path(project, log_event, filter: filter_param, q: query_param, group_uuid: group&.uuid),
-                              class: "inline-link",
-                              data: { turbo_frame: "error_detail" } %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% else %>
-        <p class="muted">No logs found in the correlation window.</p>
-      <% end %>
-    </section>
-  </div>
+  <%= render "project_events/event_detail_tabs",
+             project: project,
+             event: event,
+             group: group,
+             occurrences: occurrences,
+             related_logs: related_logs,
+             filter_param: filter_param,
+             query_param: query_param,
+             active_tab: active_tab,
+             stacktrace_tab_label: stacktrace_tab_label,
+             stacktrace_partial: stacktrace_partial,
+             exception_data: exception_data,
+             request_details: request_details,
+             frame_scope: frame_scope,
+             visible_frames: visible_frames,
+             selected_frame_index: selected_frame_index,
+             selected_frame: selected_frame,
+             source_excerpt: source_excerpt,
+             backtrace: backtrace,
+             local_variables: local_variables,
+             instance_variables: instance_variables,
+             turbo_frame_id: "error_detail",
+             wrapper_classes: "detail-tabs-wrap card" %>
 </turbo-frame>

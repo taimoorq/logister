@@ -1,5 +1,6 @@
 class ProjectsController < ApplicationController
   include ProjectInboxData
+  include ProjectEventDetailData
   include ProjectScope
 
   before_action :authenticate_user!
@@ -46,6 +47,15 @@ class ProjectsController < ApplicationController
     if @selected_event && @selected_group && @selected_event.error_group_id != @selected_group.id
       @selected_event = nil
     end
+
+    detail_event = @selected_event || @selected_group&.latest_event
+    return unless detail_event.present?
+
+    detail_data = build_project_event_detail(@project, detail_event, group: @selected_group)
+    @detail_event = detail_data[:event]
+    @detail_group = detail_data[:group]
+    @detail_occurrences = detail_data[:occurrences]
+    @detail_related_logs = detail_data[:related_logs]
   end
 
   def new

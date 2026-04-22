@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+system_primary_group:
+  project: system_inbox
+  latest_event_id: <%= ActiveRecord::FixtureSet.identify(:system_primary_error) %>
+  fingerprint: system-primary-error
+  title: Primary inbox error
+  subtitle: RuntimeError
+  stage: production
+  severity: error
+  status: 0
+  first_seen_at: 2026-02-14 21:50:30
+  last_seen_at: 2026-02-14 21:55:30
+  occurrence_count: 1
+
+system_secondary_group:
+  project: system_inbox
+  latest_event_id: <%= ActiveRecord::FixtureSet.identify(:system_secondary_error) %>
+  fingerprint: system-secondary-error
+  title: Secondary inbox error
+  subtitle: RuntimeError
+  stage: production
+  severity: error
+  status: 0
+  first_seen_at: 2026-02-14 21:45:30
+  last_seen_at: 2026-02-14 21:45:30
+  occurrence_count: 1

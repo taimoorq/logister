@@ -56,8 +56,10 @@
     <%= app_javascript_tags %>
   </head>
 
-  <body class="<%= user_signed_in? ? 'min-h-screen flex flex-col bg-slate-100 text-slate-900 antialiased' : 'min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased' %>" data-controller="local-time">
-    <nav class="<%= user_signed_in? ? 'bg-[#09195d] border-b border-[#31458f] sticky top-0 z-20' : 'bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10' %>" data-controller="nav">
+  <body class="<%= user_signed_in? ? 'min-h-screen flex flex-col bg-slate-100 text-slate-900 antialiased' : 'min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased' %>" data-controller="local-time" data-action="turbo:load@document->local-time#formatAll turbo:frame-load@document->local-time#formatAll">
+    <nav class="<%= user_signed_in? ? 'bg-[#09195d] border-b border-[#31458f] sticky top-0 z-20' : 'bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10' %>"
+         data-controller="nav"
+         data-action="click@document->nav#closeOnClickOutside keydown@document->nav#closeOnEscape">
       <div class="<%= user_signed_in? ? 'w-full px-4 sm:px-6 lg:px-8' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' %>">
         <div class="flex justify-between items-center h-14 min-h-[3.5rem]">
           <div class="flex items-center gap-3 min-w-0">
@@ -87,7 +89,8 @@
 
           <div id="nav-menu-panel"
                class="<%= user_signed_in? ? 'hidden md:flex flex-col md:flex-row md:items-center gap-0 md:gap-1 absolute md:relative top-full left-0 right-0 md:top-0 bg-[#09195d] md:bg-transparent border-b border-[#31458f] md:border-0 shadow-lg md:shadow-none py-3 md:py-0 px-4 md:px-0' : 'hidden md:flex flex-col md:flex-row md:items-center gap-0 md:gap-1 lg:gap-2 absolute md:relative top-full left-0 right-0 md:top-0 bg-white md:bg-transparent border-b md:border-b-0 border-slate-200 md:border-0 shadow-lg md:shadow-none py-3 md:py-0 px-4 md:px-0' %>"
-               data-nav-target="panel">
+               data-nav-target="panel"
+               data-action="click->nav#closeOnNavLink">
             <% if user_signed_in? %>
               <%= link_to dashboard_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(dashboard_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" do %>
                 <%= app_icon(:dashboard, css: "w-4 h-4") %>
@@ -182,79 +185,6 @@
         </div>
       </footer>
     <% end %>
-
-    <script>
-      (function() {
-        function initNavFallback() {
-          var nav = document.querySelector("nav[data-controller~='nav']")
-          if (!nav || nav.dataset.navFallbackBound === "1") return
-
-          var toggle = nav.querySelector("[data-nav-target='toggle']")
-          var panel = nav.querySelector("[data-nav-target='panel']")
-          if (!toggle || !panel) return
-
-          var iconOpen = nav.querySelector("[data-nav-target='iconOpen']")
-          var iconClose = nav.querySelector("[data-nav-target='iconClose']")
-
-          function isStimulusConnected() {
-            return nav.dataset.navConnected === "1"
-          }
-
-          function isOpen() {
-            return !panel.classList.contains("hidden")
-          }
-
-          function openMenu() {
-            panel.classList.remove("hidden")
-            toggle.setAttribute("aria-expanded", "true")
-            if (iconOpen) iconOpen.classList.add("hidden")
-            if (iconClose) iconClose.classList.remove("hidden")
-          }
-
-          function closeMenu() {
-            panel.classList.add("hidden")
-            toggle.setAttribute("aria-expanded", "false")
-            if (iconOpen) iconOpen.classList.remove("hidden")
-            if (iconClose) iconClose.classList.add("hidden")
-          }
-
-          function onToggleClick(event) {
-            if (isStimulusConnected()) return
-            event.preventDefault()
-            event.stopPropagation()
-            if (isOpen()) closeMenu()
-            else openMenu()
-          }
-
-          function onDocClick(event) {
-            if (isStimulusConnected() || !isOpen()) return
-            if (panel.contains(event.target) || toggle.contains(event.target)) return
-            closeMenu()
-          }
-
-          function onKeyDown(event) {
-            if (isStimulusConnected() || !isOpen()) return
-            if (event.key === "Escape") closeMenu()
-          }
-
-          function onPanelClick(event) {
-            if (isStimulusConnected()) return
-            var target = event && event.target
-            if (target && typeof target.closest === "function" && target.closest(".nav-link")) closeMenu()
-          }
-
-          toggle.addEventListener("click", onToggleClick)
-          document.addEventListener("click", onDocClick)
-          document.addEventListener("keydown", onKeyDown)
-          panel.addEventListener("click", onPanelClick)
-
-          nav.dataset.navFallbackBound = "1"
-        }
-
-        document.addEventListener("turbo:load", initNavFallback)
-        document.addEventListener("DOMContentLoaded", initNavFallback)
-      })()
-    </script>
 
     <%# Cookie Consent by TermsFeed %>
     <% if cookie_consent_enabled %>

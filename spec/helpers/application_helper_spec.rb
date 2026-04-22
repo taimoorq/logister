@@ -161,6 +161,80 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#event_exception_data" do
+    it "extracts exception data from event context" do
+      event = Struct.new(:context).new({
+        "exception" => {
+          "class" => "RuntimeError",
+          "message" => "boom"
+        }
+      })
+
+      expect(helper.event_exception_data(event)).to eq({
+        "class" => "RuntimeError",
+        "message" => "boom"
+      })
+    end
+  end
+
+  describe "#event_backtrace" do
+    it "returns the structured backtrace from exception data" do
+      exception_data = {
+        "backtrace" => [
+          'File "/srv/app/service.py", line 12, in call'
+        ]
+      }
+
+      expect(helper.event_backtrace(exception_data)).to eq([
+        'File "/srv/app/service.py", line 12, in call'
+      ])
+    end
+  end
+
+  describe "#event_local_variables" do
+    it "prefers locals and local_variables hashes" do
+      expect(helper.event_local_variables({ "locals" => { "order_id" => "ord_123" } })).to eq({ "order_id" => "ord_123" })
+      expect(helper.event_local_variables({ "local_variables" => { "user_id" => "usr_123" } })).to eq({ "user_id" => "usr_123" })
+    end
+  end
+
+  describe "#event_instance_variables" do
+    it "extracts instance variables as a normalized hash" do
+      expect(helper.event_instance_variables({ "instance_variables" => { "@order" => "ord_123" } })).to eq({ "@order" => "ord_123" })
+      expect(helper.event_instance_variables(nil)).to eq({})
+    end
+  end
+
+  describe "#event_stacktrace_tab_label" do
+    it "uses Details for Python and JavaScript log events" do
+      python_project = Project.new(integration_kind: "python")
+      javascript_project = Project.new(integration_kind: "javascript")
+      log_event = Struct.new(:log?).new(true)
+
+      expect(helper.event_stacktrace_tab_label(python_project, log_event)).to eq("Details")
+      expect(helper.event_stacktrace_tab_label(javascript_project, log_event)).to eq("Details")
+    end
+
+    it "uses Stacktrace for non-log events" do
+      ruby_project = Project.new(integration_kind: "ruby")
+      error_event = Struct.new(:log?).new(false)
+
+      expect(helper.event_stacktrace_tab_label(ruby_project, error_event)).to eq("Stacktrace")
+    end
+  end
+
+  describe "#event_stacktrace_partial" do
+    it "resolves the language-specific partial path" do
+      log_event = Struct.new(:log?).new(true)
+      error_event = Struct.new(:log?).new(false)
+
+      expect(helper.event_stacktrace_partial(Project.new(integration_kind: "python"), log_event)).to eq("project_events/python_log_event")
+      expect(helper.event_stacktrace_partial(Project.new(integration_kind: "javascript"), log_event)).to eq("project_events/javascript_log_event")
+      expect(helper.event_stacktrace_partial(Project.new(integration_kind: "cfml"), error_event)).to eq("project_events/cfml_stacktrace")
+      expect(helper.event_stacktrace_partial(Project.new(integration_kind: "ruby"), error_event)).to eq("project_events/ruby_stacktrace")
+    end
+  end
+
   describe "#javascript_exception_chain" do
     it "collects nested JavaScript causes and context values" do
       chain = helper.javascript_exception_chain(

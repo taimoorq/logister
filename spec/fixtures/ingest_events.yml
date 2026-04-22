@@ -32,3 +32,51 @@ three:
     name: User Load
     sql: SELECT "users".* FROM "users" WHERE "users"."id" = 1
   occurred_at: 2026-02-14 21:55:30
+
+system_primary_error:
+  project: system_inbox
+  api_key: system_inbox
+  error_group_id: <%= ActiveRecord::FixtureSet.identify(:system_primary_group) %>
+  event_type: 0
+  level: error
+  message: Primary inbox error
+  fingerprint: system-primary-error
+  context:
+    request_id: req-system-1
+    rails_action: OrdersController#show
+    exception:
+      class: RuntimeError
+      message: Primary inbox error
+      backtrace:
+        - app/services/orders/charge.rb:12:in `call`
+  occurred_at: 2026-02-14 21:55:30
+
+system_related_log:
+  project: system_inbox
+  api_key: system_inbox
+  event_type: 3
+  level: info
+  message: Related log for the primary inbox error
+  fingerprint: system-related-log
+  context:
+    request_id: req-system-1
+    logger_name: OrdersLogger
+  occurred_at: 2026-02-14 21:56:00
+
+system_secondary_error:
+  project: system_inbox
+  api_key: system_inbox
+  error_group_id: <%= ActiveRecord::FixtureSet.identify(:system_secondary_group) %>
+  event_type: 0
+  level: error
+  message: Secondary inbox error
+  fingerprint: system-secondary-error
+  context:
+    request_id: req-system-2
+    rails_action: OrdersController#create
+    exception:
+      class: RuntimeError
+      message: Secondary inbox error
+      backtrace:
+        - app/controllers/orders_controller.rb:44:in `create`
+  occurred_at: 2026-02-14 21:45:30

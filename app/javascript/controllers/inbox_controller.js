@@ -13,16 +13,10 @@ export default class extends Controller {
     this._searchTimer = null
     this.savedPageScrollY = null
     this.savedListScrollTop = null
-    this.boundDetailLoaded = this.onDetailLoaded.bind(this)
-    this.boundBeforeFetch = this.onBeforeFetch.bind(this)
-    document.addEventListener("turbo:frame-load", this.boundDetailLoaded)
-    document.addEventListener("turbo:before-fetch-request", this.boundBeforeFetch)
   }
 
   disconnect() {
     clearTimeout(this._searchTimer)
-    document.removeEventListener("turbo:frame-load", this.boundDetailLoaded)
-    document.removeEventListener("turbo:before-fetch-request", this.boundBeforeFetch)
   }
 
   // ── Debounced search ─────────────────────────────────────────────────────

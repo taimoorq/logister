@@ -64,16 +64,11 @@ module ProjectInboxData
   end
 
   def apply_inbox_query(scope, query)
-    term = "%#{sanitize_sql_like(query.downcase)}%"
+    term = "%#{ActiveRecord::Base.sanitize_sql_like(query.downcase)}%"
     scope.where(
       "LOWER(title) LIKE :t OR LOWER(COALESCE(subtitle,'')) LIKE :t OR LOWER(fingerprint) LIKE :t OR LOWER(stage) LIKE :t",
       t: term
     )
-  end
-
-  # Safe LIKE-escape — available inside controllers via AR helper
-  def sanitize_sql_like(str)
-    str.gsub("\\", "\\\\\\\\").gsub("%", "\\%").gsub("_", "\\_")
   end
 
   def inbox_cache_version(project)

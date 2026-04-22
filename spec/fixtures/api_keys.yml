@@ -15,3 +15,11 @@ two:
   token_digest: <%= Digest::SHA256.hexdigest("test-token-two") %>
   last_used_at: 2026-02-14 21:50:30
   revoked_at:
+
+system_inbox:
+  user: one
+  project: system_inbox
+  name: system-inbox
+  token_digest: <%= Digest::SHA256.hexdigest("test-token-system-inbox") %>
+  last_used_at: 2026-02-14 21:50:30
+  revoked_at:

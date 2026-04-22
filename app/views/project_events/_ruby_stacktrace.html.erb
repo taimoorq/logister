@@ -44,7 +44,7 @@
         <% if source_excerpt.present? %>
           <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
           <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy source excerpt">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy source excerpt">
               <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
               <span data-copy-target="buttonLabel">Copy</span>
             </button>
@@ -54,7 +54,7 @@
         <% elsif selected_frame.present? %>
           <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
           <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:raw] %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stack frame">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy stack frame">
               <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
               <span data-copy-target="buttonLabel">Copy</span>
             </button>
@@ -63,7 +63,7 @@
         <% else %>
           <% fallback_stacktrace = Array(backtrace).presence&.join("\n") || event.message %>
           <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= fallback_stacktrace %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy stacktrace">
               <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
               <span data-copy-target="buttonLabel">Copy</span>
             </button>

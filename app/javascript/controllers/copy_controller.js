@@ -13,6 +13,10 @@ export default class extends Controller {
     this.debug("connected", { id: this.element.id || null })
   }
 
+  disconnect() {
+    clearTimeout(this.resetTimer)
+  }
+
   async copy(event) {
     event.preventDefault()
 

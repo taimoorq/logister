@@ -133,7 +133,7 @@
       <h4>Log record fields</h4>
       <% if log_record_details.any? %>
         <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= pretty_context_json(log_record_details) %>">
-          <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy Python log record JSON">
+          <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy Python log record JSON">
             <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
             <span data-copy-target="buttonLabel">Copy</span>
           </button>

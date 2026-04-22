@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+system_primary_occurrence:
+  error_group: system_primary_group
+  ingest_event: system_primary_error
+  occurred_at: 2026-02-14 21:55:30
+
+system_secondary_occurrence:
+  error_group: system_secondary_group
+  ingest_event: system_secondary_error
+  occurred_at: 2026-02-14 21:45:30

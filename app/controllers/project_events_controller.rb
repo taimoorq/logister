@@ -1,5 +1,6 @@
 class ProjectEventsController < ApplicationController
   include ProjectInboxData
+  include ProjectEventDetailData
 
   before_action :authenticate_user!
   before_action :set_project
@@ -27,12 +28,10 @@ class ProjectEventsController < ApplicationController
 
   # GET /projects/:project_uuid/events/:uuid   — Turbo Frame: error_detail
   def show
-    @group       = @event.error_group
-    @occurrences = @group&.error_occurrences
-                         &.includes(:ingest_event)
-                         &.recent_first
-                         &.limit(50) || []
-    @related_logs = IngestEvent.related_logs(project: @project, event: @event, window: 5.minutes, limit: 50)
+    detail_data = build_project_event_detail(@project, @event)
+    @group = detail_data[:group]
+    @occurrences = detail_data[:occurrences]
+    @related_logs = detail_data[:related_logs]
 
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
