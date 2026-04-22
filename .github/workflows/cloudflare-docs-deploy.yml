@@ -45,6 +45,30 @@ jobs:
             exit 1
           fi
 
+      - name: Build optional docs analytics config
+        env:
+          DOCS_GOOGLE_TAG_ID: ${{ vars.DOCS_GOOGLE_TAG_ID }}
+          DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN: ${{ vars.DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN }}
+        run: |
+          if [ -n "${DOCS_GOOGLE_TAG_ID}" ]; then
+            docs_google_tag_id_json=$(ruby -rjson -e 'print JSON.generate(ARGV.first)' "${DOCS_GOOGLE_TAG_ID}")
+          else
+            docs_google_tag_id_json=null
+          fi
+
+          if [ -n "${DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN}" ]; then
+            docs_cloudflare_analytics_token_json=$(ruby -rjson -e 'print JSON.generate(ARGV.first)' "${DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN}")
+          else
+            docs_cloudflare_analytics_token_json=null
+          fi
+
+          cat > cloudflare-docs/assets/analytics-config.js <<EOF
+          window.LOGISTER_DOCS_ANALYTICS = {
+            googleTagId: ${docs_google_tag_id_json},
+            cloudflareWebAnalyticsToken: ${docs_cloudflare_analytics_token_json}
+          };
+          EOF
+
       - name: Deploy static docs
         uses: cloudflare/wrangler-action@v3
         with:

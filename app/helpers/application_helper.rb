@@ -196,7 +196,7 @@ module ApplicationHelper
 
   def seo_description
     content_for(:meta_description).to_s.strip.presence ||
-      "Logister is a free bug capture tool for Ruby on Rails apps using the logister-ruby gem."
+      "Logister is an open source error tracking and observability tool for Ruby, JavaScript, TypeScript, and CFML apps."
   end
 
   def seo_robots

@@ -1,32 +1,110 @@
 # Logister
 
-Logister is a Rails + PostgreSQL service for collecting application errors and metrics from other Rails apps.
+Logister is the self-hosted `logister.org` app: a Rails service for collecting and triaging application errors, logs, metrics, transactions, and check-ins from the apps you run.
 
-PostgreSQL is the control-plane database (users/projects/api keys). Event analytics can be dual-written to ClickHouse for high-scale querying.
+Use this repository when you want to run the Logister backend yourself. It provides the web UI, project/API key management, ingest endpoints, and the operational pieces behind the hosted product.
 
-## Public documentation
+## What this repo is for
 
-Most user-facing setup and integration guidance now lives in the app documentation instead of this README.
+This app is the control plane and ingest backend for Logister:
+
+- user authentication and project management
+- project API keys
+- event ingestion over HTTP
+- inbox and error-group triage UI
+- monitor/check-in visibility
+- optional ClickHouse-backed analytics
+
+If you are trying to instrument an application, the language integrations live in separate packages and guides:
+
+- Ruby package: https://github.com/taimoorq/logister-ruby
+- JavaScript package: https://github.com/taimoorq/logister-js
+
+## Public docs
+
+Canonical setup and integration docs live on `docs.logister.org`.
+
+### Start here
 
 - Overview: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
 - Self-hosting: https://docs.logister.org/self-hosting/
+
+### Operations
+
 - Local development: https://docs.logister.org/local-development/
 - Deployment config: https://docs.logister.org/deployment/
-- HTTP API: https://docs.logister.org/http-api/
 - ClickHouse: https://docs.logister.org/clickhouse/
+- HTTP API: https://docs.logister.org/http-api/
+
+### Integrations
+
 - Ruby integration: https://docs.logister.org/integrations/ruby/
+- JavaScript integration: https://docs.logister.org/integrations/javascript/
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
-When updating setup, deployment, or integration guidance, prefer updating the public docs on `logister.org` first and keep this README focused on repository orientation.
+When changing setup, deployment, or integration guidance, update the public docs first and keep this README focused on repository orientation.
 
-## Open source and self-hosting
+## Self-hosted runtime
 
-This repository is open source and can be self-hosted.
+Logister runs as a Rails app with these components:
 
-- Source: https://github.com/taimoorq/logister
-- Companion gem: https://github.com/taimoorq/logister-ruby
-- RubyGems: https://rubygems.org/gems/logister-ruby
+- Web/API: Ruby on Rails
+- Primary database: PostgreSQL
+- Cache + job backend: Redis
+- Background processing: Sidekiq
+- Optional analytics store: ClickHouse
+- Optional bot protection: Cloudflare Turnstile
+- Optional transactional email: SendGrid
+
+The basic self-host flow is:
+
+1. Boot this Rails app.
+2. Create a project in Logister.
+3. Generate an API key for that project.
+4. Connect an app using one of the supported integrations or direct HTTP ingestion.
+5. Verify events appear in the inbox.
+
+## Integrating apps with Logister
+
+Use the guide that matches the app you want to connect:
+
+| Integration | Best for | Package / path |
+|----------|-------------|-------------|
+| Ruby | Rails and Ruby apps | `logister-ruby` + https://docs.logister.org/integrations/ruby/ |
+| JavaScript / TypeScript | Node, Express, and JS/TS services | `logister-js` + https://docs.logister.org/integrations/javascript/ |
+| CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
+| Direct HTTP API | Custom clients and unsupported runtimes | https://docs.logister.org/http-api/ |
+
+## Running the app locally
+
+For full local setup, use the public local-development guide:
+
+- https://docs.logister.org/local-development/
+
+The shortest local boot path is:
+
+```bash
+cp .env.sample .env
+bundle install
+bin/rails db:prepare
+bin/dev
+```
+
+## Local development nuances
+
+A few things are worth knowing before you start changing the app locally:
+
+- `bin/dev` is the normal local entrypoint. It runs the Rails app and watches Tailwind assets.
+- Redis-backed behavior matters. Sidekiq, caching, and some operational flows behave more realistically when Redis is available.
+- PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path.
+- The public docs are hosted separately on `docs.logister.org`, so app links to docs intentionally point out of the Rails app.
+- On Fly, database preparation should run in the release phase rather than on every web boot.
+
+If you want Docker-backed local infra, or want ClickHouse and PostgreSQL running together locally, use:
+
+- https://docs.logister.org/local-development/
+- https://docs.logister.org/clickhouse/
 
 ## Project documentation
 
@@ -39,46 +117,10 @@ This repository is open source and can be self-hosted.
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | GitHub-facing pointer to the canonical CFML docs on `logister.org` |
 
-## Core flow
+## Source and related repos
 
-1. Users sign up at `logister.org` (Devise authentication).
-2. Users create one or more projects (each project maps to a monitored app).
-3. Users generate API keys per project.
-4. Client apps send events to `POST /api/v1/ingest_events` using an API token.
-5. Events are stored and visible in the dashboard.
-
-## Runtime stack
-
-Logister runs as a Rails web app with these components:
-
-- Web/API: Ruby on Rails (Puma)
-- Primary database: PostgreSQL
-- Cache + job backend: Redis
-- Background processing: Sidekiq
-- Optional analytics store: ClickHouse
-- Optional bot protection: Cloudflare Turnstile
-- Optional transactional email: SendGrid API
-
-## Companion gem
-
-`logister-ruby` is released at `0.1.2` and provides error + metric reporting for Rails apps.
-
-- GitHub: https://github.com/taimoorq/logister-ruby
+- Logister app: https://github.com/taimoorq/logister
+- Ruby package: https://github.com/taimoorq/logister-ruby
+- JavaScript package: https://github.com/taimoorq/logister-js
 - RubyGems: https://rubygems.org/gems/logister-ruby
-- Public integration docs: https://docs.logister.org/integrations/ruby/
-
-To upgrade a client app:
-
-```ruby
-gem "logister-ruby", "~> 0.1.2"
-```
-
-Enable database timing metrics in the client initializer:
-
-```ruby
-Logister.configure do |config|
-  config.capture_db_metrics = true
-  config.db_metric_min_duration_ms = 10.0
-  config.db_metric_sample_rate = 1.0
-end
-```
+- npm: https://www.npmjs.com/package/logister-js

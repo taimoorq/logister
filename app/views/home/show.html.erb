@@ -1,5 +1,5 @@
-<% content_for :title, "Free Rails Bug Capture Tool" %>
-<% content_for :meta_description, "Logister is a free bug capture tool for Ruby on Rails apps. Install the logister-ruby gem and triage issues with grouped errors and request context." %>
+<% content_for :title, "Open Source Error Tracking for Ruby, JavaScript, and CFML" %>
+<% content_for :meta_description, "Logister is an open source error tracking and observability app for Ruby, JavaScript/TypeScript, and ColdFusion/CFML teams. Use logister-ruby, logister-js, or direct HTTP ingestion." %>
 <% content_for :canonical_path, root_path %>
 <% content_for :og_type, "website" %>
 <% content_for :json_ld, json_ld({
@@ -8,7 +8,7 @@
   "name" => "Logister",
   "applicationCategory" => "DeveloperApplication",
   "operatingSystem" => "Web",
-  "description" => "Free bug capture and triage for Ruby on Rails apps via the logister-ruby gem.",
+  "description" => "Open source error tracking and observability for Ruby, JavaScript/TypeScript, and ColdFusion/CFML apps.",
   "url" => absolute_url_for(root_path),
   "offers" => {
     "@type" => "Offer",
@@ -34,12 +34,12 @@
   <section class="marketing-hero" style="view-transition-name: public-hero; view-transition-class: public-panel;">
     <div class="hero-grid">
       <div>
-        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source observability for Rails teams</p>
+        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source observability for Ruby, JavaScript, and CFML teams</p>
         <h1 class="hero-title" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
           Keep production calm even when your app is not.
         </h1>
         <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
-          Capture errors, transactions, logs, and check-ins in one place. Logister gives your team a clean inbox for fast triage and clear release confidence.
+          Capture errors, transactions, logs, and check-ins in one place. Use <code>logister-ruby</code>, <code>logister-js</code>, or direct HTTP ingestion from Lucee and ColdFusion to give your team a clean inbox for fast triage and clear release confidence.
         </p>
         <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="200">
           <%= link_to "Start free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
@@ -48,7 +48,7 @@
         <div class="hero-proof" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="250">
           <span>No credit card</span>
           <span>Self-host ready</span>
-          <span>Rails-native workflow</span>
+          <span>Ruby, JS, and CFML</span>
         </div>
       </div>
 
@@ -209,7 +209,7 @@
   <section class="workflow-wrap" style="view-transition-name: public-workflow; view-transition-class: public-panel;">
     <div class="workflow-head" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="workflow-kicker">How it works</p>
-      <h2>Three steps from setup to calmer on-call rotations</h2>
+        <h2>Three steps from setup to calmer on-call rotations</h2>
     </div>
     <div class="workflow-grid">
       <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
@@ -219,8 +219,8 @@
       </article>
       <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
         <span class="workflow-index">02</span>
-        <h3>Install the gem</h3>
-        <p>Use <code>logister-ruby</code> to capture errors, logs, metrics, and check-ins with minimal setup.</p>
+        <h3>Choose your integration</h3>
+        <p>Use <code>logister-ruby</code>, <code>logister-js</code>, or direct CFML HTTP ingestion to capture errors, logs, metrics, and check-ins with minimal setup.</p>
       </article>
       <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
         <span class="workflow-index">03</span>
@@ -246,6 +246,8 @@ LOGISTER_API_KEY=your_key_here
       <div class="proof-links">
         <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener">Self-host source</a>
         <a href="https://rubygems.org/gems/logister-ruby" target="_blank" rel="noopener">Ruby gem</a>
+        <a href="https://github.com/taimoorq/logister-js" target="_blank" rel="noopener">JavaScript SDK</a>
+        <a href="<%= docs_site_url(:cfml_integration) %>" target="_blank" rel="noopener">CFML guide</a>
         <a href="/llms.txt">AI docs</a>
       </div>
     </article>

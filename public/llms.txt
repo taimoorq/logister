@@ -1,6 +1,15 @@
 # Logister
 
-Logister is a free, open source bug capture and triage tool for Ruby on Rails applications.
+Logister is a free, open source error tracking and operational telemetry app for self-hosted teams.
+
+It supports:
+- Ruby and Rails apps via the `logister-ruby` gem
+- JavaScript and TypeScript apps via the `logister-js` package
+- CFML apps running on Lucee or Adobe ColdFusion via direct HTTP ingestion
+
+Canonical documentation lives on the public docs host:
+- Product docs: https://docs.logister.org/
+- Docs sitemap: https://docs.logister.org/sitemap.xml
 
 ## Public pages
 - Home: /
@@ -8,17 +17,34 @@ Logister is a free, open source bug capture and triage tool for Ruby on Rails ap
 - Privacy Policy: /privacy
 - Terms of Use: /terms
 
+## Public docs
+- Docs home: https://docs.logister.org/
+- Getting started: https://docs.logister.org/getting-started/
+- Self-hosting: https://docs.logister.org/self-hosting/
+- Local development: https://docs.logister.org/local-development/
+- Deployment: https://docs.logister.org/deployment/
+- ClickHouse: https://docs.logister.org/clickhouse/
+- HTTP API: https://docs.logister.org/http-api/
+- Ruby integration: https://docs.logister.org/integrations/ruby/
+- JavaScript integration: https://docs.logister.org/integrations/javascript/
+- CFML integration: https://docs.logister.org/integrations/cfml/
+
 ## Product summary
-- Captures and groups Rails errors.
-- Shows stacktrace, request context, and occurrence history.
-- Uses the `logister-ruby` gem for instrumentation and delivery.
+- Captures and groups application errors.
+- Stores stacktrace, request context, occurrence history, and status.
+- Accepts `error`, `log`, `metric`, `transaction`, and `check_in` events.
+- Includes a public docs site with setup, deployment, API, and integration guides.
 
 ## Primary audience
-- Rails developers and teams looking for lightweight error tracking.
+- Ruby and Rails developers who want self-hosted error tracking.
+- JavaScript and TypeScript developers integrating Node or Express apps.
+- ColdFusion, Lucee, and CFML developers sending structured events to Logister.
 
-## Companion gem
+## Companion packages
 - RubyGems: https://rubygems.org/gems/logister-ruby
-- Source: https://github.com/taimoorq/logister-ruby
+- Ruby source: https://github.com/taimoorq/logister-ruby
+- npm: https://www.npmjs.com/package/logister-js
+- JavaScript source: https://github.com/taimoorq/logister-js
 
 ## Self-host source
 - App source: https://github.com/taimoorq/logister

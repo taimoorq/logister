@@ -7,6 +7,7 @@ This directory contains a standalone static version of the Logister documentatio
 - `index.html` and subdirectory `index.html` files provide the static documentation pages.
 - `assets/site.css` contains the docs-specific theme and layout styles.
 - `assets/site.js` provides mobile navigation and copy-to-clipboard behavior for code blocks.
+- `assets/analytics-config.js` provides deploy-time analytics configuration for the static docs site.
 - `assets/logister-logo.svg` is copied locally so the docs do not depend on the Rails asset pipeline.
 
 ## Suggested Cloudflare Pages setup
@@ -28,10 +29,14 @@ Set these GitHub repository settings before enabling it:
 - Secret: `CLOUDFLARE_API_TOKEN`
 - Variable: `CLOUDFLARE_ACCOUNT_ID`
 - Variable: `CLOUDFLARE_PAGES_PROJECT`
+- Optional variable: `DOCS_GOOGLE_TAG_ID`
+- Optional variable: `DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN`
 
 The workflow deploys this directory directly with:
 
 - `wrangler pages deploy cloudflare-docs --project-name=<project>`
+
+Before deploy, the workflow writes `cloudflare-docs/assets/analytics-config.js` from those optional variables so the static site can load Google Analytics and/or Cloudflare Web Analytics without committing those values into the repo.
 
 ## Current scope
 

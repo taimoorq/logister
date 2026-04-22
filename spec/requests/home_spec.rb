@@ -66,6 +66,15 @@ RSpec.describe "Home", type: :request do
     end
   end
 
+  describe "GET /docs/integrations/javascript" do
+    it "redirects to the external JavaScript integration docs page" do
+      get "/docs/integrations/javascript"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://docs.logister.org/integrations/javascript/")
+    end
+  end
+
   describe "GET /privacy" do
     it "returns success and privacy content" do
       get privacy_path
@@ -86,7 +95,11 @@ RSpec.describe "Home", type: :request do
     it "returns success and llms content" do
       get "/llms.txt"
       expect(response).to have_http_status(:success)
-      expect(response.body).to include("Logister is a free, open source bug capture")
+      expect(response.body).to include("JavaScript and TypeScript apps via the `logister-js` package")
+      expect(response.body).to include("CFML apps running on Lucee or Adobe ColdFusion")
+      expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+      expect(response.body).to include("https://docs.logister.org/integrations/cfml/")
+      expect(response.body).to include("https://www.npmjs.com/package/logister-js")
     end
   end
 

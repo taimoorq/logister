@@ -1,5 +1,5 @@
 <% content_for :title, "About" %>
-<% content_for :meta_description, "About Logister, a free bug capture and triage tool for Ruby on Rails applications." %>
+<% content_for :meta_description, "About Logister, an open source error tracking and observability app for Ruby, JavaScript/TypeScript, and ColdFusion/CFML teams." %>
 <% content_for :canonical_path, about_path %>
 <% content_for :og_type, "article" %>
 <% content_for :json_ld, json_ld({
@@ -7,7 +7,7 @@
   "@type" => "AboutPage",
   "name" => "About Logister",
   "url" => absolute_url_for(about_path),
-  "description" => "About Logister and its Rails-focused bug capture workflow."
+  "description" => "About Logister and its open source observability workflow for Ruby, JavaScript, TypeScript, and CFML apps."
 }) %>
 <%
   overview_desktop_path = "marketing/overview-desktop-optimized.webp"
@@ -27,12 +27,12 @@
       <div>
         <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">About Logister</p>
         <h1 class="hero-title" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="70">
-          Built for Rails teams that need faster triage, not another noisy dashboard.
+          Built for backend teams that need faster triage, not another noisy dashboard.
         </h1>
         <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="130">
-          Logister is a bug capture and incident triage workflow focused on Ruby on Rails.
-          We focus on grouping repeated failures, preserving request context, and keeping the
-          fix loop short from alert to ownership.
+          Logister is an open source bug capture and incident triage workflow for Ruby, JavaScript/TypeScript,
+          and ColdFusion/CFML apps. We focus on grouping repeated failures, preserving request context,
+          and keeping the fix loop short from alert to ownership.
         </p>
         <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="190">
           <%= link_to "Create account", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
@@ -56,7 +56,7 @@
     </article>
     <article class="about-pill-card">
       <p class="stat-label">Approach</p>
-      <p class="about-pill-value">Rails-first, server-rendered, open source</p>
+      <p class="about-pill-value">Open source, server-rendered, multi-runtime</p>
     </article>
     <article class="about-pill-card">
       <p class="stat-label">Deploy</p>
@@ -107,7 +107,7 @@
     <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="feature-kicker">Capture</p>
       <h2>Ingest errors, transactions, logs, metrics, and check-ins</h2>
-      <p>One API shape, one gem, and one place to inspect reliability signals per project and release.</p>
+      <p>One API shape, first-party Ruby and JavaScript packages, and one place to inspect reliability signals per project and release.</p>
     </article>
     <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
       <p class="feature-kicker">Triage</p>
@@ -134,6 +134,14 @@
           <li>PostgreSQL (control plane and event store)</li>
           <li>Redis + Sidekiq for background processing</li>
           <li>Optional ClickHouse for analytics acceleration</li>
+        </ul>
+      </article>
+      <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="45">
+        <h3>Supported app integrations</h3>
+        <ul class="about-list">
+          <li><code>logister-ruby</code> for Rails and Ruby apps</li>
+          <li><code>logister-js</code> for Node, Express, and TypeScript apps</li>
+          <li>Direct HTTP ingestion for Lucee and Adobe ColdFusion</li>
         </ul>
       </article>
       <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="90">
@@ -164,7 +172,7 @@
     </div>
     <div class="hero-actions">
       <%= link_to "Sign up free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
-      <%= link_to "Read docs", "https://github.com/taimoorq/logister", target: "_blank", rel: "noopener", class: "hero-btn hero-btn-secondary" %>
+      <%= link_to "Read docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-secondary" %>
     </div>
   </section>
 </div>

@@ -7,3 +7,4 @@ Disallow: /api
 Allow: /llms.txt
 
 Sitemap: https://logister.org/sitemap.xml
+Sitemap: https://docs.logister.org/sitemap.xml
