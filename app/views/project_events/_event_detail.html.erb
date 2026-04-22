@@ -120,6 +120,24 @@
                    local_variables: local_variables,
                    instance_variables: instance_variables,
                    source_excerpt: source_excerpt %>
+      <% elsif project.integration_javascript? %>
+        <%= render "project_events/javascript_stacktrace",
+                   project: project,
+                   event: event,
+                   group: group,
+                   exception_data: exception_data,
+                   filter_param: filter_param,
+                   query_param: query_param %>
+      <% elsif project.integration_python? %>
+        <%= render "project_events/python_stacktrace",
+                   project: project,
+                   event: event,
+                   group: group,
+                   exception_data: exception_data,
+                   request_details: request_details,
+                   filter_param: filter_param,
+                   query_param: query_param,
+                   source_excerpt: source_excerpt %>
       <% else %>
         <%= render "project_events/ruby_stacktrace",
                    project: project,

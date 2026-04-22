@@ -1,0 +1,108 @@
+<% python_summary = python_exception_summary(exception_data, event.message) %>
+<% python_frames = python_exception_frames(exception_data) %>
+<% selected_frame = python_frames.first %>
+<% python_source_excerpt = source_excerpt.presence || source_excerpt_for_frame(selected_frame) %>
+<% frame_locals = selected_frame.is_a?(Hash) ? selected_frame[:locals] : {} %>
+<% frame_locals = {} unless frame_locals.is_a?(Hash) %>
+<% fallback_stacktrace = if exception_data.is_a?(Hash)
+     Array(exception_data["backtrace"] || exception_data[:backtrace]).presence&.join("\n")
+   end %>
+<% fallback_stacktrace ||= event.message %>
+
+<div class="better-errors-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-kicker">
+      <strong><%= python_summary[:class_name] %></strong>
+      in <%= selected_frame&.dig(:method_name).presence || "unknown" %>
+    </p>
+    <h3 class="better-errors-message"><%= python_summary[:message] %></h3>
+  </header>
+
+  <div class="better-errors-workbench">
+    <aside class="better-errors-frames">
+      <% if python_frames.any? %>
+        <ol class="frame-list">
+          <% python_frames.each do |frame_data| %>
+            <li class="frame-item <%= "is-active" if frame_data == selected_frame %>">
+              <div class="frame-link">
+                <span class="frame-method"><%= frame_data[:method_name].presence || "unknown" %></span>
+                <span class="frame-file"><%= frame_data[:file] %>, line <%= frame_data[:line_number] %></span>
+              </div>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="muted">No Python stack frames were captured for this event.</p>
+      <% end %>
+    </aside>
+
+    <div class="better-errors-main">
+      <section class="better-errors-code card">
+        <% if python_source_excerpt.present? %>
+          <div class="better-errors-code-header"><%= python_source_excerpt[:path] %></div>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= python_source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy source excerpt">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="better-errors-source" data-copy-target="source"><code><% python_source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == python_source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
+<% end %></code></pre>
+          </div>
+        <% elsif selected_frame&.dig(:code_context).present? %>
+          <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:code_context] %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy frame source">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= selected_frame[:code_context] %></code></pre>
+          </div>
+        <% else %>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= fallback_stacktrace %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= fallback_stacktrace %></code></pre>
+          </div>
+        <% end %>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Request info</h4>
+        <dl class="better-errors-dl">
+          <% if request_details[:http_method].present? %>
+            <dt>Method</dt>
+            <dd><code><%= request_details[:http_method] %></code></dd>
+          <% end %>
+          <% if request_details[:url].present? %>
+            <dt>URL</dt>
+            <dd><%= request_details[:url] %></dd>
+          <% end %>
+          <% if request_details[:request_id].present? %>
+            <dt>Request ID</dt>
+            <dd><code><%= request_details[:request_id] %></code></dd>
+          <% end %>
+          <% if request_details[:params].present? %>
+            <dt>Request parameters</dt>
+            <dd><code><%= pretty_context_json(request_details[:params]) %></code></dd>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Frame locals</h4>
+        <% if frame_locals.any? %>
+          <dl class="better-errors-dl">
+            <% frame_locals.each do |key, value| %>
+              <dt><code><%= key %></code></dt>
+              <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="muted">No frame locals were captured.</p>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</div>

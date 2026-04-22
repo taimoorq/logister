@@ -75,6 +75,15 @@ RSpec.describe "Home", type: :request do
     end
   end
 
+  describe "GET /docs/integrations/python" do
+    it "redirects to the external Python integration docs page" do
+      get "/docs/integrations/python"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://docs.logister.org/integrations/python/")
+    end
+  end
+
   describe "GET /privacy" do
     it "returns success and privacy content" do
       get privacy_path

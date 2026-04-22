@@ -18,6 +18,7 @@ Rails.application.routes.draw do
   get "docs/integrations/ruby", to: redirect("#{docs_base_url}/integrations/ruby/", status: 301)
   get "docs/integrations/javascript", to: redirect("#{docs_base_url}/integrations/javascript/", status: 301)
   get "docs/integrations/cfml", to: redirect("#{docs_base_url}/integrations/cfml/", status: 301)
+  get "docs/integrations/python", to: redirect("#{docs_base_url}/integrations/python/", status: 301)
   get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }
   get "about", to: "home#about"
   get "privacy", to: "home#privacy"

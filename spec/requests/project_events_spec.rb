@@ -79,6 +79,121 @@ RSpec.describe "Project events", type: :request do
       end
     end
 
+    context "when viewing a Python project error" do
+      before { sign_in users(:one) }
+
+      it "renders the Python-focused exception view" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python API")
+        api_key = create(:api_key, user: users(:one), project: project, name: "python")
+        event = IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :error,
+          level: "error",
+          message: "ValueError: invalid checkout state",
+          fingerprint: "python-valueerror-checkout",
+          context: {
+            exception: {
+              class: "ValueError",
+              message: "invalid checkout state",
+              frames: [
+                {
+                  filename: "/srv/app/checkout.py",
+                  lineno: 41,
+                  name: "create_checkout",
+                  line: "raise ValueError('invalid checkout state')",
+                  locals: { "order_id" => "ord_123" }
+                }
+              ],
+              backtrace: [
+                'File "/srv/app/checkout.py", line 41, in create_checkout'
+              ]
+            },
+            request: {
+              method: "POST",
+              params: { "order_id" => "ord_123" },
+              request_id: "req-python-1",
+              url: "https://api.example.com/checkouts"
+            }
+          },
+          occurred_at: Time.current
+        )
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("ValueError")
+        expect(response.body).to include("create_checkout")
+        expect(response.body).to include("/srv/app/checkout.py")
+        expect(response.body).to include("invalid checkout state")
+        expect(response.body).to include("Frame locals")
+      end
+    end
+
+    context "when viewing a JavaScript project error" do
+      before { sign_in users(:one) }
+
+      it "renders the JavaScript-focused exception view" do
+        project = create(:project, user: users(:one), integration_kind: "javascript", name: "Web App")
+        api_key = create(:api_key, user: users(:one), project: project, name: "javascript")
+        event = IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :error,
+          level: "error",
+          message: "TypeError: Cannot read properties of undefined",
+          fingerprint: "javascript-typeerror-checkout",
+          context: {
+            exception: {
+              class: "TypeError",
+              message: "Cannot read properties of undefined",
+              frames: [
+                {
+                  filename: "https://app.example.com/assets/app.min.js",
+                  lineno: 2,
+                  colno: 1450,
+                  name: "renderCheckout"
+                },
+                {
+                  filename: "https://app.example.com/assets/app.min.js",
+                  lineno: 9,
+                  colno: 321,
+                  name: "onSubmit"
+                }
+              ],
+              backtrace: [
+                "at renderCheckout (https://app.example.com/assets/app.min.js:2:1450)",
+                "at onSubmit (https://app.example.com/assets/app.min.js:9:321)"
+              ],
+              stack: <<~STACK
+                TypeError: Cannot read properties of undefined
+                    at renderCheckout (https://app.example.com/assets/app.min.js:2:1450)
+                    at onSubmit (https://app.example.com/assets/app.min.js:9:321)
+              STACK
+            },
+            browser: "Chrome 135",
+            os: "macOS",
+            route: "/checkout",
+            release: "web@2026.04.22",
+            user_agent: "Mozilla/5.0",
+            breadcrumbs: [
+              { category: "ui.click", message: "Clicked checkout button" }
+            ]
+          },
+          occurred_at: Time.current
+        )
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("JavaScript")
+        expect(response.body).to include("renderCheckout")
+        expect(response.body).to include("Chrome 135")
+        expect(response.body).to include("Breadcrumbs")
+        expect(response.body).to include("Source map hint")
+      end
+    end
+
     context "when non-member" do
       before { sign_in users(:one) }
 

@@ -18,6 +18,7 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(helper.docs_site_url(:http_api)).to eq("https://docs.logister.org/http-api/")
       expect(helper.docs_site_url(:cfml_integration)).to eq("https://docs.logister.org/integrations/cfml/")
       expect(helper.docs_site_url(:javascript_integration)).to eq("https://docs.logister.org/integrations/javascript/")
+      expect(helper.docs_site_url(:python_integration)).to eq("https://docs.logister.org/integrations/python/")
     end
   end
 
@@ -37,6 +38,44 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(frames.first[:line_number]).to eq(42)
       expect(frames.first[:method_name]).to eq("Expression")
       expect(frames.first[:code_context]).to include("order.getCustomer")
+    end
+
+    it "parses structured Python traceback frames and raw traceback lines" do
+      frames = helper.parse_backtrace_frames([
+        {
+          "filename" => "/srv/app/orders.py",
+          "lineno" => 27,
+          "name" => "create_order",
+          "line" => "raise ValueError('bad order')"
+        },
+        'File "/srv/app/views.py", line 11, in dispatch'
+      ])
+
+      expect(frames.size).to eq(2)
+      expect(frames.first[:file]).to eq("/srv/app/orders.py")
+      expect(frames.first[:line_number]).to eq(27)
+      expect(frames.first[:method_name]).to eq("create_order")
+      expect(frames.first[:code_context]).to eq("raise ValueError('bad order')")
+      expect(frames.second[:file]).to eq("/srv/app/views.py")
+      expect(frames.second[:line_number]).to eq(11)
+      expect(frames.second[:method_name]).to eq("dispatch")
+    end
+
+    it "parses JavaScript stack trace lines from Chrome and Firefox formats" do
+      frames = helper.parse_backtrace_frames([
+        "at renderCheckout (https://app.example.com/assets/app.min.js:2:1450)",
+        "handleClick@https://app.example.com/assets/chunk.js:88:19"
+      ])
+
+      expect(frames.size).to eq(2)
+      expect(frames.first[:file]).to eq("https://app.example.com/assets/app.min.js")
+      expect(frames.first[:line_number]).to eq(2)
+      expect(frames.first[:column_number]).to eq(1450)
+      expect(frames.first[:method_name]).to eq("renderCheckout")
+      expect(frames.second[:file]).to eq("https://app.example.com/assets/chunk.js")
+      expect(frames.second[:line_number]).to eq(88)
+      expect(frames.second[:column_number]).to eq(19)
+      expect(frames.second[:method_name]).to eq("handleClick")
     end
   end
 

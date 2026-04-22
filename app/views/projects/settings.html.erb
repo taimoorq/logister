@@ -150,19 +150,50 @@
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
-      <% elsif @project.integration_javascript? %>
+      <% elsif @project.integration_python? %>
         <div class="space-y-4">
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Install the <code>logister-js</code> package in the JavaScript or TypeScript app you want to monitor.</li>
-              <li>Use the shared client directly for scripts, jobs, and services, or add the Express middleware if your app runs on Express.</li>
-              <li>Send custom metrics, logs, and check-ins through the shared client when you need deeper visibility.</li>
+              <li>Install <code>logister-python</code> in the Python service or worker you want to monitor.</li>
+              <li>Use <code>instrument_fastapi</code> for FastAPI apps, <code>LogisterMiddleware</code> for Django apps, and <code>instrument_celery</code> for Celery workers.</li>
+              <li>Send custom metrics, logs, transactions, and check-ins through the shared client when you need deeper app visibility.</li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
+            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>pip install 'logister-python[fastapi]'
+
+from logister import LogisterClient, instrument_fastapi
+
+client = LogisterClient.from_env(default_context={"service": "api"})
+instrument_fastapi(app, client)</code></pre>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "Python integration docs",
+                        docs_site_url(:python_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% elsif @project.integration_javascript? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install <code>logister-js</code> in the JavaScript or TypeScript service you want to monitor.</li>
+              <li>Use the base client for Node workers and scripts, or add <code>createLogisterMiddleware()</code> and <code>createLogisterErrorHandler()</code> if the app runs on Express.</li>
+              <li>Set <code>LOGISTER_RELEASE</code> and include route, browser, component, or request metadata in event context so JavaScript errors are easier to triage.</li>
+              <li>If your frontend stack produces bundles, keep source maps available in your release pipeline so minified frames can be traced back to real source.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with Node or Express</h3>
             <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>npm install logister-js
 
 import { LogisterClient } from "logister-js";
@@ -170,8 +201,17 @@ import { createLogisterMiddleware, createLogisterErrorHandler } from "logister-j
 
 const client = new LogisterClient({
   apiKey: process.env.LOGISTER_API_KEY,
-  baseUrl: "https://your-logister-host.example"
+  baseUrl: "https://your-logister-host.example",
+  environment: process.env.LOGISTER_ENVIRONMENT,
+  release: process.env.LOGISTER_RELEASE
 });</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">What good JavaScript events should include</h3>
+            <p class="text-sm text-slate-600">
+              The most useful JavaScript reports include the route or screen, release, browser or runtime details, and enough stack context to tell whether source maps are missing or whether the error came from app code, a network edge, or bundled output.
+            </p>
           </div>
 
           <p class="text-sm text-slate-600">
@@ -225,6 +265,8 @@ end</code></pre>
         <strong class="text-slate-900"><%= @project.integration_label %></strong>.
         <% if @project.integration_cfml? %>
           Send JSON from Lucee or ColdFusion with `cfhttp`.
+        <% elsif @project.integration_python? %>
+          Use the <code>logister-python</code> client directly, or add the FastAPI, Django, or Celery helpers for framework-aware reporting.
         <% elsif @project.integration_javascript? %>
           Use the <code>logister-js</code> client directly, or add the Express middleware if your JavaScript app runs on Express.
         <% else %>

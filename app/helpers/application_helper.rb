@@ -10,7 +10,8 @@ module ApplicationHelper
     http_api: "/http-api/",
     ruby_integration: "/integrations/ruby/",
     cfml_integration: "/integrations/cfml/",
-    javascript_integration: "/integrations/javascript/"
+    javascript_integration: "/integrations/javascript/",
+    python_integration: "/integrations/python/"
   }.freeze
 
   ICON_PATHS = {
@@ -110,8 +111,10 @@ module ApplicationHelper
         raw: line.to_s,
         file: parsed[:file],
         line_number: parsed[:line_number],
+        column_number: parsed[:column_number],
         method_name: parsed[:method_name],
         code_context: parsed[:code_context],
+        locals: parsed[:locals],
         absolute_path: absolute_path,
         application_frame: app_frame
       }
@@ -147,6 +150,94 @@ module ApplicationHelper
         exception_hash[:extendedInfo].presence,
       error_code: exception_hash["errorCode"].presence || exception_hash[:errorCode].presence,
       extended_info: exception_hash["extendedInfo"].presence || exception_hash[:extendedInfo].presence
+    }
+  end
+
+  def python_exception_frames(exception_data)
+    exception_hash = normalize_hash(exception_data)
+    frames = exception_hash["frames"] || exception_hash[:frames]
+    return parse_backtrace_frames(frames) if frames.present?
+
+    backtrace = exception_hash["backtrace"] || exception_hash[:backtrace]
+    parse_backtrace_frames(backtrace)
+  end
+
+  def python_exception_summary(exception_data, fallback_message = nil)
+    exception_hash = normalize_hash(exception_data)
+
+    {
+      class_name: exception_hash["class"].presence ||
+        exception_hash[:class].presence ||
+        exception_hash["type"].presence ||
+        exception_hash[:type].presence ||
+        "Python exception",
+      message: exception_hash["message"].presence ||
+        exception_hash[:message].presence ||
+        fallback_message.to_s.lines.first.to_s.strip.presence ||
+        "Unhandled Python exception"
+    }
+  end
+
+  def javascript_exception_stack(exception_data)
+    exception_hash = normalize_hash(exception_data)
+    stack = exception_hash["stack"] || exception_hash[:stack]
+    return stack.to_s if stack.present?
+
+    backtrace = exception_hash["backtrace"] || exception_hash[:backtrace]
+    Array(backtrace).join("\n")
+  end
+
+  def javascript_exception_frames(exception_data)
+    exception_hash = normalize_hash(exception_data)
+    frames = exception_hash["frames"] || exception_hash[:frames]
+    return parse_backtrace_frames(frames) if frames.present?
+
+    stack = javascript_exception_stack(exception_data)
+    lines = stack.to_s.lines.map(&:strip).reject(&:blank?)
+    lines = lines.drop(1) if lines.first&.match?(/\A[\w$.]+(?::|Error)/)
+    parse_backtrace_frames(lines)
+  end
+
+  def javascript_exception_summary(exception_data, fallback_message = nil)
+    exception_hash = normalize_hash(exception_data)
+    stack_lines = javascript_exception_stack(exception_data).to_s.lines.map(&:strip)
+    headline = stack_lines.first.to_s
+    inferred_class, inferred_message = if headline.include?(":")
+      headline.split(":", 2).map(&:strip)
+    end
+
+    {
+      class_name: exception_hash["class"].presence ||
+        exception_hash[:class].presence ||
+        exception_hash["name"].presence ||
+        exception_hash[:name].presence ||
+        inferred_class.presence ||
+        "JavaScript Error",
+      message: exception_hash["message"].presence ||
+        exception_hash[:message].presence ||
+        inferred_message.presence ||
+        fallback_message.to_s.lines.first.to_s.strip.presence ||
+        "Unhandled JavaScript exception"
+    }
+  end
+
+  def javascript_runtime_details(event)
+    context = event_context_hash(event)
+    headers = normalize_hash(first_hash_value(context, :headers))
+
+    {
+      browser: value_from_hash(context, "browser"),
+      os: value_from_hash(context, "os"),
+      runtime: value_from_hash(context, "runtime"),
+      release: value_from_hash(context, "release"),
+      environment: value_from_hash(context, "environment"),
+      route: value_from_hash(context, "route"),
+      component: value_from_hash(context, "component"),
+      user_agent: value_from_hash(context, "user_agent") ||
+        value_from_hash(context, "userAgent") ||
+        value_from_hash(headers, "User-Agent"),
+      url: first_scalar_value(context, :url),
+      request_id: first_scalar_value(context, :request_id)
     }
   end
 
@@ -352,6 +443,10 @@ module ApplicationHelper
 
   def parse_backtrace_line(line)
     patterns = [
+      /\Aat (?:(?<method>.+?) )?\((?<file>.+?):(?<line>\d+):(?<column>\d+)\)\z/,
+      /\Aat (?<file>.+?):(?<line>\d+):(?<column>\d+)\z/,
+      /\A(?<method>[^@]+)@(?<file>.+?):(?<line>\d+):(?<column>\d+)\z/,
+      /\A\s*File "(?<file>.+?)", line (?<line>\d+)(?:, in (?<method>.+))?\z/,
       /\A(?<file>.+?):(?<line>\d+)(?::in `(?<method>[^']+)')?\z/,
       /\A(?<file>.+?):(?<line>\d+)(?::in (?<method>.+))?\z/
     ]
@@ -362,15 +457,18 @@ module ApplicationHelper
     {
       file: match[:file].to_s,
       line_number: match[:line].to_i,
-      method_name: match[:method].to_s.presence
+      method_name: match[:method].to_s.presence,
+      column_number: match.names.include?("column") && match[:column].to_i.positive? ? match[:column].to_i : nil
     }
   end
 
   def parse_structured_backtrace_frame(frame)
-    file = value_from_hash(frame, "template") ||
+    file = value_from_hash(frame, "filename") ||
+      value_from_hash(frame, "template") ||
       value_from_hash(frame, "file") ||
       value_from_hash(frame, "path")
-    line_number = value_from_hash(frame, "line") ||
+    line_number = value_from_hash(frame, "lineno") ||
+      value_from_hash(frame, "line") ||
       value_from_hash(frame, "line_number") ||
       value_from_hash(frame, "lineNumber")
     return nil if file.blank? || line_number.to_i <= 0
@@ -378,12 +476,24 @@ module ApplicationHelper
     {
       file: file.to_s,
       line_number: line_number.to_i,
+      column_number: value_from_hash(frame, "colno") ||
+        value_from_hash(frame, "column") ||
+        value_from_hash(frame, "column_number") ||
+        value_from_hash(frame, "colNumber"),
       method_name: value_from_hash(frame, "function") ||
+        value_from_hash(frame, "name") ||
         value_from_hash(frame, "method") ||
+        value_from_hash(frame, "module") ||
         value_from_hash(frame, "type"),
       code_context: value_from_hash(frame, "codePrintPlain") ||
         value_from_hash(frame, "code_print_plain") ||
-        value_from_hash(frame, "codePrintHTML"),
+        value_from_hash(frame, "codePrintHTML") ||
+        value_from_hash(frame, "line") ||
+        value_from_hash(frame, "code_context") ||
+        value_from_hash(frame, "context_line") ||
+        value_from_hash(frame, "source") ||
+        value_from_hash(frame, "code"),
+      locals: normalize_hash(value_from_hash(frame, "locals")),
       raw: "#{file}:#{line_number}"
     }
   end

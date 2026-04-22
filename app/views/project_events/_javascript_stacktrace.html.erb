@@ -1,0 +1,145 @@
+<% javascript_summary = javascript_exception_summary(exception_data, event.message) %>
+<% javascript_frames = javascript_exception_frames(exception_data) %>
+<% selected_frame = javascript_frames.first %>
+<% source_excerpt = source_excerpt_for_frame(selected_frame) %>
+<% stacktrace_text = javascript_exception_stack(exception_data).presence || event.message %>
+<% runtime_details = javascript_runtime_details(event) %>
+<% breadcrumbs = if event.context.is_a?(Hash)
+     event.context["breadcrumbs"] || event.context[:breadcrumbs]
+   end %>
+<% breadcrumbs = [] unless breadcrumbs.is_a?(Array) %>
+<% minified_stack = javascript_frames.any? { |frame| frame[:file].to_s.include?(".min.js") || frame[:file].to_s.include?("/assets/") } %>
+
+<div class="better-errors-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-kicker">
+      <strong><%= javascript_summary[:class_name] %></strong>
+      in <%= runtime_details[:component].presence || runtime_details[:route].presence || selected_frame&.dig(:method_name).presence || "javascript runtime" %>
+    </p>
+    <h3 class="better-errors-message"><%= javascript_summary[:message] %></h3>
+  </header>
+
+  <div class="better-errors-workbench">
+    <aside class="better-errors-frames">
+      <% if javascript_frames.any? %>
+        <ol class="frame-list">
+          <% javascript_frames.each do |frame_data| %>
+            <li class="frame-item <%= "is-active" if frame_data == selected_frame %>">
+              <div class="frame-link">
+                <span class="frame-method"><%= frame_data[:method_name].presence || "anonymous" %></span>
+                <span class="frame-file">
+                  <%= frame_data[:file] %>, line <%= frame_data[:line_number] %><% if frame_data[:column_number].present? %>:<%= frame_data[:column_number] %><% end %>
+                </span>
+              </div>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="muted">No JavaScript stack frames were captured for this event.</p>
+      <% end %>
+    </aside>
+
+    <div class="better-errors-main">
+      <% if minified_stack && source_excerpt.blank? %>
+        <section class="better-errors-section">
+          <h4>Source map hint</h4>
+          <p class="muted">
+            This stack trace looks like built JavaScript. Set a release on the SDK and upload source maps so Logister can show the original source instead of bundled output.
+          </p>
+        </section>
+      <% end %>
+
+      <section class="better-errors-code card">
+        <% if source_excerpt.present? %>
+          <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy source excerpt">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="better-errors-source" data-copy-target="source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
+<% end %></code></pre>
+          </div>
+        <% elsif selected_frame.present? %>
+          <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:raw] %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stack frame">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= selected_frame[:raw] %></code></pre>
+          </div>
+        <% else %>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= stacktrace_text %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy stacktrace">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= stacktrace_text %></code></pre>
+          </div>
+        <% end %>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Runtime context</h4>
+        <dl class="better-errors-dl">
+          <% if runtime_details[:browser].present? %>
+            <dt>Browser</dt>
+            <dd><%= runtime_details[:browser] %></dd>
+          <% end %>
+          <% if runtime_details[:os].present? %>
+            <dt>OS</dt>
+            <dd><%= runtime_details[:os] %></dd>
+          <% end %>
+          <% if runtime_details[:runtime].present? %>
+            <dt>Runtime</dt>
+            <dd><%= runtime_details[:runtime] %></dd>
+          <% end %>
+          <% if runtime_details[:route].present? %>
+            <dt>Route</dt>
+            <dd><code><%= runtime_details[:route] %></code></dd>
+          <% end %>
+          <% if runtime_details[:component].present? %>
+            <dt>Component</dt>
+            <dd><code><%= runtime_details[:component] %></code></dd>
+          <% end %>
+          <% if runtime_details[:release].present? %>
+            <dt>Release</dt>
+            <dd><code><%= runtime_details[:release] %></code></dd>
+          <% end %>
+          <% if runtime_details[:environment].present? %>
+            <dt>Environment</dt>
+            <dd><code><%= runtime_details[:environment] %></code></dd>
+          <% end %>
+          <% if runtime_details[:url].present? %>
+            <dt>URL</dt>
+            <dd><%= runtime_details[:url] %></dd>
+          <% end %>
+          <% if runtime_details[:user_agent].present? %>
+            <dt>User agent</dt>
+            <dd><code><%= runtime_details[:user_agent] %></code></dd>
+          <% end %>
+          <% if runtime_details[:request_id].present? %>
+            <dt>Request ID</dt>
+            <dd><code><%= runtime_details[:request_id] %></code></dd>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Breadcrumbs</h4>
+        <% if breadcrumbs.any? %>
+          <dl class="better-errors-dl">
+            <% breadcrumbs.first(8).each_with_index do |crumb, index| %>
+              <% crumb_hash = crumb.is_a?(Hash) ? crumb : {} %>
+              <dt><code><%= crumb_hash["category"] || crumb_hash[:category] || "breadcrumb_#{index + 1}" %></code></dt>
+              <dd><%= crumb_hash["message"] || crumb_hash[:message] || crumb_hash["data"] || crumb_hash[:data] %></dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="muted">No JavaScript breadcrumbs were captured for this event.</p>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</div>

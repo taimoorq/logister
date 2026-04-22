@@ -94,7 +94,21 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("JavaScript / TypeScript")
         expect(response.body).to include("logister-js")
         expect(response.body).to include("logister-js/express")
+        expect(response.body).to include("source maps")
+        expect(response.body).to include("LOGISTER_RELEASE")
         expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+      end
+
+      it "shows Python-specific integration guidance for logister-python projects" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python App")
+
+        get settings_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Python")
+        expect(response.body).to include("logister-python")
+        expect(response.body).to include("instrument_fastapi")
+        expect(response.body).to include("https://docs.logister.org/integrations/python/")
       end
 
       it "returns 404 for project user cannot access" do
@@ -219,6 +233,16 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
       end
 
+      it "shows Python integration docs on Python monitor pages" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python Monitor")
+
+        get monitors_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Python integration docs")
+        expect(response.body).to include("https://docs.logister.org/integrations/python/")
+      end
+
       it "returns 404 for project user cannot access" do
         get monitors_project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
@@ -263,7 +287,20 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("client.captureMetric()")
         expect(response.body).to include("client.checkIn()")
+        expect(response.body).to include("browser")
+        expect(response.body).to include("route")
         expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+      end
+
+      it "shows Python-specific empty-state guidance for Python projects" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python Activity")
+
+        get activity_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("client.capture_metric()")
+        expect(response.body).to include("client.check_in()")
+        expect(response.body).to include("https://docs.logister.org/integrations/python/")
       end
 
       it "returns 404 for project user cannot access" do

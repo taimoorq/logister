@@ -185,6 +185,24 @@
               </div>
             <% end %>
           </div>
+        <% elsif @project.integration_javascript? %>
+          <%= render "project_events/javascript_stacktrace",
+                     project: @project,
+                     event: @event,
+                     group: @group,
+                     exception_data: exception_data,
+                     filter_param: nil,
+                     query_param: nil %>
+        <% elsif @project.integration_python? %>
+          <%= render "project_events/python_stacktrace",
+                     project: @project,
+                     event: @event,
+                     group: @group,
+                     exception_data: exception_data,
+                     request_details: request_context_details(@event),
+                     filter_param: nil,
+                     query_param: nil,
+                     source_excerpt: nil %>
         <% else %>
           <% stacktrace_text = backtrace.respond_to?(:any?) && backtrace.any? ? Array(backtrace).join("\n") : @event.message %>
           <div class="copy-block" data-controller="copy" data-copy-text-value="<%= stacktrace_text %>">

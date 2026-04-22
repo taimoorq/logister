@@ -10,7 +10,7 @@ class Project < ApplicationRecord
   before_validation :ensure_uuid
   before_validation :normalize_slug
 
-  enum :integration_kind, { ruby: "ruby", cfml: "cfml", javascript: "javascript" }, default: :ruby, validate: true, prefix: :integration
+  enum :integration_kind, { ruby: "ruby", cfml: "cfml", javascript: "javascript", python: "python" }, default: :ruby, validate: true, prefix: :integration
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: { scope: :user_id }
@@ -38,7 +38,8 @@ class Project < ApplicationRecord
     {
       "ruby" => "Ruby gem",
       "cfml" => "CFML",
-      "javascript" => "JavaScript / TypeScript"
+      "javascript" => "JavaScript / TypeScript",
+      "python" => "Python"
     }.fetch(integration_kind, integration_kind.to_s.humanize)
   end
 
@@ -46,7 +47,8 @@ class Project < ApplicationRecord
     [
       [ "Ruby gem", "ruby" ],
       [ "CFML", "cfml" ],
-      [ "JavaScript / TypeScript (logister-js)", "javascript" ]
+      [ "JavaScript / TypeScript (logister-js)", "javascript" ],
+      [ "Python (logister-python)", "python" ]
     ]
   end
 
