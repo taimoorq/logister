@@ -70,6 +70,7 @@
               <p class="sidebar-label">Integrations</p>
               <a href="/integrations/ruby/">Ruby integration</a>
               <a href="/integrations/cfml/">CFML integration</a>
+              <a href="/integrations/javascript/">JavaScript integration</a>
             </div>
             <hr>
             <div class="sidebar-group">
@@ -81,7 +82,7 @@
             </div>
             <div class="sidebar-card">
               <h4>Project-aware setup</h4>
-              <p>Projects can be labeled by integration type so the in-app guidance matches the Ruby and CFML workflows.</p>
+              <p>Projects can be labeled by integration type so the in-app guidance matches the Ruby, CFML, and JavaScript workflows.</p>
             </div>
           </aside>
 
@@ -90,7 +91,7 @@
               <p class="eyebrow">Overview</p>
               <h2>Choose the guide that matches your project type.</h2>
               <p>
-                Logister provides public documentation for Ruby and CFML integrations plus the operations guides needed
+                Logister provides public documentation for Ruby, CFML, and JavaScript integrations plus the operations guides needed
                 to self-host the app. Start with the guide that matches how your application sends data today.
               </p>
               <blockquote>
@@ -115,6 +116,11 @@
                     <td>CFML integration</td>
                     <td>Lucee and Adobe ColdFusion sites</td>
                     <td><code>cfhttp</code> plus structured event payloads</td>
+                  </tr>
+                  <tr>
+                    <td>JavaScript integration</td>
+                    <td>Node, Express, and TypeScript apps</td>
+                    <td><code>logister-js</code> package and Express middleware</td>
                   </tr>
                   <tr>
                     <td>Operations guides</td>
@@ -153,6 +159,12 @@
                   <p>Use the CFML guide for Lucee or Adobe ColdFusion apps that talk to Logister over HTTP.</p>
                   <p><a href="/integrations/cfml/">Read CFML docs</a></p>
                 </article>
+                <article class="card">
+                  <p class="eyebrow">JavaScript</p>
+                  <h3>Install the npm package</h3>
+                  <p>Use the JavaScript guide for Node, Express, and TypeScript apps using the <code>logister-js</code> package.</p>
+                  <p><a href="/integrations/javascript/">Read JavaScript docs</a></p>
+                </article>
               </div>
             </section>
 
@@ -162,7 +174,7 @@
               <ol>
                 <li>Create a project and choose the right integration type.</li>
                 <li>Generate an API key and store it immediately.</li>
-                <li>Pick the Ruby or CFML guide based on your application stack.</li>
+                <li>Pick the Ruby, CFML, or JavaScript guide based on your application stack.</li>
                 <li>Use the HTTP API page when you need the exact request shape.</li>
                 <li>Send one known-good event before broadening instrumentation.</li>
               </ol>
@@ -209,6 +221,7 @@
               <h4>Integrations</h4>
               <a href="/integrations/ruby/">Ruby integration</a>
               <a href="/integrations/cfml/">CFML integration</a>
+              <a href="/integrations/javascript/">JavaScript integration</a>
             </div>
           </div>
         </div>

@@ -66,6 +66,7 @@
               <p class="sidebar-label">Integrations</p>
               <a href="/integrations/ruby/">Ruby integration</a>
               <a href="/integrations/cfml/">CFML integration</a>
+              <a href="/integrations/javascript/">JavaScript integration</a>
             </div>
             <hr>
             <div class="sidebar-group">
@@ -87,13 +88,14 @@
                   <h2>Start here if you are setting up Logister for the first time.</h2>
                   <p class="lead">
                     This page covers the product-side setup flow. Once you have a project and API token, move into the
-                    integration guide for Ruby or CFML depending on what your app runs.
+                    integration guide for Ruby, CFML, or JavaScript depending on what your app runs.
                   </p>
                 </section>
                 <aside class="outline-card chapter-links">
                   <h3>Next guides</h3>
                   <a href="/integrations/ruby/"><span>Ruby integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/cfml/"><span>CFML integration</span><span class="kbd">guide</span></a>
+                  <a href="/integrations/javascript/"><span>JavaScript integration</span><span class="kbd">guide</span></a>
                   <a href="/http-api/"><span>HTTP API</span><span class="kbd">ref</span></a>
                 </aside>
               </div>
@@ -138,6 +140,10 @@
                     <td><code>CFML</code></td>
                     <td>Lucee and Adobe ColdFusion apps sending direct HTTP payloads</td>
                   </tr>
+                  <tr>
+                    <td><code>JavaScript / TypeScript</code></td>
+                    <td>Node, Express, and TypeScript apps using <code>logister-js</code></td>
+                  </tr>
                 </tbody>
               </table>
             </section>
@@ -171,6 +177,12 @@
                   <p>Best if your app runs on Lucee or Adobe ColdFusion and sends events over HTTP.</p>
                   <p><a href="/integrations/cfml/">Read CFML integration docs</a></p>
                 </article>
+                <article class="card">
+                  <p class="eyebrow">JavaScript</p>
+                  <h3>Use the npm package</h3>
+                  <p>Best if your app runs on Node or TypeScript and you want the <code>logister-js</code> client plus Express middleware.</p>
+                  <p><a href="/integrations/javascript/">Read JavaScript integration docs</a></p>
+                </article>
               </div>
             </section>
 
@@ -187,7 +199,7 @@ Base URL for your Logister instance confirmed</code></pre>
               </div>
               <div class="note tip">
                 <h4>Next step</h4>
-                <p>Once those items are done, move into the Ruby or CFML guide and send one test event first.</p>
+                <p>Once those items are done, move into the Ruby, CFML, or JavaScript guide and send one test event first.</p>
               </div>
             </section>
           </article>
