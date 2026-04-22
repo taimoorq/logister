@@ -93,20 +93,25 @@ Used when one action should update several DOM regions:
 
 ### Documentation section
 
-- **Docs are a first-class public section, not a markdown dump.** The docs pages live in `DocsController` with a dedicated `docs` layout and public routes under `/docs`.
-- **The docs layout should still follow the app’s asset and Hotwire conventions.** It may have custom chrome, but it should use the same shared stylesheet/importmap helpers and the same Turbo metadata as the main layout.
-- **Critical docs structure should be visible in ERB, not hidden entirely in custom CSS.** For core layout behavior such as sidebar rail, content column, and code block framing, prefer clear template structure and utility classes so the page remains understandable even when custom CSS is being debugged.
-- **Docs content should follow a consistent guide shape.** The current preferred flow is:
+- **Public docs no longer live in the Rails app.** Canonical docs are hosted separately on `https://docs.logister.org` from the static site in `cloudflare-docs/`.
+- **Rails should link out to the external docs host.** Use the shared docs URL helpers in `ApplicationHelper` / `ProjectsHelper` instead of hardcoding internal `/docs` paths in new app UI.
+- **Legacy Rails docs URLs should redirect permanently.** Keep `/docs...` routes as `301` redirects so old links preserve SEO equity and do not serve duplicate content from the app.
+- **The static docs are a product surface, not a markdown dump.** Update `cloudflare-docs/` pages directly when changing setup, deployment, API, or integration guidance.
+- **Docs content should follow a consistent guide shape.** The preferred flow is:
   1. Short overview
   2. Prerequisites or before-you-start context
   3. Step-by-step setup or usage flow
   4. Verification section
   5. Next steps or troubleshooting
-- **Use the docs helpers consistently.**
-  - `docs_code_block` for copyable highlighted code snippets
-  - `docs_output_block` for shell output / verification blocks
-  - `docs_section_items` for left-nav “On this page” anchors
-  - `docs_article_classes` for the article prose shell
+- **Keep docs hosting concerns separate from Rails concerns.** Analytics, robots, sitemap, and metadata for `docs.logister.org` belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
+
+### SEO and crawl surfaces
+
+- **Treat `logister.org` and `docs.logister.org` as separate hosts.** Each host should own its own canonical URLs, robots policy, and sitemap.
+- **The Rails sitemap is intentionally app-only.** `app/views/home/sitemap.xml.builder` should include only Rails-hosted public pages like home/about/privacy/terms, not external docs URLs.
+- **Use `robots.txt` for discovery across hosts.** `public/robots.txt` advertises both the app sitemap and the docs sitemap so crawlers can discover both surfaces from the main domain.
+- **Keep `llms.txt` current with the real product shape.** `public/llms.txt` should describe the self-hosted app, supported languages, companion packages, and public docs URLs. It should not drift back to a Ruby-only description.
+- **Static docs pages should carry strong metadata.** In `cloudflare-docs/`, keep page-level canonical tags, `robots`, Open Graph, Twitter tags, and JSON-LD structured data aligned with the actual audience and technology on each page.
 
 ### Hotwire, Turbo, and Stimulus
 
@@ -120,3 +125,28 @@ Used when one action should update several DOM regions:
 - **Inspect the actual asset URL rendered in HTML.** It quickly answers whether the browser is loading fresh CSS or an old digested file.
 - **Check the compiled asset, not just the source stylesheet.** When styles seem missing, inspect both `app/assets/stylesheets/application.tailwind.css` and the compiled `app/assets/builds/tailwind.css`.
 - **Use request specs to lock in layout behavior.** For docs pages in particular, request specs should verify shared asset tags, importmap tags, Turbo metadata, and key content/anchors so layout regressions are easier to spot.
+
+### Integrations and companion packages
+
+- **Language integrations are first-class project types.** The app currently recognizes Ruby, JavaScript / TypeScript, and CFML projects. Project labels, settings copy, and docs links should stay aligned with those supported integration kinds.
+- **Client SDKs live in separate repos.** `logister-ruby` and `logister-js` are companion packages with their own release cycles. Do not couple their version numbers or changelogs directly to this Rails app.
+- **The Rails app should explain what package to use, not re-implement package docs.** In project settings and marketing pages, point users to the canonical integration docs and package repos instead of duplicating large SDK setup guides inside the app.
+- **When adding a new integration, update all discovery surfaces together.** That includes:
+  - project integration labels and settings guidance
+  - external docs nav and sitemap in `cloudflare-docs/`
+  - `public/llms.txt`
+  - public marketing/about copy if the supported-language story changes
+
+### Deploy and release learnings
+
+- **On Fly, database setup belongs in the release phase.** `fly.toml` uses `release_command = './bin/rails db:prepare'`; the web entrypoint should not also run `db:prepare` on every boot.
+- **Docs deployment is independent of app deployment.** Changes under `cloudflare-docs/` ship through the Cloudflare Pages workflow, not the Rails deploy path.
+- **App and package releases are separate.** This repo’s releases describe the Rails app and hosted/self-hosted product. `logister-js` and other client packages should keep their own changelog, tags, and GitHub releases.
+
+### Helpful CLI workflow learnings
+
+- **Use `gh` for repo configuration and release plumbing.** It is the fastest path for checking repo visibility, collaborators, Actions secrets/variables, and triggering or inspecting workflows. Prefer it over manual GitHub UI work when the change is operational and repeatable.
+- **Use `wrangler` for Cloudflare Pages work.** It is the right CLI for authenticating against Cloudflare, creating Pages projects, and deploying the static docs in `cloudflare-docs/`. The docs host is operationally separate from the Rails app, so treat Wrangler usage as part of the docs deployment toolchain.
+- **Use `flyctl` for runtime deploy diagnosis.** Build failures, release-command hangs, machine state, and deploy logs are easiest to reason about with `flyctl`. It is especially useful for checking whether a failed deploy is a build issue or a release/runtime issue.
+- **Prefer CLIs for repeatable ops, but keep secrets out of the repo.** `gh`, `wrangler`, and `flyctl` are great for configuration and deployment, but secrets should stay in the provider secret store or GitHub Actions secrets, not in tracked files.
+- **Document the required CLIs in repo-facing docs.** When a workflow depends on `gh`, `wrangler`, or `flyctl`, keep that recommendation visible in the README or the relevant static docs page so contributors do not have to rediscover the toolchain.

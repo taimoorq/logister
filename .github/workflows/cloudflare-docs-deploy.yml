@@ -27,7 +27,7 @@ jobs:
       - name: Ensure Cloudflare Pages configuration is present
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
         run: |
           if [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
@@ -36,7 +36,7 @@ jobs:
           fi
 
           if [ -z "${CLOUDFLARE_ACCOUNT_ID}" ]; then
-            echo "Missing CLOUDFLARE_ACCOUNT_ID GitHub variable."
+            echo "Missing CLOUDFLARE_ACCOUNT_ID GitHub secret."
             exit 1
           fi
 
@@ -73,7 +73,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >-
             pages deploy cloudflare-docs
             --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}

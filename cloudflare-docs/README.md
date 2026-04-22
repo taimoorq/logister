@@ -27,7 +27,7 @@ It deploys automatically when changes land on `main` under:
 Set these GitHub repository settings before enabling it:
 
 - Secret: `CLOUDFLARE_API_TOKEN`
-- Variable: `CLOUDFLARE_ACCOUNT_ID`
+- Secret: `CLOUDFLARE_ACCOUNT_ID`
 - Variable: `CLOUDFLARE_PAGES_PROJECT`
 - Optional variable: `DOCS_GOOGLE_TAG_ID`
 - Optional variable: `DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN`
