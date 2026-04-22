@@ -16,6 +16,16 @@ Use `cloudflare-docs` as the project root or output directory and deploy it as a
 
 No build step is required unless you later decide to add a static-site generator on top of this folder.
 
+## Local preview
+
+To preview the static docs locally with Cloudflare Pages behavior, run this from the repo root:
+
+```bash
+wrangler pages dev cloudflare-docs
+```
+
+That serves the `cloudflare-docs/` directory locally so you can verify layout, navigation, copy buttons, and other static-site behavior before deploying.
+
 ## GitHub Actions deployment
 
 The repository now includes a dedicated workflow at `.github/workflows/cloudflare-docs-deploy.yml`.

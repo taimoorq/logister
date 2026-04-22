@@ -106,6 +106,8 @@ If you want Docker-backed local infra, or want ClickHouse and PostgreSQL running
 - https://docs.logister.org/local-development/
 - https://docs.logister.org/clickhouse/
 
+If you are working on the static docs in `cloudflare-docs/`, use [cloudflare-docs/README.md](cloudflare-docs/README.md) for local preview and deployment notes.
+
 ## Project documentation
 
 | Document | Description |

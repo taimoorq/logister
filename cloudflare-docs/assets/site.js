@@ -38,12 +38,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const navToggle = document.querySelector("[data-nav-toggle]");
   const navPanel = document.querySelector("[data-nav-panel]");
+  const sidebar = document.querySelector(".sidebar");
 
   if (navToggle && navPanel) {
     navToggle.addEventListener("click", () => {
       const expanded = navToggle.getAttribute("aria-expanded") === "true";
       navToggle.setAttribute("aria-expanded", String(!expanded));
       navPanel.classList.toggle("is-open", !expanded);
+    });
+  }
+
+  if (sidebar) {
+    const sidebarToggle = document.createElement("button");
+    sidebarToggle.type = "button";
+    sidebarToggle.className = "sidebar-toggle";
+    sidebarToggle.setAttribute("aria-expanded", "false");
+    sidebarToggle.innerHTML = `
+      <span class="sidebar-toggle-label">
+        <span class="sidebar-toggle-kicker">Documentation</span>
+        <span>Contents</span>
+      </span>
+      <span class="sidebar-toggle-chevron" aria-hidden="true">▾</span>
+    `;
+
+    sidebar.parentNode.insertBefore(sidebarToggle, sidebar);
+
+    sidebarToggle.addEventListener("click", () => {
+      const expanded = sidebarToggle.getAttribute("aria-expanded") === "true";
+      sidebarToggle.setAttribute("aria-expanded", String(!expanded));
+      sidebar.classList.toggle("is-open", !expanded);
     });
   }
 

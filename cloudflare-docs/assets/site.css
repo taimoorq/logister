@@ -97,6 +97,40 @@ code, pre {
   font-weight: 700;
   color: var(--text);
 }
+.sidebar-toggle {
+  display: none;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  font-weight: 700;
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.sidebar-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.sidebar-toggle-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.sidebar-toggle-chevron {
+  color: var(--muted-2);
+  transition: transform 160ms ease;
+}
+.sidebar-toggle[aria-expanded="true"] .sidebar-toggle-chevron {
+  transform: rotate(180deg);
+}
 
 .page {
   max-width: 1320px;
@@ -488,8 +522,16 @@ code, pre {
   .docs-layout {
     grid-template-columns: 1fr;
   }
+  .sidebar-toggle {
+    display: inline-flex;
+  }
   .sidebar {
+    display: none;
     position: static;
+    margin-bottom: 1rem;
+  }
+  .sidebar.is-open {
+    display: block;
   }
   .outline-grid,
   .card-grid {
