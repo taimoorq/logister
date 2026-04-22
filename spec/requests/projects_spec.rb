@@ -19,6 +19,9 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Ruby gem")
         expect(response.body).to include(">Docs<")
         expect(response.body).to include("documentation section")
+        expect(response.body).to include("https://docs.logister.org/")
+        expect(response.body).to include('target="_blank"')
+        expect(response.body).to include('rel="noopener noreferrer"')
       end
     end
 
@@ -78,6 +81,8 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Integration guide")
         expect(response.body).to include("Ruby gem")
         expect(response.body).to include("logister-ruby")
+        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+        expect(response.body).to include('target="_blank"')
       end
 
       it "returns 404 for project user cannot access" do
@@ -101,6 +106,8 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Integration guide")
         expect(response.body).to include("CFML integration docs")
         expect(response.body).to include("Application.cfc.onError()")
+        expect(response.body).to include("https://docs.logister.org/integrations/cfml/")
+        expect(response.body).to include('target="_blank"')
       end
     end
   end
@@ -120,6 +127,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Instrumentation help")
         expect(response.body).to include("Ruby integration docs")
+        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
       it "renders database load stats when db.query metrics exist" do
@@ -176,6 +184,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Cron and uptime monitors")
         expect(response.body).to include("Ruby integration docs")
+        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
       it "returns 404 for project user cannot access" do
@@ -211,6 +220,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Custom events")
         expect(response.body).to include("Ruby integration docs")
+        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
       it "returns 404 for project user cannot access" do
@@ -233,6 +243,7 @@ RSpec.describe "Projects", type: :request do
         get activity_project_path(projects(:two))
         expect(response).to have_http_status(:success)
         expect(response.body).to include("CFML integration docs")
+        expect(response.body).to include("https://docs.logister.org/integrations/cfml/")
       end
     end
   end

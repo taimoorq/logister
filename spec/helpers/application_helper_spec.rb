@@ -12,6 +12,14 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#docs_site_url" do
+    it "returns the Cloudflare-hosted docs URL for the requested section" do
+      expect(helper.docs_site_url).to eq("https://docs.logister.org/")
+      expect(helper.docs_site_url(:http_api)).to eq("https://docs.logister.org/http-api/")
+      expect(helper.docs_site_url(:cfml_integration)).to eq("https://docs.logister.org/integrations/cfml/")
+    end
+  end
+
   describe "#parse_backtrace_frames" do
     it "parses structured CFML tagContext frames" do
       frames = helper.parse_backtrace_frames([

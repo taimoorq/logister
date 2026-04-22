@@ -16,6 +16,28 @@ All notable changes to Logister will be documented in this file.
 
 - TBD
 
+## v0.1.3 - 2026-04-21
+
+### Added
+
+- Standalone static documentation site under `cloudflare-docs/` for hosting on Cloudflare Pages.
+- Cloudflare Pages deployment workflow plus repo configuration for automatic docs publishes from `main`.
+- Static docs SEO assets including page-level canonical metadata, `robots.txt`, and a dedicated docs sitemap.
+- Shared app helper for linking to the external `docs.logister.org` site from Rails views and project integration surfaces.
+
+### Changed
+
+- Moved the public product and integration docs out of the Rails app and made `docs.logister.org` the canonical docs host.
+- Updated in-app docs links to open the external docs site in a new tab so users keep their place in the Logister app.
+- Shifted GitHub-facing documentation to point at the hosted docs site instead of duplicating setup content in repo markdown.
+- Limited the app sitemap to Rails-hosted marketing/legal pages and left docs discovery to the static docs sitemap.
+
+### Fixed
+
+- Legacy `/docs` Rails routes now issue permanent redirects to the Cloudflare-hosted docs pages for SEO continuity.
+- Removed the duplicate Rails docs implementation so the app no longer has two competing sources of documentation truth.
+- Tightened docs migration coverage around external links, redirects, and canonical docs URLs.
+
 ## v0.1.2 - 2026-04-21
 
 ### Added

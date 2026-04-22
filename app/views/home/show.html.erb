@@ -43,7 +43,7 @@
         </p>
         <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="200">
           <%= link_to "Start free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
-          <%= link_to "See docs", docs_path, class: "hero-btn hero-btn-secondary" %>
+          <%= link_to "See docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-secondary" %>
         </div>
         <div class="hero-proof" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="250">
           <span>No credit card</span>
@@ -258,7 +258,7 @@ LOGISTER_API_KEY=your_key_here
     </div>
     <div class="hero-actions">
       <%= link_to "Create free account", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
-      <%= link_to "Read docs", docs_path, class: "hero-btn hero-btn-secondary" %>
+      <%= link_to "Read docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-secondary" %>
     </div>
   </section>
 </div>

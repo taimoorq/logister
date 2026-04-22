@@ -144,7 +144,9 @@
           <p class="text-sm text-slate-600">
             Full setup guide:
             <%= link_to "CFML integration docs",
-                        docs_cfml_integration_path,
+                        docs_site_url(:cfml_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
@@ -171,7 +173,7 @@ end</code></pre>
 
           <p class="text-sm text-slate-600">
             Public setup guide:
-            <%= link_to "Ruby integration docs", docs_ruby_integration_path, class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            <%= link_to "Ruby integration docs", docs_site_url(:ruby_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% end %>

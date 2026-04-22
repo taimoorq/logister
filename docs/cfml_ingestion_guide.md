@@ -2,9 +2,9 @@
 
 The canonical CFML integration guide now lives in the public Logister documentation:
 
-- CFML integration: https://logister.org/docs/integrations/cfml
-- HTTP API reference: https://logister.org/docs/http-api
-- Getting started: https://logister.org/docs/getting-started
+- CFML integration: https://docs.logister.org/integrations/cfml/
+- HTTP API reference: https://docs.logister.org/http-api/
+- Getting started: https://docs.logister.org/getting-started/
 
 Use the public docs for:
 

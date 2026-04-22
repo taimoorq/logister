@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  docs_base_url = ENV.fetch("LOGISTER_DOCS_URL", "https://docs.logister.org").chomp("/")
+
   devise_for :users, controllers: {
     sessions: "users/sessions",
     registrations: "users/registrations",
@@ -6,15 +8,15 @@ Rails.application.routes.draw do
     confirmations: "users/confirmations"
   }
   root "home#show"
-  get "docs", to: "docs#index", as: :docs
-  get "docs/getting-started", to: "docs#getting_started", as: :docs_getting_started
-  get "docs/self-hosting", to: "docs#self_hosting", as: :docs_self_hosting
-  get "docs/local-development", to: "docs#local_development", as: :docs_local_development
-  get "docs/deployment", to: "docs#deployment", as: :docs_deployment
-  get "docs/clickhouse", to: "docs#clickhouse", as: :docs_clickhouse
-  get "docs/http-api", to: "docs#http_api", as: :docs_http_api
-  get "docs/integrations/ruby", to: "docs#ruby", as: :docs_ruby_integration
-  get "docs/integrations/cfml", to: "docs#cfml", as: :docs_cfml_integration
+  get "docs", to: redirect("#{docs_base_url}/", status: 301)
+  get "docs/getting-started", to: redirect("#{docs_base_url}/getting-started/", status: 301)
+  get "docs/self-hosting", to: redirect("#{docs_base_url}/self-hosting/", status: 301)
+  get "docs/local-development", to: redirect("#{docs_base_url}/local-development/", status: 301)
+  get "docs/deployment", to: redirect("#{docs_base_url}/deployment/", status: 301)
+  get "docs/clickhouse", to: redirect("#{docs_base_url}/clickhouse/", status: 301)
+  get "docs/http-api", to: redirect("#{docs_base_url}/http-api/", status: 301)
+  get "docs/integrations/ruby", to: redirect("#{docs_base_url}/integrations/ruby/", status: 301)
+  get "docs/integrations/cfml", to: redirect("#{docs_base_url}/integrations/cfml/", status: 301)
   get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }
   get "about", to: "home#about"
   get "privacy", to: "home#privacy"

@@ -8,15 +8,15 @@ PostgreSQL is the control-plane database (users/projects/api keys). Event analyt
 
 Most user-facing setup and integration guidance now lives in the app documentation instead of this README.
 
-- Overview: https://logister.org/docs
-- Getting started: https://logister.org/docs/getting-started
-- Self-hosting: https://logister.org/docs/self-hosting
-- Local development: https://logister.org/docs/local-development
-- Deployment config: https://logister.org/docs/deployment
-- HTTP API: https://logister.org/docs/http-api
-- ClickHouse: https://logister.org/docs/clickhouse
-- Ruby integration: https://logister.org/docs/integrations/ruby
-- CFML integration: https://logister.org/docs/integrations/cfml
+- Overview: https://docs.logister.org/
+- Getting started: https://docs.logister.org/getting-started/
+- Self-hosting: https://docs.logister.org/self-hosting/
+- Local development: https://docs.logister.org/local-development/
+- Deployment config: https://docs.logister.org/deployment/
+- HTTP API: https://docs.logister.org/http-api/
+- ClickHouse: https://docs.logister.org/clickhouse/
+- Ruby integration: https://docs.logister.org/integrations/ruby/
+- CFML integration: https://docs.logister.org/integrations/cfml/
 
 When updating setup, deployment, or integration guidance, prefer updating the public docs on `logister.org` first and keep this README focused on repository orientation.
 
@@ -65,7 +65,7 @@ Logister runs as a Rails web app with these components:
 
 - GitHub: https://github.com/taimoorq/logister-ruby
 - RubyGems: https://rubygems.org/gems/logister-ruby
-- Public integration docs: https://logister.org/docs/integrations/ruby
+- Public integration docs: https://docs.logister.org/integrations/ruby/
 
 To upgrade a client app:
 

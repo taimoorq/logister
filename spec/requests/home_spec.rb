@@ -18,6 +18,9 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include("Keep production calm even when your app is not.")
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("Start free")
+        expect(response.body).to include("https://docs.logister.org/")
+        expect(response.body).to include('target="_blank"')
+        expect(response.body).to include('rel="noopener noreferrer"')
         expect(response.body).to include("<meta name=\"description\"")
         expect(response.body).to include("application/ld+json")
         expect(response.body).to include("&quot;@context&quot;:&quot;https://schema.org&quot;")
@@ -55,10 +58,11 @@ RSpec.describe "Home", type: :request do
   end
 
   describe "GET /docs" do
-    it "returns success and docs content" do
-      get docs_path
-      expect(response).to have_http_status(:success)
-      expect(response.body).to include("Documentation")
+    it "redirects to the external docs site" do
+      get "/docs"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://docs.logister.org/")
     end
   end
 
@@ -94,15 +98,6 @@ RSpec.describe "Home", type: :request do
       expect(response.media_type).to eq("application/xml")
       expect(response.body).to include("<urlset")
       expect(response.body).to include(root_url)
-      expect(response.body).to include(docs_url)
-      expect(response.body).to include(docs_getting_started_url)
-      expect(response.body).to include(docs_self_hosting_url)
-      expect(response.body).to include(docs_local_development_url)
-      expect(response.body).to include(docs_deployment_url)
-      expect(response.body).to include(docs_clickhouse_url)
-      expect(response.body).to include(docs_http_api_url)
-      expect(response.body).to include(docs_ruby_integration_url)
-      expect(response.body).to include(docs_cfml_integration_url)
       expect(response.body).to include(about_url)
       expect(response.body).to include(privacy_url)
       expect(response.body).to include(terms_url)
@@ -115,15 +110,6 @@ RSpec.describe "Home", type: :request do
 
       expect(response).to have_http_status(:success)
       expect(response.body).to include("<loc>https://logister.org/</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/getting-started</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/self-hosting</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/local-development</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/deployment</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/clickhouse</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/http-api</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/integrations/ruby</loc>")
-      expect(response.body).to include("<loc>https://logister.org/docs/integrations/cfml</loc>")
       expect(response.body).to include("<loc>https://logister.org/about</loc>")
       expect(response.body).to include("<loc>https://logister.org/privacy</loc>")
       expect(response.body).to include("<loc>https://logister.org/terms</loc>")

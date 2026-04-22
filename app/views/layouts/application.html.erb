@@ -97,7 +97,7 @@
                 <%= app_icon(:projects, css: "w-4 h-4") %>
                 <span>Projects</span>
               <% end %>
-              <%= link_to docs_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{request.path.start_with?('/docs') ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" do %>
+              <%= link_to docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-900/60 hover:text-white" do %>
                 <%= app_icon(:all, css: "w-4 h-4") %>
                 <span>Docs</span>
               <% end %>
@@ -136,7 +136,7 @@
                 <%= app_icon(:info, css: "w-4 h-4") %>
                 <span>About</span>
               <% end %>
-              <%= link_to docs_path, class: "nav-link inline-flex items-center gap-2 py-3 md:py-2 px-3 rounded-lg text-sm font-medium #{request.path.start_with?('/docs') ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}" do %>
+              <%= link_to docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "nav-link inline-flex items-center gap-2 py-3 md:py-2 px-3 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900" do %>
                 <%= app_icon(:all, css: "w-4 h-4") %>
                 <span>Docs</span>
               <% end %>
@@ -172,7 +172,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p class="text-sm text-slate-500">© <%= Time.current.year %> Logister</p>
           <div class="flex items-center gap-4 text-sm">
-            <%= link_to "Docs", docs_path, class: "text-slate-600 hover:text-slate-900 no-underline #{request.path.start_with?('/docs') ? 'font-semibold text-slate-900' : ''}" %>
+            <%= link_to "Docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "text-slate-600 hover:text-slate-900 no-underline" %>
             <%= link_to "Privacy", privacy_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(privacy_path) ? 'font-semibold text-slate-900' : ''}" %>
             <%= link_to "Terms", terms_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(terms_path) ? 'font-semibold text-slate-900' : ''}" %>
             <% if cookie_consent_enabled %>

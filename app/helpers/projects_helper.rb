@@ -1,6 +1,6 @@
 module ProjectsHelper
   def project_integration_docs_path(project)
-    project&.integration_cfml? ? docs_cfml_integration_path : docs_ruby_integration_path
+    project&.integration_cfml? ? docs_site_url(:cfml_integration) : docs_site_url(:ruby_integration)
   end
 
   def project_integration_docs_label(project)

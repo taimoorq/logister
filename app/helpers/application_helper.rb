@@ -1,4 +1,17 @@
 module ApplicationHelper
+  DOCS_BASE_URL = ENV.fetch("LOGISTER_DOCS_URL", "https://docs.logister.org").chomp("/").freeze
+  DOCS_PATHS = {
+    overview: "/",
+    getting_started: "/getting-started/",
+    self_hosting: "/self-hosting/",
+    local_development: "/local-development/",
+    deployment: "/deployment/",
+    clickhouse: "/clickhouse/",
+    http_api: "/http-api/",
+    ruby_integration: "/integrations/ruby/",
+    cfml_integration: "/integrations/cfml/"
+  }.freeze
+
   ICON_PATHS = {
     plus: "M12 2.75a.75.75 0 0 1 .75.75v7.75h7.75a.75.75 0 0 1 0 1.5h-7.75v7.75a.75.75 0 0 1-1.5 0v-7.75H3.5a.75.75 0 0 1 0-1.5h7.75V3.5a.75.75 0 0 1 .75-.75Z",
     dashboard: "M3 13.5a1.5 1.5 0 0 1 1.5-1.5H9a1.5 1.5 0 0 1 1.5 1.5V19A1.5 1.5 0 0 1 9 20.5H4.5A1.5 1.5 0 0 1 3 19v-5.5Zm10.5-8A1.5 1.5 0 0 1 15 4h4.5A1.5 1.5 0 0 1 21 5.5V11a1.5 1.5 0 0 1-1.5 1.5H15a1.5 1.5 0 0 1-1.5-1.5V5.5ZM3 5.5A1.5 1.5 0 0 1 4.5 4H9a1.5 1.5 0 0 1 1.5 1.5V8A1.5 1.5 0 0 1 9 9.5H4.5A1.5 1.5 0 0 1 3 8V5.5Zm10.5 8A1.5 1.5 0 0 1 15 12h4.5a1.5 1.5 0 0 1 1.5 1.5V19a1.5 1.5 0 0 1-1.5 1.5H15a1.5 1.5 0 0 1-1.5-1.5v-5.5Z",
@@ -250,6 +263,15 @@ module ApplicationHelper
 
   def app_javascript_tags
     javascript_importmap_tags
+  end
+
+  def docs_site_url(section = :overview)
+    path = DOCS_PATHS.fetch(section.to_sym)
+    "#{DOCS_BASE_URL}#{path}"
+  end
+
+  def docs_site_host
+    DOCS_BASE_URL
   end
 
   # True when tailwindcss-rails has built app/assets/builds/tailwind.css.
