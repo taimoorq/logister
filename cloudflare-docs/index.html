@@ -4,21 +4,21 @@
     <meta charset="utf-8">
     <title>Documentation | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Public Logister documentation for Ruby, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
+    <meta name="description" content="Public Logister documentation for Ruby, Python, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Documentation | Logister">
-    <meta property="og:description" content="Public Logister documentation for Ruby, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
+    <meta property="og:description" content="Public Logister documentation for Ruby, Python, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://docs.logister.org/">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Documentation | Logister">
-    <meta name="twitter:description" content="Public Logister documentation for Ruby, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
+    <meta name="twitter:description" content="Public Logister documentation for Ruby, Python, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Documentation | Logister","description":"Public Logister documentation for Ruby, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Ruby error tracking"},{"@type":"Thing","name":"JavaScript and TypeScript observability"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Documentation | Logister","description":"Public Logister documentation for Ruby, Python, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Ruby error tracking"},{"@type":"Thing","name":"Python observability"},{"@type":"Thing","name":"JavaScript and TypeScript observability"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -47,7 +47,7 @@
           <span class="hero-kicker">Documentation</span>
           <h1>Logister Documentation</h1>
           <p>
-            Logister is a self-hosted bug and event tracker for web applications. Currently it has support for Javascript, Ruby and CFML based languages.
+            Logister is a self-hosted bug and event tracker for web applications. Currently it has support for Python, JavaScript, Ruby, and CFML based languages.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/getting-started/">Getting started</a>
@@ -73,6 +73,7 @@
             <div class="sidebar-group">
               <p class="sidebar-label">Integrations</p>
               <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/python/">Python integration</a>
               <a href="/integrations/cfml/">CFML integration</a>
               <a href="/integrations/javascript/">JavaScript integration</a>
             </div>
@@ -95,7 +96,7 @@
               <p class="eyebrow">Overview</p>
               <h2>Choose the guide that matches your project type.</h2>
               <p>
-                Logister provides public documentation for Ruby, CFML, and JavaScript integrations plus the operations guides needed
+                Logister provides public documentation for Ruby, Python, CFML, and JavaScript integrations plus the operations guides needed
                 to self-host the app. Start with the guide that matches how your application sends data today.
               </p>
               <blockquote>
@@ -115,6 +116,11 @@
                     <td><a href="/integrations/ruby/">Ruby integration</a></td>
                     <td>Rails and Ruby apps</td>
                     <td><code>logister-ruby</code> gem</td>
+                  </tr>
+                  <tr>
+                    <td><a href="/integrations/python/">Python integration</a></td>
+                    <td>FastAPI, Django, Celery, and general Python apps</td>
+                    <td><code>logister-python</code> package with framework helpers</td>
                   </tr>
                   <tr>
                     <td><a href="/integrations/cfml/">CFML integration</a></td>
@@ -158,6 +164,12 @@
                   <p><a href="/integrations/ruby/">Read Ruby docs</a></p>
                 </article>
                 <article class="card">
+                  <p class="eyebrow">Python</p>
+                  <h3>Install the package</h3>
+                  <p>Use the Python integration guide for FastAPI, Django, Celery, and shared-client Python apps.</p>
+                  <p><a href="/integrations/python/">Read Python docs</a></p>
+                </article>
+                <article class="card">
                   <p class="eyebrow">CFML</p>
                   <h3>Send direct payloads</h3>
                   <p>Use the CFML guide for Lucee or Adobe ColdFusion apps that talk to Logister over HTTP.</p>
@@ -178,7 +190,7 @@
               <ol>
                 <li>Create a project and choose the right integration type.</li>
                 <li>Generate an API key and store it immediately.</li>
-                <li>Pick the Ruby, CFML, or JavaScript guide based on your application stack.</li>
+                <li>Pick the Ruby, Python, CFML, or JavaScript guide based on your application stack.</li>
                 <li>Use the HTTP API page when you need the exact request shape.</li>
                 <li>Send one known-good event before broadening instrumentation.</li>
               </ol>
@@ -224,6 +236,7 @@
             <div class="footer-column">
               <h4>Integrations</h4>
               <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/python/">Python integration</a>
               <a href="/integrations/cfml/">CFML integration</a>
               <a href="/integrations/javascript/">JavaScript integration</a>
             </div>

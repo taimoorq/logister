@@ -60,4 +60,15 @@ This static export mirrors the current public docs pages from the Rails app:
 - ClickHouse
 - HTTP API
 - Ruby integration
+- Python integration
+- JavaScript integration
 - CFML integration
+
+## Updating the docs
+
+When you add or change docs pages in this folder:
+
+- update any repeated sidebar or footer integration links if navigation changed
+- update `sitemap.xml` when you add a new public page
+- preview locally with `wrangler pages dev cloudflare-docs`
+- deploy through the GitHub Actions workflow or `wrangler pages deploy cloudflare-docs --project-name=<project>`

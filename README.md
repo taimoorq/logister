@@ -40,6 +40,7 @@ Canonical setup and integration docs live on `docs.logister.org`.
 ### Integrations
 
 - Ruby integration: https://docs.logister.org/integrations/ruby/
+- Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
@@ -72,6 +73,7 @@ Use the guide that matches the app you want to connect:
 | Integration | Best for | Package / path |
 |----------|-------------|-------------|
 | Ruby | Rails and Ruby apps | `logister-ruby` + https://docs.logister.org/integrations/ruby/ |
+| Python | FastAPI, Django, Celery, and Python services | `logister-python` + https://docs.logister.org/integrations/python/ |
 | JavaScript / TypeScript | JavaScript and TypeScript services | `logister-js` + https://docs.logister.org/integrations/javascript/ |
 | CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
 | Direct HTTP API | Custom clients and unsupported runtimes | https://docs.logister.org/http-api/ |
@@ -108,6 +110,20 @@ If you want Docker-backed local infra, or want ClickHouse and PostgreSQL running
 
 If you are working on the static docs in `cloudflare-docs/`, use [cloudflare-docs/README.md](cloudflare-docs/README.md) for local preview and deployment notes.
 
+The shortest Cloudflare Pages workflow is:
+
+```bash
+wrangler pages dev cloudflare-docs
+```
+
+Update the static HTML under `cloudflare-docs/`, then deploy with the configured GitHub Actions workflow or a manual command like:
+
+```bash
+wrangler pages deploy cloudflare-docs --project-name=<project>
+```
+
+Use [cloudflare-docs/README.md](cloudflare-docs/README.md) for the full Cloudflare Pages setup, required secrets, analytics variables, and deployment details.
+
 ## Project documentation
 
 | Document | Description |
@@ -123,6 +139,7 @@ If you are working on the static docs in `cloudflare-docs/`, use [cloudflare-doc
 
 - Logister app: https://github.com/taimoorq/logister
 - Ruby package: https://github.com/taimoorq/logister-ruby
+- Python package: https://github.com/taimoorq/logister-python
 - JavaScript package: https://github.com/taimoorq/logister-js
 - RubyGems: https://rubygems.org/gems/logister-ruby
 - npm: https://www.npmjs.com/package/logister-js
