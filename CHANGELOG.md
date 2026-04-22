@@ -16,6 +16,23 @@ All notable changes to Logister will be documented in this file.
 
 - TBD
 
+## v0.1.4 - 2026-04-21
+
+### Added
+
+- JavaScript / TypeScript project integration type for apps using the `logister-js` package.
+- JavaScript integration guidance in project settings, activity, performance, and monitor flows.
+- Public JavaScript integration docs under `docs.logister.org/integrations/javascript/`.
+
+### Changed
+
+- Updated project integration helpers and labels so `logister-js` projects link to the right external documentation.
+- Expanded the static docs and SDK README content so `logister-js` clearly links back to the main Logister app and self-hosted backend.
+
+### Fixed
+
+- Closed the docs gap where JavaScript projects could be selected in the app without a matching public integration guide.
+
 ## v0.1.3 - 2026-04-21
 
 ### Added

@@ -22,7 +22,7 @@
     <div class="site-shell">
       <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">JavaScript integration</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://github.com/taimoorq/logister-js">SDK repo</a></nav></div></header>
       <main class="page">
-        <section class="hero"><span class="hero-kicker">Documentation / JavaScript</span><h1>Integrate a Node or TypeScript app with Logister.</h1><p>The best path for JavaScript and TypeScript projects is the <code>logister-js</code> package. It matches the JavaScript-specific setup experience in the app and is the recommended integration for Express-based services.</p></section>
+        <section class="hero"><span class="hero-kicker">Documentation / JavaScript</span><h1>Integrate a Node or TypeScript app with Logister.</h1><p>The best path for JavaScript and TypeScript projects is the <code>logister-js</code> package. It sends telemetry into the Logister backend and matches the JavaScript-specific setup experience in the app for Express-based services.</p></section>
         <div class="docs-layout">
           <aside class="sidebar">
             <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/self-hosting/">Self-hosting</a></div>
@@ -34,12 +34,15 @@
           <article class="article">
             <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>JavaScript / TypeScript</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates your app when sending events</td></tr><tr><td>Hosted Logister base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Node 18+ app</td><td>Lets you run the published <code>logister-js</code> package</td></tr></tbody></table></section>
             <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project and generate an API key.</li><li>Install <code>logister-js</code> in the Node or TypeScript app.</li><li>Configure the client with the project API key and base URL.</li><li>Add the Express middleware and error handler if you run an HTTP service.</li><li>Use the shared client for custom metrics, logs, transactions, and check-ins.</li></ol><div class="note tip"><h4>Tip</h4><p>Start with request timing and uncaught Express errors first. Once those are flowing, add custom events where you need more product-specific visibility.</p></div></section>
-            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Add the package</h2><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#js-install">Copy</button></div><pre><code id="js-install">npm install logister-js</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-client">Copy</button></div><pre><code id="js-client">import { LogisterClient } from "logister-js";
+            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Add the package</h2><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#js-install">Copy</button></div><pre><code id="js-install">npm install logister-js
+yarn add logister-js
+pnpm add logister-js
+bun add logister-js</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-client">Copy</button></div><pre><code id="js-client">import { LogisterClient } from "logister-js";
 
 const client = new LogisterClient({
   apiKey: process.env.LOGISTER_API_KEY ?? "",
   baseUrl: process.env.LOGISTER_BASE_URL ?? "https://logister.org"
-});</code></pre></div><p>Package source: <a href="https://github.com/taimoorq/logister-js">logister-js on GitHub</a>.</p></section>
+});</code></pre></div><p>Package source: <a href="https://github.com/taimoorq/logister-js">logister-js on GitHub</a>. Self-hosted backend: <a href="https://github.com/taimoorq/logister">Logister app on GitHub</a>.</p></section>
             <section id="express" class="section"><p class="eyebrow">Express</p><h2>Capture requests and uncaught route errors.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-express">Copy</button></div><pre><code id="js-express">import express from "express";
 import { LogisterClient } from "logister-js";
 import {
