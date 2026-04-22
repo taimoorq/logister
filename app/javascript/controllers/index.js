@@ -1,6 +1,7 @@
 import { application } from "controllers/application"
 import CopyController from "controllers/copy_controller"
 import CountupController from "controllers/countup_controller"
+import FrameTabsController from "controllers/frame_tabs_controller"
 import HelloController from "controllers/hello_controller"
 import InboxController from "controllers/inbox_controller"
 import LocalTimeController from "controllers/local_time_controller"
@@ -12,6 +13,7 @@ import TabsController from "controllers/tabs_controller"
 
 application.register("copy", CopyController)
 application.register("countup", CountupController)
+application.register("frame-tabs", FrameTabsController)
 application.register("hello", HelloController)
 application.register("inbox", InboxController)
 application.register("local-time", LocalTimeController)

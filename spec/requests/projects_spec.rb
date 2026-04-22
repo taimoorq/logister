@@ -84,6 +84,21 @@ RSpec.describe "Projects", type: :request do
         expect(detail_frame.text).to include("Related logs")
       end
 
+      it "marks the active filter and selected inbox row with accessible state attributes" do
+        get project_path(projects(:system_inbox), filter: "unresolved", group_uuid: error_groups(:system_primary_group).uuid)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        active_filter = document.at_css(".inbox-filter-link[aria-current='page']")
+        selected_row = document.at_css("tr.inbox-row[aria-selected='true']")
+
+        expect(active_filter).to be_present
+        expect(active_filter.text).to include("Open")
+        expect(selected_row).to be_present
+        expect(selected_row["id"]).to eq(ActionView::RecordIdentifier.dom_id(error_groups(:system_primary_group)))
+      end
+
       it "ignores a selected event when it does not belong to the selected group" do
         project = create(:project, user: users(:one), integration_kind: "python", name: "Python Inbox")
         api_key = create(:api_key, user: users(:one), project: project, name: "python-inbox")

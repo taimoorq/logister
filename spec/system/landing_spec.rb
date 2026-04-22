@@ -15,4 +15,32 @@ RSpec.describe "Landing and dashboard", type: :system do
     visit root_path
     expect(page).to have_current_path(dashboard_path)
   end
+
+  it "uses the nav state attributes for the mobile menu" do
+    visit root_path
+    page.current_window.resize_to(390, 844)
+    Capybara.using_wait_time(10) do
+      page.document.synchronize do
+        ready = page.evaluate_script(<<~JS)
+          Boolean(
+            window.Stimulus &&
+            window.Stimulus.controllers.some((controller) => controller.identifier === "nav")
+          )
+        JS
+        raise Capybara::ExpectationNotMet, "expected nav Stimulus controller to connect" unless ready
+      end
+    end
+
+    nav = find("nav", visible: :all)
+    toggle = find("button[aria-controls='nav-menu-panel']")
+    expect(toggle["aria-expanded"]).to eq("false")
+    expect(nav["data-nav-state"]).to eq("closed")
+    expect(page).to have_css("#nav-menu-panel[aria-hidden='true']", visible: :hidden)
+
+    toggle.click
+
+    expect(find("nav", visible: :all)["data-nav-state"]).to eq("open")
+    expect(find("button[aria-controls='nav-menu-panel']")["aria-expanded"]).to eq("true")
+    expect(page).to have_css("#nav-menu-panel[aria-hidden='false']")
+  end
 end

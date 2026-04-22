@@ -6,13 +6,14 @@ import { Controller } from "@hotwired/stimulus"
 //   - Row selection highlight
 export default class extends Controller {
   static get targets() {
-    return ["filterLink", "filterField", "searchForm", "searchInput"]
+    return ["detailPane", "filterLink", "filterField", "listPane", "searchForm", "searchInput"]
   }
 
   connect() {
     this._searchTimer = null
     this.savedPageScrollY = null
     this.savedListScrollTop = null
+    this.clearBusyState()
   }
 
   disconnect() {
@@ -34,8 +35,15 @@ export default class extends Controller {
   // ── Filter tab switching ─────────────────────────────────────────────────
   activateFilter(event) {
     const link = event.currentTarget
-    this.filterLinkTargets.forEach(l => l.classList.remove("is-active"))
-    link.classList.add("is-active")
+    this.filterLinkTargets.forEach(currentLink => {
+      const isActive = currentLink === link
+      currentLink.classList.toggle("is-active", isActive)
+      if (isActive) {
+        currentLink.setAttribute("aria-current", "page")
+      } else {
+        currentLink.removeAttribute("aria-current")
+      }
+    })
 
     // Keep the hidden filter field in sync so search submits the right filter
     if (this.hasFilterFieldTarget) {
@@ -93,38 +101,63 @@ export default class extends Controller {
   }
 
   onDetailLoaded(event) {
-    const frame = event.target
-    if (!(frame instanceof HTMLElement) || frame.id !== "error_detail") return
-
-    if (typeof this.savedListScrollTop === "number") {
-      const list = this.findListScroller()
-      if (list) list.scrollTop = this.savedListScrollTop
-    }
-
-    if (typeof this.savedPageScrollY === "number") {
-      window.scrollTo({ top: this.savedPageScrollY, left: 0, behavior: "auto" })
-    }
-
-    this.savedListScrollTop = null
-    this.savedPageScrollY = null
+    this.onFrameLoaded(event)
   }
 
   setSelectedRow(row) {
-    this.element.querySelectorAll(".inbox-table tbody tr").forEach(r => r.classList.remove("is-selected"))
-    row.classList.add("is-selected")
+    this.element.querySelectorAll(".inbox-table tbody tr").forEach(currentRow => {
+      const isSelected = currentRow === row
+      currentRow.classList.toggle("is-selected", isSelected)
+      currentRow.setAttribute("aria-selected", isSelected ? "true" : "false")
+    })
   }
 
   onBeforeFetch(event) {
     const target = event.target
     if (!(target instanceof HTMLElement)) return
-    if (target.id !== "error_detail") return
+    if (target.id === "error_detail") {
+      this.savedPageScrollY = window.scrollY
+      const list = this.findListScroller()
+      this.savedListScrollTop = list ? list.scrollTop : null
+      this.setBusy(this.hasDetailPaneTarget ? this.detailPaneTarget : null, true)
+    } else if (target.id === "project_inbox") {
+      this.setBusy(this.hasListPaneTarget ? this.listPaneTarget : null, true)
+    }
+  }
 
-    this.savedPageScrollY = window.scrollY
-    const list = this.findListScroller()
-    this.savedListScrollTop = list ? list.scrollTop : null
+  onFrameLoaded(event) {
+    const frame = event.target
+    if (!(frame instanceof HTMLElement)) return
+
+    if (frame.id === "error_detail") {
+      if (typeof this.savedListScrollTop === "number") {
+        const list = this.findListScroller()
+        if (list) list.scrollTop = this.savedListScrollTop
+      }
+
+      if (typeof this.savedPageScrollY === "number") {
+        window.scrollTo({ top: this.savedPageScrollY, left: 0, behavior: "auto" })
+      }
+
+      this.savedListScrollTop = null
+      this.savedPageScrollY = null
+      this.setBusy(this.hasDetailPaneTarget ? this.detailPaneTarget : null, false)
+    } else if (frame.id === "project_inbox") {
+      this.setBusy(this.hasListPaneTarget ? this.listPaneTarget : null, false)
+    }
   }
 
   findListScroller() {
     return this.element.querySelector(".inbox-list-scroll")
+  }
+
+  clearBusyState() {
+    if (this.hasListPaneTarget) this.setBusy(this.listPaneTarget, false)
+    if (this.hasDetailPaneTarget) this.setBusy(this.detailPaneTarget, false)
+  }
+
+  setBusy(element, busy) {
+    if (!element) return
+    element.setAttribute("aria-busy", busy ? "true" : "false")
   }
 }

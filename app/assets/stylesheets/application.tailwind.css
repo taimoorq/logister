@@ -123,13 +123,15 @@
   .inbox-filter-link {
     @apply flex justify-between items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline text-slate-600 hover:bg-slate-100;
   }
-  .inbox-filter-link.is-active {
+  .inbox-filter-link.is-active,
+  .inbox-filter-link[aria-current="page"] {
     @apply bg-blue-50 text-blue-700 font-medium;
   }
   .filter-count {
     @apply text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2 min-w-[1.5rem] text-center;
   }
-  .inbox-filter-link.is-active .filter-count {
+  .inbox-filter-link.is-active .filter-count,
+  .inbox-filter-link[aria-current="page"] .filter-count {
     @apply bg-blue-100 border-blue-200 text-blue-700;
   }
   .inbox-table-wrap {
@@ -161,8 +163,18 @@
   .inbox-table .inbox-row:hover {
     @apply bg-slate-50;
   }
-  .inbox-table .inbox-row.is-selected {
+  .inbox-table .inbox-row.is-selected,
+  .inbox-table .inbox-row[aria-selected="true"] {
     @apply bg-blue-50 border-l-4 border-l-blue-600;
+  }
+  .inbox-workbench-list .inbox-table-wrap,
+  .inbox-workbench-detail turbo-frame#error_detail {
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+  .inbox-workbench-list[aria-busy="true"] .inbox-table-wrap,
+  .inbox-workbench-detail[aria-busy="true"] turbo-frame#error_detail {
+    opacity: 0.68;
+    transform: translateY(2px);
   }
   .inbox-table td {
     @apply px-4 py-3 text-sm;
@@ -239,14 +251,21 @@
   .detail-tab:hover {
     @apply bg-slate-100 text-slate-900;
   }
-  .detail-tab.is-active {
+  .detail-tab.is-active,
+  .detail-tab[aria-current="page"] {
     @apply bg-blue-50 text-blue-800 border-blue-200 font-semibold;
   }
   .detail-panel {
-    @apply block;
+    @apply block transition-opacity duration-150 ease-out;
   }
   .detail-panel.is-hidden {
     @apply hidden;
+  }
+  .detail-tabs-wrap[aria-busy="true"] {
+    @apply opacity-75;
+  }
+  .detail-tabs-wrap[aria-busy="true"] .detail-tabs {
+    @apply pointer-events-none;
   }
   .detail-meta-strip {
     @apply flex flex-wrap gap-4 py-3 border-b border-slate-200 mb-4;
@@ -1879,6 +1898,28 @@
       min-height: 2.75rem;
       display: inline-flex;
       align-items: center;
+    }
+
+    .nav-panel {
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .nav-shell[data-nav-state="open"] .nav-panel {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .nav-shell[data-nav-state="closed"] .nav-icon-close,
+    .nav-shell[data-nav-state="open"] .nav-icon-open {
+      display: none;
+    }
+
+    .nav-shell[data-nav-state="closed"] .nav-icon-open,
+    .nav-shell[data-nav-state="open"] .nav-icon-close {
+      display: block;
     }
   }
 }

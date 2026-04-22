@@ -1,6 +1,7 @@
 <nav id="inbox_counts" class="inbox-filters">
   <%= link_to project_path(project, filter: "unresolved", q: query),
               class: "inbox-filter-link #{"is-active" if filter == "unresolved"}",
+              aria: { current: ("page" if filter == "unresolved") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
                       action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
     <span class="filter-label inline-flex items-center gap-1.5"><%= app_icon(:warning, css: "w-3.5 h-3.5") %><span>Open</span></span>
@@ -9,6 +10,7 @@
 
   <%= link_to project_path(project, filter: "introduced_today", q: query),
               class: "inbox-filter-link #{"is-active" if filter == "introduced_today"}",
+              aria: { current: ("page" if filter == "introduced_today") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
                       action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
     <span class="filter-label inline-flex items-center gap-1.5"><%= app_icon(:calendar, css: "w-3.5 h-3.5") %><span>Introduced today</span></span>
@@ -17,6 +19,7 @@
 
   <%= link_to project_path(project, filter: "resolved", q: query),
               class: "inbox-filter-link #{"is-active" if filter == "resolved"}",
+              aria: { current: ("page" if filter == "resolved") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
                       action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
     <span class="filter-label inline-flex items-center gap-1.5"><%= app_icon(:check, css: "w-3.5 h-3.5") %><span>Resolved</span></span>
@@ -25,6 +28,7 @@
 
   <%= link_to project_path(project, filter: "ignored", q: query),
               class: "inbox-filter-link #{"is-active" if filter == "ignored"}",
+              aria: { current: ("page" if filter == "ignored") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
                       action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
     <span class="filter-label inline-flex items-center gap-1.5"><%= app_icon(:x, css: "w-3.5 h-3.5") %><span>Ignored</span></span>
@@ -33,6 +37,7 @@
 
   <%= link_to project_path(project, filter: "archived", q: query),
               class: "inbox-filter-link #{"is-active" if filter == "archived"}",
+              aria: { current: ("page" if filter == "archived") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
                       action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
     <span class="filter-label inline-flex items-center gap-1.5"><%= app_icon(:archive, css: "w-3.5 h-3.5") %><span>Archived</span></span>
@@ -41,6 +46,7 @@
 
   <%= link_to project_path(project, filter: "all", q: query),
               class: "inbox-filter-link #{"is-active" if filter == "all"}",
+              aria: { current: ("page" if filter == "all") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
                       action: "click->inbox#activateFilter", inbox_target: "filterLink" } do %>
     <span class="filter-label inline-flex items-center gap-1.5"><%= app_icon(:all, css: "w-3.5 h-3.5") %><span>All</span></span>

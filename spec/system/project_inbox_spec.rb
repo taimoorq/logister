@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "Project inbox", type: :system do
+  include ActionView::RecordIdentifier
+
   def sign_in_via_browser(email:, password:)
     visit new_user_session_path
     fill_in "Email", with: email
@@ -26,6 +28,9 @@ RSpec.describe "Project inbox", type: :system do
       expect(page).to have_content("Secondary inbox error")
       expect(page).to have_content("OrdersController#create")
     end
+
+    expect(page).to have_css("tr##{dom_id(error_groups(:system_secondary_group))}[aria-selected='true']")
+    expect(page).to have_css("tr##{dom_id(error_groups(:system_primary_group))}[aria-selected='false']")
   end
 
   it "switches detail tabs within the Turbo frame" do
@@ -36,6 +41,7 @@ RSpec.describe "Project inbox", type: :system do
     within("turbo-frame#error_detail") do
       expect(page).to have_content("Primary inbox error")
       click_link "Related logs (1)"
+      expect(page).to have_css(".detail-tab[aria-current='page']", text: "Related logs (1)")
       expect(page).to have_content("Related log for the primary inbox error")
     end
   end

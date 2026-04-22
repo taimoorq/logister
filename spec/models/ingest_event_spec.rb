@@ -295,5 +295,65 @@ RSpec.describe IngestEvent, type: :model do
       results = described_class.related_logs(project: project, event: error_event)
       expect(results).to include(related_log)
     end
+
+    it "matches logs by session and nested user identifiers and returns newest first" do
+      project = projects(:one)
+      api_key = api_keys(:one)
+      error_event = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        level: "error",
+        message: "Session checkout failed",
+        occurred_at: Time.current,
+        context: { "sessionId" => "session-123", "user" => { "id" => "user-42" } }
+      )
+      older_log = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "older matching log",
+        occurred_at: 2.minutes.ago,
+        context: { "session_id" => "session-123" }
+      )
+      newer_log = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "newer matching log",
+        occurred_at: 1.minute.ago,
+        context: { "user" => { "id" => "user-42" } }
+      )
+      unrelated_log = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "unrelated log",
+        occurred_at: 30.seconds.ago,
+        context: { "sessionId" => "other-session" }
+      )
+
+      results = described_class.related_logs(project: project, event: error_event)
+
+      expect(results).to eq([ newer_log, older_log ])
+      expect(results).not_to include(unrelated_log)
+    end
+
+    it "returns an empty array when the event has no correlation identifiers" do
+      event = described_class.create!(
+        project: projects(:one),
+        api_key: api_keys(:one),
+        event_type: :error,
+        level: "error",
+        message: "No correlation keys",
+        occurred_at: Time.current,
+        context: {}
+      )
+
+      expect(described_class.related_logs(project: projects(:one), event: event)).to eq([])
+    end
   end
 end

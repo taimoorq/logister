@@ -30,6 +30,8 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include('<turbo-frame id="error_detail"')
         expect(response.body).to include("Context")
         expect(response.body).to include("Related logs")
+        expect(response.body).to include('aria-current="page"')
+        expect(response.body).to include('aria-selected="true"')
       end
     end
 

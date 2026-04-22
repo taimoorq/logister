@@ -6,31 +6,39 @@ export default class extends Controller {
     return ["toggle", "panel", "iconOpen", "iconClose"]
   }
 
+  connect() {
+    this.mobileOpen = false
+    this.boundSyncForViewport = this.syncForViewport.bind(this)
+    window.addEventListener("resize", this.boundSyncForViewport)
+    this.syncForViewport()
+  }
+
+  disconnect() {
+    window.removeEventListener("resize", this.boundSyncForViewport)
+  }
+
   toggle(event) {
     event.stopPropagation()
     this.isOpen() ? this.close() : this.open()
   }
 
   open() {
-    this.panelTarget.classList.remove("hidden")
-    if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "true")
-    if (this.hasIconOpenTarget) this.iconOpenTarget.classList.add("hidden")
-    if (this.hasIconCloseTarget) this.iconCloseTarget.classList.remove("hidden")
+    this.mobileOpen = true
+    this.applyState(true)
   }
 
   close() {
-    if (this.hasPanelTarget) this.panelTarget.classList.add("hidden")
     this.closeOpenMenus()
-    if (this.hasToggleTarget) this.toggleTarget.setAttribute("aria-expanded", "false")
-    if (this.hasIconOpenTarget) this.iconOpenTarget.classList.remove("hidden")
-    if (this.hasIconCloseTarget) this.iconCloseTarget.classList.add("hidden")
+    this.mobileOpen = false
+    this.applyState(false)
   }
 
   isOpen() {
-    return this.hasPanelTarget && !this.panelTarget.classList.contains("hidden")
+    return this.element.dataset.navState === "open"
   }
 
   closeOnClickOutside(event) {
+    if (this.isDesktop()) return
     if (this.isOpen() && this.hasPanelTarget && this.hasToggleTarget &&
         !this.panelTarget.contains(event.target) && !this.toggleTarget.contains(event.target)) {
       this.close()
@@ -38,6 +46,7 @@ export default class extends Controller {
   }
 
   closeOnEscape(event) {
+    if (this.isDesktop()) return
     if (event.key === "Escape" && this.isOpen()) this.close()
   }
 
@@ -52,5 +61,28 @@ export default class extends Controller {
     this.panelTarget.querySelectorAll("details[open]").forEach((el) => {
       el.removeAttribute("open")
     })
+  }
+
+  applyState(open) {
+    const panelVisible = this.isDesktop() || open
+    this.element.dataset.navState = panelVisible ? "open" : "closed"
+
+    if (this.hasPanelTarget) {
+      this.panelTarget.classList.toggle("hidden", !panelVisible)
+      this.panelTarget.setAttribute("aria-hidden", panelVisible ? "false" : "true")
+      this.panelTarget.dataset.state = panelVisible ? "open" : "closed"
+    }
+
+    if (this.hasToggleTarget) {
+      this.toggleTarget.setAttribute("aria-expanded", !this.isDesktop() && open ? "true" : "false")
+    }
+  }
+
+  syncForViewport() {
+    this.applyState(this.mobileOpen)
+  }
+
+  isDesktop() {
+    return window.matchMedia("(min-width: 768px)").matches
   }
 }

@@ -1,4 +1,6 @@
 module ApplicationHelper
+  include ProjectEvents::PayloadSupport
+
   DOCS_BASE_URL = ENV.fetch("LOGISTER_DOCS_URL", "https://docs.logister.org").chomp("/").freeze
   DOCS_PATHS = {
     overview: "/",
@@ -43,49 +45,8 @@ module ApplicationHelper
     shield: "M12 2.75 4.5 5.6v5.43c0 4.7 3.08 8.88 7.5 10.22 4.42-1.34 7.5-5.52 7.5-10.22V5.6L12 2.75Zm0 2 6 2.28v4c0 3.9-2.44 7.4-6 8.67-3.56-1.27-6-4.77-6-8.67v-4l6-2.28Z"
   }.freeze
 
-  REQUEST_DETAIL_KEYS = {
-    client_ip: [ [ "clientIp" ], [ "client_ip" ], [ "request", "clientIp" ], [ "request", "client_ip" ], [ "request", "ip" ], [ "request", "remote_ip" ] ],
-    headers: [ [ "headers" ], [ "request", "headers" ] ],
-    http_method: [ [ "httpMethod" ], [ "http_method" ], [ "method" ], [ "request", "httpMethod" ], [ "request", "http_method" ], [ "request", "method" ] ],
-    http_version: [ [ "httpVersion" ], [ "http_version" ], [ "request", "httpVersion" ], [ "request", "http_version" ], [ "request", "version" ] ],
-    params: [ [ "params" ], [ "request", "params" ] ],
-    rails_action: [ [ "railsAction" ], [ "rails_action" ], [ "request", "railsAction" ], [ "request", "rails_action" ] ],
-    referer: [ [ "referer" ], [ "referrer" ], [ "request", "referer" ], [ "request", "referrer" ] ],
-    request_id: [ [ "requestId" ], [ "request_id" ], [ "request", "requestId" ], [ "request", "request_id" ], [ "request", "id" ] ],
-    url: [ [ "url" ], [ "request", "url" ], [ "request", "original_url" ] ]
-  }.freeze
-
   def request_context_details(event)
-    context = event_context_hash(event)
-
-    headers = normalize_hash(first_hash_value(context, :headers))
-    params = normalize_hash(first_hash_value(context, :params))
-
-    rails_action = first_scalar_value(context, :rails_action)
-    if rails_action.blank?
-      controller_name = value_from_hash(params, "controller")
-      action_name = value_from_hash(params, "action")
-      rails_action = "#{controller_name}##{action_name}" if controller_name.present? && action_name.present?
-    end
-
-    referer = first_scalar_value(context, :referer)
-    referer ||= value_from_hash(headers, "Referer")
-    referer ||= value_from_hash(headers, "Referrer")
-
-    http_version = first_scalar_value(context, :http_version)
-    http_version ||= value_from_hash(headers, "Version")
-
-    {
-      client_ip: first_scalar_value(context, :client_ip),
-      headers: headers,
-      http_method: first_scalar_value(context, :http_method),
-      http_version: http_version,
-      params: params,
-      rails_action: rails_action,
-      referer: referer,
-      request_id: first_scalar_value(context, :request_id),
-      url: first_scalar_value(context, :url)
-    }
+    ProjectEvents::RequestContextPresenter.new(event).details
   end
 
   def pretty_context_json(value)
@@ -94,173 +55,40 @@ module ApplicationHelper
     value.to_s
   end
 
-  # Parses Ruby-style backtrace lines into frame hashes usable by the debugger-like UI.
-  def parse_backtrace_frames(backtrace)
-    Array(backtrace).filter_map do |line|
-      parsed = if line.is_a?(Hash)
-        parse_structured_backtrace_frame(line)
-      else
-        parse_backtrace_line(line.to_s)
-      end
-      next if parsed.blank?
-
-      absolute_path = absolute_source_path(parsed[:file])
-      app_frame = application_frame_path?(parsed[:file], absolute_path)
-
-      {
-        raw: line.to_s,
-        file: parsed[:file],
-        line_number: parsed[:line_number],
-        column_number: parsed[:column_number],
-        method_name: parsed[:method_name],
-        code_context: parsed[:code_context],
-        locals: parsed[:locals],
-        absolute_path: absolute_path,
-        application_frame: app_frame
-      }
-    end
-  end
-
   def cfml_exception_frames(exception_data)
-    exception_hash = normalize_hash(exception_data)
-    tag_context = exception_hash["tagContext"] || exception_hash[:tagContext] ||
-      exception_hash["tag_context"] || exception_hash[:tag_context]
-    return parse_backtrace_frames(tag_context) if tag_context.present?
-
-    backtrace = exception_hash["backtrace"] || exception_hash[:backtrace]
-    parse_backtrace_frames(backtrace)
+    ProjectEvents::CfmlEventPresenter.new(nil, exception_data).frames
   end
 
   def cfml_exception_summary(exception_data, fallback_message = nil)
-    exception_hash = normalize_hash(exception_data)
-
-    {
-      class_name: exception_hash["class"].presence ||
-        exception_hash[:class].presence ||
-        exception_hash["type"].presence ||
-        exception_hash[:type].presence ||
-        "ColdFusion Exception",
-      message: exception_hash["message"].presence ||
-        exception_hash[:message].presence ||
-        fallback_message.to_s.lines.first.to_s.strip.presence ||
-        "Unhandled CFML exception",
-      detail: exception_hash["detail"].presence ||
-        exception_hash[:detail].presence ||
-        exception_hash["extendedInfo"].presence ||
-        exception_hash[:extendedInfo].presence,
-      error_code: exception_hash["errorCode"].presence || exception_hash[:errorCode].presence,
-      extended_info: exception_hash["extendedInfo"].presence || exception_hash[:extendedInfo].presence
-    }
+    ProjectEvents::CfmlEventPresenter.new(nil, exception_data).summary(fallback_message)
   end
 
   def python_exception_frames(exception_data)
-    exception_hash = normalize_hash(exception_data)
-    frames = exception_hash["frames"] || exception_hash[:frames]
-    return parse_backtrace_frames(frames) if frames.present?
-
-    backtrace = exception_hash["backtrace"] || exception_hash[:backtrace]
-    parse_backtrace_frames(backtrace)
+    ProjectEvents::PythonEventPresenter.new(nil, exception_data).frames
   end
 
   def python_exception_summary(exception_data, fallback_message = nil)
-    exception_hash = normalize_hash(exception_data)
-
-    {
-      class_name: exception_hash["class"].presence ||
-        exception_hash[:class].presence ||
-        exception_hash["type"].presence ||
-        exception_hash[:type].presence ||
-        "Python exception",
-      message: exception_hash["message"].presence ||
-        exception_hash[:message].presence ||
-        fallback_message.to_s.lines.first.to_s.strip.presence ||
-        "Unhandled Python exception"
-    }
+    ProjectEvents::PythonEventPresenter.new(nil, exception_data).summary(fallback_message)
   end
 
   def python_exception_chain(exception_data, chain = [], label: "cause")
-    exception_hash = normalize_hash(exception_data)
-    return chain unless exception_hash.present?
-
-    cause = normalize_hash(exception_hash["cause"] || exception_hash[:cause])
-    if cause.present?
-      chain << {
-        label: label,
-        class_name: cause["class"].presence || cause[:class].presence || cause["qualified_class"].presence || cause[:qualified_class].presence,
-        message: cause["message"].presence || cause[:message].presence,
-        frames: python_exception_frames(cause)
-      }
-      python_exception_chain(cause, chain, label: "cause")
-    end
-
-    context = normalize_hash(exception_hash["context"] || exception_hash[:context])
-    if context.present?
-      chain << {
-        label: "context",
-        class_name: context["class"].presence || context[:class].presence || context["qualified_class"].presence || context[:qualified_class].presence,
-        message: context["message"].presence || context[:message].presence,
-        frames: python_exception_frames(context)
-      }
-      python_exception_chain(context, chain, label: "context")
-    end
-
-    chain
+    chain + ProjectEvents::PythonEventPresenter.new(nil, exception_data).exception_chain
   end
 
   def python_runtime_details(event)
-    context = event_context_hash(event)
-
-    {
-      framework: value_from_hash(context, "framework"),
-      runtime: value_from_hash(context, "runtime"),
-      python_version: value_from_hash(context, "python_version"),
-      python_implementation: value_from_hash(context, "python_implementation"),
-      platform: value_from_hash(context, "platform"),
-      hostname: value_from_hash(context, "hostname"),
-      process_id: value_from_hash(context, "process_id"),
-      runtime_name: value_from_hash(context, "runtime_name"),
-      release: value_from_hash(context, "release"),
-      environment: value_from_hash(context, "environment")
-    }
+    ProjectEvents::PythonEventPresenter.new(event).runtime_details
   end
 
   def python_execution_details(event)
-    context = event_context_hash(event)
-
-    {
-      route: value_from_hash(context, "route"),
-      endpoint: value_from_hash(context, "endpoint"),
-      blueprint: value_from_hash(context, "blueprint"),
-      task_name: value_from_hash(context, "task_name"),
-      task_id: value_from_hash(context, "task_id"),
-      task_module: value_from_hash(context, "task_module"),
-      queue: value_from_hash(context, "queue"),
-      retries: value_from_hash(context, "retries"),
-      eta: value_from_hash(context, "eta"),
-      client_ip: value_from_hash(context, "client_ip"),
-      query_string: value_from_hash(context, "query_string")
-    }
+    ProjectEvents::PythonEventPresenter.new(event).execution_details
   end
 
   def python_logger_details(event)
-    context = event_context_hash(event)
-    logger = normalize_hash(context["logger"] || context[:logger])
-
-    {
-      logger_name: value_from_hash(context, "logger_name") || value_from_hash(logger, "name"),
-      module: value_from_hash(logger, "module"),
-      pathname: value_from_hash(logger, "pathname"),
-      filename: value_from_hash(logger, "filename"),
-      function: value_from_hash(logger, "function"),
-      line_number: value_from_hash(logger, "line_number"),
-      process: value_from_hash(logger, "process"),
-      thread: value_from_hash(logger, "thread")
-    }
+    ProjectEvents::PythonEventPresenter.new(event).logger_details
   end
 
   def python_log_record_details(event)
-    context = event_context_hash(event)
-    normalize_hash(context["log_record"] || context[:log_record])
+    ProjectEvents::PythonEventPresenter.new(event).log_record_details
   end
 
   def event_exception_data(event)
@@ -315,195 +143,45 @@ module ApplicationHelper
   def python_activity_summary(event)
     return nil unless event.respond_to?(:context)
 
-    logger = python_logger_details(event)
-    execution = python_execution_details(event)
-
-    parts = []
-    parts << logger[:logger_name] if logger[:logger_name].present?
-
-    origin = if logger[:function].present? && logger[:filename].present?
-      "#{logger[:function]}() in #{logger[:filename]}"
-    elsif logger[:function].present?
-      "#{logger[:function]}()"
-    elsif logger[:filename].present?
-      logger[:filename]
-    end
-    parts << origin if origin.present?
-
-    if execution[:task_name].present?
-      parts << "task #{execution[:task_name]}"
-    elsif execution[:route].present?
-      parts << execution[:route]
-    elsif execution[:endpoint].present?
-      parts << execution[:endpoint]
-    end
-
-    parts.compact_blank.join(" · ").presence
+    ProjectEvents::PythonEventPresenter.new(event).activity_summary
   end
 
   def javascript_exception_stack(exception_data)
-    exception_hash = normalize_hash(exception_data)
-    stack = exception_hash["stack"] || exception_hash[:stack]
-    return stack.to_s if stack.present?
-
-    backtrace = exception_hash["backtrace"] || exception_hash[:backtrace]
-    Array(backtrace).join("\n")
+    ProjectEvents::JavascriptEventPresenter.new(nil, exception_data).stack
   end
 
   def javascript_exception_frames(exception_data)
-    exception_hash = normalize_hash(exception_data)
-    frames = exception_hash["frames"] || exception_hash[:frames]
-    return parse_backtrace_frames(frames) if frames.present?
-
-    stack = javascript_exception_stack(exception_data)
-    lines = stack.to_s.lines.map(&:strip).reject(&:blank?)
-    lines = lines.drop(1) if lines.first&.match?(/\A[\w$.]+(?::|Error)/)
-    parse_backtrace_frames(lines)
+    ProjectEvents::JavascriptEventPresenter.new(nil, exception_data).frames
   end
 
   def javascript_exception_summary(exception_data, fallback_message = nil)
-    exception_hash = normalize_hash(exception_data)
-    stack_lines = javascript_exception_stack(exception_data).to_s.lines.map(&:strip)
-    headline = stack_lines.first.to_s
-    inferred_class, inferred_message = if headline.include?(":")
-      headline.split(":", 2).map(&:strip)
-    end
-
-    {
-      class_name: exception_hash["class"].presence ||
-        exception_hash[:class].presence ||
-        exception_hash["name"].presence ||
-        exception_hash[:name].presence ||
-        inferred_class.presence ||
-        "JavaScript Error",
-      message: exception_hash["message"].presence ||
-        exception_hash[:message].presence ||
-        inferred_message.presence ||
-        fallback_message.to_s.lines.first.to_s.strip.presence ||
-        "Unhandled JavaScript exception"
-    }
+    ProjectEvents::JavascriptEventPresenter.new(nil, exception_data).summary(fallback_message)
   end
 
   def javascript_exception_chain(exception_data, chain = [], label: "cause")
-    exception_hash = normalize_hash(exception_data)
-    return chain unless exception_hash.present?
-
-    cause = normalize_hash(exception_hash["cause"] || exception_hash[:cause])
-    if cause.present?
-      chain << {
-        label: label,
-        class_name: cause["class"].presence || cause[:class].presence || cause["name"].presence || cause[:name].presence,
-        message: cause["message"].presence || cause[:message].presence,
-        frames: javascript_exception_frames(cause)
-      }
-      javascript_exception_chain(cause, chain, label: "cause")
-    end
-
-    context = normalize_hash(exception_hash["context"] || exception_hash[:context])
-    if context.present?
-      nested_values = context["values"] || context[:values]
-      if nested_values.is_a?(Array)
-        nested_values.each do |entry|
-          next unless entry.is_a?(Hash)
-
-          chain << {
-            label: "context",
-            class_name: entry["class"].presence || entry[:class].presence || "JavaScript Error",
-            message: entry["message"].presence || entry[:message].presence,
-            frames: javascript_exception_frames(entry)
-          }
-        end
-      else
-        chain << {
-          label: "context",
-          class_name: context["class"].presence || context[:class].presence,
-          message: context["message"].presence || context[:message].presence,
-          frames: javascript_exception_frames(context)
-        }
-      end
-    end
-
-    chain.compact_blank
+    chain + ProjectEvents::JavascriptEventPresenter.new(nil, exception_data).exception_chain
   end
 
   def javascript_runtime_details(event)
-    context = event_context_hash(event)
-    headers = normalize_hash(first_hash_value(context, :headers))
-
-    {
-      browser: value_from_hash(context, "browser"),
-      os: value_from_hash(context, "os"),
-      runtime: value_from_hash(context, "runtime"),
-      release: value_from_hash(context, "release"),
-      environment: value_from_hash(context, "environment"),
-      route: value_from_hash(context, "route"),
-      component: value_from_hash(context, "component"),
-      user_agent: value_from_hash(context, "user_agent") ||
-        value_from_hash(context, "userAgent") ||
-        value_from_hash(headers, "User-Agent"),
-      url: first_scalar_value(context, :url),
-      request_id: first_scalar_value(context, :request_id)
-    }
+    ProjectEvents::JavascriptEventPresenter.new(event).runtime_details
   end
 
   def javascript_logger_details(event)
-    context = event_context_hash(event)
-    logger = normalize_hash(context["logger"] || context[:logger])
-
-    {
-      logger_name: value_from_hash(context, "logger_name") || value_from_hash(logger, "name"),
-      method: value_from_hash(logger, "method"),
-      module: value_from_hash(logger, "module"),
-      pathname: value_from_hash(logger, "pathname"),
-      filename: value_from_hash(logger, "filename"),
-      function: value_from_hash(logger, "function"),
-      line_number: value_from_hash(logger, "line_number"),
-      process: value_from_hash(logger, "process"),
-      thread: value_from_hash(logger, "thread")
-    }
+    ProjectEvents::JavascriptEventPresenter.new(event).logger_details
   end
 
   def javascript_log_record_details(event)
-    context = event_context_hash(event)
-    normalize_hash(context["log_record"] || context[:log_record])
+    ProjectEvents::JavascriptEventPresenter.new(event).log_record_details
   end
 
   def javascript_activity_summary(event)
     return nil unless event.respond_to?(:context)
 
-    logger = javascript_logger_details(event)
-    runtime = javascript_runtime_details(event)
-    parts = []
-    parts << logger[:logger_name] if logger[:logger_name].present?
-    parts << logger[:method] if logger[:method].present?
-
-    origin = if logger[:function].present? && logger[:filename].present?
-      "#{logger[:function]}() in #{logger[:filename]}"
-    elsif logger[:function].present?
-      "#{logger[:function]}()"
-    elsif logger[:filename].present?
-      logger[:filename]
-    end
-    parts << origin if origin.present?
-    parts << runtime[:route] if runtime[:route].present?
-    parts << runtime[:component] if runtime[:component].present?
-
-    parts.compact_blank.join(" · ").presence
+    ProjectEvents::JavascriptEventPresenter.new(event).activity_summary
   end
 
   def cfml_request_details(event)
-    context = event_context_hash(event)
-    cgi = normalize_hash(context["cgi"] || context[:cgi] || context["CGI"] || context[:CGI])
-    generic_request = request_context_details(event)
-
-    {
-      script_name: value_from_hash(cgi, "script_name") || value_from_hash(cgi, "SCRIPT_NAME"),
-      request_method: value_from_hash(cgi, "request_method") || value_from_hash(cgi, "REQUEST_METHOD") || generic_request[:http_method],
-      query_string: value_from_hash(cgi, "query_string") || value_from_hash(cgi, "QUERY_STRING"),
-      remote_addr: value_from_hash(cgi, "remote_addr") || value_from_hash(cgi, "REMOTE_ADDR") || generic_request[:client_ip],
-      http_user_agent: value_from_hash(cgi, "http_user_agent") || value_from_hash(cgi, "HTTP_USER_AGENT"),
-      url: generic_request[:url]
-    }
+    ProjectEvents::CfmlEventPresenter.new(event).request_details
   end
 
   def source_excerpt_for_frame(frame, radius: 4)
@@ -641,131 +319,5 @@ module ApplicationHelper
     base_url = +"#{protocol}://#{host}"
     base_url << ":#{port}" if port.present?
     base_url
-  end
-
-  def event_context_hash(event)
-    raw = event.respond_to?(:context) ? event.context : event
-    normalize_hash(raw)
-  end
-
-  def normalize_hash(value)
-    value.is_a?(Hash) ? value : {}
-  end
-
-  def first_hash_value(context, key)
-    REQUEST_DETAIL_KEYS.fetch(key).each do |path|
-      value = dig_context(context, path)
-      return value if value.is_a?(Hash)
-    end
-
-    {}
-  end
-
-  def first_scalar_value(context, key)
-    REQUEST_DETAIL_KEYS.fetch(key).each do |path|
-      value = dig_context(context, path)
-      return value.to_s if scalarish?(value) && value.to_s.present?
-    end
-
-    nil
-  end
-
-  def value_from_hash(hash, key)
-    return nil unless hash.is_a?(Hash)
-
-    hash[key].presence || hash[key.downcase].presence || hash[key.upcase].presence || hash[key.to_sym].presence
-  end
-
-  def dig_context(hash, path)
-    current = hash
-    path.each do |segment|
-      return nil unless current.is_a?(Hash)
-
-      current = current[segment] || current[segment.to_sym]
-    end
-
-    current
-  end
-
-  def scalarish?(value)
-    value.is_a?(String) || value.is_a?(Numeric) || value == true || value == false
-  end
-
-  def parse_backtrace_line(line)
-    patterns = [
-      /\Aat (?:(?<method>.+?) )?\((?<file>.+?):(?<line>\d+):(?<column>\d+)\)\z/,
-      /\Aat (?<file>.+?):(?<line>\d+):(?<column>\d+)\z/,
-      /\A(?<method>[^@]+)@(?<file>.+?):(?<line>\d+):(?<column>\d+)\z/,
-      /\A\s*File "(?<file>.+?)", line (?<line>\d+)(?:, in (?<method>.+))?\z/,
-      /\A(?<file>.+?):(?<line>\d+)(?::in `(?<method>[^']+)')?\z/,
-      /\A(?<file>.+?):(?<line>\d+)(?::in (?<method>.+))?\z/
-    ]
-
-    match = patterns.lazy.map { |pattern| pattern.match(line) }.find(&:present?)
-    return nil unless match
-
-    {
-      file: match[:file].to_s,
-      line_number: match[:line].to_i,
-      method_name: match[:method].to_s.presence,
-      column_number: match.names.include?("column") && match[:column].to_i.positive? ? match[:column].to_i : nil
-    }
-  end
-
-  def parse_structured_backtrace_frame(frame)
-    file = value_from_hash(frame, "filename") ||
-      value_from_hash(frame, "template") ||
-      value_from_hash(frame, "file") ||
-      value_from_hash(frame, "path")
-    line_number = value_from_hash(frame, "lineno") ||
-      value_from_hash(frame, "line") ||
-      value_from_hash(frame, "line_number") ||
-      value_from_hash(frame, "lineNumber")
-    return nil if file.blank? || line_number.to_i <= 0
-
-    {
-      file: file.to_s,
-      line_number: line_number.to_i,
-      column_number: value_from_hash(frame, "colno") ||
-        value_from_hash(frame, "column") ||
-        value_from_hash(frame, "column_number") ||
-        value_from_hash(frame, "colNumber"),
-      method_name: value_from_hash(frame, "function") ||
-        value_from_hash(frame, "name") ||
-        value_from_hash(frame, "method") ||
-        value_from_hash(frame, "module") ||
-        value_from_hash(frame, "type"),
-      code_context: value_from_hash(frame, "codePrintPlain") ||
-        value_from_hash(frame, "code_print_plain") ||
-        value_from_hash(frame, "codePrintHTML") ||
-        value_from_hash(frame, "line") ||
-        value_from_hash(frame, "code_context") ||
-        value_from_hash(frame, "context_line") ||
-        value_from_hash(frame, "source") ||
-        value_from_hash(frame, "code"),
-      locals: normalize_hash(value_from_hash(frame, "locals")),
-      raw: "#{file}:#{line_number}"
-    }
-  end
-
-  def absolute_source_path(file_path)
-    return nil if file_path.blank?
-
-    root = Rails.root.to_s
-    if file_path.start_with?("/")
-      return file_path if file_path.start_with?(root)
-
-      return nil
-    end
-
-    return nil unless file_path.start_with?("app/", "lib/", "config/", "db/")
-
-    Rails.root.join(file_path).to_s
-  end
-
-  def application_frame_path?(relative_path, absolute_path)
-    return true if relative_path.to_s.start_with?("app/")
-
-    absolute_path.to_s.start_with?(Rails.root.join("app").to_s)
   end
 end

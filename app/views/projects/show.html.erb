@@ -8,7 +8,10 @@
   <%= render "nav" %>
 </section>
 
-<div class="inbox-workbench min-w-0" data-controller="inbox" data-inbox-project-uuid-value="<%= @project.uuid %>" data-action="turbo:frame-load@document->inbox#onDetailLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch">
+<div class="inbox-workbench min-w-0"
+     data-controller="inbox"
+     data-inbox-project-uuid-value="<%= @project.uuid %>"
+     data-action="turbo:frame-load@document->inbox#onFrameLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch">
   <aside class="inbox-workbench-sidebar">
     <div class="inbox-sidebar-card">
       <div class="flex items-center justify-between gap-2 mb-3">
@@ -37,7 +40,7 @@
     </div>
   </aside>
 
-  <section class="inbox-workbench-list">
+  <section class="inbox-workbench-list" data-inbox-target="listPane" aria-busy="false">
     <header class="inbox-pane-header">
       <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]">Error groups</h2>
       <p class="text-xs text-slate-500"><%= @groups.size %> shown</p>
@@ -50,7 +53,7 @@
                query:         @query %>
   </section>
 
-  <section class="inbox-workbench-detail">
+  <section class="inbox-workbench-detail" data-inbox-target="detailPane" aria-busy="false">
     <% if @detail_event.present? %>
       <%= render "project_events/event_detail",
                  project:     @project,

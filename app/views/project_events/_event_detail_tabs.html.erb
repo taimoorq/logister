@@ -5,35 +5,57 @@
 <% wrapper_classes = local_assigns[:wrapper_classes].presence || "detail-tabs-wrap" %>
 <% link_data = turbo_frame_id.present? ? { turbo_frame: turbo_frame_id } : {} %>
 
-<div class="<%= wrapper_classes %>">
+<div class="<%= wrapper_classes %>"
+     data-controller="frame-tabs"
+     data-frame-tabs-turbo-frame-value="<%= turbo_frame_id %>"
+     data-action="turbo:before-fetch-request@document->frame-tabs#onBeforeFetch turbo:frame-load@document->frame-tabs#onFrameLoad"
+     aria-busy="false">
   <nav class="detail-tabs" role="tablist" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
     <%= link_to "Context",
                 project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "context"),
                 class: "detail-tab #{'is-active' if active_tab == 'context'}",
                 role: "tab",
-                data: link_data %>
+                aria: { controls: "tab-context", selected: (active_tab == "context").to_s, current: ("page" if active_tab == "context") },
+                tabindex: (active_tab == "context" ? 0 : -1),
+                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to stacktrace_tab_label,
                 project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
                 class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
                 role: "tab",
-                data: link_data %>
+                aria: { controls: "tab-stacktrace", selected: (active_tab == "stacktrace").to_s, current: ("page" if active_tab == "stacktrace") },
+                tabindex: (active_tab == "stacktrace" ? 0 : -1),
+                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to "Occurrences (#{occurrences.size})",
                 project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "occurrences"),
                 class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
                 role: "tab",
-                data: link_data %>
+                aria: { controls: "tab-occurrences", selected: (active_tab == "occurrences").to_s, current: ("page" if active_tab == "occurrences") },
+                tabindex: (active_tab == "occurrences" ? 0 : -1),
+                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to "Related logs (#{related_logs.size})",
                 project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "related_logs"),
                 class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
                 role: "tab",
-                data: link_data %>
+                aria: { controls: "tab-related-logs", selected: (active_tab == "related_logs").to_s, current: ("page" if active_tab == "related_logs") },
+                tabindex: (active_tab == "related_logs" ? 0 : -1),
+                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
   </nav>
 
-  <section id="tab-context" class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>">
+  <section id="tab-context"
+           class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>"
+           role="tabpanel"
+           aria-hidden="<%= active_tab == 'context' ? 'false' : 'true' %>"
+           <%= 'hidden' unless active_tab == 'context' %>
+           data-frame-tabs-target="panel">
     <%= render "project_events/context_panel", event: event %>
   </section>
 
-  <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
+  <section id="tab-stacktrace"
+           class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>"
+           role="tabpanel"
+           aria-hidden="<%= active_tab == 'stacktrace' ? 'false' : 'true' %>"
+           <%= 'hidden' unless active_tab == 'stacktrace' %>
+           data-frame-tabs-target="panel">
     <%= render stacktrace_partial,
                project: project,
                event: event,
@@ -52,7 +74,12 @@
                instance_variables: instance_variables %>
   </section>
 
-  <section id="tab-occurrences" class="detail-panel<%= ' is-hidden' unless active_tab == 'occurrences' %>">
+  <section id="tab-occurrences"
+           class="detail-panel<%= ' is-hidden' unless active_tab == 'occurrences' %>"
+           role="tabpanel"
+           aria-hidden="<%= active_tab == 'occurrences' ? 'false' : 'true' %>"
+           <%= 'hidden' unless active_tab == 'occurrences' %>
+           data-frame-tabs-target="panel">
     <% if occurrences.any? %>
       <table class="occurrences-table">
         <thead>
@@ -85,7 +112,12 @@
     <% end %>
   </section>
 
-  <section id="tab-related-logs" class="detail-panel<%= ' is-hidden' unless active_tab == 'related_logs' %>">
+  <section id="tab-related-logs"
+           class="detail-panel<%= ' is-hidden' unless active_tab == 'related_logs' %>"
+           role="tabpanel"
+           aria-hidden="<%= active_tab == 'related_logs' ? 'false' : 'true' %>"
+           <%= 'hidden' unless active_tab == 'related_logs' %>
+           data-frame-tabs-target="panel">
     <% if related_logs.any? %>
       <table class="occurrences-table">
         <thead>

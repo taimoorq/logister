@@ -122,18 +122,24 @@ class IngestEvent < ApplicationRecord
     start_time = (event.occurred_at || Time.current) - window
     end_time = (event.occurred_at || Time.current) + window
 
-    candidates = logs.where(project: project).where(occurred_at: start_time..end_time)
-                     .order(occurred_at: :desc).limit(limit * 4).to_a
+    match_conditions = related_log_match_conditions(
+      trace: trace,
+      request: request,
+      session: session,
+      user: user
+    )
+    return [] if match_conditions.empty?
 
-    candidates.select do |log_event|
-      matches = []
-      matches << (trace.present? && trace_id(log_event) == trace)
-      matches << (request.present? && request_id(log_event) == request)
-      matches << (session.present? && session_id(log_event) == session)
-      matches << (user.present? && user_identifier(log_event) == user)
-      matches.any?
-    end.first(limit)
+    sql_fragments = match_conditions.map { |condition| "(#{condition[:sql]})" }.join(" OR ")
+    bind_values = match_conditions.flat_map { |condition| condition[:values] }
+
+    logs.where(project: project, occurred_at: start_time..end_time)
+        .where([ sql_fragments, *bind_values ])
+        .order(occurred_at: :desc)
+        .limit(limit)
+        .to_a
   end
+
   def self.db_stats_from_events(events)
     durations = events.map { |e| duration_ms(e) }.select(&:positive?)
     return { count: 0, avg_ms: 0.0, p95_ms: 0.0 } if durations.empty?
@@ -197,4 +203,39 @@ class IngestEvent < ApplicationRecord
     relation.group(field).count(:all)
   end
   private_class_method :grouped_count
+
+  def self.related_log_match_conditions(trace:, request:, session:, user:)
+    conditions = []
+
+    if trace.present?
+      conditions << {
+        sql: "(context->>'trace_id' = ? OR context->>'traceId' = ? OR context->'trace'->>'traceId' = ?)",
+        values: [ trace, trace, trace ]
+      }
+    end
+
+    if request.present?
+      conditions << {
+        sql: "(context->>'request_id' = ? OR context->>'requestId' = ? OR context->'trace'->>'requestId' = ?)",
+        values: [ request, request, request ]
+      }
+    end
+
+    if session.present?
+      conditions << {
+        sql: "(context->>'session_id' = ? OR context->>'sessionId' = ?)",
+        values: [ session, session ]
+      }
+    end
+
+    if user.present?
+      conditions << {
+        sql: "(context->>'user_id' = ? OR context->>'userId' = ? OR context->'user'->>'id' = ?)",
+        values: [ user, user, user ]
+      }
+    end
+
+    conditions
+  end
+  private_class_method :related_log_match_conditions
 end

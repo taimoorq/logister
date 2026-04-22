@@ -19,6 +19,7 @@
                   class="inbox-row<%= " is-selected" if selected_uuid.present? && selected_uuid == group.uuid %><%= " is-clickable" if row_clickable %>"
                   data-action="<%= row_clickable ? 'click->inbox#openRow keydown.enter->inbox#openRowKey keydown.space->inbox#openRowKey' : '' %>"
                   tabindex="<%= row_clickable ? 0 : -1 %>"
+                  aria-selected="<%= selected_uuid.present? && selected_uuid == group.uuid ? "true" : "false" %>"
                   aria-label="<%= row_clickable ? "Open error details for #{group.title}" : nil %>"
                   style="view-transition-name: <%= dom_id(group) %>; view-transition-class: inbox-row;">
                 <td class="col-error">
