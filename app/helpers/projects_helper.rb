@@ -1,9 +1,15 @@
 module ProjectsHelper
   def project_integration_docs_path(project)
-    project&.integration_cfml? ? docs_site_url(:cfml_integration) : docs_site_url(:ruby_integration)
+    return docs_site_url(:cfml_integration) if project&.integration_cfml?
+    return docs_site_url(:javascript_integration) if project&.integration_javascript?
+
+    docs_site_url(:ruby_integration)
   end
 
   def project_integration_docs_label(project)
-    project&.integration_cfml? ? "CFML integration docs" : "Ruby integration docs"
+    return "CFML integration docs" if project&.integration_cfml?
+    return "JavaScript integration docs" if project&.integration_javascript?
+
+    "Ruby integration docs"
   end
 end

@@ -150,6 +150,39 @@
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
+      <% elsif @project.integration_javascript? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install the <code>logister-js</code> package in the Node or TypeScript app you want to monitor.</li>
+              <li>Use the Express middleware and error handler to capture request timing and uncaught route errors.</li>
+              <li>Send custom metrics, logs, and check-ins through the shared client when you need deeper visibility.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
+            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>npm install logister-js
+
+import { LogisterClient } from "logister-js";
+import { createLogisterMiddleware, createLogisterErrorHandler } from "logister-js/express";
+
+const client = new LogisterClient({
+  apiKey: process.env.LOGISTER_API_KEY,
+  baseUrl: "https://your-logister-host.example"
+});</code></pre>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "JavaScript integration docs",
+                        docs_site_url(:javascript_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
       <% else %>
         <div class="space-y-4">
           <div>
@@ -192,6 +225,8 @@ end</code></pre>
         <strong class="text-slate-900"><%= @project.integration_label %></strong>.
         <% if @project.integration_cfml? %>
           Send JSON from Lucee or ColdFusion with `cfhttp`.
+        <% elsif @project.integration_javascript? %>
+          Use the <code>logister-js</code> client or Express middleware to send events from your Node app.
         <% else %>
           Send events through the Ruby gem integration.
         <% end %>

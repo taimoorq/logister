@@ -94,8 +94,12 @@ RSpec.describe Project, type: :model do
   end
 
   describe ".integration_options" do
-    it "includes ruby and cfml integrations" do
-      expect(described_class.integration_options).to include([ "Ruby gem", "ruby" ], [ "CFML", "cfml" ])
+    it "includes ruby, cfml, and javascript integrations" do
+      expect(described_class.integration_options).to include(
+        [ "Ruby gem", "ruby" ],
+        [ "CFML", "cfml" ],
+        [ "JavaScript / TypeScript (logister-js)", "javascript" ]
+      )
     end
   end
 

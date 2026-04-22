@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>JavaScript Integration | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Set up a Node, TypeScript, or Express app with Logister using the logister-js package.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/integrations/javascript/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="JavaScript Integration | Logister">
+    <meta property="og:description" content="Set up a Node, TypeScript, or Express app with Logister using the logister-js package.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/integrations/javascript/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="JavaScript Integration | Logister">
+    <meta name="twitter:description" content="Set up a Node, TypeScript, or Express app with Logister using the logister-js package.">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">JavaScript integration</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://github.com/taimoorq/logister-js">SDK repo</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / JavaScript</span><h1>Integrate a Node or TypeScript app with Logister.</h1><p>The best path for JavaScript and TypeScript projects is the <code>logister-js</code> package. It matches the JavaScript-specific setup experience in the app and is the recommended integration for Express-based services.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/cfml/">CFML integration</a><a class="active" href="/integrations/javascript/">JavaScript integration</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#flow">Setup flow</a><a href="#install">Install</a><a href="#express">Express</a><a href="#custom-events">Custom events</a></div>
+          </aside>
+          <article class="article">
+            <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>JavaScript / TypeScript</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates your app when sending events</td></tr><tr><td>Hosted Logister base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Node 18+ app</td><td>Lets you run the published <code>logister-js</code> package</td></tr></tbody></table></section>
+            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project and generate an API key.</li><li>Install <code>logister-js</code> in the Node or TypeScript app.</li><li>Configure the client with the project API key and base URL.</li><li>Add the Express middleware and error handler if you run an HTTP service.</li><li>Use the shared client for custom metrics, logs, transactions, and check-ins.</li></ol><div class="note tip"><h4>Tip</h4><p>Start with request timing and uncaught Express errors first. Once those are flowing, add custom events where you need more product-specific visibility.</p></div></section>
+            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Add the package</h2><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#js-install">Copy</button></div><pre><code id="js-install">npm install logister-js</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-client">Copy</button></div><pre><code id="js-client">import { LogisterClient } from "logister-js";
+
+const client = new LogisterClient({
+  apiKey: process.env.LOGISTER_API_KEY ?? "",
+  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://logister.org"
+});</code></pre></div><p>Package source: <a href="https://github.com/taimoorq/logister-js">logister-js on GitHub</a>.</p></section>
+            <section id="express" class="section"><p class="eyebrow">Express</p><h2>Capture requests and uncaught route errors.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-express">Copy</button></div><pre><code id="js-express">import express from "express";
+import { LogisterClient } from "logister-js";
+import {
+  createLogisterErrorHandler,
+  createLogisterMiddleware
+} from "logister-js/express";
+
+const app = express();
+const client = new LogisterClient({
+  apiKey: process.env.LOGISTER_API_KEY ?? "",
+  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://logister.org"
+});
+
+app.use(createLogisterMiddleware({ client }));
+
+app.get("/orders/:id", async (_req, res) =&gt; {
+  res.json({ ok: true });
+});
+
+app.use(createLogisterErrorHandler({ client }));</code></pre></div><div class="note warn"><h4>Important</h4><p>Register the Logister request middleware before your routes and the Logister error handler before your final Express error response middleware.</p></div></section>
+            <section id="custom-events" class="section"><p class="eyebrow">Custom events</p><h2>Report metrics, logs, and check-ins from the same client.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-events">Copy</button></div><pre><code id="js-events">await client.captureMetric("cache.hit_rate", 0.98, {
+  context: { service: "checkout-api" }
+});
+
+await client.captureMessage("Queue backlog rising", {
+  level: "warning",
+  context: { queue: "emails" }
+});
+
+await client.checkIn("nightly-import", "ok", {
+  context: { environment: "production" }
+});</code></pre></div><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
+transactions visible
+uncaught route errors visible
+custom metrics and check-ins present</code></pre></div></section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

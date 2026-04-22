@@ -85,6 +85,18 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include('target="_blank"')
       end
 
+      it "shows JavaScript-specific integration guidance for logister-js projects" do
+        project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node App")
+
+        get settings_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("JavaScript / TypeScript")
+        expect(response.body).to include("logister-js")
+        expect(response.body).to include("logister-js/express")
+        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+      end
+
       it "returns 404 for project user cannot access" do
         get settings_project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
@@ -128,6 +140,16 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Instrumentation help")
         expect(response.body).to include("Ruby integration docs")
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+      end
+
+      it "shows JavaScript integration docs on JavaScript performance pages" do
+        project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node Perf")
+
+        get performance_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("JavaScript integration docs")
+        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
       end
 
       it "renders database load stats when db.query metrics exist" do
@@ -187,6 +209,16 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
+      it "shows JavaScript integration docs on JavaScript monitor pages" do
+        project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node Monitor")
+
+        get monitors_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("JavaScript integration docs")
+        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+      end
+
       it "returns 404 for project user cannot access" do
         get monitors_project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
@@ -221,6 +253,17 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Custom events")
         expect(response.body).to include("Ruby integration docs")
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+      end
+
+      it "shows JavaScript-specific empty-state guidance for JavaScript projects" do
+        project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node Activity")
+
+        get activity_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("client.captureMetric()")
+        expect(response.body).to include("client.checkIn()")
+        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
       end
 
       it "returns 404 for project user cannot access" do

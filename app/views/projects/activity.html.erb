@@ -52,6 +52,14 @@
           No custom events yet. Follow the
           <%= link_to "CFML integration docs", docs_site_url(:cfml_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
           to send metrics, logs, transactions, and check-ins from your Lucee or ColdFusion app.
+        <% elsif @project.integration_javascript? %>
+          No custom events yet. Use
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureMetric()</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureMessage()</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureTransaction()</code>, or
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.checkIn()</code>
+          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-js</code>. You can also start with the
+          <%= link_to "JavaScript integration docs", docs_site_url(:javascript_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% else %>
           No custom events yet. Use
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_metric</code>,

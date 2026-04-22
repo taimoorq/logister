@@ -9,7 +9,8 @@ module ApplicationHelper
     clickhouse: "/clickhouse/",
     http_api: "/http-api/",
     ruby_integration: "/integrations/ruby/",
-    cfml_integration: "/integrations/cfml/"
+    cfml_integration: "/integrations/cfml/",
+    javascript_integration: "/integrations/javascript/"
   }.freeze
 
   ICON_PATHS = {
