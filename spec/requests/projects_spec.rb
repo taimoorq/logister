@@ -108,6 +108,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Python")
         expect(response.body).to include("logister-python")
         expect(response.body).to include("instrument_fastapi")
+        expect(response.body).to include("instrument_flask")
         expect(response.body).to include("https://docs.logister.org/integrations/python/")
       end
 
@@ -300,6 +301,7 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("client.capture_metric()")
         expect(response.body).to include("client.check_in()")
+        expect(response.body).to include("instrument_flask()")
         expect(response.body).to include("https://docs.logister.org/integrations/python/")
       end
 

@@ -156,7 +156,7 @@
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install <code>logister-python</code> in the Python service or worker you want to monitor.</li>
-              <li>Use <code>instrument_fastapi</code> for FastAPI apps, <code>LogisterMiddleware</code> for Django apps, and <code>instrument_celery</code> for Celery workers.</li>
+              <li>Use <code>instrument_fastapi</code> for FastAPI apps, <code>LogisterMiddleware</code> for Django apps, <code>instrument_flask</code> for Flask apps, and <code>instrument_celery</code> for Celery workers.</li>
               <li>Send custom metrics, logs, transactions, and check-ins through the shared client when you need deeper app visibility.</li>
             </ul>
           </div>
@@ -169,6 +169,13 @@ from logister import LogisterClient, instrument_fastapi
 
 client = LogisterClient.from_env(default_context={"service": "api"})
 instrument_fastapi(app, client)</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Also supported</h3>
+            <p class="text-sm text-slate-600">
+              Django apps can use <code>LogisterMiddleware</code>, Flask apps can use <code>instrument_flask(app, client)</code>, and Celery workers can use <code>instrument_celery()</code> with optional monitor slugs for check-ins.
+            </p>
           </div>
 
           <p class="text-sm text-slate-600">
@@ -266,7 +273,7 @@ end</code></pre>
         <% if @project.integration_cfml? %>
           Send JSON from Lucee or ColdFusion with `cfhttp`.
         <% elsif @project.integration_python? %>
-          Use the <code>logister-python</code> client directly, or add the FastAPI, Django, or Celery helpers for framework-aware reporting.
+          Use the <code>logister-python</code> client directly, or add the FastAPI, Django, Flask, or Celery helpers for framework-aware reporting.
         <% elsif @project.integration_javascript? %>
           Use the <code>logister-js</code> client directly, or add the Express middleware if your JavaScript app runs on Express.
         <% else %>

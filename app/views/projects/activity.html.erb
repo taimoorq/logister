@@ -58,7 +58,7 @@
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.capture_message()</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.capture_transaction()</code>, or
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.check_in()</code>
-          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-python</code>. You can also start with the
+          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-python</code>. For web apps, pair that with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_fastapi()</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_flask()</code>, or <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LogisterMiddleware</code> so request-level Python errors arrive with framework context. You can also start with the
           <%= link_to "Python integration docs", docs_site_url(:python_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_javascript? %>
           No custom events yet. Use
