@@ -16,6 +16,31 @@ All notable changes to Logister will be documented in this file.
 
 - TBD
 
+## v0.1.2 - 2026-04-21
+
+### Added
+
+- Project integration types with support for both `Ruby gem` and `CFML` project setup flows.
+- Public documentation section under `/docs` with guides for getting started, self-hosting, HTTP API usage, and Ruby/CFML integrations.
+- CFML-focused exception rendering with support for structured `tagContext`, exception detail fields, and request/CGI metadata.
+- Docs helper and request coverage for public docs pages, layout assets, section anchors, and copy-enabled code blocks.
+- Release configuration in `config/release.yml` and GitHub release publishing on successful Fly deploys.
+
+### Changed
+
+- Split project guidance across dedicated subpages so settings, activity, monitors, and performance pages can link to the right integration docs.
+- Updated the docs layout to use the app’s shared asset-loading helpers and standard Hotwire/importmap boot path.
+- Refined docs content into a more consistent guide format with overview, setup flow, verification, and next-step sections.
+- Simplified the docs top navigation so the left sidebar is the primary documentation navigation surface.
+- Limited Fly runtime boot to process startup and left database setup to the Fly release phase.
+
+### Fixed
+
+- API key creation and revocation now return users to project settings so one-time tokens are visible when generated.
+- Project sharing redirects now return to settings instead of dropping users back into the inbox.
+- Docs asset loading in development now respects the Propshaft/Tailwind setup instead of relying on stale precompiled CSS.
+- Resolved docs helper lint issues and tightened request specs around docs layout assets and Turbo metadata.
+
 ## v0.1.1 - 2026-04-17
 
 ### Added

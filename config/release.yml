@@ -1,0 +1,9 @@
+app_name: Logister
+tag_prefix: v
+changelog_path: CHANGELOG.md
+github:
+  create_release_on_deploy: true
+  make_latest: true
+deploy:
+  provider: fly
+  environment: production
