@@ -10,6 +10,15 @@ class DocsController < ApplicationController
   def self_hosting
   end
 
+  def local_development
+  end
+
+  def deployment
+  end
+
+  def clickhouse
+  end
+
   def http_api
   end
 

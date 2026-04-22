@@ -2,13 +2,7 @@ require "rouge"
 
 module DocsHelper
   def docs_primary_navigation_items
-    [
-      [ "Overview", docs_path ],
-      [ "Getting started", docs_getting_started_path ],
-      [ "HTTP API", docs_http_api_path ],
-      [ "Ruby", docs_ruby_integration_path ],
-      [ "CFML", docs_cfml_integration_path ]
-    ]
+    docs_navigation_sections.flat_map { |section| section[:items] }.uniq
   end
 
   def docs_navigation_sections
@@ -17,13 +11,16 @@ module DocsHelper
         title: "Start here",
         items: [
           [ "Overview", docs_path ],
-          [ "Getting started", docs_getting_started_path ]
+          [ "Getting started", docs_getting_started_path ],
+          [ "Self-hosting", docs_self_hosting_path ]
         ]
       },
       {
         title: "Operations",
         items: [
-          [ "Self-hosting", docs_self_hosting_path ],
+          [ "Local development", docs_local_development_path ],
+          [ "Deployment config", docs_deployment_path ],
+          [ "ClickHouse", docs_clickhouse_path ],
           [ "HTTP API", docs_http_api_path ]
         ]
       },
@@ -52,13 +49,38 @@ module DocsHelper
       [
         [ "Prerequisites", "#prerequisites" ],
         [ "Local quickstart", "#local-quickstart" ],
-        [ "Environment", "#environment" ],
-        [ "Production checklist", "#production-checklist" ],
+        [ "Docs map", "#docs-map" ],
+        [ "What you need", "#what-you-need" ],
         [ "Verify deploy", "#verify-deploy" ]
+      ]
+    when docs_local_development_path
+      [
+        [ "Bootstrap", "#bootstrap" ],
+        [ "Boot paths", "#boot-paths" ],
+        [ "Seed data", "#seed-data" ],
+        [ "Local services", "#local-services" ],
+        [ "Verify local boot", "#verify-local-boot" ]
+      ]
+    when docs_deployment_path
+      [
+        [ "Required secrets", "#required-secrets" ],
+        [ "Optional services", "#optional-services" ],
+        [ "Provider files", "#provider-files" ],
+        [ "Production checklist", "#production-checklist" ],
+        [ "Deploy verification", "#deploy-verification" ]
+      ]
+    when docs_clickhouse_path
+      [
+        [ "When to enable it", "#when-to-enable-it" ],
+        [ "Environment", "#environment" ],
+        [ "Schema setup", "#schema-setup" ],
+        [ "Health checks", "#health-checks" ],
+        [ "Payload mapping", "#payload-mapping" ]
       ]
     when docs_http_api_path
       [
         [ "Authentication", "#authentication" ],
+        [ "Payload shape", "#payload-shape" ],
         [ "Ingest events", "#ingest-events" ],
         [ "Check-ins", "#check-ins" ],
         [ "Event types", "#event-types" ],

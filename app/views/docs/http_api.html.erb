@@ -65,6 +65,15 @@
         </ul>
       </section>
 
+      <section id="payload-shape" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Payload shape</p>
+        <h2>Send nested payloads with an <code>event</code> or <code>check_in</code> root key.</h2>
+        <p>
+          The ingest controller requires an <code>event</code> payload, and the check-in controller requires a
+          <code>check_in</code> payload. Keep your first request explicit and structured so you can verify the shape easily.
+        </p>
+      </section>
+
       <section id="ingest-events" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Ingest events</p>
         <h2>POST application events to the ingest endpoint.</h2>
@@ -75,16 +84,27 @@
         ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy ingest endpoint example") %>
         <%= docs_code_block([
           "{",
-          "  \"event_type\": \"error\",",
-          "  \"level\": \"error\",",
-          "  \"message\": \"Unhandled exception\",",
-          "  \"context\": {",
-          "    \"exception\": {",
-          "      \"type\": \"RuntimeError\"",
+          "  \"event\": {",
+          "    \"event_type\": \"error\",",
+          "    \"level\": \"error\",",
+          "    \"message\": \"NoMethodError in CheckoutService\",",
+          "    \"fingerprint\": \"checkout-nomethoderror\",",
+          "    \"occurred_at\": \"2026-02-14T12:00:00Z\",",
+          "    \"context\": {",
+          "      \"environment\": \"production\",",
+          "      \"request_id\": \"abc123\",",
+          "      \"metadata\": {",
+          "        \"user_id\": 42",
+          "      }",
+          "    }",
           "    }",
           "  }",
           "}"
         ].join("\n"), language: "language-json", aria_label: "Copy ingest payload example") %>
+        <p>
+          For database load metrics from the Ruby gem, metric events typically use <code>message: "db.query"</code> and
+          include timing fields like <code>duration_ms</code>, <code>name</code>, and <code>sql</code> in context.
+        </p>
       </section>
 
       <section id="check-ins" class="docs-section docs-section-anchor">
@@ -97,10 +117,13 @@
         ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy check-in endpoint example") %>
         <%= docs_code_block([
           "{",
-          "  \"slug\": \"nightly-sync\",",
-          "  \"status\": \"ok\",",
-          "  \"environment\": \"production\",",
-          "  \"expected_interval_seconds\": 3600",
+          "  \"check_in\": {",
+          "    \"slug\": \"nightly-reconcile\",",
+          "    \"status\": \"ok\",",
+          "    \"expected_interval_seconds\": 900,",
+          "    \"environment\": \"production\",",
+          "    \"release\": \"2026.03.02\"",
+          "  }",
           "}"
         ].join("\n"), language: "language-json", aria_label: "Copy check-in payload example") %>
       </section>
@@ -138,6 +161,11 @@
             </tr>
           </tbody>
         </table>
+        <p>
+          Transaction events work best when context includes <code>transaction_name</code>, <code>duration_ms</code>,
+          and correlation fields like <code>trace_id</code> or <code>request_id</code>. Log events should carry the
+          same identifiers when available so error views can pivot to surrounding logs cleanly.
+        </p>
       </section>
 
       <section id="verify-delivery" class="docs-section docs-section-anchor">

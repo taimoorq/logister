@@ -21,6 +21,15 @@ RSpec.describe DocsHelper, type: :helper do
         [ "Getting started next", "#getting-started-next" ]
       )
     end
+
+    it "returns the local development sections for the local development page" do
+      allow(helper).to receive(:request).and_return(double(path: docs_local_development_path))
+
+      expect(helper.docs_section_items).to include(
+        [ "Bootstrap", "#bootstrap" ],
+        [ "Verify local boot", "#verify-local-boot" ]
+      )
+    end
   end
 
   describe "#docs_code_block" do

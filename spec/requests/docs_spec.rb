@@ -13,6 +13,9 @@ RSpec.describe "Docs", type: :request do
       expect(response.body).to include("Public setup guides for Logister and its integrations.")
       expect(response.body).to include("Getting started")
       expect(response.body).to include("Self-hosting")
+      expect(response.body).to include("Local development")
+      expect(response.body).to include("Deployment config")
+      expect(response.body).to include("ClickHouse")
       expect(response.body).to include("HTTP API")
       expect(response.body).to include("Ruby integration")
       expect(response.body).to include("CFML integration")
@@ -43,8 +46,44 @@ RSpec.describe "Docs", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Run Logister yourself.")
       expect(response.body).to include("Local quickstart")
-      expect(response.body).to include("Production checklist")
+      expect(response.body).to include("Docs map")
       expect(response.body).to include("Verify deploy")
+    end
+  end
+
+  describe "GET /docs/local-development" do
+    it "returns success and local development content" do
+      get docs_local_development_path
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Run Logister locally with realistic data.")
+      expect(response.body).to include("bin/dev-infra")
+      expect(response.body).to include("Seed data")
+      expect(response.body).to include("alice@example.com / password123")
+    end
+  end
+
+  describe "GET /docs/deployment" do
+    it "returns success and deployment config content" do
+      get docs_deployment_path
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Configure production deploys without guessing.")
+      expect(response.body).to include("RAILS_MASTER_KEY")
+      expect(response.body).to include("LOGISTER_TURNSTILE_ENABLED")
+      expect(response.body).to include("Post-deploy verification")
+    end
+  end
+
+  describe "GET /docs/clickhouse" do
+    it "returns success and ClickHouse content" do
+      get docs_clickhouse_path
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Add ClickHouse when Postgres stops being enough for analytics.")
+      expect(response.body).to include("LOGISTER_CLICKHOUSE_ENABLED")
+      expect(response.body).to include("/health/clickhouse")
+      expect(response.body).to include("context_json")
     end
   end
 
@@ -55,6 +94,8 @@ RSpec.describe "Docs", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("docs-topbar")
       expect(response.body).to include("Send events and check-ins over HTTP.")
+      expect(response.body).to include("\"event\"")
+      expect(response.body).to include("\"check_in\"")
       expect(response.body).to include("/api/v1/ingest_events")
       expect(response.body).to include("/api/v1/check_ins")
       expect(response.body).to include("Authorization: Bearer")
@@ -111,6 +152,7 @@ RSpec.describe "Docs", type: :request do
       expect(response.body).to include("Integrations")
       expect(response.body).to include("On this page")
       expect(response.body).to include("Send a structured error event")
+      expect(response.body).to include("HTTP API reference")
     end
   end
 end

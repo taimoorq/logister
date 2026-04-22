@@ -16,8 +16,8 @@
       <p class="hero-kicker">Documentation</p>
       <h1 class="hero-title">Public setup guides for Logister and its integrations.</h1>
       <p class="hero-copy">
-        This is the public documentation section for Logister. It is where integration guides, setup instructions,
-        and future app documentation should live so users can access them without signing in.
+        This is the public documentation section for Logister. It now carries the setup, operations, and integration
+        guidance that used to live mostly in the GitHub README, so users can find the full product docs in one place.
       </p>
       <div class="hero-actions">
         <%= link_to "Getting started", docs_getting_started_path, class: "hero-btn hero-btn-primary" %>
@@ -79,6 +79,27 @@
           <h3>Self-host Logister</h3>
           <p>Best for teams running the Logister app themselves with local setup, environment config, and production rollout notes.</p>
           <%= link_to "Read self-hosting docs", docs_self_hosting_path, class: "docs-inline-link" %>
+        </article>
+
+        <article class="docs-card">
+          <p class="feature-kicker">Development</p>
+          <h3>Run the app locally</h3>
+          <p>Best for local boot, Docker-backed infra, seed data, and realistic development verification.</p>
+          <%= link_to "Read local development docs", docs_local_development_path, class: "docs-inline-link" %>
+        </article>
+
+        <article class="docs-card">
+          <p class="feature-kicker">Deployment</p>
+          <h3>Configure production deploys</h3>
+          <p>Best for environment variables, provider files, email, Turnstile, analytics, and production rollout checks.</p>
+          <%= link_to "Read deployment docs", docs_deployment_path, class: "docs-inline-link" %>
+        </article>
+
+        <article class="docs-card">
+          <p class="feature-kicker">Analytics</p>
+          <h3>Add ClickHouse</h3>
+          <p>Best for optional high-scale event analytics, schema setup, and health verification.</p>
+          <%= link_to "Read ClickHouse docs", docs_clickhouse_path, class: "docs-inline-link" %>
         </article>
 
         <article class="docs-card">

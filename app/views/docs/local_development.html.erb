@@ -1,0 +1,122 @@
+<% content_for :title, "Local Development" %>
+<% content_for :meta_description, "Boot Logister locally with the right app, database, Redis, ClickHouse, and sample data setup." %>
+<% content_for :canonical_path, docs_local_development_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "TechArticle",
+  "name" => "Logister Local Development",
+  "url" => absolute_url_for(docs_local_development_path),
+  "description" => "Boot Logister locally with the right app, database, Redis, ClickHouse, and sample data setup."
+}) %>
+
+<div class="docs-page">
+  <section class="docs-hero docs-hero-compact">
+    <div>
+      <p class="hero-kicker">Documentation / Local Development</p>
+      <h1 class="hero-title">Run Logister locally with realistic data.</h1>
+      <p class="hero-copy">
+        Use this page for day-to-day development: booting the app, choosing a local infra strategy, loading sample
+        data, and verifying that Redis-backed features work before you touch production deploys.
+      </p>
+    </div>
+  </section>
+
+  <div class="docs-shell docs-layout">
+    <div class="docs-rail">
+      <%= render "sidebar" %>
+    </div>
+
+    <article class="<%= docs_article_classes %>">
+      <section id="bootstrap" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Bootstrap</p>
+        <h2>Start with the default local app setup.</h2>
+        <%= docs_code_block([
+          "cp .env.sample .env",
+          "bundle install",
+          "bin/rails db:prepare",
+          "bin/dev"
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy local development bootstrap commands") %>
+        <p>
+          <code>LOGISTER_EMAIL_FROM</code> defaults to <code>support@logister.org</code> and is used by app mailers
+          and Devise emails. If you want confirmation emails to work outside development, also set
+          <code>SENDGRID_API_KEY</code>.
+        </p>
+      </section>
+
+      <section id="boot-paths" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Boot paths</p>
+        <h2>Choose the local startup path that matches your machine.</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Best for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>bin/dev</code></td>
+              <td>Normal local work when PostgreSQL is already available and Redis can be started automatically.</td>
+            </tr>
+            <tr>
+              <td><code>bin/dev-infra</code></td>
+              <td>One-command startup for the Rails app plus Docker-backed Redis and ClickHouse.</td>
+            </tr>
+            <tr>
+              <td><code>bin/dev-infra --with-postgres</code></td>
+              <td>Full local stack in Docker, including PostgreSQL.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="seed-data" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Seed data</p>
+        <h2>Load development-only sample data when you want a realistic inbox.</h2>
+        <%= docs_code_block("bin/rails db:seed", language: "language-bash", shell: true, aria_label: "Copy seed command") %>
+        <p>The seeds are idempotent and designed for development only.</p>
+        <ul class="docs-list">
+          <li>Three confirmed users: <code>alice</code>, <code>bob</code>, and <code>carol</code></li>
+          <li>Projects with shared memberships</li>
+          <li>Active and revoked API keys</li>
+          <li>Events across <code>error</code>, <code>metric</code>, <code>transaction</code>, <code>log</code>, and <code>check_in</code></li>
+          <li>Error groups in unresolved, resolved, ignored, and archived states</li>
+          <li>Check-in monitor examples for <code>ok</code>, <code>missed</code>, and <code>error</code></li>
+        </ul>
+        <%= docs_output_block([
+          "alice@example.com / password123",
+          "bob@example.com / password123",
+          "carol@example.com / password123"
+        ].join("\n"), label: "Demo credentials") %>
+      </section>
+
+      <section id="local-services" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Local services</p>
+        <h2>Pick a PostgreSQL strategy, then add Docker services as needed.</h2>
+        <p>If you already use Postgres.app locally, you can keep PostgreSQL outside Docker and only run ClickHouse and Redis:</p>
+        <%= docs_code_block([
+          "docker compose up -d clickhouse redis",
+          "bin/rails db:prepare"
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy local services commands") %>
+        <p>If you want PostgreSQL in Docker too, use:</p>
+        <%= docs_code_block([
+          "docker compose --profile docker-db up -d",
+          "bin/rails db:prepare"
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy Docker database commands") %>
+      </section>
+
+      <section id="verify-local-boot" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Verify local boot</p>
+        <h2>Confirm the local stack is actually usable.</h2>
+        <%= docs_output_block([
+          "Landing page loads",
+          "You can sign in with a seeded account",
+          "Projects index renders sample projects",
+          "Redis-backed background features start without errors",
+          "A seeded event appears in a project inbox"
+        ].join("\n"), label: "Local verification") %>
+      </section>
+    </article>
+  </div>
+</div>
