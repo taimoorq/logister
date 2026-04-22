@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Self-hosting | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Run Logister yourself with the local quickstart, docs map, and deploy verification flow.">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/">
+            <img src="/assets/logister-logo.svg" alt="Logister">
+            <span class="brand-copy">
+              <span class="brand-kicker">Documentation</span>
+              <span class="brand-title">Self-hosting</span>
+            </span>
+          </a>
+          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
+          <nav class="topnav" data-nav-panel>
+            <a href="/">Docs home</a>
+            <a href="https://github.com/taimoorq/logister">GitHub</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero">
+          <span class="hero-kicker">Documentation / Self-hosting</span>
+          <h1>Run Logister yourself.</h1>
+          <p>
+            Use this page as the operator entry point. It covers the first local boot and then routes you into the
+            more focused guides for day-to-day development, deploy configuration, and ClickHouse.
+          </p>
+        </section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group">
+              <p class="sidebar-label">Start here</p>
+              <a href="/">Overview</a>
+              <a href="/getting-started/">Getting started</a>
+              <a class="active" href="/self-hosting/">Self-hosting</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Operations</p>
+              <a href="/local-development/">Local development</a>
+              <a href="/deployment/">Deployment config</a>
+              <a href="/clickhouse/">ClickHouse</a>
+              <a href="/http-api/">HTTP API</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Integrations</p>
+              <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/cfml/">CFML integration</a>
+            </div>
+            <hr>
+            <div class="sidebar-group">
+              <p class="sidebar-label">On this page</p>
+              <a href="#prerequisites">Prerequisites</a>
+              <a href="#quickstart">Local quickstart</a>
+              <a href="#map">Docs map</a>
+              <a href="#need">What you need</a>
+              <a href="#verify">Verify deploy</a>
+            </div>
+          </aside>
+
+          <article class="article">
+            <section class="article-header">
+              <div class="outline-grid">
+                <section class="outline-card">
+                  <p class="eyebrow">Guide overview</p>
+                  <h2>Use this guide when you want to run the Logister app yourself.</h2>
+                  <p class="lead">
+                    Logister is a Rails app with PostgreSQL for control-plane data, Redis for jobs and cache, and
+                    optional ClickHouse for higher-scale analytics querying.
+                  </p>
+                </section>
+                <aside class="outline-card">
+                  <h3>Before you start</h3>
+                  <ul>
+                    <li>Provision PostgreSQL and Redis first.</li>
+                    <li>Keep your Rails credentials and environment secrets ready.</li>
+                    <li>Treat local boot and production rollout as separate steps.</li>
+                  </ul>
+                </aside>
+              </div>
+            </section>
+
+            <section id="prerequisites" class="section">
+              <p class="eyebrow">Prerequisites</p>
+              <h2>What you need before booting the app.</h2>
+              <ul>
+                <li>Ruby <code>4.0.1</code></li>
+                <li>PostgreSQL <code>&gt;= 14</code></li>
+                <li>Redis <code>&gt;= 7</code></li>
+                <li>Optional ClickHouse if you want a dedicated analytics store</li>
+              </ul>
+            </section>
+
+            <section id="quickstart" class="section">
+              <p class="eyebrow">Local quickstart</p>
+              <h2>Start the app locally.</h2>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#selfhost-setup">Copy</button>
+                </div>
+                <pre><code id="selfhost-setup">git clone https://github.com/taimoorq/logister.git
+cd logister
+cp .env.sample .env
+bundle install
+bin/rails db:prepare
+bin/dev</code></pre>
+              </div>
+              <div class="note tip">
+                <h4>Tip</h4>
+                <p><code>bin/dev</code> also watches Tailwind locally and attempts to ensure Redis is available.</p>
+              </div>
+            </section>
+
+            <section id="map" class="section">
+              <p class="eyebrow">Docs map</p>
+              <h2>Use the focused guides instead of one giant deployment checklist.</h2>
+              <div class="card-grid">
+                <article class="card">
+                  <p class="eyebrow">Local development</p>
+                  <h3>Boot, seed, and verify the app locally</h3>
+                  <p>Use this for <code>bin/dev</code>, Docker-backed infra, seeds, and local verification.</p>
+                  <p><a href="/local-development/">Read local development docs</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">Deployment config</p>
+                  <h3>Set production variables and provider config</h3>
+                  <p>Use this for environment variables, Turnstile, analytics, SendGrid, and deployment files.</p>
+                  <p><a href="/deployment/">Read deployment config docs</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">ClickHouse</p>
+                  <h3>Enable dedicated analytics storage</h3>
+                  <p>Use this when you want the optional ClickHouse path, schema setup, and event-column mapping.</p>
+                  <p><a href="/clickhouse/">Read ClickHouse docs</a></p>
+                </article>
+              </div>
+            </section>
+
+            <section id="need" class="section">
+              <p class="eyebrow">What you need</p>
+              <h2>Keep the deployment primitives clear before tuning extras.</h2>
+              <ul>
+                <li>PostgreSQL for users, projects, API keys, and app state</li>
+                <li>Redis for Sidekiq and app caching</li>
+                <li>A production secret store for Rails and provider credentials</li>
+                <li>A deployment method such as Fly, Kamal, or a custom Docker-based workflow</li>
+                <li>Optional ClickHouse if you need dedicated analytics scale</li>
+              </ul>
+            </section>
+
+            <section id="verify" class="section">
+              <p class="eyebrow">Verify deploy</p>
+              <h2>Check the app before you start sending production traffic.</h2>
+              <div class="output-block">
+                <div class="output-head"><span class="output-label">Deployment verification</span></div>
+                <pre><code>Web app responds successfully
+Background jobs can start
+Project creation works
+API key creation works
+A test event appears in the project inbox</code></pre>
+              </div>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

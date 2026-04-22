@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Getting Started | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Set up your first Logister project, generate an API key, and choose the right integration path.">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/">
+            <img src="/assets/logister-logo.svg" alt="Logister">
+            <span class="brand-copy">
+              <span class="brand-kicker">Documentation</span>
+              <span class="brand-title">Getting started</span>
+            </span>
+          </a>
+          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
+          <nav class="topnav" data-nav-panel>
+            <a href="/">Docs home</a>
+            <a href="https://github.com/taimoorq/logister">GitHub</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero">
+          <span class="hero-kicker">Documentation / Getting started</span>
+          <h1>Set up your first Logister project.</h1>
+          <p>
+            Logister works best when you start with a clean project, generate an API token, and then choose the
+            integration path that matches your application stack.
+          </p>
+        </section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group">
+              <p class="sidebar-label">Start here</p>
+              <a href="/">Overview</a>
+              <a class="active" href="/getting-started/">Getting started</a>
+              <a href="/self-hosting/">Self-hosting</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Operations</p>
+              <a href="/local-development/">Local development</a>
+              <a href="/deployment/">Deployment config</a>
+              <a href="/clickhouse/">ClickHouse</a>
+              <a href="/http-api/">HTTP API</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Integrations</p>
+              <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/cfml/">CFML integration</a>
+            </div>
+            <hr>
+            <div class="sidebar-group">
+              <p class="sidebar-label">On this page</p>
+              <a href="#project">Every setup begins with a project</a>
+              <a href="#flow">Core flow</a>
+              <a href="#project-type">Create a project</a>
+              <a href="#api-key">Generate an API key</a>
+              <a href="#integration">Choose an integration</a>
+              <a href="#verify">Verify setup</a>
+            </div>
+          </aside>
+
+          <article class="article">
+            <section class="article-header">
+              <div class="outline-grid">
+                <section class="outline-card">
+                  <p class="eyebrow">Guide overview</p>
+                  <h2>Start here if you are setting up Logister for the first time.</h2>
+                  <p class="lead">
+                    This page covers the product-side setup flow. Once you have a project and API token, move into the
+                    integration guide for Ruby or CFML depending on what your app runs.
+                  </p>
+                </section>
+                <aside class="outline-card chapter-links">
+                  <h3>Next guides</h3>
+                  <a href="/integrations/ruby/"><span>Ruby integration</span><span class="kbd">guide</span></a>
+                  <a href="/integrations/cfml/"><span>CFML integration</span><span class="kbd">guide</span></a>
+                  <a href="/http-api/"><span>HTTP API</span><span class="kbd">ref</span></a>
+                </aside>
+              </div>
+            </section>
+
+            <section id="project" class="section">
+              <p class="eyebrow">Getting started</p>
+              <h2>Every setup begins with a project.</h2>
+              <p>
+                In Logister, a project represents one monitored app or service. Each project has its own API keys,
+                settings, events, monitors, and integration guidance.
+              </p>
+            </section>
+
+            <section id="flow" class="section">
+              <p class="eyebrow">Core flow</p>
+              <h2>How data moves into Logister.</h2>
+              <ol>
+                <li>Create a project for the app you want to monitor.</li>
+                <li>Generate an API key for that project.</li>
+                <li>Send events to <code>/api/v1/ingest_events</code> or check-ins to <code>/api/v1/check_ins</code>.</li>
+                <li>Review errors, performance data, activity, and monitors in the project pages.</li>
+              </ol>
+            </section>
+
+            <section id="project-type" class="section">
+              <p class="eyebrow">Create a project</p>
+              <h2>Choose the integration type that matches your app.</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Integration type</th>
+                    <th>Best for</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>Ruby gem</code></td>
+                    <td>Rails and Ruby apps using <code>logister-ruby</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>CFML</code></td>
+                    <td>Lucee and Adobe ColdFusion apps sending direct HTTP payloads</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section id="api-key" class="section">
+              <p class="eyebrow">Generate an API key</p>
+              <h2>Create the token your app will use.</h2>
+              <p>
+                API keys are generated per project from project settings. The token is shown once at creation time,
+                so copy it into your environment or secret manager right away.
+              </p>
+              <div class="note warn">
+                <h4>Important</h4>
+                <p>The token is not shown again after creation. Store it before you leave the settings page.</p>
+              </div>
+            </section>
+
+            <section id="integration" class="section">
+              <p class="eyebrow">Choose an integration</p>
+              <h2>Move into the guide that matches your app stack.</h2>
+              <div class="card-grid">
+                <article class="card">
+                  <p class="eyebrow">Ruby</p>
+                  <h3>Use the gem</h3>
+                  <p>Best if your app is already Ruby or Rails and you want the shortest path to native instrumentation.</p>
+                  <p><a href="/integrations/ruby/">Read Ruby integration docs</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">CFML</p>
+                  <h3>Send direct payloads</h3>
+                  <p>Best if your app runs on Lucee or Adobe ColdFusion and sends events over HTTP.</p>
+                  <p><a href="/integrations/cfml/">Read CFML integration docs</a></p>
+                </article>
+              </div>
+            </section>
+
+            <section id="verify" class="section">
+              <p class="eyebrow">Verify setup</p>
+              <h2>Confirm that your project is ready for ingestion.</h2>
+              <div class="output-block">
+                <div class="output-head"><span class="output-label">Setup checklist</span></div>
+                <pre><code>Project created
+Integration type selected
+API key generated and copied once
+Destination guide chosen
+Base URL for your Logister instance confirmed</code></pre>
+              </div>
+              <div class="note tip">
+                <h4>Next step</h4>
+                <p>Once those items are done, move into the Ruby or CFML guide and send one test event first.</p>
+              </div>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>CFML Integration | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Set up a Lucee or Adobe ColdFusion site with Logister using cfhttp, Application.cfc.onError(), and structured exception data.">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">CFML integration</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://docs.lucee.org/">Lucee docs</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / CFML</span><h1>Integrate a Lucee or ColdFusion site with Logister.</h1><p>CFML apps can send events directly to Logister with <code>cfhttp</code>. The best path is a small <code>LogisterClient.cfc</code> wrapper plus <code>Application.cfc.onError()</code> for uncaught exceptions.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a class="active" href="/integrations/cfml/">CFML integration</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#flow">Setup flow</a><a href="#error">Send an error</a><a href="#handling">Error handling</a><a href="#types">Event types</a><a href="#detail">More detail</a></div>
+          </aside>
+          <article class="article">
+            <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>CFML</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates each request to Logister</td></tr><tr><td>Logister host URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Access to <code>Application.cfc</code></td><td>Lets you hook uncaught exceptions centrally</td></tr></tbody></table></section>
+            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project, choose <code>CFML</code>, and generate an API key.</li><li>Add a small <code>LogisterClient.cfc</code> wrapper around <code>cfhttp</code>.</li><li>Hook uncaught exceptions into <code>Application.cfc.onError()</code>.</li><li>Send request timings as <code>transaction</code> events and query timings as <code>metric</code> events.</li></ol><div class="note tip"><h4>Tip</h4><p>Start with uncaught exception capture, then add transactions, metrics, logs, and check-ins one by one as you verify each payload shape.</p></div></section>
+            <section id="error" class="section"><p class="eyebrow">Start with</p><h2>Send a structured error event.</h2><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#cfml-endpoint">Copy</button></div><pre><code id="cfml-endpoint">POST /api/v1/ingest_events</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">cfml</span><button class="copy-button" data-copy-button data-copy-target="#cfml-error">Copy</button></div><pre><code id="cfml-error">application.logister.sendEvent(
+  eventType = "error",
+  level = "error",
+  message = exception.message ?: "Unhandled CFML exception",
+  context = {
+    exception = {
+      type = exception.type ?: "Exception",
+      detail = exception.detail ?: "",
+      tagContext = exception.tagContext ?: []
+    }
+  }
+);</code></pre></div><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>request accepted
+error visible in project inbox
+stack frames rendered from tagContext</code></pre></div></section>
+            <section id="handling" class="section"><p class="eyebrow">Error handling</p><h2>Capture uncaught exceptions with <code>Application.cfc.onError()</code>.</h2><ul><li><code>exception.type</code> and <code>exception.message</code> drive the exception summary</li><li><code>exception.detail</code> improves the ColdFusion exception panel</li><li><code>exception.tagContext</code> populates template frames</li><li><code>context.cgi.script_name</code> and related CGI fields improve request context</li></ul><div class="code-block"><div class="code-head"><span class="code-language">cfml</span><button class="copy-button" data-copy-button data-copy-target="#cfml-onerror">Copy</button></div><pre><code id="cfml-onerror">public void function onError(any exception, string eventName) {
+  application.logister.sendEvent(
+    eventType = "error",
+    level = "error",
+    message = exception.message ?: "Unhandled exception",
+    context = {
+      exception = {
+        type = exception.type ?: "Exception",
+        detail = exception.detail ?: "",
+        tagContext = exception.tagContext ?: []
+      },
+      cgi = {
+        script_name = cgi.script_name ?: "",
+        request_method = cgi.request_method ?: "",
+        query_string = cgi.query_string ?: ""
+      }
+    }
+  );
+}</code></pre></div><div class="note warn"><h4>Important</h4><p>If you omit <code>tagContext</code>, Logister can still store the event, but the CFML error view loses the template-frame detail that makes debugging much easier.</p></div></section>
+            <section id="types" class="section"><p class="eyebrow">Event types</p><h2>Use structured event types consistently.</h2><table><thead><tr><th>Event type</th><th>Typical CFML use</th></tr></thead><tbody><tr><td><code>transaction</code></td><td>Request timing, CFC method timing, remote call latency</td></tr><tr><td><code>metric</code></td><td><code>db.query</code>, cache timings, outbound HTTP timings</td></tr><tr><td><code>log</code></td><td>Application logs with request or release metadata</td></tr><tr><td><code>check_in</code></td><td>Scheduled jobs, task runners, cron-style heartbeats</td></tr></tbody></table><dl><dt>Error</dt><dd>Start here so you can confirm payload authentication and exception rendering.</dd><dt>Transaction</dt><dd>Add request timings next so the performance view becomes useful quickly.</dd><dt>Metric</dt><dd>Layer in <code>db.query</code> and other timings for deeper latency analysis.</dd><dt>Check-in</dt><dd>Finish with scheduled jobs and cron heartbeats for monitor coverage.</dd></dl></section>
+            <section id="detail" class="section"><p class="eyebrow">More detail</p><h2>Need more reference material?</h2><p>The static docs now carry the CFML setup flow directly. For lower-level payload details, pair this page with the <a href="/http-api/">HTTP API reference</a> so you can verify exact request shapes and authentication headers.</p></section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Documentation | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Public Logister documentation for integrations, setup flows, operations, and product usage.">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/">
+            <img src="/assets/logister-logo.svg" alt="Logister">
+            <span class="brand-copy">
+              <span class="brand-kicker">Documentation</span>
+              <span class="brand-title">Overview</span>
+            </span>
+          </a>
+          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
+          <nav class="topnav" data-nav-panel>
+            <a href="/">Docs home</a>
+            <a href="https://github.com/taimoorq/logister">GitHub</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero">
+          <span class="hero-kicker">Documentation</span>
+          <h1>Public setup guides for Logister and its integrations.</h1>
+          <p>
+            This static site is the Cloudflare Pages version of the Logister docs. It carries the setup,
+            operations, and integration guidance that used to live mostly in the GitHub README.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="/getting-started/">Getting started</a>
+            <a class="btn btn-secondary" href="/http-api/">HTTP API</a>
+          </div>
+        </section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group">
+              <p class="sidebar-label">Start here</p>
+              <a class="active" href="/">Overview</a>
+              <a href="/getting-started/">Getting started</a>
+              <a href="/self-hosting/">Self-hosting</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Operations</p>
+              <a href="/local-development/">Local development</a>
+              <a href="/deployment/">Deployment config</a>
+              <a href="/clickhouse/">ClickHouse</a>
+              <a href="/http-api/">HTTP API</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Integrations</p>
+              <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/cfml/">CFML integration</a>
+            </div>
+            <hr>
+            <div class="sidebar-group">
+              <p class="sidebar-label">On this page</p>
+              <a href="#overview">Overview</a>
+              <a href="#guides">Guides</a>
+              <a href="#next">Getting started next</a>
+              <a href="#growth">Growing the docs</a>
+            </div>
+            <div class="sidebar-card">
+              <h4>Project-aware setup</h4>
+              <p>Projects can be labeled by integration type so the in-app guidance matches the Ruby and CFML workflows.</p>
+            </div>
+          </aside>
+
+          <article class="article">
+            <section id="overview" class="section">
+              <p class="eyebrow">Overview</p>
+              <h2>Choose the guide that matches your project type.</h2>
+              <p>
+                Logister provides public documentation for Ruby and CFML integrations plus the operations guides needed
+                to self-host the app. Start with the guide that matches how your application sends data today.
+              </p>
+              <blockquote>
+                Use the product docs as the canonical source of truth. The GitHub README now points here instead of
+                duplicating most setup guidance.
+              </blockquote>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Guide</th>
+                    <th>Best for</th>
+                    <th>Main setup path</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Ruby integration</td>
+                    <td>Rails and Ruby apps</td>
+                    <td><code>logister-ruby</code> gem</td>
+                  </tr>
+                  <tr>
+                    <td>CFML integration</td>
+                    <td>Lucee and Adobe ColdFusion sites</td>
+                    <td><code>cfhttp</code> plus structured event payloads</td>
+                  </tr>
+                  <tr>
+                    <td>Operations guides</td>
+                    <td>Teams self-hosting Logister</td>
+                    <td>Local development, deployment, ClickHouse, and HTTP reference</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section id="guides" class="section">
+              <p class="eyebrow">Guides</p>
+              <h2>Everything you need to get from zero to a working event feed.</h2>
+              <div class="card-grid">
+                <article class="card">
+                  <p class="eyebrow">Start here</p>
+                  <h3>Set up your first project</h3>
+                  <p>Create a project, choose the right integration type, generate an API key, and send your first event.</p>
+                  <p><a href="/getting-started/">Read getting started</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">Operations</p>
+                  <h3>Self-host Logister</h3>
+                  <p>Use the operations docs for local boot, deployment configuration, ClickHouse, and HTTP payload reference.</p>
+                  <p><a href="/self-hosting/">Read self-hosting docs</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">Ruby</p>
+                  <h3>Install the gem</h3>
+                  <p>Use the Ruby integration guide when your app already runs on Rails or Ruby.</p>
+                  <p><a href="/integrations/ruby/">Read Ruby docs</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">CFML</p>
+                  <h3>Send direct payloads</h3>
+                  <p>Use the CFML guide for Lucee or Adobe ColdFusion apps that talk to Logister over HTTP.</p>
+                  <p><a href="/integrations/cfml/">Read CFML docs</a></p>
+                </article>
+              </div>
+            </section>
+
+            <section id="next" class="section">
+              <p class="eyebrow">Getting started next</p>
+              <h2>Follow the shortest path to your first event.</h2>
+              <ol>
+                <li>Create a project and choose the right integration type.</li>
+                <li>Generate an API key and store it immediately.</li>
+                <li>Pick the Ruby or CFML guide based on your application stack.</li>
+                <li>Use the HTTP API page when you need the exact request shape.</li>
+                <li>Send one known-good event before broadening instrumentation.</li>
+              </ol>
+            </section>
+
+            <section id="growth" class="section">
+              <p class="eyebrow">Growing the docs</p>
+              <h2>This is the base for a standalone hosted documentation site.</h2>
+              <p>
+                This static export is designed so the docs can move to Cloudflare Pages cleanly. It keeps the information
+                architecture of the Rails docs while removing the app runtime dependency.
+              </p>
+              <ul>
+                <li>Integration guides stay public and easy to share.</li>
+                <li>Operations docs no longer need to live in the README.</li>
+                <li>Future product docs can be added as plain HTML in this directory.</li>
+              </ul>
+            </section>
+          </article>
+        </div>
+      </main>
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div class="footer-copy">
+            <strong>Logister documentation</strong>
+            <p>Reference material for integrating errors, metrics, logs, and check-ins into Logister.</p>
+          </div>
+          <div class="footer-links">
+            <div class="footer-column">
+              <h4>Start here</h4>
+              <a href="/">Overview</a>
+              <a href="/getting-started/">Getting started</a>
+              <a href="/self-hosting/">Self-hosting</a>
+            </div>
+            <div class="footer-column">
+              <h4>Operations</h4>
+              <a href="/local-development/">Local development</a>
+              <a href="/deployment/">Deployment config</a>
+              <a href="/clickhouse/">ClickHouse</a>
+              <a href="/http-api/">HTTP API</a>
+            </div>
+            <div class="footer-column">
+              <h4>Integrations</h4>
+              <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/cfml/">CFML integration</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
