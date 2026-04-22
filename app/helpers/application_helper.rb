@@ -242,6 +242,16 @@ module ApplicationHelper
     end
   end
 
+  def app_stylesheet_tags
+    return "".html_safe unless tailwind_built?
+
+    stylesheet_link_tag("tailwind", media: "all", "data-turbo-track": "reload")
+  end
+
+  def app_javascript_tags
+    javascript_importmap_tags
+  end
+
   # True when tailwindcss-rails has built app/assets/builds/tailwind.css.
   # Lets request specs pass without running bin/rails tailwindcss:build.
   def tailwind_built?

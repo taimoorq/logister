@@ -20,26 +20,67 @@
         and future app documentation should live so users can access them without signing in.
       </p>
       <div class="hero-actions">
-        <%= link_to "Ruby integration", docs_ruby_integration_path, class: "hero-btn hero-btn-primary" %>
-        <%= link_to "CFML integration", docs_cfml_integration_path, class: "hero-btn hero-btn-secondary" %>
+        <%= link_to "Getting started", docs_getting_started_path, class: "hero-btn hero-btn-primary" %>
+        <%= link_to "HTTP API", docs_http_api_path, class: "hero-btn hero-btn-secondary" %>
       </div>
     </div>
   </section>
 
-  <div class="docs-shell">
-    <%= render "sidebar" %>
+  <div class="docs-shell docs-layout">
+    <div class="docs-rail">
+      <%= render "sidebar" %>
+    </div>
 
-    <div class="docs-content">
-      <section class="docs-section">
+    <article class="<%= docs_article_classes %>">
+      <section id="overview" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Overview</p>
         <h2>Choose the guide that matches your project type.</h2>
         <p>
           Logister currently has public documentation for Ruby and CFML integrations. Each project in the app can be tagged
           with an integration type so the in-app setup guidance matches the public docs here.
         </p>
+        <blockquote>
+          Start with the guide that matches how your app sends data today. You can always revisit the project integration
+          type later if you are migrating from one ingestion style to another.
+        </blockquote>
+        <table>
+          <thead>
+            <tr>
+              <th>Guide</th>
+              <th>Best for</th>
+              <th>Main setup path</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ruby integration</td>
+              <td>Rails and Ruby apps</td>
+              <td><code>logister-ruby</code> gem</td>
+            </tr>
+            <tr>
+              <td>CFML integration</td>
+              <td>Lucee and Adobe ColdFusion sites</td>
+              <td><code>cfhttp</code> plus structured event payloads</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
 
-      <section class="docs-card-grid">
+      <section id="guides" class="docs-card-grid docs-section-anchor not-prose">
+        <article class="docs-card">
+          <p class="feature-kicker">Start here</p>
+          <h3>Set up your first project</h3>
+          <p>Use the getting started guide to create a project, generate an API key, and pick the right integration path.</p>
+          <%= link_to "Read getting started", docs_getting_started_path, class: "docs-inline-link" %>
+        </article>
+
+        <article class="docs-card">
+          <p class="feature-kicker">Operations</p>
+          <h3>Self-host Logister</h3>
+          <p>Best for teams running the Logister app themselves with local setup, environment config, and production rollout notes.</p>
+          <%= link_to "Read self-hosting docs", docs_self_hosting_path, class: "docs-inline-link" %>
+        </article>
+
         <article class="docs-card">
           <p class="feature-kicker">Ruby</p>
           <h3>Install the `logister-ruby` gem</h3>
@@ -55,19 +96,32 @@
         </article>
       </section>
 
-      <section class="docs-section">
+      <section id="getting-started-next" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Getting started next</p>
+        <h2>Follow the shortest path to your first event.</h2>
+        <ol class="docs-list docs-list-numbered">
+          <li>Read the getting started guide and create a project.</li>
+          <li>Generate an API key and store it immediately.</li>
+          <li>Choose the Ruby or CFML guide based on your app stack.</li>
+          <li>Use the HTTP API reference when you need exact payload details.</li>
+          <li>Send one test event before adding broader instrumentation.</li>
+        </ol>
+      </section>
+
+      <section id="growing-the-docs" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Growing the section</p>
         <h2>This is the foundation for broader Logister docs.</h2>
         <p>
           New product documentation should be added under this public docs section going forward so setup, feature usage,
           and integration guidance all live in one consistent place.
         </p>
+        <hr>
         <ul class="docs-list">
           <li>Integration guides</li>
           <li>Public setup instructions linked from project settings</li>
           <li>Future feature docs for the Logister app itself</li>
         </ul>
       </section>
-    </div>
+    </article>
   </div>
 </div>

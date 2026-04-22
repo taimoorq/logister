@@ -7,6 +7,9 @@ Rails.application.routes.draw do
   }
   root "home#show"
   get "docs", to: "docs#index", as: :docs
+  get "docs/getting-started", to: "docs#getting_started", as: :docs_getting_started
+  get "docs/self-hosting", to: "docs#self_hosting", as: :docs_self_hosting
+  get "docs/http-api", to: "docs#http_api", as: :docs_http_api
   get "docs/integrations/ruby", to: "docs#ruby", as: :docs_ruby_integration
   get "docs/integrations/cfml", to: "docs#cfml", as: :docs_cfml_integration
   get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }

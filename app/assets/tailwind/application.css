@@ -1,3 +1,4 @@
 @import "tailwindcss";
 @config "../../../config/tailwind.config.js";
+@plugin "@tailwindcss/typography";
 @import "../stylesheets/application.tailwind.css";

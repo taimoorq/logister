@@ -1,12 +1,28 @@
-<aside class="docs-sidebar">
+<aside class="docs-sidebar w-full self-start rounded-2xl border border-slate-200 bg-white/90 shadow-sm p-5 space-y-4">
   <p class="docs-sidebar-kicker">Documentation</p>
-  <nav class="docs-sidebar-nav" aria-label="Documentation navigation">
-    <% docs_navigation_items.each do |label, path| %>
-      <%= link_to label, path, class: "docs-sidebar-link #{current_page?(path) ? 'is-active' : ''}" %>
-    <% end %>
-  </nav>
+  <% docs_navigation_sections.each do |section| %>
+    <div class="docs-sidebar-group">
+      <p class="docs-sidebar-kicker"><%= section[:title] %></p>
+      <nav class="docs-sidebar-nav" aria-label="<%= section[:title] %>">
+        <% section[:items].each do |label, path| %>
+          <%= link_to label, path, class: "docs-sidebar-link block rounded-xl px-3 py-2.5 text-sm font-medium no-underline #{current_page?(path) ? 'is-active bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" %>
+        <% end %>
+      </nav>
+    </div>
+  <% end %>
 
-  <div class="docs-sidebar-card">
+  <div class="docs-sidebar-divider"></div>
+
+  <div class="docs-sidebar-group">
+    <p class="docs-sidebar-kicker">On this page</p>
+    <nav class="docs-sidebar-nav" aria-label="Page sections">
+      <% docs_section_items.each do |label, path| %>
+        <%= link_to label, path, class: "docs-sidebar-link docs-sidebar-link-section block rounded-xl px-3 py-2 text-[13px] no-underline text-slate-500 hover:bg-slate-50 hover:text-slate-800" %>
+      <% end %>
+    </nav>
+  </div>
+
+  <div class="docs-sidebar-card rounded-xl border border-slate-200 bg-slate-50/80 p-4">
     <p class="docs-sidebar-card-title">Project-aware setup</p>
     <p class="docs-sidebar-card-copy">Projects can be labeled by integration type so the in-app setup guidance matches Ruby and CFML workflows.</p>
   </div>

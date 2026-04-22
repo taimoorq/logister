@@ -78,3 +78,45 @@ Used when one action should update several DOM regions:
 
 - Request specs exercise controllers and Turbo: frame and stream responses are tested by hitting the same actions with the right params and headers (or by using the same URLs as the front end and asserting on response body or redirects).
 - No need to duplicate full UX in system tests for every Turbo path; use request specs for “this action returns this frame/stream” and system tests for a few critical flows if desired.
+
+## Implementation learnings
+
+### Asset pipeline and Tailwind
+
+- **This app uses Propshaft, not Sprockets.** Treat asset loading the Rails 8 / Propshaft way. Do not add Sprockets-style cache-busting path hacks such as `/assets/tailwind.css?v=...` unless there is a very specific reason and you have confirmed Propshaft ownership of that path.
+- **Use the shared layout helpers for assets.** Both `application` and `docs` layouts should load CSS/JS through shared helpers in `ApplicationHelper` so the app has one asset-loading path:
+  - `app_stylesheet_tags`
+  - `app_javascript_tags`
+- **Tailwind comes from `app/assets/builds/tailwind.css`.** `tailwindcss-rails` builds from `app/assets/tailwind/application.css`, which imports `app/assets/stylesheets/application.tailwind.css`. When docs or app styling changes, rebuild with `bin/rails tailwindcss:build` or run `bin/dev`.
+- **Do not trust stale compiled files in `public/assets`.** If styling looks inexplicably old in development, inspect what stylesheet URL the page is loading. A stale digested CSS file can mask new styles even when `app/assets/builds/tailwind.css` is correct.
+- **In development, prefer aggressive cache invalidation for asset debugging.** `config/environments/development.rb` should not set long-lived public cache headers while debugging stylesheet issues. If changes seem invisible, check the browser’s loaded CSS asset before assuming the views are wrong.
+
+### Documentation section
+
+- **Docs are a first-class public section, not a markdown dump.** The docs pages live in `DocsController` with a dedicated `docs` layout and public routes under `/docs`.
+- **The docs layout should still follow the app’s asset and Hotwire conventions.** It may have custom chrome, but it should use the same shared stylesheet/importmap helpers and the same Turbo metadata as the main layout.
+- **Critical docs structure should be visible in ERB, not hidden entirely in custom CSS.** For core layout behavior such as sidebar rail, content column, and code block framing, prefer clear template structure and utility classes so the page remains understandable even when custom CSS is being debugged.
+- **Docs content should follow a consistent guide shape.** The current preferred flow is:
+  1. Short overview
+  2. Prerequisites or before-you-start context
+  3. Step-by-step setup or usage flow
+  4. Verification section
+  5. Next steps or troubleshooting
+- **Use the docs helpers consistently.**
+  - `docs_code_block` for copyable highlighted code snippets
+  - `docs_output_block` for shell output / verification blocks
+  - `docs_section_items` for left-nav “On this page” anchors
+  - `docs_article_classes` for the article prose shell
+
+### Hotwire, Turbo, and Stimulus
+
+- **Docs pages should not special-case Hotwire unless necessary.** Public docs should work as normal Turbo Drive pages. Only opt out with `data: { turbo: false }` for flows that already require full reloads, like Devise auth links.
+- **Keep JS boot standard.** Turbo is loaded in `app/javascript/application.js`, Stimulus controllers are registered in `app/javascript/controllers/index.js`, and layouts should use `javascript_importmap_tags`.
+- **Use Stimulus for small behavior only.** Existing docs behavior such as copy buttons and nav toggles should remain Stimulus-driven or simple DOM behavior, not custom page-specific JS frameworks.
+- **When debugging rendering, separate HTML issues from CSS issues.** First confirm the expected classes are present in the rendered HTML. Then confirm the final compiled CSS actually contains selectors for those classes. This prevents wasting time changing views when the real problem is stale or missing assets.
+
+### Working habits that helped
+
+- **Inspect the actual asset URL rendered in HTML.** It quickly answers whether the browser is loading fresh CSS or an old digested file.
+- **Check the compiled asset, not just the source stylesheet.** When styles seem missing, inspect both `app/assets/stylesheets/application.tailwind.css` and the compiled `app/assets/builds/tailwind.css`.
+- **Use request specs to lock in layout behavior.** For docs pages in particular, request specs should verify shared asset tags, importmap tags, Turbo metadata, and key content/anchors so layout regressions are easier to spot.

@@ -473,6 +473,7 @@ DEPENDENCIES
   rails_cloudflare_turnstile
   railsforge
   redis (~> 5.4)
+  rouge
   rspec-rails (~> 8.0.0)
   rubocop-rails-omakase
   selenium-webdriver

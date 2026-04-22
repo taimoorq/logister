@@ -52,8 +52,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" if tailwind_built? %>
-    <%= javascript_importmap_tags %>
+    <%= app_stylesheet_tags %>
+    <%= app_javascript_tags %>
   </head>
 
   <body class="<%= user_signed_in? ? 'min-h-screen flex flex-col bg-slate-100 text-slate-900 antialiased' : 'min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased' %>" data-controller="local-time">

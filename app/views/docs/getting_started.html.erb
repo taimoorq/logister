@@ -1,0 +1,166 @@
+<% content_for :title, "Getting Started" %>
+<% content_for :meta_description, "Get started with Logister by creating a project, generating an API key, and choosing the right integration path." %>
+<% content_for :canonical_path, docs_getting_started_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "TechArticle",
+  "name" => "Logister Getting Started",
+  "url" => absolute_url_for(docs_getting_started_path),
+  "description" => "Get started with Logister by creating a project, generating an API key, and choosing the right integration path."
+}) %>
+
+<div class="docs-page">
+  <section class="docs-hero docs-hero-compact">
+    <div>
+      <p class="hero-kicker">Documentation / Getting Started</p>
+      <h1 class="hero-title">Set up your first Logister project.</h1>
+      <p class="hero-copy">
+        Logister works best when you start with a clean project, generate an API token, and then choose the
+        integration path that matches your application stack.
+      </p>
+    </div>
+  </section>
+
+  <div class="docs-shell docs-layout">
+    <div class="docs-rail">
+      <%= render "sidebar" %>
+    </div>
+
+    <article class="<%= docs_article_classes %>">
+      <section class="docs-article-header not-prose">
+        <p class="docs-eyebrow">Guide overview</p>
+        <h2>Start here if you are setting up Logister for the first time.</h2>
+        <p class="docs-lead">
+          This page covers the product-side setup flow. Once you have a project and API token, move into the
+          integration guide for Ruby or CFML depending on what your app runs.
+        </p>
+        <div class="docs-outline-grid">
+          <section class="docs-outline-card">
+            <h3 class="docs-outline-title">After reading this guide, you will know:</h3>
+            <ul class="docs-outline-list">
+              <li>How Logister projects map to monitored applications.</li>
+              <li>How to create a project and choose the right integration type.</li>
+              <li>How to generate an API key and where it gets used.</li>
+              <li>Where to go next for ingestion and setup details.</li>
+            </ul>
+          </section>
+
+          <aside class="docs-outline-card">
+            <h3 class="docs-outline-title">Next guides</h3>
+            <nav class="docs-chapters" aria-label="Getting started next steps">
+              <%= link_to docs_ruby_integration_path do %>
+                <span>Ruby integration</span>
+                <span class="docs-kbd">guide</span>
+              <% end %>
+              <%= link_to docs_cfml_integration_path do %>
+                <span>CFML integration</span>
+                <span class="docs-kbd">guide</span>
+              <% end %>
+              <%= link_to docs_http_api_path do %>
+                <span>HTTP API</span>
+                <span class="docs-kbd">ref</span>
+              <% end %>
+            </nav>
+          </aside>
+        </div>
+      </section>
+
+      <section id="getting-started" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Getting started</p>
+        <h2>Every setup begins with a project.</h2>
+        <p>
+          In Logister, a project represents one monitored app or service. Each project has its own API keys,
+          settings, events, monitors, and integration guidance.
+        </p>
+      </section>
+
+      <section id="core-flow" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Core flow</p>
+        <h2>How data moves into Logister.</h2>
+        <ol class="docs-list docs-list-numbered">
+          <li>Create a project for the app you want to monitor.</li>
+          <li>Generate an API key for that project.</li>
+          <li>Send events to <code>/api/v1/ingest_events</code> or check-ins to <code>/api/v1/check_ins</code>.</li>
+          <li>Review errors, performance data, activity, and monitors in the project pages.</li>
+        </ol>
+      </section>
+
+      <section id="create-a-project" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Create a project</p>
+        <h2>Choose the integration type that matches your app.</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Integration type</th>
+              <th>Best for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Ruby gem</code></td>
+              <td>Rails and Ruby apps using <code>logister-ruby</code></td>
+            </tr>
+            <tr>
+              <td><code>CFML</code></td>
+              <td>Lucee and Adobe ColdFusion apps sending direct HTTP payloads</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="generate-an-api-key" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Generate an API key</p>
+        <h2>Create the token your app will use.</h2>
+        <p>
+          API keys are generated per project from project settings. The token is shown once at creation time,
+          so copy it into your environment or secret manager right away.
+        </p>
+        <div class="docs-note docs-note-warn not-prose">
+          <strong>Important</strong>
+          <p>The token is not shown again after creation. Store it before you leave the settings page.</p>
+        </div>
+      </section>
+
+      <section id="choose-an-integration" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Choose an integration</p>
+        <h2>Move into the guide that matches your app stack.</h2>
+        <div class="docs-card-grid not-prose">
+          <article class="docs-card">
+            <p class="feature-kicker">Ruby</p>
+            <h3>Use the gem</h3>
+            <p>Best if your app is already Ruby or Rails and you want the shortest path to native instrumentation.</p>
+            <%= link_to "Read Ruby integration docs", docs_ruby_integration_path, class: "docs-inline-link" %>
+          </article>
+
+          <article class="docs-card">
+            <p class="feature-kicker">CFML</p>
+            <h3>Send direct payloads</h3>
+            <p>Best if your app runs on Lucee or Adobe ColdFusion and sends events over HTTP.</p>
+            <%= link_to "Read CFML integration docs", docs_cfml_integration_path, class: "docs-inline-link" %>
+          </article>
+        </div>
+      </section>
+
+      <section id="verify-setup" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Verify setup</p>
+        <h2>Confirm that your project is ready for ingestion.</h2>
+        <p>
+          Before touching application code, make sure the product-side pieces are in place. That keeps the first
+          integration pass small and makes it easier to tell whether a missing event is a product issue or an app issue.
+        </p>
+        <%= docs_output_block([
+          "Project created",
+          "Integration type selected",
+          "API key generated and copied once",
+          "Destination guide chosen",
+          "Base URL for your Logister instance confirmed"
+        ].join("\n"), label: "Setup checklist") %>
+        <div class="docs-note docs-note-tip not-prose">
+          <strong>Next step</strong>
+          <p>Once those five items are done, move straight into the Ruby or CFML guide and send one test event first.</p>
+        </div>
+      </section>
+    </article>
+  </div>
+</div>

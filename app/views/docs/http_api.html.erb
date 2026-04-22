@@ -1,0 +1,164 @@
+<% content_for :title, "HTTP API" %>
+<% content_for :meta_description, "Reference for the Logister ingest and check-in HTTP endpoints." %>
+<% content_for :canonical_path, docs_http_api_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "TechArticle",
+  "name" => "Logister HTTP API",
+  "url" => absolute_url_for(docs_http_api_path),
+  "description" => "Reference for the Logister ingest and check-in HTTP endpoints."
+}) %>
+
+<div class="docs-page">
+  <section class="docs-hero docs-hero-compact">
+    <div>
+      <p class="hero-kicker">Documentation / HTTP API</p>
+      <h1 class="hero-title">Send events and check-ins over HTTP.</h1>
+      <p class="hero-copy">
+        Logister exposes project-scoped ingest endpoints for application events and heartbeat-style check-ins.
+      </p>
+    </div>
+  </section>
+
+  <div class="docs-shell docs-layout">
+    <div class="docs-rail">
+      <%= render "sidebar" %>
+    </div>
+
+    <article class="<%= docs_article_classes %>">
+      <section class="docs-article-header not-prose">
+        <p class="docs-eyebrow">API overview</p>
+        <h2>Use the HTTP API when you are integrating directly.</h2>
+        <p class="docs-lead">
+          Most clients will use the Ruby guide or the CFML guide, but the API itself is simple: authenticate
+          with a project token, then POST JSON to the right endpoint.
+        </p>
+        <div class="docs-outline-grid">
+          <section class="docs-outline-card">
+            <h3 class="docs-outline-title">Use this guide when:</h3>
+            <ul class="docs-outline-list">
+              <li>You are sending events from a custom client.</li>
+              <li>You want the exact endpoint and payload shapes.</li>
+              <li>You are debugging ingestion outside the app-specific guides.</li>
+            </ul>
+          </section>
+
+          <aside class="docs-outline-card">
+            <h3 class="docs-outline-title">Keep nearby</h3>
+            <ul class="docs-outline-list">
+              <li>Your project API token</li>
+              <li>Your Logister base URL</li>
+              <li>One sample app event to send first</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section id="authentication" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Authentication</p>
+        <h2>Use a project API token.</h2>
+        <p>Send the token with either of these headers:</p>
+        <ul class="docs-list">
+          <li><code>Authorization: Bearer &lt;token&gt;</code></li>
+          <li><code>X-Api-Key: &lt;token&gt;</code></li>
+        </ul>
+      </section>
+
+      <section id="ingest-events" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Ingest events</p>
+        <h2>POST application events to the ingest endpoint.</h2>
+        <%= docs_code_block([
+          "POST /api/v1/ingest_events",
+          "Authorization: Bearer <token>",
+          "Content-Type: application/json"
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy ingest endpoint example") %>
+        <%= docs_code_block([
+          "{",
+          "  \"event_type\": \"error\",",
+          "  \"level\": \"error\",",
+          "  \"message\": \"Unhandled exception\",",
+          "  \"context\": {",
+          "    \"exception\": {",
+          "      \"type\": \"RuntimeError\"",
+          "    }",
+          "  }",
+          "}"
+        ].join("\n"), language: "language-json", aria_label: "Copy ingest payload example") %>
+      </section>
+
+      <section id="check-ins" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Check-ins</p>
+        <h2>POST monitor heartbeats for scheduled work.</h2>
+        <%= docs_code_block([
+          "POST /api/v1/check_ins",
+          "Authorization: Bearer <token>",
+          "Content-Type: application/json"
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy check-in endpoint example") %>
+        <%= docs_code_block([
+          "{",
+          "  \"slug\": \"nightly-sync\",",
+          "  \"status\": \"ok\",",
+          "  \"environment\": \"production\",",
+          "  \"expected_interval_seconds\": 3600",
+          "}"
+        ].join("\n"), language: "language-json", aria_label: "Copy check-in payload example") %>
+      </section>
+
+      <section id="event-types" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Event types</p>
+        <h2>Use the right event type for the data you are sending.</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Typical use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>error</code></td>
+              <td>Unhandled exceptions and captured failures</td>
+            </tr>
+            <tr>
+              <td><code>transaction</code></td>
+              <td>Request timings and method latency</td>
+            </tr>
+            <tr>
+              <td><code>metric</code></td>
+              <td><code>db.query</code> and custom timing metrics</td>
+            </tr>
+            <tr>
+              <td><code>log</code></td>
+              <td>Structured application logs</td>
+            </tr>
+            <tr>
+              <td><code>check_in</code></td>
+              <td>Heartbeat-style scheduled job reporting</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="verify-delivery" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Verify delivery</p>
+        <h2>Make sure your first payload shows up where you expect.</h2>
+        <p>
+          Send one known-good payload first, then check the matching project in Logister before broadening the rollout.
+          That gives you a clean baseline for authentication, endpoint selection, and event shape.
+        </p>
+        <%= docs_output_block([
+          "1. Send one test error or transaction payload",
+          "2. Open the matching project in Logister",
+          "3. Confirm the event appears in the inbox or activity feed",
+          "4. Inspect context fields to verify the payload shape",
+          "5. Only then add the rest of your instrumentation"
+        ].join("\n"), label: "Delivery verification") %>
+        <div class="docs-note docs-note-tip not-prose">
+          <strong>Next step</strong>
+          <p>If you are integrating from CFML or Ruby, switch back to those guides once the raw HTTP path is working.</p>
+        </div>
+      </section>
+    </article>
+  </div>
+</div>

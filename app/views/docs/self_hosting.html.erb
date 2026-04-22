@@ -1,0 +1,163 @@
+<% content_for :title, "Self-hosting" %>
+<% content_for :meta_description, "Self-host Logister with the local quickstart, environment setup, and production checklist." %>
+<% content_for :canonical_path, docs_self_hosting_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "TechArticle",
+  "name" => "Logister Self-hosting",
+  "url" => absolute_url_for(docs_self_hosting_path),
+  "description" => "Self-host Logister with the local quickstart, environment setup, and production checklist."
+}) %>
+
+<div class="docs-page">
+  <section class="docs-hero docs-hero-compact">
+    <div>
+      <p class="hero-kicker">Documentation / Self-hosting</p>
+      <h1 class="hero-title">Run Logister yourself.</h1>
+      <p class="hero-copy">
+        This page distills the self-hosting guidance from the README into a public docs flow for local setup,
+        required environment variables, and production rollout.
+      </p>
+    </div>
+  </section>
+
+  <div class="docs-shell docs-layout">
+    <div class="docs-rail">
+      <%= render "sidebar" %>
+    </div>
+
+    <article class="<%= docs_article_classes %>">
+      <section class="docs-article-header not-prose">
+        <p class="docs-eyebrow">Guide overview</p>
+        <h2>Use this guide when you want to run the Logister app yourself.</h2>
+        <p class="docs-lead">
+          Logister is a Rails app with PostgreSQL for control-plane data, Redis for jobs and cache, and optional
+          ClickHouse for higher-scale analytics querying.
+        </p>
+        <div class="docs-outline-grid">
+          <section class="docs-outline-card">
+            <h3 class="docs-outline-title">Before you start</h3>
+            <ul class="docs-outline-list">
+              <li>Provision PostgreSQL and Redis first.</li>
+              <li>Keep your Rails credentials and environment secrets ready.</li>
+              <li>Treat local boot and production rollout as separate steps.</li>
+            </ul>
+          </section>
+
+          <aside class="docs-outline-card">
+            <h3 class="docs-outline-title">After reading this guide, you will know:</h3>
+            <ul class="docs-outline-list">
+              <li>How to boot Logister locally.</li>
+              <li>Which environment variables matter in production.</li>
+              <li>What to verify before calling a deploy healthy.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section id="prerequisites" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Prerequisites</p>
+        <h2>What you need before booting the app.</h2>
+        <ul class="docs-list">
+          <li>Ruby <code>4.0.1</code></li>
+          <li>PostgreSQL <code>&gt;= 14</code></li>
+          <li>Redis <code>&gt;= 7</code></li>
+          <li>Optional ClickHouse if you want a dedicated analytics store</li>
+        </ul>
+      </section>
+
+      <section id="local-quickstart" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Local quickstart</p>
+        <h2>Start the app locally.</h2>
+        <p>Use this path for your first local boot so you can verify the app, database, and asset pipeline together.</p>
+        <h3>1. Clone and configure</h3>
+        <%= docs_code_block([
+          "git clone https://github.com/taimoorq/logister.git",
+          "cd logister",
+          "cp .env.sample .env",
+          "bundle install"
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy self-host setup commands") %>
+        <h3>2. Prepare the database</h3>
+        <%= docs_code_block([
+          "bin/rails db:prepare",
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy self-host database commands") %>
+        <h3>3. Start the app</h3>
+        <%= docs_code_block([
+          "bin/dev"
+        ].join("\n"), language: "language-bash", shell: true, aria_label: "Copy self-host boot commands") %>
+        <div class="docs-note docs-note-tip not-prose">
+          <strong>Tip</strong>
+          <p><code>bin/dev</code> also watches Tailwind locally and attempts to ensure Redis is available.</p>
+        </div>
+      </section>
+
+      <section id="environment" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Environment</p>
+        <h2>Provide the minimum production configuration.</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Why it matters</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>RAILS_MASTER_KEY</code></td>
+              <td>Decrypts Rails credentials</td>
+            </tr>
+            <tr>
+              <td><code>DATABASE_URL</code></td>
+              <td>Connects the primary Rails database</td>
+            </tr>
+            <tr>
+              <td><code>REDIS_URL</code></td>
+              <td>Powers Sidekiq and app caching</td>
+            </tr>
+            <tr>
+              <td><code>LOGISTER_ADMIN_EMAILS</code></td>
+              <td>Bootstraps admin access</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="production-checklist" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Production checklist</p>
+        <h2>Checklist before you go live.</h2>
+        <ol class="docs-list docs-list-numbered">
+          <li>Set required secrets and connection URLs.</li>
+          <li>Configure outbound email if you need confirmation and system email delivery.</li>
+          <li>Run migrations during deploy.</li>
+          <li>Enable Sidekiq in production.</li>
+          <li>Optionally enable ClickHouse, Turnstile, and analytics consent tooling.</li>
+        </ol>
+        <div class="docs-note docs-note-warn not-prose">
+          <strong>Important</strong>
+          <p>Keep secrets out of committed config files. Use your deployment provider’s secrets manager or environment configuration.</p>
+        </div>
+      </section>
+
+      <section id="verify-deploy" class="docs-section docs-section-anchor">
+        <p class="docs-eyebrow">Verify deploy</p>
+        <h2>Check the app before you start sending production traffic.</h2>
+        <p>
+          A healthy deployment is more than “the web process booted.” Confirm the web app, jobs, and key product
+          surfaces are all reachable before wiring your apps to it.
+        </p>
+        <%= docs_output_block([
+          "Web app responds successfully",
+          "Background jobs can start",
+          "Project creation works",
+          "API key creation works",
+          "A test event appears in the project inbox"
+        ].join("\n"), label: "Deployment verification") %>
+        <div class="docs-note docs-note-tip not-prose">
+          <strong>Next step</strong>
+          <p>After the app is healthy, continue with the integration guide for the first application you want to connect.</p>
+        </div>
+      </section>
+    </article>
+  </div>
+</div>

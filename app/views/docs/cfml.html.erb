@@ -22,20 +22,76 @@
     </div>
   </section>
 
-  <div class="docs-shell">
-    <%= render "sidebar" %>
+  <div class="docs-shell docs-layout">
+    <div class="docs-rail">
+      <%= render "sidebar" %>
+    </div>
 
-    <div class="docs-content">
-      <section class="docs-section">
+    <article class="<%= docs_article_classes %>">
+      <section class="docs-article-header not-prose">
+        <p class="docs-eyebrow">Guide overview</p>
+        <h2>Use direct ingest calls when your app runs on Lucee or Adobe ColdFusion.</h2>
+        <p class="docs-lead">
+          The CFML path keeps things explicit: send structured payloads with <code>cfhttp</code>, centralize
+          exception capture in <code>Application.cfc</code>, and map your request timings to Logister event types.
+        </p>
+        <div class="docs-outline-grid">
+          <section class="docs-outline-card">
+            <h3 class="docs-outline-title">After reading this guide, you will know:</h3>
+            <ul class="docs-outline-list">
+              <li>How to create a CFML project and generate the API token.</li>
+              <li>How to send your first structured error payload.</li>
+              <li>How to wire uncaught exceptions through <code>Application.cfc.onError()</code>.</li>
+              <li>How to map transactions, metrics, logs, and check-ins into Logister.</li>
+            </ul>
+          </section>
+
+          <aside class="docs-outline-card">
+            <h3 class="docs-outline-title">Chapters</h3>
+            <nav class="docs-chapters" aria-label="CFML guide chapters">
+              <% docs_section_items.each do |label, path| %>
+                <%= link_to path do %>
+                  <span><%= label %></span>
+                  <span class="docs-kbd">jump</span>
+                <% end %>
+              <% end %>
+            </nav>
+          </aside>
+        </div>
+      </section>
+
+      <section id="before-you-start" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Before you start</p>
         <h2>Create the project with the `CFML` integration type.</h2>
         <p>
           In Logister, choose <strong>CFML</strong> for the project integration type. That makes the project settings page
           show CFML-specific setup guidance and links back to this public guide.
         </p>
+        <table>
+          <thead>
+            <tr>
+              <th>What you need</th>
+              <th>Why it matters</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Project API token</td>
+              <td>Authenticates each request to Logister</td>
+            </tr>
+            <tr>
+              <td>Logister host URL</td>
+              <td>Used to build the ingest and check-in endpoints</td>
+            </tr>
+            <tr>
+              <td>Access to <code>Application.cfc</code></td>
+              <td>Lets you hook uncaught exceptions centrally</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
 
-      <section class="docs-section">
+      <section id="setup-flow" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Setup flow</p>
         <h2>Recommended installation path</h2>
         <ol class="docs-list docs-list-numbered">
@@ -44,26 +100,46 @@
           <li>Hook uncaught exceptions into <code>Application.cfc.onError()</code>.</li>
           <li>Send request timings as <code>transaction</code> events and query timings as <code>metric</code> events.</li>
         </ol>
+        <div class="docs-note docs-note-tip not-prose">
+          <strong>Tip</strong>
+          <p>
+            The cleanest rollout is to start with uncaught exception capture, then add transactions, metrics,
+            logs, and check-ins one by one as you verify each payload shape.
+          </p>
+        </div>
       </section>
 
-      <section class="docs-section">
+      <section id="send-an-error" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Start with</p>
         <h2>Send a structured error event</h2>
-        <pre class="docs-code"><code>application.logister.sendEvent(
-  eventType = "error",
-  level = "error",
-  message = exception.message ?: "Unhandled CFML exception",
-  context = {
-    exception = {
-      type = exception.type ?: "Exception",
-      detail = exception.detail ?: "",
-      tagContext = exception.tagContext ?: []
-    }
-  }
-);</code></pre>
+        <h3>POST the error event to Logister</h3>
+        <%= docs_code_block("POST /api/v1/ingest_events", language: "language-bash", shell: true, aria_label: "Copy CFML ingest endpoint") %>
+        <% error_event_example = [
+          "application.logister.sendEvent(",
+          "  eventType = \"error\",",
+          "  level = \"error\",",
+          "  message = exception.message ?: \"Unhandled CFML exception\",",
+          "  context = {",
+          "    exception = {",
+          "      type = exception.type ?: \"Exception\",",
+          "      detail = exception.detail ?: \"\",",
+          "      tagContext = exception.tagContext ?: []",
+          "    }",
+          "  }",
+          ");"
+        ].join("\n") %>
+        <h3>Example payload sender</h3>
+        <%= docs_code_block(error_event_example, language: "language-cfml", aria_label: "Copy structured CFML error event") %>
+        <p>That first payload is usually enough to confirm authentication, endpoint wiring, and the CFML-specific error presentation in Logister.</p>
+        <%= docs_output_block([
+          "First verification target",
+          "request accepted",
+          "error visible in project inbox",
+          "stack frames rendered from tagContext"
+        ].join("\n"), label: "Verification") %>
       </section>
 
-      <section class="docs-section">
+      <section id="error-handling" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Error handling</p>
         <h2>Capture uncaught exceptions with `Application.cfc.onError()`</h2>
         <p>
@@ -71,15 +147,45 @@
           <code>exception.type</code>, <code>exception.detail</code>, <code>exception.tagContext</code>, and
           <code>context.cgi</code> for the best result.
         </p>
+        <h3>Recommended payload fields</h3>
         <ul class="docs-list">
           <li><code>exception.type</code> and <code>exception.message</code> drive the exception summary</li>
           <li><code>exception.detail</code> improves the ColdFusion exception panel</li>
           <li><code>exception.tagContext</code> populates template frames</li>
           <li><code>context.cgi.script_name</code> and related CGI fields improve request context</li>
         </ul>
+        <% on_error_example = [
+          "public void function onError(any exception, string eventName) {",
+          "  application.logister.sendEvent(",
+          "    eventType = \"error\",",
+          "    level = \"error\",",
+          "    message = exception.message ?: \"Unhandled exception\",",
+          "    context = {",
+          "      exception = {",
+          "        type = exception.type ?: \"Exception\",",
+          "        detail = exception.detail ?: \"\",",
+          "        tagContext = exception.tagContext ?: []",
+          "      },",
+          "      cgi = {",
+          "        script_name = cgi.script_name ?: \"\",",
+          "        request_method = cgi.request_method ?: \"\",",
+          "        query_string = cgi.query_string ?: \"\"",
+          "      }",
+          "    }",
+          "  );",
+          "}"
+        ].join("\n") %>
+        <%= docs_code_block(on_error_example, language: "language-cfml", aria_label: "Copy Application.cfc onError example") %>
+        <div class="docs-note docs-note-warn not-prose">
+          <strong>Important</strong>
+          <p>
+            If you omit <code>tagContext</code>, Logister can still store the event, but the CFML error view
+            will lose the template-frame detail that makes debugging much easier.
+          </p>
+        </div>
       </section>
 
-      <section class="docs-section">
+      <section id="event-types" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">Event types</p>
         <h2>Use structured event types consistently</h2>
         <ul class="docs-list">
@@ -88,9 +194,46 @@
           <li><code>log</code> for structured application logs with correlation fields</li>
           <li><code>check_in</code> or <code>/api/v1/check_ins</code> for scheduled jobs</li>
         </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Event type</th>
+              <th>Typical CFML use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>transaction</code></td>
+              <td>Request timing, CFC method timing, remote call latency</td>
+            </tr>
+            <tr>
+              <td><code>metric</code></td>
+              <td><code>db.query</code>, cache timings, outbound HTTP timings</td>
+            </tr>
+            <tr>
+              <td><code>log</code></td>
+              <td>Application logs with request or release metadata</td>
+            </tr>
+            <tr>
+              <td><code>check_in</code></td>
+              <td>Scheduled jobs, task runners, cron-style heartbeats</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Suggested rollout order</h3>
+        <dl>
+          <dt>Error</dt>
+          <dd>Start here so you can confirm payload authentication and exception rendering.</dd>
+          <dt>Transaction</dt>
+          <dd>Add request timings next so the performance view becomes useful quickly.</dd>
+          <dt>Metric</dt>
+          <dd>Layer in <code>db.query</code> and other timings for deeper latency analysis.</dd>
+          <dt>Check-in</dt>
+          <dd>Finish with scheduled jobs and cron heartbeats for monitor coverage.</dd>
+        </dl>
       </section>
 
-      <section class="docs-section">
+      <section id="more-detail" class="docs-section docs-section-anchor">
         <p class="docs-eyebrow">More detail</p>
         <h2>Need the longer write-up?</h2>
         <p>
@@ -98,7 +241,14 @@
           <a href="https://github.com/taimoorq/logister/blob/main/docs/cfml_ingestion_guide.md" target="_blank" rel="noopener" class="docs-inline-link">docs/cfml_ingestion_guide.md</a>
           with additional payload examples and rollout advice.
         </p>
+        <div class="docs-note docs-note-tip not-prose">
+          <strong>Next step</strong>
+          <p>
+            Once the first error event lands correctly, the next best additions are request transactions and
+            <code>db.query</code> metrics so the performance pages become useful right away.
+          </p>
+        </div>
       </section>
-    </div>
+    </article>
   </div>
 </div>
