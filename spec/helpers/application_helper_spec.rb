@@ -107,7 +107,7 @@ RSpec.describe ApplicationHelper, type: :helper do
           "cause" => {
             "class" => "ValueError",
             "message" => "invalid order",
-            "frames" => [{ "filename" => "/srv/app/orders.py", "lineno" => 12, "name" => "load_order" }]
+            "frames" => [ { "filename" => "/srv/app/orders.py", "lineno" => 12, "name" => "load_order" } ]
           },
           "context" => {
             "class" => "KeyError",
@@ -170,7 +170,7 @@ RSpec.describe ApplicationHelper, type: :helper do
           "cause" => {
             "class" => "Error",
             "message" => "missing state",
-            "frames" => [{ "filename" => "/app/src/state.ts", "lineno" => 18, "name" => "readState" }]
+            "frames" => [ { "filename" => "/app/src/state.ts", "lineno" => 18, "name" => "readState" } ]
           },
           "context" => {
             "values" => [

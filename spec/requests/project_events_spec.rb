@@ -322,7 +322,7 @@ RSpec.describe "Project events", type: :request do
               function: "flushQueue"
             },
             log_record: {
-              arguments: ["Queue backlog rising", { "queue" => "emails" }],
+              arguments: [ "Queue backlog rising", { "queue" => "emails" } ],
               original_method: "warn"
             },
             runtime: "node",

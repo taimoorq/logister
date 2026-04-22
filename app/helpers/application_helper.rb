@@ -220,7 +220,7 @@ module ApplicationHelper
       process_id: value_from_hash(context, "process_id"),
       runtime_name: value_from_hash(context, "runtime_name"),
       release: value_from_hash(context, "release"),
-      environment: value_from_hash(context, "environment"),
+      environment: value_from_hash(context, "environment")
     }
   end
 
@@ -238,7 +238,7 @@ module ApplicationHelper
       retries: value_from_hash(context, "retries"),
       eta: value_from_hash(context, "eta"),
       client_ip: value_from_hash(context, "client_ip"),
-      query_string: value_from_hash(context, "query_string"),
+      query_string: value_from_hash(context, "query_string")
     }
   end
 
