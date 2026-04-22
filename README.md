@@ -72,7 +72,7 @@ Use the guide that matches the app you want to connect:
 | Integration | Best for | Package / path |
 |----------|-------------|-------------|
 | Ruby | Rails and Ruby apps | `logister-ruby` + https://docs.logister.org/integrations/ruby/ |
-| JavaScript / TypeScript | Node, Express, and JS/TS services | `logister-js` + https://docs.logister.org/integrations/javascript/ |
+| JavaScript / TypeScript | JavaScript and TypeScript services | `logister-js` + https://docs.logister.org/integrations/javascript/ |
 | CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
 | Direct HTTP API | Custom clients and unsupported runtimes | https://docs.logister.org/http-api/ |
 
