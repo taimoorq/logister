@@ -31,16 +31,14 @@ RSpec.describe "Landing and dashboard", type: :system do
       end
     end
 
-    nav = find("nav", visible: :all)
-    toggle = find("button[aria-controls='nav-menu-panel']")
-    expect(toggle["aria-expanded"]).to eq("false")
-    expect(nav["data-nav-state"]).to eq("closed")
+    expect(page).to have_css("nav[data-nav-state='closed']", visible: :all)
+    expect(page).to have_css("button[aria-controls='nav-menu-panel'][aria-expanded='false']", visible: :all)
     expect(page).to have_css("#nav-menu-panel[aria-hidden='true']", visible: :hidden)
 
-    toggle.click
+    find("button[aria-controls='nav-menu-panel']", visible: :all).click
 
-    expect(find("nav", visible: :all)["data-nav-state"]).to eq("open")
-    expect(find("button[aria-controls='nav-menu-panel']")["aria-expanded"]).to eq("true")
+    expect(page).to have_css("nav[data-nav-state='open']", visible: :all)
+    expect(page).to have_css("button[aria-controls='nav-menu-panel'][aria-expanded='true']", visible: :all)
     expect(page).to have_css("#nav-menu-panel[aria-hidden='false']")
   end
 end

@@ -37,6 +37,8 @@ RSpec.describe "Project inbox", type: :system do
     sign_in_via_browser(email: users(:one).email, password: "password123")
 
     visit project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
+    expect(page).to have_content("System Inbox App inbox")
+    expect(page).to have_css("turbo-frame#error_detail")
 
     within("turbo-frame#error_detail") do
       expect(page).to have_content("Primary inbox error")
