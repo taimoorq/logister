@@ -4,6 +4,7 @@ Logister is a free, open source error tracking and operational telemetry app for
 
 It supports:
 - Ruby and Rails apps via the `logister-ruby` gem
+- Python apps via the `logister-python` package
 - JavaScript and TypeScript apps via the `logister-js` package
 - CFML apps running on Lucee or Adobe ColdFusion via direct HTTP ingestion
 
@@ -26,6 +27,7 @@ Canonical documentation lives on the public docs host:
 - ClickHouse: https://docs.logister.org/clickhouse/
 - HTTP API: https://docs.logister.org/http-api/
 - Ruby integration: https://docs.logister.org/integrations/ruby/
+- Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
@@ -37,12 +39,15 @@ Canonical documentation lives on the public docs host:
 
 ## Primary audience
 - Ruby and Rails developers who want self-hosted error tracking.
+- Python developers instrumenting APIs, workers, schedulers, and Python logging.
 - JavaScript and TypeScript developers integrating Node or Express apps.
 - ColdFusion, Lucee, and CFML developers sending structured events to Logister.
 
 ## Companion packages
 - RubyGems: https://rubygems.org/gems/logister-ruby
 - Ruby source: https://github.com/taimoorq/logister-ruby
+- PyPI: https://pypi.org/project/logister-python/
+- Python source: https://github.com/taimoorq/logister-python
 - npm: https://www.npmjs.com/package/logister-js
 - JavaScript source: https://github.com/taimoorq/logister-js
 

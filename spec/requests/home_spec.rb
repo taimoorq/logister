@@ -17,6 +17,7 @@ RSpec.describe "Home", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Keep production calm even when your app is not.")
         expect(response.body).to include("logister-ruby")
+        expect(response.body).to include("logister-python")
         expect(response.body).to include("Start free")
         expect(response.body).to include("https://docs.logister.org/")
         expect(response.body).to include('target="_blank"')
@@ -104,6 +105,9 @@ RSpec.describe "Home", type: :request do
     it "returns success and llms content" do
       get "/llms.txt"
       expect(response).to have_http_status(:success)
+      expect(response.body).to include("Python apps via the `logister-python` package")
+      expect(response.body).to include("https://docs.logister.org/integrations/python/")
+      expect(response.body).to include("https://pypi.org/project/logister-python/")
       expect(response.body).to include("JavaScript and TypeScript apps via the `logister-js` package")
       expect(response.body).to include("CFML apps running on Lucee or Adobe ColdFusion")
       expect(response.body).to include("https://docs.logister.org/integrations/javascript/")

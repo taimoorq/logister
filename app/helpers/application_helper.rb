@@ -215,7 +215,7 @@ module ApplicationHelper
 
   def seo_description
     content_for(:meta_description).to_s.strip.presence ||
-      "Logister is an open source error tracking and observability tool for Ruby, JavaScript, TypeScript, and CFML apps."
+      "Logister is an open source error tracking and observability tool for Ruby, Python, JavaScript, TypeScript, and CFML apps."
   end
 
   def seo_robots

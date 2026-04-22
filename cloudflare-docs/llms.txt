@@ -1,0 +1,33 @@
+# Logister Documentation
+
+Canonical product and integration documentation for Logister lives on this docs host.
+
+## Start here
+- Docs home: https://docs.logister.org/
+- Getting started: https://docs.logister.org/getting-started/
+- HTTP API: https://docs.logister.org/http-api/
+- Self-hosting: https://docs.logister.org/self-hosting/
+
+## Integrations
+- Ruby integration: https://docs.logister.org/integrations/ruby/
+- Python integration: https://docs.logister.org/integrations/python/
+- JavaScript integration: https://docs.logister.org/integrations/javascript/
+- CFML integration: https://docs.logister.org/integrations/cfml/
+
+## Operations
+- Local development: https://docs.logister.org/local-development/
+- Deployment config: https://docs.logister.org/deployment/
+- ClickHouse: https://docs.logister.org/clickhouse/
+
+## Audience
+- Ruby and Rails teams using `logister-ruby`
+- Python teams using `logister-python` with FastAPI, Django, Flask, Celery, and Python logging
+- JavaScript and TypeScript teams using `logister-js`
+- Lucee and Adobe ColdFusion teams sending structured CFML payloads over HTTP
+
+## Product and packages
+- Main product site: https://logister.org/
+- App source: https://github.com/taimoorq/logister
+- Ruby SDK source: https://github.com/taimoorq/logister-ruby
+- Python SDK source: https://github.com/taimoorq/logister-python
+- JavaScript SDK source: https://github.com/taimoorq/logister-js

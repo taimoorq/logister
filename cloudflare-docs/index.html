@@ -12,9 +12,12 @@
     <meta property="og:description" content="Public Logister documentation for Ruby, Python, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://docs.logister.org/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Documentation | Logister">
     <meta name="twitter:description" content="Public Logister documentation for Ruby, Python, JavaScript/TypeScript, and CFML integrations, plus setup, self-hosting, and HTTP API guides.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
@@ -47,7 +50,7 @@
           <span class="hero-kicker">Documentation</span>
           <h1>Logister Documentation</h1>
           <p>
-            Logister is a self-hosted bug and event tracker for web applications. Currently it has support for Python, JavaScript, Ruby, and CFML based languages.
+            Logister is a self-hosted error tracking and observability product for web applications, with public guides for Ruby, Python, JavaScript/TypeScript, and CFML teams.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/getting-started/">Getting started</a>
@@ -87,7 +90,7 @@
             </div>
             <div class="sidebar-card">
               <h4>Project-aware setup</h4>
-              <p>Projects can be labeled by the supported language so the in-app views are specific to it.</p>
+              <p>Projects can be labeled by runtime so the in-app triage views, setup guidance, and docs entry points stay language-specific.</p>
             </div>
           </aside>
 
@@ -201,7 +204,8 @@
               <h2>This is the base for a standalone hosted documentation site.</h2>
               <p>
                 This static export is designed so the docs can move to Cloudflare Pages cleanly. It keeps the information
-                architecture of the Rails docs while removing the app runtime dependency.
+                architecture of the Rails docs while removing the app runtime dependency, and now includes a machine-readable
+                <code>/llms.txt</code> index for AI tools that need the public docs map.
               </p>
               <ul>
                 <li>Integration guides stay public and easy to share.</li>

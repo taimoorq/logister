@@ -1,4 +1,11 @@
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
 User-agent: *
 Allow: /
+Allow: /llms.txt
 
 Sitemap: https://docs.logister.org/sitemap.xml

@@ -1,3 +1,13 @@
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /api
+
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /api
+
 User-agent: *
 Allow: /
 Disallow: /admin
