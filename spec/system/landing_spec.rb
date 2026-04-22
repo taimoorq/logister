@@ -33,7 +33,7 @@ RSpec.describe "Landing and dashboard", type: :system do
 
     expect(page).to have_css("nav[data-nav-state='closed']", visible: :all)
     expect(page).to have_css("button[aria-controls='nav-menu-panel'][aria-expanded='false']", visible: :all)
-    expect(page).to have_css("#nav-menu-panel[aria-hidden='true']", visible: :hidden)
+    expect(page).to have_css("#nav-menu-panel.hidden[data-state='closed'][aria-hidden='true']", visible: :all)
 
     find("button[aria-controls='nav-menu-panel']", visible: :all).click
 
