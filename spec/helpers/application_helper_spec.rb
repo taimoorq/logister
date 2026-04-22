@@ -97,4 +97,132 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(summary[:error_code]).to eq("expression")
     end
   end
+
+  describe "#python_exception_chain" do
+    it "collects nested cause and context exceptions" do
+      chain = helper.python_exception_chain(
+        {
+          "class" => "RuntimeError",
+          "message" => "checkout failed",
+          "cause" => {
+            "class" => "ValueError",
+            "message" => "invalid order",
+            "frames" => [{ "filename" => "/srv/app/orders.py", "lineno" => 12, "name" => "load_order" }]
+          },
+          "context" => {
+            "class" => "KeyError",
+            "message" => "customer_id"
+          }
+        }
+      )
+
+      expect(chain.map { |entry| entry[:label] }).to eq(%w[cause context])
+      expect(chain.map { |entry| entry[:class_name] }).to eq(%w[ValueError KeyError])
+      expect(chain.first[:frames].first[:method_name]).to eq("load_order")
+    end
+  end
+
+  describe "#python_logger_details" do
+    it "extracts logger metadata from event context" do
+      event = Struct.new(:context).new(
+        {
+          "logger_name" => "inventory.cache",
+          "logger" => {
+            "function" => "refresh_cache",
+            "filename" => "worker.py",
+            "line_number" => 88
+          }
+        }
+      )
+
+      details = helper.python_logger_details(event)
+
+      expect(details[:logger_name]).to eq("inventory.cache")
+      expect(details[:function]).to eq("refresh_cache")
+      expect(details[:filename]).to eq("worker.py")
+      expect(details[:line_number]).to eq(88)
+    end
+  end
+
+  describe "#python_activity_summary" do
+    it "builds a compact logger and task summary" do
+      event = Struct.new(:context).new(
+        {
+          "logger_name" => "inventory.cache",
+          "logger" => {
+            "function" => "refresh_cache",
+            "filename" => "worker.py"
+          },
+          "task_name" => "inventory.refresh"
+        }
+      )
+
+      expect(helper.python_activity_summary(event)).to eq("inventory.cache · refresh_cache() in worker.py · task inventory.refresh")
+    end
+  end
+
+  describe "#javascript_exception_chain" do
+    it "collects nested JavaScript causes and context values" do
+      chain = helper.javascript_exception_chain(
+        {
+          "class" => "TypeError",
+          "message" => "render failed",
+          "cause" => {
+            "class" => "Error",
+            "message" => "missing state",
+            "frames" => [{ "filename" => "/app/src/state.ts", "lineno" => 18, "name" => "readState" }]
+          },
+          "context" => {
+            "values" => [
+              { "class" => "NetworkError", "message" => "upstream timeout" }
+            ]
+          }
+        }
+      )
+
+      expect(chain.map { |entry| entry[:label] }).to eq(%w[cause context])
+      expect(chain.map { |entry| entry[:class_name] }).to eq(%w[Error NetworkError])
+      expect(chain.first[:frames].first[:method_name]).to eq("readState")
+    end
+  end
+
+  describe "#javascript_logger_details" do
+    it "extracts logger metadata from JavaScript log events" do
+      event = Struct.new(:context).new(
+        {
+          "logger_name" => "console",
+          "logger" => {
+            "method" => "warn",
+            "function" => "flushQueue",
+            "filename" => "worker.js"
+          }
+        }
+      )
+
+      details = helper.javascript_logger_details(event)
+
+      expect(details[:logger_name]).to eq("console")
+      expect(details[:method]).to eq("warn")
+      expect(details[:function]).to eq("flushQueue")
+      expect(details[:filename]).to eq("worker.js")
+    end
+  end
+
+  describe "#javascript_activity_summary" do
+    it "builds a compact logger and route summary" do
+      event = Struct.new(:context).new(
+        {
+          "logger_name" => "console",
+          "logger" => {
+            "method" => "warn",
+            "function" => "flushQueue",
+            "filename" => "worker.js"
+          },
+          "route" => "/jobs/email-drain"
+        }
+      )
+
+      expect(helper.javascript_activity_summary(event)).to eq("console · warn · flushQueue() in worker.js · /jobs/email-drain")
+    end
+  end
 end

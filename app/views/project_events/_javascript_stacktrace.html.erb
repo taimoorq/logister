@@ -9,6 +9,7 @@
    end %>
 <% breadcrumbs = [] unless breadcrumbs.is_a?(Array) %>
 <% minified_stack = javascript_frames.any? { |frame| frame[:file].to_s.include?(".min.js") || frame[:file].to_s.include?("/assets/") } %>
+<% exception_chain = javascript_exception_chain(exception_data) %>
 
 <div class="better-errors-shell">
   <header class="better-errors-header">
@@ -138,6 +139,28 @@
           </dl>
         <% else %>
           <p class="muted">No JavaScript breadcrumbs were captured for this event.</p>
+        <% end %>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Exception chain</h4>
+        <% if exception_chain.any? %>
+          <dl class="better-errors-dl">
+            <% exception_chain.each do |entry| %>
+              <dt><code><%= entry[:label] %></code></dt>
+              <dd>
+                <strong><%= entry[:class_name] %></strong>
+                <% if entry[:message].present? %>
+                  <span><%= entry[:message] %></span>
+                <% end %>
+                <% if entry[:frames].any? %>
+                  <code><%= entry[:frames].first[:file] %>:<%= entry[:frames].first[:line_number] %></code>
+                <% end %>
+              </dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="muted">No chained JavaScript exceptions were captured for this event.</p>
         <% end %>
       </section>
     </div>

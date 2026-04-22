@@ -4,6 +4,9 @@
 <% python_source_excerpt = source_excerpt.presence || source_excerpt_for_frame(selected_frame) %>
 <% frame_locals = selected_frame.is_a?(Hash) ? selected_frame[:locals] : {} %>
 <% frame_locals = {} unless frame_locals.is_a?(Hash) %>
+<% runtime_details = python_runtime_details(event) %>
+<% execution_details = python_execution_details(event) %>
+<% exception_chain = python_exception_chain(exception_data) %>
 <% fallback_stacktrace = if exception_data.is_a?(Hash)
      Array(exception_data["backtrace"] || exception_data[:backtrace]).presence&.join("\n")
    end %>
@@ -87,7 +90,119 @@
             <dt>Request parameters</dt>
             <dd><code><%= pretty_context_json(request_details[:params]) %></code></dd>
           <% end %>
+          <% if execution_details[:route].present? %>
+            <dt>Route</dt>
+            <dd><code><%= execution_details[:route] %></code></dd>
+          <% end %>
+          <% if execution_details[:endpoint].present? %>
+            <dt>Endpoint</dt>
+            <dd><code><%= execution_details[:endpoint] %></code></dd>
+          <% end %>
+          <% if execution_details[:blueprint].present? %>
+            <dt>Blueprint</dt>
+            <dd><code><%= execution_details[:blueprint] %></code></dd>
+          <% end %>
+          <% if execution_details[:client_ip].present? %>
+            <dt>Client IP</dt>
+            <dd><code><%= execution_details[:client_ip] %></code></dd>
+          <% end %>
+          <% if execution_details[:query_string].present? %>
+            <dt>Query string</dt>
+            <dd><code><%= execution_details[:query_string] %></code></dd>
+          <% end %>
         </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Runtime details</h4>
+        <dl class="better-errors-dl">
+          <% if runtime_details[:framework].present? %>
+            <dt>Framework</dt>
+            <dd><code><%= runtime_details[:framework] %></code></dd>
+          <% end %>
+          <% if runtime_details[:runtime].present? %>
+            <dt>Runtime</dt>
+            <dd><code><%= runtime_details[:runtime] %></code></dd>
+          <% end %>
+          <% if runtime_details[:python_version].present? %>
+            <dt>Python version</dt>
+            <dd><code><%= runtime_details[:python_version] %></code></dd>
+          <% end %>
+          <% if runtime_details[:python_implementation].present? %>
+            <dt>Implementation</dt>
+            <dd><code><%= runtime_details[:python_implementation] %></code></dd>
+          <% end %>
+          <% if runtime_details[:platform].present? %>
+            <dt>Platform</dt>
+            <dd><code><%= runtime_details[:platform] %></code></dd>
+          <% end %>
+          <% if runtime_details[:hostname].present? %>
+            <dt>Hostname</dt>
+            <dd><code><%= runtime_details[:hostname] %></code></dd>
+          <% end %>
+          <% if runtime_details[:process_id].present? %>
+            <dt>Process ID</dt>
+            <dd><code><%= runtime_details[:process_id] %></code></dd>
+          <% end %>
+          <% if runtime_details[:runtime_name].present? %>
+            <dt>Executable</dt>
+            <dd><code><%= runtime_details[:runtime_name] %></code></dd>
+          <% end %>
+          <% if runtime_details[:environment].present? %>
+            <dt>Environment</dt>
+            <dd><code><%= runtime_details[:environment] %></code></dd>
+          <% end %>
+          <% if runtime_details[:release].present? %>
+            <dt>Release</dt>
+            <dd><code><%= runtime_details[:release] %></code></dd>
+          <% end %>
+          <% if execution_details[:task_name].present? %>
+            <dt>Task name</dt>
+            <dd><code><%= execution_details[:task_name] %></code></dd>
+          <% end %>
+          <% if execution_details[:task_id].present? %>
+            <dt>Task ID</dt>
+            <dd><code><%= execution_details[:task_id] %></code></dd>
+          <% end %>
+          <% if execution_details[:task_module].present? %>
+            <dt>Task module</dt>
+            <dd><code><%= execution_details[:task_module] %></code></dd>
+          <% end %>
+          <% if execution_details[:queue].present? %>
+            <dt>Queue</dt>
+            <dd><code><%= execution_details[:queue] %></code></dd>
+          <% end %>
+          <% if execution_details[:retries].present? %>
+            <dt>Retries</dt>
+            <dd><code><%= execution_details[:retries] %></code></dd>
+          <% end %>
+          <% if execution_details[:eta].present? %>
+            <dt>ETA</dt>
+            <dd><code><%= execution_details[:eta] %></code></dd>
+          <% end %>
+        </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Exception chain</h4>
+        <% if exception_chain.any? %>
+          <dl class="better-errors-dl">
+            <% exception_chain.each do |entry| %>
+              <dt><code><%= entry[:label] %></code></dt>
+              <dd>
+                <strong><%= entry[:class_name] %></strong>
+                <% if entry[:message].present? %>
+                  <span><%= entry[:message] %></span>
+                <% end %>
+                <% if entry[:frames].any? %>
+                  <code><%= entry[:frames].first[:file] %>:<%= entry[:frames].first[:line_number] %></code>
+                <% end %>
+              </dd>
+            <% end %>
+          </dl>
+        <% else %>
+          <p class="muted">No chained Python exceptions were captured.</p>
+        <% end %>
       </section>
 
       <section class="better-errors-section">

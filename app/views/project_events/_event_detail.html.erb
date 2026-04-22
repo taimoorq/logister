@@ -22,6 +22,11 @@
   <% query_param  = local_assigns[:query]  || "" %>
   <% related_logs = local_assigns[:related_logs] || [] %>
   <% active_tab   = local_assigns[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
+  <% stacktrace_tab_label = if (project.integration_python? || project.integration_javascript?) && event.log?
+       "Details"
+     else
+       "Stacktrace"
+     end %>
 
   <%# ── Action bar ──────────────────────────────────────────────────────── %>
   <header class="detail-actionbar card">
@@ -87,7 +92,7 @@
                   class: "detail-tab #{'is-active' if active_tab == 'context'}",
                   role: "tab",
                   data: { turbo_frame: "error_detail" } %>
-      <%= link_to "Stacktrace",
+      <%= link_to stacktrace_tab_label,
                   project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
                   class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
                   role: "tab",
@@ -111,7 +116,17 @@
 
     <%# ── Stacktrace panel ─────────────────────────────────────────────── %>
     <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
-      <% if project.integration_cfml? %>
+      <% if project.integration_python? && event.log? %>
+        <%= render "project_events/python_log_event",
+                   project: project,
+                   event: event,
+                   request_details: request_details %>
+      <% elsif project.integration_javascript? && event.log? %>
+        <%= render "project_events/javascript_log_event",
+                   project: project,
+                   event: event,
+                   request_details: request_details %>
+      <% elsif project.integration_cfml? %>
         <%= render "project_events/cfml_stacktrace",
                    project: project,
                    event: event,

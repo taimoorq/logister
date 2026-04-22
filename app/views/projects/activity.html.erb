@@ -23,6 +23,8 @@
           </thead>
           <tbody class="divide-y divide-slate-200 bg-white">
             <% @activity_events.each do |event| %>
+              <% python_log_summary = @project.integration_python? && event.log? ? python_activity_summary(event) : nil %>
+              <% javascript_log_summary = @project.integration_javascript? && event.log? ? javascript_activity_summary(event) : nil %>
               <tr>
                 <td class="px-3 py-2 text-sm">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -37,7 +39,14 @@
                   </span>
                 </td>
                 <td class="px-3 py-2 text-sm text-slate-700"><%= local_time_tag(event.occurred_at, format: :long) %></td>
-                <td class="px-3 py-2 text-sm text-slate-900"><%= truncate(event.message.to_s.lines.first, length: 80) %></td>
+                <td class="px-3 py-2 text-sm text-slate-900">
+                  <div><%= truncate(event.message.to_s.lines.first, length: 80) %></div>
+                  <% if python_log_summary.present? %>
+                    <div class="text-xs text-slate-500 mt-1"><%= python_log_summary %></div>
+                  <% elsif javascript_log_summary.present? %>
+                    <div class="text-xs text-slate-500 mt-1"><%= javascript_log_summary %></div>
+                  <% end %>
+                </td>
                 <td class="px-3 py-2 text-sm">
                   <%= link_to "View", project_event_path(@project, event), class: "text-blue-600 hover:underline" %>
                 </td>
@@ -58,7 +67,7 @@
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.capture_message()</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.capture_transaction()</code>, or
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.check_in()</code>
-          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-python</code>. For web apps, pair that with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_fastapi()</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_flask()</code>, or <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LogisterMiddleware</code> so request-level Python errors arrive with framework context. You can also start with the
+          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-python</code>. For Python services, the usual starting point is framework hooks plus worker instrumentation: pair that with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_fastapi()</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_flask()</code>, or <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LogisterMiddleware</code> so request-level errors arrive with framework context, and use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_logging()</code> if you want standard Python log records to show up automatically. Set <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LOGISTER_CAPTURE_LOCALS=true</code> if you want frame locals visible in Python error details. You can also start with the
           <%= link_to "Python integration docs", docs_site_url(:python_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_javascript? %>
           No custom events yet. Use
@@ -66,7 +75,7 @@
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureMessage()</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureTransaction()</code>, or
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.checkIn()</code>
-          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-js</code>. Include release, route, browser, and request context when you send events so JavaScript errors can be grouped and debugged with more than a raw stack trace. You can also start with the
+          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-js</code>. For JavaScript and TypeScript services, the usual starting point is request errors plus operational logging: use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrumentConsole()</code> if you want standard console events to show up automatically, and include release, route, browser, and request context when you send events so issues can be grouped with more than a raw stack trace. You can also start with the
           <%= link_to "JavaScript integration docs", docs_site_url(:javascript_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% else %>
           No custom events yet. Use

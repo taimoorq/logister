@@ -157,7 +157,9 @@
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install <code>logister-python</code> in the Python service or worker you want to monitor.</li>
               <li>Use <code>instrument_fastapi</code> for FastAPI apps, <code>LogisterMiddleware</code> for Django apps, <code>instrument_flask</code> for Flask apps, and <code>instrument_celery</code> for Celery workers.</li>
-              <li>Send custom metrics, logs, transactions, and check-ins through the shared client when you need deeper app visibility.</li>
+              <li>Attach <code>instrument_logging(client, logger=...)</code> if you want standard Python <code>logging</code> records and <code>logger.exception(...)</code> events to flow into Logister automatically.</li>
+              <li>Use the shared client for the parts Python teams usually customize after that: business metrics, job heartbeats, and service-specific logs or transactions.</li>
+              <li>Set <code>LOGISTER_RELEASE</code> for deploy tracking, and optionally <code>LOGISTER_CAPTURE_LOCALS=true</code> when you want frame locals in Python error details.</li>
             </ul>
           </div>
 
@@ -174,7 +176,7 @@ instrument_fastapi(app, client)</code></pre>
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Also supported</h3>
             <p class="text-sm text-slate-600">
-              Django apps can use <code>LogisterMiddleware</code>, Flask apps can use <code>instrument_flask(app, client)</code>, and Celery workers can use <code>instrument_celery()</code> with optional monitor slugs for check-ins.
+              Django apps can use <code>LogisterMiddleware</code>, Flask apps can use <code>instrument_flask(app, client)</code>, Celery workers can use <code>instrument_celery()</code> with optional monitor slugs for check-ins, and any Python app can forward built-in logging records with <code>instrument_logging()</code>. Python events now include structured frames, chained exceptions, runtime metadata, and logger metadata when events come through the logging integration.
             </p>
           </div>
 
@@ -194,7 +196,8 @@ instrument_fastapi(app, client)</code></pre>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install <code>logister-js</code> in the JavaScript or TypeScript service you want to monitor.</li>
               <li>Use the base client for Node workers and scripts, or add <code>createLogisterMiddleware()</code> and <code>createLogisterErrorHandler()</code> if the app runs on Express.</li>
-              <li>Set <code>LOGISTER_RELEASE</code> and include route, browser, component, or request metadata in event context so JavaScript errors are easier to triage.</li>
+              <li>Attach <code>instrumentConsole(client)</code> if you want standard <code>console</code> output and <code>console.error(error)</code> calls to flow into Logister automatically.</li>
+              <li>Set <code>LOGISTER_RELEASE</code> and include route, browser, component, or request metadata so JavaScript teams can tell whether an issue came from a request path, a worker, or bundled client-side code.</li>
               <li>If your frontend stack produces bundles, keep source maps available in your release pipeline so minified frames can be traced back to real source.</li>
             </ul>
           </div>
@@ -217,7 +220,7 @@ const client = new LogisterClient({
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">What good JavaScript events should include</h3>
             <p class="text-sm text-slate-600">
-              The most useful JavaScript reports include the route or screen, release, browser or runtime details, and enough stack context to tell whether source maps are missing or whether the error came from app code, a network edge, or bundled output.
+              The most useful JavaScript reports include the route or screen, release, browser or runtime details, chained causes when errors wrap other errors, and enough stack context to tell whether the problem came from app code, an HTTP edge, or bundled output that still needs source maps.
             </p>
           </div>
 

@@ -1,0 +1,147 @@
+<% logger_details = python_logger_details(event) %>
+<% log_record_details = python_log_record_details(event) %>
+<% runtime_details = python_runtime_details(event) %>
+<% execution_details = python_execution_details(event) %>
+
+<div class="better-errors-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-kicker">
+      <strong>Python log event</strong>
+      <% if logger_details[:logger_name].present? %>
+        from <%= logger_details[:logger_name] %>
+      <% end %>
+    </p>
+    <h3 class="better-errors-message"><%= event.message %></h3>
+  </header>
+
+  <div class="better-errors-main">
+    <section class="better-errors-section">
+      <h4>Logger details</h4>
+      <dl class="better-errors-dl">
+        <% if logger_details[:logger_name].present? %>
+          <dt>Logger</dt>
+          <dd><code><%= logger_details[:logger_name] %></code></dd>
+        <% end %>
+        <% if logger_details[:function].present? %>
+          <dt>Function</dt>
+          <dd><code><%= logger_details[:function] %></code></dd>
+        <% end %>
+        <% if logger_details[:module].present? %>
+          <dt>Module</dt>
+          <dd><code><%= logger_details[:module] %></code></dd>
+        <% end %>
+        <% if logger_details[:filename].present? %>
+          <dt>File</dt>
+          <dd><code><%= logger_details[:filename] %></code></dd>
+        <% end %>
+        <% if logger_details[:pathname].present? %>
+          <dt>Path</dt>
+          <dd><code><%= logger_details[:pathname] %></code></dd>
+        <% end %>
+        <% if logger_details[:line_number].present? %>
+          <dt>Line</dt>
+          <dd><code><%= logger_details[:line_number] %></code></dd>
+        <% end %>
+        <% if logger_details[:process].present? %>
+          <dt>Process</dt>
+          <dd><code><%= logger_details[:process] %></code></dd>
+        <% end %>
+        <% if logger_details[:thread].present? %>
+          <dt>Thread</dt>
+          <dd><code><%= logger_details[:thread] %></code></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Runtime details</h4>
+      <dl class="better-errors-dl">
+        <% if runtime_details[:framework].present? %>
+          <dt>Framework</dt>
+          <dd><code><%= runtime_details[:framework] %></code></dd>
+        <% end %>
+        <% if runtime_details[:runtime].present? %>
+          <dt>Runtime</dt>
+          <dd><code><%= runtime_details[:runtime] %></code></dd>
+        <% end %>
+        <% if runtime_details[:python_version].present? %>
+          <dt>Python version</dt>
+          <dd><code><%= runtime_details[:python_version] %></code></dd>
+        <% end %>
+        <% if runtime_details[:hostname].present? %>
+          <dt>Hostname</dt>
+          <dd><code><%= runtime_details[:hostname] %></code></dd>
+        <% end %>
+        <% if runtime_details[:process_id].present? %>
+          <dt>Process ID</dt>
+          <dd><code><%= runtime_details[:process_id] %></code></dd>
+        <% end %>
+        <% if runtime_details[:environment].present? %>
+          <dt>Environment</dt>
+          <dd><code><%= runtime_details[:environment] %></code></dd>
+        <% end %>
+        <% if runtime_details[:release].present? %>
+          <dt>Release</dt>
+          <dd><code><%= runtime_details[:release] %></code></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Execution details</h4>
+      <dl class="better-errors-dl">
+        <% if request_details[:http_method].present? %>
+          <dt>Method</dt>
+          <dd><code><%= request_details[:http_method] %></code></dd>
+        <% end %>
+        <% if request_details[:url].present? %>
+          <dt>URL</dt>
+          <dd><%= request_details[:url] %></dd>
+        <% end %>
+        <% if request_details[:request_id].present? %>
+          <dt>Request ID</dt>
+          <dd><code><%= request_details[:request_id] %></code></dd>
+        <% end %>
+        <% if execution_details[:route].present? %>
+          <dt>Route</dt>
+          <dd><code><%= execution_details[:route] %></code></dd>
+        <% end %>
+        <% if execution_details[:endpoint].present? %>
+          <dt>Endpoint</dt>
+          <dd><code><%= execution_details[:endpoint] %></code></dd>
+        <% end %>
+        <% if execution_details[:blueprint].present? %>
+          <dt>Blueprint</dt>
+          <dd><code><%= execution_details[:blueprint] %></code></dd>
+        <% end %>
+        <% if execution_details[:task_name].present? %>
+          <dt>Task name</dt>
+          <dd><code><%= execution_details[:task_name] %></code></dd>
+        <% end %>
+        <% if execution_details[:task_id].present? %>
+          <dt>Task ID</dt>
+          <dd><code><%= execution_details[:task_id] %></code></dd>
+        <% end %>
+        <% if execution_details[:task_module].present? %>
+          <dt>Task module</dt>
+          <dd><code><%= execution_details[:task_module] %></code></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Log record fields</h4>
+      <% if log_record_details.any? %>
+        <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= pretty_context_json(log_record_details) %>">
+          <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy Python log record JSON">
+            <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+            <span data-copy-target="buttonLabel">Copy</span>
+          </button>
+          <pre class="context-json" data-copy-target="source"><code><%= pretty_context_json(log_record_details) %></code></pre>
+        </div>
+      <% else %>
+        <p class="muted">No extra log record fields were captured for this event.</p>
+      <% end %>
+    </section>
+  </div>
+</div>

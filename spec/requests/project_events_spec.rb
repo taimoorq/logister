@@ -95,6 +95,7 @@ RSpec.describe "Project events", type: :request do
           context: {
             exception: {
               class: "ValueError",
+              qualified_class: "builtins.ValueError",
               message: "invalid checkout state",
               frames: [
                 {
@@ -105,15 +106,38 @@ RSpec.describe "Project events", type: :request do
                   locals: { "order_id" => "ord_123" }
                 }
               ],
+              cause: {
+                class: "KeyError",
+                message: "customer_id",
+                frames: [
+                  {
+                    filename: "/srv/app/customer_lookup.py",
+                    lineno: 12,
+                    name: "fetch_customer",
+                    line: "raise KeyError('customer_id')"
+                  }
+                ]
+              },
               backtrace: [
                 'File "/srv/app/checkout.py", line 41, in create_checkout'
               ]
             },
+            framework: "fastapi",
+            runtime: "python",
+            python_version: "3.12.3",
+            python_implementation: "CPython",
+            platform: "macOS-14.0-arm64",
+            hostname: "api-1",
+            process_id: 4242,
+            release: "api@2026.04.22",
+            route: "/checkouts",
             request: {
               method: "POST",
               params: { "order_id" => "ord_123" },
               request_id: "req-python-1",
-              url: "https://api.example.com/checkouts"
+              url: "https://api.example.com/checkouts",
+              client_ip: "203.0.113.8",
+              query_string: "preview=true"
             }
           },
           occurred_at: Time.current
@@ -126,7 +150,76 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("create_checkout")
         expect(response.body).to include("/srv/app/checkout.py")
         expect(response.body).to include("invalid checkout state")
+        expect(response.body).to include("Runtime details")
+        expect(response.body).to include("CPython")
+        expect(response.body).to include("api@2026.04.22")
+        expect(response.body).to include("Exception chain")
+        expect(response.body).to include("KeyError")
         expect(response.body).to include("Frame locals")
+      end
+    end
+
+    context "when viewing a Python project log event" do
+      before { sign_in users(:one) }
+
+      it "renders the Python logging-focused details view" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python Worker")
+        api_key = create(:api_key, user: users(:one), project: project, name: "python-logs")
+        event = IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :log,
+          level: "warning",
+          message: "Inventory cache miss",
+          context: {
+            logger_name: "inventory.cache",
+            logger: {
+              name: "inventory.cache",
+              module: "inventory.worker",
+              pathname: "/srv/app/inventory/worker.py",
+              filename: "worker.py",
+              function: "refresh_cache",
+              line_number: 88,
+              process: 7021,
+              thread: 19
+            },
+            log_record: {
+              request_id: "req-log-1",
+              trace_id: "trace-log-1",
+              sku: "sku_42",
+              warehouse: "east"
+            },
+            framework: "celery",
+            runtime: "python",
+            python_version: "3.12.3",
+            hostname: "worker-2",
+            process_id: 7021,
+            release: "worker@2026.04.22",
+            task_name: "inventory.refresh",
+            task_id: "task-123",
+            task_module: "inventory.tasks",
+            request: {
+              request_id: "req-log-1",
+              url: "https://api.example.com/internal/inventory/refresh",
+              method: "POST"
+            }
+          },
+          occurred_at: Time.current
+        )
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Python log event")
+        expect(response.body).to include("Logger details")
+        expect(response.body).to include("inventory.cache")
+        expect(response.body).to include("refresh_cache")
+        expect(response.body).to include("Runtime details")
+        expect(response.body).to include("Execution details")
+        expect(response.body).to include("inventory.tasks")
+        expect(response.body).to include("Log record fields")
+        expect(response.body).to include("sku_42")
+        expect(response.body).to include(">Details<")
       end
     end
 
@@ -165,11 +258,23 @@ RSpec.describe "Project events", type: :request do
                 "at renderCheckout (https://app.example.com/assets/app.min.js:2:1450)",
                 "at onSubmit (https://app.example.com/assets/app.min.js:9:321)"
               ],
-              stack: <<~STACK
+              stack: <<~STACK,
                 TypeError: Cannot read properties of undefined
                     at renderCheckout (https://app.example.com/assets/app.min.js:2:1450)
                     at onSubmit (https://app.example.com/assets/app.min.js:9:321)
               STACK
+              cause: {
+                class: "Error",
+                message: "checkout state missing",
+                frames: [
+                  {
+                    filename: "https://app.example.com/src/lib/checkout.ts",
+                    lineno: 27,
+                    colno: 14,
+                    name: "validateCheckout"
+                  }
+                ]
+              }
             },
             browser: "Chrome 135",
             os: "macOS",
@@ -191,6 +296,54 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("Chrome 135")
         expect(response.body).to include("Breadcrumbs")
         expect(response.body).to include("Source map hint")
+        expect(response.body).to include("Exception chain")
+        expect(response.body).to include("checkout state missing")
+      end
+    end
+
+    context "when viewing a JavaScript project log event" do
+      before { sign_in users(:one) }
+
+      it "renders the JavaScript logging-focused details view" do
+        project = create(:project, user: users(:one), integration_kind: "javascript", name: "Web Worker")
+        api_key = create(:api_key, user: users(:one), project: project, name: "javascript-logs")
+        event = IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :log,
+          level: "warning",
+          message: "Queue backlog rising",
+          context: {
+            logger_name: "console",
+            logger: {
+              name: "console",
+              method: "warn",
+              filename: "worker.js",
+              function: "flushQueue"
+            },
+            log_record: {
+              arguments: ["Queue backlog rising", { "queue" => "emails" }],
+              original_method: "warn"
+            },
+            runtime: "node",
+            route: "/jobs/email-drain",
+            release: "web@2026.04.22",
+            url: "https://app.example.com/jobs/email-drain"
+          },
+          occurred_at: Time.current
+        )
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("JavaScript log event")
+        expect(response.body).to include("Logger details")
+        expect(response.body).to include("console")
+        expect(response.body).to include("warn")
+        expect(response.body).to include("Runtime details")
+        expect(response.body).to include("Log record fields")
+        expect(response.body).to include("Queue backlog rising")
+        expect(response.body).to include(">Details<")
       end
     end
 

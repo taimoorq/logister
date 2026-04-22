@@ -2,6 +2,11 @@
 <% exception_data = @event.context.is_a?(Hash) ? (@event.context["exception"] || @event.context[:exception]) : nil %>
 <% backtrace = exception_data.is_a?(Hash) ? (exception_data["backtrace"] || exception_data[:backtrace]) : nil %>
 <% active_tab = @tab.presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
+<% stacktrace_tab_label = if (@project.integration_python? || @project.integration_javascript?) && @event.log?
+     "Details"
+   else
+     "Stacktrace"
+   end %>
 
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
 
@@ -142,7 +147,7 @@
                     project_event_path(@project, @event, tab: "context"),
                     class: "detail-tab #{'is-active' if active_tab == 'context'}",
                     role: "tab" %>
-        <%= link_to "Stacktrace",
+        <%= link_to stacktrace_tab_label,
                     project_event_path(@project, @event, tab: "stacktrace"),
                     class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
                     role: "tab" %>
@@ -165,7 +170,17 @@
 
       <%# Stacktrace panel %>
       <section id="tab-stacktrace" class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>">
-        <% if @project.integration_cfml? %>
+        <% if @project.integration_python? && @event.log? %>
+          <%= render "project_events/python_log_event",
+                     project: @project,
+                     event: @event,
+                     request_details: request_context_details(@event) %>
+        <% elsif @project.integration_javascript? && @event.log? %>
+          <%= render "project_events/javascript_log_event",
+                     project: @project,
+                     event: @event,
+                     request_details: request_context_details(@event) %>
+        <% elsif @project.integration_cfml? %>
           <% cfml_summary = cfml_exception_summary(exception_data, @event.message) %>
           <% cfml_frames = cfml_exception_frames(exception_data) %>
           <div class="card space-y-4">

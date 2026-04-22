@@ -178,6 +178,120 @@ module ApplicationHelper
     }
   end
 
+  def python_exception_chain(exception_data, chain = [], label: "cause")
+    exception_hash = normalize_hash(exception_data)
+    return chain unless exception_hash.present?
+
+    cause = normalize_hash(exception_hash["cause"] || exception_hash[:cause])
+    if cause.present?
+      chain << {
+        label: label,
+        class_name: cause["class"].presence || cause[:class].presence || cause["qualified_class"].presence || cause[:qualified_class].presence,
+        message: cause["message"].presence || cause[:message].presence,
+        frames: python_exception_frames(cause)
+      }
+      python_exception_chain(cause, chain, label: "cause")
+    end
+
+    context = normalize_hash(exception_hash["context"] || exception_hash[:context])
+    if context.present?
+      chain << {
+        label: "context",
+        class_name: context["class"].presence || context[:class].presence || context["qualified_class"].presence || context[:qualified_class].presence,
+        message: context["message"].presence || context[:message].presence,
+        frames: python_exception_frames(context)
+      }
+      python_exception_chain(context, chain, label: "context")
+    end
+
+    chain
+  end
+
+  def python_runtime_details(event)
+    context = event_context_hash(event)
+
+    {
+      framework: value_from_hash(context, "framework"),
+      runtime: value_from_hash(context, "runtime"),
+      python_version: value_from_hash(context, "python_version"),
+      python_implementation: value_from_hash(context, "python_implementation"),
+      platform: value_from_hash(context, "platform"),
+      hostname: value_from_hash(context, "hostname"),
+      process_id: value_from_hash(context, "process_id"),
+      runtime_name: value_from_hash(context, "runtime_name"),
+      release: value_from_hash(context, "release"),
+      environment: value_from_hash(context, "environment"),
+    }
+  end
+
+  def python_execution_details(event)
+    context = event_context_hash(event)
+
+    {
+      route: value_from_hash(context, "route"),
+      endpoint: value_from_hash(context, "endpoint"),
+      blueprint: value_from_hash(context, "blueprint"),
+      task_name: value_from_hash(context, "task_name"),
+      task_id: value_from_hash(context, "task_id"),
+      task_module: value_from_hash(context, "task_module"),
+      queue: value_from_hash(context, "queue"),
+      retries: value_from_hash(context, "retries"),
+      eta: value_from_hash(context, "eta"),
+      client_ip: value_from_hash(context, "client_ip"),
+      query_string: value_from_hash(context, "query_string"),
+    }
+  end
+
+  def python_logger_details(event)
+    context = event_context_hash(event)
+    logger = normalize_hash(context["logger"] || context[:logger])
+
+    {
+      logger_name: value_from_hash(context, "logger_name") || value_from_hash(logger, "name"),
+      module: value_from_hash(logger, "module"),
+      pathname: value_from_hash(logger, "pathname"),
+      filename: value_from_hash(logger, "filename"),
+      function: value_from_hash(logger, "function"),
+      line_number: value_from_hash(logger, "line_number"),
+      process: value_from_hash(logger, "process"),
+      thread: value_from_hash(logger, "thread")
+    }
+  end
+
+  def python_log_record_details(event)
+    context = event_context_hash(event)
+    normalize_hash(context["log_record"] || context[:log_record])
+  end
+
+  def python_activity_summary(event)
+    return nil unless event.respond_to?(:context)
+
+    logger = python_logger_details(event)
+    execution = python_execution_details(event)
+
+    parts = []
+    parts << logger[:logger_name] if logger[:logger_name].present?
+
+    origin = if logger[:function].present? && logger[:filename].present?
+      "#{logger[:function]}() in #{logger[:filename]}"
+    elsif logger[:function].present?
+      "#{logger[:function]}()"
+    elsif logger[:filename].present?
+      logger[:filename]
+    end
+    parts << origin if origin.present?
+
+    if execution[:task_name].present?
+      parts << "task #{execution[:task_name]}"
+    elsif execution[:route].present?
+      parts << execution[:route]
+    elsif execution[:endpoint].present?
+      parts << execution[:endpoint]
+    end
+
+    parts.compact_blank.join(" · ").presence
+  end
+
   def javascript_exception_stack(exception_data)
     exception_hash = normalize_hash(exception_data)
     stack = exception_hash["stack"] || exception_hash[:stack]
@@ -221,6 +335,48 @@ module ApplicationHelper
     }
   end
 
+  def javascript_exception_chain(exception_data, chain = [], label: "cause")
+    exception_hash = normalize_hash(exception_data)
+    return chain unless exception_hash.present?
+
+    cause = normalize_hash(exception_hash["cause"] || exception_hash[:cause])
+    if cause.present?
+      chain << {
+        label: label,
+        class_name: cause["class"].presence || cause[:class].presence || cause["name"].presence || cause[:name].presence,
+        message: cause["message"].presence || cause[:message].presence,
+        frames: javascript_exception_frames(cause)
+      }
+      javascript_exception_chain(cause, chain, label: "cause")
+    end
+
+    context = normalize_hash(exception_hash["context"] || exception_hash[:context])
+    if context.present?
+      nested_values = context["values"] || context[:values]
+      if nested_values.is_a?(Array)
+        nested_values.each do |entry|
+          next unless entry.is_a?(Hash)
+
+          chain << {
+            label: "context",
+            class_name: entry["class"].presence || entry[:class].presence || "JavaScript Error",
+            message: entry["message"].presence || entry[:message].presence,
+            frames: javascript_exception_frames(entry)
+          }
+        end
+      else
+        chain << {
+          label: "context",
+          class_name: context["class"].presence || context[:class].presence,
+          message: context["message"].presence || context[:message].presence,
+          frames: javascript_exception_frames(context)
+        }
+      end
+    end
+
+    chain.compact_blank
+  end
+
   def javascript_runtime_details(event)
     context = event_context_hash(event)
     headers = normalize_hash(first_hash_value(context, :headers))
@@ -239,6 +395,51 @@ module ApplicationHelper
       url: first_scalar_value(context, :url),
       request_id: first_scalar_value(context, :request_id)
     }
+  end
+
+  def javascript_logger_details(event)
+    context = event_context_hash(event)
+    logger = normalize_hash(context["logger"] || context[:logger])
+
+    {
+      logger_name: value_from_hash(context, "logger_name") || value_from_hash(logger, "name"),
+      method: value_from_hash(logger, "method"),
+      module: value_from_hash(logger, "module"),
+      pathname: value_from_hash(logger, "pathname"),
+      filename: value_from_hash(logger, "filename"),
+      function: value_from_hash(logger, "function"),
+      line_number: value_from_hash(logger, "line_number"),
+      process: value_from_hash(logger, "process"),
+      thread: value_from_hash(logger, "thread")
+    }
+  end
+
+  def javascript_log_record_details(event)
+    context = event_context_hash(event)
+    normalize_hash(context["log_record"] || context[:log_record])
+  end
+
+  def javascript_activity_summary(event)
+    return nil unless event.respond_to?(:context)
+
+    logger = javascript_logger_details(event)
+    runtime = javascript_runtime_details(event)
+    parts = []
+    parts << logger[:logger_name] if logger[:logger_name].present?
+    parts << logger[:method] if logger[:method].present?
+
+    origin = if logger[:function].present? && logger[:filename].present?
+      "#{logger[:function]}() in #{logger[:filename]}"
+    elsif logger[:function].present?
+      "#{logger[:function]}()"
+    elsif logger[:filename].present?
+      logger[:filename]
+    end
+    parts << origin if origin.present?
+    parts << runtime[:route] if runtime[:route].present?
+    parts << runtime[:component] if runtime[:component].present?
+
+    parts.compact_blank.join(" · ").presence
   end
 
   def cfml_request_details(event)

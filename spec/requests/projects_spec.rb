@@ -94,6 +94,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("JavaScript / TypeScript")
         expect(response.body).to include("logister-js")
         expect(response.body).to include("logister-js/express")
+        expect(response.body).to include("instrumentConsole")
         expect(response.body).to include("source maps")
         expect(response.body).to include("LOGISTER_RELEASE")
         expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
@@ -288,9 +289,41 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("client.captureMetric()")
         expect(response.body).to include("client.checkIn()")
+        expect(response.body).to include("instrumentConsole()")
         expect(response.body).to include("browser")
         expect(response.body).to include("route")
         expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+      end
+
+      it "shows JavaScript logger metadata inline for JavaScript log events" do
+        project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node Activity")
+        api_key = create(:api_key, user: users(:one), project: project, name: "javascript-activity")
+        IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :log,
+          level: "warning",
+          message: "Queue backlog rising",
+          context: {
+            logger_name: "console",
+            logger: {
+              method: "warn",
+              filename: "worker.js",
+              function: "flushQueue"
+            },
+            route: "/jobs/email-drain"
+          },
+          occurred_at: Time.current
+        )
+
+        get activity_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Queue backlog rising")
+        expect(response.body).to include("console")
+        expect(response.body).to include("warn")
+        expect(response.body).to include("flushQueue() in worker.js")
+        expect(response.body).to include("/jobs/email-drain")
       end
 
       it "shows Python-specific empty-state guidance for Python projects" do
@@ -303,6 +336,35 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("client.check_in()")
         expect(response.body).to include("instrument_flask()")
         expect(response.body).to include("https://docs.logister.org/integrations/python/")
+      end
+
+      it "shows Python logger metadata inline for Python log events" do
+        project = create(:project, user: users(:one), integration_kind: "python", name: "Python Activity")
+        api_key = create(:api_key, user: users(:one), project: project, name: "python-activity")
+        IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :log,
+          level: "warning",
+          message: "Inventory cache miss",
+          context: {
+            logger_name: "inventory.cache",
+            logger: {
+              filename: "worker.py",
+              function: "refresh_cache"
+            },
+            task_name: "inventory.refresh"
+          },
+          occurred_at: Time.current
+        )
+
+        get activity_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Inventory cache miss")
+        expect(response.body).to include("inventory.cache")
+        expect(response.body).to include("refresh_cache() in worker.py")
+        expect(response.body).to include("task inventory.refresh")
       end
 
       it "returns 404 for project user cannot access" do

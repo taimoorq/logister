@@ -1,0 +1,96 @@
+<% logger_details = javascript_logger_details(event) %>
+<% log_record_details = javascript_log_record_details(event) %>
+<% runtime_details = javascript_runtime_details(event) %>
+
+<div class="better-errors-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-kicker">
+      <strong>JavaScript log event</strong>
+      <% if logger_details[:logger_name].present? %>
+        from <%= logger_details[:logger_name] %>
+      <% end %>
+    </p>
+    <h3 class="better-errors-message"><%= event.message %></h3>
+  </header>
+
+  <div class="better-errors-main">
+    <section class="better-errors-section">
+      <h4>Logger details</h4>
+      <dl class="better-errors-dl">
+        <% if logger_details[:logger_name].present? %>
+          <dt>Logger</dt>
+          <dd><code><%= logger_details[:logger_name] %></code></dd>
+        <% end %>
+        <% if logger_details[:method].present? %>
+          <dt>Method</dt>
+          <dd><code><%= logger_details[:method] %></code></dd>
+        <% end %>
+        <% if logger_details[:function].present? %>
+          <dt>Function</dt>
+          <dd><code><%= logger_details[:function] %></code></dd>
+        <% end %>
+        <% if logger_details[:filename].present? %>
+          <dt>File</dt>
+          <dd><code><%= logger_details[:filename] %></code></dd>
+        <% end %>
+        <% if logger_details[:pathname].present? %>
+          <dt>Path</dt>
+          <dd><code><%= logger_details[:pathname] %></code></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Runtime details</h4>
+      <dl class="better-errors-dl">
+        <% if runtime_details[:runtime].present? %>
+          <dt>Runtime</dt>
+          <dd><code><%= runtime_details[:runtime] %></code></dd>
+        <% end %>
+        <% if runtime_details[:browser].present? %>
+          <dt>Browser</dt>
+          <dd><%= runtime_details[:browser] %></dd>
+        <% end %>
+        <% if runtime_details[:os].present? %>
+          <dt>OS</dt>
+          <dd><%= runtime_details[:os] %></dd>
+        <% end %>
+        <% if runtime_details[:route].present? %>
+          <dt>Route</dt>
+          <dd><code><%= runtime_details[:route] %></code></dd>
+        <% end %>
+        <% if runtime_details[:component].present? %>
+          <dt>Component</dt>
+          <dd><code><%= runtime_details[:component] %></code></dd>
+        <% end %>
+        <% if runtime_details[:release].present? %>
+          <dt>Release</dt>
+          <dd><code><%= runtime_details[:release] %></code></dd>
+        <% end %>
+        <% if runtime_details[:environment].present? %>
+          <dt>Environment</dt>
+          <dd><code><%= runtime_details[:environment] %></code></dd>
+        <% end %>
+        <% if runtime_details[:url].present? %>
+          <dt>URL</dt>
+          <dd><%= runtime_details[:url] %></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Log record fields</h4>
+      <% if log_record_details.any? %>
+        <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= pretty_context_json(log_record_details) %>">
+          <button type="button" class="copy-block-btn" data-action="copy#copy" onclick="window.logisterCopyButton && window.logisterCopyButton(this)" aria-label="Copy JavaScript log record JSON">
+            <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+            <span data-copy-target="buttonLabel">Copy</span>
+          </button>
+          <pre class="context-json" data-copy-target="source"><code><%= pretty_context_json(log_record_details) %></code></pre>
+        </div>
+      <% else %>
+        <p class="muted">No extra log record fields were captured for this event.</p>
+      <% end %>
+    </section>
+  </div>
+</div>
