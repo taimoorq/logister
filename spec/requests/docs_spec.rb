@@ -18,6 +18,7 @@ RSpec.describe "Docs", type: :request do
       expect(response.body).to include("CFML integration")
       expect(response.body).to include("Integrations")
       expect(response.body).to include("On this page")
+      expect(response.body).to include("Getting started next")
       expect(response.body).to include("Growing the docs")
     end
   end
@@ -30,6 +31,7 @@ RSpec.describe "Docs", type: :request do
       expect(response.body).to include("Set up your first Logister project.")
       expect(response.body).to include("Generate an API key")
       expect(response.body).to include("Choose an integration")
+      expect(response.body).to include("Verify setup")
       expect(response.body).to include("Integrations")
     end
   end
@@ -42,6 +44,7 @@ RSpec.describe "Docs", type: :request do
       expect(response.body).to include("Run Logister yourself.")
       expect(response.body).to include("Local quickstart")
       expect(response.body).to include("Production checklist")
+      expect(response.body).to include("Verify deploy")
     end
   end
 
@@ -55,6 +58,7 @@ RSpec.describe "Docs", type: :request do
       expect(response.body).to include("/api/v1/ingest_events")
       expect(response.body).to include("/api/v1/check_ins")
       expect(response.body).to include("Authorization: Bearer")
+      expect(response.body).to include("Verify delivery")
     end
   end
 
@@ -68,6 +72,7 @@ RSpec.describe "Docs", type: :request do
         expect(response.body).to include("/assets/tailwind")
       end
       expect(response.body).to include(%(type="importmap"))
+      expect(response.body).not_to include("docs-topbar-link")
     end
 
     it "includes the turbo metadata used by the main app layout" do
