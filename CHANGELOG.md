@@ -2,19 +2,24 @@
 
 All notable changes to Logister will be documented in this file.
 
-## Unreleased
+## v0.1.5 - 2026-04-22
 
 ### Added
 
-- TBD
+- Python-specific event rendering for richer exception details, runtime metadata, chained exceptions, and Python log events.
+- JavaScript-specific event rendering for chained exception details and dedicated JavaScript log event views.
+- Activity-list summaries for Python and JavaScript log events so logger metadata is visible before opening an event.
+- Additional helper and request spec coverage around Python and JavaScript event presentation logic.
 
 ### Changed
 
-- TBD
+- Expanded project integration guidance for Python and JavaScript to cover Python logging capture and JavaScript console capture.
+- Updated Cloudflare-hosted docs and in-app docs copy so Python and JavaScript guides reflect the current SDK capabilities and audience-specific positioning.
+- Improved product wording for Python and JavaScript setup flows so each language guide speaks to its primary runtime patterns.
 
 ### Fixed
 
-- TBD
+- Closed the gap where Python and JavaScript log events were shown in generic event views instead of language-aware detail panels.
 
 ## v0.1.4 - 2026-04-21
 
