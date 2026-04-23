@@ -21,7 +21,7 @@
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://docs.logister.org/self-hosting/","description":"Run Logister yourself with the local quickstart, docs map, and deploy verification flow.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Rails deployment"},{"@type":"Thing","name":"Open source observability"}],"audience":{"@type":"Audience","audienceType":"Developers"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://docs.logister.org/self-hosting/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://docs.logister.org/self-hosting/","description":"Run Logister yourself with the local quickstart, docs map, and deploy verification flow.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Open source observability"}],"audience":{"@type":"Audience","audienceType":"Developers"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://docs.logister.org/self-hosting/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -95,15 +95,15 @@
                   <p class="eyebrow">Guide overview</p>
                   <h2>Use this guide when you want to run the Logister app yourself.</h2>
                   <p class="lead">
-                    Logister is a Rails app with PostgreSQL for control-plane data, Redis for jobs and cache, and
-                    optional ClickHouse for higher-scale analytics querying.
+                    When you self-host Logister, the current app stack uses Rails with PostgreSQL for control-plane data,
+                    Redis for jobs and cache, and optional ClickHouse for higher-scale analytics querying.
                   </p>
                 </section>
                 <aside class="outline-card">
                   <h3>Before you start</h3>
                   <ul>
                     <li>Provision PostgreSQL and Redis first.</li>
-                    <li>Keep your Rails credentials and environment secrets ready.</li>
+                    <li>Keep your app secrets and environment variables ready.</li>
                     <li>Treat local boot and production rollout as separate steps.</li>
                   </ul>
                 </aside>
@@ -173,7 +173,7 @@ bin/dev</code></pre>
               <ul>
                 <li>PostgreSQL for users, projects, API keys, and app state</li>
                 <li>Redis for Sidekiq and app caching</li>
-                <li>A production secret store for Rails and provider credentials</li>
+                <li>A production secret store for app and provider credentials</li>
                 <li>A deployment method such as Fly, Kamal, or a custom Docker-based workflow</li>
                 <li>Optional ClickHouse if you need dedicated analytics scale</li>
               </ul>

@@ -50,7 +50,7 @@
           <span class="hero-kicker">Documentation</span>
           <h1>Logister Documentation</h1>
           <p>
-            Logister is a self-hosted error tracking and observability product for web applications, with public guides for Ruby, Python, JavaScript/TypeScript, and CFML teams.
+            Logister is a self-hosted reporting shell and observability control plane for backend teams, with public guides for Ruby, Python, JavaScript/TypeScript, and CFML integrations.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/getting-started/">Getting started</a>
@@ -100,7 +100,7 @@
               <h2>Choose the guide that matches your project type.</h2>
               <p>
                 Logister provides public documentation for Ruby, Python, CFML, and JavaScript integrations plus the operations guides needed
-                to self-host the app. Start with the guide that matches how your application sends data today.
+                when you want to self-host the app. Start with the guide that matches how your application sends data today.
               </p>
               <blockquote>
                 Use the product docs as the canonical source of truth. The GitHub README now points here instead of
@@ -117,7 +117,7 @@
                 <tbody>
                   <tr>
                     <td><a href="/integrations/ruby/">Ruby integration</a></td>
-                    <td>Rails and Ruby apps</td>
+                    <td>Ruby apps and Rails services</td>
                     <td><code>logister-ruby</code> gem</td>
                   </tr>
                   <tr>
@@ -162,8 +162,8 @@
                 </article>
                 <article class="card">
                   <p class="eyebrow">Ruby</p>
-                  <h3>Install the gem</h3>
-                  <p>Use the Ruby integration guide when your app already runs on Rails or Ruby.</p>
+                  <h3>Install the Ruby package</h3>
+                  <p>Use the Ruby integration guide when your app already runs on Ruby or Rails.</p>
                   <p><a href="/integrations/ruby/">Read Ruby docs</a></p>
                 </article>
                 <article class="card">
@@ -203,8 +203,8 @@
               <p class="eyebrow">Growing the docs</p>
               <h2>This is the base for a standalone hosted documentation site.</h2>
               <p>
-                This static export is designed so the docs can move to Cloudflare Pages cleanly. It keeps the information
-                architecture of the Rails docs while removing the app runtime dependency, and now includes a machine-readable
+                This static export is designed so the docs can live on Cloudflare Pages cleanly. It keeps the same information
+                architecture as the product docs while removing the app runtime dependency, and includes a machine-readable
                 <code>/llms.txt</code> index for AI tools that need the public docs map.
               </p>
               <ul>

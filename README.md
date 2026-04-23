@@ -1,6 +1,6 @@
 # Logister
 
-Logister is the self-hosted `logister.org` app: a Rails service for collecting and triaging application errors, logs, metrics, transactions, and check-ins from the apps you run.
+Logister is the self-hosted shell behind `logister.org`: the control plane and reporting surface for collecting and triaging application errors, logs, metrics, transactions, and check-ins from the apps you run.
 
 Use this repository when you want to run the Logister backend yourself. It provides the web UI, project/API key management, ingest endpoints, and the operational pieces behind the hosted product.
 
@@ -60,7 +60,7 @@ Logister runs as a Rails app with these components:
 
 The basic self-host flow is:
 
-1. Boot this Rails app.
+1. Boot the self-hosted Logister app.
 2. Create a project in Logister.
 3. Generate an API key for that project.
 4. Connect an app using one of the supported integrations or direct HTTP ingestion.

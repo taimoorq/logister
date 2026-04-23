@@ -1,5 +1,5 @@
-<% content_for :title, "Open Source Error Tracking for Ruby, Python, JavaScript, and CFML" %>
-<% content_for :meta_description, "Logister is an open source error tracking and observability app for Ruby, Python, JavaScript/TypeScript, and ColdFusion/CFML teams. Use logister-ruby, logister-python, logister-js, or direct HTTP ingestion." %>
+<% content_for :title, "Open Source Error Tracking and Reporting Shell for Backend Teams" %>
+<% content_for :meta_description, "Logister is an open source error tracking and observability shell for backend teams. Connect Ruby, Python, JavaScript/TypeScript, or CFML apps with the published packages or direct HTTP ingestion." %>
 <% content_for :canonical_path, root_path %>
 <% content_for :og_type, "website" %>
 <% content_for :json_ld, json_ld({
@@ -8,7 +8,7 @@
   "name" => "Logister",
   "applicationCategory" => "DeveloperApplication",
   "operatingSystem" => "Web",
-  "description" => "Open source error tracking and observability for Ruby, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
+  "description" => "Open source error tracking and observability shell for Ruby, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
   "url" => absolute_url_for(root_path),
   "image" => absolute_url_for("/icon.png"),
   "sameAs" => [
@@ -18,7 +18,7 @@
     "https://github.com/taimoorq/logister-js"
   ],
   "featureList" => [
-    "Ruby and Rails instrumentation",
+    "Ruby instrumentation via the published gem",
     "Python instrumentation for FastAPI, Django, Flask, Celery, and logging",
     "JavaScript and TypeScript instrumentation",
     "CFML HTTP ingestion",
@@ -48,7 +48,7 @@
   <section class="marketing-hero" style="view-transition-name: public-hero; view-transition-class: public-panel;">
     <div class="hero-grid">
       <div>
-        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source observability for Ruby, Python, JavaScript, and CFML teams</p>
+        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source observability shell for backend teams</p>
         <h1 class="hero-title" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
           Keep production calm even when your app is not.
         </h1>
@@ -198,7 +198,7 @@
     <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="150">
       <p class="stat-label">Time to first event</p>
       <p class="stat-value" data-controller="countup" data-countup-number-value="5" data-countup-suffix-value=" min">5 min</p>
-      <p class="stat-meta">install gem, generate key, ship</p>
+      <p class="stat-meta">install a package, generate key, ship</p>
     </article>
   </section>
 
@@ -247,10 +247,9 @@
   <section class="code-and-proof" style="view-transition-name: public-proof; view-transition-class: public-panel;">
     <article class="code-block-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="feature-kicker">Install in minutes</p>
-      <pre><code>gem "logister-ruby"
-
-bundle install
-bin/rails db:prepare
+      <pre><code>bundle add logister-ruby
+pip install logister-python
+npm install logister-js
 LOGISTER_API_KEY=your_key_here
 </code></pre>
     </article>

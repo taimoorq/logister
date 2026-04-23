@@ -8,7 +8,7 @@ This directory contains a standalone static version of the Logister documentatio
 - `assets/site.css` contains the docs-specific theme and layout styles.
 - `assets/site.js` provides mobile navigation and copy-to-clipboard behavior for code blocks.
 - `assets/analytics-config.js` provides deploy-time analytics configuration for the static docs site.
-- `assets/logister-logo.svg` is copied locally so the docs do not depend on the Rails asset pipeline.
+- `assets/logister-logo.svg` is copied locally so the docs do not depend on the app asset pipeline.
 
 ## Suggested Cloudflare Pages setup
 
@@ -50,7 +50,7 @@ Before deploy, the workflow writes `cloudflare-docs/assets/analytics-config.js` 
 
 ## Current scope
 
-This static export mirrors the current public docs pages from the Rails app:
+This static export mirrors the current public docs pages from the main Logister app:
 
 - Overview
 - Getting started
