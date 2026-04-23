@@ -17,8 +17,9 @@ This app is the self-hosted hub for Logister:
 
 If you are trying to instrument an application, the language integrations live in separate packages and guides:
 
-- Ruby package: https://github.com/taimoorq/logister-ruby
-- JavaScript package: https://github.com/taimoorq/logister-js
+- Ruby package for Ruby apps and Rails services: https://github.com/taimoorq/logister-ruby
+- Python package for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python
+- JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js
 
 ## Public docs
 
