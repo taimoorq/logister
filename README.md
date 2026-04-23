@@ -1,12 +1,12 @@
 # Logister
 
-Logister is the self-hosted shell behind `logister.org`: the control plane and reporting surface for collecting and triaging application errors, logs, metrics, transactions, and check-ins from the apps you run.
+Logister is the self-hosted hub behind `logister.org`: one place to collect application errors, logs, metrics, transactions, and check-ins so your team can spot problems, investigate them, and fix them faster.
 
 Use this repository when you want to run the Logister backend yourself. It provides the web UI, project/API key management, ingest endpoints, and the operational pieces behind the hosted product.
 
 ## What this repo is for
 
-This app is the control plane and ingest backend for Logister:
+This app is the self-hosted hub for Logister:
 
 - user authentication and project management
 - project API keys

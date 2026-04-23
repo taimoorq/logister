@@ -20,7 +20,7 @@ Canonical product and integration documentation for Logister lives on this docs 
 - ClickHouse: https://docs.logister.org/clickhouse/
 
 ## Audience
-- Backend teams using Logister as a self-hosted reporting shell
+- Backend teams using Logister as a self-hosted hub for app issues and triage
 - Ruby teams using `logister-ruby`
 - Python teams using `logister-python` with FastAPI, Django, Flask, Celery, and Python logging
 - JavaScript and TypeScript teams using `logister-js`
