@@ -5,5 +5,12 @@ db/schema.rb linguist-generated
 
 # Mark any vendored files as having been vendored.
 vendor/* linguist-vendored
+
+# Keep the static docs export from dominating the repository language stats.
+cloudflare-docs/** linguist-documentation
+
+# Treat Rails templates as application code rather than plain HTML for GitHub's language bar.
+*.erb linguist-language=Ruby
+
 config/credentials/*.yml.enc diff=rails_credentials
 config/credentials.yml.enc diff=rails_credentials
