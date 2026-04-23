@@ -276,7 +276,7 @@ module ApplicationHelper
   end
 
   def app_stylesheet_tags
-    return "".html_safe unless tailwind_built?
+    return unless tailwind_built?
 
     stylesheet_link_tag("tailwind", media: "all", "data-turbo-track": "reload")
   end
