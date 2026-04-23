@@ -6,19 +6,6 @@ RSpec.describe ErrorOccurrence, type: :model do
   let(:project) { projects(:one) }
   let(:api_key) { api_keys(:one) }
 
-  def create_occurrence
-    event = IngestEvent.create!(
-      project: project,
-      api_key: api_key,
-      event_type: :error,
-      message: "Occurrence spec",
-      fingerprint: "occ-#{SecureRandom.hex(4)}",
-      occurred_at: Time.current
-    )
-    ErrorGroupingService.call(event)
-    event.reload.error_occurrence
-  end
-
   describe "associations" do
     it "belongs to error_group" do
       expect(described_class.reflect_on_association(:error_group).macro).to eq(:belongs_to)
@@ -31,7 +18,7 @@ RSpec.describe ErrorOccurrence, type: :model do
 
   describe "validations" do
     it "validates uniqueness of ingest_event_id scoped to error_group_id" do
-      occ = create_occurrence
+      occ = create(:error_occurrence, api_key: api_key, error_group: create(:error_group, project: project))
       dup = described_class.new(error_group: occ.error_group, ingest_event: occ.ingest_event, occurred_at: Time.current)
       expect(dup).not_to be_valid
       expect(dup.errors[:ingest_event_id]).to be_present
@@ -40,31 +27,41 @@ RSpec.describe ErrorOccurrence, type: :model do
 
   describe "scopes" do
     it "recent_first orders by occurred_at desc" do
-      occ = create_occurrence
+      occ = create(:error_occurrence, api_key: api_key, error_group: create(:error_group, project: project))
       expect(described_class.recent_first).to eq(described_class.order(occurred_at: :desc))
     end
   end
 
   describe "callbacks" do
     it "syncs occurred_at from ingest_event when blank" do
-      event = IngestEvent.create!(
+      group = create(:error_group, project: project)
+      event = create(:ingest_event,
         project: project,
         api_key: api_key,
-        event_type: :error,
+        fingerprint: group.fingerprint,
         message: "Sync spec",
-        fingerprint: "sync-#{SecureRandom.hex(4)}",
-        occurred_at: 1.hour.ago
-      )
-      ErrorGroupingService.call(event)
-      occ = event.reload.error_occurrence
+        occurred_at: 1.hour.ago)
+      occ = described_class.create!(error_group: group, ingest_event: event)
+
       expect(occ.occurred_at).to be_within(1.second).of(event.occurred_at)
     end
   end
 
   describe "#to_param" do
     it "returns uuid" do
-      occ = create_occurrence
+      occ = create(:error_occurrence, api_key: api_key, error_group: create(:error_group, project: project))
       expect(occ.to_param).to eq(occ.uuid)
+    end
+  end
+
+  describe "factory" do
+    it "creates a coherent occurrence linked to its group and event" do
+      occurrence = create(:error_occurrence, api_key: api_key, error_group: create(:error_group, project: project))
+
+      expect(occurrence).to be_persisted
+      expect(occurrence.error_group.project).to eq(project)
+      expect(occurrence.ingest_event.project).to eq(project)
+      expect(occurrence.ingest_event.error_group).to eq(occurrence.error_group)
     end
   end
 end

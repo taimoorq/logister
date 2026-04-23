@@ -37,19 +37,29 @@ module Seeds
         owner: users.fetch(:alice),
         slug: "storefront",
         name: "Storefront",
-        description: "Rails storefront app with checkout, search, and background jobs."
+        description: "Rails storefront app with checkout, search, and background jobs.",
+        integration_kind: "ruby"
       ),
-      billing_api: upsert_project!(
+      billing_worker: upsert_project!(
         owner: users.fetch(:alice),
-        slug: "billing-api",
-        name: "Billing API",
-        description: "Internal billing API and recurring invoice workers."
+        slug: "billing-worker",
+        name: "Billing Worker",
+        description: "Python APIs and Celery workers for billing, invoices, and scheduled jobs.",
+        integration_kind: "python"
       ),
-      mobile_backend: upsert_project!(
+      web_frontend: upsert_project!(
         owner: users.fetch(:bob),
-        slug: "mobile-backend",
-        name: "Mobile Backend",
-        description: "Backend APIs and auth services for mobile clients."
+        slug: "web-frontend",
+        name: "Web Frontend",
+        description: "JavaScript and TypeScript app with client-side errors, logs, and release tracking.",
+        integration_kind: "javascript"
+      ),
+      legacy_cfml: upsert_project!(
+        owner: users.fetch(:carol),
+        slug: "legacy-cfml",
+        name: "Legacy CFML",
+        description: "Lucee and Adobe ColdFusion app posting structured events over HTTP.",
+        integration_kind: "cfml"
       )
     }
   end
@@ -57,7 +67,9 @@ module Seeds
   def seed_memberships(users, projects)
     membership!(user: users.fetch(:bob), project: projects.fetch(:storefront))
     membership!(user: users.fetch(:carol), project: projects.fetch(:storefront))
-    membership!(user: users.fetch(:alice), project: projects.fetch(:mobile_backend))
+    membership!(user: users.fetch(:alice), project: projects.fetch(:web_frontend))
+    membership!(user: users.fetch(:bob), project: projects.fetch(:billing_worker))
+    membership!(user: users.fetch(:carol), project: projects.fetch(:web_frontend))
   end
 
   def seed_api_keys(projects)
@@ -76,16 +88,22 @@ module Seeds
         revoked: true
       ),
       billing_primary: upsert_api_key!(
-        project: projects.fetch(:billing_api),
-        user: projects.fetch(:billing_api).user,
+        project: projects.fetch(:billing_worker),
+        user: projects.fetch(:billing_worker).user,
         name: "Primary ingest key",
         token: "seed-billing-primary"
       ),
-      mobile_primary: upsert_api_key!(
-        project: projects.fetch(:mobile_backend),
-        user: projects.fetch(:mobile_backend).user,
+      web_primary: upsert_api_key!(
+        project: projects.fetch(:web_frontend),
+        user: projects.fetch(:web_frontend).user,
         name: "Primary ingest key",
-        token: "seed-mobile-primary"
+        token: "seed-web-primary"
+      ),
+      cfml_primary: upsert_api_key!(
+        project: projects.fetch(:legacy_cfml),
+        user: projects.fetch(:legacy_cfml).user,
+        name: "Primary ingest key",
+        token: "seed-cfml-primary"
       )
     }
   end
@@ -94,10 +112,12 @@ module Seeds
     now = Time.current.change(sec: 0)
     storefront = projects.fetch(:storefront)
     storefront_key = keys.fetch(:storefront_primary)
-    billing = projects.fetch(:billing_api)
+    billing = projects.fetch(:billing_worker)
     billing_key = keys.fetch(:billing_primary)
-    mobile = projects.fetch(:mobile_backend)
-    mobile_key = keys.fetch(:mobile_primary)
+    web = projects.fetch(:web_frontend)
+    web_key = keys.fetch(:web_primary)
+    cfml = projects.fetch(:legacy_cfml)
+    cfml_key = keys.fetch(:cfml_primary)
 
     create_event!(
       project: storefront,
@@ -271,36 +291,103 @@ module Seeds
       key: "billing-error",
       event_type: :error,
       level: "error",
-      message: "Stripe::RateLimitError in InvoiceJob",
+      message: "ValueError: invalid invoice state",
       fingerprint: "invoice-ratelimit",
       occurred_at: now - 90.minutes,
-      context: error_context(release: "v2.0.1", env: "production")
+      context: python_error_context(
+        release: "billing@2026.04.22",
+        env: "production",
+        framework: "celery",
+        route: "/internal/invoices",
+        request_id: "req-python-seed-1",
+        trace_id: "trace-python-seed-1"
+      )
     )
     create_event!(
       project: billing,
       api_key: billing_key,
-      key: "billing-transaction",
+      key: "billing-log",
+      event_type: :log,
+      level: "warning",
+      message: "Retry queue backlog rising",
+      occurred_at: now - 25.minutes,
+      context: python_log_context(
+        release: "billing@2026.04.22",
+        framework: "celery",
+        task_name: "billing.retry_failed_invoices",
+        task_id: "task-seed-123"
+      )
+    )
+
+    create_event!(
+      project: billing,
+      api_key: billing_key,
+      key: "billing-checkin",
+      event_type: :check_in,
+      level: "info",
+      message: "daily-billing-rollup",
+      occurred_at: now - 8.minutes,
+      context: check_in_context(status: "ok", slug: "daily-billing-rollup", expected_interval_seconds: 600, env: "production")
+    )
+
+    create_event!(
+      project: web,
+      api_key: web_key,
+      key: "web-error",
+      event_type: :error,
+      level: "error",
+      message: "TypeError: Cannot read properties of undefined",
+      fingerprint: "javascript-typeerror-checkout",
+      occurred_at: now - 35.minutes,
+      context: javascript_error_context(release: "web@2026.04.22", route: "/checkout")
+    )
+    create_event!(
+      project: web,
+      api_key: web_key,
+      key: "web-log",
+      event_type: :log,
+      level: "warning",
+      message: "Queue backlog rising",
+      occurred_at: now - 20.minutes,
+      context: javascript_log_context(release: "web@2026.04.22", route: "/jobs/email-drain")
+    )
+    create_event!(
+      project: web,
+      api_key: web_key,
+      key: "web-transaction",
       event_type: :transaction,
       level: "info",
-      message: "invoice.generate",
-      occurred_at: now - 25.minutes,
+      message: "checkout.submit",
+      occurred_at: now - 12.minutes,
       context: {
-        "transaction_name" => "InvoiceJob#perform",
-        "duration_ms" => 180.5,
+        "transaction_name" => "CheckoutView#submit",
+        "duration_ms" => 245.7,
         "status" => 200,
-        "environment" => "production"
+        "environment" => "production",
+        "release" => "web@2026.04.22"
       }
     )
 
     create_event!(
-      project: mobile,
-      api_key: mobile_key,
-      key: "mobile-log",
+      project: cfml,
+      api_key: cfml_key,
+      key: "cfml-error",
+      event_type: :error,
+      level: "error",
+      message: "ColdFusion exception",
+      fingerprint: "cfml-customer-undefined",
+      occurred_at: now - 50.minutes,
+      context: cfml_error_context(release: "cfml@2026.04.22", env: "production")
+    )
+    create_event!(
+      project: cfml,
+      api_key: cfml_key,
+      key: "cfml-log",
       event_type: :log,
       level: "info",
-      message: "User login succeeded",
+      message: "Customer export completed",
       occurred_at: now - 20.minutes,
-      context: { "environment" => "production", "request_id" => "req-mobile-1" }
+      context: { "environment" => "production", "request_id" => "req-cfml-1", "route" => "/reports/customer-export" }
     )
   end
 
@@ -325,9 +412,9 @@ module Seeds
     user
   end
 
-  def upsert_project!(owner:, slug:, name:, description:)
+  def upsert_project!(owner:, slug:, name:, description:, integration_kind:)
     project = owner.projects.find_or_initialize_by(slug: slug)
-    project.assign_attributes(name: name, description: description)
+    project.assign_attributes(name: name, description: description, integration_kind: integration_kind)
     project.save!
     project
   end
@@ -415,6 +502,187 @@ module Seeds
       "check_in_slug" => slug,
       "check_in_status" => status,
       "expected_interval_seconds" => expected_interval_seconds
+    }
+  end
+
+  def python_error_context(release:, env:, framework:, route:, request_id:, trace_id:)
+    {
+      "environment" => env,
+      "release" => release,
+      "framework" => framework,
+      "runtime" => "python",
+      "python_version" => "3.12.3",
+      "python_implementation" => "CPython",
+      "platform" => "macOS-14.0-arm64",
+      "hostname" => "worker-1",
+      "process_id" => 4242,
+      "route" => route,
+      "request" => {
+        "method" => "POST",
+        "request_id" => request_id,
+        "url" => "https://api.example.com#{route}",
+        "client_ip" => "203.0.113.8"
+      },
+      "trace_id" => trace_id,
+      "exception" => {
+        "class" => "ValueError",
+        "qualified_class" => "builtins.ValueError",
+        "message" => "invalid invoice state",
+        "frames" => [
+          {
+            "filename" => "/srv/app/billing/invoice_job.py",
+            "lineno" => 41,
+            "name" => "generate_invoice",
+            "line" => "raise ValueError('invalid invoice state')",
+            "locals" => { "invoice_id" => "inv_123" }
+          }
+        ],
+        "cause" => {
+          "class" => "KeyError",
+          "message" => "customer_id",
+          "frames" => [
+            {
+              "filename" => "/srv/app/billing/customer_lookup.py",
+              "lineno" => 12,
+              "name" => "fetch_customer",
+              "line" => "raise KeyError('customer_id')"
+            }
+          ]
+        },
+        "backtrace" => [
+          "File \"/srv/app/billing/invoice_job.py\", line 41, in generate_invoice"
+        ]
+      }
+    }
+  end
+
+  def python_log_context(release:, framework:, task_name:, task_id:)
+    {
+      "logger_name" => "billing.retry",
+      "logger" => {
+        "name" => "billing.retry",
+        "module" => "billing.retry_worker",
+        "pathname" => "/srv/app/billing/retry_worker.py",
+        "filename" => "retry_worker.py",
+        "function" => "drain_retry_queue",
+        "line_number" => 88,
+        "process" => 7021,
+        "thread" => 19
+      },
+      "log_record" => {
+        "request_id" => "req-log-1",
+        "trace_id" => "trace-log-1",
+        "queue" => "billing",
+        "retry_count" => 4
+      },
+      "framework" => framework,
+      "runtime" => "python",
+      "python_version" => "3.12.3",
+      "hostname" => "worker-2",
+      "process_id" => 7021,
+      "release" => release,
+      "task_name" => task_name,
+      "task_id" => task_id,
+      "task_module" => "billing.tasks"
+    }
+  end
+
+  def javascript_error_context(release:, route:)
+    {
+      "browser" => "Chrome 135",
+      "os" => "macOS",
+      "route" => route,
+      "release" => release,
+      "user_agent" => "Mozilla/5.0",
+      "breadcrumbs" => [
+        { "category" => "ui.click", "message" => "Clicked checkout button" }
+      ],
+      "exception" => {
+        "class" => "TypeError",
+        "message" => "Cannot read properties of undefined",
+        "frames" => [
+          {
+            "filename" => "https://app.example.com/assets/app.min.js",
+            "lineno" => 2,
+            "colno" => 1450,
+            "name" => "renderCheckout"
+          },
+          {
+            "filename" => "https://app.example.com/assets/app.min.js",
+            "lineno" => 9,
+            "colno" => 321,
+            "name" => "onSubmit"
+          }
+        ],
+        "backtrace" => [
+          "at renderCheckout (https://app.example.com/assets/app.min.js:2:1450)",
+          "at onSubmit (https://app.example.com/assets/app.min.js:9:321)"
+        ],
+        "stack" => "TypeError: Cannot read properties of undefined\n    at renderCheckout (https://app.example.com/assets/app.min.js:2:1450)\n    at onSubmit (https://app.example.com/assets/app.min.js:9:321)\n",
+        "cause" => {
+          "class" => "Error",
+          "message" => "checkout state missing",
+          "frames" => [
+            {
+              "filename" => "https://app.example.com/src/lib/checkout.ts",
+              "lineno" => 27,
+              "colno" => 14,
+              "name" => "validateCheckout"
+            }
+          ]
+        }
+      }
+    }
+  end
+
+  def javascript_log_context(release:, route:)
+    {
+      "logger_name" => "console",
+      "logger" => {
+        "name" => "console",
+        "method" => "warn",
+        "filename" => "worker.js",
+        "function" => "flushQueue"
+      },
+      "log_record" => {
+        "arguments" => [ "Queue backlog rising", { "queue" => "emails" } ],
+        "original_method" => "warn"
+      },
+      "runtime" => "node",
+      "route" => route,
+      "release" => release,
+      "url" => "https://app.example.com#{route}"
+    }
+  end
+
+  def cfml_error_context(release:, env:)
+    {
+      "environment" => env,
+      "release" => release,
+      "exception" => {
+        "type" => "Expression",
+        "message" => "Variable CUSTOMER is undefined.",
+        "template" => "/srv/www/app/orders/show.cfm",
+        "line" => 118,
+        "detail" => "The error occurred while rendering the order details template."
+      },
+      "template_frames" => [
+        {
+          "template" => "/srv/www/app/orders/show.cfm",
+          "line" => 118,
+          "code" => "<cfset customerName = CUSTOMER.name>"
+        },
+        {
+          "template" => "/srv/www/app/layouts/application.cfm",
+          "line" => 52,
+          "code" => "<cfinclude template=\"/orders/show.cfm\">"
+        }
+      ],
+      "request" => {
+        "method" => "GET",
+        "url" => "https://legacy.example.com/orders/show.cfm?id=42",
+        "request_id" => "req-cfml-seed-1"
+      }
     }
   end
 end
