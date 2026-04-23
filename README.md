@@ -4,6 +4,17 @@ Logister is the self-hosted hub behind `logister.org`: one place to collect appl
 
 Use this repository when you want to run the Logister backend yourself. It provides the web UI, project/API key management, ingest endpoints, and the operational pieces behind the hosted product.
 
+## Table Of Contents
+
+- [What this repo is for](#what-this-repo-is-for)
+- [Public docs](#public-docs)
+- [Self-hosted runtime](#self-hosted-runtime)
+- [Integrating apps with Logister](#integrating-apps-with-logister)
+- [Running the app locally](#running-the-app-locally)
+- [Local development nuances](#local-development-nuances)
+- [Project documentation](#project-documentation)
+- [Source and related repos](#source-and-related-repos)
+
 ## What this repo is for
 
 This app is the self-hosted hub for Logister:
@@ -143,4 +154,5 @@ Use [cloudflare-docs/README.md](cloudflare-docs/README.md) for the full Cloudfla
 - Python package: https://github.com/taimoorq/logister-python
 - JavaScript package: https://github.com/taimoorq/logister-js
 - RubyGems: https://rubygems.org/gems/logister-ruby
+- PyPI: https://pypi.org/project/logister-python/
 - npm: https://www.npmjs.com/package/logister-js
