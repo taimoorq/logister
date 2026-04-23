@@ -1,5 +1,5 @@
-<% content_for :title, "Open Source Error Tracking and Reporting Shell for Backend Teams" %>
-<% content_for :meta_description, "Logister is an open source error tracking and observability shell for backend teams. Connect Ruby, Python, JavaScript/TypeScript, or CFML apps with the published packages or direct HTTP ingestion." %>
+<% content_for :title, "Self-Hosted Analytics Dashboard for Your Apps" %>
+<% content_for :meta_description, "Logister is an open source, self-hosted analytics dashboard for your apps. Track errors, logs, metrics, transactions, and check-ins from Ruby, Python, JavaScript/TypeScript, or CFML services." %>
 <% content_for :canonical_path, root_path %>
 <% content_for :og_type, "website" %>
 <% content_for :json_ld, json_ld({
@@ -8,7 +8,7 @@
   "name" => "Logister",
   "applicationCategory" => "DeveloperApplication",
   "operatingSystem" => "Web",
-  "description" => "Open source error tracking and observability shell for Ruby, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
+  "description" => "Open source, self-hosted analytics dashboard for Ruby, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
   "url" => absolute_url_for(root_path),
   "image" => absolute_url_for("/icon.png"),
   "sameAs" => [
@@ -48,12 +48,12 @@
   <section class="marketing-hero" style="view-transition-name: public-hero; view-transition-class: public-panel;">
     <div class="hero-grid">
       <div>
-        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source observability shell for backend teams</p>
+        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Self-hosted analytics dashboard for your apps</p>
         <h1 class="hero-title" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
-          Keep production calm even when your app is not.
+          See errors, logs, and app health in one place.
         </h1>
         <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
-          Capture errors, transactions, logs, and check-ins in one place. Use <code>logister-ruby</code>, <code>logister-python</code>, <code>logister-js</code>, or direct HTTP ingestion from Lucee and ColdFusion to give your team a clean inbox for fast triage and clear release confidence.
+          Capture errors, transactions, logs, and check-ins in one dashboard. Use <code>logister-ruby</code>, <code>logister-python</code>, <code>logister-js</code>, or direct HTTP ingestion from Lucee and ColdFusion to help your team spot problems faster, investigate with context, and feel better about each release.
         </p>
         <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="200">
           <%= link_to "Start free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>

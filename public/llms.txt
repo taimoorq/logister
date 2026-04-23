@@ -1,6 +1,6 @@
 # Logister
 
-Logister is a free, open source error tracking and operational telemetry app for self-hosted teams.
+Logister is a free, open source, self-hosted analytics dashboard for your apps.
 
 It supports:
 - Ruby and Rails apps via the `logister-ruby` gem
@@ -38,7 +38,7 @@ Canonical documentation lives on the public docs host:
 - Includes a public docs site with setup, deployment, API, and integration guides.
 
 ## Primary audience
-- Backend teams who want a self-hosted hub for seeing app issues, investigating them, and fixing them faster.
+- Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.
 - Python developers instrumenting APIs, workers, schedulers, and Python logging.
 - JavaScript and TypeScript developers integrating Node or Express apps.
 - ColdFusion, Lucee, and CFML developers sending structured events to Logister.

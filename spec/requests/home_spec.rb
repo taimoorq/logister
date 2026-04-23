@@ -15,7 +15,7 @@ RSpec.describe "Home", type: :request do
       it "returns success and shows landing content" do
         get root_path
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("Keep production calm even when your app is not.")
+        expect(response.body).to include("See errors, logs, and app health in one place.")
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("logister-python")
         expect(response.body).to include("Start free")
