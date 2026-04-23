@@ -1,5 +1,6 @@
 class IngestEvent < ApplicationRecord
   include IngestEventContext
+  include IngestEventDetailing
   include IngestEventReporting
 
   belongs_to :project
