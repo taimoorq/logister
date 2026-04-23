@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe "Landing and dashboard", type: :system do
   it "shows the landing page when not signed in" do
     visit root_path
-    expect(page).to have_content("Keep production calm even when your app is not.")
+    expect(page).to have_content("See errors, logs, and app health in one place.")
     expect(page).to have_content("Start free")
     expect(page).to have_link(href: /logister-ruby/)
   end
