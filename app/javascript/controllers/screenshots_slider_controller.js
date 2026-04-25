@@ -9,9 +9,6 @@ export default class extends Controller {
   connect() {
     this.index = 0
     this.count = this.slideTargets.length
-    if (this.hasTrackTarget && this.count > 0) {
-      this.trackTarget.style.width = `${this.count * 100}%`
-    }
     this.update()
   }
 
@@ -39,8 +36,7 @@ export default class extends Controller {
 
   update() {
     if (this.hasTrackTarget && this.count > 0) {
-      const step = 100 / this.count
-      this.trackTarget.style.transform = `translateX(-${this.index * step}%)`
+      this.trackTarget.style.transform = `translateX(-${this.index * 100}%)`
     }
 
     this.slideTargets.forEach((slide, idx) => {

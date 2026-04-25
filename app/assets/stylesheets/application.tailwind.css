@@ -668,7 +668,7 @@
   }
 
   .shot-frame {
-    @apply rounded-xl overflow-hidden;
+    @apply rounded-xl overflow-hidden flex items-center justify-center;
     background: #f4f8ff;
     border: 1px solid rgba(120, 145, 199, 0.32);
     box-shadow: 0 14px 30px -24px rgba(18, 34, 72, 0.65);
@@ -676,14 +676,20 @@
 
   .shot-main {
     @apply mb-3;
+    aspect-ratio: 2572 / 1696;
   }
 
   .hero-shot {
-    @apply block w-full h-auto;
+    @apply block w-full h-auto max-w-full;
+    object-fit: contain;
   }
 
   .hero-mobile-shots {
     @apply grid grid-cols-2 gap-3;
+  }
+
+  .hero-mobile-shots .shot-frame {
+    aspect-ratio: 3 / 4;
   }
 
   .shot-placeholder {
@@ -693,7 +699,30 @@
   }
 
   .shot-wide .hero-shot {
+    @apply w-full h-full;
+  }
+
+  .shot-wide {
     @apply w-full;
+    height: clamp(14rem, 58vw, 34rem);
+    max-height: 68vh;
+  }
+
+  .shot-main .hero-shot,
+  .hero-mobile-shots .hero-shot,
+  .shot-wide .hero-shot,
+  .about-hero .shot-frame > .hero-shot,
+  .about-shot-card .shot-frame > .hero-shot {
+    @apply h-full;
+  }
+
+  .about-hero .shot-frame {
+    aspect-ratio: 2572 / 1696;
+  }
+
+  .about-shot-card .shot-frame {
+    aspect-ratio: 4 / 3;
+    max-height: 28rem;
   }
 
   .logo-band {
@@ -720,13 +749,15 @@
   }
 
   .screenshots-slider-track {
-    @apply flex;
+    @apply flex h-full;
     transition: transform 320ms ease;
     will-change: transform;
   }
 
   .screenshots-slide {
+    @apply h-full flex items-center justify-center;
     flex: 0 0 100%;
+    min-width: 0;
   }
 
   .screenshots-slider-controls {
