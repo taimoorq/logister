@@ -16,6 +16,10 @@ jobs:
     concurrency: deploy-group
     steps:
       - uses: actions/checkout@v6
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
       - uses: superfly/flyctl-actions/setup-flyctl@v1
       - name: Ensure Fly API token is configured
         run: |

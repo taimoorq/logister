@@ -39,7 +39,7 @@ body:
     attributes:
       label: Environment
       description: Provide versions and runtime details.
-      placeholder: Ruby 4.0.1, Rails 8.1.2, PostgreSQL 16, Redis 7, macOS 15
+      placeholder: Ruby 4.0.3, Rails 8.1.2, PostgreSQL 16, Redis 7, macOS 15
     validations:
       required: true
   - type: textarea
