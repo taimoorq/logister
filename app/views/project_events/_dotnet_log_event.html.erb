@@ -1,0 +1,123 @@
+<% logger_details = dotnet_logger_details(event) %>
+<% log_record_details = dotnet_log_record_details(event) %>
+<% runtime_details = dotnet_runtime_details(event) %>
+<% execution_details = dotnet_execution_details(event) %>
+
+<div class="better-errors-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-kicker">
+      <strong>.NET log event</strong>
+      <% if logger_details[:logger_name].present? %>
+        from <%= logger_details[:logger_name] %>
+      <% end %>
+    </p>
+    <h3 class="better-errors-message"><%= event.message %></h3>
+  </header>
+
+  <div class="better-errors-main">
+    <section class="better-errors-section">
+      <h4>Logger details</h4>
+      <dl class="better-errors-dl">
+        <% if logger_details[:logger_name].present? %>
+          <dt>Logger</dt>
+          <dd><code><%= logger_details[:logger_name] %></code></dd>
+        <% end %>
+        <% if logger_details[:event_id].present? %>
+          <dt>Event ID</dt>
+          <dd><code><%= logger_details[:event_id] %></code></dd>
+        <% end %>
+        <% if logger_details[:event_name].present? %>
+          <dt>Event name</dt>
+          <dd><code><%= logger_details[:event_name] %></code></dd>
+        <% end %>
+        <% if logger_details[:source_context].present? %>
+          <dt>Source context</dt>
+          <dd><code><%= logger_details[:source_context] %></code></dd>
+        <% end %>
+        <% if logger_details[:scope].present? %>
+          <dt>Scope</dt>
+          <dd><code><%= logger_details[:scope] %></code></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Runtime details</h4>
+      <dl class="better-errors-dl">
+        <% if runtime_details[:framework].present? %>
+          <dt>Framework</dt>
+          <dd><code><%= runtime_details[:framework] %></code></dd>
+        <% end %>
+        <% if runtime_details[:runtime].present? %>
+          <dt>Runtime</dt>
+          <dd><code><%= runtime_details[:runtime] %></code></dd>
+        <% end %>
+        <% if runtime_details[:dotnet_version].present? %>
+          <dt>.NET version</dt>
+          <dd><code><%= runtime_details[:dotnet_version] %></code></dd>
+        <% end %>
+        <% if runtime_details[:machine_name].present? %>
+          <dt>Machine</dt>
+          <dd><code><%= runtime_details[:machine_name] %></code></dd>
+        <% end %>
+        <% if runtime_details[:environment].present? %>
+          <dt>Environment</dt>
+          <dd><code><%= runtime_details[:environment] %></code></dd>
+        <% end %>
+        <% if runtime_details[:release].present? %>
+          <dt>Release</dt>
+          <dd><code><%= runtime_details[:release] %></code></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Execution details</h4>
+      <dl class="better-errors-dl">
+        <% if request_details[:http_method].present? %>
+          <dt>Method</dt>
+          <dd><code><%= request_details[:http_method] %></code></dd>
+        <% end %>
+        <% if request_details[:url].present? %>
+          <dt>URL</dt>
+          <dd><%= request_details[:url] %></dd>
+        <% end %>
+        <% if execution_details[:route].present? %>
+          <dt>Route</dt>
+          <dd><code><%= execution_details[:route] %></code></dd>
+        <% end %>
+        <% if execution_details[:status].present? %>
+          <dt>Status</dt>
+          <dd><code><%= execution_details[:status] %></code></dd>
+        <% end %>
+        <% if execution_details[:duration_ms].present? %>
+          <dt>Duration</dt>
+          <dd><code><%= execution_details[:duration_ms] %> ms</code></dd>
+        <% end %>
+        <% if execution_details[:request_id].present? %>
+          <dt>Request ID</dt>
+          <dd><code><%= execution_details[:request_id] %></code></dd>
+        <% end %>
+        <% if execution_details[:trace_id].present? %>
+          <dt>Trace ID</dt>
+          <dd><code><%= execution_details[:trace_id] %></code></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="better-errors-section">
+      <h4>Log record fields</h4>
+      <% if log_record_details.any? %>
+        <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= pretty_context_json(log_record_details) %>">
+          <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy .NET log record JSON">
+            <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+            <span data-copy-target="buttonLabel">Copy</span>
+          </button>
+          <pre class="context-json" data-copy-target="source"><code><%= pretty_context_json(log_record_details) %></code></pre>
+        </div>
+      <% else %>
+        <p class="muted">No extra log record fields were captured for this event.</p>
+      <% end %>
+    </section>
+  </div>
+</div>

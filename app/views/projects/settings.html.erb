@@ -189,6 +189,47 @@ instrument_fastapi(app, client)</code></pre>
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
+      <% elsif @project.integration_dotnet? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install <code>Logister.AspNetCore</code> in the ASP.NET Core app you want to monitor.</li>
+              <li>Use <code>AddLogister(builder.Configuration)</code> to register the client and <code>UseLogisterExceptionReporting()</code> to capture uncaught request exceptions.</li>
+              <li>Turn on <code>UseLogisterRequestTransactions()</code> when you want ASP.NET Core request timings in the performance view.</li>
+              <li>Use the shared <code>LogisterClient</code> for business metrics, check-ins, worker errors, and service-specific logs.</li>
+              <li>Set <code>LOGISTER_RELEASE</code> for deploy tracking and include request IDs or trace IDs so .NET errors can be linked to nearby logs.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with ASP.NET Core</h3>
+            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>dotnet add package Logister.AspNetCore
+
+using Logister.AspNetCore;
+
+builder.Services.AddLogister(builder.Configuration);
+
+app.UseLogisterExceptionReporting();
+app.UseLogisterRequestTransactions();</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Custom metrics</h3>
+            <p class="text-sm text-slate-600">
+              Inject <code>LogisterClient</code> anywhere in the app and call <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, <code>CaptureMessageAsync()</code>, or <code>CheckInAsync()</code> for the app-specific metrics you choose.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to ".NET integration docs",
+                        docs_site_url(:dotnet_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
       <% elsif @project.integration_javascript? %>
         <div class="space-y-4">
           <div>
@@ -277,6 +318,8 @@ end</code></pre>
           Send JSON from Lucee or ColdFusion with `cfhttp`.
         <% elsif @project.integration_python? %>
           Use the <code>logister-python</code> client directly, or add the FastAPI, Django, Flask, or Celery helpers for framework-aware reporting.
+        <% elsif @project.integration_dotnet? %>
+          Use <code>Logister.AspNetCore</code> for ASP.NET Core middleware, or the base <code>Logister</code> client from workers and services.
         <% elsif @project.integration_javascript? %>
           Use the <code>logister-js</code> client directly, or add the Express middleware if your JavaScript app runs on Express.
         <% else %>

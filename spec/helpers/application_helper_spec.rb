@@ -19,6 +19,7 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(helper.docs_site_url(:cfml_integration)).to eq("https://docs.logister.org/integrations/cfml/")
       expect(helper.docs_site_url(:javascript_integration)).to eq("https://docs.logister.org/integrations/javascript/")
       expect(helper.docs_site_url(:python_integration)).to eq("https://docs.logister.org/integrations/python/")
+      expect(helper.docs_site_url(:dotnet_integration)).to eq("https://docs.logister.org/integrations/dotnet/")
     end
   end
 
@@ -206,13 +207,15 @@ RSpec.describe ApplicationHelper, type: :helper do
   end
 
   describe "#event_stacktrace_tab_label" do
-    it "uses Details for Python and JavaScript log events" do
+    it "uses Details for Python, JavaScript, and .NET log events" do
       python_project = Project.new(integration_kind: "python")
       javascript_project = Project.new(integration_kind: "javascript")
+      dotnet_project = Project.new(integration_kind: "dotnet")
       log_event = Struct.new(:log?).new(true)
 
       expect(helper.event_stacktrace_tab_label(python_project, log_event)).to eq("Details")
       expect(helper.event_stacktrace_tab_label(javascript_project, log_event)).to eq("Details")
+      expect(helper.event_stacktrace_tab_label(dotnet_project, log_event)).to eq("Details")
     end
 
     it "uses Stacktrace for non-log events" do
@@ -230,7 +233,9 @@ RSpec.describe ApplicationHelper, type: :helper do
 
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "python"), log_event)).to eq("project_events/python_log_event")
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "javascript"), log_event)).to eq("project_events/javascript_log_event")
+      expect(helper.event_stacktrace_partial(Project.new(integration_kind: "dotnet"), log_event)).to eq("project_events/dotnet_log_event")
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "cfml"), error_event)).to eq("project_events/cfml_stacktrace")
+      expect(helper.event_stacktrace_partial(Project.new(integration_kind: "dotnet"), error_event)).to eq("project_events/dotnet_stacktrace")
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "ruby"), error_event)).to eq("project_events/ruby_stacktrace")
     end
   end
@@ -297,6 +302,24 @@ RSpec.describe ApplicationHelper, type: :helper do
       )
 
       expect(helper.javascript_activity_summary(event)).to eq("console · warn · flushQueue() in worker.js · /jobs/email-drain")
+    end
+  end
+
+  describe "#dotnet_activity_summary" do
+    it "builds a compact logger and route summary" do
+      event = Struct.new(:context).new(
+        {
+          "logger_name" => "QuriaTime.Web.Services.ApprovalService",
+          "logger" => {
+            "event_name" => "ApprovalFailed"
+          },
+          "route" => "POST /approvals/{id}",
+          "status" => 500,
+          "framework" => "aspnetcore"
+        }
+      )
+
+      expect(helper.dotnet_activity_summary(event)).to eq("QuriaTime.Web.Services.ApprovalService · ApprovalFailed · POST /approvals/{id} · status 500 · aspnetcore")
     end
   end
 end

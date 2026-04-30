@@ -96,6 +96,7 @@ module ProjectEvents
         /\Aat (?<file>.+?):(?<line>\d+):(?<column>\d+)\z/,
         /\A(?<method>[^@]+)@(?<file>.+?):(?<line>\d+):(?<column>\d+)\z/,
         /\A\s*File "(?<file>.+?)", line (?<line>\d+)(?:, in (?<method>.+))?\z/,
+        /\A\s*at (?<method>.+?) in (?<file>.+?):line (?<line>\d+)\z/,
         /\A(?<file>.+?):(?<line>\d+)(?::in `(?<method>[^']+)')?\z/,
         /\A(?<file>.+?):(?<line>\d+)(?::in (?<method>.+))?\z/
       ]

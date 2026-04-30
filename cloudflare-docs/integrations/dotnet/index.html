@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>.NET Integration | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Set up .NET and ASP.NET Core apps with Logister using the logister-dotnet SDK.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/integrations/dotnet/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content=".NET Integration | Logister">
+    <meta property="og:description" content="Set up .NET and ASP.NET Core apps with Logister using the logister-dotnet SDK.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/integrations/dotnet/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content=".NET Integration | Logister">
+    <meta name="twitter:description" content="Set up .NET and ASP.NET Core apps with Logister using the logister-dotnet SDK.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-dotnet"]},{"@type":"TechArticle","@id":"https://docs.logister.org/integrations/dotnet/#article","headline":"Integrate a .NET app with Logister.","name":".NET Integration | Logister","url":"https://docs.logister.org/integrations/dotnet/","description":"Set up .NET and ASP.NET Core apps with Logister using the logister-dotnet SDK.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":".NET error tracking"},{"@type":"Thing","name":"ASP.NET Core observability"},{"@type":"SoftwareSourceCode","name":"logister-dotnet","codeRepository":"https://github.com/taimoorq/logister-dotnet","programmingLanguage":"C#"}],"audience":{"@type":"Audience","audienceType":".NET developers"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":".NET integration","item":"https://docs.logister.org/integrations/dotnet/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">.NET integration</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">logister.org</a><a href="https://github.com/taimoorq/logister-dotnet">SDK repo</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / .NET</span><h1>Integrate a .NET app with Logister.</h1><p>The recommended path for ASP.NET Core projects is <code>Logister.AspNetCore</code>. It captures uncaught request exceptions, optional request transactions, runtime metadata, structured .NET exception chains, and custom metrics you choose from your own C# services.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a class="active" href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a href="/integrations/javascript/">JavaScript integration</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#install">Install</a><a href="#aspnetcore">ASP.NET Core</a><a href="#custom-events">Custom events</a><a href="#configuration">Configuration</a></div>
+          </aside>
+          <article class="article">
+            <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>.NET / ASP.NET Core</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates the app when sending events</td></tr><tr><td>Hosted Logister base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>.NET 8+ app</td><td>Lets you use the first Logister .NET SDK packages</td></tr></tbody></table></section>
+            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Install the base client or ASP.NET Core package.</h2><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-install">Copy</button></div><pre><code id="dotnet-install">dotnet add package Logister
+dotnet add package Logister.AspNetCore</code></pre></div><p>Until NuGet packages are published, reference the local project from the <code>logister-dotnet</code> repository.</p><div class="code-block"><div class="code-head"><span class="code-language">xml</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-projectref">Copy</button></div><pre><code id="dotnet-projectref">&lt;ProjectReference Include="../logister-dotnet/src/Logister/Logister.csproj" /&gt;
+&lt;ProjectReference Include="../logister-dotnet/src/Logister.AspNetCore/Logister.AspNetCore.csproj" /&gt;</code></pre></div></section>
+            <section id="aspnetcore" class="section"><p class="eyebrow">ASP.NET Core</p><h2>Capture uncaught exceptions and optional request transactions.</h2><div class="code-block"><div class="code-head"><span class="code-language">csharp</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-aspnet">Copy</button></div><pre><code id="dotnet-aspnet">using Logister.AspNetCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddLogister(builder.Configuration, options =&gt;
+{
+    options.Client.DefaultContext["service"] = "quriatime-web";
+});
+
+var app = builder.Build();
+
+app.UseLogisterExceptionReporting();
+app.UseLogisterRequestTransactions();</code></pre></div><p>The exception middleware captures structured .NET exception details, stack frames when available, inner exceptions, <code>Exception.Data</code>, request URL, request ID, trace ID, user ID, framework metadata, and runtime metadata.</p></section>
+            <section id="custom-events" class="section"><p class="eyebrow">Custom events</p><h2>Use the injected client for metrics and events you choose.</h2><div class="code-block"><div class="code-head"><span class="code-language">csharp</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-events">Copy</button></div><pre><code id="dotnet-events">public sealed class ApprovalService(LogisterClient logister)
+{
+    public async Task RecordQueueDepthAsync(int pending)
+    {
+        await logister.CaptureMetricAsync(
+            "timesheet.approvals.pending",
+            pending,
+            new MetricOptions { Unit = "count" });
+    }
+}</code></pre></div><p>The same client supports <code>CaptureExceptionAsync()</code>, <code>CaptureMessageAsync()</code>, <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, and <code>CheckInAsync()</code>.</p></section>
+            <section id="configuration" class="section"><p class="eyebrow">Configuration</p><h2>Configure with appsettings or environment variables.</h2><div class="code-block"><div class="code-head"><span class="code-language">json</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-config">Copy</button></div><pre><code id="dotnet-config">{
+  "Logister": {
+    "ApiKey": "your-project-api-token",
+    "BaseUrl": "https://your-logister-host.example",
+    "Environment": "production",
+    "Release": "quriatime@2026.04.30",
+    "CaptureRequestTransactions": true
+  }
+}</code></pre></div><p>The base client also reads <code>LOGISTER_API_KEY</code>, <code>LOGISTER_BASE_URL</code>, <code>LOGISTER_ENVIRONMENT</code>, <code>LOGISTER_RELEASE</code>, and <code>LOGISTER_TIMEOUT</code>.</p></section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

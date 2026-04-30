@@ -4,6 +4,7 @@ Logister is a free, open source, self-hosted analytics dashboard for your apps.
 
 It supports:
 - Ruby and Rails apps via the `logister-ruby` gem
+- .NET and ASP.NET Core apps via the `logister-dotnet` SDK
 - Python apps via the `logister-python` package
 - JavaScript and TypeScript apps via the `logister-js` package
 - CFML apps running on Lucee or Adobe ColdFusion via direct HTTP ingestion
@@ -27,6 +28,7 @@ Canonical documentation lives on the public docs host:
 - ClickHouse: https://docs.logister.org/clickhouse/
 - HTTP API: https://docs.logister.org/http-api/
 - Ruby integration: https://docs.logister.org/integrations/ruby/
+- .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
 - CFML integration: https://docs.logister.org/integrations/cfml/
@@ -40,12 +42,14 @@ Canonical documentation lives on the public docs host:
 ## Primary audience
 - Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.
 - Python developers instrumenting APIs, workers, schedulers, and Python logging.
+- .NET developers instrumenting ASP.NET Core apps and C# workers.
 - JavaScript and TypeScript developers integrating Node or Express apps.
 - ColdFusion, Lucee, and CFML developers sending structured events to Logister.
 
 ## Companion packages
 - RubyGems: https://rubygems.org/gems/logister-ruby
 - Ruby source: https://github.com/taimoorq/logister-ruby
+- .NET source: https://github.com/taimoorq/logister-dotnet
 - PyPI: https://pypi.org/project/logister-python/
 - Python source: https://github.com/taimoorq/logister-python
 - npm: https://www.npmjs.com/package/logister-js

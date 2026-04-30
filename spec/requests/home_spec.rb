@@ -17,6 +17,7 @@ RSpec.describe "Home", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("See errors, logs, and app health in one place.")
         expect(response.body).to include("logister-ruby")
+        expect(response.body).to include("logister-dotnet")
         expect(response.body).to include("logister-python")
         expect(response.body).to include("Start free")
         expect(response.body).to include("https://docs.logister.org/")
@@ -85,6 +86,15 @@ RSpec.describe "Home", type: :request do
     end
   end
 
+  describe "GET /docs/integrations/dotnet" do
+    it "redirects to the external .NET integration docs page" do
+      get "/docs/integrations/dotnet"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://docs.logister.org/integrations/dotnet/")
+    end
+  end
+
   describe "GET /privacy" do
     it "returns success and privacy content" do
       get privacy_path
@@ -106,7 +116,9 @@ RSpec.describe "Home", type: :request do
       get "/llms.txt"
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Python apps via the `logister-python` package")
+      expect(response.body).to include(".NET and ASP.NET Core apps via the `logister-dotnet` SDK")
       expect(response.body).to include("https://docs.logister.org/integrations/python/")
+      expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
       expect(response.body).to include("https://pypi.org/project/logister-python/")
       expect(response.body).to include("JavaScript and TypeScript apps via the `logister-js` package")
       expect(response.body).to include("CFML apps running on Lucee or Adobe ColdFusion")

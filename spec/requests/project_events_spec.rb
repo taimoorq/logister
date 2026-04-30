@@ -236,6 +236,131 @@ RSpec.describe "Project events", type: :request do
       end
     end
 
+    context "when viewing a .NET project error" do
+      before { sign_in users(:one) }
+
+      it "renders the .NET-focused exception view" do
+        project = create(:project, user: users(:one), integration_kind: "dotnet", name: "QuriaTime")
+        api_key = create(:api_key, user: users(:one), project: project, name: "dotnet")
+        event = IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :error,
+          level: "error",
+          message: "approval failed",
+          fingerprint: "dotnet-approval-failed",
+          context: {
+            exception: {
+              class: "InvalidOperationException",
+              qualified_class: "System.InvalidOperationException",
+              message: "approval failed",
+              hresult: -2146233079,
+              source: "QuriaTime.Web",
+              target_site: "QuriaTime.Web.Services.ApprovalService.ApproveAsync",
+              frames: [
+                {
+                  filename: "/src/QuriaTime.Web/Services/ApprovalService.cs",
+                  lineno: 42,
+                  name: "QuriaTime.Web.Services.ApprovalService.ApproveAsync",
+                  raw: "at QuriaTime.Web.Services.ApprovalService.ApproveAsync in /src/QuriaTime.Web/Services/ApprovalService.cs:line 42"
+                }
+              ],
+              inner_exception: {
+                class: "ArgumentException",
+                message: "missing manager"
+              },
+              data: {
+                timesheet_id: "ts_123"
+              }
+            },
+            framework: "aspnetcore",
+            runtime: ".NET",
+            dotnet_version: "8.0.4",
+            framework_description: ".NET 8.0.4",
+            os_description: "Darwin 23.0.0",
+            machine_name: "quriatime-web-1",
+            process_id: 8080,
+            release: "quriatime@2026.04.30",
+            request_id: "req-dotnet-1",
+            trace_id: "trace-dotnet-1",
+            route: "POST /approvals/{id}",
+            request: {
+              method: "POST",
+              url: "https://quriatime.example.com/approvals/123",
+              request_id: "req-dotnet-1"
+            }
+          },
+          occurred_at: Time.current
+        )
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("InvalidOperationException")
+        expect(response.body).to include("ApprovalService.ApproveAsync")
+        expect(response.body).to include("/src/QuriaTime.Web/Services/ApprovalService.cs")
+        expect(response.body).to include("Runtime details")
+        expect(response.body).to include(".NET 8.0.4")
+        expect(response.body).to include("Exception chain")
+        expect(response.body).to include("ArgumentException")
+        expect(response.body).to include("Exception data")
+        expect(response.body).to include("timesheet_id")
+        expect(response.body).to include("trace-dotnet-1")
+      end
+    end
+
+    context "when viewing a .NET project log event" do
+      before { sign_in users(:one) }
+
+      it "renders the .NET logging-focused details view" do
+        project = create(:project, user: users(:one), integration_kind: "dotnet", name: "QuriaTime Worker")
+        api_key = create(:api_key, user: users(:one), project: project, name: "dotnet-logs")
+        event = IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :log,
+          level: "warning",
+          message: "Approval queue backlog rising",
+          context: {
+            logger_name: "QuriaTime.Web.Services.ApprovalService",
+            logger: {
+              event_id: 42,
+              event_name: "ApprovalQueueBacklog",
+              source_context: "QuriaTime.Web.Services.ApprovalService"
+            },
+            log_record: {
+              queue: "approval-email",
+              backlog: 17
+            },
+            framework: "aspnetcore",
+            runtime: ".NET",
+            dotnet_version: "8.0.4",
+            machine_name: "worker-1",
+            route: "BackgroundService NotificationOutboxWorker",
+            status: 200,
+            duration_ms: 87.4,
+            request: {
+              method: "POST",
+              url: "https://quriatime.example.com/internal/approval-drain"
+            }
+          },
+          occurred_at: Time.current
+        )
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(".NET log event")
+        expect(response.body).to include("Logger details")
+        expect(response.body).to include("ApprovalQueueBacklog")
+        expect(response.body).to include("Runtime details")
+        expect(response.body).to include("Execution details")
+        expect(response.body).to include("Log record fields")
+        expect(response.body).to include("approval-email")
+        expect(response.body).to include(">Details<")
+      end
+    end
+
     context "when viewing a JavaScript project error" do
       before { sign_in users(:one) }
 

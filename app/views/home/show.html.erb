@@ -1,5 +1,5 @@
 <% content_for :title, "Self-Hosted Analytics Dashboard for Your Apps" %>
-<% content_for :meta_description, "Logister is an open source, self-hosted analytics dashboard for your apps. Track errors, logs, metrics, transactions, and check-ins from Ruby, Python, JavaScript/TypeScript, or CFML services." %>
+<% content_for :meta_description, "Logister is an open source, self-hosted analytics dashboard for your apps. Track errors, logs, metrics, transactions, and check-ins from Ruby, .NET, Python, JavaScript/TypeScript, or CFML services." %>
 <% content_for :canonical_path, root_path %>
 <% content_for :og_type, "website" %>
 <% content_for :json_ld, json_ld({
@@ -8,17 +8,19 @@
   "name" => "Logister",
   "applicationCategory" => "DeveloperApplication",
   "operatingSystem" => "Web",
-  "description" => "Open source, self-hosted analytics dashboard for Ruby, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
+  "description" => "Open source, self-hosted analytics dashboard for Ruby, .NET, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
   "url" => absolute_url_for(root_path),
   "image" => absolute_url_for("/icon.png"),
   "sameAs" => [
     "https://github.com/taimoorq/logister",
     "https://github.com/taimoorq/logister-ruby",
+    "https://github.com/taimoorq/logister-dotnet",
     "https://github.com/taimoorq/logister-python",
     "https://github.com/taimoorq/logister-js"
   ],
   "featureList" => [
     "Ruby instrumentation via the published gem",
+    ".NET instrumentation for ASP.NET Core and C# services",
     "Python instrumentation for FastAPI, Django, Flask, Celery, and logging",
     "JavaScript and TypeScript instrumentation",
     "CFML HTTP ingestion",
@@ -53,7 +55,7 @@
           See errors, logs, and app health in one place.
         </h1>
         <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
-          Capture errors, transactions, logs, and check-ins in one dashboard. Use <code>logister-ruby</code>, <code>logister-python</code>, <code>logister-js</code>, or direct HTTP ingestion from Lucee and ColdFusion to help your team spot problems faster, investigate with context, and feel better about each release.
+          Capture errors, transactions, logs, and check-ins in one dashboard. Use <code>logister-ruby</code>, <code>logister-dotnet</code>, <code>logister-python</code>, <code>logister-js</code>, or direct HTTP ingestion from Lucee and ColdFusion to help your team spot problems faster, investigate with context, and feel better about each release.
         </p>
         <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="200">
           <%= link_to "Start free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
@@ -62,7 +64,7 @@
         <div class="hero-proof" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="250">
           <span>No credit card</span>
           <span>Self-host ready</span>
-          <span>Ruby, Python, JS, and CFML</span>
+          <span>Ruby, .NET, Python, JS, and CFML</span>
         </div>
       </div>
 
@@ -234,7 +236,7 @@
       <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
         <span class="workflow-index">02</span>
         <h3>Choose your integration</h3>
-        <p>Use <code>logister-ruby</code>, <code>logister-python</code>, <code>logister-js</code>, or direct CFML HTTP ingestion to capture errors, logs, metrics, and check-ins with minimal setup.</p>
+        <p>Use <code>logister-ruby</code>, <code>logister-dotnet</code>, <code>logister-python</code>, <code>logister-js</code>, or direct CFML HTTP ingestion to capture errors, logs, metrics, and check-ins with minimal setup.</p>
       </article>
       <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
         <span class="workflow-index">03</span>
@@ -248,6 +250,7 @@
     <article class="code-block-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="feature-kicker">Install in minutes</p>
       <pre><code>bundle add logister-ruby
+dotnet add package Logister.AspNetCore
 pip install logister-python
 npm install logister-js
 LOGISTER_API_KEY=your_key_here
@@ -259,6 +262,7 @@ LOGISTER_API_KEY=your_key_here
       <div class="proof-links">
         <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener">Self-host source</a>
         <a href="https://rubygems.org/gems/logister-ruby" target="_blank" rel="noopener">Ruby gem</a>
+        <a href="<%= docs_site_url(:dotnet_integration) %>" target="_blank" rel="noopener">.NET SDK</a>
         <a href="https://pypi.org/project/logister-python/" target="_blank" rel="noopener">Python package</a>
         <a href="https://github.com/taimoorq/logister-js" target="_blank" rel="noopener">JavaScript SDK</a>
         <a href="<%= docs_site_url(:cfml_integration) %>" target="_blank" rel="noopener">CFML guide</a>

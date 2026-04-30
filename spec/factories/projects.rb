@@ -16,6 +16,10 @@ FactoryBot.define do
       integration_kind { "python" }
     end
 
+    trait :dotnet do
+      integration_kind { "dotnet" }
+    end
+
     trait :javascript do
       integration_kind { "javascript" }
     end

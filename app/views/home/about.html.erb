@@ -1,5 +1,5 @@
 <% content_for :title, "About" %>
-<% content_for :meta_description, "About Logister, an open source, self-hosted analytics dashboard for apps built with Ruby, Python, JavaScript/TypeScript, and ColdFusion/CFML." %>
+<% content_for :meta_description, "About Logister, an open source, self-hosted analytics dashboard for apps built with Ruby, .NET, Python, JavaScript/TypeScript, and ColdFusion/CFML." %>
 <% content_for :canonical_path, about_path %>
 <% content_for :og_type, "article" %>
 <% content_for :json_ld, json_ld({
@@ -7,7 +7,7 @@
   "@type" => "AboutPage",
   "name" => "About Logister",
   "url" => absolute_url_for(about_path),
-  "description" => "About Logister and its open source, self-hosted analytics workflow for Ruby, Python, JavaScript, TypeScript, and CFML apps."
+  "description" => "About Logister and its open source, self-hosted analytics workflow for Ruby, .NET, Python, JavaScript, TypeScript, and CFML apps."
 }) %>
 <%
   overview_desktop_path = "marketing/overview-desktop-optimized.webp"
@@ -30,7 +30,7 @@
           Built for teams that want clearer app analytics, not another noisy tool.
         </h1>
         <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="130">
-          Logister is an open source, self-hosted analytics dashboard for your apps across Ruby, Python, JavaScript/TypeScript,
+          Logister is an open source, self-hosted analytics dashboard for your apps across Ruby, .NET, Python, JavaScript/TypeScript,
           and ColdFusion/CFML runtimes. We focus on helping teams see what changed, group repeated failures,
           preserve request context, and move from a problem to a fix without bouncing between tools.
         </p>
@@ -107,7 +107,7 @@
     <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="feature-kicker">Capture</p>
       <h2>Ingest errors, transactions, logs, metrics, and check-ins</h2>
-      <p>One API shape, first-party Ruby, Python, and JavaScript packages, and one place to inspect reliability signals per project and release.</p>
+      <p>One API shape, first-party Ruby, .NET, Python, and JavaScript packages, and one place to inspect reliability signals per project and release.</p>
     </article>
     <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
       <p class="feature-kicker">Triage</p>
@@ -140,6 +140,7 @@
         <h3>Supported app integrations</h3>
         <ul class="about-list">
           <li><code>logister-ruby</code> for Rails and Ruby apps</li>
+          <li><code>logister-dotnet</code> for ASP.NET Core and C# services</li>
           <li><code>logister-python</code> for FastAPI, Django, Flask, Celery, and Python services</li>
           <li><code>logister-js</code> for JavaScript and TypeScript apps, with optional Express middleware</li>
           <li>Direct HTTP ingestion for Lucee and Adobe ColdFusion</li>

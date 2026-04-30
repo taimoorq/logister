@@ -213,6 +213,20 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/python/")
       end
 
+      it "shows .NET-specific integration guidance for logister-dotnet projects" do
+        project = create(:project, user: users(:one), integration_kind: "dotnet", name: "QuriaTime")
+
+        get settings_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(".NET / ASP.NET Core")
+        expect(response.body).to include("Logister.AspNetCore")
+        expect(response.body).to include("AddLogister")
+        expect(response.body).to include("UseLogisterExceptionReporting")
+        expect(response.body).to include("CaptureMetricAsync")
+        expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
+      end
+
       it "returns 404 for project user cannot access" do
         get settings_project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
@@ -436,6 +450,49 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("client.check_in()")
         expect(response.body).to include("instrument_flask()")
         expect(response.body).to include("https://docs.logister.org/integrations/python/")
+      end
+
+      it "shows .NET-specific empty-state guidance for .NET projects" do
+        project = create(:project, user: users(:one), integration_kind: "dotnet", name: "Dotnet Activity")
+
+        get activity_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("CaptureMetricAsync()")
+        expect(response.body).to include("CheckInAsync()")
+        expect(response.body).to include("UseLogisterExceptionReporting()")
+        expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
+      end
+
+      it "shows .NET logger metadata inline for .NET log events" do
+        project = create(:project, user: users(:one), integration_kind: "dotnet", name: "Dotnet Activity")
+        api_key = create(:api_key, user: users(:one), project: project, name: "dotnet-activity")
+        IngestEvent.create!(
+          project: project,
+          api_key: api_key,
+          event_type: :log,
+          level: "warning",
+          message: "Approval queue backlog rising",
+          context: {
+            logger_name: "QuriaTime.Web.Services.ApprovalService",
+            logger: {
+              event_name: "ApprovalQueueBacklog"
+            },
+            route: "BackgroundService NotificationOutboxWorker",
+            status: 200,
+            framework: "aspnetcore"
+          },
+          occurred_at: Time.current
+        )
+
+        get activity_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Approval queue backlog rising")
+        expect(response.body).to include("QuriaTime.Web.Services.ApprovalService")
+        expect(response.body).to include("ApprovalQueueBacklog")
+        expect(response.body).to include("BackgroundService NotificationOutboxWorker")
+        expect(response.body).to include("status 200")
       end
 
       it "shows Python logger metadata inline for Python log events" do

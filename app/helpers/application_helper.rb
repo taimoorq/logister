@@ -13,7 +13,8 @@ module ApplicationHelper
     ruby_integration: "/integrations/ruby/",
     cfml_integration: "/integrations/cfml/",
     javascript_integration: "/integrations/javascript/",
-    python_integration: "/integrations/python/"
+    python_integration: "/integrations/python/",
+    dotnet_integration: "/integrations/dotnet/"
   }.freeze
 
   ICON_PATHS = {
@@ -117,7 +118,7 @@ module ApplicationHelper
   end
 
   def event_stacktrace_tab_label(project, event)
-    if (project.integration_python? || project.integration_javascript?) && event.log?
+    if (project.integration_python? || project.integration_javascript? || project.integration_dotnet?) && event.log?
       "Details"
     else
       "Stacktrace"
@@ -129,12 +130,16 @@ module ApplicationHelper
       "project_events/python_log_event"
     elsif project.integration_javascript? && event.log?
       "project_events/javascript_log_event"
+    elsif project.integration_dotnet? && event.log?
+      "project_events/dotnet_log_event"
     elsif project.integration_cfml?
       "project_events/cfml_stacktrace"
     elsif project.integration_javascript?
       "project_events/javascript_stacktrace"
     elsif project.integration_python?
       "project_events/python_stacktrace"
+    elsif project.integration_dotnet?
+      "project_events/dotnet_stacktrace"
     else
       "project_events/ruby_stacktrace"
     end
@@ -180,6 +185,44 @@ module ApplicationHelper
     ProjectEvents::JavascriptEventPresenter.new(event).activity_summary
   end
 
+  def dotnet_exception_frames(exception_data)
+    ProjectEvents::DotnetEventPresenter.new(nil, exception_data).frames
+  end
+
+  def dotnet_exception_summary(exception_data, fallback_message = nil)
+    ProjectEvents::DotnetEventPresenter.new(nil, exception_data).summary(fallback_message)
+  end
+
+  def dotnet_exception_chain(exception_data, chain = [])
+    chain + ProjectEvents::DotnetEventPresenter.new(nil, exception_data).exception_chain
+  end
+
+  def dotnet_exception_data(exception_data)
+    ProjectEvents::DotnetEventPresenter.new(nil, exception_data).exception_data
+  end
+
+  def dotnet_runtime_details(event)
+    ProjectEvents::DotnetEventPresenter.new(event).runtime_details
+  end
+
+  def dotnet_execution_details(event)
+    ProjectEvents::DotnetEventPresenter.new(event).execution_details
+  end
+
+  def dotnet_logger_details(event)
+    ProjectEvents::DotnetEventPresenter.new(event).logger_details
+  end
+
+  def dotnet_log_record_details(event)
+    ProjectEvents::DotnetEventPresenter.new(event).log_record_details
+  end
+
+  def dotnet_activity_summary(event)
+    return nil unless event.respond_to?(:context)
+
+    ProjectEvents::DotnetEventPresenter.new(event).activity_summary
+  end
+
   def cfml_request_details(event)
     ProjectEvents::CfmlEventPresenter.new(event).request_details
   end
@@ -215,7 +258,7 @@ module ApplicationHelper
 
   def seo_description
     content_for(:meta_description).to_s.strip.presence ||
-      "Logister is an open source error tracking and observability tool for Ruby, Python, JavaScript, TypeScript, and CFML apps."
+      "Logister is an open source error tracking and observability tool for Ruby, .NET, Python, JavaScript, TypeScript, and CFML apps."
   end
 
   def seo_robots

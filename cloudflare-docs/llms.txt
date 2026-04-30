@@ -10,6 +10,7 @@ Canonical product and integration documentation for Logister lives on this docs 
 
 ## Integrations
 - Ruby integration: https://docs.logister.org/integrations/ruby/
+- .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
 - CFML integration: https://docs.logister.org/integrations/cfml/
@@ -22,6 +23,7 @@ Canonical product and integration documentation for Logister lives on this docs 
 ## Audience
 - Teams using Logister as a self-hosted analytics dashboard for app issues, release visibility, and triage
 - Ruby teams using `logister-ruby`
+- .NET teams using `logister-dotnet` with ASP.NET Core and C# services
 - Python teams using `logister-python` with FastAPI, Django, Flask, Celery, and Python logging
 - JavaScript and TypeScript teams using `logister-js`
 - Lucee and Adobe ColdFusion teams sending structured CFML payloads over HTTP
@@ -30,5 +32,6 @@ Canonical product and integration documentation for Logister lives on this docs 
 - Main product site: https://logister.org/
 - App source: https://github.com/taimoorq/logister
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
+- .NET SDK source: https://github.com/taimoorq/logister-dotnet
 - Python SDK source: https://github.com/taimoorq/logister-python
 - JavaScript SDK source: https://github.com/taimoorq/logister-js

@@ -4,24 +4,24 @@
     <meta charset="utf-8">
     <title>Documentation | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
+    <meta name="description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Documentation | Logister">
-    <meta property="og:description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
+    <meta property="og:description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://docs.logister.org/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Documentation | Logister">
-    <meta name="twitter:description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
+    <meta name="twitter:description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Documentation | Logister","description":"Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, Python, JavaScript/TypeScript, and CFML integrations plus setup, self-hosting, and HTTP API guides.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Documentation | Logister","description":"Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup, self-hosting, and HTTP API guides.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -77,6 +77,7 @@
             <div class="sidebar-group">
               <p class="sidebar-label">Integrations</p>
               <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/dotnet/">.NET integration</a>
               <a href="/integrations/python/">Python integration</a>
               <a href="/integrations/cfml/">CFML integration</a>
               <a href="/integrations/javascript/">JavaScript integration</a>
@@ -100,7 +101,7 @@
               <p class="eyebrow">Overview</p>
               <h2>Choose the guide that matches your project type.</h2>
               <p>
-                Logister provides public documentation for Ruby, Python, CFML, and JavaScript integrations plus the operations guides needed
+                Logister provides public documentation for Ruby, .NET, Python, CFML, and JavaScript integrations plus the operations guides needed
                 when you want to self-host the app. Start with the guide that matches how your application sends data today.
               </p>
               <blockquote>
@@ -125,6 +126,11 @@
                     <td><a href="/integrations/ruby/">Ruby integration</a></td>
                     <td>Ruby apps and Rails services</td>
                     <td><code>logister-ruby</code> gem</td>
+                  </tr>
+                  <tr>
+                    <td><a href="/integrations/dotnet/">.NET integration</a></td>
+                    <td>ASP.NET Core apps and C# services</td>
+                    <td><code>logister-dotnet</code> SDK with ASP.NET Core middleware</td>
                   </tr>
                   <tr>
                     <td><a href="/integrations/python/">Python integration</a></td>
@@ -168,6 +174,12 @@
                   <p><a href="/integrations/ruby/">Read Ruby docs</a></p>
                 </article>
                 <article class="card">
+                  <p class="eyebrow">.NET</p>
+                  <h3>Install the .NET SDK</h3>
+                  <p>Use the .NET integration guide for ASP.NET Core apps, C# services, custom metrics, and check-ins.</p>
+                  <p><a href="/integrations/dotnet/">Read .NET docs</a></p>
+                </article>
+                <article class="card">
                   <p class="eyebrow">Python</p>
                   <h3>Install the package</h3>
                   <p>Use the Python integration guide for FastAPI, Django, Flask, Celery, shared-client Python apps, and native Python logging capture.</p>
@@ -194,7 +206,7 @@
               <ol>
                 <li>Create a project and choose the right integration type.</li>
                 <li>Generate an API key and store it immediately.</li>
-                <li>Pick the Ruby, Python, CFML, or JavaScript guide based on your application stack.</li>
+                <li>Pick the Ruby, .NET, Python, CFML, or JavaScript guide based on your application stack.</li>
                 <li>Use the HTTP API page when you need the exact request shape.</li>
                 <li>Send one known-good event before broadening instrumentation.</li>
               </ol>
@@ -241,6 +253,7 @@
             <div class="footer-column">
               <h4>Integrations</h4>
               <a href="/integrations/ruby/">Ruby integration</a>
+              <a href="/integrations/dotnet/">.NET integration</a>
               <a href="/integrations/python/">Python integration</a>
               <a href="/integrations/cfml/">CFML integration</a>
               <a href="/integrations/javascript/">JavaScript integration</a>

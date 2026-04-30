@@ -50,6 +50,11 @@ FactoryBot.define do
       api_key { association :api_key, project: project, user: project.user }
     end
 
+    trait :dotnet do
+      project { association :project, :dotnet }
+      api_key { association :api_key, project: project, user: project.user }
+    end
+
     trait :javascript do
       project { association :project, :javascript }
       api_key { association :api_key, project: project, user: project.user }

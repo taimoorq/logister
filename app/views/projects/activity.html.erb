@@ -25,6 +25,7 @@
             <% @activity_events.each do |event| %>
               <% python_log_summary = @project.integration_python? && event.log? ? python_activity_summary(event) : nil %>
               <% javascript_log_summary = @project.integration_javascript? && event.log? ? javascript_activity_summary(event) : nil %>
+              <% dotnet_log_summary = @project.integration_dotnet? && event.log? ? dotnet_activity_summary(event) : nil %>
               <tr>
                 <td class="px-3 py-2 text-sm">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -45,6 +46,8 @@
                     <div class="text-xs text-slate-500 mt-1"><%= python_log_summary %></div>
                   <% elsif javascript_log_summary.present? %>
                     <div class="text-xs text-slate-500 mt-1"><%= javascript_log_summary %></div>
+                  <% elsif dotnet_log_summary.present? %>
+                    <div class="text-xs text-slate-500 mt-1"><%= dotnet_log_summary %></div>
                   <% end %>
                 </td>
                 <td class="px-3 py-2 text-sm">
@@ -69,6 +72,16 @@
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.check_in()</code>
           from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-python</code>. For Python services, the usual starting point is framework hooks plus worker instrumentation: pair that with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_fastapi()</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_flask()</code>, or <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LogisterMiddleware</code> so request-level errors arrive with framework context, and use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_logging()</code> if you want standard Python log records to show up automatically. Set <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LOGISTER_CAPTURE_LOCALS=true</code> if you want frame locals visible in Python error details. You can also start with the
           <%= link_to "Python integration docs", docs_site_url(:python_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
+        <% elsif @project.integration_dotnet? %>
+          No custom events yet. Inject
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LogisterClient</code>
+          and call
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">CaptureMetricAsync()</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">CaptureMessageAsync()</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">CaptureTransactionAsync()</code>, or
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">CheckInAsync()</code>
+          from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-dotnet</code>. For ASP.NET Core apps, start with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">AddLogister()</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">UseLogisterExceptionReporting()</code>, and optional request transactions. You can also start with the
+          <%= link_to ".NET integration docs", docs_site_url(:dotnet_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_javascript? %>
           No custom events yet. Use
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureMetric()</code>,
