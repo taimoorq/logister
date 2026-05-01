@@ -20,21 +20,6 @@
           <span class="project-card-access"><%= project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
         <% end %>
 
-        <div class="project-card-health">
-          <div class="project-card-health-item" title="Session stability is not available yet">
-            <span class="project-card-health-label">Session stability <%= app_icon(:info, css: "project-card-info-icon") %></span>
-            <span class="project-card-health-value"><%= app_icon(:chart, css: "project-card-health-icon") %><span>--</span></span>
-          </div>
-          <div class="project-card-health-item" title="User stability is not available yet">
-            <span class="project-card-health-label">User stability <%= app_icon(:info, css: "project-card-info-icon") %></span>
-            <span class="project-card-health-value"><%= app_icon(:account, css: "project-card-health-icon") %><span>--</span></span>
-          </div>
-          <div class="project-card-health-item" title="Performance score is not available yet">
-            <span class="project-card-health-label">Performance score <%= app_icon(:info, css: "project-card-info-icon") %></span>
-            <span class="project-card-health-value"><%= app_icon(:dashboard, css: "project-card-health-icon") %><span>--</span></span>
-          </div>
-        </div>
-
         <div class="project-card-chart">
           <%= render "shared/widgets/line_chart", points: trend %>
         </div>

@@ -39,6 +39,8 @@ RSpec.describe "Dashboard", type: :request do
         expect(card).to be_present
         expect(card.at_css(".project-card-header")["href"]).to eq(project_path(project))
         expect(card.at_css(".project-type-icon-ruby use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-ruby\z})
+        expect(card.at_css(".project-card-health")).to be_nil
+        expect(card.text).not_to include("Session stability", "User stability", "Performance score")
         expect(card.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")).to be_present
         expect(card.at_css("a[href='#{project_path(project, filter: 'all')}']")).to be_present
         expect(card.at_css("a[href='#{activity_project_path(project)}']")).to be_present

@@ -150,25 +150,6 @@
   .project-type-icon-dotnet {
     @apply bg-violet-50 text-violet-800 ring-1 ring-violet-200;
   }
-  .project-card-health {
-    @apply grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-3;
-  }
-  .project-card-health-item {
-    @apply min-w-0 text-center;
-  }
-  .project-card-health-label {
-    @apply inline-flex items-center justify-center gap-1 text-[11px] font-semibold uppercase text-slate-400;
-    letter-spacing: 0;
-  }
-  .project-card-health-value {
-    @apply mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-slate-300;
-  }
-  .project-card-info-icon {
-    @apply h-3 w-3 text-slate-300;
-  }
-  .project-card-health-icon {
-    @apply h-5 w-5 text-slate-300;
-  }
   .project-card-chart {
     @apply bg-slate-50 px-4 py-4;
   }

@@ -41,6 +41,8 @@ RSpec.describe "Projects", type: :request do
         expect(card).to be_present
         expect(card.at_css(".project-card-header")["href"]).to eq(project_path(project))
         expect(card.at_css(".project-type-icon-dotnet use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-dotnet\z})
+        expect(card.at_css(".project-card-health")).to be_nil
+        expect(card.text).not_to include("Session stability", "User stability", "Performance score")
 
         open_errors_link = card.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")
         all_errors_link = card.at_css("a[href='#{project_path(project, filter: 'all')}']")
