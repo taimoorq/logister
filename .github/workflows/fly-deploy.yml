@@ -2,20 +2,124 @@
 
 name: Fly Deploy
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
+  actions: read
   contents: write
 
 jobs:
+  verify_required_workflows:
+    name: Require CI and CodeQL
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      deploy_sha: ${{ steps.required_workflows.outputs.deploy_sha }}
+    steps:
+      - name: Wait for required workflows
+        id: required_workflows
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const requiredWorkflows = ["CI", "CodeQL"];
+            const deploySha = context.eventName === "workflow_run"
+              ? context.payload.workflow_run.head_sha
+              : context.sha;
+            const deployBranch = context.eventName === "workflow_run"
+              ? context.payload.workflow_run.head_branch
+              : context.ref.replace("refs/heads/", "");
+
+            if (deployBranch !== "main") {
+              core.setFailed(`Fly deploy only runs for main; got ${deployBranch}.`);
+              return;
+            }
+
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const timeoutMs = 45 * 60 * 1000;
+            const pollMs = 30 * 1000;
+            const startedAt = Date.now();
+
+            async function workflowByName(name) {
+              const workflows = await github.paginate(github.rest.actions.listRepoWorkflows, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+              });
+
+              return workflows.find((workflow) => workflow.name === name);
+            }
+
+            async function latestRunForSha(workflowId) {
+              const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: workflowId,
+                branch: "main",
+                per_page: 100,
+              });
+
+              return runs
+                .filter((run) => run.head_sha === deploySha)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+            }
+
+            const workflowMap = new Map();
+            for (const name of requiredWorkflows) {
+              const workflow = await workflowByName(name);
+              if (!workflow) {
+                core.setFailed(`Required workflow not found: ${name}`);
+                return;
+              }
+              workflowMap.set(name, workflow);
+            }
+
+            while (true) {
+              const waiting = [];
+
+              for (const [name, workflow] of workflowMap) {
+                const run = await latestRunForSha(workflow.id);
+
+                if (!run || run.status !== "completed") {
+                  waiting.push(name);
+                  continue;
+                }
+
+                if (run.conclusion !== "success") {
+                  core.setFailed(`${name} did not pass for ${deploySha}: ${run.html_url}`);
+                  return;
+                }
+
+                core.info(`${name} passed for ${deploySha}: ${run.html_url}`);
+              }
+
+              if (waiting.length === 0) {
+                core.setOutput("deploy_sha", deploySha);
+                return;
+              }
+
+              if (Date.now() - startedAt > timeoutMs) {
+                core.setFailed(`Timed out waiting for required workflows on ${deploySha}: ${waiting.join(", ")}`);
+                return;
+              }
+
+              core.info(`Waiting for required workflows on ${deploySha}: ${waiting.join(", ")}`);
+              await sleep(pollMs);
+            }
+
   deploy:
     name: Deploy app
+    needs: verify_required_workflows
     runs-on: ubuntu-latest
+    if: ${{ needs.verify_required_workflows.outputs.deploy_sha != '' }}
     concurrency: deploy-group
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.verify_required_workflows.outputs.deploy_sha }}
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -80,7 +184,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release_meta.outputs.tag_name }}
-          target_commitish: ${{ github.sha }}
+          target_commitish: ${{ needs.verify_required_workflows.outputs.deploy_sha }}
           name: ${{ steps.release_meta.outputs.release_name }}
           body: ${{ steps.release_meta.outputs.release_body }}
           make_latest: ${{ steps.release_config.outputs.make_latest }}
