@@ -8,5 +8,5 @@ namespace :streamline do
 end
 
 if Rake::Task.task_defined?("assets:precompile")
-  Rake::Task["assets:precompile"].enhance(["streamline:icons"])
+  Rake::Task["assets:precompile"].enhance([ "streamline:icons" ])
 end
