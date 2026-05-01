@@ -2,6 +2,25 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v0.1.6 - 2026-05-01
+
+### Added
+
+- .NET-specific event collection support for `logister-dotnet`, including richer exception, request, route, status code, and optional cookie context.
+- .NET exception detail views that mirror the familiar ASP.NET developer exception layout with stack, query, cookie, header, and routing sections.
+- Streamline Freehand icon assets in the Rails asset pipeline for consistent project, navigation, and action icons.
+
+### Changed
+
+- Refined the error inbox into a more compact, scannable layout with horizontal filters, denser rows, secondary metadata rows, and tooltip-backed details.
+- Updated project cards and the dashboard to make project headers and error counts easier to scan and navigate.
+- Simplified project creation by removing the manual slug field and generating slugs automatically from project names.
+
+### Fixed
+
+- Required CI and CodeQL checks to pass before Fly deploys run from `main`.
+- Fixed Fly production builds so Streamline icon generation has its Node dependencies during asset precompile without shipping `node_modules` in the runtime image.
+
 ## v0.1.5 - 2026-04-22
 
 ### Added
