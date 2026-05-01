@@ -54,13 +54,20 @@ class Project < ApplicationRecord
     ]
   end
 
-  # Stats for project index: total_events, open_groups, trend (7-day counts) per project.
+  # Stats for project index: raw event volume, activity volume, open error groups,
+  # total error groups, and 7-day raw event trend per project.
   def self.stats_for(project_ids)
     return {} if project_ids.blank?
 
-    stats = Hash.new { |h, k| h[k] = { total_events: 0, open_groups: 0, trend: Array.new(7, 0) } }
+    stats = Hash.new do |h, k|
+      h[k] = { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, trend: Array.new(7, 0) }
+    end
     project_error_groups = ErrorGroup.where(project_id: project_ids)
     project_events = IngestEvent.where(project_id: project_ids)
+
+    project_error_groups.group(:project_id).count.each do |pid, count|
+      stats[pid][:all_groups] = count
+    end
 
     project_error_groups.unresolved.group(:project_id).count.each do |pid, count|
       stats[pid][:open_groups] = count
@@ -70,12 +77,14 @@ class Project < ApplicationRecord
       stats[pid][:total_events] = count
     end
 
+    project_events.where.not(event_type: :error).group(:project_id).count.each do |pid, count|
+      stats[pid][:activity_events] = count
+    end
+
     trend_dates = 7.times.map { |i| Date.current - (6 - i) }
-    ErrorOccurrence
-      .joins(:error_group)
-      .where(error_groups: { project_id: project_ids })
-      .where("error_occurrences.occurred_at >= ?", 7.days.ago)
-      .group("error_groups.project_id", "DATE(error_occurrences.occurred_at)")
+    project_events
+      .where("occurred_at >= ?", trend_dates.first.beginning_of_day)
+      .group(:project_id, "DATE(occurred_at)")
       .count
       .each do |(pid, date), count|
         idx = trend_dates.index(date.to_date)

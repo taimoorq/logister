@@ -22,7 +22,21 @@
   <section class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
     <% if @projects.any? %>
       <% @projects.each do |project| %>
-        <% stats = @project_stats[project.id] || { total_events: 0, open_groups: 0, trend: Array.new(7, 0) } %>
+        <% stats = @project_stats[project.id] || { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, trend: Array.new(7, 0) } %>
+        <% total_events = stats[:total_events].to_i %>
+        <% activity_events = stats[:activity_events].to_i %>
+        <% open_groups = stats[:open_groups].to_i %>
+        <% all_groups = stats[:all_groups].to_i %>
+        <% card_action_label, card_action_path =
+          if open_groups.positive?
+            [ "Open inbox", project_path(project) ]
+          elsif activity_events.positive?
+            [ "View activity", activity_project_path(project) ]
+          elsif all_groups.positive?
+            [ "View all errors", project_path(project, filter: "all") ]
+          else
+            [ "Open inbox", project_path(project) ]
+          end %>
         <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden project-card" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>" style="view-transition-name: <%= dom_id(project) %>; view-transition-class: project-card;">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
@@ -42,11 +56,11 @@
           <div class="grid grid-cols-3 gap-3 mt-4 py-4 border-y border-slate-200">
             <div>
               <p class="text-[11px] uppercase tracking-[0.14em] font-semibold text-slate-500">Open</p>
-              <p class="text-xl font-semibold text-slate-900 mt-1"><%= stats[:open_groups] %></p>
+              <p class="text-xl font-semibold text-slate-900 mt-1"><%= open_groups %></p>
             </div>
             <div>
               <p class="text-[11px] uppercase tracking-[0.14em] font-semibold text-slate-500">Events</p>
-              <p class="text-xl font-semibold text-slate-900 mt-1"><%= stats[:total_events] %></p>
+              <p class="text-xl font-semibold text-slate-900 mt-1"><%= total_events %></p>
             </div>
             <div>
               <p class="text-[11px] uppercase tracking-[0.14em] font-semibold text-slate-500">Last 7d</p>
@@ -60,13 +74,17 @@
 
           <div class="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
             <p class="text-sm text-slate-600">
-              <% if stats[:open_groups] > 0 %>
-                <strong class="text-red-600"><%= stats[:open_groups] %> open</strong> error <%= "group".pluralize(stats[:open_groups]) %>
+              <% if open_groups.positive? %>
+                <strong class="text-red-600"><%= open_groups %> open</strong> error <%= "group".pluralize(open_groups) %>
+              <% elsif activity_events.positive? %>
+                No open errors · <strong class="text-slate-900"><%= pluralize(activity_events, "activity event") %></strong>
+              <% elsif total_events.positive? %>
+                No open errors · <strong class="text-slate-900"><%= pluralize(total_events, "captured event") %></strong>
               <% else %>
                 No open errors
               <% end %>
             </p>
-            <%= link_to "Open inbox", project_path(project), class: "text-sm font-semibold text-blue-600 hover:text-blue-700 no-underline" %>
+            <%= link_to card_action_label, card_action_path, class: "text-sm font-semibold text-blue-600 hover:text-blue-700 no-underline" %>
           </div>
         </article>
       <% end %>

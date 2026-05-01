@@ -92,6 +92,79 @@ module ProjectEvents
       normalize_hash(exception_hash["data"] || exception_hash[:data])
     end
 
+    def developer_exception_title(fallback_message = nil, compact: false)
+      current_summary = summary(fallback_message)
+      message = current_summary[:message].to_s
+      message = compact ? message.gsub(/\s+/, " ").strip : message.lines.first.to_s.strip
+
+      [ current_summary[:class_name], message ].compact_blank.join(": ")
+    end
+
+    def endpoint_matches(fallback_message = nil)
+      explicit_matches = first_present_value(context, "endpoint_matches", "candidate_endpoints", "matches")
+      values = Array(explicit_matches).filter_map { |value| value.to_s.strip.presence }
+      return values if values.any?
+
+      message = summary(fallback_message)[:message].to_s
+      match_text = message[/Matches:\s*(?<matches>.+)\z/m, :matches]
+      match_text.to_s.lines.map(&:strip).compact_blank
+    end
+
+    def stack_lines
+      lines = stack.to_s.lines.map(&:strip).compact_blank
+      return lines if lines.any?
+
+      frames.map { |frame| stack_line_for(frame) }.compact_blank
+    end
+
+    def query_parameters
+      direct_query = normalize_hash(first_present_value(request_context, "query", "query_params", "queryParameters", "params"))
+      return direct_query if direct_query.any?
+
+      raw_query = first_present_value(request_context, "query_string", "queryString")
+      raw_query ||= query_string_from_url(first_present_value(request_context, "url"))
+      return {} if raw_query.blank?
+
+      Rack::Utils.parse_nested_query(raw_query.to_s.delete_prefix("?"))
+    rescue StandardError
+      { "query_string" => raw_query.to_s }
+    end
+
+    def request_headers
+      normalize_hash(first_present_value(request_context, "headers") || first_present_value(context, "headers"))
+    end
+
+    def request_cookies
+      direct_cookies = normalize_hash(first_present_value(request_context, "cookies") || first_present_value(context, "cookies"))
+      return direct_cookies if direct_cookies.any?
+
+      cookie_header = value_from_hash(request_headers, "Cookie")
+      return {} if cookie_header.blank?
+
+      Rack::Utils.parse_cookies_header(cookie_header.to_s)
+    rescue StandardError
+      {}
+    end
+
+    def routing_details
+      request_route = first_present_value(request_context, "route", "route_values", "routeValues")
+      route_values = normalize_hash(request_route)
+      route_label = request_route unless request_route.is_a?(Hash)
+
+      {
+        endpoint: first_present_value(context, "endpoint") || first_present_value(request_context, "endpoint"),
+        route: first_present_value(context, "route") || route_label,
+        route_values: route_values.presence,
+        path: first_present_value(request_context, "path"),
+        method: first_present_value(request_context, "method", "http_method", "httpMethod"),
+        url: first_present_value(request_context, "url"),
+        status: first_present_value(context, "status") || first_present_value(request_context, "status"),
+        request_id: first_present_value(context, "request_id", "requestId") || first_present_value(request_context, "request_id", "requestId"),
+        trace_id: first_present_value(context, "trace_id", "traceId") || first_present_value(request_context, "trace_id", "traceId"),
+        duration_ms: first_present_value(context, "duration_ms", "durationMs")
+      }.compact_blank
+    end
+
     def activity_summary
       logger = logger_details
       execution = execution_details
@@ -112,8 +185,49 @@ module ProjectEvents
       @context ||= event_context_hash(@event)
     end
 
+    def request_context
+      @request_context ||= normalize_hash(context["request"] || context[:request])
+    end
+
     def exception_hash
       @exception_hash ||= normalize_hash(@exception_data)
+    end
+
+    def first_present_value(hash, *keys)
+      keys.each do |key|
+        value = value_from_hash(hash, key)
+        return value if value.present?
+      end
+
+      nil
+    end
+
+    def query_string_from_url(url)
+      value = url.to_s
+      return nil unless value.include?("?")
+
+      value.split("?", 2).last.to_s.split("#", 2).first.presence
+    end
+
+    def stack_line_for(frame)
+      return nil unless frame.is_a?(Hash)
+
+      raw = frame[:raw].to_s
+      return raw if raw.present? && !raw.start_with?("{")
+
+      method_name = frame[:method_name].presence
+      file = frame[:file].presence
+      line_number = frame[:line_number].presence
+
+      if method_name.present? && file.present? && line_number.present?
+        "at #{method_name} in #{file}:line #{line_number}"
+      elsif method_name.present?
+        "at #{method_name}"
+      elsif file.present? && line_number.present?
+        "at #{file}:line #{line_number}"
+      elsif file.present?
+        "at #{file}"
+      end
     end
 
     def collect_exception_chain(hash, chain = [])

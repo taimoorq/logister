@@ -1,187 +1,204 @@
-<% dotnet_summary = dotnet_exception_summary(exception_data, event.message) %>
-<% dotnet_frames = dotnet_exception_frames(exception_data) %>
-<% selected_frame = dotnet_frames.first %>
-<% dotnet_source_excerpt = source_excerpt.presence || source_excerpt_for_frame(selected_frame) %>
-<% runtime_details = dotnet_runtime_details(event) %>
-<% execution_details = dotnet_execution_details(event) %>
-<% exception_chain = dotnet_exception_chain(exception_data) %>
-<% exception_data_fields = dotnet_exception_data(exception_data) %>
-<% fallback_stacktrace = if exception_data.is_a?(Hash)
-     (exception_data["stack"] || exception_data[:stack] || Array(exception_data["backtrace"] || exception_data[:backtrace]).presence&.join("\n")).presence
-   end %>
-<% fallback_stacktrace ||= event.message %>
+<% dotnet_presenter = ProjectEvents::DotnetEventPresenter.new(event, exception_data) %>
+<% dotnet_summary = dotnet_presenter.summary(event.message) %>
+<% dotnet_frames = dotnet_presenter.frames %>
+<% dotnet_stack_lines = dotnet_presenter.stack_lines %>
+<% dotnet_matches = dotnet_presenter.endpoint_matches(event.message) %>
+<% runtime_details = dotnet_presenter.runtime_details %>
+<% exception_chain = dotnet_presenter.exception_chain %>
+<% exception_data_fields = dotnet_presenter.exception_data %>
+<% query_parameters = dotnet_presenter.query_parameters %>
+<% request_headers = dotnet_presenter.request_headers %>
+<% request_cookies = dotnet_presenter.request_cookies %>
+<% routing_details = dotnet_presenter.routing_details %>
+<% raw_exception_details = exception_data.is_a?(Hash) ? pretty_context_json(exception_data) : event.message %>
+<% stack_fallback = dotnet_stack_lines.presence || Array(dotnet_frames).map { |frame| frame[:raw] }.compact_blank.presence || [event.message] %>
 
-<div class="better-errors-shell">
-  <header class="better-errors-header">
-    <p class="better-errors-kicker">
-      <strong><%= dotnet_summary[:class_name] %></strong>
-      in <%= selected_frame&.dig(:method_name).presence || execution_details[:route].presence || "dotnet runtime" %>
+<div class="dotnet-dev-page">
+  <header class="dotnet-dev-header">
+    <h3>An unhandled exception occurred while processing the request.</h3>
+
+    <p class="dotnet-dev-lede">
+      <strong><%= dotnet_summary[:class_name] %>:</strong>
+      <%= dotnet_summary[:message].to_s.lines.first.to_s.strip.presence || event.message.to_s.lines.first %>
     </p>
-    <h3 class="better-errors-message"><%= dotnet_summary[:message] %></h3>
+
+    <% if dotnet_matches.any? %>
+      <div class="dotnet-dev-matches">
+        <% dotnet_matches.each do |match| %>
+          <div><%= match %></div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if stack_fallback.first.present? %>
+      <p class="dotnet-dev-top-frame"><%= stack_fallback.first %></p>
+    <% end %>
   </header>
 
-  <div class="better-errors-workbench">
-    <aside class="better-errors-frames">
-      <% if dotnet_frames.any? %>
-        <ol class="frame-list">
-          <% dotnet_frames.each do |frame_data| %>
-            <li class="frame-item <%= "is-active" if frame_data == selected_frame %>">
-              <div class="frame-link">
-                <span class="frame-method"><%= frame_data[:method_name].presence || "unknown" %></span>
-                <span class="frame-file"><%= frame_data[:file] %>, line <%= frame_data[:line_number] %></span>
-              </div>
-            </li>
-          <% end %>
-        </ol>
-      <% else %>
-        <p class="muted">No .NET stack frames were captured for this event.</p>
-      <% end %>
-    </aside>
+  <nav class="dotnet-dev-tabs" aria-label=".NET exception detail sections">
+    <a href="#dotnet-stack" class="dotnet-dev-tab is-active">Stack</a>
+    <a href="#dotnet-query" class="dotnet-dev-tab">Query</a>
+    <a href="#dotnet-cookies" class="dotnet-dev-tab">Cookies</a>
+    <a href="#dotnet-headers" class="dotnet-dev-tab">Headers</a>
+    <a href="#dotnet-routing" class="dotnet-dev-tab">Routing</a>
+  </nav>
 
-    <div class="better-errors-main">
-      <section class="better-errors-code card">
-        <% if dotnet_source_excerpt.present? %>
-          <div class="better-errors-code-header"><%= dotnet_source_excerpt[:path] %></div>
-          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= dotnet_source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy source excerpt">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="better-errors-source" data-copy-target="source"><code><% dotnet_source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == dotnet_source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
-<% end %></code></pre>
-          </div>
-        <% elsif selected_frame.present? %>
-          <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
-          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:raw].presence || "#{selected_frame[:method_name]} #{selected_frame[:file]}:#{selected_frame[:line_number]}" %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy stack frame">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="stacktrace" data-copy-target="source"><code><%= selected_frame[:raw].presence || "#{selected_frame[:method_name]} #{selected_frame[:file]}:#{selected_frame[:line_number]}" %></code></pre>
-          </div>
-        <% else %>
-          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= fallback_stacktrace %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy stacktrace">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="stacktrace" data-copy-target="source"><code><%= fallback_stacktrace %></code></pre>
-          </div>
-        <% end %>
-      </section>
+  <section id="dotnet-stack" class="dotnet-dev-stack-panel">
+    <h4><%= dotnet_presenter.developer_exception_title(event.message, compact: true) %></h4>
 
-      <section class="better-errors-section">
-        <h4>Request info</h4>
-        <dl class="better-errors-dl">
-          <% if request_details[:http_method].present? %>
-            <dt>Method</dt>
-            <dd><code><%= request_details[:http_method] %></code></dd>
-          <% end %>
-          <% if request_details[:url].present? %>
-            <dt>URL</dt>
-            <dd><%= request_details[:url] %></dd>
-          <% end %>
-          <% if request_details[:request_id].present? %>
-            <dt>Request ID</dt>
-            <dd><code><%= request_details[:request_id] %></code></dd>
-          <% end %>
-          <% if execution_details[:route].present? %>
-            <dt>Route</dt>
-            <dd><code><%= execution_details[:route] %></code></dd>
-          <% end %>
-          <% if execution_details[:endpoint].present? %>
-            <dt>Endpoint</dt>
-            <dd><code><%= execution_details[:endpoint] %></code></dd>
-          <% end %>
-          <% if execution_details[:status].present? %>
-            <dt>Status</dt>
-            <dd><code><%= execution_details[:status] %></code></dd>
-          <% end %>
-          <% if execution_details[:trace_id].present? %>
-            <dt>Trace ID</dt>
-            <dd><code><%= execution_details[:trace_id] %></code></dd>
-          <% end %>
-        </dl>
-      </section>
+    <% if stack_fallback.any? %>
+      <pre class="dotnet-dev-stack"><code><%= stack_fallback.join("\n") %></code></pre>
+    <% else %>
+      <p class="muted">No .NET stack frames were captured for this event.</p>
+    <% end %>
+  </section>
 
-      <section class="better-errors-section">
-        <h4>Runtime details</h4>
-        <dl class="better-errors-dl">
-          <% if runtime_details[:framework].present? %>
-            <dt>Framework</dt>
-            <dd><code><%= runtime_details[:framework] %></code></dd>
-          <% end %>
-          <% if runtime_details[:runtime].present? %>
-            <dt>Runtime</dt>
-            <dd><code><%= runtime_details[:runtime] %></code></dd>
-          <% end %>
-          <% if runtime_details[:dotnet_version].present? %>
-            <dt>.NET version</dt>
-            <dd><code><%= runtime_details[:dotnet_version] %></code></dd>
-          <% end %>
-          <% if runtime_details[:framework_description].present? %>
-            <dt>Framework description</dt>
-            <dd><code><%= runtime_details[:framework_description] %></code></dd>
-          <% end %>
-          <% if runtime_details[:os_description].present? %>
-            <dt>OS</dt>
-            <dd><code><%= runtime_details[:os_description] %></code></dd>
-          <% end %>
-          <% if runtime_details[:machine_name].present? %>
-            <dt>Machine</dt>
-            <dd><code><%= runtime_details[:machine_name] %></code></dd>
-          <% end %>
-          <% if runtime_details[:process_id].present? %>
-            <dt>Process ID</dt>
-            <dd><code><%= runtime_details[:process_id] %></code></dd>
-          <% end %>
-          <% if runtime_details[:environment].present? %>
-            <dt>Environment</dt>
-            <dd><code><%= runtime_details[:environment] %></code></dd>
-          <% end %>
-          <% if runtime_details[:release].present? %>
-            <dt>Release</dt>
-            <dd><code><%= runtime_details[:release] %></code></dd>
-          <% end %>
-        </dl>
-      </section>
-
-      <section class="better-errors-section">
-        <h4>Exception chain</h4>
-        <% if exception_chain.any? %>
-          <dl class="better-errors-dl">
-            <% exception_chain.each do |entry| %>
-              <dt><code><%= entry[:label] %></code></dt>
-              <dd>
-                <strong><%= entry[:class_name] %></strong>
-                <% if entry[:message].present? %>
-                  <span><%= entry[:message] %></span>
-                <% end %>
-                <% if entry[:frames].any? %>
-                  <code><%= entry[:frames].first[:file] %>:<%= entry[:frames].first[:line_number] %></code>
-                <% end %>
-              </dd>
-            <% end %>
-          </dl>
-        <% else %>
-          <p class="muted">No inner .NET exceptions were captured.</p>
-        <% end %>
-      </section>
-
-      <section class="better-errors-section">
-        <h4>Exception data</h4>
-        <% if exception_data_fields.any? %>
-          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= pretty_context_json(exception_data_fields) %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy exception data JSON">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="context-json" data-copy-target="source"><code><%= pretty_context_json(exception_data_fields) %></code></pre>
-          </div>
-        <% else %>
-          <p class="muted">No <code>Exception.Data</code> entries were captured.</p>
-        <% end %>
-      </section>
+  <details class="dotnet-dev-raw">
+    <summary>Show raw exception details</summary>
+    <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= raw_exception_details %>">
+      <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy raw exception details">
+        <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+        <span data-copy-target="buttonLabel">Copy</span>
+      </button>
+      <pre class="context-json" data-copy-target="source"><code><%= raw_exception_details %></code></pre>
     </div>
+  </details>
+
+  <div class="dotnet-dev-section-grid">
+    <section id="dotnet-query" class="dotnet-dev-section">
+      <h4>Query</h4>
+      <% if query_parameters.any? %>
+        <table class="dotnet-dev-table">
+          <tbody>
+            <% query_parameters.each do |key, value| %>
+              <tr>
+                <th><code><%= key %></code></th>
+                <td><code><%= value.is_a?(Hash) || value.is_a?(Array) ? pretty_context_json(value) : value %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No query string values were captured.</p>
+      <% end %>
+    </section>
+
+    <section id="dotnet-cookies" class="dotnet-dev-section">
+      <h4>Cookies</h4>
+      <% if request_cookies.any? %>
+        <table class="dotnet-dev-table">
+          <tbody>
+            <% request_cookies.each do |key, value| %>
+              <tr>
+                <th><code><%= key %></code></th>
+                <td><code><%= value.is_a?(Hash) || value.is_a?(Array) ? pretty_context_json(value) : value %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No cookies were captured.</p>
+      <% end %>
+    </section>
+
+    <section id="dotnet-headers" class="dotnet-dev-section">
+      <h4>Headers</h4>
+      <% if request_headers.any? %>
+        <table class="dotnet-dev-table">
+          <tbody>
+            <% request_headers.each do |key, value| %>
+              <tr>
+                <th><code><%= key %></code></th>
+                <td><code><%= value.is_a?(Hash) || value.is_a?(Array) ? pretty_context_json(value) : value %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No request headers were captured.</p>
+      <% end %>
+    </section>
+
+    <section id="dotnet-routing" class="dotnet-dev-section">
+      <h4>Routing</h4>
+      <% if routing_details.any? %>
+        <table class="dotnet-dev-table">
+          <tbody>
+            <% routing_details.each do |key, value| %>
+              <tr>
+                <th><code><%= key.to_s.humanize %></code></th>
+                <td><code><%= value.is_a?(Hash) || value.is_a?(Array) ? pretty_context_json(value) : value %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No routing details were captured.</p>
+      <% end %>
+    </section>
+  </div>
+
+  <div class="dotnet-dev-section-grid dotnet-dev-secondary-grid">
+    <section class="dotnet-dev-section">
+      <h4>Runtime details</h4>
+      <% if runtime_details.compact_blank.any? %>
+        <table class="dotnet-dev-table">
+          <tbody>
+            <% runtime_details.compact_blank.each do |key, value| %>
+              <tr>
+                <th><code><%= key.to_s.humanize %></code></th>
+                <td><code><%= value %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No .NET runtime details were captured.</p>
+      <% end %>
+    </section>
+
+    <section class="dotnet-dev-section">
+      <h4>Exception chain</h4>
+      <% if exception_chain.any? %>
+        <table class="dotnet-dev-table">
+          <tbody>
+            <% exception_chain.each do |entry| %>
+              <tr>
+                <th><code><%= entry[:label] %></code></th>
+                <td>
+                  <strong><%= entry[:class_name] %></strong>
+                  <% if entry[:message].present? %>
+                    <span><%= entry[:message] %></span>
+                  <% end %>
+                  <% if entry[:frames].any? %>
+                    <code><%= entry[:frames].first[:file] %>:<%= entry[:frames].first[:line_number] %></code>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No inner .NET exceptions were captured.</p>
+      <% end %>
+    </section>
+
+    <section class="dotnet-dev-section">
+      <h4>Exception data</h4>
+      <% if exception_data_fields.any? %>
+        <table class="dotnet-dev-table">
+          <tbody>
+            <% exception_data_fields.each do |key, value| %>
+              <tr>
+                <th><code><%= key %></code></th>
+                <td><code><%= value.is_a?(Hash) || value.is_a?(Array) ? pretty_context_json(value) : value %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="muted">No <code>Exception.Data</code> entries were captured.</p>
+      <% end %>
+    </section>
   </div>
 </div>

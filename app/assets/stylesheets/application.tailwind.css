@@ -387,6 +387,96 @@
   .better-errors-dl dd code {
     @apply whitespace-pre-wrap;
   }
+  .dotnet-dev-page {
+    @apply overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-900;
+    font-family: "Inter", "Segoe UI", sans-serif;
+  }
+  .dotnet-dev-header {
+    @apply px-4 sm:px-5 py-4 border-b border-slate-200;
+  }
+  .dotnet-dev-header h3 {
+    @apply m-0 text-2xl sm:text-3xl font-bold leading-tight text-slate-700;
+  }
+  .dotnet-dev-lede {
+    @apply mt-5 mb-0 text-base sm:text-lg leading-relaxed text-slate-900;
+  }
+  .dotnet-dev-matches {
+    @apply mt-5 space-y-1 text-base sm:text-lg font-medium text-slate-900 break-words;
+  }
+  .dotnet-dev-top-frame {
+    @apply mt-3 mb-0 pl-6 text-sm font-semibold text-slate-700 break-words;
+  }
+  .dotnet-dev-tabs {
+    @apply flex flex-wrap items-center gap-1 border-b border-slate-200 px-2 pt-3 bg-white;
+  }
+  .dotnet-dev-tab {
+    @apply inline-flex items-center px-3 py-2 text-sm sm:text-base font-semibold text-sky-800 no-underline border border-transparent rounded-t-sm;
+  }
+  .dotnet-dev-tab:hover {
+    @apply bg-sky-50 text-sky-900 no-underline;
+  }
+  .dotnet-dev-tab.is-active {
+    @apply bg-sky-800 text-white border-sky-800;
+  }
+  .dotnet-dev-stack-panel {
+    @apply px-2 sm:px-4 py-4 border-b border-slate-200;
+  }
+  .dotnet-dev-stack-panel h4 {
+    @apply m-0 text-lg sm:text-2xl font-bold leading-tight text-slate-900 break-words;
+  }
+  .dotnet-dev-stack {
+    @apply mt-3 mb-0 overflow-auto bg-white p-0 pl-6 text-sm sm:text-base font-semibold leading-relaxed text-slate-800;
+    max-height: 24rem;
+  }
+  .dotnet-dev-stack code {
+    @apply whitespace-pre bg-transparent p-0 text-inherit;
+  }
+  .dotnet-dev-raw {
+    @apply border-b border-slate-200 px-2 sm:px-4 py-3;
+  }
+  .dotnet-dev-raw summary {
+    @apply inline-flex cursor-pointer text-sm sm:text-base font-medium text-sky-800 hover:text-sky-900;
+  }
+  .dotnet-dev-raw .copy-block {
+    @apply mt-3;
+  }
+  .dotnet-dev-section-grid {
+    @apply grid grid-cols-1 xl:grid-cols-2 gap-0 border-b border-slate-200;
+  }
+  .dotnet-dev-secondary-grid {
+    @apply xl:grid-cols-3 border-b-0;
+  }
+  .dotnet-dev-section {
+    @apply min-w-0 border-t border-slate-200 px-4 py-4;
+  }
+  .dotnet-dev-section:nth-child(1),
+  .dotnet-dev-section:nth-child(2) {
+    @apply xl:border-t-0;
+  }
+  .dotnet-dev-secondary-grid .dotnet-dev-section {
+    @apply xl:border-t-0;
+  }
+  .dotnet-dev-section h4 {
+    @apply m-0 mb-3 text-xl font-semibold text-slate-800;
+  }
+  .dotnet-dev-table {
+    @apply w-full border-collapse text-sm;
+  }
+  .dotnet-dev-table tr {
+    @apply border-t border-slate-200;
+  }
+  .dotnet-dev-table tr:first-child {
+    @apply border-t-0;
+  }
+  .dotnet-dev-table th {
+    @apply w-36 align-top py-2 pr-3 text-left font-semibold text-slate-700;
+  }
+  .dotnet-dev-table td {
+    @apply min-w-0 py-2 text-slate-900 break-words;
+  }
+  .dotnet-dev-table code {
+    @apply whitespace-pre-wrap break-words bg-transparent p-0 text-inherit;
+  }
   .event-meta-list {
     @apply grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm;
   }
@@ -546,6 +636,28 @@
 
     .better-errors-dl {
       @apply grid-cols-1 gap-y-1.5;
+    }
+
+    .dotnet-dev-header h3 {
+      @apply text-xl;
+    }
+
+    .dotnet-dev-lede,
+    .dotnet-dev-matches {
+      @apply text-sm;
+    }
+
+    .dotnet-dev-top-frame {
+      @apply pl-0 text-xs;
+    }
+
+    .dotnet-dev-stack {
+      @apply pl-0 text-xs;
+    }
+
+    .dotnet-dev-table th,
+    .dotnet-dev-table td {
+      @apply block w-full py-1.5 pr-0;
     }
   }
 

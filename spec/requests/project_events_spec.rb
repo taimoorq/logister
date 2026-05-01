@@ -286,7 +286,15 @@ RSpec.describe "Project events", type: :request do
             route: "POST /approvals/{id}",
             request: {
               method: "POST",
-              url: "https://quriatime.example.com/approvals/123",
+              url: "https://quriatime.example.com/approvals/123?approval_id=123",
+              query_string: "?approval_id=123",
+              headers: {
+                "User-Agent" => "DotNetTest/1.0"
+              },
+              route: {
+                "controller" => "Approvals",
+                "action" => "Review"
+              },
               request_id: "req-dotnet-1"
             }
           },
@@ -296,9 +304,16 @@ RSpec.describe "Project events", type: :request do
         get project_event_path(project, event)
 
         expect(response).to have_http_status(:success)
+        expect(response.body).to include("An unhandled exception occurred while processing the request.")
+        expect(response.body).to include("Query")
+        expect(response.body).to include("Cookies")
+        expect(response.body).to include("Headers")
+        expect(response.body).to include("Routing")
         expect(response.body).to include("InvalidOperationException")
         expect(response.body).to include("ApprovalService.ApproveAsync")
         expect(response.body).to include("/src/QuriaTime.Web/Services/ApprovalService.cs")
+        expect(response.body).to include("approval_id")
+        expect(response.body).to include("User-Agent")
         expect(response.body).to include("Runtime details")
         expect(response.body).to include(".NET 8.0.4")
         expect(response.body).to include("Exception chain")

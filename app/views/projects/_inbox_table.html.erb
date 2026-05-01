@@ -61,6 +61,12 @@
     <% else %>
       <div class="inbox-empty">
         <p class="muted">No errors matching this filter.</p>
+        <% if project.ingest_events.where.not(event_type: :error).exists? %>
+          <p class="muted mt-2">
+            This project has logs, metrics, transactions, or check-ins. Those live in
+            <%= link_to "Activity", activity_project_path(project), class: "inline-link", data: { turbo_frame: "_top" } %>.
+          </p>
+        <% end %>
         <% if query.present? %>
           <%= link_to "Clear search",
                       project_path(project, filter: filter),

@@ -24,6 +24,28 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include('target="_blank"')
         expect(response.body).to include('rel="noopener noreferrer"')
       end
+
+      it "links activity-only .NET projects to activity instead of the empty error inbox" do
+        project = create(:project, :dotnet, user: users(:one), name: "quria-work")
+        api_key = create(:api_key, project: project, user: users(:one))
+        create(:ingest_event, :transaction, project: project, api_key: api_key)
+        create(:ingest_event, :log, project: project, api_key: api_key)
+
+        get projects_path
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        card = document.css(".project-card").find { |node| node.text.include?("quria-work") }
+
+        expect(card).to be_present
+        expect(card.text).to include("No open errors")
+        expect(card.text).to include("2 activity events")
+
+        activity_link = card.at_css("a")
+        expect(activity_link.text).to include("View activity")
+        expect(activity_link["href"]).to eq(activity_project_path(project))
+      end
     end
 
     context "when signed in as shared member" do
@@ -45,6 +67,23 @@ RSpec.describe "Projects", type: :request do
         get project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
+      end
+
+      it "points activity-only .NET projects from the empty inbox to Activity" do
+        project = create(:project, :dotnet, user: users(:one), name: "quria-work")
+        api_key = create(:api_key, project: project, user: users(:one))
+        create(:ingest_event, :transaction, project: project, api_key: api_key)
+
+        get project_path(project)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        inbox = document.at_css("turbo-frame#project_inbox")
+
+        expect(inbox.text).to include("No errors matching this filter")
+        expect(inbox.text).to include("Those live in")
+        expect(inbox.at_css("a[href='#{activity_project_path(project)}']").text).to eq("Activity")
       end
 
       it "returns 404 for project user cannot access" do

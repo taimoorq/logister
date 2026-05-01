@@ -115,8 +115,26 @@ RSpec.describe Project, type: :model do
       ids = [ projects(:one).id ]
       stats = described_class.stats_for(ids)
       expect(stats).to be_a(Hash)
-      expect(stats[ids.first]).to include(:total_events, :open_groups, :trend)
+      expect(stats[ids.first]).to include(:total_events, :activity_events, :open_groups, :all_groups, :trend)
       expect(stats[ids.first][:trend].size).to eq(7)
+    end
+
+    it "counts non-error activity events and uses raw events for the 7-day trend" do
+      travel_to Time.zone.local(2026, 4, 30, 12, 0, 0) do
+        project = create(:project, :dotnet, user: users(:one))
+        api_key = create(:api_key, project: project, user: users(:one))
+
+        create(:ingest_event, :transaction, project: project, api_key: api_key, occurred_at: 2.days.ago)
+        create(:ingest_event, :log, project: project, api_key: api_key, occurred_at: 1.day.ago)
+
+        stats = described_class.stats_for([ project.id ]).fetch(project.id)
+
+        expect(stats[:total_events]).to eq(2)
+        expect(stats[:activity_events]).to eq(2)
+        expect(stats[:open_groups]).to eq(0)
+        expect(stats[:all_groups]).to eq(0)
+        expect(stats[:trend].sum).to eq(2)
+      end
     end
   end
 
