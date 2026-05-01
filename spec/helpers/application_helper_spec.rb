@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "nokogiri"
 
 RSpec.describe ApplicationHelper, type: :helper do
   describe "#json_ld" do
@@ -20,6 +21,25 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(helper.docs_site_url(:javascript_integration)).to eq("https://docs.logister.org/integrations/javascript/")
       expect(helper.docs_site_url(:python_integration)).to eq("https://docs.logister.org/integrations/python/")
       expect(helper.docs_site_url(:dotnet_integration)).to eq("https://docs.logister.org/integrations/dotnet/")
+    end
+  end
+
+  describe "#app_icon" do
+    it "renders icons from the local Streamline sprite" do
+      fragment = Nokogiri::HTML.fragment(helper.app_icon(:search, css: "h-4 w-4 text-slate-400"))
+
+      expect(fragment.at_css("svg")["class"]).to include("h-4", "w-4", "text-slate-400")
+      expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-search\z})
+      expect(fragment.at_css("path")).to be_nil
+    end
+
+    it "renders project integration icons through the Streamline map" do
+      project = Project.new(integration_kind: "dotnet")
+      fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(project))
+
+      expect(fragment.at_css(".project-type-icon-dotnet")).to be_present
+      expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-dotnet\z})
+      expect(fragment.text.strip).to be_empty
     end
   end
 

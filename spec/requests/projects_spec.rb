@@ -25,7 +25,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include('rel="noopener noreferrer"')
       end
 
-      it "links activity-only .NET projects to activity instead of the empty error inbox" do
+      it "renders Bugsnag-style project cards with clickable headers and counts" do
         project = create(:project, :dotnet, user: users(:one), name: "quria-work")
         api_key = create(:api_key, project: project, user: users(:one))
         create(:ingest_event, :transaction, project: project, api_key: api_key)
@@ -39,12 +39,21 @@ RSpec.describe "Projects", type: :request do
         card = document.css(".project-card").find { |node| node.text.include?("quria-work") }
 
         expect(card).to be_present
-        expect(card.text).to include("No open errors")
-        expect(card.text).to include("2 activity events")
+        expect(card.at_css(".project-card-header")["href"]).to eq(project_path(project))
+        expect(card.at_css(".project-type-icon-dotnet use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-dotnet\z})
 
-        activity_link = card.at_css("a")
-        expect(activity_link.text).to include("View activity")
-        expect(activity_link["href"]).to eq(activity_project_path(project))
+        open_errors_link = card.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")
+        all_errors_link = card.at_css("a[href='#{project_path(project, filter: 'all')}']")
+        activity_link = card.at_css("a[href='#{activity_project_path(project)}']")
+
+        expect(open_errors_link).to be_present
+        expect(open_errors_link.text).to include("Errors for review", "0", "No open errors")
+        expect(all_errors_link).to be_present
+        expect(all_errors_link.text).to include("All error groups", "0", "No errors yet")
+        expect(activity_link).to be_present
+        expect(activity_link.text).to include("Activity events", "2", "View activity")
+        expect(card.at_css(".project-card-line-chart")).to be_present
+        expect(card.text).to include("No open errors")
       end
     end
 
@@ -636,6 +645,7 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Edit project")
+        expect(Nokogiri::HTML.parse(response.body).at_css("input[name='project[slug]']")).to be_nil
       end
 
       it "returns 404 for project user cannot access" do
@@ -665,9 +675,13 @@ RSpec.describe "Projects", type: :request do
 
       it "updates project and redirects to settings" do
         project = projects(:one)
-        patch project_path(project), params: { project: { name: "Renamed App", description: "New desc", integration_kind: "cfml" } }
+        original_slug = project.slug
+
+        patch project_path(project), params: { project: { name: "Renamed App", slug: "manual-change", description: "New desc", integration_kind: "cfml" } }
+
         expect(response).to redirect_to(settings_project_path(project))
         expect(project.reload.name).to eq("Renamed App")
+        expect(project.slug).to eq(original_slug)
         expect(project.description).to eq("New desc")
         expect(project.integration_kind).to eq("cfml")
       end
@@ -698,11 +712,19 @@ RSpec.describe "Projects", type: :request do
   describe "POST /projects" do
     before { sign_in users(:one) }
 
+    it "does not render slug as a user-editable field" do
+      get new_project_path
+
+      expect(response).to have_http_status(:success)
+      expect(Nokogiri::HTML.parse(response.body).at_css("input[name='project[slug]']")).to be_nil
+    end
+
     it "creates project and redirects" do
       expect {
-        post projects_path, params: { project: { name: "New App", description: "Desc", integration_kind: "cfml" } }
+        post projects_path, params: { project: { name: "New App", slug: "manual-change", description: "Desc", integration_kind: "cfml" } }
       }.to change(Project, :count).by(1)
       expect(response).to redirect_to(project_path(Project.last))
+      expect(Project.last.slug).to eq("new-app")
       expect(Project.last.integration_kind).to eq("cfml")
       follow_redirect!
       expect(response.body).to include("Project created")

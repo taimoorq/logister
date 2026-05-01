@@ -1,0 +1,20 @@
+<% points = Array(local_assigns.fetch(:points, [])).map(&:to_i) %>
+<% points = Array.new(7, 0) if points.empty? %>
+<% width = 320 %>
+<% height = 104 %>
+<% padding = 14 %>
+<% max_value = points.max.to_i %>
+<% max_value = 1 if max_value.zero? %>
+<% x_step = points.size > 1 ? (width - (padding * 2)).to_f / (points.size - 1) : 0 %>
+<% polyline_points = points.each_with_index.map do |point, index|
+     x = padding + (x_step * index)
+     y = height - padding - ((point.to_f / max_value) * (height - (padding * 2)))
+     "#{x.round(2)},#{y.round(2)}"
+   end.join(" ") %>
+
+<svg class="project-card-line-chart" viewBox="0 0 <%= width %> <%= height %>" role="img" aria-label="Last 7 days event trend" preserveAspectRatio="none">
+  <line x1="<%= padding %>" y1="<%= padding %>" x2="<%= width - padding %>" y2="<%= padding %>" class="project-card-chart-grid" />
+  <line x1="<%= padding %>" y1="<%= height / 2 %>" x2="<%= width - padding %>" y2="<%= height / 2 %>" class="project-card-chart-grid" />
+  <line x1="<%= padding %>" y1="<%= height - padding %>" x2="<%= width - padding %>" y2="<%= height - padding %>" class="project-card-chart-grid" />
+  <polyline points="<%= polyline_points %>" class="project-card-chart-line" />
+</svg>

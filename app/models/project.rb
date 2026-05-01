@@ -60,7 +60,7 @@ class Project < ApplicationRecord
     return {} if project_ids.blank?
 
     stats = Hash.new do |h, k|
-      h[k] = { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, trend: Array.new(7, 0) }
+      h[k] = { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, latest_event_at: nil, trend: Array.new(7, 0) }
     end
     project_error_groups = ErrorGroup.where(project_id: project_ids)
     project_events = IngestEvent.where(project_id: project_ids)
@@ -79,6 +79,10 @@ class Project < ApplicationRecord
 
     project_events.where.not(event_type: :error).group(:project_id).count.each do |pid, count|
       stats[pid][:activity_events] = count
+    end
+
+    project_events.group(:project_id).maximum(:occurred_at).each do |pid, occurred_at|
+      stats[pid][:latest_event_at] = occurred_at
     end
 
     trend_dates = 7.times.map { |i| Date.current - (6 - i) }

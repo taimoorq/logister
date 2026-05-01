@@ -95,7 +95,7 @@ class ProjectsController < ApplicationController
   private
 
   def project_params
-    params.require(:project).permit(:name, :slug, :description, :integration_kind)
+    params.require(:project).permit(:name, :description, :integration_kind)
   end
 
   def cached_project_stats(project_ids)

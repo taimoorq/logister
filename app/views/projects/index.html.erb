@@ -1,101 +1,30 @@
-<div data-controller="project-search" class="space-y-5">
-  <section class="rounded-xl bg-white border border-slate-200 shadow-sm px-5 py-4">
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-      <h1 class="text-2xl font-semibold text-slate-900">Projects</h1>
-      <div class="flex flex-col sm:flex-row gap-2">
-        <%= link_to "Docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
-        <%= link_to "New project", new_project_path, class: "inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-blue-700" %>
-      </div>
-    </div>
-    <div class="relative max-w-md mt-4">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%= app_icon(:search) %></span>
+<div data-controller="project-search" class="projects-page">
+  <section class="projects-command-row">
+    <div class="projects-search">
+      <span class="projects-search-icon"><%= app_icon(:search, css: "w-4 h-4") %></span>
       <input type="search" placeholder="Search projects" aria-label="Search projects"
-             class="form-input max-w-md pl-10"
+             class="form-input projects-search-input"
              data-action="input->project-search#filter">
     </div>
-    <p class="mt-3 text-sm text-slate-600">
-      Need setup help? Start with the public
-      <%= link_to "documentation section", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "font-medium text-blue-600 hover:text-blue-700 no-underline" %>.
-    </p>
-  </section>
 
-  <section class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-    <% if @projects.any? %>
-      <% @projects.each do |project| %>
-        <% stats = @project_stats[project.id] || { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, trend: Array.new(7, 0) } %>
-        <% total_events = stats[:total_events].to_i %>
-        <% activity_events = stats[:activity_events].to_i %>
-        <% open_groups = stats[:open_groups].to_i %>
-        <% all_groups = stats[:all_groups].to_i %>
-        <% card_action_label, card_action_path =
-          if open_groups.positive?
-            [ "Open inbox", project_path(project) ]
-          elsif activity_events.positive?
-            [ "View activity", activity_project_path(project) ]
-          elsif all_groups.positive?
-            [ "View all errors", project_path(project, filter: "all") ]
-          else
-            [ "Open inbox", project_path(project) ]
-          end %>
-        <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 overflow-hidden project-card" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>" style="view-transition-name: <%= dom_id(project) %>; view-transition-class: project-card;">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h2 class="text-xl font-semibold text-slate-900 truncate"><%= project.name %></h2>
-              <p class="text-sm text-slate-500 truncate"><%= project.slug %></p>
-              <div class="mt-2">
-                <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200">
-                  <%= project.integration_label %>
-                </span>
-              </div>
-            </div>
-            <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 border border-slate-200">
-              <%= project.owned_by?(current_user) ? "Owner" : "Shared" %>
-            </span>
-          </div>
-
-          <div class="grid grid-cols-3 gap-3 mt-4 py-4 border-y border-slate-200">
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.14em] font-semibold text-slate-500">Open</p>
-              <p class="text-xl font-semibold text-slate-900 mt-1"><%= open_groups %></p>
-            </div>
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.14em] font-semibold text-slate-500">Events</p>
-              <p class="text-xl font-semibold text-slate-900 mt-1"><%= total_events %></p>
-            </div>
-            <div>
-              <p class="text-[11px] uppercase tracking-[0.14em] font-semibold text-slate-500">Last 7d</p>
-              <p class="text-xl font-semibold text-slate-900 mt-1"><%= stats[:trend].sum %></p>
-            </div>
-          </div>
-
-          <div class="mt-4">
-            <%= render "shared/widgets/sparkline", points: stats[:trend] %>
-          </div>
-
-          <div class="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
-            <p class="text-sm text-slate-600">
-              <% if open_groups.positive? %>
-                <strong class="text-red-600"><%= open_groups %> open</strong> error <%= "group".pluralize(open_groups) %>
-              <% elsif activity_events.positive? %>
-                No open errors · <strong class="text-slate-900"><%= pluralize(activity_events, "activity event") %></strong>
-              <% elsif total_events.positive? %>
-                No open errors · <strong class="text-slate-900"><%= pluralize(total_events, "captured event") %></strong>
-              <% else %>
-                No open errors
-              <% end %>
-            </p>
-            <%= link_to card_action_label, card_action_path, class: "text-sm font-semibold text-blue-600 hover:text-blue-700 no-underline" %>
-          </div>
-        </article>
+    <div class="projects-action-row">
+      <%= link_to "Docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "projects-secondary-button" %>
+      <%= link_to new_project_path, class: "projects-new-button" do %>
+        <%= app_icon(:plus, css: "w-4 h-4") %>
+        <span>New project</span>
       <% end %>
-    <% else %>
-      <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 xl:col-span-2 2xl:col-span-3">
-        <p class="text-slate-600 mb-4">No projects yet. Create your first project to start ingesting events from Ruby or CFML apps.</p>
-        <div class="flex flex-col sm:flex-row gap-2">
-          <%= link_to "Create project", new_project_path, class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline" %>
-          <%= link_to "Browse docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline" %>
-        </div>
-      </div>
-    <% end %>
+    </div>
   </section>
+
+  <section class="projects-title-row">
+    <div>
+      <h1>Projects</h1>
+      <p>
+        Need setup help? Start with the public
+        <%= link_to "documentation section", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "projects-inline-link" %>.
+      </p>
+    </div>
+  </section>
+
+  <%= render "project_cards", projects: @projects, project_stats: @project_stats %>
 </div>

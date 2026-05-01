@@ -41,7 +41,7 @@ RSpec.describe Project, type: :model do
   end
 
   describe "validations" do
-    it "validates presence of name, slug, uuid" do
+    it "validates presence of name and auto-managed identifiers" do
       project = Project.new(user: users(:one))
       expect(project).not_to be_valid
       expect(project.errors[:name]).to be_present
@@ -115,7 +115,7 @@ RSpec.describe Project, type: :model do
       ids = [ projects(:one).id ]
       stats = described_class.stats_for(ids)
       expect(stats).to be_a(Hash)
-      expect(stats[ids.first]).to include(:total_events, :activity_events, :open_groups, :all_groups, :trend)
+      expect(stats[ids.first]).to include(:total_events, :activity_events, :open_groups, :all_groups, :latest_event_at, :trend)
       expect(stats[ids.first][:trend].size).to eq(7)
     end
 
@@ -133,6 +133,7 @@ RSpec.describe Project, type: :model do
         expect(stats[:activity_events]).to eq(2)
         expect(stats[:open_groups]).to eq(0)
         expect(stats[:all_groups]).to eq(0)
+        expect(stats[:latest_event_at]).to be_within(1.second).of(1.day.ago)
         expect(stats[:trend].sum).to eq(2)
       end
     end

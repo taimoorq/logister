@@ -1,0 +1,82 @@
+<% projects = local_assigns.fetch(:projects) %>
+<% project_stats = local_assigns.fetch(:project_stats, {}) %>
+
+<section class="project-card-grid">
+  <% if projects.any? %>
+    <% projects.each do |project| %>
+      <% stats = project_stats[project.id] || { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, latest_event_at: nil, trend: Array.new(7, 0) } %>
+      <% activity_events = stats[:activity_events].to_i %>
+      <% open_groups = stats[:open_groups].to_i %>
+      <% all_groups = stats[:all_groups].to_i %>
+      <% trend = Array(stats[:trend]) %>
+      <% latest_event_at = stats[:latest_event_at] %>
+      <article class="project-card" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>" style="view-transition-name: <%= dom_id(project) %>; view-transition-class: project-card;">
+        <%= link_to project_path(project), class: "project-card-header", aria: { label: "Open #{project.name} inbox" } do %>
+          <%= project_integration_icon(project) %>
+          <span class="project-card-title-block">
+            <span class="project-card-title"><%= project.name %></span>
+            <span class="project-card-subtitle"><%= project.integration_label %></span>
+          </span>
+          <span class="project-card-access"><%= project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+        <% end %>
+
+        <div class="project-card-health">
+          <div class="project-card-health-item" title="Session stability is not available yet">
+            <span class="project-card-health-label">Session stability <%= app_icon(:info, css: "project-card-info-icon") %></span>
+            <span class="project-card-health-value"><%= app_icon(:chart, css: "project-card-health-icon") %><span>--</span></span>
+          </div>
+          <div class="project-card-health-item" title="User stability is not available yet">
+            <span class="project-card-health-label">User stability <%= app_icon(:info, css: "project-card-info-icon") %></span>
+            <span class="project-card-health-value"><%= app_icon(:account, css: "project-card-health-icon") %><span>--</span></span>
+          </div>
+          <div class="project-card-health-item" title="Performance score is not available yet">
+            <span class="project-card-health-label">Performance score <%= app_icon(:info, css: "project-card-info-icon") %></span>
+            <span class="project-card-health-value"><%= app_icon(:dashboard, css: "project-card-health-icon") %><span>--</span></span>
+          </div>
+        </div>
+
+        <div class="project-card-chart">
+          <%= render "shared/widgets/line_chart", points: trend %>
+        </div>
+
+        <div class="project-card-footer">
+          <div class="project-card-footer-item">
+            <span class="project-card-footer-label">Latest event</span>
+            <% if latest_event_at.present? %>
+              <strong><%= time_ago_in_words(latest_event_at) %> ago</strong>
+            <% else %>
+              <strong>--</strong>
+              <span>No events yet</span>
+            <% end %>
+          </div>
+
+          <%= link_to project_path(project, filter: "unresolved"), class: "project-card-footer-item project-card-count-link" do %>
+            <span class="project-card-footer-label">Errors for review</span>
+            <strong><%= open_groups %></strong>
+            <span><%= open_groups.positive? ? "Open error #{'group'.pluralize(open_groups)}" : "No open errors" %></span>
+          <% end %>
+
+          <%= link_to project_path(project, filter: "all"), class: "project-card-footer-item project-card-count-link" do %>
+            <span class="project-card-footer-label">All error groups</span>
+            <strong><%= all_groups %></strong>
+            <span><%= all_groups.positive? ? "View all errors" : "No errors yet" %></span>
+          <% end %>
+
+          <%= link_to activity_project_path(project), class: "project-card-footer-item project-card-count-link" do %>
+            <span class="project-card-footer-label">Activity events</span>
+            <strong><%= activity_events %></strong>
+            <span><%= activity_events.positive? ? "View activity" : "No activity yet" %></span>
+          <% end %>
+        </div>
+      </article>
+    <% end %>
+  <% else %>
+    <div class="project-card-empty">
+      <p>No projects yet. Create your first project to start ingesting events from Ruby, .NET, Python, JavaScript, or CFML apps.</p>
+      <div class="project-card-empty-actions">
+        <%= link_to "Create project", new_project_path, class: "btn-primary" %>
+        <%= link_to "Browse docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "btn-ghost" %>
+      </div>
+    </div>
+  <% end %>
+</section>

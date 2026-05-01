@@ -67,6 +67,161 @@
   .sidebar-action-link {
     @apply block py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 no-underline;
   }
+  .projects-page {
+    @apply space-y-5;
+  }
+  .projects-command-row {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+  }
+  .projects-search {
+    @apply relative w-full sm:w-80;
+  }
+  .projects-search-icon {
+    @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400;
+  }
+  .projects-search-input {
+    @apply h-10 rounded-sm pl-10 text-sm shadow-none;
+  }
+  .projects-action-row {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center;
+  }
+  .projects-new-button {
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-xs font-bold uppercase text-white no-underline hover:bg-blue-700;
+    letter-spacing: 0;
+  }
+  .projects-secondary-button {
+    @apply inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-50;
+  }
+  .projects-title-row {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between;
+  }
+  .projects-title-row h1 {
+    @apply text-2xl font-semibold text-slate-900;
+  }
+  .projects-title-row p {
+    @apply mt-1 text-sm text-slate-500;
+  }
+  .projects-secondary-link,
+  .projects-inline-link {
+    @apply text-sm font-semibold text-blue-600 no-underline hover:text-blue-700;
+  }
+  .project-card-grid {
+    @apply grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-3;
+  }
+  .project-card {
+    @apply overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition-colors;
+  }
+  .project-card:hover {
+    @apply border-slate-300 shadow;
+  }
+  .project-card-header {
+    @apply flex min-w-0 items-start gap-3 border-b border-slate-100 px-4 py-4 text-slate-900 no-underline hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset;
+  }
+  .project-card-title-block {
+    @apply min-w-0 flex-1;
+  }
+  .project-card-title {
+    @apply block truncate text-base font-semibold leading-snug text-slate-900;
+  }
+  .project-card-subtitle {
+    @apply mt-0.5 block truncate text-xs text-slate-500;
+  }
+  .project-card-access {
+    @apply shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-500;
+  }
+  .project-type-icon {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md;
+  }
+  .project-type-icon svg {
+    @apply h-6 w-6;
+  }
+  .project-type-icon-ruby {
+    @apply bg-red-50 text-red-700 ring-1 ring-red-200;
+  }
+  .project-type-icon-cfml {
+    @apply bg-amber-50 text-amber-700 ring-1 ring-amber-200;
+  }
+  .project-type-icon-javascript {
+    @apply bg-slate-900 text-white ring-1 ring-slate-700;
+  }
+  .project-type-icon-python {
+    @apply bg-blue-50 text-blue-700 ring-1 ring-blue-200;
+  }
+  .project-type-icon-dotnet {
+    @apply bg-violet-50 text-violet-800 ring-1 ring-violet-200;
+  }
+  .project-card-health {
+    @apply grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-3;
+  }
+  .project-card-health-item {
+    @apply min-w-0 text-center;
+  }
+  .project-card-health-label {
+    @apply inline-flex items-center justify-center gap-1 text-[11px] font-semibold uppercase text-slate-400;
+    letter-spacing: 0;
+  }
+  .project-card-health-value {
+    @apply mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-slate-300;
+  }
+  .project-card-info-icon {
+    @apply h-3 w-3 text-slate-300;
+  }
+  .project-card-health-icon {
+    @apply h-5 w-5 text-slate-300;
+  }
+  .project-card-chart {
+    @apply bg-slate-50 px-4 py-4;
+  }
+  .project-card-line-chart {
+    @apply h-32 w-full overflow-visible;
+  }
+  .project-card-chart-grid {
+    @apply stroke-slate-200;
+    stroke-width: 1;
+  }
+  .project-card-chart-line {
+    @apply fill-none stroke-slate-400;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .project-card-footer {
+    @apply grid grid-cols-1 border-t border-slate-100 sm:grid-cols-2;
+  }
+  .project-card-footer-item {
+    @apply min-w-0 border-b border-slate-100 px-4 py-3 text-sm text-slate-500 last:border-b-0;
+  }
+  .project-card-footer-item:nth-child(odd) {
+    @apply sm:border-r;
+  }
+  .project-card-footer-item:nth-last-child(-n+2) {
+    @apply sm:border-b-0;
+  }
+  .project-card-footer-label {
+    @apply block text-[11px] font-semibold uppercase text-slate-400;
+    letter-spacing: 0;
+  }
+  .project-card-footer-item strong {
+    @apply mt-1 block truncate text-lg font-semibold text-slate-900;
+  }
+  .project-card-footer-item span:last-child {
+    @apply mt-1 block truncate text-xs text-slate-500;
+  }
+  .project-card-count-link {
+    @apply no-underline hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset;
+  }
+  .project-card-count-link:hover strong {
+    @apply text-blue-700;
+  }
+  .project-card-empty {
+    @apply rounded-md border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2 2xl:col-span-3;
+  }
+  .project-card-empty p {
+    @apply mb-4 text-slate-600;
+  }
+  .project-card-empty-actions {
+    @apply flex flex-col gap-2 sm:flex-row;
+  }
   .inbox-workbench {
     @apply grid grid-cols-1 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] gap-4 items-start;
   }

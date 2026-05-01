@@ -81,12 +81,8 @@
                   aria-expanded="false"
                   aria-controls="nav-menu-panel"
                   aria-label="Toggle menu">
-            <svg class="nav-icon-open w-6 h-6" data-nav-target="iconOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-            <svg class="nav-icon-close w-6 h-6" data-nav-target="iconClose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <%= app_icon(:menu, css: "nav-icon-open w-6 h-6") %>
+            <%= app_icon(:x, css: "nav-icon-close w-6 h-6") %>
           </button>
 
           <div id="nav-menu-panel"
@@ -113,9 +109,7 @@
                 <details class="relative">
                   <summary class="list-none flex items-center justify-between gap-2 py-2 px-3 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-900/60 hover:text-white cursor-pointer select-none min-h-[44px] md:min-h-0">
                     <span class="truncate max-w-[220px] text-left"><%= current_user.email %></span>
-                    <svg class="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
+                    <%= app_icon(:chevron_down, css: "w-4 h-4 shrink-0") %>
                   </summary>
                   <div class="md:absolute md:right-0 mt-1 md:mt-2 w-full md:w-56 rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden z-10">
                     <%= link_to profile_path, class: "nav-link block px-3 py-2.5 text-sm font-medium #{current_page?(profile_path) ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}" do %>
