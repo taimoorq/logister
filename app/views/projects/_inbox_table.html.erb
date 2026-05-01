@@ -2,19 +2,17 @@
   <div class="inbox-table-wrap">
     <% if groups.any? %>
       <div class="inbox-list-scroll">
-        <table class="inbox-table">
-          <thead>
-            <tr>
-              <th class="col-error">Error</th>
-              <th class="col-num">Events</th>
-              <th class="col-trend">7d trend</th>
-              <th class="col-stage">Stage</th>
-              <th class="col-severity">Severity</th>
-            </tr>
-          </thead>
+        <table class="inbox-table inbox-table-compact" aria-label="Error groups">
           <tbody>
             <% groups.each do |group| %>
               <% row_clickable = group.latest_event.present? %>
+              <% first_seen_words = time_ago_in_words(group.first_seen_at) %>
+              <% last_seen_words = time_ago_in_words(group.last_seen_at) %>
+              <% trend_points = group.trend %>
+              <% trend_total = trend_points.sum %>
+              <% trend_tooltip = "7 day trend: #{trend_points.join(", ")} occurrences. #{trend_total} total in the last 7 days." %>
+              <% stage = group.stage.presence || "production" %>
+              <% severity = group.severity.presence || "error" %>
               <tr id="<%= dom_id(group) %>"
                   class="inbox-row<%= " is-selected" if selected_uuid.present? && selected_uuid == group.uuid %><%= " is-clickable" if row_clickable %>"
                   data-action="<%= row_clickable ? 'click->inbox#openRow keydown.enter->inbox#openRowKey keydown.space->inbox#openRowKey' : '' %>"
@@ -22,7 +20,7 @@
                   aria-selected="<%= selected_uuid.present? && selected_uuid == group.uuid ? "true" : "false" %>"
                   aria-label="<%= row_clickable ? "Open error details for #{group.title}" : nil %>"
                   style="view-transition-name: <%= dom_id(group) %>; view-transition-class: inbox-row;">
-                <td class="col-error">
+                <td class="inbox-error-cell">
                   <% if group.latest_event %>
                     <%= link_to project_event_path(project, group.latest_event,
                                   filter: filter, q: query, group_uuid: group.uuid),
@@ -31,28 +29,53 @@
                                   turbo_frame: "error_detail",
                                   action: "click->inbox#openDetail"
                                 } do %>
-                      <span class="error-title"><%= group.title %></span>
-                      <% if group.subtitle.present? %>
-                        <span class="error-subtitle"><%= group.subtitle %></span>
-                      <% end %>
+                      <span class="error-row-primary">
+                        <span class="error-title"><%= group.title %></span>
+                        <% if group.subtitle.present? %>
+                          <span class="error-subtitle"><%= group.subtitle %></span>
+                        <% end %>
+                      </span>
                     <% end %>
                   <% else %>
                     <span class="error-row-link error-row-link--orphan">
-                      <span class="error-title"><%= group.title %></span>
-                      <% if group.subtitle.present? %>
-                        <span class="error-subtitle"><%= group.subtitle %></span>
-                      <% end %>
+                      <span class="error-row-primary">
+                        <span class="error-title"><%= group.title %></span>
+                        <% if group.subtitle.present? %>
+                          <span class="error-subtitle"><%= group.subtitle %></span>
+                        <% end %>
+                      </span>
                     </span>
                   <% end %>
-                  <span class="error-meta">
-                    first seen <%= time_ago_in_words(group.first_seen_at) %> ago
-                    &middot; last seen <%= time_ago_in_words(group.last_seen_at) %> ago
-                  </span>
+                  <div class="error-meta-row">
+                    <span class="error-meta-chip"
+                          title="<%= pluralize(group.occurrence_count, "event") %>"
+                          aria-label="<%= pluralize(group.occurrence_count, "event") %>">
+                      <%= app_icon(:info, css: "inbox-info-icon") %>
+                      <strong><%= group.occurrence_count %></strong>
+                    </span>
+                    <span class="error-meta-chip error-meta-trend"
+                          title="<%= trend_tooltip %>"
+                          aria-label="<%= trend_tooltip %>">
+                      <%= app_icon(:info, css: "inbox-info-icon") %>
+                      <span class="error-meta-sparkline"><%= render "shared/widgets/sparkline", points: trend_points, compact: true %></span>
+                    </span>
+                    <span class="stage-tag stage-tag-compact"
+                          title="Stage: <%= stage %>"
+                          aria-label="Stage: <%= stage %>"><%= stage %></span>
+                    <span class="severity-compact severity-<%= severity %>"
+                          title="Severity: <%= severity %>"
+                          aria-label="Severity: <%= severity %>">
+                      <span class="severity-compact-dot" aria-hidden="true"></span>
+                      <span><%= severity %></span>
+                    </span>
+                    <span class="error-meta-chip error-meta-time"
+                          title="First seen <%= first_seen_words %> ago. Last seen <%= last_seen_words %> ago."
+                          aria-label="First seen <%= first_seen_words %> ago. Last seen <%= last_seen_words %> ago.">
+                      <%= app_icon(:info, css: "inbox-info-icon") %>
+                      <span>last <%= last_seen_words %> ago</span>
+                    </span>
+                  </div>
                 </td>
-                <td class="col-num"><strong><%= group.occurrence_count %></strong></td>
-                <td class="col-trend"><%= render "shared/widgets/sparkline", points: group.trend, compact: true %></td>
-                <td class="col-stage"><span class="stage-tag"><%= group.stage %></span></td>
-                <td class="col-severity"><%= render "shared/widgets/severity_badge", level: group.severity %></td>
               </tr>
             <% end %>
           </tbody>

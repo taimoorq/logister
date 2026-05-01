@@ -35,6 +35,41 @@ RSpec.describe "Project inbox", type: :system do
     expect(page).to have_css("tr##{dom_id(error_groups(:system_primary_group))}[aria-selected='false']")
   end
 
+  it "renders the inbox filters and error rows in the compact layout" do
+    sign_in_via_browser(email: users(:one).email, password: "password123")
+
+    visit project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
+
+    expect(page).to have_css(".inbox-workbench > .inbox-workbench-filters .inbox-filter-bar")
+    expect(page).to have_no_css(".inbox-workbench-sidebar")
+
+    within(".inbox-filter-bar") do
+      expect(page).to have_field("Search inbox")
+      expect(page).to have_link("Open")
+      expect(page).to have_link("Introduced today")
+      expect(page).to have_link("Resolved")
+      expect(page).to have_link("Ignored")
+      expect(page).to have_link("Archived")
+      expect(page).to have_link("All")
+    end
+
+    within("turbo-frame#project_inbox") do
+      expect(page).to have_css("table.inbox-table-compact[aria-label='Error groups']")
+      expect(page).to have_no_css("thead")
+
+      within("tr##{dom_id(error_groups(:system_primary_group))}") do
+        expect(page).to have_css(".error-row-primary .error-title", text: "Primary inbox error")
+        expect(page).to have_css(".error-row-primary .error-subtitle", text: "RuntimeError")
+        expect(page).to have_css(".error-meta-row .error-meta-chip[title='1 event']")
+        expect(page).to have_css(".error-meta-row .error-meta-trend[title*='7 day trend']")
+        expect(page).to have_css(".stage-tag-compact[title='Stage: production']", text: "production")
+        expect(page).to have_css(".severity-compact.severity-error[title='Severity: error']", text: "error")
+        expect(page).to have_css(".error-meta-time[title*='First seen']")
+        expect(page).to have_css(".inbox-info-icon", minimum: 3)
+      end
+    end
+  end
+
   it "switches detail tabs within the Turbo frame" do
     sign_in_via_browser(email: users(:one).email, password: "password123")
 

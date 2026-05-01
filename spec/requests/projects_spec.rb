@@ -138,6 +138,40 @@ RSpec.describe "Projects", type: :request do
         expect(selected_row["id"]).to eq(ActionView::RecordIdentifier.dom_id(error_groups(:system_primary_group)))
       end
 
+      it "renders the inbox controls as a top filter bar and uses compact row metadata" do
+        get project_path(projects(:system_inbox), filter: "unresolved", group_uuid: error_groups(:system_primary_group).uuid)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        filter_bar = document.at_css(".inbox-workbench > .inbox-workbench-filters .inbox-filter-bar")
+
+        expect(filter_bar).to be_present
+        expect(document.at_css(".inbox-workbench > .inbox-workbench-sidebar")).to be_nil
+        expect(filter_bar.at_css("form.inbox-filter-search input[name='q']")["placeholder"]).to eq("Search errors...")
+        expect(filter_bar.css("#inbox_counts .inbox-filter-link").map(&:text).join(" ")).to include("Open", "Introduced today", "Resolved", "Ignored", "Archived", "All")
+
+        table = document.at_css("turbo-frame#project_inbox table.inbox-table-compact[aria-label='Error groups']")
+        expect(table).to be_present
+        expect(table.at_css("thead")).to be_nil
+        expect(table.css("td.col-num, td.col-trend, td.col-stage, td.col-severity")).to be_empty
+
+        row = table.at_css("tr##{ActionView::RecordIdentifier.dom_id(error_groups(:system_primary_group))}")
+        expect(row).to be_present
+
+        primary_line = row.at_css(".error-row-primary")
+        metadata = row.at_css(".error-meta-row")
+
+        expect(primary_line.at_css(".error-title").text).to eq("Primary inbox error")
+        expect(primary_line.at_css(".error-subtitle").text).to eq("RuntimeError")
+        expect(metadata.at_css(".error-meta-chip[title='1 event']")).to be_present
+        expect(metadata.at_css(".error-meta-trend")["title"]).to include("7 day trend")
+        expect(metadata.at_css(".stage-tag-compact")["title"]).to eq("Stage: production")
+        expect(metadata.at_css(".severity-compact.severity-error")["title"]).to eq("Severity: error")
+        expect(metadata.at_css(".error-meta-time")["title"]).to include("First seen", "Last seen")
+        expect(metadata.css(".inbox-info-icon").size).to be >= 3
+      end
+
       it "ignores a selected event when it does not belong to the selected group" do
         project = create(:project, user: users(:one), integration_kind: "python", name: "Python Inbox")
         api_key = create(:api_key, user: users(:one), project: project, name: "python-inbox")

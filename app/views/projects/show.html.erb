@@ -12,33 +12,23 @@
      data-controller="inbox"
      data-inbox-project-uuid-value="<%= @project.uuid %>"
      data-action="turbo:frame-load@document->inbox#onFrameLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch">
-  <aside class="inbox-workbench-sidebar">
-    <div class="inbox-sidebar-card">
-      <div class="flex items-center justify-between gap-2 mb-3">
-        <div class="min-w-0">
-          <h1 class="text-lg font-semibold text-slate-900 truncate"><%= @project.name %></h1>
-          <p class="text-xs text-slate-500"><%= @project.slug %></p>
-        </div>
-        <%= link_to "All projects", projects_path, class: "text-xs font-semibold text-blue-600 hover:text-blue-700 no-underline whitespace-nowrap" %>
-      </div>
-
+  <section class="inbox-workbench-filters" aria-label="Inbox filters">
+    <div class="inbox-filter-bar">
       <%= form_with url: project_path(@project), method: :get,
-                    class: "space-y-3",
+                    class: "inbox-filter-search",
                     data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "searchForm", action: "submit->inbox#onSearchSubmit" } do |f| %>
         <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
-        <div>
-          <%= f.label :q, "Search inbox", class: "kicker mb-1 block" %>
-          <%= f.search_field :q, value: @query, placeholder: "Search errors...",
-                             class: "form-input",
-                             data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
-        </div>
+        <%= f.label :q, "Search inbox", class: "kicker inbox-filter-search-label" %>
+        <%= f.search_field :q, value: @query, placeholder: "Search errors...",
+                           class: "form-input inbox-filter-search-input",
+                           data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
       <% end %>
 
-      <div class="mt-4">
-        <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query %>
-      </div>
+      <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query %>
+
+      <%= link_to "All projects", projects_path, class: "inbox-filter-projects-link" %>
     </div>
-  </aside>
+  </section>
 
   <section class="inbox-workbench-list" data-inbox-target="listPane" aria-busy="false">
     <header class="inbox-pane-header">
