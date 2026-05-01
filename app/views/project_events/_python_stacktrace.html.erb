@@ -1,12 +1,14 @@
 <% python_summary = python_exception_summary(exception_data, event.message) %>
 <% python_frames = python_exception_frames(exception_data) %>
-<% selected_frame = python_frames.first %>
+<% selected_frame = python_frames.last || python_frames.first %>
 <% python_source_excerpt = source_excerpt.presence || source_excerpt_for_frame(selected_frame) %>
 <% frame_locals = selected_frame.is_a?(Hash) ? selected_frame[:locals] : {} %>
 <% frame_locals = {} unless frame_locals.is_a?(Hash) %>
 <% runtime_details = python_runtime_details(event) %>
 <% execution_details = python_execution_details(event) %>
 <% exception_chain = python_exception_chain(exception_data) %>
+<% python_traceback = python_traceback_text(exception_data, event.message) %>
+<% custom_context_details = python_custom_context_details(event) %>
 <% fallback_stacktrace = if exception_data.is_a?(Hash)
      Array(exception_data["backtrace"] || exception_data[:backtrace]).presence&.join("\n")
    end %>
@@ -74,21 +76,58 @@
       <section class="better-errors-section">
         <h4>Request info</h4>
         <dl class="better-errors-dl">
-          <% if request_details[:http_method].present? %>
+          <% if execution_details[:method].present? %>
+            <dt>Method</dt>
+            <dd><code><%= execution_details[:method] %></code></dd>
+          <% elsif request_details[:http_method].present? %>
             <dt>Method</dt>
             <dd><code><%= request_details[:http_method] %></code></dd>
           <% end %>
-          <% if request_details[:url].present? %>
+          <% if execution_details[:status_code].present? %>
+            <dt>Status code</dt>
+            <dd><code><%= execution_details[:status_code] %></code></dd>
+          <% end %>
+          <% if execution_details[:path].present? %>
+            <dt>Path</dt>
+            <dd><code><%= execution_details[:path] %></code></dd>
+          <% end %>
+          <% if execution_details[:url].present? %>
+            <dt>URL</dt>
+            <dd><%= execution_details[:url] %></dd>
+          <% elsif request_details[:url].present? %>
             <dt>URL</dt>
             <dd><%= request_details[:url] %></dd>
           <% end %>
-          <% if request_details[:request_id].present? %>
+          <% if execution_details[:request_id].present? %>
+            <dt>Request ID</dt>
+            <dd><code><%= execution_details[:request_id] %></code></dd>
+          <% elsif request_details[:request_id].present? %>
             <dt>Request ID</dt>
             <dd><code><%= request_details[:request_id] %></code></dd>
+          <% end %>
+          <% if execution_details[:trace_id].present? %>
+            <dt>Trace ID</dt>
+            <dd><code><%= execution_details[:trace_id] %></code></dd>
+          <% end %>
+          <% if execution_details[:transaction_name].present? %>
+            <dt>Transaction</dt>
+            <dd><code><%= execution_details[:transaction_name] %></code></dd>
+          <% end %>
+          <% if execution_details[:duration_ms].present? %>
+            <dt>Duration</dt>
+            <dd><code><%= execution_details[:duration_ms] %> ms</code></dd>
           <% end %>
           <% if request_details[:params].present? %>
             <dt>Request parameters</dt>
             <dd><code><%= pretty_context_json(request_details[:params]) %></code></dd>
+          <% end %>
+          <% if execution_details[:path_params].present? %>
+            <dt>Path params</dt>
+            <dd><code><%= pretty_context_json(execution_details[:path_params]) %></code></dd>
+          <% end %>
+          <% if execution_details[:view_args].present? %>
+            <dt>View args</dt>
+            <dd><code><%= pretty_context_json(execution_details[:view_args]) %></code></dd>
           <% end %>
           <% if execution_details[:route].present? %>
             <dt>Route</dt>
@@ -110,7 +149,22 @@
             <dt>Query string</dt>
             <dd><code><%= execution_details[:query_string] %></code></dd>
           <% end %>
+          <% if execution_details[:headers].present? %>
+            <dt>Headers</dt>
+            <dd><code><%= pretty_context_json(execution_details[:headers]) %></code></dd>
+          <% end %>
         </dl>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Python traceback</h4>
+        <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= python_traceback %>">
+          <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy Python traceback">
+            <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+            <span data-copy-target="buttonLabel">Copy</span>
+          </button>
+          <pre class="stacktrace" data-copy-target="source"><code><%= python_traceback %></code></pre>
+        </div>
       </section>
 
       <section class="better-errors-section">
@@ -168,6 +222,22 @@
             <dt>Task module</dt>
             <dd><code><%= execution_details[:task_module] %></code></dd>
           <% end %>
+          <% if execution_details[:task_state].present? %>
+            <dt>Task state</dt>
+            <dd><code><%= execution_details[:task_state] %></code></dd>
+          <% end %>
+          <% if execution_details[:task_args_count].present? %>
+            <dt>Task args</dt>
+            <dd><code><%= execution_details[:task_args_count] %></code></dd>
+          <% end %>
+          <% if execution_details[:task_kwargs_keys].present? %>
+            <dt>Task kwargs</dt>
+            <dd><code><%= pretty_context_json(execution_details[:task_kwargs_keys]) %></code></dd>
+          <% end %>
+          <% if execution_details[:task_result].present? %>
+            <dt>Task result</dt>
+            <dd><code><%= execution_details[:task_result] %></code></dd>
+          <% end %>
           <% if execution_details[:queue].present? %>
             <dt>Queue</dt>
             <dd><code><%= execution_details[:queue] %></code></dd>
@@ -180,8 +250,40 @@
             <dt>ETA</dt>
             <dd><code><%= execution_details[:eta] %></code></dd>
           <% end %>
+          <% if execution_details[:user_id].present? %>
+            <dt>User ID</dt>
+            <dd><code><%= execution_details[:user_id] %></code></dd>
+          <% end %>
+          <% if execution_details[:session_id].present? %>
+            <dt>Session ID</dt>
+            <dd><code><%= execution_details[:session_id] %></code></dd>
+          <% end %>
+          <% if execution_details[:check_in_slug].present? %>
+            <dt>Check-in slug</dt>
+            <dd><code><%= execution_details[:check_in_slug] %></code></dd>
+          <% end %>
+          <% if execution_details[:check_in_status].present? %>
+            <dt>Check-in status</dt>
+            <dd><code><%= execution_details[:check_in_status] %></code></dd>
+          <% end %>
+          <% if execution_details[:expected_interval_seconds].present? %>
+            <dt>Expected interval</dt>
+            <dd><code><%= execution_details[:expected_interval_seconds] %> seconds</code></dd>
+          <% end %>
         </dl>
       </section>
+
+      <% if custom_context_details.any? %>
+        <section class="better-errors-section">
+          <h4>Python app context</h4>
+          <dl class="better-errors-dl">
+            <% custom_context_details.each do |key, value| %>
+              <dt><code><%= key %></code></dt>
+              <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+            <% end %>
+          </dl>
+        </section>
+      <% end %>
 
       <section class="better-errors-section">
         <h4>Exception chain</h4>

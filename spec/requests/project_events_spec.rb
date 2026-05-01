@@ -110,6 +110,12 @@ RSpec.describe "Project events", type: :request do
               message: "invalid checkout state",
               frames: [
                 {
+                  filename: "/srv/app/api.py",
+                  lineno: 21,
+                  name: "checkout_handler",
+                  line: "return create_checkout(order_id)"
+                },
+                {
                   filename: "/srv/app/checkout.py",
                   lineno: 41,
                   name: "create_checkout",
@@ -140,15 +146,31 @@ RSpec.describe "Project events", type: :request do
             platform: "macOS-14.0-arm64",
             hostname: "api-1",
             process_id: 4242,
+            runtime_name: "/usr/local/bin/python",
             release: "api@2026.04.22",
+            environment: "production",
+            service: "checkout-api",
+            entrypoint: "uvicorn app.main:app",
+            feature_flags: {
+              "new_checkout_flow" => true
+            },
+            status_code: 500,
+            trace_id: "trace-python-1",
+            transaction_name: "POST /checkouts/{order_id}",
+            duration_ms: 128.4,
             route: "/checkouts",
             request: {
               method: "POST",
-              params: { "order_id" => "ord_123" },
+              path: "/checkouts/ord_123",
               request_id: "req-python-1",
               url: "https://api.example.com/checkouts",
               client_ip: "203.0.113.8",
-              query_string: "preview=true"
+              query_string: "preview=true",
+              path_params: { "order_id" => "ord_123" },
+              headers: {
+                "User-Agent" => "PytestClient/1.0",
+                "X-Request-Id" => "req-python-1"
+              }
             }
           },
           occurred_at: Time.current
@@ -161,9 +183,24 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("create_checkout")
         expect(response.body).to include("/srv/app/checkout.py")
         expect(response.body).to include("invalid checkout state")
+        expect(response.body).to include("Python traceback")
+        expect(response.body).to include("Traceback (most recent call last):")
+        expect(response.body).to include('File &quot;/srv/app/checkout.py&quot;, line 41, in create_checkout')
+        expect(response.body).to include("Status code")
+        expect(response.body).to include("500")
+        expect(response.body).to include("Path params")
+        expect(response.body).to include("ord_123")
+        expect(response.body).to include("PytestClient/1.0")
+        expect(response.body).to include("trace-python-1")
+        expect(response.body).to include("POST /checkouts/{order_id}")
         expect(response.body).to include("Runtime details")
         expect(response.body).to include("CPython")
+        expect(response.body).to include("/usr/local/bin/python")
         expect(response.body).to include("api@2026.04.22")
+        expect(response.body).to include("Python app context")
+        expect(response.body).to include("checkout-api")
+        expect(response.body).to include("uvicorn app.main:app")
+        expect(response.body).to include("new_checkout_flow")
         expect(response.body).to include("Exception chain")
         expect(response.body).to include("KeyError")
         expect(response.body).to include("Frame locals")
@@ -205,12 +242,24 @@ RSpec.describe "Project events", type: :request do
             framework: "celery",
             runtime: "python",
             python_version: "3.12.3",
+            python_implementation: "CPython",
+            platform: "Linux-6.8-x86_64",
             hostname: "worker-2",
             process_id: 7021,
+            runtime_name: "/opt/app/.venv/bin/python",
             release: "worker@2026.04.22",
+            service: "inventory-worker",
+            worker_pool: "celery-default",
+            status_code: 202,
+            trace_id: "trace-log-1",
+            duration_ms: 55.2,
             task_name: "inventory.refresh",
             task_id: "task-123",
             task_module: "inventory.tasks",
+            task_state: "SUCCESS",
+            task_args_count: 1,
+            task_kwargs_keys: [ "force" ],
+            queue: "inventory",
             request: {
               request_id: "req-log-1",
               url: "https://api.example.com/internal/inventory/refresh",
@@ -230,6 +279,10 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("Runtime details")
         expect(response.body).to include("Execution details")
         expect(response.body).to include("inventory.tasks")
+        expect(response.body).to include("Task state")
+        expect(response.body).to include("SUCCESS")
+        expect(response.body).to include("inventory-worker")
+        expect(response.body).to include("worker_pool")
         expect(response.body).to include("Log record fields")
         expect(response.body).to include("sku_42")
         expect(response.body).to include(">Details<")

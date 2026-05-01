@@ -2,6 +2,7 @@
 <% log_record_details = python_log_record_details(event) %>
 <% runtime_details = python_runtime_details(event) %>
 <% execution_details = python_execution_details(event) %>
+<% custom_context_details = python_custom_context_details(event) %>
 
 <div class="better-errors-shell">
   <header class="better-errors-header">
@@ -68,6 +69,14 @@
           <dt>Python version</dt>
           <dd><code><%= runtime_details[:python_version] %></code></dd>
         <% end %>
+        <% if runtime_details[:python_implementation].present? %>
+          <dt>Implementation</dt>
+          <dd><code><%= runtime_details[:python_implementation] %></code></dd>
+        <% end %>
+        <% if runtime_details[:platform].present? %>
+          <dt>Platform</dt>
+          <dd><code><%= runtime_details[:platform] %></code></dd>
+        <% end %>
         <% if runtime_details[:hostname].present? %>
           <dt>Hostname</dt>
           <dd><code><%= runtime_details[:hostname] %></code></dd>
@@ -75,6 +84,10 @@
         <% if runtime_details[:process_id].present? %>
           <dt>Process ID</dt>
           <dd><code><%= runtime_details[:process_id] %></code></dd>
+        <% end %>
+        <% if runtime_details[:runtime_name].present? %>
+          <dt>Executable</dt>
+          <dd><code><%= runtime_details[:runtime_name] %></code></dd>
         <% end %>
         <% if runtime_details[:environment].present? %>
           <dt>Environment</dt>
@@ -90,17 +103,46 @@
     <section class="better-errors-section">
       <h4>Execution details</h4>
       <dl class="better-errors-dl">
-        <% if request_details[:http_method].present? %>
+        <% if execution_details[:method].present? %>
+          <dt>Method</dt>
+          <dd><code><%= execution_details[:method] %></code></dd>
+        <% elsif request_details[:http_method].present? %>
           <dt>Method</dt>
           <dd><code><%= request_details[:http_method] %></code></dd>
         <% end %>
-        <% if request_details[:url].present? %>
+        <% if execution_details[:status_code].present? %>
+          <dt>Status code</dt>
+          <dd><code><%= execution_details[:status_code] %></code></dd>
+        <% end %>
+        <% if execution_details[:path].present? %>
+          <dt>Path</dt>
+          <dd><code><%= execution_details[:path] %></code></dd>
+        <% end %>
+        <% if execution_details[:url].present? %>
+          <dt>URL</dt>
+          <dd><%= execution_details[:url] %></dd>
+        <% elsif request_details[:url].present? %>
           <dt>URL</dt>
           <dd><%= request_details[:url] %></dd>
         <% end %>
-        <% if request_details[:request_id].present? %>
+        <% if execution_details[:request_id].present? %>
+          <dt>Request ID</dt>
+          <dd><code><%= execution_details[:request_id] %></code></dd>
+        <% elsif request_details[:request_id].present? %>
           <dt>Request ID</dt>
           <dd><code><%= request_details[:request_id] %></code></dd>
+        <% end %>
+        <% if execution_details[:trace_id].present? %>
+          <dt>Trace ID</dt>
+          <dd><code><%= execution_details[:trace_id] %></code></dd>
+        <% end %>
+        <% if execution_details[:transaction_name].present? %>
+          <dt>Transaction</dt>
+          <dd><code><%= execution_details[:transaction_name] %></code></dd>
+        <% end %>
+        <% if execution_details[:duration_ms].present? %>
+          <dt>Duration</dt>
+          <dd><code><%= execution_details[:duration_ms] %> ms</code></dd>
         <% end %>
         <% if execution_details[:route].present? %>
           <dt>Route</dt>
@@ -114,6 +156,14 @@
           <dt>Blueprint</dt>
           <dd><code><%= execution_details[:blueprint] %></code></dd>
         <% end %>
+        <% if execution_details[:path_params].present? %>
+          <dt>Path params</dt>
+          <dd><code><%= pretty_context_json(execution_details[:path_params]) %></code></dd>
+        <% end %>
+        <% if execution_details[:view_args].present? %>
+          <dt>View args</dt>
+          <dd><code><%= pretty_context_json(execution_details[:view_args]) %></code></dd>
+        <% end %>
         <% if execution_details[:task_name].present? %>
           <dt>Task name</dt>
           <dd><code><%= execution_details[:task_name] %></code></dd>
@@ -126,8 +176,48 @@
           <dt>Task module</dt>
           <dd><code><%= execution_details[:task_module] %></code></dd>
         <% end %>
+        <% if execution_details[:task_state].present? %>
+          <dt>Task state</dt>
+          <dd><code><%= execution_details[:task_state] %></code></dd>
+        <% end %>
+        <% if execution_details[:task_args_count].present? %>
+          <dt>Task args</dt>
+          <dd><code><%= execution_details[:task_args_count] %></code></dd>
+        <% end %>
+        <% if execution_details[:task_kwargs_keys].present? %>
+          <dt>Task kwargs</dt>
+          <dd><code><%= pretty_context_json(execution_details[:task_kwargs_keys]) %></code></dd>
+        <% end %>
+        <% if execution_details[:task_result].present? %>
+          <dt>Task result</dt>
+          <dd><code><%= execution_details[:task_result] %></code></dd>
+        <% end %>
+        <% if execution_details[:queue].present? %>
+          <dt>Queue</dt>
+          <dd><code><%= execution_details[:queue] %></code></dd>
+        <% end %>
+        <% if execution_details[:retries].present? %>
+          <dt>Retries</dt>
+          <dd><code><%= execution_details[:retries] %></code></dd>
+        <% end %>
+        <% if execution_details[:query_string].present? %>
+          <dt>Query string</dt>
+          <dd><code><%= execution_details[:query_string] %></code></dd>
+        <% end %>
       </dl>
     </section>
+
+    <% if custom_context_details.any? %>
+      <section class="better-errors-section">
+        <h4>Python app context</h4>
+        <dl class="better-errors-dl">
+          <% custom_context_details.each do |key, value| %>
+            <dt><code><%= key %></code></dt>
+            <dd><code><%= value.is_a?(String) ? value : pretty_context_json(value) %></code></dd>
+          <% end %>
+        </dl>
+      </section>
+    <% end %>
 
     <section class="better-errors-section">
       <h4>Log record fields</h4>

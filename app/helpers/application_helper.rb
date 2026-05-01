@@ -76,6 +76,14 @@ module ApplicationHelper
     ProjectEvents::PythonEventPresenter.new(event).log_record_details
   end
 
+  def python_traceback_text(exception_data, fallback_message = nil)
+    ProjectEvents::PythonEventPresenter.new(nil, exception_data).traceback_text(fallback_message)
+  end
+
+  def python_custom_context_details(event)
+    ProjectEvents::PythonEventPresenter.new(event).custom_context_details
+  end
+
   def event_exception_data(event)
     context = event_context_hash(event)
     normalize_hash(context["exception"] || context[:exception])

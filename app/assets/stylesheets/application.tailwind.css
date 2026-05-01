@@ -1,3 +1,122 @@
+@theme {
+  --color-slate-50: var(--app-neutral-50);
+  --color-slate-100: var(--app-neutral-100);
+  --color-slate-200: var(--app-neutral-200);
+  --color-slate-300: var(--app-neutral-300);
+  --color-slate-400: var(--app-neutral-400);
+  --color-slate-500: var(--app-neutral-500);
+  --color-slate-600: var(--app-neutral-600);
+  --color-slate-700: var(--app-neutral-700);
+  --color-slate-800: var(--app-neutral-800);
+  --color-slate-900: var(--app-neutral-900);
+  --color-blue-50: var(--app-primary-50);
+  --color-blue-100: var(--app-primary-100);
+  --color-blue-200: var(--app-primary-200);
+  --color-blue-300: var(--app-primary-300);
+  --color-blue-400: var(--app-primary-400);
+  --color-blue-500: var(--app-primary-500);
+  --color-blue-600: var(--app-primary-600);
+  --color-blue-700: var(--app-primary-700);
+  --color-blue-800: var(--app-primary-800);
+  --color-blue-900: var(--app-primary-900);
+  --color-cyan-50: var(--app-primary-50);
+  --color-cyan-100: var(--app-primary-100);
+  --color-cyan-200: var(--app-primary-200);
+  --color-cyan-700: var(--app-primary-700);
+  --color-sky-50: var(--app-primary-50);
+  --color-sky-200: var(--app-primary-200);
+  --color-sky-700: var(--app-primary-700);
+  --color-sky-800: var(--app-primary-800);
+  --color-sky-900: var(--app-primary-900);
+  --color-amber-50: var(--app-warning-50);
+  --color-amber-200: var(--app-warning-200);
+  --color-amber-700: var(--app-warning-700);
+  --color-red-50: var(--app-danger-50);
+  --color-red-200: var(--app-danger-200);
+  --color-red-500: var(--app-danger-500);
+  --color-red-700: var(--app-danger-700);
+  --color-red-800: var(--app-danger-800);
+  --color-emerald-50: var(--app-success-50);
+  --color-emerald-300: var(--app-success-300);
+  --color-emerald-700: var(--app-success-700);
+  --color-violet-50: var(--app-archived-50);
+  --color-violet-200: var(--app-archived-200);
+  --color-violet-800: var(--app-archived-800);
+}
+
+@layer base {
+  :root {
+    --app-neutral-50: #f8fafc;
+    --app-neutral-100: #f1f5f9;
+    --app-neutral-200: #e2e8f0;
+    --app-neutral-300: #cbd5e1;
+    --app-neutral-400: #94a3b8;
+    --app-neutral-500: #64748b;
+    --app-neutral-600: #475569;
+    --app-neutral-700: #334155;
+    --app-neutral-800: #1e293b;
+    --app-neutral-900: #0f172a;
+    --app-primary-50: #eff6ff;
+    --app-primary-100: #dbeafe;
+    --app-primary-200: #bfdbfe;
+    --app-primary-300: #93c5fd;
+    --app-primary-400: #60a5fa;
+    --app-primary-500: #3b82f6;
+    --app-primary-600: #2563eb;
+    --app-primary-700: #1d4ed8;
+    --app-primary-800: #1e40af;
+    --app-primary-900: #1e3a8a;
+    --app-primary-contrast: #ffffff;
+    --app-nav-bg: #09195d;
+    --app-nav-bg-subtle: #132a73;
+    --app-nav-hover-bg: rgb(30 58 138 / 0.6);
+    --app-nav-active-bg: rgb(30 64 175 / 0.7);
+    --app-nav-border: #31458f;
+    --app-nav-text: #ffffff;
+    --app-nav-muted: var(--app-primary-100);
+    --app-auth-glow-a: rgb(96 165 250 / 0.26);
+    --app-auth-glow-b: rgb(45 212 191 / 0.18);
+    --app-surface: #ffffff;
+    --app-surface-subtle: var(--app-neutral-50);
+    --app-page-bg: var(--app-neutral-100);
+    --app-text: var(--app-neutral-900);
+    --app-muted: var(--app-neutral-600);
+    --app-border: var(--app-neutral-200);
+    --app-border-strong: var(--app-neutral-300);
+    --app-code-bg: #07132f;
+    --app-code-text: #deebff;
+    --app-danger-50: #fef2f2;
+    --app-danger-200: #fecaca;
+    --app-danger-500: #ef4444;
+    --app-danger-700: #b91c1c;
+    --app-danger-800: #991b1b;
+    --app-warning-50: #fffbeb;
+    --app-warning-200: #fde68a;
+    --app-warning-700: #b45309;
+    --app-success-50: #ecfdf5;
+    --app-success-300: #6ee7b7;
+    --app-success-700: #047857;
+    --app-archived-50: #f5f3ff;
+    --app-archived-200: #ddd6fe;
+    --app-archived-800: #5b21b6;
+    --app-shadow-color: rgb(19 37 84 / 0.55);
+    --app-marketing-bg-start: #f7faff;
+    --app-marketing-bg-stop: #eef3ff;
+    --app-marketing-ink: #101a33;
+    --app-marketing-muted: #5a6a88;
+    --app-marketing-border: #d8e0f0;
+    --app-marketing-card: var(--app-surface);
+    --app-docs-bg-start: #eef4ff;
+    --app-docs-bg-mid: #f7fafe;
+    --app-docs-bg-stop: #f8fbff;
+    --app-github-ink: #24292f;
+    --app-github-muted: #57606a;
+    --app-github-border: #d0d7de;
+    --app-github-bg: #f6f8fa;
+    --app-github-link: #0969da;
+  }
+}
+
 @layer components {
   .card {
     @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5;
@@ -34,8 +153,8 @@
   }
   .auth-brand-panel {
     @apply relative bg-slate-900 text-slate-100 p-8 sm:p-10 lg:p-12;
-    background-image: radial-gradient(circle at 10% 0%, rgba(96, 165, 250, 0.26), transparent 45%),
-                      radial-gradient(circle at 90% 100%, rgba(45, 212, 191, 0.18), transparent 48%);
+    background-image: radial-gradient(circle at 10% 0%, var(--app-auth-glow-a), transparent 45%),
+                      radial-gradient(circle at 90% 100%, var(--app-auth-glow-b), transparent 48%);
   }
   .auth-brand-badge {
     @apply inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/70 px-3 py-1 text-xs font-medium text-slate-100;
@@ -306,7 +425,7 @@
   .inbox-table th {
     @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider;
     @apply sticky top-0 z-[1];
-    background-color: rgb(248 250 252);
+    background-color: var(--app-neutral-50);
   }
   .inbox-table .inbox-row {
     @apply border-b border-slate-200 transition-colors;
@@ -896,17 +1015,17 @@
   }
 
   .marketing-home {
-    --mk-bg-start: #f7faff;
-    --mk-bg-stop: #eef3ff;
-    --mk-ink: #101a33;
-    --mk-muted: #5a6a88;
-    --mk-accent: #2f61e9;
-    --mk-accent-dark: #1d4ed8;
-    --mk-border: #d8e0f0;
-    --mk-card: #ffffff;
-    --mk-shadow: 0 20px 50px -34px rgba(19, 37, 84, 0.55);
+    --mk-bg-start: var(--app-marketing-bg-start);
+    --mk-bg-stop: var(--app-marketing-bg-stop);
+    --mk-ink: var(--app-marketing-ink);
+    --mk-muted: var(--app-marketing-muted);
+    --mk-accent: var(--app-primary-600);
+    --mk-accent-dark: var(--app-primary-700);
+    --mk-border: var(--app-marketing-border);
+    --mk-card: var(--app-marketing-card);
+    --mk-shadow: 0 20px 50px -34px var(--app-shadow-color);
     @apply relative rounded-[2rem] p-4 sm:p-6 lg:p-8 overflow-hidden;
-    background: radial-gradient(1200px 520px at 88% -20%, #dbe6ff 0%, rgba(219, 230, 255, 0) 58%),
+    background: radial-gradient(1200px 520px at 88% -20%, var(--app-primary-100) 0%, transparent 58%),
       linear-gradient(180deg, var(--mk-bg-start), var(--mk-bg-stop));
   }
 
@@ -922,7 +1041,7 @@
     height: 18rem;
     top: -8rem;
     left: -7rem;
-    background: radial-gradient(circle at 35% 35%, #7ca4ff 0%, #7ca4ff 8%, rgba(124, 164, 255, 0) 72%);
+    background: radial-gradient(circle at 35% 35%, var(--app-primary-300) 0%, var(--app-primary-300) 8%, transparent 72%);
     opacity: 0.45;
   }
 
@@ -931,7 +1050,7 @@
     height: 16rem;
     right: -8rem;
     bottom: 14rem;
-    background: radial-gradient(circle at 50% 50%, #8ae8ff 0%, #8ae8ff 8%, rgba(138, 232, 255, 0) 72%);
+    background: radial-gradient(circle at 50% 50%, var(--app-primary-200) 0%, var(--app-primary-200) 8%, transparent 72%);
     opacity: 0.3;
   }
 
@@ -950,9 +1069,9 @@
 
   .hero-kicker {
     @apply inline-flex items-center rounded-full px-3 py-1 text-[0.68rem] sm:text-xs font-semibold uppercase tracking-[0.16em] mb-3;
-    color: #2749a7;
-    background: rgba(53, 109, 255, 0.1);
-    border: 1px solid rgba(53, 109, 255, 0.2);
+    color: var(--app-primary-800);
+    background: color-mix(in srgb, var(--app-primary-500) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--app-primary-500) 20%, transparent);
   }
 
   .hero-title {
@@ -977,18 +1096,18 @@
 
   .hero-btn-primary {
     @apply text-white border-transparent;
-    background: linear-gradient(180deg, #3d73ff 0%, #2f61e9 100%);
-    box-shadow: 0 16px 34px -22px rgba(43, 94, 244, 0.8);
+    background: linear-gradient(180deg, var(--app-primary-500) 0%, var(--app-primary-600) 100%);
+    box-shadow: 0 16px 34px -22px color-mix(in srgb, var(--app-primary-600) 80%, transparent);
   }
 
   .hero-btn-primary:hover {
-    background: linear-gradient(180deg, #2f61e9 0%, #224fcc 100%);
+    background: linear-gradient(180deg, var(--app-primary-600) 0%, var(--app-primary-700) 100%);
   }
 
   .hero-btn-secondary {
     @apply bg-white;
-    color: #1d3d8f;
-    border-color: rgba(39, 73, 167, 0.22);
+    color: var(--app-primary-900);
+    border-color: color-mix(in srgb, var(--app-primary-800) 22%, transparent);
   }
 
   .hero-btn-secondary:hover {
@@ -1002,22 +1121,22 @@
 
   .hero-proof span {
     @apply inline-flex items-center rounded-full px-3 py-1;
-    border: 1px solid rgba(56, 93, 179, 0.18);
-    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid color-mix(in srgb, var(--app-primary-800) 18%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 70%, transparent);
   }
 
   .hero-surface {
     @apply rounded-2xl p-3 sm:p-4;
-    border: 1px solid rgba(76, 106, 183, 0.22);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 255, 0.93));
+    border: 1px solid color-mix(in srgb, var(--app-primary-800) 22%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--app-surface) 96%, transparent), color-mix(in srgb, var(--app-primary-50) 93%, transparent));
     box-shadow: var(--mk-shadow);
   }
 
   .shot-frame {
     @apply rounded-xl overflow-hidden flex items-center justify-center;
-    background: #f4f8ff;
-    border: 1px solid rgba(120, 145, 199, 0.32);
-    box-shadow: 0 14px 30px -24px rgba(18, 34, 72, 0.65);
+    background: var(--app-primary-50);
+    border: 1px solid color-mix(in srgb, var(--app-primary-700) 32%, transparent);
+    box-shadow: 0 14px 30px -24px color-mix(in srgb, var(--app-neutral-900) 65%, transparent);
   }
 
   .shot-main {
@@ -1040,8 +1159,8 @@
 
   .shot-placeholder {
     @apply text-xs sm:text-sm px-3 py-8 sm:py-10 text-center;
-    color: #5f7398;
-    background: linear-gradient(180deg, #f7fbff, #eef4ff);
+    color: var(--mk-muted);
+    background: linear-gradient(180deg, var(--app-surface), var(--app-primary-50));
   }
 
   .shot-wide .hero-shot {
@@ -1073,13 +1192,13 @@
 
   .logo-band {
     @apply rounded-2xl px-4 sm:px-6 py-4 mb-6 border;
-    border-color: rgba(94, 121, 184, 0.22);
-    background: rgba(255, 255, 255, 0.6);
+    border-color: color-mix(in srgb, var(--app-primary-800) 22%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 60%, transparent);
   }
 
   .logo-band-title {
     @apply text-xs uppercase tracking-[0.16em] font-semibold mb-3;
-    color: #627397;
+    color: var(--mk-muted);
   }
 
   .logo-band-head {
@@ -1112,13 +1231,13 @@
 
   .screenshots-slider-arrow {
     @apply inline-flex items-center justify-center rounded-lg w-8 h-8 sm:w-9 sm:h-9 border;
-    color: #2f4b8f;
-    border-color: rgba(94, 121, 184, 0.35);
-    background: rgba(255, 255, 255, 0.85);
+    color: var(--app-primary-900);
+    border-color: color-mix(in srgb, var(--app-primary-800) 35%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 85%, transparent);
   }
 
   .screenshots-slider-arrow:hover {
-    background: rgba(255, 255, 255, 1);
+    background: var(--app-surface);
   }
 
   .screenshots-slider-dots {
@@ -1129,11 +1248,11 @@
     @apply rounded-full;
     width: 0.55rem;
     height: 0.55rem;
-    background: rgba(86, 110, 157, 0.35);
+    background: color-mix(in srgb, var(--app-primary-900) 35%, transparent);
   }
 
   .screenshots-slider-dot.is-active {
-    background: #355fca;
+    background: var(--mk-accent);
   }
 
   .stats-grid {
@@ -1142,26 +1261,26 @@
 
   .stat-card {
     @apply rounded-2xl p-5 border;
-    background: rgba(255, 255, 255, 0.82);
-    border-color: rgba(94, 121, 184, 0.26);
-    box-shadow: 0 10px 30px -26px rgba(19, 37, 84, 0.6);
+    background: color-mix(in srgb, var(--app-surface) 82%, transparent);
+    border-color: color-mix(in srgb, var(--app-primary-800) 26%, transparent);
+    box-shadow: 0 10px 30px -26px color-mix(in srgb, var(--app-shadow-color) 60%, transparent);
   }
 
   .stat-label {
     @apply text-xs uppercase tracking-[0.16em] font-semibold mb-1;
-    color: #5f7399;
+    color: var(--mk-muted);
   }
 
   .stat-value {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-4xl sm:text-5xl font-bold leading-none mb-2;
-    color: #122247;
+    color: var(--mk-ink);
     font-variant-numeric: tabular-nums;
   }
 
   .stat-meta {
     @apply text-sm;
-    color: #5a6d93;
+    color: var(--mk-muted);
   }
 
   .feature-grid {
@@ -1170,31 +1289,31 @@
 
   .feature-card {
     @apply rounded-2xl p-5 border;
-    border-color: rgba(94, 121, 184, 0.24);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(242, 247, 255, 0.92));
-    box-shadow: 0 16px 34px -32px rgba(22, 40, 88, 0.75);
+    border-color: color-mix(in srgb, var(--app-primary-800) 24%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--app-surface) 95%, transparent), color-mix(in srgb, var(--app-primary-50) 92%, transparent));
+    box-shadow: 0 16px 34px -32px color-mix(in srgb, var(--app-shadow-color) 75%, transparent);
   }
 
   .feature-kicker {
     @apply text-xs uppercase tracking-[0.16em] font-semibold mb-2;
-    color: #4363ba;
+    color: var(--mk-accent);
   }
 
   .feature-card h2 {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-xl font-bold mb-2;
-    color: #152343;
+    color: var(--mk-ink);
   }
 
   .feature-card p {
     @apply text-sm sm:text-base;
-    color: #56698f;
+    color: var(--mk-muted);
   }
 
   .workflow-wrap {
     @apply rounded-2xl border p-4 sm:p-6 mb-6;
-    border-color: rgba(94, 121, 184, 0.25);
-    background: rgba(255, 255, 255, 0.75);
+    border-color: color-mix(in srgb, var(--app-primary-800) 25%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 75%, transparent);
   }
 
   .workflow-head {
@@ -1203,13 +1322,13 @@
 
   .workflow-kicker {
     @apply text-xs uppercase tracking-[0.16em] font-semibold mb-2;
-    color: #4864a8;
+    color: var(--mk-accent);
   }
 
   .workflow-head h2 {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-2xl sm:text-3xl font-bold max-w-3xl;
-    color: #111f3f;
+    color: var(--mk-ink);
   }
 
   .workflow-grid {
@@ -1218,26 +1337,26 @@
 
   .workflow-step {
     @apply rounded-xl p-4 border;
-    border-color: rgba(108, 132, 190, 0.28);
-    background: linear-gradient(180deg, rgba(252, 254, 255, 0.98), rgba(239, 245, 255, 0.96));
+    border-color: color-mix(in srgb, var(--app-primary-800) 28%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--app-surface) 98%, transparent), color-mix(in srgb, var(--app-primary-50) 96%, transparent));
   }
 
   .workflow-index {
     @apply inline-flex rounded-lg px-2 py-1 text-xs font-bold mb-3;
-    color: #2550b9;
-    background: rgba(62, 111, 241, 0.12);
-    border: 1px solid rgba(62, 111, 241, 0.2);
+    color: var(--mk-accent-dark);
+    background: color-mix(in srgb, var(--app-primary-500) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--app-primary-500) 20%, transparent);
   }
 
   .workflow-step h3 {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-lg font-bold mb-2;
-    color: #152546;
+    color: var(--mk-ink);
   }
 
   .workflow-step p {
     @apply text-sm sm:text-base;
-    color: #596c90;
+    color: var(--mk-muted);
   }
 
   .code-and-proof {
@@ -1247,26 +1366,26 @@
   .code-block-card,
   .proof-card {
     @apply rounded-2xl border p-5;
-    border-color: rgba(94, 121, 184, 0.24);
-    background: rgba(255, 255, 255, 0.87);
-    box-shadow: 0 16px 34px -30px rgba(20, 43, 94, 0.7);
+    border-color: color-mix(in srgb, var(--app-primary-800) 24%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 87%, transparent);
+    box-shadow: 0 16px 34px -30px color-mix(in srgb, var(--app-shadow-color) 70%, transparent);
   }
 
   .code-block-card pre {
     @apply mt-3 rounded-xl p-4 text-sm overflow-x-auto;
-    background: #07132f;
-    color: #deebff;
+    background: var(--app-code-bg);
+    color: var(--app-code-text);
   }
 
   .proof-quote {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-xl sm:text-2xl font-bold leading-snug mb-4;
-    color: #15284d;
+    color: var(--mk-ink);
   }
 
   .proof-person {
     @apply text-sm mb-4;
-    color: #61759d;
+    color: var(--mk-muted);
   }
 
   .proof-links {
@@ -1275,20 +1394,20 @@
 
   .proof-links a {
     @apply inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium no-underline;
-    color: #1f4fc1;
-    background: #edf3ff;
-    border: 1px solid #d6e2fd;
+    color: var(--mk-accent-dark);
+    background: var(--app-primary-50);
+    border: 1px solid var(--app-primary-200);
   }
 
   .proof-links a:hover {
-    background: #e4eeff;
+    background: var(--app-primary-100);
   }
 
   .marketing-cta {
     @apply rounded-2xl border p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4;
-    border-color: rgba(86, 114, 181, 0.35);
-    background: linear-gradient(130deg, rgba(27, 73, 178, 0.98), rgba(53, 106, 232, 0.98));
-    color: #f7fbff;
+    border-color: color-mix(in srgb, var(--app-primary-900) 35%, transparent);
+    background: linear-gradient(130deg, color-mix(in srgb, var(--app-primary-800) 98%, transparent), color-mix(in srgb, var(--app-primary-600) 98%, transparent));
+    color: var(--app-docs-bg-stop);
   }
 
   .marketing-cta h2 {
@@ -1297,7 +1416,7 @@
   }
 
   .marketing-cta .workflow-kicker {
-    color: rgba(255, 255, 255, 0.76);
+    color: color-mix(in srgb, var(--app-primary-contrast) 76%, transparent);
   }
 
   .marketing-cta .hero-btn-primary {
@@ -1310,13 +1429,13 @@
   }
 
   .marketing-cta .hero-btn-secondary {
-    color: #f1f6ff;
-    background: rgba(255, 255, 255, 0.11);
-    border-color: rgba(239, 246, 255, 0.34);
+    color: var(--app-primary-50);
+    background: color-mix(in srgb, var(--app-primary-contrast) 11%, transparent);
+    border-color: color-mix(in srgb, var(--app-primary-50) 34%, transparent);
   }
 
   .marketing-cta .hero-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: color-mix(in srgb, var(--app-primary-contrast) 20%, transparent);
   }
 
   .about-page {
@@ -1333,14 +1452,14 @@
 
   .about-pill-card {
     @apply rounded-xl p-4 border;
-    border-color: rgba(94, 121, 184, 0.25);
-    background: rgba(255, 255, 255, 0.78);
+    border-color: color-mix(in srgb, var(--app-primary-800) 25%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 78%, transparent);
   }
 
   .about-pill-value {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-lg font-semibold;
-    color: #122449;
+    color: var(--mk-ink);
   }
 
   .about-showcase-head {
@@ -1350,7 +1469,7 @@
   .about-showcase-head h2 {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-2xl sm:text-3xl font-bold;
-    color: #13254a;
+    color: var(--mk-ink);
   }
 
   .about-showcase-grid {
@@ -1359,8 +1478,8 @@
 
   .about-shot-card {
     @apply rounded-xl p-4 border;
-    border-color: rgba(94, 121, 184, 0.25);
-    background: rgba(255, 255, 255, 0.78);
+    border-color: color-mix(in srgb, var(--app-primary-800) 25%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 78%, transparent);
   }
 
   .about-config-grid {
@@ -1369,7 +1488,7 @@
 
   .about-list {
     @apply list-disc pl-5 text-sm sm:text-base space-y-1.5;
-    color: #596c91;
+    color: var(--mk-muted);
   }
 
   .docs-page {
@@ -1378,20 +1497,20 @@
 
   .docs-app {
     background:
-      radial-gradient(circle at top left, rgba(191, 219, 254, 0.26), transparent 24%),
-      radial-gradient(circle at top right, rgba(125, 211, 252, 0.18), transparent 18%),
-      linear-gradient(180deg, #eef4ff 0%, #f7fafe 28%, #f8fbff 100%);
+      radial-gradient(circle at top left, color-mix(in srgb, var(--app-primary-200) 26%, transparent), transparent 24%),
+      radial-gradient(circle at top right, color-mix(in srgb, var(--app-primary-300) 18%, transparent), transparent 18%),
+      linear-gradient(180deg, var(--app-docs-bg-start) 0%, var(--app-docs-bg-mid) 28%, var(--app-docs-bg-stop) 100%);
   }
 
   .docs-topbar {
     position: sticky;
     top: 0;
     z-index: 40;
-    border-bottom: 1px solid rgba(49, 69, 143, 0.32);
+    border-bottom: 1px solid color-mix(in srgb, var(--app-nav-border) 32%, transparent);
     background:
-      linear-gradient(180deg, rgba(10, 25, 88, 0.98) 0%, rgba(9, 25, 93, 0.94) 100%);
+      linear-gradient(180deg, color-mix(in srgb, var(--app-nav-bg) 98%, transparent) 0%, color-mix(in srgb, var(--app-nav-bg) 94%, transparent) 100%);
     backdrop-filter: blur(20px);
-    box-shadow: 0 18px 36px -34px rgba(9, 25, 93, 0.72);
+    box-shadow: 0 18px 36px -34px color-mix(in srgb, var(--app-nav-bg) 72%, transparent);
   }
 
   .docs-topbar-inner {
@@ -1412,7 +1531,7 @@
 
   .docs-topbar-divider {
     @apply hidden md:block h-8 w-px;
-    background: rgba(147, 197, 253, 0.32);
+    background: color-mix(in srgb, var(--app-primary-300) 32%, transparent);
   }
 
   .docs-topbar-context {
@@ -1421,25 +1540,25 @@
 
   .docs-topbar-kicker {
     @apply text-[10px] font-semibold uppercase tracking-[0.22em];
-    color: rgba(191, 219, 254, 0.76);
+    color: color-mix(in srgb, var(--app-primary-200) 76%, transparent);
   }
 
   .docs-topbar-title {
     @apply text-sm font-medium truncate;
-    color: #f8fbff;
+    color: var(--app-docs-bg-stop);
   }
 
   .docs-topbar-toggle {
     @apply inline-flex items-center justify-center rounded-lg border h-10 w-10;
-    border-color: rgba(147, 197, 253, 0.22);
-    color: #dbeafe;
-    background: rgba(19, 42, 115, 0.55);
+    border-color: color-mix(in srgb, var(--app-primary-300) 22%, transparent);
+    color: var(--app-primary-100);
+    background: color-mix(in srgb, var(--app-nav-bg-subtle) 55%, transparent);
   }
 
   .docs-topbar-panel {
     @apply absolute md:static top-full left-0 right-0 hidden md:flex flex-col md:flex-row md:items-center gap-4 px-4 md:px-0 py-4 md:py-0 border-t md:border-t-0;
-    border-color: rgba(147, 197, 253, 0.18);
-    background: rgba(9, 25, 93, 0.98);
+    border-color: color-mix(in srgb, var(--app-primary-300) 18%, transparent);
+    background: color-mix(in srgb, var(--app-nav-bg) 98%, transparent);
   }
 
   .docs-topbar-nav {
@@ -1456,30 +1575,30 @@
   .docs-topbar-link,
   .docs-topbar-action,
   .docs-topbar-account {
-    color: #c7d7fb;
+    color: color-mix(in srgb, var(--app-primary-100) 86%, var(--app-primary-300));
   }
 
   .docs-topbar-link:hover,
   .docs-topbar-action:hover,
   .docs-topbar-account:hover {
-    background: rgba(37, 99, 235, 0.14);
-    color: #ffffff;
+    background: color-mix(in srgb, var(--app-primary-600) 14%, transparent);
+    color: var(--app-nav-text);
   }
 
   .docs-topbar-link.is-active {
-    background: rgba(59, 130, 246, 0.22);
-    color: #ffffff;
-    box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.2);
+    background: color-mix(in srgb, var(--app-primary-500) 22%, transparent);
+    color: var(--app-nav-text);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-primary-300) 20%, transparent);
   }
 
   .docs-topbar-actions {
     @apply flex flex-col md:flex-row md:items-center gap-2 md:gap-2 md:ml-4 md:pl-4;
-    border-color: rgba(147, 197, 253, 0.18);
+    border-color: color-mix(in srgb, var(--app-primary-300) 18%, transparent);
   }
 
   @media (min-width: 768px) {
     .docs-topbar-actions {
-      border-left: 1px solid rgba(147, 197, 253, 0.18);
+      border-left: 1px solid color-mix(in srgb, var(--app-primary-300) 18%, transparent);
     }
   }
 
@@ -1490,13 +1609,13 @@
 
   .docs-topbar-cta {
     @apply font-medium justify-center;
-    color: #fff;
-    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
-    box-shadow: 0 12px 24px -20px rgba(59, 130, 246, 0.9);
+    color: var(--app-primary-contrast);
+    background: linear-gradient(180deg, var(--app-primary-500) 0%, var(--app-primary-600) 100%);
+    box-shadow: 0 12px 24px -20px color-mix(in srgb, var(--app-primary-500) 90%, transparent);
   }
 
   .docs-topbar-cta:hover {
-    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(180deg, var(--app-primary-600) 0%, var(--app-primary-700) 100%);
   }
 
   .docs-layout-main {
@@ -1508,21 +1627,21 @@
   }
 
   .docs-flash-notice {
-    border-color: rgba(96, 165, 250, 0.36);
-    background: rgba(239, 246, 255, 0.92);
-    color: #1d4ed8;
+    border-color: color-mix(in srgb, var(--app-primary-400) 36%, transparent);
+    background: color-mix(in srgb, var(--app-primary-50) 92%, transparent);
+    color: var(--app-primary-700);
   }
 
   .docs-flash-alert {
-    border-color: rgba(252, 165, 165, 0.36);
-    background: rgba(254, 242, 242, 0.94);
-    color: #b91c1c;
+    border-color: color-mix(in srgb, var(--app-danger-200) 36%, transparent);
+    background: color-mix(in srgb, var(--app-danger-50) 94%, transparent);
+    color: var(--app-danger-700);
   }
 
   .docs-footer {
     @apply mt-16 border-t;
-    border-color: rgba(148, 163, 184, 0.2);
-    background: rgba(255, 255, 255, 0.68);
+    border-color: color-mix(in srgb, var(--app-neutral-400) 20%, transparent);
+    background: color-mix(in srgb, var(--app-surface) 68%, transparent);
     backdrop-filter: blur(14px);
   }
 
@@ -1533,12 +1652,12 @@
   .docs-footer-title {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-xl font-bold;
-    color: #13254a;
+    color: var(--mk-ink);
   }
 
   .docs-footer-copy {
     @apply mt-2 text-sm leading-7 max-w-xl;
-    color: #5a6f95;
+    color: var(--mk-muted);
   }
 
   .docs-footer-links {
@@ -1551,16 +1670,16 @@
 
   .docs-footer-heading {
     @apply text-[11px] font-semibold uppercase tracking-[0.2em];
-    color: #4d6595;
+    color: var(--mk-muted);
   }
 
   .docs-footer-link {
     @apply block text-sm no-underline;
-    color: #41567e;
+    color: var(--mk-muted);
   }
 
   .docs-footer-link:hover {
-    color: #173d8d;
+    color: var(--app-primary-900);
   }
 
   .docs-hero {
@@ -1620,7 +1739,7 @@
 
   .docs-sidebar-kicker {
     @apply text-[11px] font-semibold uppercase tracking-[0.22em];
-    color: #4f6590;
+    color: var(--mk-muted);
   }
 
   .docs-sidebar-nav {
@@ -1638,28 +1757,28 @@
 
   .docs-sidebar-link {
     @apply rounded-xl px-3 py-2.5 text-sm font-medium no-underline;
-    color: #596c91;
+    color: var(--mk-muted);
   }
 
   .docs-sidebar-link:hover {
     background: rgba(239, 246, 255, 0.9);
-    color: #173d8d;
+    color: var(--app-primary-900);
   }
 
   .docs-sidebar-link.is-active {
-    background: #e9f1ff;
-    color: #173d8d;
-    border: 1px solid #d4e2ff;
+    background: var(--app-primary-50);
+    color: var(--app-primary-900);
+    border: 1px solid var(--app-primary-200);
   }
 
   .docs-sidebar-link-section {
     @apply text-[13px];
-    color: #6a7fa8;
+    color: var(--mk-muted);
   }
 
   .docs-sidebar-link-section:hover {
     background: rgba(237, 242, 255, 0.9);
-    color: #1d468f;
+    color: var(--app-primary-900);
   }
 
   .docs-sidebar-card {
@@ -1670,12 +1789,12 @@
 
   .docs-sidebar-card-title {
     @apply text-sm font-semibold;
-    color: #152749;
+    color: var(--mk-ink);
   }
 
   .docs-sidebar-card-copy {
     @apply mt-1 text-sm leading-6;
-    color: #5d7094;
+    color: var(--mk-muted);
   }
 
   .docs-content {
@@ -1688,7 +1807,7 @@
 
   .docs-prose {
     @apply space-y-4;
-    color: #24292f;
+    color: var(--app-github-ink);
   }
 
   .docs-prose .docs-section > :first-child,
@@ -1703,14 +1822,14 @@
 
   .docs-article-header {
     @apply rounded-2xl border p-5 sm:p-6;
-    border-color: #d8dee4;
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+    border-color: var(--app-github-border);
+    background: color-mix(in srgb, var(--app-surface) 92%, transparent);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--app-github-ink) 4%, transparent);
   }
 
   .docs-lead {
     @apply text-base sm:text-lg leading-8 mt-3;
-    color: #57606a;
+    color: var(--app-github-muted);
   }
 
   .docs-outline-grid {
@@ -1727,17 +1846,17 @@
   .docs-outline-title {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-xl font-bold;
-    color: #152749;
+    color: var(--mk-ink);
   }
 
   .docs-outline-copy {
     @apply mt-2 text-sm sm:text-base leading-relaxed;
-    color: #576a90;
+    color: var(--mk-muted);
   }
 
   .docs-outline-list {
     @apply mt-4 space-y-2 text-sm sm:text-base leading-relaxed;
-    color: #576a90;
+    color: var(--mk-muted);
   }
 
   .docs-outline-list li {
@@ -1752,8 +1871,8 @@
     width: 0.45rem;
     height: 0.45rem;
     border-radius: 9999px;
-    background: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    background: var(--app-primary-600);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-primary-600) 12%, transparent);
   }
 
   .docs-chapters {
@@ -1762,13 +1881,13 @@
 
   .docs-chapters a {
     @apply flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium no-underline;
-    color: #536789;
+    color: var(--mk-muted);
     background: rgba(246, 249, 255, 0.84);
     border: 1px solid rgba(212, 226, 255, 0.85);
   }
 
   .docs-chapters a:hover {
-    color: #173d8d;
+    color: var(--app-primary-900);
     background: rgba(233, 241, 255, 0.94);
   }
 
@@ -1792,53 +1911,53 @@
 
   .docs-eyebrow {
     @apply text-[11px] font-semibold uppercase tracking-[0.22em];
-    color: #2354b5;
+    color: var(--mk-accent-dark);
   }
 
   .docs-section h2 {
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
     @apply text-[2rem] leading-tight font-semibold mt-2 pb-3;
-    color: #1f2328;
-    border-bottom: 1px solid #d8dee4;
+    color: var(--app-github-ink);
+    border-bottom: 1px solid var(--app-github-border);
   }
 
   .docs-section p {
     @apply text-base leading-7 mt-4;
-    color: #24292f;
+    color: var(--app-github-ink);
   }
 
   .docs-section-intro {
     @apply mt-4 text-lg leading-8;
-    color: #57606a;
+    color: var(--app-github-muted);
   }
 
   .docs-section h3,
   .docs-card h3 {
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
     @apply text-2xl leading-tight font-semibold mt-8;
-    color: #1f2328;
+    color: var(--app-github-ink);
   }
 
   .docs-section h4 {
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
     @apply text-xl leading-tight font-semibold mt-6;
-    color: #1f2328;
+    color: var(--app-github-ink);
   }
 
   .docs-section a:not(.docs-inline-link) {
-    color: #0969da;
+    color: var(--app-github-link);
     text-decoration: none;
     font-weight: 500;
   }
 
   .docs-section a:not(.docs-inline-link):hover {
-    color: #0969da;
+    color: var(--app-github-link);
     text-decoration: underline;
   }
 
   .docs-section strong,
   .docs-card strong {
-    color: #1f2328;
+    color: var(--app-github-ink);
   }
 
   .docs-section code,
@@ -1848,8 +1967,8 @@
     font-size: 0.85em;
     padding: 0.15rem 0.35rem;
     border-radius: 0.375rem;
-    background: rgba(175, 184, 193, 0.2);
-    color: #1f2328;
+    background: color-mix(in srgb, var(--app-github-muted) 20%, transparent);
+    color: var(--app-github-ink);
     border: 0;
   }
 
@@ -1867,21 +1986,21 @@
   .docs-card h3 {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-xl font-bold mt-2;
-    color: #152749;
+    color: var(--mk-ink);
   }
 
   .docs-card p {
     @apply text-sm sm:text-base leading-relaxed mt-3;
-    color: #576a90;
+    color: var(--mk-muted);
   }
 
   .docs-inline-link {
     @apply inline-flex items-center mt-4 text-sm font-semibold no-underline;
-    color: #2354b5;
+    color: var(--mk-accent-dark);
   }
 
   .docs-inline-link:hover {
-    color: #173d8d;
+    color: var(--app-primary-900);
   }
 
   .docs-fact-grid {
@@ -1896,17 +2015,17 @@
 
   .docs-fact-label {
     @apply text-[11px] font-semibold uppercase tracking-[0.18em];
-    color: #4f6aa0;
+    color: var(--mk-muted);
   }
 
   .docs-fact-value {
     @apply mt-2 text-sm sm:text-base leading-relaxed;
-    color: #213960;
+    color: var(--mk-ink);
   }
 
   .docs-list {
     @apply mt-4 space-y-2 pl-6 text-base leading-7 list-disc;
-    color: #24292f;
+    color: var(--app-github-ink);
   }
 
   .docs-list .docs-list {
@@ -1918,15 +2037,15 @@
   }
 
   .docs-list li::marker {
-    color: #57606a;
+    color: var(--app-github-muted);
   }
 
   .docs-code {
     @apply mt-0 rounded-b-2xl p-0 text-sm overflow-x-auto border border-t-0;
-    background: #f6f8fa;
-    color: #24292f;
-    border-color: #d0d7de;
-    box-shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+    background: var(--app-github-bg);
+    color: var(--app-github-ink);
+    border-color: var(--app-github-border);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--app-github-ink) 4%, transparent);
   }
 
   .docs-code code {
@@ -1942,7 +2061,7 @@
   }
 
   .docs-code-shell {
-    background: #f6f8fa;
+    background: var(--app-github-bg);
   }
 
   .docs-code-block {
@@ -1951,38 +2070,38 @@
 
   .docs-code-header {
     @apply flex items-center justify-between gap-3 rounded-t-2xl border px-4 py-2.5;
-    background: #f6f8fa;
-    border-color: #d0d7de;
+    background: var(--app-github-bg);
+    border-color: var(--app-github-border);
   }
 
   .docs-code-language {
     @apply text-[11px] font-semibold uppercase tracking-[0.18em];
-    color: #57606a;
+    color: var(--app-github-muted);
   }
 
   .docs-code-block .copy-block-btn {
     @apply static inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium shadow-sm;
-    border-color: #d0d7de;
-    background: #ffffff;
-    color: #57606a;
+    border-color: var(--app-github-border);
+    background: var(--app-surface);
+    color: var(--app-github-muted);
     backdrop-filter: none;
   }
 
   .docs-code-block .copy-block-btn:hover {
-    background: #f3f4f6;
-    color: #24292f;
+    background: var(--app-neutral-100);
+    color: var(--app-github-ink);
   }
 
   .docs-code-block.is-copied .copy-block-btn {
-    background: #dafbe1;
-    border-color: #1a7f37;
-    color: #1a7f37;
+    background: var(--app-success-50);
+    border-color: var(--app-success-700);
+    color: var(--app-success-700);
   }
 
   .docs-code-block.is-copy-failed .copy-block-btn {
-    background: #ffebe9;
-    border-color: #cf222e;
-    color: #cf222e;
+    background: var(--app-danger-50);
+    border-color: var(--app-danger-700);
+    color: var(--app-danger-700);
   }
 
   .docs-note {
@@ -1993,12 +2112,12 @@
 
   .docs-note strong {
     @apply block text-sm font-semibold mb-1;
-    color: #1f355c;
+    color: var(--mk-ink);
   }
 
   .docs-note p {
     @apply mt-0 text-sm sm:text-base leading-relaxed;
-    color: #24292f;
+    color: var(--app-github-ink);
   }
 
   .docs-note-tip {
@@ -2021,10 +2140,10 @@
 
   .docs-output {
     @apply rounded-b-xl border px-4 py-3 text-sm overflow-x-auto;
-    background: #f8fafc;
+    background: var(--app-neutral-50);
     border-color: rgba(148, 163, 184, 0.22);
     border-top: 0;
-    color: #334155;
+    color: var(--app-neutral-700);
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     white-space: pre-wrap;
     line-height: 1.75;
@@ -2047,7 +2166,7 @@
     @apply rounded-t-xl border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em];
     background: rgba(234, 241, 255, 0.84);
     border-color: rgba(148, 163, 184, 0.22);
-    color: #4f6aa0;
+    color: var(--mk-muted);
   }
 
   .docs-step-list {
@@ -2062,12 +2181,12 @@
 
   .docs-step-title {
     @apply text-sm font-semibold;
-    color: #1f355c;
+    color: var(--mk-ink);
   }
 
   .docs-step-copy {
     @apply mt-1 text-sm sm:text-base leading-relaxed;
-    color: #576a90;
+    color: var(--mk-muted);
   }
 
   .docs-kbd {
@@ -2121,9 +2240,9 @@
 
   .docs-section blockquote {
     @apply mt-4 py-0 pl-4 pr-0;
-    border-left: 0.25em solid #d0d7de;
+    border-left: 0.25em solid var(--app-github-border);
     background: transparent;
-    color: #57606a;
+    color: var(--app-github-muted);
     border-radius: 0;
   }
 
@@ -2134,17 +2253,17 @@
 
   .docs-section dt {
     @apply text-sm font-semibold;
-    color: #1f2328;
+    color: var(--app-github-ink);
   }
 
   .docs-section dd {
     @apply text-sm sm:text-base leading-relaxed;
-    color: #57606a;
+    color: var(--app-github-muted);
   }
 
   .docs-section hr {
     @apply my-6 border-0 h-px;
-    background: #d8dee4;
+    background: var(--app-github-border);
   }
 
   .docs-section table {
@@ -2159,12 +2278,12 @@
   .docs-section th,
   .docs-section td {
     @apply px-3 py-2 text-left align-top;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--app-github-border);
   }
 
   .docs-section th {
-    background: #f6f8fa;
-    color: #1f2328;
+    background: var(--app-github-bg);
+    color: var(--app-github-ink);
     font-weight: 600;
   }
 
@@ -2184,7 +2303,7 @@
 
   .legal-updated {
     @apply text-sm mt-2;
-    color: #62759a;
+    color: var(--mk-muted);
   }
 
   .legal-summary-grid {
@@ -2206,19 +2325,19 @@
   .legal-section h2 {
     font-family: "Space Grotesk", "Inter", sans-serif;
     @apply text-xl font-bold mb-2;
-    color: #152749;
+    color: var(--mk-ink);
   }
 
   .legal-section p {
     @apply text-sm sm:text-base leading-relaxed;
-    color: #576a90;
+    color: var(--mk-muted);
   }
 
   .legal-section code {
     @apply px-1.5 py-0.5 rounded text-sm;
-    color: #1e3f98;
-    background: #eaf1ff;
-    border: 1px solid #d4e2ff;
+    color: var(--app-primary-900);
+    background: var(--app-primary-50);
+    border: 1px solid var(--app-primary-200);
   }
 
   .reveal-up,
