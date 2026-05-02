@@ -68,7 +68,7 @@ Logister runs as a Rails app with these components:
 - Background processing: Sidekiq
 - Optional analytics store: ClickHouse
 - Optional bot protection: Cloudflare Turnstile
-- Optional transactional email: SendGrid
+- Optional transactional email: Amazon SES
 
 The basic self-host flow is:
 

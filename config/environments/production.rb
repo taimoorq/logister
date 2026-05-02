@@ -69,7 +69,18 @@ Rails.application.configure do
   config.action_mailer.default_url_options = public_url_options
   Rails.application.routes.default_url_options = public_url_options
 
-  config.action_mailer.delivery_method = :sendgrid_api
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: ENV.fetch("SES_SMTP_ADDRESS") { "email-smtp.#{ENV.fetch('SES_REGION', 'us-east-1')}.amazonaws.com" },
+    port: ENV.fetch("SES_SMTP_PORT", 587).to_i,
+    domain: ENV.fetch("SES_SMTP_DOMAIN", "logister.org"),
+    user_name: ENV["SES_SMTP_USERNAME"],
+    password: ENV["SES_SMTP_PASSWORD"],
+    authentication: :login,
+    enable_starttls_auto: ActiveModel::Type::Boolean.new.cast(ENV.fetch("SES_SMTP_ENABLE_STARTTLS_AUTO", "true")),
+    open_timeout: ENV.fetch("SES_SMTP_OPEN_TIMEOUT", 5).to_i,
+    read_timeout: ENV.fetch("SES_SMTP_READ_TIMEOUT", 5).to_i
+  }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

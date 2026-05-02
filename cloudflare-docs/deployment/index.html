@@ -44,13 +44,13 @@
               <p class="eyebrow">Required secrets</p>
               <h2>These are the minimum variables for a production deployment.</h2>
               <table><thead><tr><th>Variable</th><th>Purpose</th></tr></thead><tbody><tr><td><code>RAILS_MASTER_KEY</code></td><td>Decrypts the app credentials for self-hosted deploys</td></tr><tr><td><code>DATABASE_URL</code></td><td>Connects PostgreSQL for the control-plane app database</td></tr><tr><td><code>REDIS_URL</code></td><td>Powers Sidekiq, caching, and Redis-backed features</td></tr><tr><td><code>LOGISTER_ADMIN_EMAILS</code></td><td>Bootstraps admin access for named operators</td></tr></tbody></table>
-              <p>Most production installs also set <code>LOGISTER_EMAIL_FROM</code> and <code>SENDGRID_API_KEY</code>.</p>
+              <p>Most production installs also set <code>LOGISTER_EMAIL_FROM</code>, <code>SES_REGION</code>, <code>SES_SMTP_USERNAME</code>, and <code>SES_SMTP_PASSWORD</code>.</p>
             </section>
             <section id="optional" class="section">
               <p class="eyebrow">Optional services</p>
               <h2>Enable additional integrations only when you need them.</h2>
               <h3>Email</h3>
-              <ul><li><code>LOGISTER_EMAIL_FROM</code> sets the sender for auth and system mail</li><li><code>SENDGRID_API_KEY</code> enables SendGrid delivery in production</li></ul>
+              <ul><li><code>LOGISTER_EMAIL_FROM</code> sets the sender for auth and system mail</li><li><code>SES_REGION</code> selects the Amazon SES region, defaulting to <code>us-east-1</code></li><li><code>SES_SMTP_USERNAME</code> and <code>SES_SMTP_PASSWORD</code> enable Amazon SES SMTP delivery in production</li></ul>
               <h3>Cloudflare Turnstile</h3>
               <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#turnstile-code">Copy</button></div><pre><code id="turnstile-code">LOGISTER_TURNSTILE_ENABLED=true
 LOGISTER_TURNSTILE_SITE_KEY=
