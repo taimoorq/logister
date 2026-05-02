@@ -1,0 +1,129 @@
+<% content_for :title, "Cookie Policy" %>
+<% content_for :meta_description, "Read Logister's cookie policy for how session, security, consent, and analytics cookies are used." %>
+<% content_for :canonical_path, cookies_path %>
+<% content_for :og_type, "article" %>
+<% content_for :json_ld, json_ld({
+  "@context" => "https://schema.org",
+  "@type" => "WebPage",
+  "name" => "Logister Cookie Policy",
+  "url" => absolute_url_for(cookies_path),
+  "description" => "Cookie policy for Logister."
+}) %>
+
+<div class="marketing-home legal-page">
+  <section class="legal-hero" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-hero; view-transition-class: public-panel;">
+    <p class="hero-kicker">Legal</p>
+    <h1 class="hero-title">Cookie Policy</h1>
+    <p class="hero-copy max-w-3xl">
+      This policy explains how Logister uses cookies and similar technologies for
+      authentication, security, consent management, and optional analytics.
+    </p>
+    <p class="legal-updated"><strong>Last updated:</strong> May 2, 2026</p>
+  </section>
+
+  <section class="legal-summary-grid" style="view-transition-name: public-stats; view-transition-class: public-panel;">
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="stat-label">Necessary cookies</p>
+      <p class="about-pill-value">Sessions, CSRF, auth, consent state</p>
+    </article>
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
+      <p class="stat-label">Security services</p>
+      <p class="about-pill-value">Cloudflare Turnstile where enabled</p>
+    </article>
+    <article class="about-pill-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
+      <p class="stat-label">Analytics</p>
+      <p class="about-pill-value">Consent-gated and deployment-configured</p>
+    </article>
+  </section>
+
+  <section class="legal-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-workflow; view-transition-class: public-panel;">
+    <article class="legal-section">
+      <h2>What cookies are</h2>
+      <p>
+        Cookies are small files stored by your browser. Similar technologies, such as
+        local storage and script-managed consent preferences, can also remember choices
+        or support site functionality.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Strictly necessary cookies</h2>
+      <p>
+        Logister uses necessary cookies and similar storage so the site and application
+        can work. These may include:
+      </p>
+      <ul>
+        <li>Session cookies used to keep you signed in and route requests to the correct account.</li>
+        <li>CSRF and security cookies used to protect forms and authenticated actions.</li>
+        <li>Remember-me cookies when you choose to stay signed in.</li>
+        <li>Cookie consent preferences so we can remember your privacy choices.</li>
+        <li>Security or bot-protection signals used by services such as Cloudflare Turnstile when enabled.</li>
+      </ul>
+      <p>
+        These cookies are required for core functionality and cannot be disabled through
+        Logister's consent banner. Blocking them in your browser may prevent sign-in,
+        form submission, or account features from working.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Analytics cookies</h2>
+      <p>
+        Logister can be configured to use Google Analytics and Cloudflare Web Analytics
+        to understand aggregate product usage and site performance. These tools only load
+        when analytics is enabled for the deployment and you have allowed tracking through
+        the consent banner.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Third-party tools</h2>
+      <p>
+        Logister may use third-party scripts or services for consent management,
+        analytics, and abuse prevention. These services may set or read their own cookies
+        when they are enabled and allowed. Current optional services include TermsFeed
+        Cookie Consent, Google Analytics, Cloudflare Web Analytics, and Cloudflare
+        Turnstile.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Managing cookies</h2>
+      <p>
+        You can use the Cookie preferences link in the footer to review or change
+        optional tracking choices. You can also clear or block cookies through your
+        browser settings. Browser-level blocking applies to necessary cookies too, so
+        some Logister features may stop working if all cookies are disabled.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Changes to this policy</h2>
+      <p>
+        We may update this policy as Logister changes or as optional services are added,
+        removed, or reconfigured. The updated date above shows when this page was last
+        changed.
+      </p>
+    </article>
+
+    <article class="legal-section">
+      <h2>Contact</h2>
+      <p>
+        For cookie or privacy questions, contact
+        <code>support@logister.org</code>.
+      </p>
+    </article>
+  </section>
+
+  <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-cta; view-transition-class: public-panel;">
+    <div>
+      <p class="workflow-kicker">Related pages</p>
+      <h2>Need the broader privacy picture?</h2>
+    </div>
+    <div class="hero-actions">
+      <%= link_to "Privacy policy", privacy_path, class: "hero-btn hero-btn-primary" %>
+      <%= link_to "Terms of use", terms_path, class: "hero-btn hero-btn-secondary" %>
+      <%= link_to "About Logister", about_path, class: "hero-btn hero-btn-secondary" %>
+    </div>
+  </section>
+</div>

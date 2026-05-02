@@ -29,6 +29,18 @@
     <% cookie_consent_script_url = ENV.fetch("COOKIECONSENT_SCRIPT_URL", "https://www.termsfeed.com/public/cookie-consent/4.2.0/cookie-consent.js") %>
     <% cookie_consent_website_name = ENV["COOKIECONSENT_WEBSITE_NAME"].to_s.strip.presence || "Logister" %>
     <% cookie_consent_privacy_url = ENV["COOKIECONSENT_PRIVACY_POLICY_URL"].to_s.strip.presence || absolute_url_for(privacy_path) %>
+    <% cookie_consent_config = {
+      "notice_banner_type" => "headline",
+      "consent_type" => "express",
+      "palette" => "dark",
+      "language" => "en",
+      "page_load_consent_levels" => [ "strictly-necessary" ],
+      "notice_banner_reject_button_hide" => false,
+      "preferences_center_close_button_hide" => false,
+      "page_refresh_confirmation_buttons" => false,
+      "website_name" => cookie_consent_website_name,
+      "website_privacy_policy_url" => cookie_consent_privacy_url
+    } %>
     <% google_tag_id = ENV["GOOGLE_TAG_ID"].to_s.strip.presence %>
     <% cloudflare_web_analytics_token = ENV["CLOUDFLARE_WEB_ANALYTICS_TOKEN"].to_s.strip.presence %>
     <% if google_tag_id.present? %>
@@ -175,6 +187,7 @@
           <div class="flex items-center gap-4 text-sm">
             <%= link_to "Docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "text-slate-600 hover:text-slate-900 no-underline" %>
             <%= link_to "Privacy", privacy_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(privacy_path) ? 'font-semibold text-slate-900' : ''}" %>
+            <%= link_to "Cookies", cookies_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(cookies_path) ? 'font-semibold text-slate-900' : ''}" %>
             <%= link_to "Terms", terms_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(terms_path) ? 'font-semibold text-slate-900' : ''}" %>
             <% if cookie_consent_enabled %>
               <a href="#" id="open_preferences_center" class="text-slate-600 hover:text-slate-900 no-underline">Cookie preferences</a>
@@ -190,7 +203,7 @@
       <script type="text/javascript" src="<%= cookie_consent_script_url %>" charset="UTF-8"></script>
       <script type="text/javascript" charset="UTF-8">
       document.addEventListener('DOMContentLoaded', function () {
-      cookieconsent.run({"notice_banner_type":"headline","consent_type":"express","palette":"dark","language":"en","page_load_consent_levels":["strictly-necessary"],"notice_banner_reject_button_hide":false,"preferences_center_close_button_hide":false,"page_refresh_confirmation_buttons":false});
+      cookieconsent.run(<%= json_escape(cookie_consent_config.to_json).html_safe %>);
       });
       </script>
 

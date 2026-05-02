@@ -2333,6 +2333,17 @@
     color: var(--mk-muted);
   }
 
+  .legal-section ul {
+    @apply mt-3 grid gap-2 pl-5 text-sm sm:text-base leading-relaxed list-disc;
+    color: var(--mk-muted);
+  }
+
+  .legal-section a {
+    color: var(--app-primary-700);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
   .legal-section code {
     @apply px-1.5 py-0.5 rounded text-sm;
     color: var(--app-primary-900);

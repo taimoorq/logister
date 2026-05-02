@@ -10,6 +10,15 @@ RSpec.describe "Routes", type: :routing do
     it "routes GET /about to home#about" do
       expect(get: "/about").to route_to(controller: "home", action: "about")
     end
+    it "routes GET /privacy to home#privacy" do
+      expect(get: "/privacy").to route_to(controller: "home", action: "privacy")
+    end
+    it "routes GET /cookies to home#cookies" do
+      expect(get: "/cookies").to route_to(controller: "home", action: "cookies")
+    end
+    it "routes GET /terms to home#terms" do
+      expect(get: "/terms").to route_to(controller: "home", action: "terms")
+    end
     it "routes GET /up to rails/health#show" do
       expect(get: "/up").to route_to(controller: "rails/health", action: "show")
     end

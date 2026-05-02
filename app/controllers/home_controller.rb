@@ -9,6 +9,9 @@ class HomeController < ApplicationController
   def privacy
   end
 
+  def cookies
+  end
+
   def terms
   end
 
@@ -17,6 +20,7 @@ class HomeController < ApplicationController
       { url: root_url, lastmod: view_mtime("show") },
       { url: about_url, lastmod: view_mtime("about") },
       { url: privacy_url, lastmod: view_mtime("privacy") },
+      { url: cookies_url, lastmod: view_mtime("cookies") },
       { url: terms_url, lastmod: view_mtime("terms") }
     ]
 

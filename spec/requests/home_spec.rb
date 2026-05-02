@@ -100,6 +100,18 @@ RSpec.describe "Home", type: :request do
       get privacy_path
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Privacy Policy")
+      expect(response.body).to include("Application event data")
+      expect(response.body).to include(cookies_path)
+    end
+  end
+
+  describe "GET /cookies" do
+    it "returns success and cookie content" do
+      get cookies_path
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Cookie Policy")
+      expect(response.body).to include("Strictly necessary cookies")
+      expect(response.body).to include(privacy_path)
     end
   end
 
@@ -138,6 +150,7 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include(root_url)
       expect(response.body).to include(about_url)
       expect(response.body).to include(privacy_url)
+      expect(response.body).to include(cookies_url)
       expect(response.body).to include(terms_url)
     end
 
@@ -150,6 +163,7 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("<loc>https://logister.org/</loc>")
       expect(response.body).to include("<loc>https://logister.org/about</loc>")
       expect(response.body).to include("<loc>https://logister.org/privacy</loc>")
+      expect(response.body).to include("<loc>https://logister.org/cookies</loc>")
       expect(response.body).to include("<loc>https://logister.org/terms</loc>")
     end
   end

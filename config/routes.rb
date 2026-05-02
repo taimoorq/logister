@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }
   get "about", to: "home#about"
   get "privacy", to: "home#privacy"
+  get "cookies", to: "home#cookies"
   get "terms", to: "home#terms"
 
   get "dashboard", to: "dashboard#index"
