@@ -59,9 +59,11 @@ LOGISTER_TURNSTILE_SECRET_KEY=</code></pre></div>
               <h3>Consent-gated analytics</h3>
               <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#analytics-code">Copy</button></div><pre><code id="analytics-code">LOGISTER_COOKIE_CONSENT_ENABLED=true
 LOGISTER_ANALYTICS_ENABLED=true
-COOKIECONSENT_SCRIPT_URL=
-COOKIECONSENT_WEBSITE_NAME=
-COOKIECONSENT_PRIVACY_POLICY_URL=https://your-domain.example/privacy
+PROBO_COOKIE_BANNER_SCRIPT_URL=https://cdn.jsdelivr.net/npm/@probo/cookie-banner/dist/cookie-banner.iife.js
+PROBO_COOKIE_BANNER_ID=
+PROBO_COOKIE_BANNER_BASE_URL=https://your-probo.example/api/cookie-banner/v1
+PROBO_COOKIE_BANNER_POSITION=bottom-left
+LOGISTER_ANALYTICS_COOKIE_CATEGORY=analytics
 GOOGLE_TAG_ID=G-XXXXXXXXXX
 CLOUDFLARE_WEB_ANALYTICS_TOKEN=</code></pre></div>
             </section>

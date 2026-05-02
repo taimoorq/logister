@@ -111,6 +111,7 @@ RSpec.describe "Home", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Cookie Policy")
       expect(response.body).to include("Strictly necessary cookies")
+      expect(response.body).to include("Probo Cookie Banner")
       expect(response.body).to include(privacy_path)
     end
   end

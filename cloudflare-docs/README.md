@@ -7,7 +7,7 @@ This directory contains a standalone static version of the Logister documentatio
 - `index.html` and subdirectory `index.html` files provide the static documentation pages.
 - `assets/site.css` contains the docs-specific theme and layout styles.
 - `assets/site.js` provides mobile navigation and copy-to-clipboard behavior for code blocks.
-- `assets/analytics-config.js` provides deploy-time analytics configuration for the static docs site.
+- `functions/assets/analytics-config.js/index.js` serves runtime analytics and Probo Cookie Banner configuration from Cloudflare Pages secrets.
 - `assets/logister-logo.svg` is copied locally so the docs do not depend on the app asset pipeline.
 
 ## Suggested Cloudflare Pages setup
@@ -39,14 +39,25 @@ Set these GitHub repository settings before enabling it:
 - Secret: `CLOUDFLARE_API_TOKEN`
 - Secret: `CLOUDFLARE_ACCOUNT_ID`
 - Variable: `CLOUDFLARE_PAGES_PROJECT`
-- Optional variable: `DOCS_GOOGLE_TAG_ID`
-- Optional variable: `DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN`
 
 The workflow deploys this directory directly with:
 
 - `wrangler pages deploy cloudflare-docs --project-name=<project>`
 
-Before deploy, the workflow writes `cloudflare-docs/assets/analytics-config.js` from those optional variables so the static site can load Google Analytics and/or Cloudflare Web Analytics without committing those values into the repo.
+## Runtime docs configuration
+
+Set optional docs runtime values as Cloudflare Pages secrets:
+
+```bash
+wrangler pages secret put DOCS_PROBO_COOKIE_BANNER_ID --project-name=logister-docs
+wrangler pages secret put DOCS_PROBO_COOKIE_BANNER_BASE_URL --project-name=logister-docs
+wrangler pages secret put DOCS_PROBO_COOKIE_BANNER_POSITION --project-name=logister-docs
+wrangler pages secret put DOCS_ANALYTICS_COOKIE_CATEGORY --project-name=logister-docs
+wrangler pages secret put DOCS_GOOGLE_TAG_ID --project-name=logister-docs
+wrangler pages secret put DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN --project-name=logister-docs
+```
+
+Docs analytics will not load unless both `DOCS_PROBO_COOKIE_BANNER_ID` and `DOCS_PROBO_COOKIE_BANNER_BASE_URL` are configured. Values served through `/assets/analytics-config.js` are visible to browsers at runtime, so do not put server-only credentials there.
 
 ## Current scope
 

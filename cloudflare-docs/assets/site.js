@@ -3,13 +3,23 @@ function loadDocsAnalytics() {
   const googleTagId = typeof config.googleTagId === "string" ? config.googleTagId.trim() : "";
   const cloudflareToken = typeof config.cloudflareWebAnalyticsToken === "string" ? config.cloudflareWebAnalyticsToken.trim() : "";
   const doNotTrack = navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.msDoNotTrack === "1";
+  const hasAnalytics = Boolean(googleTagId || cloudflareToken);
 
   if (doNotTrack) return;
 
-  if (googleTagId && !document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
-    const script = document.createElement("script");
+  const proboLoaded = loadDocsCookieBanner(config);
+  if (hasAnalytics && !proboLoaded) {
+    console.warn("Logister docs analytics disabled because Probo cookie banner configuration is missing.");
+    return;
+  }
+
+  const analyticsCategory = docsCookieBannerConfig(config).analyticsCategory;
+
+  if (googleTagId && !document.querySelector('[data-logister-docs-analytics="google-loader"]')) {
+    const script = createConsentScript(analyticsCategory);
     script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleTagId)}`;
+    script.setAttribute("data-src", `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleTagId)}`);
+    script.setAttribute("data-logister-docs-analytics", "google-loader");
     document.head.appendChild(script);
 
     window.dataLayer = window.dataLayer || [];
@@ -17,20 +27,68 @@ function loadDocsAnalytics() {
       window.dataLayer.push(arguments);
     };
 
-    window.gtag("js", new Date());
-    window.gtag("config", googleTagId, {
-      anonymize_ip: true,
-      page_path: window.location.pathname + window.location.search
-    });
+    const inlineScript = createConsentScript(analyticsCategory);
+    inlineScript.setAttribute("data-logister-docs-analytics", "google-config");
+    inlineScript.textContent = `
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
+      window.gtag("js", new Date());
+      window.gtag("config", ${JSON.stringify(googleTagId)}, {
+        anonymize_ip: true,
+        page_path: window.location.pathname + window.location.search
+      });
+    `;
+    document.head.appendChild(inlineScript);
   }
 
-  if (cloudflareToken && !document.querySelector('script[src*="static.cloudflareinsights.com/beacon.min.js"]')) {
-    const script = document.createElement("script");
+  if (cloudflareToken && !document.querySelector('[data-logister-docs-analytics="cloudflare"]')) {
+    const script = createConsentScript(analyticsCategory);
     script.defer = true;
-    script.src = "https://static.cloudflareinsights.com/beacon.min.js";
+    script.setAttribute("data-src", "https://static.cloudflareinsights.com/beacon.min.js");
     script.setAttribute("data-cf-beacon", JSON.stringify({ token: cloudflareToken }));
+    script.setAttribute("data-logister-docs-analytics", "cloudflare");
     document.head.appendChild(script);
   }
+}
+
+function docsCookieBannerConfig(config) {
+  const cookieBanner = config.cookieBanner || {};
+  return {
+    scriptUrl: typeof cookieBanner.scriptUrl === "string" && cookieBanner.scriptUrl.trim()
+      ? cookieBanner.scriptUrl.trim()
+      : "https://cdn.jsdelivr.net/npm/@probo/cookie-banner/dist/cookie-banner.iife.js",
+    bannerId: typeof cookieBanner.bannerId === "string" ? cookieBanner.bannerId.trim() : "",
+    baseUrl: typeof cookieBanner.baseUrl === "string" ? cookieBanner.baseUrl.trim() : "",
+    position: typeof cookieBanner.position === "string" && cookieBanner.position.trim()
+      ? cookieBanner.position.trim()
+      : "bottom-left",
+    analyticsCategory: typeof cookieBanner.analyticsCategory === "string" && cookieBanner.analyticsCategory.trim()
+      ? cookieBanner.analyticsCategory.trim()
+      : "analytics"
+  };
+}
+
+function loadDocsCookieBanner(config) {
+  const cookieBanner = docsCookieBannerConfig(config);
+  if (!cookieBanner.bannerId || !cookieBanner.baseUrl) return false;
+  if (document.querySelector("probo-cookie-banner") || document.querySelector("[data-logister-docs-probo-banner]")) return true;
+
+  const script = document.createElement("script");
+  script.src = cookieBanner.scriptUrl;
+  script.defer = true;
+  script.setAttribute("data-logister-docs-probo-banner", "true");
+  script.setAttribute("data-banner-id", cookieBanner.bannerId);
+  script.setAttribute("data-base-url", cookieBanner.baseUrl);
+  script.setAttribute("data-position", cookieBanner.position);
+  document.head.appendChild(script);
+  return true;
+}
+
+function createConsentScript(category) {
+  const script = document.createElement("script");
+  script.type = "text/plain";
+  script.setAttribute("data-cookie-consent", category);
+  return script;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

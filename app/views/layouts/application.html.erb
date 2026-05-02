@@ -23,24 +23,17 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%# Keep system tests deterministic by skipping third-party overlays in test. %>
-    <% cookie_consent_enabled = !Rails.env.test? && ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_COOKIE_CONSENT_ENABLED", "true")) %>
     <% analytics_enabled = Rails.env.production? || ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_ANALYTICS_ENABLED", "false")) %>
-    <% cookie_consent_script_url = ENV.fetch("COOKIECONSENT_SCRIPT_URL", "https://www.termsfeed.com/public/cookie-consent/4.2.0/cookie-consent.js") %>
-    <% cookie_consent_website_name = ENV["COOKIECONSENT_WEBSITE_NAME"].to_s.strip.presence || "Logister" %>
-    <% cookie_consent_privacy_url = ENV["COOKIECONSENT_PRIVACY_POLICY_URL"].to_s.strip.presence || absolute_url_for(privacy_path) %>
-    <% cookie_consent_config = {
-      "notice_banner_type" => "headline",
-      "consent_type" => "express",
-      "palette" => "dark",
-      "language" => "en",
-      "page_load_consent_levels" => [ "strictly-necessary" ],
-      "notice_banner_reject_button_hide" => false,
-      "preferences_center_close_button_hide" => false,
-      "page_refresh_confirmation_buttons" => false,
-      "website_name" => cookie_consent_website_name,
-      "website_privacy_policy_url" => cookie_consent_privacy_url
-    } %>
+    <% probo_cookie_banner_script_url = ENV["PROBO_COOKIE_BANNER_SCRIPT_URL"].to_s.strip.presence || "https://cdn.jsdelivr.net/npm/@probo/cookie-banner/dist/cookie-banner.iife.js" %>
+    <% probo_cookie_banner_id = ENV["PROBO_COOKIE_BANNER_ID"].to_s.strip.presence %>
+    <% probo_cookie_banner_base_url = ENV["PROBO_COOKIE_BANNER_BASE_URL"].to_s.strip.presence %>
+    <% probo_cookie_banner_position = ENV["PROBO_COOKIE_BANNER_POSITION"].to_s.strip.presence || "bottom-left" %>
+    <% analytics_cookie_consent_category = ENV["LOGISTER_ANALYTICS_COOKIE_CATEGORY"].to_s.strip.presence || "analytics" %>
+    <%# Keep system tests deterministic by skipping third-party overlays in test. %>
+    <% cookie_consent_enabled = !Rails.env.test? &&
+      ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_COOKIE_CONSENT_ENABLED", "true")) &&
+      probo_cookie_banner_id.present? &&
+      probo_cookie_banner_base_url.present? %>
     <% google_tag_id = ENV["GOOGLE_TAG_ID"].to_s.strip.presence %>
     <% cloudflare_web_analytics_token = ENV["CLOUDFLARE_WEB_ANALYTICS_TOKEN"].to_s.strip.presence %>
     <% if google_tag_id.present? %>
@@ -190,28 +183,27 @@
             <%= link_to "Cookies", cookies_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(cookies_path) ? 'font-semibold text-slate-900' : ''}" %>
             <%= link_to "Terms", terms_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(terms_path) ? 'font-semibold text-slate-900' : ''}" %>
             <% if cookie_consent_enabled %>
-              <a href="#" id="open_preferences_center" class="text-slate-600 hover:text-slate-900 no-underline">Cookie preferences</a>
+              <probo-settings-link><a href="#" class="text-slate-600 hover:text-slate-900 no-underline">Cookie preferences</a></probo-settings-link>
             <% end %>
           </div>
         </div>
       </footer>
     <% end %>
 
-    <%# Cookie Consent by TermsFeed %>
+    <%# Cookie Consent by Probo %>
     <% if cookie_consent_enabled %>
-      <!-- Cookie Consent by TermsFeed https://www.TermsFeed.com -->
-      <script type="text/javascript" src="<%= cookie_consent_script_url %>" charset="UTF-8"></script>
-      <script type="text/javascript" charset="UTF-8">
-      document.addEventListener('DOMContentLoaded', function () {
-      cookieconsent.run(<%= json_escape(cookie_consent_config.to_json).html_safe %>);
-      });
-      </script>
+      <script
+        src="<%= probo_cookie_banner_script_url %>"
+        data-banner-id="<%= probo_cookie_banner_id %>"
+        data-base-url="<%= probo_cookie_banner_base_url %>"
+        data-position="<%= probo_cookie_banner_position %>"
+      ></script>
 
       <% if analytics_enabled && google_tag_id.present? %>
         <!-- Google Analytics -->
         <!-- Google tag (gtag.js) -->
-        <script type="text/plain" data-cookie-consent="tracking" async src="https://www.googletagmanager.com/gtag/js?id=<%= google_tag_id %>"></script>
-        <script type="text/plain" data-cookie-consent="tracking">
+        <script type="text/plain" data-cookie-consent="<%= analytics_cookie_consent_category %>" async src="https://www.googletagmanager.com/gtag/js?id=<%= google_tag_id %>"></script>
+        <script type="text/plain" data-cookie-consent="<%= analytics_cookie_consent_category %>">
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
@@ -223,12 +215,9 @@
 
       <% if analytics_enabled && cloudflare_web_analytics_token.present? %>
         <!-- Cloudflare Web Analytics -->
-        <script type="text/plain" data-cookie-consent="tracking" defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='<%= { token: cloudflare_web_analytics_token }.to_json %>'></script>
+        <script type="text/plain" data-cookie-consent="<%= analytics_cookie_consent_category %>" defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='<%= { token: cloudflare_web_analytics_token }.to_json %>'></script>
         <!-- End Cloudflare Web Analytics -->
       <% end %>
-
-      <noscript>Free cookie consent management tool by <a href="https://www.termsfeed.com/">TermsFeed</a></noscript>
-      <!-- End Cookie Consent by TermsFeed https://www.TermsFeed.com -->
     <% end %>
   </body>
 </html>
