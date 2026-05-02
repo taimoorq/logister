@@ -37,7 +37,7 @@
             <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a class="active" href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a href="/integrations/javascript/">JavaScript integration</a></div>
             <hr>
-            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#required">Required secrets</a><a href="#optional">Optional services</a><a href="#files">Provider files</a><a href="#checklist">Production checklist</a><a href="#verify">Deploy verification</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#required">Required secrets</a><a href="#optional">Optional services</a><a href="#consent-banners">Consent banners</a><a href="#files">Provider files</a><a href="#checklist">Production checklist</a><a href="#verify">Deploy verification</a></div>
           </aside>
           <article class="article">
             <section id="required" class="section">
@@ -66,6 +66,13 @@ PROBO_COOKIE_BANNER_POSITION=bottom-left
 LOGISTER_ANALYTICS_COOKIE_CATEGORY=analytics
 GOOGLE_TAG_ID=G-XXXXXXXXXX
 CLOUDFLARE_WEB_ANALYTICS_TOKEN=</code></pre></div>
+            </section>
+            <section id="consent-banners" class="section">
+              <p class="eyebrow">Consent banners</p>
+              <h2>Logister ships first-party support for Probo Cookie Banner.</h2>
+              <p>The Rails app and the Cloudflare Pages docs use the same consent model: load the banner, mark optional scripts with a <code>data-cookie-consent</code> category, and keep project-specific banner IDs in your deployment provider rather than in the public repo.</p>
+              <table><thead><tr><th>Banner</th><th>Status</th><th>Where it works</th><th>Notes</th></tr></thead><tbody><tr><td>Probo Cookie Banner</td><td>Supported</td><td>Rails app and Cloudflare Pages docs</td><td>Configure <code>PROBO_COOKIE_BANNER_ID</code>, <code>PROBO_COOKIE_BANNER_BASE_URL</code>, and the analytics category slug. Analytics scripts load only after the matching category is accepted.</td></tr><tr><td>Custom consent banner</td><td>Manual integration</td><td>Self-hosted forks</td><td>You can replace the loader, but your banner must activate scripts marked with <code>data-cookie-consent</code> or you must adapt the app layout and docs JavaScript.</td></tr><tr><td>TermsFeed Cookie Consent</td><td>Not supported in current code</td><td>None by default</td><td>Older <code>COOKIECONSENT_*</code> variables are no longer read by Logister after the Probo migration.</td></tr></tbody></table>
+              <div class="note warn"><h4>Public configuration</h4><p>Cookie banner IDs and analytics measurement IDs are sent to browsers at runtime, so they are not server-only credentials. Still, keep deployment-specific values in Fly, Cloudflare Pages, or CI configuration instead of committing them to this public repository.</p></div>
             </section>
             <section id="files" class="section">
               <p class="eyebrow">Provider files</p>
