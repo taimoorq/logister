@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Wait for required workflows
         id: required_workflows
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const requiredWorkflows = ["CI", "CodeQL"];
