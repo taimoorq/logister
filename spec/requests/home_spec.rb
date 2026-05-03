@@ -19,7 +19,8 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("logister-dotnet")
         expect(response.body).to include("logister-python")
-        expect(response.body).to include("Start free")
+        expect(response.body).to include("Self-host Logister")
+        expect(response.body).to include("Use hosted app")
         expect(response.body).to include("https://docs.logister.org/")
         expect(response.body).to include('target="_blank"')
         expect(response.body).to include('rel="noopener noreferrer"')
@@ -65,6 +66,15 @@ RSpec.describe "Home", type: :request do
 
       expect(response).to have_http_status(:moved_permanently)
       expect(response).to redirect_to("https://docs.logister.org/")
+    end
+  end
+
+  describe "GET /docs/product" do
+    it "redirects to the external product guide docs page" do
+      get "/docs/product"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://docs.logister.org/product/")
     end
   end
 
@@ -130,6 +140,7 @@ RSpec.describe "Home", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Python apps via the `logister-python` package")
       expect(response.body).to include(".NET and ASP.NET Core apps via the `logister-dotnet` SDK")
+      expect(response.body).to include("https://docs.logister.org/product/")
       expect(response.body).to include("https://docs.logister.org/integrations/python/")
       expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
       expect(response.body).to include("https://pypi.org/project/logister-python/")

@@ -5,6 +5,7 @@ module ApplicationHelper
   DOCS_PATHS = {
     overview: "/",
     getting_started: "/getting-started/",
+    product: "/product/",
     self_hosting: "/self-hosting/",
     local_development: "/local-development/",
     deployment: "/deployment/",

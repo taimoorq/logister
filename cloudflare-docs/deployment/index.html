@@ -28,34 +28,49 @@
   </head>
   <body>
     <div class="site-shell">
-      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Deployment config</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">logister.org</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Deployment config</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
         <section class="hero"><span class="hero-kicker">Documentation / Deployment config</span><h1>Configure production deploys without guessing.</h1><p>This page collects the operator-facing configuration for self-hosted Logister: required secrets, optional services, provider-managed files, and the checklist to run before you call a deployment healthy.</p></section>
         <div class="docs-layout">
           <aside class="sidebar">
-            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/product/">Product guide</a><a href="/self-hosting/">Self-hosting</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a class="active" href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a href="/integrations/javascript/">JavaScript integration</a></div>
             <hr>
-            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#required">Required secrets</a><a href="#optional">Optional services</a><a href="#consent-banners">Consent banners</a><a href="#files">Provider files</a><a href="#checklist">Production checklist</a><a href="#verify">Deploy verification</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#processes">Process model</a><a href="#required">Required secrets</a><a href="#scaling">Scaling knobs</a><a href="#optional">Optional services</a><a href="#consent-banners">Consent banners</a><a href="#files">Provider files</a><a href="#checklist">Production checklist</a><a href="#verify">Deploy verification</a></div>
           </aside>
           <article class="article">
+            <section id="processes" class="section">
+              <p class="eyebrow">Process model</p>
+              <h2>Run web traffic and background work as separate responsibilities.</h2>
+              <p>The production app can be deployed on Fly, Kamal, Docker, or any platform that can run a Rails web process and a Sidekiq worker against PostgreSQL and Redis.</p>
+              <table><thead><tr><th>Process</th><th>Purpose</th><th>Typical command</th></tr></thead><tbody><tr><td>Web</td><td>Serves the UI, auth screens, project pages, public pages, health checks, and API ingestion endpoints.</td><td><code>./bin/rails server</code> behind Puma/Thruster or your platform web command</td></tr><tr><td>Worker</td><td>Runs asynchronous jobs such as optional ClickHouse event ingestion.</td><td><code>bundle exec sidekiq -C config/sidekiq.yml</code></td></tr><tr><td>Release or migration step</td><td>Prepares the database before the new web process handles traffic.</td><td><code>./bin/rails db:prepare</code></td></tr></tbody></table>
+              <div class="note tip"><h4>Planning note</h4><p>Low-volume installs can start with one web process and one worker. As traffic grows, scale the web and worker process counts separately so ingestion and background jobs do not compete with user-facing requests.</p></div>
+            </section>
             <section id="required" class="section">
               <p class="eyebrow">Required secrets</p>
               <h2>These are the minimum variables for a production deployment.</h2>
-              <table><thead><tr><th>Variable</th><th>Purpose</th></tr></thead><tbody><tr><td><code>RAILS_MASTER_KEY</code></td><td>Decrypts the app credentials for self-hosted deploys</td></tr><tr><td><code>DATABASE_URL</code></td><td>Connects PostgreSQL for the control-plane app database</td></tr><tr><td><code>REDIS_URL</code></td><td>Powers Sidekiq, caching, and Redis-backed features</td></tr><tr><td><code>LOGISTER_ADMIN_EMAILS</code></td><td>Bootstraps admin access for named operators</td></tr></tbody></table>
-              <p>Most production installs also set <code>LOGISTER_EMAIL_FROM</code>, <code>SES_REGION</code>, <code>SES_SMTP_USERNAME</code>, and <code>SES_SMTP_PASSWORD</code>.</p>
+              <table><thead><tr><th>Variable</th><th>Purpose</th></tr></thead><tbody><tr><td><code>RAILS_MASTER_KEY</code></td><td>Decrypts the app credentials for self-hosted deploys.</td></tr><tr><td><code>DATABASE_URL</code></td><td>Connects the Rails app to PostgreSQL.</td></tr><tr><td><code>REDIS_URL</code></td><td>Connects Rails caching and Sidekiq workers to Redis.</td></tr><tr><td><code>LOGISTER_ADMIN_EMAILS</code></td><td>Comma-separated email allow-list for operator/admin access.</td></tr></tbody></table>
+              <p>Production also needs normal Rails platform settings such as <code>RAILS_ENV=production</code>, <code>PORT</code> when your host requires it, and HTTPS termination through your platform, load balancer, or reverse proxy.</p>
+            </section>
+            <section id="scaling" class="section">
+              <p class="eyebrow">Scaling knobs</p>
+              <h2>Use these variables when you need more throughput.</h2>
+              <table><thead><tr><th>Variable</th><th>Default</th><th>Use when</th></tr></thead><tbody><tr><td><code>RAILS_MAX_THREADS</code></td><td><code>3</code></td><td>You want each web process to handle more concurrent requests. Match database pool sizing to your thread count.</td></tr><tr><td><code>WEB_CONCURRENCY</code></td><td><code>1</code></td><td>You want multiple Puma workers per web machine. Use only when the host has enough CPU and memory.</td></tr><tr><td><code>SIDEKIQ_CONCURRENCY</code></td><td><code>5</code></td><td>You want each worker process to run more jobs in parallel. Raise carefully with Redis and database capacity in mind.</td></tr><tr><td><code>RAILS_LOG_LEVEL</code></td><td><code>info</code></td><td>You need more or less production log detail during operations.</td></tr></tbody></table>
             </section>
             <section id="optional" class="section">
               <p class="eyebrow">Optional services</p>
               <h2>Enable additional integrations only when you need them.</h2>
+              <h3>ClickHouse</h3>
+              <p>ClickHouse is optional. Keep it off until you need dedicated analytics storage or higher-volume event analysis. When you turn it on, set the ClickHouse variables in the <a href="/clickhouse/">ClickHouse guide</a> and verify the worker can write events.</p>
               <h3>Email</h3>
-              <ul><li><code>LOGISTER_EMAIL_FROM</code> sets the sender for auth and system mail</li><li><code>SES_REGION</code> selects the Amazon SES region, defaulting to <code>us-east-1</code></li><li><code>SES_SMTP_USERNAME</code> and <code>SES_SMTP_PASSWORD</code> enable Amazon SES SMTP delivery in production</li></ul>
+              <p>Email is optional for a private single-user trial, but recommended for real users because account confirmation and password reset flows depend on SMTP delivery.</p>
+              <ul><li><code>LOGISTER_EMAIL_FROM</code> sets the sender for auth and system mail.</li><li><code>SES_REGION</code> selects the Amazon SES region, defaulting to <code>us-east-1</code>.</li><li><code>SES_SMTP_USERNAME</code> and <code>SES_SMTP_PASSWORD</code> enable Amazon SES SMTP delivery in production.</li><li><code>SES_SMTP_ADDRESS</code>, <code>SES_SMTP_PORT</code>, <code>SES_SMTP_DOMAIN</code>, <code>SES_SMTP_ENABLE_STARTTLS_AUTO</code>, <code>SES_SMTP_OPEN_TIMEOUT</code>, and <code>SES_SMTP_READ_TIMEOUT</code> are available when your SMTP provider needs custom settings.</li></ul>
               <h3>Cloudflare Turnstile</h3>
               <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#turnstile-code">Copy</button></div><pre><code id="turnstile-code">LOGISTER_TURNSTILE_ENABLED=true
 LOGISTER_TURNSTILE_SITE_KEY=
 LOGISTER_TURNSTILE_SECRET_KEY=</code></pre></div>
-              <p>The Devise sign-in and sign-up flows render the Turnstile widget and validate tokens server-side when enabled.</p>
+              <p>The sign-in, sign-up, password, and confirmation flows validate Turnstile when enabled.</p>
               <h3>Consent-gated analytics</h3>
               <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#analytics-code">Copy</button></div><pre><code id="analytics-code">LOGISTER_COOKIE_CONSENT_ENABLED=true
 LOGISTER_ANALYTICS_ENABLED=true
@@ -77,7 +92,7 @@ CLOUDFLARE_WEB_ANALYTICS_TOKEN=</code></pre></div>
             <section id="files" class="section">
               <p class="eyebrow">Provider files</p>
               <h2>Keep deploy config in version control, but keep secrets out of the repo.</h2>
-              <ul><li><code>Dockerfile</code> for containerized deploys</li><li><code>config/deploy.yml</code> for Kamal-based deploys</li><li><code>fly.toml</code> as tracked non-secret Fly.io config</li><li><code>fly.toml.example</code> as a reference template</li></ul>
+              <ul><li><code>Dockerfile</code> for containerized deploys.</li><li><code>fly.toml.example</code> as the Fly.io template self-hosters can copy before setting their own app name, region, and scale.</li><li><code>fly.toml</code> as the tracked production Fly.io config for this public instance, with separate app and worker processes.</li><li><code>config/deploy.yml</code> as a Kamal-oriented starting point if you prefer a server-based Docker deployment.</li><li><code>docker-compose.yml</code> for local PostgreSQL, Redis, and ClickHouse services.</li></ul>
               <div class="note warn"><h4>Important</h4><p>Keep secrets in your deploy provider or CI secret store, not in tracked config files.</p></div>
             </section>
             <section id="checklist" class="section">

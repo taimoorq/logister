@@ -4,24 +4,24 @@
     <meta charset="utf-8">
     <title>Self-hosting | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Run Logister yourself with the local quickstart, docs map, and deploy verification flow.">
+    <meta name="description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/self-hosting/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Self-hosting | Logister">
-    <meta property="og:description" content="Run Logister yourself with the local quickstart, docs map, and deploy verification flow.">
+    <meta property="og:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://docs.logister.org/self-hosting/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Self-hosting | Logister">
-    <meta name="twitter:description" content="Run Logister yourself with the local quickstart, docs map, and deploy verification flow.">
+    <meta name="twitter:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://docs.logister.org/self-hosting/","description":"Run Logister yourself with the local quickstart, docs map, and deploy verification flow.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Open source observability"}],"audience":{"@type":"Audience","audienceType":"Developers"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://docs.logister.org/self-hosting/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://docs.logister.org/self-hosting/","description":"Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Open source observability"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://docs.logister.org/self-hosting/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -40,7 +40,7 @@
           <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
           <nav class="topnav" data-nav-panel>
             <a href="/">Docs home</a>
-            <a href="https://logister.org/">logister.org</a>
+            <a href="https://logister.org/">Hosted app</a>
             <a href="https://github.com/taimoorq/logister">GitHub</a>
           </nav>
         </div>
@@ -51,8 +51,8 @@
           <span class="hero-kicker">Documentation / Self-hosting</span>
           <h1>Run Logister yourself.</h1>
           <p>
-            Use this page as the operator entry point. It covers the first local boot and then routes you into the
-            more focused guides for day-to-day development, deploy configuration, and ClickHouse.
+            Use this page to plan the infrastructure footprint before you deploy. Start with the required app, database,
+            Redis, and worker pieces, then add ClickHouse, email, Turnstile, or analytics only when your install needs them.
           </p>
         </section>
 
@@ -62,6 +62,7 @@
               <p class="sidebar-label">Start here</p>
               <a href="/">Overview</a>
               <a href="/getting-started/">Getting started</a>
+              <a href="/product/">Product guide</a>
               <a class="active" href="/self-hosting/">Self-hosting</a>
             </div>
             <div class="sidebar-group">
@@ -83,9 +84,10 @@
             <div class="sidebar-group">
               <p class="sidebar-label">On this page</p>
               <a href="#prerequisites">Prerequisites</a>
+              <a href="#infrastructure">Infrastructure plan</a>
               <a href="#quickstart">Local quickstart</a>
               <a href="#map">Docs map</a>
-              <a href="#need">What you need</a>
+              <a href="#deployment-shapes">Deployment shapes</a>
               <a href="#verify">Verify deploy</a>
             </div>
           </aside>
@@ -97,16 +99,17 @@
                   <p class="eyebrow">Guide overview</p>
                   <h2>Use this guide when you want to run the Logister app yourself.</h2>
                   <p class="lead">
-                    When you self-host Logister, the current app stack uses Rails with PostgreSQL for control-plane data,
-                    Redis for jobs and cache, and optional ClickHouse for higher-scale analytics querying.
+                    When you self-host Logister, the baseline footprint is a Rails web process, a PostgreSQL database,
+                    Redis, and a Sidekiq worker. Optional services extend that baseline for scale, email, auth protection,
+                    and analytics.
                   </p>
                 </section>
                 <aside class="outline-card">
                   <h3>Before you start</h3>
                   <ul>
-                    <li>Provision PostgreSQL and Redis first.</li>
-                    <li>Keep your app secrets and environment variables ready.</li>
-                    <li>Treat local boot and production rollout as separate steps.</li>
+                    <li>Plan the required services before tuning optional ones.</li>
+                    <li>Keep secrets and connection URLs in your deploy provider's secret store.</li>
+                    <li>Separate web traffic from background work as usage grows.</li>
                   </ul>
                 </aside>
               </div>
@@ -121,6 +124,32 @@
                 <li>Redis <code>&gt;= 7</code></li>
                 <li>Optional ClickHouse if you want a dedicated analytics store</li>
               </ul>
+            </section>
+
+            <section id="infrastructure" class="section">
+              <p class="eyebrow">Infrastructure plan</p>
+              <h2>Plan for the required baseline first.</h2>
+              <p>
+                A self-hosted Logister install needs the same core pieces whether you run it on Fly, Kamal, Docker, or
+                another container platform. The optional services below are supported, but the app does not require all
+                of them on day one.
+              </p>
+              <table>
+                <thead><tr><th>Infrastructure</th><th>Required?</th><th>What users get from it</th><th>Planning notes</th></tr></thead>
+                <tbody>
+                  <tr><td>Web app process</td><td>Required</td><td>Serves the Logister UI, auth screens, project pages, public pages, and ingest endpoints.</td><td>Runs Rails on Puma, usually from the provided Docker image. Put it behind HTTPS through your platform, load balancer, or reverse proxy.</td></tr>
+                  <tr><td>PostgreSQL</td><td>Required</td><td>Stores accounts, projects, API keys, events, error groups, occurrences, monitors, and project sharing.</td><td>Set <code>DATABASE_URL</code>. Start with managed PostgreSQL if you want backups, upgrades, and point-in-time recovery handled for you.</td></tr>
+                  <tr><td>Redis</td><td>Required</td><td>Powers the Rails cache and Sidekiq job queue.</td><td>Set <code>REDIS_URL</code>. TLS Redis URLs such as <code>rediss://...</code> are supported by the Redis client.</td></tr>
+                  <tr><td>Sidekiq worker process</td><td>Required for background work</td><td>Runs asynchronous jobs, including optional ClickHouse event writes.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
+                  <tr><td>Persistent app storage</td><td>Usually optional</td><td>Keeps any local Active Storage files if your deployment uses local disk storage.</td><td>Normal event data lives in PostgreSQL. If you rely on local Active Storage, mount and back up <code>/rails/storage</code>.</td></tr>
+                  <tr><td>Outbound email / SMTP</td><td>Optional, recommended for real users</td><td>Enables confirmation, password reset, and system emails.</td><td>The documented path uses Amazon SES SMTP variables, but any compatible SMTP endpoint can be provided through the same settings.</td></tr>
+                  <tr><td>ClickHouse</td><td>Optional</td><td>Adds a dedicated analytics store for higher-volume event analysis.</td><td>Keep it disabled until PostgreSQL-only operation is not enough. When enabled, run the worker and verify <code>/health/clickhouse</code>.</td></tr>
+                  <tr><td>Cloudflare Turnstile</td><td>Optional</td><td>Adds bot protection to auth flows.</td><td>Enable when your public sign-in, sign-up, password, or confirmation forms need extra protection.</td></tr>
+                  <tr><td>Cookie consent and analytics</td><td>Optional</td><td>Lets operators add consent-gated Google Analytics or Cloudflare Web Analytics.</td><td>Useful for public product pages. It is not required for the app to monitor your services.</td></tr>
+                  <tr><td>Static docs hosting</td><td>Optional</td><td>Hosts your fork of these public docs separately from the app.</td><td>The repo includes Cloudflare Pages docs, but your self-hosted app can also point to the canonical public docs host.</td></tr>
+                </tbody>
+              </table>
+              <div class="note tip"><h4>Start small</h4><p>For a first production install, plan one web process, one Sidekiq worker, managed PostgreSQL, and managed Redis. Add ClickHouse after you know your event volume and retention needs.</p></div>
             </section>
 
             <section id="quickstart" class="section">
@@ -140,7 +169,7 @@ bin/dev</code></pre>
               </div>
               <div class="note tip">
                 <h4>Tip</h4>
-                <p><code>bin/dev</code> also watches Tailwind locally and attempts to ensure Redis is available.</p>
+                <p><code>bin/dev</code> starts the Rails app and Tailwind watcher. Keep PostgreSQL and Redis available yourself, or use <code>bin/dev-infra</code> when you want Docker to start local infrastructure first.</p>
               </div>
             </section>
 
@@ -169,16 +198,18 @@ bin/dev</code></pre>
               </div>
             </section>
 
-            <section id="need" class="section">
-              <p class="eyebrow">What you need</p>
-              <h2>Keep the deployment primitives clear before tuning extras.</h2>
-              <ul>
-                <li>PostgreSQL for users, projects, API keys, and app state</li>
-                <li>Redis for Sidekiq and app caching</li>
-                <li>A production secret store for app and provider credentials</li>
-                <li>A deployment method such as Fly, Kamal, or a custom Docker-based workflow</li>
-                <li>Optional ClickHouse if you need dedicated analytics scale</li>
-              </ul>
+            <section id="deployment-shapes" class="section">
+              <p class="eyebrow">Deployment shapes</p>
+              <h2>Choose the shape that matches your team and traffic.</h2>
+              <table>
+                <thead><tr><th>Shape</th><th>Best for</th><th>What to run</th></tr></thead>
+                <tbody>
+                  <tr><td>Single-node trial</td><td>Evaluation, internal demos, and low-volume installs</td><td>One web process, PostgreSQL, Redis, and one worker. Keep backups on for the database.</td></tr>
+                  <tr><td>Small production install</td><td>A team monitoring a few services</td><td>Managed PostgreSQL, managed Redis, one or more web processes, one Sidekiq worker, SMTP if users need account emails.</td></tr>
+                  <tr><td>Growing event volume</td><td>More apps, more logs, or heavier performance/event analysis</td><td>Scale web and worker processes separately, raise <code>SIDEKIQ_CONCURRENCY</code> carefully, monitor PostgreSQL size, then add ClickHouse when analytics volume justifies it.</td></tr>
+                  <tr><td>Public self-hosted instance</td><td>Multi-user deployments exposed to the internet</td><td>HTTPS termination, SMTP, Turnstile, admin email allow-list, backups, log retention, and health checks for <code>/up</code> and <code>/health/clickhouse</code> if ClickHouse is enabled.</td></tr>
+                </tbody>
+              </table>
             </section>
 
             <section id="verify" class="section">

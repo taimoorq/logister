@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Product Guide | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="User-focused guide to what teams can get out of self-hostable Logister: error triage, event context, performance visibility, monitors, activity, collaboration, and self-hosted operations.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Product Guide | Logister">
+    <meta property="og:description" content="User-focused guide to what teams can get out of self-hostable Logister: error triage, event context, performance visibility, monitors, activity, collaboration, and self-hosted operations.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Product Guide | Logister">
+    <meta name="twitter:description" content="User-focused guide to what teams can get out of self-hostable Logister: error triage, event context, performance visibility, monitors, activity, collaboration, and self-hosted operations.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/#article","headline":"What your team can get out of self-hostable Logister.","name":"Product Guide | Logister","url":"https://docs.logister.org/product/","description":"User-focused guide to what teams can get out of self-hostable Logister: error triage, event context, performance visibility, monitors, activity, collaboration, and self-hosted operations.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error triage"},{"@type":"Thing","name":"Application observability"},{"@type":"Thing","name":"Self-hosted monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers, engineering teams, and operators"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product guide","item":"https://docs.logister.org/product/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Product guide</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / Product guide</span><h1>What your team can get out of self-hosted Logister.</h1><p>Logister helps you run your own app telemetry hub: connect a service, spot what broke, understand the surrounding context, decide what needs action, and keep an eye on performance and scheduled work. The hosted app at <code>logister.org</code> is a secondary option when you want someone else to operate the instance.</p></section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a class="active" href="/product/">Product guide</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a href="/integrations/javascript/">JavaScript integration</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#connect">Connect services</a><a href="#triage">Triage errors</a><a href="#investigate">Investigate faster</a><a href="#performance">Understand performance</a><a href="#monitors">Watch scheduled work</a><a href="#activity">Review activity</a><a href="#collaborate">Work with teammates</a><a href="#operate">Run it yourself</a><a href="#next">Where to go next</a></div>
+          </aside>
+
+          <article class="article">
+            <section id="connect" class="section">
+              <p class="eyebrow">Connect services</p>
+              <h2>Start each app with a project, an API key, and the right integration guide.</h2>
+              <p>A Logister project represents one app or service your team wants to observe on your own Logister instance. When you create a project, choose the integration type that matches how that service runs: Ruby, .NET / ASP.NET Core, Python, JavaScript / TypeScript, or CFML. The project settings page then gives you the right setup guidance and the API key tools your service needs.</p>
+              <table><thead><tr><th>You want to...</th><th>Use Logister to...</th></tr></thead><tbody><tr><td>Connect a new service</td><td>Create a project, select the app's runtime, generate an API key, and follow the matching integration guide.</td></tr><tr><td>Keep secrets controlled</td><td>Generate project-scoped API keys that are shown once, then store the token in your environment or secret manager.</td></tr><tr><td>Rotate credentials</td><td>Create a replacement API key, deploy it to the service, then revoke the older key from project settings.</td></tr><tr><td>Use a custom or unsupported runtime</td><td>Send events directly with the HTTP API while keeping the same Logister inbox, activity, performance, and monitor views.</td></tr></tbody></table>
+            </section>
+
+            <section id="triage" class="section">
+              <p class="eyebrow">Triage errors</p>
+              <h2>Use the inbox to decide what needs attention.</h2>
+              <p>Logister groups repeated error events into issues so the inbox stays focused on problems, not every individual occurrence. The project inbox shows open groups first, lets you search by issue text or fingerprint, and gives you status filters for unresolved, introduced today, resolved, ignored, archived, and all issues.</p>
+              <div class="card-grid"><article class="card"><p class="eyebrow">Prioritize</p><h3>Find the errors that still need review</h3><p>Use open and introduced-today filters to focus on current work instead of already handled issues.</p></article><article class="card"><p class="eyebrow">Act</p><h3>Mark fixed, ignore, archive, or reopen</h3><p>Move an issue through the triage state that matches your team decision without losing its history.</p></article><article class="card"><p class="eyebrow">Catch regressions</p><h3>See when old problems come back</h3><p>If a new occurrence arrives for a previously closed issue, Logister reopens it and preserves release context when your events include a release.</p></article></div>
+            </section>
+
+            <section id="investigate" class="section">
+              <p class="eyebrow">Investigate faster</p>
+              <h2>Open an issue and see the context around it.</h2>
+              <p>The event detail pane is designed for the moment after you ask, "what happened here?" It combines payload context, stack or runtime details, occurrence history, and nearby logs that share the same trace, request, session, or user identifiers.</p>
+              <table><thead><tr><th>What you need</th><th>Where Logister helps</th></tr></thead><tbody><tr><td>Understand the failing request or job</td><td>Read the event context, environment, release, request identifiers, user identifiers, and custom metadata your integration sent.</td></tr><tr><td>Inspect the failure in the language you use</td><td>Use runtime-aware views for Ruby, .NET, Python, JavaScript, and CFML so stack traces and log details match the shape of your app.</td></tr><tr><td>Compare repeats of the same problem</td><td>Open the occurrences tab to move between individual events in the same grouped issue.</td></tr><tr><td>Connect an error to nearby logs</td><td>Use related logs to find log records in the correlation window instead of manually searching by request ID.</td></tr></tbody></table>
+              <p>For best investigation results, include <code>release</code>, <code>environment</code>, <code>trace_id</code>, <code>request_id</code>, <code>session_id</code>, or <code>user_id</code> when your integration can provide them.</p>
+            </section>
+
+            <section id="performance" class="section">
+              <p class="eyebrow">Understand performance</p>
+              <h2>Turn transactions and metrics into a project performance view.</h2>
+              <p>When your integration sends transaction timings and metric events, Logister can show what got slower, which releases are noisy, and which slow routes also have related errors.</p>
+              <ul><li>Transaction cards show volume, throughput, P50 latency, P95 latency, error rate, and Apdex for recent traffic.</li><li>Slow transaction rows highlight the slowest recent work and link to related errors when they share transaction context.</li><li>Database load appears when your app sends database timing metrics such as <code>db.query</code>.</li><li>Release health shows recent releases with total events, error events, introduced issues, and regressed issues when events include release names.</li></ul>
+            </section>
+
+            <section id="monitors" class="section">
+              <p class="eyebrow">Watch scheduled work</p>
+              <h2>Use check-ins for cron jobs, workers, and recurring tasks.</h2>
+              <p>Scheduled work often fails quietly. Logister check-ins let each job report a slug, status, environment, expected interval, optional release, and duration. The monitor page then shows whether recent jobs are ok, in error, or missed based on the interval you set.</p>
+              <table><thead><tr><th>Check-in status</th><th>What it tells you</th></tr></thead><tbody><tr><td><code>ok</code></td><td>The job reported successfully within its expected cadence.</td></tr><tr><td><code>error</code></td><td>The job reported a failed run.</td></tr><tr><td><code>missed</code></td><td>The job has not checked in within its expected interval plus grace time.</td></tr></tbody></table>
+            </section>
+
+            <section id="activity" class="section">
+              <p class="eyebrow">Review activity</p>
+              <h2>Keep non-error telemetry visible too.</h2>
+              <p>The activity page shows recent metrics, logs, transactions, and check-ins for the project. It is useful when you want to confirm that instrumentation is working, inspect a custom business metric, review operational logs, or open a non-error event with the same detail tools used for errors.</p>
+            </section>
+
+            <section id="collaborate" class="section">
+              <p class="eyebrow">Work with teammates</p>
+              <h2>Share project visibility without sharing every account credential.</h2>
+              <p>Project owners can share access with existing Logister users by email. Shared users can open the project, review inbox details, inspect activity, performance, monitors, and see the integration guidance. Owners keep the sensitive controls for API key management, project sharing, project editing, and deletion.</p>
+              <p>Self-hosted admins can also manage user confirmation and user cleanup from the admin area when their email is listed in <code>LOGISTER_ADMIN_EMAILS</code>.</p>
+            </section>
+
+            <section id="operate" class="section">
+              <p class="eyebrow">Run it yourself</p>
+              <h2>Self-host Logister with clear operational checkpoints.</h2>
+              <p>Logister is designed to be self-hosted as a Rails app with PostgreSQL, Redis, and background jobs. ClickHouse is optional and can be added when you want a dedicated analytics store. The operations docs cover local boot, deployment variables, health checks, email, Turnstile, consent-gated analytics, and ClickHouse setup.</p>
+              <div class="output-block"><div class="output-head"><span class="output-label">Useful health checks</span></div><pre><code>GET /up
+GET /health/clickhouse</code></pre></div>
+            </section>
+
+            <section id="next" class="section">
+              <p class="eyebrow">Where to go next</p>
+              <h2>Pick the guide that matches what you are trying to do.</h2>
+              <div class="card-grid"><article class="card"><p class="eyebrow">First setup</p><h3>Create a project and send one event</h3><p><a href="/getting-started/">Read getting started</a></p></article><article class="card"><p class="eyebrow">Exact payloads</p><h3>Build against the HTTP API</h3><p><a href="/http-api/">Read the HTTP API reference</a></p></article><article class="card"><p class="eyebrow">Self-hosting</p><h3>Run Logister yourself</h3><p><a href="/self-hosting/">Read self-hosting docs</a></p></article></div>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

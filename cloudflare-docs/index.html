@@ -4,24 +4,24 @@
     <meta charset="utf-8">
     <title>Documentation | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
+    <meta name="description" content="Public Logister documentation for the open source, self-hostable analytics dashboard for your apps, including self-hosting, deployment, API, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Documentation | Logister">
-    <meta property="og:description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
+    <meta property="og:description" content="Public Logister documentation for the open source, self-hostable analytics dashboard for your apps, including self-hosting, deployment, API, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://docs.logister.org/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Documentation | Logister">
-    <meta name="twitter:description" content="Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup and deployment guides.">
+    <meta name="twitter:description" content="Public Logister documentation for the open source, self-hostable analytics dashboard for your apps, including self-hosting, deployment, API, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Documentation | Logister","description":"Public Logister documentation for the self-hosted analytics dashboard for your apps, including Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations plus setup, self-hosting, and HTTP API guides.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Documentation | Logister","description":"Public Logister documentation for the open source, self-hostable analytics dashboard for your apps, including self-hosting, deployment, API, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Self-hosted app analytics"},{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -40,7 +40,7 @@
           <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
           <nav class="topnav" data-nav-panel>
             <a href="/">Docs home</a>
-            <a href="https://logister.org/">logister.org</a>
+            <a href="https://logister.org/">Hosted app</a>
             <a href="https://github.com/taimoorq/logister">GitHub</a>
           </nav>
         </div>
@@ -51,11 +51,12 @@
           <span class="hero-kicker">Documentation</span>
           <h1>Logister Documentation</h1>
           <p>
-            Logister is a self-hosted analytics dashboard for your apps: one place to collect errors, logs, metrics, transactions, and check-ins so your team can see problems faster, investigate with context, and ship with more confidence.
+            Logister is an open source, self-hostable analytics dashboard for your apps. Run it yourself to collect errors, logs, metrics, transactions, and check-ins in infrastructure you control; the hosted app at <code>logister.org</code> is secondary for teams that want a managed convenience path.
           </p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="/getting-started/">Getting started</a>
-            <a class="btn btn-secondary" href="/http-api/">HTTP API</a>
+            <a class="btn btn-primary" href="/self-hosting/">Self-hosting</a>
+            <a class="btn btn-secondary" href="/getting-started/">Getting started</a>
+            <a class="btn btn-secondary" href="/product/">Product guide</a>
           </div>
         </section>
 
@@ -65,6 +66,7 @@
               <p class="sidebar-label">Start here</p>
               <a class="active" href="/">Overview</a>
               <a href="/getting-started/">Getting started</a>
+              <a href="/product/">Product guide</a>
               <a href="/self-hosting/">Self-hosting</a>
             </div>
             <div class="sidebar-group">
@@ -87,6 +89,7 @@
               <p class="sidebar-label">On this page</p>
               <a href="#overview">Overview</a>
               <a href="#guides">Guides</a>
+              <a href="#product">What Logister helps with</a>
               <a href="#next">Getting started next</a>
               <a href="#growth">Growing the docs</a>
               <a href="#credits">Credits</a>
@@ -102,12 +105,10 @@
               <p class="eyebrow">Overview</p>
               <h2>Choose the guide that matches your project type.</h2>
               <p>
-                Logister provides public documentation for Ruby, .NET, Python, CFML, and JavaScript integrations plus the operations guides needed
-                when you want to self-host the app. Start with the guide that matches how your application sends data today.
+                Logister provides public documentation for running your own instance first, then connecting Ruby, .NET, Python, CFML, and JavaScript apps to it. Start with self-hosting when you are planning infrastructure, or with the integration guide that matches how your application sends data today.
               </p>
               <blockquote>
-                Use the product docs as the canonical source of truth. The GitHub README now points here instead of
-                duplicating most setup guidance.
+                Logister is self-hosted and self-hostable first. The public <code>logister.org</code> app is a secondary hosted option; the source and operations docs are here so teams can run it themselves.
               </blockquote>
               <table>
                 <thead>
@@ -152,6 +153,17 @@
               </table>
             </section>
 
+            <section id="product" class="section">
+              <p class="eyebrow">What Logister helps with</p>
+              <h2>Use Logister to move from raw events to decisions.</h2>
+              <div class="card-grid">
+                <article class="card"><p class="eyebrow">Triage</p><h3>See which errors still need attention</h3><p>Grouped issues, status filters, search, and occurrence history help your team decide what to fix, ignore, archive, or reopen.</p></article>
+                <article class="card"><p class="eyebrow">Investigate</p><h3>Open one event and get the surrounding context</h3><p>Runtime-aware details, request context, release metadata, and related logs keep the investigation close to the problem.</p></article>
+                <article class="card"><p class="eyebrow">Operate</p><h3>Watch performance and scheduled work</h3><p>Transaction metrics, database timing, release health, activity events, and check-in monitors show whether services are healthy beyond exceptions.</p></article>
+              </div>
+              <p><a href="/product/">Read the product guide</a> for the user-focused tour of what teams can do in Logister.</p>
+            </section>
+
             <section id="guides" class="section">
               <p class="eyebrow">Guides</p>
               <h2>Everything you need to get from zero to a working event feed.</h2>
@@ -161,6 +173,12 @@
                   <h3>Set up your first project</h3>
                   <p>Create a project, choose the right integration type, generate an API key, and send your first event.</p>
                   <p><a href="/getting-started/">Read getting started</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">Product guide</p>
+                  <h3>See what your team can do in Logister</h3>
+                  <p>Use this guide to understand the inbox, event details, performance views, monitors, activity feed, sharing, and self-hosted operations.</p>
+                  <p><a href="/product/">Read the product guide</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">Operations</p>
@@ -215,9 +233,9 @@
 
             <section id="growth" class="section">
               <p class="eyebrow">Growing the docs</p>
-              <h2>This is the base for a standalone hosted documentation site.</h2>
+              <h2>This is the base for a standalone documentation site.</h2>
               <p>
-                This static export is designed so the docs can live on Cloudflare Pages cleanly. It keeps the same information
+                This static export is designed so the docs can live separately from either a self-hosted Logister instance or the secondary hosted app. It keeps the same information
                 architecture as the product docs while removing the app runtime dependency, and includes a machine-readable
                 <code>/llms.txt</code> index for AI tools that need the public docs map.
               </p>
@@ -252,6 +270,7 @@
               <h4>Start here</h4>
               <a href="/">Overview</a>
               <a href="/getting-started/">Getting started</a>
+              <a href="/product/">Product guide</a>
               <a href="/self-hosting/">Self-hosting</a>
             </div>
             <div class="footer-column">

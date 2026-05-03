@@ -40,7 +40,7 @@
           <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
           <nav class="topnav" data-nav-panel>
             <a href="/">Docs home</a>
-            <a href="https://logister.org/">logister.org</a>
+            <a href="https://logister.org/">Hosted app</a>
             <a href="https://github.com/taimoorq/logister">GitHub</a>
           </nav>
         </div>
@@ -51,8 +51,8 @@
           <span class="hero-kicker">Documentation / Getting started</span>
           <h1>Set up your first Logister project.</h1>
           <p>
-            Logister works best when you start with a clean project, generate an API token, and then choose the
-            integration path that matches your application stack.
+            Logister works best when you start from your own instance, create a clean project, generate an API token,
+            and then choose the integration path that matches your application stack.
           </p>
         </section>
 
@@ -62,6 +62,7 @@
               <p class="sidebar-label">Start here</p>
               <a href="/">Overview</a>
               <a class="active" href="/getting-started/">Getting started</a>
+              <a href="/product/">Product guide</a>
               <a href="/self-hosting/">Self-hosting</a>
             </div>
             <div class="sidebar-group">
@@ -98,16 +99,18 @@
                   <p class="eyebrow">Guide overview</p>
                   <h2>Start here if you are setting up Logister for the first time.</h2>
                   <p class="lead">
-                    This page covers the product-side setup flow. Once you have a project and API token, move into the
+                    This page covers the product-side setup flow after you have a self-hosted Logister instance running, or after you choose the secondary hosted app. Once you have a project and API token, move into the
                     integration guide for Ruby, .NET, Python, CFML, or JavaScript depending on what your app runs.
                   </p>
                 </section>
                 <aside class="outline-card chapter-links">
                   <h3>Next guides</h3>
                   <a href="/integrations/ruby/"><span>Ruby integration</span><span class="kbd">guide</span></a>
+                  <a href="/integrations/dotnet/"><span>.NET integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/python/"><span>Python integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/cfml/"><span>CFML integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/javascript/"><span>JavaScript integration</span><span class="kbd">guide</span></a>
+                  <a href="/product/"><span>Product guide</span><span class="kbd">tour</span></a>
                   <a href="/http-api/"><span>HTTP API</span><span class="kbd">ref</span></a>
                 </aside>
               </div>
@@ -149,6 +152,10 @@
                     <td>Ruby apps and Rails services using <code>logister-ruby</code></td>
                   </tr>
                   <tr>
+                    <td><code>.NET / ASP.NET Core</code></td>
+                    <td>.NET 8+ apps, ASP.NET Core services, C# workers, and custom metrics using <code>Logister</code> or <code>Logister.AspNetCore</code> from <code>logister-dotnet</code></td>
+                  </tr>
+                  <tr>
                     <td><code>Python</code></td>
                     <td>FastAPI, Django, Flask, Celery, and Python apps using <code>logister-python</code>, including Python logging capture</td>
                   </tr>
@@ -188,6 +195,12 @@
                   <p><a href="/integrations/ruby/">Read Ruby integration docs</a></p>
                 </article>
                 <article class="card">
+                  <p class="eyebrow">.NET</p>
+                  <h3>Use the .NET SDK</h3>
+                  <p>Best if your app runs on ASP.NET Core or C# services and you want request exceptions, optional request transactions, metrics, logs, and check-ins.</p>
+                  <p><a href="/integrations/dotnet/">Read .NET integration docs</a></p>
+                </article>
+                <article class="card">
                   <p class="eyebrow">Python</p>
                   <h3>Use the Python package</h3>
                   <p>Best if your app runs on FastAPI, Django, Flask, Celery, or another Python runtime and you want the <code>logister-python</code> client plus framework helpers and logging support.</p>
@@ -217,7 +230,9 @@
 Integration type selected
 API key generated and copied once
 Destination guide chosen
-Base URL for your Logister instance confirmed</code></pre>
+Base URL for your Logister instance confirmed
+One test event visible in the project inbox or activity feed
+Check-in visible on the monitors page if you are instrumenting scheduled work</code></pre>
               </div>
               <div class="note tip">
                 <h4>Next step</h4>

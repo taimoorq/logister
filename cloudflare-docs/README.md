@@ -65,12 +65,14 @@ This static export mirrors the current public docs pages from the main Logister 
 
 - Overview
 - Getting started
+- Product guide
 - Self-hosting
 - Local development
 - Deployment config
 - ClickHouse
 - HTTP API
 - Ruby integration
+- .NET integration
 - Python integration
 - JavaScript integration
 - CFML integration

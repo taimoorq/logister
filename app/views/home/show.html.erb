@@ -1,5 +1,5 @@
 <% content_for :title, "Self-Hosted Analytics Dashboard for Your Apps" %>
-<% content_for :meta_description, "Logister is an open source, self-hosted analytics dashboard for your apps. Track errors, logs, metrics, transactions, and check-ins from Ruby, .NET, Python, JavaScript/TypeScript, or CFML services." %>
+<% content_for :meta_description, "Logister is an open source, self-hostable analytics dashboard for your apps. Run it yourself and track errors, logs, metrics, transactions, and check-ins from Ruby, .NET, Python, JavaScript/TypeScript, or CFML services." %>
 <% content_for :canonical_path, root_path %>
 <% content_for :og_type, "website" %>
 <% content_for :json_ld, json_ld({
@@ -8,7 +8,7 @@
   "name" => "Logister",
   "applicationCategory" => "DeveloperApplication",
   "operatingSystem" => "Web",
-  "description" => "Open source, self-hosted analytics dashboard for Ruby, .NET, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
+  "description" => "Open source, self-hostable analytics dashboard for Ruby, .NET, Python, JavaScript/TypeScript, and ColdFusion/CFML apps.",
   "url" => absolute_url_for(root_path),
   "image" => absolute_url_for("/icon.png"),
   "sameAs" => [
@@ -50,20 +50,20 @@
   <section class="marketing-hero" style="view-transition-name: public-hero; view-transition-class: public-panel;">
     <div class="hero-grid">
       <div>
-        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Self-hosted analytics dashboard for your apps</p>
+        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Self-hostable analytics dashboard for your apps</p>
         <h1 class="hero-title" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
           See errors, logs, and app health in one place.
         </h1>
         <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
-          Capture errors, transactions, logs, and check-ins in one dashboard. Use <code>logister-ruby</code>, <code>logister-dotnet</code>, <code>logister-python</code>, <code>logister-js</code>, or direct HTTP ingestion from Lucee and ColdFusion to help your team spot problems faster, investigate with context, and feel better about each release.
+          Run Logister yourself, keep your telemetry in infrastructure you control, and capture errors, transactions, logs, and check-ins in one dashboard. Use <code>logister-ruby</code>, <code>logister-dotnet</code>, <code>logister-python</code>, <code>logister-js</code>, or direct HTTP ingestion from Lucee and ColdFusion to help your team spot problems faster, investigate with context, and feel better about each release.
         </p>
         <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="200">
-          <%= link_to "Start free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
-          <%= link_to "See docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-secondary" %>
+          <%= link_to "Self-host Logister", docs_site_url(:self_hosting), target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-primary" %>
+          <%= link_to "Use hosted app", new_user_registration_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
         </div>
         <div class="hero-proof" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="250">
-          <span>No credit card</span>
-          <span>Self-host ready</span>
+          <span>Open source</span>
+          <span>Self-host first</span>
           <span>Ruby, .NET, Python, JS, and CFML</span>
         </div>
       </div>
@@ -273,12 +273,12 @@ LOGISTER_API_KEY=your_key_here
 
   <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-cta; view-transition-class: public-panel;">
     <div>
-      <p class="workflow-kicker">Get started</p>
-      <h2>Ship safer deploys with clearer error ownership.</h2>
+      <p class="workflow-kicker">Run it yourself</p>
+      <h2>Self-host Logister and keep clearer error ownership close to your team.</h2>
     </div>
     <div class="hero-actions">
-      <%= link_to "Create free account", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
-      <%= link_to "Read docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-secondary" %>
+      <%= link_to "Read self-hosting docs", docs_site_url(:self_hosting), target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-primary" %>
+      <%= link_to "Use hosted app", new_user_registration_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
     </div>
   </section>
 </div>

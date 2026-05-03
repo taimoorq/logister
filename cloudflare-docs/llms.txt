@@ -1,10 +1,11 @@
 # Logister Documentation
 
-Canonical product and integration documentation for Logister lives on this docs host.
+Canonical product and integration documentation for Logister lives on this docs host. Logister is self-hosted and self-hostable first; the public hosted app at logister.org is a secondary option.
 
 ## Start here
 - Docs home: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
+- Product guide: https://docs.logister.org/product/
 - HTTP API: https://docs.logister.org/http-api/
 - Self-hosting: https://docs.logister.org/self-hosting/
 
@@ -21,7 +22,8 @@ Canonical product and integration documentation for Logister lives on this docs 
 - ClickHouse: https://docs.logister.org/clickhouse/
 
 ## Audience
-- Teams using Logister as a self-hosted analytics dashboard for app issues, release visibility, and triage
+- Teams using Logister to connect app telemetry to daily work: grouped error triage, event investigation, related logs, performance visibility, check-in monitors, activity review, release visibility, and project sharing
+- Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, and optional ClickHouse, email, Turnstile, analytics, and static docs hosting
 - Ruby teams using `logister-ruby`
 - .NET teams using `logister-dotnet` with ASP.NET Core and C# services
 - Python teams using `logister-python` with FastAPI, Django, Flask, Celery, and Python logging
@@ -29,8 +31,8 @@ Canonical product and integration documentation for Logister lives on this docs 
 - Lucee and Adobe ColdFusion teams sending structured CFML payloads over HTTP
 
 ## Product and packages
-- Main product site: https://logister.org/
 - App source: https://github.com/taimoorq/logister
+- Secondary hosted/public app: https://logister.org/
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
 - .NET SDK source: https://github.com/taimoorq/logister-dotnet
 - Python SDK source: https://github.com/taimoorq/logister-python

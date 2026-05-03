@@ -1,6 +1,6 @@
 # Logister
 
-Logister is a free, open source, self-hosted analytics dashboard for your apps.
+Logister is a free, open source, self-hosted and self-hostable analytics dashboard for your apps. The primary goal is helping teams run Logister themselves; the public hosted app at logister.org is a secondary option.
 
 It supports:
 - Ruby and Rails apps via the `logister-ruby` gem
@@ -12,6 +12,7 @@ It supports:
 Canonical documentation lives on the public docs host:
 - Product docs: https://docs.logister.org/
 - Docs sitemap: https://docs.logister.org/sitemap.xml
+- Self-host source: https://github.com/taimoorq/logister
 
 ## Public pages
 - Home: /
@@ -22,6 +23,7 @@ Canonical documentation lives on the public docs host:
 ## Public docs
 - Docs home: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
+- Product guide: https://docs.logister.org/product/
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Local development: https://docs.logister.org/local-development/
 - Deployment: https://docs.logister.org/deployment/
@@ -37,10 +39,12 @@ Canonical documentation lives on the public docs host:
 - Captures and groups application errors.
 - Stores stacktrace, request context, occurrence history, and status.
 - Accepts `error`, `log`, `metric`, `transaction`, and `check_in` events.
-- Includes a public docs site with setup, deployment, API, and integration guides.
+- Helps teams triage grouped errors, inspect event context, connect related logs, review performance, watch scheduled work, share project visibility, and operate the self-hosted app.
+- Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
 
 ## Primary audience
 - Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.
+- Teams evaluating whether to run their own Logister instance before using the secondary hosted app.
 - Python developers instrumenting APIs, workers, schedulers, and Python logging.
 - .NET developers instrumenting ASP.NET Core apps and C# workers.
 - JavaScript and TypeScript developers integrating Node or Express apps.

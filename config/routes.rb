@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   root "home#show"
   get "docs", to: redirect("#{docs_base_url}/", status: 301)
   get "docs/getting-started", to: redirect("#{docs_base_url}/getting-started/", status: 301)
+  get "docs/product", to: redirect("#{docs_base_url}/product/", status: 301)
   get "docs/self-hosting", to: redirect("#{docs_base_url}/self-hosting/", status: 301)
   get "docs/local-development", to: redirect("#{docs_base_url}/local-development/", status: 301)
   get "docs/deployment", to: redirect("#{docs_base_url}/deployment/", status: 301)

@@ -2,50 +2,54 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://docs.logister.org/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/getting-started/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/product/</loc>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/self-hosting/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/local-development/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/deployment/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/clickhouse/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/http-api/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/integrations/ruby/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/integrations/dotnet/</loc>
-    <lastmod>2026-04-30</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/integrations/python/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/integrations/cfml/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/integrations/javascript/</loc>
-    <lastmod>2026-04-22</lastmod>
+    <lastmod>2026-05-03</lastmod>
   </url>
 </urlset>

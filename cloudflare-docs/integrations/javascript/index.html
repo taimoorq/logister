@@ -28,19 +28,20 @@
   </head>
   <body>
     <div class="site-shell">
-      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">JavaScript integration</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">logister.org</a><a href="https://github.com/taimoorq/logister-js">SDK repo</a></nav></div></header>
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">JavaScript integration</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister-js">SDK repo</a></nav></div></header>
       <main class="page">
         <section class="hero"><span class="hero-kicker">Documentation / JavaScript</span><h1>Integrate a JavaScript or TypeScript app with Logister.</h1><p>The best path for JavaScript and TypeScript projects is the published npm package <code>logister-js</code>. It is aimed at the kinds of JavaScript teams that need visibility across HTTP handlers, background jobs, scripts, and console output, with optional Express middleware and console capture when you need them.</p></section>
         <div class="docs-layout">
           <aside class="sidebar">
-            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/product/">Product guide</a><a href="/self-hosting/">Self-hosting</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a class="active" href="/integrations/javascript/">JavaScript integration</a></div>
             <hr>
-            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#flow">Setup flow</a><a href="#install">Install</a><a href="#express">Express</a><a href="#console">Console logging</a><a href="#other-frameworks">Other frameworks</a><a href="#custom-events">Custom events</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#outcomes">What you get</a><a href="#flow">Setup flow</a><a href="#install">Install</a><a href="#express">Express</a><a href="#console">Console logging</a><a href="#other-frameworks">Other frameworks</a><a href="#custom-events">Custom events</a></div>
           </aside>
           <article class="article">
-            <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>JavaScript / TypeScript</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates your app when sending events</td></tr><tr><td>Hosted Logister base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Node 18+ app</td><td>Lets you run the published <code>logister-js</code> package</td></tr></tbody></table></section>
+            <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>JavaScript / TypeScript</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates your app when sending events</td></tr><tr><td>Logister instance base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Node 18+ app</td><td>Lets you run the published <code>logister-js</code> package</td></tr></tbody></table></section>
+            <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use the JavaScript integration to connect server-side errors, logs, and request timing.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch Express request failures</td><td>Inbox issues with structured JavaScript stack frames, request context, route or URL metadata, runtime details, and chained causes when available.</td></tr><tr><td>Keep console output visible</td><td><code>console</code> activity in the project activity feed, with <code>console.error(Error)</code> reported as error events.</td></tr><tr><td>Measure server work</td><td>Transaction events for request handlers, scripts, jobs, and custom operations that feed the performance view.</td></tr><tr><td>Correlate logs and errors</td><td>Request, trace, session, or user identifiers shared across log and error events so related logs appear in the detail pane.</td></tr><tr><td>Monitor recurring jobs</td><td>Check-ins from workers and scripts that show up as monitor status.</td></tr></tbody></table></section>
             <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project and generate an API key.</li><li>Install <code>logister-js</code> in the JavaScript or TypeScript app.</li><li>Configure the client with the project API key and base URL.</li><li>Add the Express middleware and error handler if you run Express, or start with direct shared-client calls in your framework.</li><li>Attach <code>instrumentConsole()</code> if you want standard console activity to flow into Logister too.</li><li>Use the shared client for custom metrics, logs, transactions, and check-ins.</li></ol><div class="note tip"><h4>Tip</h4><p>JavaScript teams usually get the fastest value by starting with uncaught errors plus request or job timing, then adding console capture and custom events once the noisy operational paths are under control.</p></div></section>
             <section id="install" class="section"><p class="eyebrow">Install</p><h2>Install <code>logister-js</code> from npm.</h2><p>Use the published npm package when you want a Node or TypeScript service to send errors, logs, metrics, transactions, and check-ins into Logister with the package manager your team already uses. The npm listing is the canonical package page for install commands, version history, and package metadata.</p><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#js-install">Copy</button></div><pre><code id="js-install">npm install logister-js
 yarn add logister-js
@@ -49,7 +50,7 @@ bun add logister-js</code></pre></div><div class="code-block"><div class="code-h
 
 const client = new LogisterClient({
   apiKey: process.env.LOGISTER_API_KEY ?? "",
-  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://logister.org"
+  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://your-logister-host.example"
 });</code></pre></div><ul><li><a href="https://www.npmjs.com/package/logister-js">View the npm package listing</a> for version history and install details.</li><li><a href="https://github.com/taimoorq/logister-js">Use GitHub</a> for source, issues, and changelog history.</li><li><a href="https://github.com/taimoorq/logister">Use the main Logister repo</a> if you want to run the self-hosted hub yourself.</li></ul></section>
             <section id="express" class="section"><p class="eyebrow">Express</p><h2>Capture requests and uncaught route errors.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-express">Copy</button></div><pre><code id="js-express">import express from "express";
 import { LogisterClient } from "logister-js";
@@ -61,7 +62,7 @@ import {
 const app = express();
 const client = new LogisterClient({
   apiKey: process.env.LOGISTER_API_KEY ?? "",
-  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://logister.org"
+  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://your-logister-host.example"
 });
 
 app.use(createLogisterMiddleware({ client }));
@@ -76,7 +77,7 @@ import { instrumentConsole } from "logister-js/console";
 
 const client = new LogisterClient({
   apiKey: process.env.LOGISTER_API_KEY ?? "",
-  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://logister.org"
+  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://your-logister-host.example"
 });
 
 const restoreConsole = instrumentConsole(client, {
@@ -90,7 +91,7 @@ restoreConsole();</code></pre></div><p>This is the low-friction path when a Java
 
 const client = new LogisterClient({
   apiKey: process.env.LOGISTER_API_KEY ?? "",
-  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://logister.org"
+  baseUrl: process.env.LOGISTER_BASE_URL ?? "https://your-logister-host.example"
 });
 
 try {

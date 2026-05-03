@@ -60,7 +60,7 @@
     </article>
     <article class="about-pill-card">
       <p class="stat-label">Deploy</p>
-      <p class="about-pill-value">Cloud hosted or fully self-hosted</p>
+        <p class="about-pill-value">Self-hosted first, hosted optional</p>
     </article>
   </section>
 
@@ -116,8 +116,8 @@
     </article>
     <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
       <p class="feature-kicker">Operate</p>
-      <h2>Run hosted or self-host with infrastructure you control</h2>
-      <p>Most teams only need the product and the language packages. Runtime stack details matter when you want to operate Logister yourself.</p>
+      <h2>Self-host with infrastructure you control</h2>
+      <p>The main path is to operate Logister yourself. The hosted app exists as an optional convenience, while the runtime stack details help teams plan their own deployment.</p>
     </article>
   </section>
 
@@ -170,11 +170,11 @@
   <section class="marketing-cta" data-controller="reveal" data-reveal-animation-class-value="reveal-up" style="view-transition-name: public-cta; view-transition-class: public-panel;">
     <div>
       <p class="workflow-kicker">Next step</p>
-      <h2>Start capturing real production issues in minutes.</h2>
+      <h2>Start with the self-hosted path, then connect real production services.</h2>
     </div>
     <div class="hero-actions">
-      <%= link_to "Sign up free", new_user_registration_path, class: "hero-btn hero-btn-primary", data: { turbo: false } %>
-      <%= link_to "Read docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-secondary" %>
+      <%= link_to "Self-host Logister", docs_site_url(:self_hosting), target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-primary" %>
+      <%= link_to "Use hosted app", new_user_registration_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
     </div>
   </section>
 </div>
