@@ -7,6 +7,8 @@ class User < ApplicationRecord
   has_many :projects, dependent: :destroy
   has_many :api_keys, dependent: :destroy
   has_many :project_memberships, dependent: :destroy
+  has_many :project_notification_preferences, dependent: :destroy
+  has_many :email_notification_deliveries, dependent: :destroy
   has_many :shared_projects, through: :project_memberships, source: :project
 
   before_validation :ensure_uuid

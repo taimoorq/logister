@@ -21,8 +21,9 @@ class ErrorGroupingService
     return nil unless @event.error?
 
     fingerprint = derive_fingerprint
-    group       = upsert_group(fingerprint)
+    group, created = upsert_group(fingerprint)
     link_occurrence(group)
+    ProjectErrorFirstOccurrenceAlertJob.perform_later(group.id) if created
     group
   end
 
@@ -38,7 +39,9 @@ class ErrorGroupingService
   def upsert_group(fingerprint)
     group = @project.error_groups.find_or_initialize_by(fingerprint: fingerprint)
 
-    if group.new_record?
+    created = group.new_record?
+
+    if created
       # Build initial state from the event
       ctx = @event.context.is_a?(Hash) ? @event.context : {}
       exc = ctx["exception"] || ctx[:exception]
@@ -64,7 +67,7 @@ class ErrorGroupingService
     # Back-link on the ingest_event row so we can JOIN cheaply
     @event.update_column(:error_group_id, group.id)
 
-    group
+    [ group, created ]
   end
 
   def link_occurrence(group)

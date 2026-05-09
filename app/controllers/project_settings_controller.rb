@@ -8,6 +8,7 @@ class ProjectSettingsController < ApplicationController
     @owner = @project.user
     @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
     @api_keys = @project.api_keys.order(created_at: :desc)
+    @notification_preference = ProjectNotificationPreference.for(user: current_user, project: @project)
 
     render "projects/settings"
   end

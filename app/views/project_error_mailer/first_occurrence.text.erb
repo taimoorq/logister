@@ -1,0 +1,16 @@
+New error in <%= @project.name %>
+
+Logister saw this error type for the first time in your project.
+
+Error: <%= @group.title %>
+<% if @group.subtitle.present? %>Class: <%= @group.subtitle %>
+<% end %>Environment: <%= @group.stage %>
+Severity: <%= @group.severity %>
+<% if @group.introduced_in_release.present? %>Release: <%= @group.introduced_in_release %>
+<% end %><% if @group.first_seen_at %>First seen: <%= l(@group.first_seen_at, format: :long) %>
+<% end %>
+Open error:
+<%= @group_url %>
+
+Manage project email settings:
+<%= @settings_url %>

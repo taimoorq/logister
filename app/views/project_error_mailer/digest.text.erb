@@ -1,0 +1,19 @@
+<%= @frequency.titleize %> error digest for <%= @project.name %>
+
+Period: <%= l(@period_start, format: :long) %> to <%= l(@period_end, format: :long) %>
+
+<%= @summary.total_occurrences %> occurrences across <%= pluralize(@summary.error_group_count, "error group") %>
+<%= pluralize(@summary.new_group_count, "new group") %>
+
+<% @summary.entries.each do |entry| %>
+<% group = entry.group %>
+- <%= group.title %>
+  <%= pluralize(entry.occurrence_count, "occurrence") %> · <%= group.stage %><% if group.last_seen_release.present? %> · <%= group.last_seen_release %><% end %>
+  <%= project_url(@project, group_uuid: group.uuid) %>
+
+<% end %>
+Open project:
+<%= @project_url %>
+
+Manage project email settings:
+<%= @settings_url %>

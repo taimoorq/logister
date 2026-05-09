@@ -3,6 +3,7 @@ class ErrorGroup < ApplicationRecord
   belongs_to :latest_event, class_name: "IngestEvent", optional: true
   has_many   :error_occurrences, dependent: :destroy
   has_many   :ingest_events, through: :error_occurrences
+  has_many   :email_notification_deliveries, dependent: :nullify
 
   before_validation :ensure_uuid
 

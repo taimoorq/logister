@@ -2,12 +2,33 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-      /* Email styles need to be inline */
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
 
-  <body>
-    <%= yield %>
+  <body style="margin:0; padding:0; background:#f1f5f9; font-family:Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+    <div style="display:none; max-height:0; overflow:hidden; color:transparent; opacity:0;">Logister project notification</div>
+    <table role="presentation" style="width:100%; border-collapse:collapse; background:#f1f5f9;">
+      <tr>
+        <td align="center" style="padding:28px 12px;">
+          <table role="presentation" style="width:100%; max-width:640px; border-collapse:collapse;">
+            <tr>
+              <td style="padding:0 0 12px;">
+                <a href="<%= root_url %>" style="color:#0f172a; text-decoration:none; font-size:20px; font-weight:800;">Logister</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:28px;">
+                <%= yield %>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:14px 0 0; color:#64748b; font-size:12px; line-height:1.5;">
+                Logister sends project notifications only to account members with project access.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

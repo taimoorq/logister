@@ -1,0 +1,38 @@
+<h1 style="margin:0 0 12px; font-size:24px; line-height:1.25; color:#0f172a;"><%= @frequency.titleize %> error digest for <%= @project.name %></h1>
+
+<p style="margin:0 0 18px; color:#475569; font-size:15px; line-height:1.6;">
+  <%= l(@period_start, format: :long) %> to <%= l(@period_end, format: :long) %>
+</p>
+
+<div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin:0 0 18px; background:#f8fafc;">
+  <p style="margin:0; color:#0f172a; font-size:28px; line-height:1.1; font-weight:800;"><%= @summary.total_occurrences %></p>
+  <p style="margin:6px 0 0; color:#475569; font-size:14px;">
+    occurrences across <%= pluralize(@summary.error_group_count, "error group") %>;
+    <%= pluralize(@summary.new_group_count, "new group") %>.
+  </p>
+</div>
+
+<% @summary.entries.each do |entry| %>
+  <% group = entry.group %>
+  <div style="border-top:1px solid #e2e8f0; padding:14px 0;">
+    <p style="margin:0 0 4px; color:#0f172a; font-size:16px; font-weight:700;"><%= group.title %></p>
+    <p style="margin:0 0 8px; color:#475569; font-size:13px;">
+      <%= pluralize(entry.occurrence_count, "occurrence") %>
+      · <%= group.stage %>
+      <% if group.last_seen_release.present? %> · <%= group.last_seen_release %><% end %>
+      <% if entry.latest_occurrence_at.present? %> · last seen <%= l(entry.latest_occurrence_at, format: :short) %><% end %>
+    </p>
+    <p style="margin:0;">
+      <a href="<%= project_url(@project, group_uuid: group.uuid) %>" style="color:#2563eb; font-size:13px; font-weight:700;">Open error</a>
+    </p>
+  </div>
+<% end %>
+
+<p style="margin:8px 0 22px;">
+  <a href="<%= @project_url %>" style="display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:8px; padding:11px 16px; font-weight:700; font-size:14px;">Open project in Logister</a>
+</p>
+
+<p style="margin:0; color:#64748b; font-size:12px; line-height:1.5;">
+  You received this because <%= @frequency %> digests are enabled for <%= @project.name %>.
+  <a href="<%= @settings_url %>" style="color:#2563eb;">Manage project email settings</a>.
+</p>

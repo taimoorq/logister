@@ -5,6 +5,8 @@ class Project < ApplicationRecord
   has_many :error_groups, dependent: :destroy
   has_many :check_in_monitors, dependent: :destroy
   has_many :project_memberships, dependent: :destroy
+  has_many :project_notification_preferences, dependent: :destroy
+  has_many :email_notification_deliveries, dependent: :destroy
   has_many :members, through: :project_memberships, source: :user
 
   before_validation :ensure_uuid
@@ -32,6 +34,10 @@ class Project < ApplicationRecord
 
   def owned_by?(viewer)
     user_id == viewer.id
+  end
+
+  def notification_recipients
+    User.where(id: [ user_id, *project_memberships.pluck(:user_id) ]).distinct
   end
 
   def integration_label

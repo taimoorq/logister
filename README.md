@@ -128,6 +128,7 @@ A few things are worth knowing before you start changing the app locally:
 - PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path.
 - The public docs are hosted separately on `docs.logister.org`, so app links to docs intentionally point out of the Rails app.
 - On Fly, database preparation should run in the release phase rather than on every web boot. If your database provider gives you separate runtime and migration URLs, set `DATABASE_URL` to the runtime URL and `DATABASE_MIGRATION_URL` to the direct migration/admin URL.
+- On Fly and other production hosts, keep one Sidekiq worker running. It handles ClickHouse writes, Action Mailer delivery, first-occurrence error alerts, and digest scheduling; no separate cron service is required.
 
 If you want Docker-backed local infra, or want ClickHouse and PostgreSQL running together locally, use:
 

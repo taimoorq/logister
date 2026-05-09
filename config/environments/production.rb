@@ -1,4 +1,5 @@
 require "active_support/core_ext/integer/time"
+require "uri"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -63,7 +64,9 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
 
-  public_url_options = { host: "logister.org", protocol: "https" }
+  public_url = URI.parse(ENV.fetch("LOGISTER_PUBLIC_URL", "https://logister.org"))
+  public_url_options = { host: public_url.host, protocol: public_url.scheme }
+  public_url_options[:port] = public_url.port unless [ 80, 443 ].include?(public_url.port)
 
   # Set the canonical public host for generated URLs in mailers, sitemap, and SEO tags.
   config.action_mailer.default_url_options = public_url_options

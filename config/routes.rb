@@ -26,6 +26,8 @@ Rails.application.routes.draw do
   get "privacy", to: "home#privacy"
   get "cookies", to: "home#cookies"
   get "terms", to: "home#terms"
+  get "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#unsubscribe", as: :unsubscribe_notification_preferences
+  post "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#unsubscribe"
 
   get "dashboard", to: "dashboard#index"
   get "health/clickhouse", to: "health#clickhouse"
@@ -50,6 +52,7 @@ Rails.application.routes.draw do
     end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
+    resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
 
     resources :error_groups, only: [], param: :uuid do

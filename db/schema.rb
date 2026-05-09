@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_21_185034) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_09_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -50,6 +50,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_185034) do
     t.index ["project_id", "last_check_in_at"], name: "index_check_in_monitors_on_project_id_and_last_check_in_at"
     t.index ["project_id", "slug", "environment"], name: "idx_check_in_monitors_uniqueness", unique: true
     t.index ["project_id"], name: "index_check_in_monitors_on_project_id"
+  end
+
+  create_table "email_notification_deliveries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "dedup_key", null: false
+    t.bigint "error_group_id"
+    t.text "last_error"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "notification_kind", null: false
+    t.datetime "period_end_at"
+    t.datetime "period_start_at"
+    t.bigint "project_id", null: false
+    t.datetime "sent_at"
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["dedup_key"], name: "index_email_notification_deliveries_on_dedup_key", unique: true
+    t.index ["error_group_id"], name: "index_email_notification_deliveries_on_error_group_id"
+    t.index ["project_id"], name: "index_email_notification_deliveries_on_project_id"
+    t.index ["status", "created_at"], name: "idx_email_deliveries_status_created_at"
+    t.index ["user_id", "project_id", "notification_kind", "period_start_at"], name: "idx_email_deliveries_digest_lookup"
+    t.index ["user_id"], name: "index_email_notification_deliveries_on_user_id"
+    t.index ["uuid"], name: "index_email_notification_deliveries_on_uuid", unique: true
   end
 
   create_table "error_groups", force: :cascade do |t|
@@ -140,6 +164,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_185034) do
     t.index ["uuid"], name: "index_project_memberships_on_uuid", unique: true
   end
 
+  create_table "project_notification_preferences", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "digest_frequency", default: "none", null: false
+    t.integer "digest_send_hour", default: 9, null: false
+    t.boolean "first_occurrence_enabled", default: true, null: false
+    t.bigint "project_id", null: false
+    t.boolean "send_empty_digest", default: false, null: false
+    t.string "time_zone", default: "UTC", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["digest_frequency", "digest_send_hour"], name: "idx_project_notification_preferences_digest_due"
+    t.index ["project_id", "user_id"], name: "idx_project_notification_preferences_uniqueness", unique: true
+    t.index ["project_id"], name: "index_project_notification_preferences_on_project_id"
+    t.index ["user_id"], name: "index_project_notification_preferences_on_user_id"
+    t.index ["uuid"], name: "index_project_notification_preferences_on_uuid", unique: true
+  end
+
   create_table "projects", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
@@ -183,6 +225,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_185034) do
   add_foreign_key "api_keys", "users"
   add_foreign_key "check_in_monitors", "ingest_events", column: "last_event_id"
   add_foreign_key "check_in_monitors", "projects"
+  add_foreign_key "email_notification_deliveries", "error_groups"
+  add_foreign_key "email_notification_deliveries", "projects"
+  add_foreign_key "email_notification_deliveries", "users"
   add_foreign_key "error_groups", "ingest_events", column: "latest_event_id"
   add_foreign_key "error_groups", "projects"
   add_foreign_key "error_occurrences", "error_groups"
@@ -192,5 +237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_21_185034) do
   add_foreign_key "ingest_events", "projects"
   add_foreign_key "project_memberships", "projects"
   add_foreign_key "project_memberships", "users"
+  add_foreign_key "project_notification_preferences", "projects"
+  add_foreign_key "project_notification_preferences", "users"
   add_foreign_key "projects", "users"
 end
