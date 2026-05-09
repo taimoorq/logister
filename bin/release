@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+if [[ -n "${DATABASE_MIGRATION_URL:-}" ]]; then
+  export DATABASE_URL="${DATABASE_MIGRATION_URL}"
+elif [[ -n "${DIRECT_URL:-}" ]]; then
+  export DATABASE_URL="${DIRECT_URL}"
+fi
+
+exec ./bin/rails db:prepare
