@@ -412,6 +412,79 @@
   .dashboard-metric-state-attention .dashboard-metric-icon {
     @apply bg-red-50 text-red-700 ring-1 ring-red-200;
   }
+  .dashboard-explorer {
+    @apply border-y border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5;
+  }
+  .dashboard-explorer-header {
+    @apply flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between;
+  }
+  .dashboard-explorer-header h2 {
+    @apply text-lg font-semibold text-slate-900;
+  }
+  .dashboard-explorer-header p:not(.dashboard-kicker) {
+    @apply mt-1 text-sm text-slate-500;
+  }
+  .dashboard-explorer-actions {
+    @apply flex flex-col gap-2 lg:items-end;
+  }
+  .dashboard-explorer-filters {
+    @apply flex min-h-9 flex-wrap items-center gap-2;
+  }
+  .dashboard-explorer-filter,
+  .dashboard-explorer-reset {
+    @apply inline-flex h-8 items-center justify-center gap-2 rounded-md border px-3 text-xs font-semibold no-underline;
+  }
+  .dashboard-explorer-filter {
+    @apply border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100;
+  }
+  .dashboard-explorer-filter span:last-child {
+    @apply text-blue-400;
+  }
+  .dashboard-explorer-filter-empty {
+    @apply text-xs font-semibold uppercase text-slate-400;
+    letter-spacing: 0;
+  }
+  .dashboard-explorer-reset {
+    @apply border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .dashboard-explorer-summary {
+    @apply mt-4 grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-slate-50;
+  }
+  .dashboard-explorer-summary span {
+    @apply min-w-0 border-r border-slate-200 px-3 py-2 text-slate-500 last:border-r-0;
+  }
+  .dashboard-explorer-summary strong {
+    @apply block truncate text-lg font-semibold text-slate-900;
+  }
+  .dashboard-explorer-summary span span {
+    @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .dashboard-explorer-layout {
+    @apply mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3;
+  }
+  .dashboard-explorer-card {
+    @apply min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3 shadow-sm;
+  }
+  .dashboard-explorer-card-wide {
+    @apply lg:col-span-2;
+  }
+  .dashboard-explorer-card-header {
+    @apply mb-2 flex items-baseline justify-between gap-3;
+  }
+  .dashboard-explorer-card-header h3 {
+    @apply truncate text-sm font-semibold text-slate-900;
+  }
+  .dashboard-explorer-card-header span {
+    @apply shrink-0 text-[11px] font-semibold uppercase text-slate-400;
+    letter-spacing: 0;
+  }
+  .dashboard-explorer-chart {
+    @apply h-64 w-full min-w-0;
+  }
+  .dashboard-explorer-chart-tall {
+    @apply h-72;
+  }
   .dashboard-grid {
     @apply grid grid-cols-1 gap-5 xl:grid-cols-2;
   }

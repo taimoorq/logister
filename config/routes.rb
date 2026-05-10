@@ -30,6 +30,7 @@ Rails.application.routes.draw do
   post "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#unsubscribe"
 
   get "dashboard", to: "dashboard#index"
+  get "dashboard/explorer", to: "dashboard#explorer", as: :dashboard_explorer
   get "health/clickhouse", to: "health#clickhouse"
   resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
   get "account/security", to: redirect("/users/edit"), as: :account_security

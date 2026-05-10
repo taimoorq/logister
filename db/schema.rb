@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_10_154000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -152,8 +152,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_150000) do
     t.bigint "project_id", null: false
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index "project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC", name: "idx_ingest_events_project_environment_occurred"
     t.index ["api_key_id"], name: "index_ingest_events_on_api_key_id"
     t.index ["error_group_id"], name: "index_ingest_events_on_error_group_id"
+    t.index ["project_id", "event_type", "occurred_at"], name: "idx_ingest_events_project_occurred_type", order: { occurred_at: :desc }
     t.index ["project_id", "event_type"], name: "index_ingest_events_on_project_id_and_event_type"
     t.index ["project_id", "occurred_at"], name: "index_ingest_events_on_project_id_and_occurred_at"
     t.index ["project_id", "updated_at"], name: "idx_ingest_events_project_updated_at", order: { updated_at: :desc }

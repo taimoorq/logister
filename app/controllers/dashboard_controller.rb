@@ -3,9 +3,9 @@ class DashboardController < ApplicationController
 
   def index
     accessible = current_user.accessible_projects
-    project_ids = accessible.pluck(:id)
+    @projects = accessible.order(created_at: :desc).to_a
+    project_ids = @projects.map(&:id)
 
-    @projects = accessible.order(created_at: :desc)
     summary = safe_cache_fetch(
       [ "dashboard_summary", current_user.id, project_ids, Dashboard.cache_version(project_ids) ],
       expires_in: 30.seconds
@@ -27,6 +27,19 @@ class DashboardController < ApplicationController
     @recent_events = ordered_records(IngestEvent.includes(:project).where(id: summary[:recent_event_ids]), summary[:recent_event_ids]).first(8)
     @recent_error_groups = ordered_records(ErrorGroup.includes(:project, :latest_event).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
     @project_summaries = ranked_project_summaries(@projects, @project_stats).first(6)
+    @dashboard_explorer = dashboard_explorer_config(@projects)
+  end
+
+  def explorer
+    projects = current_user.accessible_projects.order(created_at: :desc).to_a
+    project_ids = projects.map(&:id)
+    filters = dashboard_explorer_filters(project_ids)
+    explorer = safe_cache_fetch(
+      [ "dashboard_explorer", current_user.id, project_ids, filters, Dashboard.cache_version(project_ids) ],
+      expires_in: 30.seconds
+    ) { Dashboard.explorer_for(project_ids, **filters) }
+
+    render json: dashboard_explorer_response(projects, explorer)
   end
 
   private
@@ -45,6 +58,73 @@ class DashboardController < ApplicationController
         -(stats[:latest_event_at]&.to_i || 0),
         -project.created_at.to_i
       ]
+    end
+  end
+
+  def dashboard_explorer_config(projects)
+    {
+      endpoint: dashboard_explorer_path,
+      window_days: Dashboard::EXPLORER_WINDOW.in_days.to_i,
+      event_types: Dashboard::EVENT_TYPE_ORDER.map do |event_type|
+        { key: event_type, label: helpers.dashboard_event_type_label(event_type) }
+      end,
+      projects: projects.map do |project|
+        {
+          id: project.id,
+          name: project.name,
+          slug: project.slug,
+          integration: project.integration_label,
+          url: project_path(project),
+          activity_url: activity_project_path(project)
+        }
+      end
+    }
+  end
+
+  def dashboard_explorer_response(projects, explorer)
+    projects_by_id = projects.index_by(&:id)
+    event_type_counts = explorer[:event_types] || {}
+
+    {
+      window_started_at: explorer[:window_started_at],
+      window_days: explorer[:window_days],
+      totals: explorer[:totals],
+      timeline: explorer[:timeline],
+      event_types: Dashboard::EVENT_TYPE_ORDER.map do |event_type|
+        {
+          key: event_type,
+          label: helpers.dashboard_event_type_label(event_type),
+          count: event_type_counts.fetch(event_type, 0).to_i
+        }
+      end,
+      projects: explorer[:projects].filter_map do |project_row|
+        project = projects_by_id[project_row[:project_id]]
+        next if project.blank?
+
+        {
+          id: project.id,
+          name: project.name,
+          slug: project.slug,
+          integration: project.integration_label,
+          url: project_path(project),
+          activity_url: activity_project_path(project),
+          count: project_row[:count],
+          open_errors: project_row[:open_errors]
+        }
+      end,
+      environments: explorer[:environments]
+    }
+  end
+
+  def dashboard_explorer_filters(project_ids)
+    event_type = params[:event_type].to_s
+    project_id = params[:project_id].to_i
+    environment = params[:environment].to_s.strip
+
+    {}.tap do |filters|
+      filters[:event_type] = event_type if IngestEvent.event_types.key?(event_type)
+      filters[:project_id] = project_id if project_ids.include?(project_id)
+      filters[:environment] = environment if environment.present?
     end
   end
 end

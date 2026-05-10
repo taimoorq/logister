@@ -68,6 +68,59 @@
     </article>
   </section>
 
+  <section class="dashboard-explorer" data-controller="dashboard-explorer" aria-label="Cross-app event explorer">
+    <script type="application/json" data-dashboard-explorer-target="payload"><%= raw json_ld(@dashboard_explorer) %></script>
+
+    <div class="dashboard-explorer-header">
+      <div>
+        <p class="dashboard-kicker">Explorer</p>
+        <h2>Overall Event flow</h2>
+        <p>Last <%= @dashboard_explorer[:window_days] %> days across accessible apps</p>
+      </div>
+
+      <div class="dashboard-explorer-actions">
+        <div class="dashboard-explorer-filters" data-dashboard-explorer-target="filters"></div>
+        <button type="button" class="dashboard-explorer-reset" data-dashboard-explorer-target="resetButton" data-action="dashboard-explorer#resetFilters">Reset</button>
+      </div>
+    </div>
+
+    <div class="dashboard-explorer-summary" data-dashboard-explorer-target="summary"></div>
+
+    <div class="dashboard-explorer-layout">
+      <article class="dashboard-explorer-card dashboard-explorer-card-wide">
+        <div class="dashboard-explorer-card-header">
+          <h3>Daily volume</h3>
+          <span>By event type</span>
+        </div>
+        <div class="dashboard-explorer-chart dashboard-explorer-chart-tall" data-dashboard-explorer-target="timelineChart" role="img" aria-label="Daily event volume by type"></div>
+      </article>
+
+      <article class="dashboard-explorer-card">
+        <div class="dashboard-explorer-card-header">
+          <h3>Event types</h3>
+          <span>Current slice</span>
+        </div>
+        <div class="dashboard-explorer-chart" data-dashboard-explorer-target="eventTypeChart" role="img" aria-label="Events grouped by type"></div>
+      </article>
+
+      <article class="dashboard-explorer-card">
+        <div class="dashboard-explorer-card-header">
+          <h3>Apps by volume</h3>
+          <span>Top active apps</span>
+        </div>
+        <div class="dashboard-explorer-chart" data-dashboard-explorer-target="projectChart" role="img" aria-label="Top apps by event volume"></div>
+      </article>
+
+      <article class="dashboard-explorer-card">
+        <div class="dashboard-explorer-card-header">
+          <h3>Environments</h3>
+          <span>Grouped from event context</span>
+        </div>
+        <div class="dashboard-explorer-chart" data-dashboard-explorer-target="environmentChart" role="img" aria-label="Events grouped by environment"></div>
+      </article>
+    </div>
+  </section>
+
   <section class="dashboard-grid">
     <article class="dashboard-panel dashboard-panel-wide">
       <div class="dashboard-panel-header">

@@ -47,6 +47,36 @@ RSpec.describe "Dashboard", type: :request do
         expect(project_row.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")).to be_present
         expect(project_row.at_css("a[href='#{activity_project_path(project)}']")).to be_present
       end
+
+      it "renders the server-backed dashboard explorer shell" do
+        get dashboard_path
+
+        document = Nokogiri::HTML.parse(response.body)
+        explorer = document.at_css("[data-controller='dashboard-explorer']")
+        payload = JSON.parse(explorer.at_css("script[data-dashboard-explorer-target='payload']").text)
+
+        expect(explorer).to be_present
+        expect(payload["endpoint"]).to eq(dashboard_explorer_path)
+        expect(payload["rows"]).to be_nil
+        expect(document.css("[data-dashboard-explorer-target$='Chart']").size).to eq(4)
+      end
+
+      it "returns filtered explorer aggregates as JSON" do
+        project = projects(:one)
+        create(:ingest_event, :log, project: project, api_key: api_keys(:one), context: { "environment" => "production" }, occurred_at: 30.minutes.ago)
+
+        get dashboard_explorer_path, params: { event_type: "log", project_id: project.id, environment: "production" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.media_type).to eq("application/json")
+
+        data = JSON.parse(response.body)
+
+        expect(data.dig("totals", "events")).to be >= 1
+        expect(data["event_types"].find { |event_type| event_type["key"] == "log" }["count"]).to be >= 1
+        expect(data["projects"].map { |project_row| project_row["id"] }).to include(project.id)
+        expect(data["environments"]).to include(hash_including("name" => "production"))
+      end
     end
   end
 end
