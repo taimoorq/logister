@@ -80,6 +80,28 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
       end
 
+      it "renders a compact project status strip above the inbox" do
+        project = create(:project, user: users(:one), name: "Status Strip")
+        api_key = create(:api_key, project: project, user: users(:one))
+        create(:ingest_event, :grouped, project: project, api_key: api_key, message: "Grouped status error")
+        create(:ingest_event, :log, project: project, api_key: api_key, occurred_at: 2.hours.ago)
+        create(:check_in_monitor, :missed, project: project)
+
+        get project_path(project)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        strip = document.at_css(".project-overview-strip")
+
+        expect(document.at_css(".project-command-panel")).to be_present
+        expect(strip).to be_present
+        expect(strip.at_css("a[href='#{project_path(project, filter: 'unresolved')}']").text).to include("1", "Open errors")
+        expect(strip.at_css("a[href='#{project_path(project, filter: 'introduced_today')}']").text).to include("1", "Introduced today")
+        expect(strip.at_css("a[href='#{activity_project_path(project)}']").text).to include("2", "Events 24h")
+        expect(strip.at_css("a[href='#{monitors_project_path(project)}']").text).to include("1", "1 monitor tracked")
+      end
+
       it "points activity-only .NET projects from the empty inbox to Activity" do
         project = create(:project, :dotnet, user: users(:one), name: "quria-work")
         api_key = create(:api_key, project: project, user: users(:one))

@@ -1,10 +1,76 @@
-<section class="rounded-xl border border-slate-200 bg-white shadow-sm px-4 py-3 mb-4">
-  <div class="flex items-center justify-between gap-2 mb-3">
-    <h1 class="text-lg font-semibold text-slate-900"><%= @project.name %> inbox</h1>
-    <% if @project.owned_by?(current_user) %>
-      <%= link_to "Project settings", settings_project_path(@project), class: "text-sm font-semibold text-blue-600 hover:text-blue-700 no-underline" %>
+<section class="project-command-panel">
+  <div class="project-command-main">
+    <div class="project-command-identity">
+      <%= project_integration_icon(@project) %>
+      <div>
+        <p class="dashboard-kicker">Project inbox</p>
+        <h1><%= @project.name %></h1>
+        <p>
+          <code><%= @project.slug %></code>
+          <span><%= @project.integration_label %></span>
+          <span><%= @project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+        </p>
+      </div>
+    </div>
+
+    <div class="project-command-actions">
+      <%= link_to projects_path, class: "projects-secondary-button" do %>
+        <%= app_icon(:projects, css: "w-4 h-4") %>
+        <span>All projects</span>
+      <% end %>
+      <% if @project.owned_by?(current_user) %>
+        <%= link_to settings_project_path(@project), class: "projects-secondary-button" do %>
+          <%= app_icon(:settings, css: "w-4 h-4") %>
+          <span>Settings</span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% open_errors_count = @counts.fetch(:unresolved, 0) %>
+  <% introduced_today_count = @counts.fetch(:introduced_today, 0) %>
+  <% events_last_24h = @project_overview.fetch(:events_last_24h, 0) %>
+  <% unhealthy_monitors_count = @project_overview.fetch(:unhealthy_monitors_count, 0) %>
+  <% monitors_count = @project_overview.fetch(:monitors_count, 0) %>
+  <% monitors_label = monitors_count.positive? ? "#{pluralize(monitors_count, "monitor")} tracked" : "No monitors" %>
+
+  <div class="project-overview-strip" aria-label="Project status">
+    <%= link_to project_path(@project, filter: "unresolved"),
+                class: "project-overview-cell #{dashboard_metric_state_class(open_errors_count)}" do %>
+      <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(open_errors_count) %></strong>
+        <span>Open errors</span>
+      </span>
+    <% end %>
+
+    <%= link_to project_path(@project, filter: "introduced_today"),
+                class: "project-overview-cell #{dashboard_metric_state_class(introduced_today_count)}" do %>
+      <span class="project-overview-icon"><%= app_icon(:calendar, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(introduced_today_count) %></strong>
+        <span>Introduced today</span>
+      </span>
+    <% end %>
+
+    <%= link_to activity_project_path(@project), class: "project-overview-cell" do %>
+      <span class="project-overview-icon"><%= app_icon(:chart, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(events_last_24h) %></strong>
+        <span>Events 24h</span>
+      </span>
+    <% end %>
+
+    <%= link_to monitors_project_path(@project),
+                class: "project-overview-cell #{dashboard_metric_state_class(unhealthy_monitors_count)}" do %>
+      <span class="project-overview-icon"><%= app_icon(:check, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(unhealthy_monitors_count) %></strong>
+        <span><%= monitors_label %></span>
+      </span>
     <% end %>
   </div>
+
   <%= render "nav" %>
 </section>
 

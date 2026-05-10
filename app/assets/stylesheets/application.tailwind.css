@@ -323,10 +323,13 @@
     @apply flex flex-col gap-2 sm:flex-row;
   }
   .dashboard-page {
-    @apply space-y-5;
+    @apply space-y-4;
   }
   .dashboard-title-row {
-    @apply flex flex-col gap-3 rounded-md border border-slate-200 bg-white px-4 py-5 shadow-sm sm:flex-row sm:items-end sm:justify-between;
+    @apply grid grid-cols-1 gap-3 border-b border-slate-200 bg-transparent px-0 pb-4 pt-1 lg:grid-cols-[minmax(0,1fr)_auto];
+  }
+  .dashboard-title-copy {
+    @apply min-w-0;
   }
   .dashboard-kicker {
     @apply mb-1 text-xs font-semibold uppercase text-slate-400;
@@ -339,29 +342,66 @@
     @apply mt-1 text-sm text-slate-500;
   }
   .dashboard-action-row {
-    @apply flex flex-col gap-2 sm:flex-row sm:items-center;
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center lg:justify-end;
   }
   .dashboard-action-row .projects-secondary-button {
     @apply gap-2;
+  }
+  .dashboard-title-metrics {
+    @apply grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-4 lg:col-span-2;
+  }
+  .dashboard-title-metrics > span {
+    @apply min-w-0 border-l-2 border-slate-300 bg-transparent px-3 py-1.5;
+  }
+  .dashboard-title-metrics > span:nth-child(1) {
+    @apply border-l-blue-500;
+  }
+  .dashboard-title-metrics > span:nth-child(2) {
+    @apply border-l-red-500;
+  }
+  .dashboard-title-metrics > span:nth-child(3) {
+    @apply border-l-emerald-500;
+  }
+  .dashboard-title-metrics > span:nth-child(4) {
+    @apply border-l-violet-500;
+  }
+  .dashboard-title-metrics strong {
+    @apply block truncate text-base font-semibold text-slate-900;
+  }
+  .dashboard-title-metrics span span {
+    @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
   }
   .dashboard-metric-grid {
     @apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4;
   }
   .dashboard-metric-card {
-    @apply flex min-h-32 flex-col rounded-md border border-slate-200 bg-white p-4 text-slate-600 no-underline shadow-sm transition-colors;
+    @apply flex min-h-28 flex-col rounded-md border-0 border-l-4 bg-slate-50 p-3 text-slate-600 no-underline ring-1 ring-slate-200 transition-colors;
+  }
+  .dashboard-metric-grid .dashboard-metric-card:nth-child(1) {
+    @apply border-l-blue-500 bg-blue-50;
+  }
+  .dashboard-metric-grid .dashboard-metric-card:nth-child(2) {
+    @apply border-l-violet-500 bg-violet-50;
+  }
+  .dashboard-metric-grid .dashboard-metric-card:nth-child(3) {
+    @apply border-l-red-500 bg-red-50;
+  }
+  .dashboard-metric-grid .dashboard-metric-card:nth-child(4) {
+    @apply border-l-emerald-500 bg-emerald-50;
   }
   .dashboard-metric-link:hover {
-    @apply border-slate-300 bg-slate-50;
+    @apply ring-slate-300 brightness-[0.98];
   }
   .dashboard-metric-icon {
-    @apply mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md bg-slate-100 text-slate-600;
+    @apply mb-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/80 text-slate-600 ring-1 ring-slate-200;
   }
   .dashboard-metric-label {
     @apply text-xs font-semibold uppercase text-slate-400;
     letter-spacing: 0;
   }
   .dashboard-metric-card strong {
-    @apply mt-1 text-3xl font-bold leading-tight text-slate-900;
+    @apply mt-1 text-2xl font-bold leading-tight text-slate-900;
   }
   .dashboard-metric-card > span:last-child {
     @apply mt-auto pt-2 text-sm text-slate-500;
@@ -376,13 +416,13 @@
     @apply grid grid-cols-1 gap-5 xl:grid-cols-2;
   }
   .dashboard-panel {
-    @apply overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm;
+    @apply overflow-visible bg-transparent;
   }
   .dashboard-panel-wide {
     @apply xl:col-span-2;
   }
   .dashboard-panel-header {
-    @apply flex flex-col gap-2 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between;
+    @apply flex flex-col gap-2 px-0 py-2 sm:flex-row sm:items-center sm:justify-between;
   }
   .dashboard-panel-header h2 {
     @apply text-base font-semibold text-slate-900;
@@ -396,10 +436,10 @@
   .dashboard-attention-list,
   .dashboard-activity-list,
   .dashboard-project-list {
-    @apply divide-y divide-slate-100;
+    @apply overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm divide-y divide-slate-100;
   }
   .dashboard-attention-row {
-    @apply flex flex-col gap-3 px-4 py-3 text-slate-700 no-underline hover:bg-red-50 sm:flex-row sm:items-center sm:justify-between;
+    @apply flex flex-col gap-3 border-l-2 border-l-red-400 px-4 py-3 text-slate-700 no-underline hover:bg-red-50 sm:flex-row sm:items-center sm:justify-between;
   }
   .dashboard-attention-title {
     @apply block truncate text-sm font-semibold text-slate-900;
@@ -414,7 +454,7 @@
     @apply text-lg font-semibold text-red-700;
   }
   .dashboard-empty-state {
-    @apply px-4 py-6 text-sm text-slate-500;
+    @apply rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500;
   }
   .dashboard-empty-state strong {
     @apply block text-base font-semibold text-slate-900;
@@ -423,19 +463,19 @@
     @apply mt-1 block;
   }
   .dashboard-event-mix {
-    @apply space-y-3 px-4 py-4;
+    @apply space-y-3 rounded-md bg-slate-900 px-4 py-4 shadow-sm ring-1 ring-slate-800;
   }
   .dashboard-event-mix-label {
     @apply mb-1 flex items-center justify-between gap-3 text-sm;
   }
   .dashboard-event-mix-label strong {
-    @apply font-semibold text-slate-900;
+    @apply font-semibold text-slate-100;
   }
   .dashboard-event-bar {
-    @apply h-2 overflow-hidden rounded-full bg-slate-100;
+    @apply h-2 overflow-hidden rounded-full bg-white/10;
   }
   .dashboard-event-bar span {
-    @apply block h-full rounded-full bg-slate-500;
+    @apply block h-full rounded-full bg-blue-400;
   }
   .dashboard-event-badge {
     @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700;
@@ -470,6 +510,9 @@
   .dashboard-project-row {
     @apply grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center;
   }
+  .dashboard-project-row:nth-child(even) {
+    @apply bg-slate-50;
+  }
   .dashboard-project-main {
     @apply flex min-w-0 items-center gap-3 text-slate-900 no-underline hover:text-blue-700;
   }
@@ -490,13 +533,78 @@
   }
   .dashboard-project-stats a,
   .dashboard-project-stats > span {
-    @apply min-w-0 rounded-md border border-slate-200 px-3 py-2 text-left text-slate-500 no-underline hover:bg-slate-50;
+    @apply min-w-0 border-l border-slate-200 px-3 py-1.5 text-left text-slate-500 no-underline hover:bg-white;
   }
   .dashboard-project-stats strong {
     @apply block truncate text-sm font-semibold text-slate-900;
   }
   .dashboard-project-stats span span {
     @apply mt-0.5 block truncate text-[11px] text-slate-500;
+  }
+  .project-command-panel {
+    @apply mb-4 border-b border-slate-200 bg-transparent pb-4;
+  }
+  .project-command-main {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+  }
+  .project-command-identity {
+    @apply flex min-w-0 items-center gap-3;
+  }
+  .project-command-identity .project-type-icon {
+    @apply h-10 w-10;
+  }
+  .project-command-identity .project-type-icon svg {
+    @apply h-5 w-5;
+  }
+  .project-command-identity h1 {
+    @apply truncate text-xl font-semibold text-slate-900;
+  }
+  .project-command-identity p:not(.dashboard-kicker) {
+    @apply mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500;
+  }
+  .project-command-identity code,
+  .project-command-identity p:not(.dashboard-kicker) span {
+    @apply rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-semibold text-slate-600;
+  }
+  .project-command-actions {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center;
+  }
+  .project-overview-strip {
+    @apply mt-3 grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;
+  }
+  .project-overview-cell {
+    @apply flex min-w-0 items-center gap-2 border-l-4 border-r border-slate-200 bg-transparent px-3 py-2 text-slate-600 no-underline transition-colors hover:bg-white;
+  }
+  .project-overview-cell:nth-child(1) {
+    @apply border-l-red-500;
+  }
+  .project-overview-cell:nth-child(2) {
+    @apply border-l-amber-500;
+  }
+  .project-overview-cell:nth-child(3) {
+    @apply border-l-blue-500;
+  }
+  .project-overview-cell:nth-child(4) {
+    @apply border-l-emerald-500 border-r-0;
+  }
+  .project-overview-icon {
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-slate-600 ring-1 ring-slate-200;
+  }
+  .project-overview-cell strong {
+    @apply block truncate text-lg font-semibold leading-tight text-slate-900;
+  }
+  .project-overview-cell span span {
+    @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .project-overview-cell.dashboard-metric-state-ok .project-overview-icon {
+    @apply text-emerald-700 ring-emerald-200;
+  }
+  .project-overview-cell.dashboard-metric-state-attention .project-overview-icon {
+    @apply text-red-700 ring-red-200;
+  }
+  .project-command-panel nav {
+    @apply mb-0 mt-3 border-t border-slate-100 pt-3;
   }
   .inbox-workbench {
     @apply grid grid-cols-1 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] gap-4 items-start;

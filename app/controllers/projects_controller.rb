@@ -33,6 +33,7 @@ class ProjectsController < ApplicationController
 
     # Full page load — build everything the workbench needs for the inbox.
     @counts  = inbox_counts(@project)
+    @project_overview = project_overview(@project)
     @selected_group = if params[:group_uuid].present?
       @project.error_groups.find_by(uuid: params[:group_uuid])
     else
@@ -101,5 +102,35 @@ class ProjectsController < ApplicationController
   def cached_project_stats(project_ids)
     cache_key = [ "projects_stats", current_user.id, Project.stats_cache_version(project_ids) ]
     safe_cache_fetch(cache_key, expires_in: 45.seconds) { Project.stats_for(project_ids) }
+  end
+
+  def project_overview(project)
+    safe_cache_fetch([ "project", project.id, "overview", project_overview_cache_version(project) ], expires_in: 30.seconds) do
+      events = project.ingest_events
+      events_last_24h = events.where("occurred_at >= ?", 24.hours.ago)
+      monitors = project.check_in_monitors
+                        .select(:id, :last_status, :last_check_in_at, :expected_interval_seconds)
+                        .to_a
+      monitor_status_counts = monitors.each_with_object({ ok: 0, missed: 0, error: 0 }) do |monitor, counts|
+        status = monitor.status.to_sym
+        counts[status] = counts.fetch(status, 0) + 1
+      end
+
+      {
+        events_last_24h: events_last_24h.count,
+        activity_events_last_24h: events_last_24h.where.not(event_type: IngestEvent.event_types[:error]).count,
+        latest_event_at: events.maximum(:occurred_at),
+        monitors_count: monitors.size,
+        monitor_status_counts: monitor_status_counts,
+        unhealthy_monitors_count: monitor_status_counts.fetch(:missed, 0) + monitor_status_counts.fetch(:error, 0)
+      }
+    end
+  end
+
+  def project_overview_cache_version(project)
+    [
+      project.ingest_events.maximum(:updated_at)&.utc&.to_i || 0,
+      project.check_in_monitors.maximum(:updated_at)&.utc&.to_i || 0
+    ]
   end
 end

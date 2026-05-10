@@ -1,6 +1,6 @@
 <div class="dashboard-page">
   <section class="dashboard-title-row">
-    <div>
+    <div class="dashboard-title-copy">
       <p class="dashboard-kicker">Overview</p>
       <h1>All apps</h1>
       <p><%= pluralize(@active_projects_count, "active project") %> · <%= pluralize(@events_last_24h, "event") %> in the last 24 hours</p>
@@ -15,6 +15,25 @@
         <%= app_icon(:plus, css: "w-4 h-4") %>
         <span>New project</span>
       <% end %>
+    </div>
+
+    <div class="dashboard-title-metrics" aria-label="Overview signals">
+      <span>
+        <strong><%= @active_projects_count %></strong>
+        <span>Active apps</span>
+      </span>
+      <span>
+        <strong><%= @new_error_groups_last_24h %></strong>
+        <span>New issues</span>
+      </span>
+      <span>
+        <strong><%= @monitor_status_counts.fetch(:ok, 0) %></strong>
+        <span>Healthy monitors</span>
+      </span>
+      <span>
+        <strong><%= @api_keys_count %></strong>
+        <span>API keys</span>
+      </span>
     </div>
   </section>
 

@@ -34,6 +34,7 @@ RSpec.describe "Dashboard", type: :request do
         project_row = document.css(".dashboard-project-row").find { |node| node.text.include?(project.name) }
 
         expect(document.at_css(".dashboard-page")).to be_present
+        expect(document.css(".dashboard-title-metrics > span").size).to eq(4)
         expect(document.at_css(".projects-search input[aria-label='Search projects']")).to be_nil
         expect(document.css(".dashboard-metric-card").size).to eq(4)
         expect(document.at_css("a.projects-new-button")["href"]).to eq(new_project_path)

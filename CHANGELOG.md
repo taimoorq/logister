@@ -13,6 +13,7 @@ All notable changes to Logister will be documented in this file.
 ### Changed
 
 - Redesigned the dashboard overview around account-wide reliability signals, recent activity, event mix, monitor health, and compact project links.
+- Tightened the dashboard and project inbox headers with compact status strips for faster scanning across apps and within one app.
 - Switched outbound email configuration away from the old SendGrid-specific adapter and onto standard Rails SMTP settings for SES-backed delivery.
 - Consolidated CI, release, and Fly deploy checks so successful production deploys publish the newest changelog entry as the latest GitHub release.
 
