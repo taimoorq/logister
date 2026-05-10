@@ -1,8 +1,8 @@
 # Logister
 
-Logister is a free, open source, self-hostable analytics dashboard for your apps: one place to collect application errors, logs, metrics, transactions, and check-ins so your team can see what is going wrong, investigate faster, and ship with more confidence.
+Logister is a free, open source, forkable, self-hostable alternative to paid error monitoring and bug triage tools. It gives teams one place to collect application errors, logs, metrics, transactions, and check-ins so they can see what is going wrong, assign ownership, investigate faster, and ship with more confidence.
 
-Use this repository when you want to run Logister yourself. It provides the web UI, project/API key management, ingest endpoints, and the operational pieces for your own self-hosted instance. `logister.org` is a secondary hosted/public instance of the same product direction, not the primary deployment model.
+Use this repository when you want to run Logister yourself or fork it for your own needs. It provides the web UI, project/API key management, ingest endpoints, background jobs, release automation, GHCR Docker images, and operational docs for your own self-hosted instance. `logister.org` is a secondary hosted/public instance of the same product direction, not the primary deployment model.
 
 ## Table Of Contents
 
@@ -13,6 +13,8 @@ Use this repository when you want to run Logister yourself. It provides the web 
 - [Integrating apps with Logister](#integrating-apps-with-logister)
 - [Running the app locally](#running-the-app-locally)
 - [Local development nuances](#local-development-nuances)
+- [License](#license)
+- [Brand and trademark](#brand-and-trademark)
 - [Project documentation](#project-documentation)
 - [Source and related repos](#source-and-related-repos)
 
@@ -25,10 +27,12 @@ This app is the self-hosted and self-hostable analytics dashboard for Logister:
 - event ingestion over HTTP
 - cross-app dashboard overview with server-backed explorer charts
 - inbox and error-group triage UI with team assignment
+- Bugzilla-style issue ownership paired with Bugsnag/Sentry-style application error monitoring
 - monitor/check-in visibility
 - project lifecycle controls for active, archived, restored, and deleted projects
 - project email notifications for first occurrences and daily or weekly digests
 - optional ClickHouse-backed analytics
+- release versions published as GitHub Releases and Docker images in GitHub Container Registry
 
 If you are trying to instrument an application, the language integrations live in separate packages and guides:
 
@@ -129,7 +133,7 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image instead:
 
-- `ghcr.io/taimoorq/logister:v1.0.0`
+- `ghcr.io/taimoorq/logister:v1.1.0`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
 
@@ -170,6 +174,14 @@ wrangler pages deploy cloudflare-docs --project-name=<project>
 
 Use [cloudflare-docs/README.md](cloudflare-docs/README.md) for the full Cloudflare Pages setup, required secrets, analytics variables, and deployment details.
 
+## License
+
+Logister's code is released under the [MIT License](LICENSE). You can use, fork, modify, self-host, and redistribute the code, including for commercial purposes, as long as the license notice is preserved.
+
+## Brand and trademark
+
+The Logister name, logo, wordmark, visual identity, and brand assets are not licensed for use in forks, hosted services, redistributed versions, commercial offerings, or other modified distributions. Public forks and rebranded versions should replace Logister branding with their own branding and avoid implying endorsement by the official Logister project. See [TRADEMARKS.md](TRADEMARKS.md).
+
 ## Project documentation
 
 | Document | Description |
@@ -178,8 +190,11 @@ Use [cloudflare-docs/README.md](cloudflare-docs/README.md) for the full Cloudfla
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, report bugs, and submit changes |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards and expected behavior |
 | [SECURITY.md](SECURITY.md) | Security policy and how to report vulnerabilities |
+| [LICENSE](LICENSE) | MIT License for using, forking, modifying, self-hosting, and redistributing the Logister code |
+| [TRADEMARKS.md](TRADEMARKS.md) | Logister brand and trademark policy for forks, hosted services, and redistributed versions |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
+| [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and GHCR verification plan |
 | [docs/1.0-release-plan.md](docs/1.0-release-plan.md) | 1.0 release scope, gates, rollout, and rollback plan |
 | [docs/error-assignment-plan.md](docs/error-assignment-plan.md) | Implementation record for team assignment on grouped errors |
 | [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | GitHub-facing pointer to the canonical CFML docs |

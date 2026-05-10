@@ -15,7 +15,9 @@ RSpec.describe "Home", type: :request do
       it "returns success and shows landing content" do
         get root_path
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("See errors, logs, and app health in one place.")
+        expect(response.body).to include("An open source alternative for teams who want to self-host error monitoring.")
+        expect(response.body).to include("Versioned GHCR images")
+        expect(response.body).to include("tools like Bugzilla plus the application error monitoring teams compare with Bugsnag")
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("logister-dotnet")
         expect(response.body).to include("logister-python")
@@ -138,6 +140,9 @@ RSpec.describe "Home", type: :request do
     it "returns success and llms content" do
       get "/llms.txt"
       expect(response).to have_http_status(:success)
+      expect(response.body).to include("open source alternatives to paid error monitoring tools")
+      expect(response.body).to include("GHCR image package")
+      expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.0")
       expect(response.body).to include("Python apps via the `logister-python` package")
       expect(response.body).to include(".NET and ASP.NET Core apps via the `logister-dotnet` SDK")
       expect(response.body).to include("https://docs.logister.org/product/")

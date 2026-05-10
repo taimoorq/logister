@@ -1,6 +1,8 @@
 # Logister
 
-Logister is a free, open source, self-hosted and self-hostable analytics dashboard for your apps. The primary goal is helping teams run Logister themselves; the public hosted app at logister.org is a secondary option.
+Logister is a free, open source, forkable, self-hosted and self-hostable error monitoring, bug triage, and app observability dashboard. It is positioned for teams evaluating open source alternatives to paid error monitoring tools such as Bugsnag or Sentry, and for teams that want Bugzilla-style ownership workflows connected directly to production error context.
+
+The primary goal is helping teams run Logister themselves. The public hosted app at logister.org is a secondary option.
 
 It supports:
 - Ruby and Rails apps via the `logister-ruby` gem
@@ -36,6 +38,17 @@ Canonical documentation lives on the public docs host:
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
+## Self-hosting and release distribution
+- Source to fork or self-host: https://github.com/taimoorq/logister
+- License: MIT License at https://github.com/taimoorq/logister/blob/main/LICENSE
+- Brand policy: Logister name, logo, wordmark, visual identity, and brand assets are not licensed for use in forks or redistributed versions. Public forks should replace Logister branding with their own branding. See https://github.com/taimoorq/logister/blob/main/TRADEMARKS.md
+- GitHub Releases: https://github.com/taimoorq/logister/releases
+- GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
+- Versioned Docker image: `ghcr.io/taimoorq/logister:v1.1.0`
+- Latest Docker image: `ghcr.io/taimoorq/logister:latest`
+- Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
+- Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
+
 ## Product summary
 - Captures and groups application errors into triageable error groups.
 - Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, and status.
@@ -44,10 +57,12 @@ Canonical documentation lives on the public docs host:
 - Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
 - Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
+- Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, and GHCR release images.
 
 ## Primary audience
 - Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.
 - Teams evaluating whether to run their own Logister instance before using the secondary hosted app.
+- Teams comparing open source alternatives to Bugzilla, Bugsnag, Sentry, and other paid app monitoring or issue triage products.
 - Python developers instrumenting APIs, workers, schedulers, and Python logging.
 - .NET developers instrumenting ASP.NET Core apps and C# workers.
 - JavaScript and TypeScript developers integrating Node or Express apps.

@@ -1,6 +1,8 @@
 # Logister Documentation
 
-Canonical product and integration documentation for Logister lives on this docs host. Logister is self-hosted and self-hostable first; the public hosted app at logister.org is a secondary option.
+Canonical product and integration documentation for Logister lives on this docs host. Logister is open source, forkable, self-hosted and self-hostable first; the public hosted app at logister.org is a secondary option.
+
+Logister is positioned for teams that want an open source alternative to paid error monitoring and bug triage products. It combines Bugsnag/Sentry-style application error monitoring with Bugzilla-style ownership and status workflows, while keeping deployment, data, release versions, and Docker images under the operator's control.
 
 ## Start here
 - Docs home: https://docs.logister.org/
@@ -22,9 +24,20 @@ Canonical product and integration documentation for Logister lives on this docs 
 - Docker self-hosting option and GHCR images: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 
+## Self-hosting and releases
+- App source to fork or self-host: https://github.com/taimoorq/logister
+- License: MIT License at https://github.com/taimoorq/logister/blob/main/LICENSE
+- Brand policy: Logister name, logo, wordmark, visual identity, and brand assets are not licensed for use in forks or redistributed versions. Public forks should replace Logister branding with their own branding. See https://github.com/taimoorq/logister/blob/main/TRADEMARKS.md
+- GitHub Releases: https://github.com/taimoorq/logister/releases
+- GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
+- Versioned Docker image: `ghcr.io/taimoorq/logister:v1.1.0`
+- Latest Docker image: `ghcr.io/taimoorq/logister:latest`
+- Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, and optional ClickHouse
+
 ## Audience
 - Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, grouped error triage, error assignment with dashboard and project workload views, assignee-filtered inboxes, event investigation with request method and URL/path context, related logs, performance visibility, check-in monitors, project error email alerts, digest summaries, activity review, release visibility, project sharing, and active or archived project views
 - Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project alert and digest delivery, and optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
+- Teams comparing self-hosted and open source alternatives to Bugzilla, Bugsnag, Sentry, and other paid monitoring or issue triage tools
 - Ruby teams using `logister-ruby`
 - .NET teams using `logister-dotnet` with ASP.NET Core and C# services
 - Python teams using `logister-python` with FastAPI, Django, Flask, Celery, and Python logging

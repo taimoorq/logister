@@ -2,6 +2,20 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v1.1.0 - 2026-05-10
+
+### Added
+
+- Root MIT License for the Logister code, giving community users clear permission to use, fork, modify, self-host, and redistribute it.
+- Logister trademark and brand policy clarifying that forks and redistributed versions must replace Logister branding and must not use the Logister name, logo, wordmark, visual identity, or brand assets without permission.
+- GHCR post-deploy runbook for verifying release publication, package visibility, image tags, and public image pulls after the next release deploy.
+
+### Changed
+
+- Repositioned the homepage, About page, public docs, SEO metadata, robots rules, and `llms.txt` around Logister as a forkable, self-hosted error monitoring and bug triage alternative.
+- Updated self-hosting and AI-readable release references for the next `v1.1.0` Docker image published to GitHub Container Registry.
+- Expanded public project documentation so self-hosters understand the supported release distribution path, permissive code license, and separate Logister brand policy.
+
 ## v1.0.0 - 2026-05-10
 
 ### Added

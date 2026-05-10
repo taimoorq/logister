@@ -419,7 +419,7 @@ jobs:
             ${{ steps.container_meta.outputs.sha_tag }}
           labels: |
             org.opencontainers.image.title=Logister
-            org.opencontainers.image.description=Self-hostable analytics dashboard for applications
+            org.opencontainers.image.description=Self-hostable error monitoring and bug triage for applications
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ steps.release_meta.outputs.tag_name }}
