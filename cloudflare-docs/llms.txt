@@ -19,6 +19,7 @@ Canonical product and integration documentation for Logister lives on this docs 
 ## Operations
 - Local development: https://docs.logister.org/local-development/
 - Deployment config and `.env.sample` reference: https://docs.logister.org/deployment/
+- Docker self-hosting option: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 
 ## Audience

@@ -85,6 +85,7 @@
               <p class="sidebar-label">On this page</p>
               <a href="#prerequisites">Prerequisites</a>
               <a href="#infrastructure">Infrastructure plan</a>
+              <a href="#docker">Docker option</a>
               <a href="#quickstart">Local quickstart</a>
               <a href="#map">Docs map</a>
               <a href="#deployment-shapes">Deployment shapes</a>
@@ -150,6 +151,104 @@
                 </tbody>
               </table>
               <div class="note tip"><h4>Start small</h4><p>For a first production install, plan one web process, one Sidekiq worker, managed PostgreSQL, and managed Redis. Add ClickHouse after you know your event volume and retention needs.</p></div>
+            </section>
+
+            <section id="docker" class="section">
+              <p class="eyebrow">Docker option</p>
+              <h2>Run the app image with managed services or a Compose-backed single-host stack.</h2>
+              <p>The repository includes a production <code>Dockerfile</code>. Self-hosters can build that image and run separate web and worker containers against PostgreSQL and Redis. ClickHouse is optional, and SMTP, Turnstile, and analytics remain external provider services configured through environment variables.</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#docker-build-code">Copy</button>
+                </div>
+                <pre><code id="docker-build-code">docker build -t logister:1.0 .
+cp .env.sample .env.production
+# Edit .env.production with production URLs and secrets before starting containers.</code></pre>
+              </div>
+              <table>
+                <thead><tr><th>Docker shape</th><th>Use when</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>App image + managed services</td><td>You want durable production operations.</td><td>Run <code>web</code> and <code>worker</code> containers from the Logister image, then point <code>DATABASE_URL</code> and <code>REDIS_URL</code> at managed PostgreSQL and Redis.</td></tr>
+                  <tr><td>Single-host Compose stack</td><td>You want everything on one Docker host.</td><td>Run web, worker, PostgreSQL, Redis, and optional ClickHouse together. Replace sample passwords, back up volumes, and put a reverse proxy or platform HTTPS layer in front of the web container.</td></tr>
+                  <tr><td>Local Compose infrastructure</td><td>You are developing locally.</td><td>The checked-in <code>docker-compose.yml</code> starts PostgreSQL, Redis, and ClickHouse for local work. Its default credentials are not production secrets.</td></tr>
+                </tbody>
+              </table>
+              <p>A production Compose file should keep the app process and worker process separate. This shape shows the supported container split while leaving optional services disabled unless you configure them. Save it as <code>docker-compose.selfhost.yml</code> or adapt it to your own Compose file.</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">yaml</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#docker-compose-selfhost-code">Copy</button>
+                </div>
+                <pre><code id="docker-compose-selfhost-code">services:
+  web:
+    image: logister:1.0
+    env_file: .env.production
+    command: ./bin/thrust ./bin/rails server -b 0.0.0.0 -p 80
+    ports:
+      - "3000:80"
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    image: logister:1.0
+    env_file: .env.production
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: logister
+      POSTGRES_PASSWORD: replace-me
+      POSTGRES_DB: logister_production
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    volumes:
+      - redisdata:/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    profiles: ["analytics"]
+    volumes:
+      - chdata:/var/lib/clickhouse
+
+volumes:
+  pgdata:
+  redisdata:
+  chdata:</code></pre>
+              </div>
+              <p>For that single-host shape, set <code>DATABASE_URL</code> to the PostgreSQL service name, set <code>REDIS_URL</code> to the Redis service name, and enable ClickHouse only when you also start the <code>analytics</code> profile.</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#docker-compose-env-code">Copy</button>
+                </div>
+                <pre><code id="docker-compose-env-code">DATABASE_URL=postgresql://logister:replace-me@postgres:5432/logister_production
+REDIS_URL=redis://redis:6379/0
+LOGISTER_CLICKHOUSE_ENABLED=false
+# When using the analytics profile:
+# LOGISTER_CLICKHOUSE_ENABLED=true
+# LOGISTER_CLICKHOUSE_URL=http://clickhouse:8123</code></pre>
+              </div>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#docker-compose-run-code">Copy</button>
+                </div>
+                <pre><code id="docker-compose-run-code">docker compose -f docker-compose.selfhost.yml up -d postgres redis
+docker compose -f docker-compose.selfhost.yml run --rm web ./bin/release
+docker compose -f docker-compose.selfhost.yml up -d web worker
+# Include optional ClickHouse:
+docker compose -f docker-compose.selfhost.yml --profile analytics up -d clickhouse web worker</code></pre>
+              </div>
+              <div class="note warn"><h4>Production warning</h4><p>The example above is a starting point, not a secret-safe file to paste unchanged into production. Replace passwords, keep <code>RAILS_MASTER_KEY</code> and provider tokens in a secret store, back up PostgreSQL and Redis volumes, and terminate HTTPS before exposing the app publicly.</p></div>
             </section>
 
             <section id="quickstart" class="section">

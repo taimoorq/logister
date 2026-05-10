@@ -85,6 +85,7 @@ Logister runs as a Rails app with this baseline infrastructure:
 - Optional bot protection: Cloudflare Turnstile
 - Optional transactional email: Amazon SES
 - Optional consent-gated analytics: Google Analytics or Cloudflare Web Analytics
+- Supported deployment shapes: Fly, Kamal, Docker image, or a Docker Compose-style single-host stack
 
 The basic self-host flow is:
 
@@ -125,6 +126,10 @@ bin/dev
 The repo uses `.env.sample` as the example environment file. For self-hosted production installs, copy the entries you need into your deploy provider's secret/config store rather than committing a filled-in `.env` file. The public deployment guide explains what each sample entry does and where to get provider values such as PostgreSQL URLs, Redis URLs, SES SMTP credentials, Turnstile keys, ClickHouse credentials, and analytics IDs:
 
 - https://docs.logister.org/deployment/#env-reference
+
+The production `Dockerfile` can run the app as separate web and worker containers. The self-hosting guide includes a Docker option for either managed PostgreSQL/Redis or a single-host Compose-style stack with optional ClickHouse:
+
+- https://docs.logister.org/self-hosting/#docker
 
 ## Local development nuances
 
