@@ -270,13 +270,14 @@ jobs:
         run: echo "All required CI jobs passed."
 
   deploy:
-    name: Deploy app to Fly
+    name: Deploy / Publish release
     needs: ci_passed
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     concurrency: deploy-group
     permissions:
       contents: write
+      packages: write
 
     steps:
       - name: Checkout code
@@ -375,6 +376,55 @@ jobs:
           puts release_body
           puts "EOF"
           RUBY
+
+      - name: Compute container image metadata
+        id: container_meta
+        if: steps.release_config.outputs.enabled == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
+        run: |
+          ruby <<'RUBY' >> "$GITHUB_OUTPUT"
+          repository = ENV.fetch("GITHUB_REPOSITORY").downcase
+          sha = ENV.fetch("GITHUB_SHA")
+          release_tag = ENV.fetch("RELEASE_TAG")
+          image = "ghcr.io/#{repository}"
+
+          puts "image=#{image}"
+          puts "version_tag=#{image}:#{release_tag}"
+          puts "latest_tag=#{image}:latest"
+          puts "sha_tag=#{image}:#{sha[0, 12]}"
+          RUBY
+
+      - name: Set up Docker Buildx
+        if: steps.release_config.outputs.enabled == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: steps.release_config.outputs.enabled == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish container image to GHCR
+        if: steps.release_config.outputs.enabled == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.container_meta.outputs.version_tag }}
+            ${{ steps.container_meta.outputs.latest_tag }}
+            ${{ steps.container_meta.outputs.sha_tag }}
+          labels: |
+            org.opencontainers.image.title=Logister
+            org.opencontainers.image.description=Self-hostable analytics dashboard for applications
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.release_meta.outputs.tag_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Publish GitHub release
         if: steps.release_config.outputs.enabled == 'true'

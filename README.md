@@ -127,7 +127,13 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 - https://docs.logister.org/deployment/#env-reference
 
-The production `Dockerfile` can run the app as separate web and worker containers. The self-hosting guide includes a Docker option for either managed PostgreSQL/Redis or a single-host Compose-style stack with optional ClickHouse:
+Release images are published to GitHub Container Registry after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image instead:
+
+- `ghcr.io/taimoorq/logister:v1.0.0`
+- `ghcr.io/taimoorq/logister:latest`
+- `ghcr.io/taimoorq/logister:<short-sha>`
+
+The self-hosting guide includes a Docker option for either managed PostgreSQL/Redis or a single-host Compose-style stack with optional ClickHouse:
 
 - https://docs.logister.org/self-hosting/#docker
 

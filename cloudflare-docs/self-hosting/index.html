@@ -156,16 +156,17 @@
             <section id="docker" class="section">
               <p class="eyebrow">Docker option</p>
               <h2>Run the app image with managed services or a Compose-backed single-host stack.</h2>
-              <p>The repository includes a production <code>Dockerfile</code>. Self-hosters can build that image and run separate web and worker containers against PostgreSQL and Redis. ClickHouse is optional, and SMTP, Turnstile, and analytics remain external provider services configured through environment variables.</p>
+              <p>Release images are published to GitHub Container Registry at <code>ghcr.io/taimoorq/logister</code>. Self-hosters can pull a versioned image and run separate web and worker containers against PostgreSQL and Redis. ClickHouse is optional, and SMTP, Turnstile, and analytics remain external provider services configured through environment variables.</p>
               <div class="code-block">
                 <div class="code-head">
                   <span class="code-language">shell</span>
                   <button class="copy-button" data-copy-button data-copy-target="#docker-build-code">Copy</button>
                 </div>
-                <pre><code id="docker-build-code">docker build -t logister:1.0 .
+                <pre><code id="docker-build-code">docker pull ghcr.io/taimoorq/logister:v1.0.0
 cp .env.sample .env.production
 # Edit .env.production with production URLs and secrets before starting containers.</code></pre>
               </div>
+              <p>Each release publishes three image tags: the version tag such as <code>v1.0.0</code>, <code>latest</code>, and the short commit SHA. If you prefer to build from source, the repository still includes a production <code>Dockerfile</code>.</p>
               <table>
                 <thead><tr><th>Docker shape</th><th>Use when</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -182,7 +183,7 @@ cp .env.sample .env.production
                 </div>
                 <pre><code id="docker-compose-selfhost-code">services:
   web:
-    image: logister:1.0
+    image: ghcr.io/taimoorq/logister:v1.0.0
     env_file: .env.production
     command: ./bin/thrust ./bin/rails server -b 0.0.0.0 -p 80
     ports:
@@ -192,7 +193,7 @@ cp .env.sample .env.production
       - redis
 
   worker:
-    image: logister:1.0
+    image: ghcr.io/taimoorq/logister:v1.0.0
     env_file: .env.production
     command: bundle exec sidekiq -C config/sidekiq.yml
     depends_on:

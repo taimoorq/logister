@@ -22,6 +22,7 @@ All notable changes to Logister will be documented in this file.
 - Archived projects now disappear from active dashboards, active project lists, and the top navigation, and archiving revokes active API tokens.
 - Expanded the self-hosting environment sample and deployment docs so operators can map each supported Rails, PostgreSQL, Redis, Sidekiq, SES, ClickHouse, Turnstile, analytics, and Cloudflare docs setting to the provider value they need.
 - Documented Docker self-hosting options for running the production image with separate web and worker containers, managed services, or a single-host Compose-style stack with optional ClickHouse.
+- Added GitHub Container Registry publishing for release images, including version, latest, and short-SHA tags after CI, Fly deploy, and Fly health checks pass.
 - Release automation now treats the top changelog entry as the GitHub Release body after CI, CodeQL, Fly deploy, and Fly health checks pass.
 
 ### Fixed
