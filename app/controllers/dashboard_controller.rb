@@ -1,4 +1,6 @@
 class DashboardController < ApplicationController
+  MAX_EXPLORER_ENVIRONMENT_FILTER_LENGTH = 80
+
   before_action :authenticate_user!
 
   def index
@@ -64,7 +66,7 @@ class DashboardController < ApplicationController
   def dashboard_explorer_config(projects)
     {
       endpoint: dashboard_explorer_path,
-      window_days: Dashboard::EXPLORER_WINDOW.in_days.to_i,
+      window_days: Dashboard::EXPLORER_WINDOW_DAYS,
       event_types: Dashboard::EVENT_TYPE_ORDER.map do |event_type|
         { key: event_type, label: helpers.dashboard_event_type_label(event_type) }
       end,
@@ -88,6 +90,7 @@ class DashboardController < ApplicationController
     {
       window_started_at: explorer[:window_started_at],
       window_days: explorer[:window_days],
+      days: explorer[:days],
       totals: explorer[:totals],
       timeline: explorer[:timeline],
       event_types: Dashboard::EVENT_TYPE_ORDER.map do |event_type|
@@ -119,7 +122,7 @@ class DashboardController < ApplicationController
   def dashboard_explorer_filters(project_ids)
     event_type = params[:event_type].to_s
     project_id = params[:project_id].to_i
-    environment = params[:environment].to_s.strip
+    environment = params[:environment].to_s.strip.first(MAX_EXPLORER_ENVIRONMENT_FILTER_LENGTH)
 
     {}.tap do |filters|
       filters[:event_type] = event_type if IngestEvent.event_types.key?(event_type)

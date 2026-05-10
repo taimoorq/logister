@@ -3,7 +3,8 @@
 class Dashboard
   EVENT_TYPE_ORDER = %w[error log metric transaction check_in].freeze
   EXPLORER_ENVIRONMENT_LIMIT = 8
-  EXPLORER_WINDOW = 7.days
+  EXPLORER_WINDOW_DAYS = 7
+  EXPLORER_WINDOW = EXPLORER_WINDOW_DAYS.days
 
   def self.summary_for(project_ids)
     return empty_summary if project_ids.blank?
@@ -40,18 +41,21 @@ class Dashboard
     }
   end
 
-  def self.explorer_for(project_ids, since: EXPLORER_WINDOW.ago, event_type: nil, project_id: nil, environment: nil)
+  def self.explorer_for(project_ids, since: nil, event_type: nil, project_id: nil, environment: nil)
     return empty_explorer if project_ids.blank?
 
+    since ||= explorer_window_start
     project_ids = filtered_project_ids(project_ids, project_id)
     return empty_explorer if project_ids.blank?
 
     events_scope = explorer_scope(project_ids, since:, event_type:, environment:)
     open_error_group_counts = ErrorGroup.where(project_id: project_ids).unresolved.group(:project_id).count
+    days = explorer_days(since)
 
     {
       window_started_at: since.utc.iso8601,
-      window_days: ((Time.current - since) / 1.day).ceil,
+      window_days: days.size,
+      days: days,
       totals: explorer_totals(events_scope),
       timeline: explorer_timeline(events_scope),
       event_types: explorer_event_type_counts(events_scope),
@@ -72,9 +76,13 @@ class Dashboard
   end
 
   def self.empty_explorer
+    since = explorer_window_start
+    days = explorer_days(since)
+
     {
-      window_started_at: EXPLORER_WINDOW.ago.utc.iso8601,
-      window_days: EXPLORER_WINDOW.in_days.to_i,
+      window_started_at: since.utc.iso8601,
+      window_days: days.size,
+      days: days,
       totals: { events: 0, active_projects: 0, environments: 0 },
       timeline: [],
       event_types: EVENT_TYPE_ORDER.index_with { 0 },
@@ -105,6 +113,19 @@ class Dashboard
     relation.count(:all)
   end
   private_class_method :relation_count
+
+  def self.explorer_window_start
+    (EXPLORER_WINDOW_DAYS - 1).days.ago.beginning_of_day
+  end
+  private_class_method :explorer_window_start
+
+  def self.explorer_days(since)
+    start_date = since.to_date
+    end_date = Time.current.to_date
+
+    (start_date..end_date).map(&:iso8601)
+  end
+  private_class_method :explorer_days
 
   def self.event_type_counts(relation)
     counts = relation.group(:event_type).count

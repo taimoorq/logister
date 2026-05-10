@@ -37,13 +37,24 @@ export default class extends Controller {
     this.initializeCharts()
     this.renderShell()
     this.fetchData()
-    this.resizeHandler = () => this.resizeCharts()
+    this.resizeHandler = () => this.queueResize()
     window.addEventListener("resize", this.resizeHandler)
+
+    if ("ResizeObserver" in window) {
+      this.resizeObserver = new ResizeObserver(() => this.queueResize())
+      this.resizeObserver.observe(this.element)
+      this.timelineChartTargets.forEach((target) => this.resizeObserver.observe(target))
+      this.eventTypeChartTargets.forEach((target) => this.resizeObserver.observe(target))
+      this.projectChartTargets.forEach((target) => this.resizeObserver.observe(target))
+      this.environmentChartTargets.forEach((target) => this.resizeObserver.observe(target))
+    }
   }
 
   disconnect() {
     this.abortController?.abort()
     window.removeEventListener("resize", this.resizeHandler)
+    this.resizeObserver?.disconnect()
+    cancelAnimationFrame(this.resizeFrame)
     Object.values(this.charts).forEach((chart) => chart.dispose())
   }
 
@@ -101,12 +112,13 @@ export default class extends Controller {
         return response.json()
       })
       .then((data) => {
-        this.data = data
+        this.currentExplorerData = data
         this.renderData(data)
       })
       .catch((error) => {
         if (error.name === "AbortError") return
 
+        console.warn("[Logister] Dashboard explorer failed to render", error)
         this.renderError()
       })
       .finally(() => {
@@ -190,6 +202,7 @@ export default class extends Controller {
   renderTimeline(data) {
     const rows = data.timeline || []
     const days = this.timelineDays(data)
+    const counts = new Map(rows.map((row) => [timelineKey(row.day, row.event_type), Number(row.count) || 0]))
     const series = this.eventTypes.map((eventType) => ({
       name: eventType.label,
       type: "line",
@@ -197,18 +210,20 @@ export default class extends Controller {
       symbolSize: 5,
       emphasis: { focus: "series" },
       color: EVENT_COLORS[eventType.key],
-      data: days.map((day) => sum(rows.filter((row) => row.day === day && row.event_type === eventType.key), "count"))
+      data: days.map((day) => counts.get(timelineKey(day, eventType.key)) || 0)
     }))
+    const hasData = series.some((line) => line.data.some((value) => value > 0))
 
-    this.charts.timeline.setOption({
+    this.setChartOption(this.charts.timeline, {
       aria: { enabled: true },
       color: this.chartColors(),
+      graphic: emptyGraphic(!hasData, "No events in this slice"),
       grid: { left: 40, right: 16, top: 20, bottom: 28 },
       tooltip: { trigger: "axis", formatter: tooltipFormatter },
       xAxis: { type: "category", boundaryGap: false, data: days.map(shortDateLabel), axisTick: { show: false } },
       yAxis: { type: "value", minInterval: 1, axisLabel: { formatter: compactNumber } },
       series
-    }, true)
+    })
   }
 
   renderEventTypes(data) {
@@ -220,14 +235,15 @@ export default class extends Controller {
       itemStyle: { color: EVENT_COLORS[eventType.key] }
     })).filter((item) => item.value > 0)
 
-    this.charts.eventTypes.setOption({
+    this.setChartOption(this.charts.eventTypes, {
       aria: { enabled: true },
+      graphic: emptyGraphic(chartData.length === 0, "No event types"),
       grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
       tooltip: { trigger: "item", formatter: itemTooltipFormatter },
       xAxis: { type: "value", minInterval: 1, axisLabel: { formatter: compactNumber } },
       yAxis: { type: "category", data: chartData.map((item) => item.name), inverse: true, axisTick: { show: false } },
       series: [{ type: "bar", barWidth: 12, data: chartData }]
-    }, true)
+    })
   }
 
   renderProjects(data) {
@@ -239,8 +255,9 @@ export default class extends Controller {
       itemStyle: { color: project.open_errors > 0 ? "#ef4444" : "#2563eb" }
     })).sort((a, b) => b.value - a.value).slice(0, 8)
 
-    this.charts.projects.setOption({
+    this.setChartOption(this.charts.projects, {
       aria: { enabled: true },
+      graphic: emptyGraphic(chartData.length === 0, "No app activity"),
       grid: { left: 8, right: 18, top: 8, bottom: 8, containLabel: true },
       tooltip: {
         trigger: "item",
@@ -249,7 +266,7 @@ export default class extends Controller {
       xAxis: { type: "value", minInterval: 1, axisLabel: { formatter: compactNumber } },
       yAxis: { type: "category", data: chartData.map((item) => item.name), inverse: true, axisTick: { show: false } },
       series: [{ type: "bar", barWidth: 12, data: chartData }]
-    }, true)
+    })
   }
 
   renderEnvironments(data) {
@@ -259,9 +276,10 @@ export default class extends Controller {
       filterValue: environment.name
     }))
 
-    this.charts.environments.setOption({
+    this.setChartOption(this.charts.environments, {
       aria: { enabled: true },
       color: FALLBACK_COLORS,
+      graphic: emptyGraphic(chartData.length === 0, "No environments"),
       tooltip: { trigger: "item", formatter: itemTooltipFormatter },
       series: [{
         type: "pie",
@@ -271,10 +289,12 @@ export default class extends Controller {
         label: { formatter: "{b}", overflow: "truncate", width: 90 },
         data: chartData
       }]
-    }, true)
+    })
   }
 
   timelineDays(data) {
+    if (Array.isArray(data.days) && data.days.length > 0) return data.days
+
     const days = Array.from(new Set((data.timeline || []).map((row) => row.day))).sort()
     if (days.length > 0) return days
 
@@ -300,6 +320,15 @@ export default class extends Controller {
     Object.values(this.charts).forEach((chart) => chart.resize())
   }
 
+  queueResize() {
+    cancelAnimationFrame(this.resizeFrame)
+    this.resizeFrame = requestAnimationFrame(() => this.resizeCharts())
+  }
+
+  setChartOption(chart, option) {
+    chart.setOption(option, true)
+  }
+
   setLoading(loading) {
     Object.values(this.charts).forEach((chart) => {
       if (loading) {
@@ -315,8 +344,25 @@ export default class extends Controller {
   }
 }
 
-function sum(rows, key) {
-  return rows.reduce((total, row) => total + (Number(row[key]) || 0), 0)
+function timelineKey(day, eventType) {
+  return `${day}::${eventType}`
+}
+
+function emptyGraphic(show, text) {
+  if (!show) return []
+
+  return [{
+    type: "text",
+    left: "center",
+    top: "middle",
+    silent: true,
+    style: {
+      text,
+      fill: "#64748b",
+      fontSize: 12,
+      fontWeight: 600
+    }
+  }]
 }
 
 function formatNumber(value) {

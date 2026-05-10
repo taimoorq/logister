@@ -58,6 +58,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(explorer).to be_present
         expect(explorer.at_css("script[data-dashboard-explorer-target='payload']")).to be_nil
         expect(payload["endpoint"]).to eq(dashboard_explorer_path)
+        expect(payload["window_days"]).to eq(Dashboard::EXPLORER_WINDOW_DAYS)
         expect(payload["rows"]).to be_nil
         expect(document.css("[data-dashboard-explorer-target$='Chart']").size).to eq(4)
       end
@@ -74,9 +75,18 @@ RSpec.describe "Dashboard", type: :request do
         data = JSON.parse(response.body)
 
         expect(data.dig("totals", "events")).to be >= 1
+        expect(data["days"]).to be_an(Array)
+        expect(data["days"].size).to eq(Dashboard::EXPLORER_WINDOW_DAYS)
         expect(data["event_types"].find { |event_type| event_type["key"] == "log" }["count"]).to be >= 1
         expect(data["projects"].map { |project_row| project_row["id"] }).to include(project.id)
         expect(data["environments"]).to include(hash_including("name" => "production"))
+      end
+
+      it "bounds arbitrary environment filters before querying" do
+        get dashboard_explorer_path, params: { environment: "x" * 500 }
+
+        expect(response).to have_http_status(:success)
+        expect(response.media_type).to eq("application/json")
       end
     end
   end
