@@ -1,6 +1,6 @@
 # Logister
 
-Logister is a free, open source, forkable, self-hostable alternative to paid error monitoring and bug triage tools. It gives teams one place to collect application errors, logs, metrics, transactions, and check-ins so they can see what is going wrong, assign ownership, investigate faster, and ship with more confidence.
+Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. It gives teams one place to collect application errors, logs, metrics, transactions, and check-ins so they can see what is going wrong, assign ownership, investigate faster, and ship with more confidence.
 
 Use this repository when you want to run Logister yourself or fork it for your own needs. It provides the web UI, project/API key management, ingest endpoints, background jobs, release automation, GHCR Docker images, and operational docs for your own self-hosted instance. `logister.org` is a secondary hosted/public instance of the same product direction, not the primary deployment model.
 
@@ -50,6 +50,15 @@ Canonical setup and integration docs live on `docs.logister.org`, with self-host
 - Overview: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
 - Product guide: https://docs.logister.org/product/
+- Use cases and comparisons: https://docs.logister.org/use-cases/
+- Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
+- Python error monitoring: https://docs.logister.org/use-cases/python-error-monitoring/
+- .NET / ASP.NET Core error monitoring: https://docs.logister.org/use-cases/dotnet-error-monitoring/
+- JavaScript / TypeScript error monitoring: https://docs.logister.org/use-cases/javascript-error-monitoring/
+- ColdFusion / CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
+- Docker and GHCR self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
+- Amazon SES error alert emails and digests: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - Self-hosting: https://docs.logister.org/self-hosting/
 
 ### Operations
@@ -194,6 +203,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [TRADEMARKS.md](TRADEMARKS.md) | Logister brand and trademark policy for forks, hosted services, and redistributed versions |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
+| [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |
 | [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and GHCR verification plan |
 | [docs/1.0-release-plan.md](docs/1.0-release-plan.md) | 1.0 release scope, gates, rollout, and rollback plan |
 | [docs/error-assignment-plan.md](docs/error-assignment-plan.md) | Implementation record for team assignment on grouped errors |

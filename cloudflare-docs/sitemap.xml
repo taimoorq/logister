@@ -5,11 +5,71 @@
     <lastmod>2026-05-10</lastmod>
   </url>
   <url>
+    <loc>https://docs.logister.org/llms.txt</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/llms-full.txt</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
     <loc>https://docs.logister.org/getting-started/</loc>
     <lastmod>2026-05-10</lastmod>
   </url>
   <url>
     <loc>https://docs.logister.org/product/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/self-hosted-error-monitoring/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/sentry-alternative/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/bugsnag-alternative/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/bugzilla-alternative/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/rails-error-monitoring/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/python-error-monitoring/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/dotnet-error-monitoring/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/javascript-error-monitoring/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/cfml-error-monitoring/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/docker-ghcr-self-hosting/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/error-assignment-team-triage/</loc>
+    <lastmod>2026-05-10</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/use-cases/amazon-ses-error-alerts/</loc>
     <lastmod>2026-05-10</lastmod>
   </url>
   <url>

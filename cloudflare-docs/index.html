@@ -4,24 +4,25 @@
     <meta charset="utf-8">
     <title>Open Source Error Monitoring Docs | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Docs for Logister, an open source, forkable, self-hosted error monitoring and bug triage alternative with GHCR Docker images, deployment guides, API docs, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.">
+    <meta name="description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Open Source Error Monitoring Docs | Logister">
-    <meta property="og:description" content="Docs for Logister, an open source, forkable, self-hosted error monitoring and bug triage alternative with GHCR Docker images, deployment guides, API docs, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.">
+    <meta property="og:description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://docs.logister.org/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Open Source Error Monitoring Docs | Logister">
-    <meta name="twitter:description" content="Docs for Logister, an open source, forkable, self-hosted error monitoring and bug triage alternative with GHCR Docker images, deployment guides, API docs, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.">
+    <meta name="twitter:description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLMs full context">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Open Source Error Monitoring Docs | Logister","description":"Docs for Logister, an open source, forkable, self-hosted error monitoring and bug triage alternative with GHCR Docker images, deployment guides, API docs, and Ruby, .NET, Python, JavaScript/TypeScript, and CFML integrations.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"GHCR Docker images"},{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Open Source Error Monitoring Docs | Logister","description":"Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"GHCR Docker images"},{"@type":"Thing","name":"Error assignment and team triage"},{"@type":"Thing","name":"Amazon SES alert emails"},{"@type":"Thing","name":"Sentry alternative"},{"@type":"Thing","name":"Bugsnag alternative"},{"@type":"Thing","name":"Bugzilla alternative"},{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -51,7 +52,7 @@
           <span class="hero-kicker">Documentation</span>
           <h1>Open source error monitoring docs for Logister</h1>
           <p>
-            Logister is an open source, forkable, self-hostable error monitoring and bug triage dashboard for your apps. Run it yourself to collect errors, logs, metrics, transactions, and check-ins in infrastructure you control; the hosted app at <code>logister.org</code> is secondary for teams that want a managed convenience path.
+            Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. Run it yourself to collect errors, logs, metrics, transactions, and check-ins in infrastructure you control; the hosted app at <code>logister.org</code> is secondary for teams that want a managed convenience path.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/self-hosting/">Self-hosting</a>
@@ -68,6 +69,7 @@
               <a href="/getting-started/">Getting started</a>
               <a href="/product/">Product guide</a>
               <a href="/self-hosting/">Self-hosting</a>
+              <a href="/use-cases/">Use cases</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">Operations</p>
@@ -91,6 +93,7 @@
               <a href="#guides">Guides</a>
               <a href="#product">What Logister helps with</a>
               <a href="#next">Getting started next</a>
+              <a href="#use-cases">Use cases</a>
               <a href="#growth">Growing the docs</a>
               <a href="#credits">Credits</a>
             </div>
@@ -151,6 +154,20 @@
                   </tr>
                 </tbody>
               </table>
+            </section>
+
+            <section id="use-cases" class="section">
+              <p class="eyebrow">Use cases</p>
+              <h2>Start from the problem or comparison your team is evaluating.</h2>
+              <div class="card-grid">
+                <article class="card"><p class="eyebrow">Self-hosting</p><h3>Self-hosted error monitoring</h3><p>Run Logister yourself with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, and GHCR images.</p><p><a href="/use-cases/self-hosted-error-monitoring/">Read the use case</a></p></article>
+                <article class="card"><p class="eyebrow">Comparison</p><h3>Sentry alternative</h3><p>Evaluate Logister when you want forkable source, owned infrastructure, grouped errors, assignment, and release context.</p><p><a href="/use-cases/sentry-alternative/">Compare the fit</a></p></article>
+                <article class="card"><p class="eyebrow">Comparison</p><h3>Bugsnag alternative</h3><p>Evaluate Logister when first-occurrence alerts, digest emails, and team-owned triage should live in your own stack.</p><p><a href="/use-cases/bugsnag-alternative/">Compare the fit</a></p></article>
+                <article class="card"><p class="eyebrow">Comparison</p><h3>Bugzilla alternative</h3><p>Use production error context as the start of bug ownership, not a separate manual ticket-writing step.</p><p><a href="/use-cases/bugzilla-alternative/">Compare the fit</a></p></article>
+                <article class="card"><p class="eyebrow">Operations</p><h3>Docker and GHCR self-hosting</h3><p>Run versioned Docker images with separate Rails web and Sidekiq worker containers in your own infrastructure.</p><p><a href="/use-cases/docker-ghcr-self-hosting/">Read the Docker use case</a></p></article>
+                <article class="card"><p class="eyebrow">Workflow</p><h3>Error assignment and team triage</h3><p>Assign grouped production errors to teammates, filter by assignee, and keep ownership close to the event context.</p><p><a href="/use-cases/error-assignment-team-triage/">Read the triage use case</a></p></article>
+                <article class="card"><p class="eyebrow">Notifications</p><h3>Amazon SES alert emails</h3><p>Send first-occurrence alerts and daily or weekly digest emails through Rails SMTP settings backed by SES.</p><p><a href="/use-cases/amazon-ses-error-alerts/">Read the SES use case</a></p></article>
+              </div>
             </section>
 
             <section id="product" class="section">
@@ -239,6 +256,7 @@
                 This static export is designed so the docs can live separately from either a self-hosted Logister instance or the secondary hosted app. It keeps the same information
                 architecture as the product docs while removing the app runtime dependency, and includes a machine-readable
                 <code>/llms.txt</code> index for AI tools that need the public docs map.
+                The fuller <code>/llms-full.txt</code> file gives agents a denser product, operations, release, and comparison context.
               </p>
               <ul>
                 <li>Integration guides stay public and easy to share.</li>
@@ -273,6 +291,7 @@
               <a href="/getting-started/">Getting started</a>
               <a href="/product/">Product guide</a>
               <a href="/self-hosting/">Self-hosting</a>
+              <a href="/use-cases/">Use cases</a>
             </div>
             <div class="footer-column">
               <h4>Operations</h4>

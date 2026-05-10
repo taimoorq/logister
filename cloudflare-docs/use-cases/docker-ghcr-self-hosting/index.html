@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Docker and GHCR Self-Hosting for Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Self-host Logister with versioned GHCR Docker images, separate Rails web and Sidekiq worker processes, PostgreSQL, Redis, SMTP/Amazon SES, and optional ClickHouse.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/use-cases/docker-ghcr-self-hosting/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Docker and GHCR Self-Hosting for Logister">
+    <meta property="og:description" content="Self-host Logister with versioned GHCR Docker images, separate Rails web and Sidekiq worker processes, PostgreSQL, Redis, SMTP/Amazon SES, and optional ClickHouse.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/use-cases/docker-ghcr-self-hosting/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLMs full context">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/use-cases/docker-ghcr-self-hosting/#article","headline":"Docker and GHCR self-hosting for Logister","name":"Docker and GHCR Self-Hosting for Logister","url":"https://docs.logister.org/use-cases/docker-ghcr-self-hosting/","description":"Self-host Logister with versioned GHCR Docker images, separate Rails web and Sidekiq worker processes, PostgreSQL, Redis, SMTP/Amazon SES, and optional ClickHouse.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Docker self-hosting"},{"@type":"Thing","name":"GitHub Container Registry"},{"@type":"Thing","name":"Rails and Sidekiq deployment"}],"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Use cases","item":"https://docs.logister.org/use-cases/"},{"@type":"ListItem","position":3,"name":"Docker and GHCR self-hosting","item":"https://docs.logister.org/use-cases/docker-ghcr-self-hosting/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Docker self-hosting</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/use-cases/">Use cases</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Docker and GHCR self-hosting</span><h1>Run Logister from versioned Docker images in infrastructure you control.</h1><p>Logister publishes release images to GitHub Container Registry so self-hosters can pin a known version, run separate web and worker processes, and keep PostgreSQL, Redis, SMTP, and optional ClickHouse under their own operational plan.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Use cases</p><a href="/use-cases/self-hosted-error-monitoring/">Self-hosted error monitoring</a><a class="active" href="/use-cases/docker-ghcr-self-hosting/">Docker and GHCR</a><a href="/use-cases/error-assignment-team-triage/">Team triage</a><a href="/use-cases/amazon-ses-error-alerts/">SES alerts</a></div><div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/self-hosting/#docker">Docker guide</a><a href="/deployment/">Environment reference</a><a href="https://github.com/taimoorq/logister/pkgs/container/logister">GHCR package</a></div></aside>
+          <article class="article">
+            <section class="section"><p class="eyebrow">Release images</p><h2>Pin the app image that matches the release notes.</h2><p>Release automation publishes version, latest, and short-SHA tags after CI, Fly deploy, and health checks pass. For stable self-hosting, pin a version tag such as <code>ghcr.io/taimoorq/logister:v1.1.0</code> and review the matching changelog entry before upgrading.</p></section>
+            <section class="section"><p class="eyebrow">Process model</p><h2>The Docker shape mirrors the Rails app architecture.</h2><table><thead><tr><th>Container</th><th>Responsibility</th></tr></thead><tbody><tr><td>Web</td><td>Runs the Rails UI, auth, project management, dashboards, and ingest endpoints.</td></tr><tr><td>Worker</td><td>Runs Sidekiq for email delivery, first-occurrence alerts, digests, async ingestion, and optional ClickHouse writes.</td></tr><tr><td>PostgreSQL</td><td>Stores accounts, projects, API keys, events, grouped errors, notification preferences, and sharing.</td></tr><tr><td>Redis</td><td>Backs Sidekiq, caching, and rate-friendly dashboard behavior.</td></tr><tr><td>ClickHouse</td><td>Optional analytics store for higher-volume event exploration.</td></tr></tbody></table></section>
+            <section class="section"><p class="eyebrow">Self-hosting choices</p><h2>Use managed data stores or a single-host stack.</h2><p>Teams can run only the Logister web and worker containers while using managed PostgreSQL, Redis, and SMTP, or they can use a Compose-style single-host stack for the full footprint. The same environment reference applies in both cases.</p><ul><li>Keep secrets in the deploy platform or host secret store, not in the repository.</li><li>Run database migrations in a release phase or explicit one-off task.</li><li>Keep at least one worker process running so email, digests, and async ingestion continue.</li></ul></section>
+            <section class="section"><p class="eyebrow">Next steps</p><h2>Start with the Docker guide and environment reference.</h2><div class="card-grid"><article class="card"><h3>Docker self-hosting</h3><p><a href="/self-hosting/#docker">Read the Docker guide</a></p></article><article class="card"><h3>Environment variables</h3><p><a href="/deployment/">Read the env reference</a></p></article><article class="card"><h3>Release images</h3><p><a href="https://github.com/taimoorq/logister/pkgs/container/logister">Open the GHCR package</a></p></article></div></section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

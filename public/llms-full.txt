@@ -1,0 +1,99 @@
+# Logister Full AI Context
+
+Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.
+
+The primary Logister deployment model is self-hosting. The public hosted app at https://logister.org/ is secondary. The source repository is https://github.com/taimoorq/logister.
+
+## What Logister Does
+
+- Captures application errors, logs, metrics, transactions, and check-ins.
+- Groups repeated errors into triageable error groups.
+- Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, and environment when integrations provide them.
+- Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
+- Provides cross-app dashboard exploration with server-backed aggregate endpoints.
+- Sends first-occurrence error emails and daily or weekly digest summaries through SMTP, commonly Amazon SES.
+- Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.
+
+## Supported Runtimes
+
+- Ruby and Rails apps use `logister-ruby`.
+- .NET and ASP.NET Core apps use `logister-dotnet`.
+- Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging.
+- JavaScript and TypeScript apps use `logister-js`.
+- CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
+- Unsupported runtimes can use the HTTP API directly.
+
+## Operational Use Cases
+
+- Docker and GHCR self-hosting: Logister publishes versioned release images for teams that want to pin app versions and run separate Rails web and Sidekiq worker containers.
+- Error assignment and team triage: Logister stores ownership on grouped errors so teammates can filter inboxes by assignee, claim unassigned work, and move production issues through fixed, ignored, archived, or reopened states.
+- Amazon SES error alert emails and digests: Logister sends first-occurrence alerts and daily or weekly project digest emails through standard Rails SMTP settings, commonly backed by SES in self-hosted deployments.
+
+## Self-Hosted Stack
+
+- Rails web app served by Puma.
+- PostgreSQL for accounts, projects, API keys, events, grouped errors, monitors, notification preferences, and sharing.
+- Redis for caching and Sidekiq.
+- Sidekiq worker for async jobs, Action Mailer delivery, first-occurrence alerts, digest scheduling, and optional ClickHouse writes.
+- SMTP/Amazon SES for auth mail, project alerts, and digest emails.
+- Optional ClickHouse for higher-volume event analytics.
+- Optional Cloudflare Turnstile for auth bot protection.
+- Optional Cloudflare Pages for static docs hosting.
+
+## Release Distribution
+
+- GitHub Releases: https://github.com/taimoorq/logister/releases
+- GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
+- Current versioned image: `ghcr.io/taimoorq/logister:v1.1.0`
+- Latest image: `ghcr.io/taimoorq/logister:latest`
+- Release workflow publishes version, latest, and short-SHA Docker tags after CI, Fly deploy, and health checks pass.
+
+## License And Brand
+
+- Code license: MIT License at https://github.com/taimoorq/logister/blob/main/LICENSE
+- Brand policy: https://github.com/taimoorq/logister/blob/main/TRADEMARKS.md
+- Forks may use, modify, self-host, and redistribute the code under the MIT License.
+- Forks and redistributed versions may not use the Logister name, logo, wordmark, visual identity, or brand assets as their own branding without permission.
+- Public forks and rebranded versions should replace Logister branding and avoid implying endorsement by the official project.
+
+## Comparisons
+
+Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or their maintainers.
+
+- Sentry alternative: Logister fits teams that want grouped errors, assignment, release context, and self-hosted operations from forkable source.
+- Bugsnag alternative: Logister fits teams that want grouped production errors, first-occurrence emails, digest summaries, and project-level ownership in their own infrastructure.
+- Bugzilla alternative: Logister fits teams that want issue ownership to start from real production error context: request details, stacktrace, occurrence history, owner, and status.
+- Rails error monitoring: Logister fits Rails teams that want self-hosted exception grouping, request method and URL/path context, assignment, related logs, and Ruby integration docs.
+- Python error monitoring: Logister fits Python teams using FastAPI, Django, Flask, Celery, workers, schedulers, and Python logging.
+- .NET error monitoring: Logister fits ASP.NET Core and C# teams that want request context, transactions, custom metrics, and check-ins in one triage app.
+- JavaScript error monitoring: Logister fits JavaScript and TypeScript teams using Node, Express, workers, console capture, and structured logs.
+- CFML error monitoring: Logister fits Lucee and Adobe ColdFusion teams sending structured payloads over HTTP.
+- Docker and GHCR self-hosting: Logister fits operators who want versioned Docker releases, separate web and worker containers, PostgreSQL, Redis, SMTP, and optional ClickHouse.
+- Error assignment and team triage: Logister fits teams that want grouped production errors to become owned work with assignee filters and status workflows.
+- Amazon SES error alerts: Logister fits self-hosters who want first-occurrence alerts and daily or weekly digest emails through SMTP/Amazon SES.
+
+## Canonical Links
+
+- App source: https://github.com/taimoorq/logister
+- Public docs: https://docs.logister.org/
+- Product guide: https://docs.logister.org/product/
+- Use cases: https://docs.logister.org/use-cases/
+- Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
+- Python error monitoring: https://docs.logister.org/use-cases/python-error-monitoring/
+- .NET error monitoring: https://docs.logister.org/use-cases/dotnet-error-monitoring/
+- JavaScript error monitoring: https://docs.logister.org/use-cases/javascript-error-monitoring/
+- CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
+- Docker and GHCR self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
+- Amazon SES error alerts: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
+- Self-hosting: https://docs.logister.org/self-hosting/
+- Deployment config: https://docs.logister.org/deployment/
+- Docker self-hosting: https://docs.logister.org/self-hosting/#docker
+- HTTP API: https://docs.logister.org/http-api/
+- Ruby integration: https://docs.logister.org/integrations/ruby/
+- .NET integration: https://docs.logister.org/integrations/dotnet/
+- Python integration: https://docs.logister.org/integrations/python/
+- JavaScript integration: https://docs.logister.org/integrations/javascript/
+- CFML integration: https://docs.logister.org/integrations/cfml/
+- Short AI map: https://logister.org/llms.txt
+- Docs AI map: https://docs.logister.org/llms.txt

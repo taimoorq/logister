@@ -1,6 +1,6 @@
 # Logister
 
-Logister is a free, open source, forkable, self-hosted and self-hostable error monitoring, bug triage, and app observability dashboard. It is positioned for teams evaluating open source alternatives to paid error monitoring tools such as Bugsnag or Sentry, and for teams that want Bugzilla-style ownership workflows connected directly to production error context.
+Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.
 
 The primary goal is helping teams run Logister themselves. The public hosted app at logister.org is a secondary option.
 
@@ -26,9 +26,23 @@ Canonical documentation lives on the public docs host:
 - Docs home: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
 - Product guide: https://docs.logister.org/product/
+- Use cases and comparisons: https://docs.logister.org/use-cases/
+- Self-hosted error monitoring use case: https://docs.logister.org/use-cases/self-hosted-error-monitoring/
+- Sentry alternative comparison: https://docs.logister.org/use-cases/sentry-alternative/
+- Bugsnag alternative comparison: https://docs.logister.org/use-cases/bugsnag-alternative/
+- Bugzilla alternative comparison: https://docs.logister.org/use-cases/bugzilla-alternative/
+- Rails error monitoring use case: https://docs.logister.org/use-cases/rails-error-monitoring/
+- Python error monitoring use case: https://docs.logister.org/use-cases/python-error-monitoring/
+- .NET / ASP.NET Core error monitoring use case: https://docs.logister.org/use-cases/dotnet-error-monitoring/
+- JavaScript / TypeScript error monitoring use case: https://docs.logister.org/use-cases/javascript-error-monitoring/
+- ColdFusion / CFML error monitoring use case: https://docs.logister.org/use-cases/cfml-error-monitoring/
+- Docker and GHCR self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Error assignment and team triage use case: https://docs.logister.org/use-cases/error-assignment-team-triage/
+- Amazon SES error alert emails and digests use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Local development: https://docs.logister.org/local-development/
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
+- Full AI context: https://logister.org/llms-full.txt
 - Docker self-hosting option and GHCR images: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 - HTTP API: https://docs.logister.org/http-api/
@@ -67,6 +81,7 @@ Canonical documentation lives on the public docs host:
 - .NET developers instrumenting ASP.NET Core apps and C# workers.
 - JavaScript and TypeScript developers integrating Node or Express apps.
 - ColdFusion, Lucee, and CFML developers sending structured events to Logister.
+- Rails teams looking for self-hosted exception grouping, request context, and assignment.
 
 ## Companion packages
 - RubyGems: https://rubygems.org/gems/logister-ruby
@@ -79,3 +94,4 @@ Canonical documentation lives on the public docs host:
 
 ## Self-host source
 - App source: https://github.com/taimoorq/logister
+- Full AI context: https://logister.org/llms-full.txt

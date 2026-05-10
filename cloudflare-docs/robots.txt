@@ -10,11 +10,21 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
 User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
 Allow: /
 
 User-agent: *
 Allow: /
 Allow: /llms.txt
+Allow: /llms-full.txt
 
 Sitemap: https://docs.logister.org/sitemap.xml

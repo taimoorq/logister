@@ -17,7 +17,7 @@ RSpec.describe "Home", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("An open source alternative for teams who want to self-host error monitoring.")
         expect(response.body).to include("Versioned GHCR images")
-        expect(response.body).to include("tools like Bugzilla plus the application error monitoring teams compare with Bugsnag")
+        expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("logister-dotnet")
         expect(response.body).to include("logister-python")
@@ -30,6 +30,7 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include("application/ld+json")
         expect(response.body).to include("&quot;@context&quot;:&quot;https://schema.org&quot;")
         expect(response.body).to include("/llms.txt")
+        expect(response.body).to include("/llms-full.txt")
       end
 
       it "uses the configured https canonical URL even for http requests" do
@@ -140,9 +141,16 @@ RSpec.describe "Home", type: :request do
     it "returns success and llms content" do
       get "/llms.txt"
       expect(response).to have_http_status(:success)
-      expect(response.body).to include("open source alternatives to paid error monitoring tools")
+      expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
       expect(response.body).to include("GHCR image package")
       expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.0")
+      expect(response.body).to include("https://docs.logister.org/use-cases/")
+      expect(response.body).to include("https://docs.logister.org/use-cases/rails-error-monitoring/")
+      expect(response.body).to include("https://docs.logister.org/use-cases/python-error-monitoring/")
+      expect(response.body).to include("https://docs.logister.org/use-cases/docker-ghcr-self-hosting/")
+      expect(response.body).to include("https://docs.logister.org/use-cases/error-assignment-team-triage/")
+      expect(response.body).to include("https://docs.logister.org/use-cases/amazon-ses-error-alerts/")
+      expect(response.body).to include("https://logister.org/llms-full.txt")
       expect(response.body).to include("Python apps via the `logister-python` package")
       expect(response.body).to include(".NET and ASP.NET Core apps via the `logister-dotnet` SDK")
       expect(response.body).to include("https://docs.logister.org/product/")
@@ -154,6 +162,22 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
       expect(response.body).to include("https://docs.logister.org/integrations/cfml/")
       expect(response.body).to include("https://www.npmjs.com/package/logister-js")
+    end
+  end
+
+  describe "GET /llms-full.txt" do
+    it "returns success and expanded llms context" do
+      get "/llms-full.txt"
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Logister Full AI Context")
+      expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
+      expect(response.body).to include("Sentry alternative")
+      expect(response.body).to include("Rails error monitoring")
+      expect(response.body).to include("Docker and GHCR self-hosting")
+      expect(response.body).to include("Error assignment and team triage")
+      expect(response.body).to include("Amazon SES error alert emails")
+      expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.0")
+      expect(response.body).to include("TRADEMARKS.md")
     end
   end
 
@@ -169,6 +193,8 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include(privacy_url)
       expect(response.body).to include(cookies_url)
       expect(response.body).to include(terms_url)
+      expect(response.body).to include("#{root_url}llms.txt")
+      expect(response.body).to include("#{root_url}llms-full.txt")
     end
 
     it "uses the configured https host for sitemap entries" do
@@ -182,6 +208,8 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("<loc>https://logister.org/privacy</loc>")
       expect(response.body).to include("<loc>https://logister.org/cookies</loc>")
       expect(response.body).to include("<loc>https://logister.org/terms</loc>")
+      expect(response.body).to include("<loc>https://logister.org/llms.txt</loc>")
+      expect(response.body).to include("<loc>https://logister.org/llms-full.txt</loc>")
     end
   end
 end

@@ -9,12 +9,19 @@ All notable changes to Logister will be documented in this file.
 - Root MIT License for the Logister code, giving community users clear permission to use, fork, modify, self-host, and redistribute it.
 - Logister trademark and brand policy clarifying that forks and redistributed versions must replace Logister branding and must not use the Logister name, logo, wordmark, visual identity, or brand assets without permission.
 - GHCR post-deploy runbook for verifying release publication, package visibility, image tags, and public image pulls after the next release deploy.
+- SEO and LLM discovery plan documenting Logister's product positioning, intent-page strategy, structured data, robots, and measurement work.
+- Use-case and comparison docs for self-hosted error monitoring, Sentry alternatives, Bugsnag alternatives, and Bugzilla-style app error triage.
+- Runtime-focused SEO docs for Rails, Python, .NET / ASP.NET Core, JavaScript / TypeScript, and CFML error monitoring.
+- Operations-focused SEO docs for Docker/GHCR self-hosting, team error assignment workflows, and Amazon SES error alert emails or digest summaries.
+- Expanded `llms-full.txt` files for the app and docs domains so AI tools can read a denser product, stack, release, license, brand, and comparison context.
 
 ### Changed
 
 - Repositioned the homepage, About page, public docs, SEO metadata, robots rules, and `llms.txt` around Logister as a forkable, self-hosted error monitoring and bug triage alternative.
 - Updated self-hosting and AI-readable release references for the next `v1.1.0` Docker image published to GitHub Container Registry.
 - Expanded public project documentation so self-hosters understand the supported release distribution path, permissive code license, and separate Logister brand policy.
+- Standardized the public product definition around open source, self-hosted error monitoring and bug triage for teams evaluating forkable alternatives to Bugsnag, Sentry, and Bugzilla-style workflows.
+- Added the public `llms.txt` and `llms-full.txt` files to the app sitemap so AI-readable product context is easier to discover.
 
 ## v1.0.0 - 2026-05-10
 

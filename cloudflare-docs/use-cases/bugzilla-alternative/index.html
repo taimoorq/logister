@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Bugzilla Alternative for Application Errors | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Use Logister as a Bugzilla-style workflow for application errors, with grouped production issues, assignees, statuses, occurrence history, and request context.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/use-cases/bugzilla-alternative/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Bugzilla Alternative for Application Errors | Logister">
+    <meta property="og:description" content="Use Logister as a Bugzilla-style workflow for application errors, with grouped production issues, assignees, statuses, occurrence history, and request context.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/use-cases/bugzilla-alternative/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLMs full context">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/use-cases/bugzilla-alternative/#article","headline":"Logister as a Bugzilla alternative for application errors","name":"Bugzilla Alternative for Application Errors | Logister","url":"https://docs.logister.org/use-cases/bugzilla-alternative/","description":"Use Logister as a Bugzilla-style workflow for application errors, with grouped production issues, assignees, statuses, occurrence history, and request context.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Bugzilla alternative"},{"@type":"Thing","name":"Bug triage"},{"@type":"Thing","name":"Error assignment"}],"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Use cases","item":"https://docs.logister.org/use-cases/"},{"@type":"ListItem","position":3,"name":"Bugzilla alternative","item":"https://docs.logister.org/use-cases/bugzilla-alternative/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Bugzilla alternative</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/use-cases/">Use cases</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Bugzilla alternative for app errors</span><h1>Use production error context as the starting point for bug ownership.</h1><p>Logister is independent and is not affiliated with Bugzilla. It is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Use cases</p><a href="/use-cases/self-hosted-error-monitoring/">Self-hosted error monitoring</a><a href="/use-cases/sentry-alternative/">Sentry alternative</a><a href="/use-cases/bugsnag-alternative/">Bugsnag alternative</a><a class="active" href="/use-cases/bugzilla-alternative/">Bugzilla alternative</a></div><div class="sidebar-group"><p class="sidebar-label">Next</p><a href="/product/#triage">Triage errors</a><a href="/product/#collaborate">Work with teammates</a><a href="/getting-started/">Getting started</a></div></aside>
+          <article class="article">
+            <section class="section"><p class="eyebrow">When Logister fits</p><h2>Choose Logister when a bug report should start with the real failing event.</h2><p>Traditional issue trackers are useful once someone writes a clear ticket. Logister starts one step earlier: the app receives the exception, groups repeated occurrences, surfaces request method and URL/path when available, links related logs, and lets the team assign an owner from the project inbox.</p></section>
+            <section class="section"><p class="eyebrow">Workflow</p><h2>Issue ownership stays close to runtime evidence.</h2><table><thead><tr><th>Bug triage need</th><th>Logister surface</th></tr></thead><tbody><tr><td>Who owns this?</td><td>Error groups can be assigned to project users and filtered by assignee.</td></tr><tr><td>Is it fixed?</td><td>Status actions include mark fixed, ignore, archive, and reopen.</td></tr><tr><td>How often did it happen?</td><td>Occurrence counts, first seen, last seen, and occurrence history stay with the grouped issue.</td></tr><tr><td>What request failed?</td><td>Runtime-aware detail views show method, URL/path, stacktrace, request context, and related logs when integrations send them.</td></tr></tbody></table></section>
+            <section class="section"><p class="eyebrow">Next steps</p><h2>Send one real error, then work it like a bug.</h2><p>Create a project, send an event from the runtime you use, open the inbox, assign the grouped issue, and use the detail view to decide whether it should be fixed, ignored, archived, or left open.</p><p><a href="/getting-started/">Read getting started</a>.</p></section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Use Cases for Self-Hosted Error Monitoring | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Use cases and comparisons for Logister, including self-hosted error monitoring, Docker/GHCR, team assignment, SES alerts, Sentry, Bugsnag, Bugzilla, and runtime monitoring.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/use-cases/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Use Cases for Self-Hosted Error Monitoring | Logister">
+    <meta property="og:description" content="Use cases and comparisons for Logister, including self-hosted error monitoring, Docker/GHCR, team assignment, SES alerts, Sentry, Bugsnag, Bugzilla, and runtime monitoring.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/use-cases/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Use Cases for Self-Hosted Error Monitoring | Logister">
+    <meta name="twitter:description" content="Use cases and comparisons for Logister, including self-hosted error monitoring, Docker/GHCR, team assignment, SES alerts, Sentry, Bugsnag, Bugzilla, and runtime monitoring.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLMs full context">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"CollectionPage","@id":"https://docs.logister.org/use-cases/#page","url":"https://docs.logister.org/use-cases/","name":"Use Cases for Self-Hosted Error Monitoring | Logister","description":"Use cases and comparisons for Logister, including self-hosted error monitoring, Docker/GHCR, team assignment, SES alerts, Sentry, Bugsnag, Bugzilla, and runtime monitoring.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Self-hosted error monitoring"},{"@type":"Thing","name":"Docker and GHCR self-hosting"},{"@type":"Thing","name":"Error assignment and team triage"},{"@type":"Thing","name":"Amazon SES error alert emails"},{"@type":"Thing","name":"Open source Sentry alternative"},{"@type":"Thing","name":"Bugsnag alternative"},{"@type":"Thing","name":"Bugzilla alternative"},{"@type":"Thing","name":"Rails error monitoring"},{"@type":"Thing","name":"Python error monitoring"},{"@type":"Thing","name":".NET error monitoring"},{"@type":"Thing","name":"JavaScript error monitoring"},{"@type":"Thing","name":"CFML error monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers, engineering teams, and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Use cases","item":"https://docs.logister.org/use-cases/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Use cases</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Use cases</span><h1>Find the Logister path that matches what your team is trying to replace or build.</h1><p>Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/product/">Product guide</a><a href="/self-hosting/">Self-hosting</a><a class="active" href="/use-cases/">Use cases</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Use cases</p><a href="/use-cases/self-hosted-error-monitoring/">Self-hosted error monitoring</a><a href="/use-cases/sentry-alternative/">Sentry alternative</a><a href="/use-cases/bugsnag-alternative/">Bugsnag alternative</a><a href="/use-cases/bugzilla-alternative/">Bugzilla alternative</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Runtime searches</p><a href="/use-cases/rails-error-monitoring/">Rails</a><a href="/use-cases/python-error-monitoring/">Python</a><a href="/use-cases/dotnet-error-monitoring/">.NET</a><a href="/use-cases/javascript-error-monitoring/">JavaScript</a><a href="/use-cases/cfml-error-monitoring/">CFML</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Operations and team workflows</p><a href="/use-cases/docker-ghcr-self-hosting/">Docker and GHCR</a><a href="/use-cases/error-assignment-team-triage/">Team triage</a><a href="/use-cases/amazon-ses-error-alerts/">SES alerts</a></div>
+          </aside>
+          <article class="article">
+            <section class="section">
+              <p class="eyebrow">Why these pages exist</p>
+              <h2>Different teams discover Logister through different jobs.</h2>
+              <p>Some teams search for a self-hosted monitoring stack. Some are comparing paid error tools. Others already have a bug tracker but want production error context, assignment, and release history in one place. These pages describe those paths directly and link back to the canonical setup docs.</p>
+              <div class="card-grid">
+                <article class="card"><p class="eyebrow">Self-hosting</p><h3>Self-hosted error monitoring</h3><p>Run Logister yourself with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, and versioned GHCR images.</p><p><a href="/use-cases/self-hosted-error-monitoring/">Read the use case</a></p></article>
+                <article class="card"><p class="eyebrow">Comparison</p><h3>Sentry alternative</h3><p>Use Logister when your team wants open source code, Docker-based releases, and grouped issue triage in your own infrastructure.</p><p><a href="/use-cases/sentry-alternative/">Compare the fit</a></p></article>
+                <article class="card"><p class="eyebrow">Comparison</p><h3>Bugsnag alternative</h3><p>Use Logister when you want error grouping, first-occurrence alerts, assignment, and digest workflows without a hosted-only dependency.</p><p><a href="/use-cases/bugsnag-alternative/">Compare the fit</a></p></article>
+                <article class="card"><p class="eyebrow">Comparison</p><h3>Bugzilla alternative for app errors</h3><p>Use Logister when bugs start as production exceptions and need request context, occurrences, owners, and status workflows.</p><p><a href="/use-cases/bugzilla-alternative/">Compare the fit</a></p></article>
+              </div>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Important note</p>
+              <h2>Comparison pages are descriptive, not affiliation claims.</h2>
+              <p>Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or their maintainers. The comparisons explain when Logister's open source, self-hosted operating model may fit teams evaluating those categories of tools.</p>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Operations and team workflows</p>
+              <h2>Use these pages when the question is how Logister runs day to day.</h2>
+              <div class="card-grid">
+                <article class="card"><p class="eyebrow">Self-hosting</p><h3>Docker and GHCR self-hosting</h3><p>Run the versioned release image with separate Rails web and Sidekiq worker containers, PostgreSQL, Redis, SMTP, and optional ClickHouse.</p><p><a href="/use-cases/docker-ghcr-self-hosting/">Read the Docker use case</a></p></article>
+                <article class="card"><p class="eyebrow">Team workflow</p><h3>Error assignment and team triage</h3><p>Assign grouped errors to project teammates, filter inboxes by owner, and connect production context to Bugzilla-style ownership.</p><p><a href="/use-cases/error-assignment-team-triage/">Read the triage use case</a></p></article>
+                <article class="card"><p class="eyebrow">Notifications</p><h3>Amazon SES alert emails and digests</h3><p>Send first-occurrence alerts and daily or weekly digest summaries through Rails SMTP settings backed by SES or another provider.</p><p><a href="/use-cases/amazon-ses-error-alerts/">Read the SES use case</a></p></article>
+              </div>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Runtime-specific monitoring</p>
+              <h2>Pick the page that matches the stack you are instrumenting.</h2>
+              <div class="card-grid">
+                <article class="card"><p class="eyebrow">Ruby</p><h3>Rails error monitoring</h3><p>Use Logister with <code>logister-ruby</code> to capture Rails exceptions, request context, assignment, and related logs.</p><p><a href="/use-cases/rails-error-monitoring/">Read the Rails use case</a></p></article>
+                <article class="card"><p class="eyebrow">Python</p><h3>Python error monitoring</h3><p>Use Logister with FastAPI, Django, Flask, Celery, workers, schedulers, and Python logging.</p><p><a href="/use-cases/python-error-monitoring/">Read the Python use case</a></p></article>
+                <article class="card"><p class="eyebrow">.NET</p><h3>ASP.NET Core error monitoring</h3><p>Use Logister with .NET services, request details, transactions, custom metrics, and scheduled check-ins.</p><p><a href="/use-cases/dotnet-error-monitoring/">Read the .NET use case</a></p></article>
+                <article class="card"><p class="eyebrow">JavaScript</p><h3>JavaScript and TypeScript monitoring</h3><p>Use Logister with Node, Express, TypeScript, workers, and console or structured logs.</p><p><a href="/use-cases/javascript-error-monitoring/">Read the JavaScript use case</a></p></article>
+                <article class="card"><p class="eyebrow">CFML</p><h3>ColdFusion error monitoring</h3><p>Use direct HTTP ingestion from Lucee or Adobe ColdFusion apps and keep grouped issue ownership in Logister.</p><p><a href="/use-cases/cfml-error-monitoring/">Read the CFML use case</a></p></article>
+              </div>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

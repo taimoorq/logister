@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Amazon SES Error Alert Emails and Digests | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Send Logister project error alert emails and daily or weekly digests through standard Rails SMTP settings, commonly backed by Amazon SES in self-hosted deployments.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/use-cases/amazon-ses-error-alerts/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Amazon SES Error Alert Emails and Digests | Logister">
+    <meta property="og:description" content="Send Logister project error alert emails and daily or weekly digests through standard Rails SMTP settings, commonly backed by Amazon SES in self-hosted deployments.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/use-cases/amazon-ses-error-alerts/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLMs full context">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/use-cases/amazon-ses-error-alerts/#article","headline":"Amazon SES error alert emails and digests for Logister","name":"Amazon SES Error Alert Emails and Digests | Logister","url":"https://docs.logister.org/use-cases/amazon-ses-error-alerts/","description":"Send Logister project error alert emails and daily or weekly digests through standard Rails SMTP settings, commonly backed by Amazon SES in self-hosted deployments.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Amazon SES"},{"@type":"Thing","name":"Error alert emails"},{"@type":"Thing","name":"Digest emails"}],"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Use cases","item":"https://docs.logister.org/use-cases/"},{"@type":"ListItem","position":3,"name":"Amazon SES error alerts","item":"https://docs.logister.org/use-cases/amazon-ses-error-alerts/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">SES alerts</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/use-cases/">Use cases</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Amazon SES error alerts</span><h1>Send first-occurrence alerts and digest emails without mailing every repeated error.</h1><p>Logister uses standard Rails SMTP settings, so self-hosted teams can send branded project error emails through Amazon SES or another SMTP provider while Sidekiq handles delivery outside the web request.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Use cases</p><a href="/use-cases/self-hosted-error-monitoring/">Self-hosted error monitoring</a><a href="/use-cases/docker-ghcr-self-hosting/">Docker and GHCR</a><a href="/use-cases/error-assignment-team-triage/">Team triage</a><a class="active" href="/use-cases/amazon-ses-error-alerts/">SES alerts</a></div><div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/deployment/">SMTP and SES config</a><a href="/product/#notifications">Notifications</a><a href="/self-hosting/">Self-hosting</a></div></aside>
+          <article class="article">
+            <section class="section"><p class="eyebrow">Notification cadence</p><h2>Alert on new error types, summarize repeats.</h2><p>First-occurrence emails help teams notice new grouped errors. Daily or weekly digests summarize project activity so repeat occurrences stay visible without creating inbox noise.</p><ul><li>First occurrence alerts are for new grouped error types.</li><li>Digest emails summarize unresolved project activity over a chosen cadence.</li><li>Project users can choose the alert style that fits their role.</li></ul></section>
+            <section class="section"><p class="eyebrow">Email delivery</p><h2>SES is configured through ordinary SMTP environment variables.</h2><p>Logister does not need checked-in provider secrets. Self-hosters put SMTP host, port, domain, username, password, sender, and reply-to values in their deploy provider's secret/config store. The deployment reference explains each sample entry and which provider values to use.</p><p><a href="/deployment/">Read the deployment environment reference</a>.</p></section>
+            <section class="section"><p class="eyebrow">Deliverability</p><h2>Branded, useful mail is less likely to be treated as noise.</h2><p>Error emails include project, environment, release, occurrence, and triage links when available. That helps recipients understand why the message was sent and makes the email more useful than a generic exception dump. Operators should also configure SES identity verification, SPF, DKIM, DMARC, and a sending domain that matches the self-hosted instance.</p></section>
+            <section class="section"><p class="eyebrow">Worker requirement</p><h2>Keep Sidekiq running for alerts and digests.</h2><p>Email delivery, first-occurrence alerts, and digest scheduling run through background jobs. A self-hosted deployment should run at least one Sidekiq worker alongside the Rails web process.</p><p><a href="/use-cases/docker-ghcr-self-hosting/">Read the Docker and worker process overview</a>.</p></section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

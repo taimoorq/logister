@@ -18,7 +18,22 @@ Allow: /
 Disallow: /admin
 Disallow: /api
 
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /api
+
+User-agent: Claude-User
+Allow: /
+Disallow: /admin
+Disallow: /api
+
 User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /api
+
+User-agent: Google-Extended
 Allow: /
 Disallow: /admin
 Disallow: /api
@@ -30,6 +45,7 @@ Disallow: /api
 
 # AI-friendly plain text context
 Allow: /llms.txt
+Allow: /llms-full.txt
 
 Sitemap: https://logister.org/sitemap.xml
 Sitemap: https://docs.logister.org/sitemap.xml
