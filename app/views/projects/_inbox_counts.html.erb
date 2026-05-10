@@ -1,5 +1,7 @@
+<% assignee_param = local_assigns[:assignee].presence || "all" %>
+
 <nav id="inbox_counts" class="inbox-filters">
-  <%= link_to project_path(project, filter: "unresolved", q: query),
+  <%= link_to project_path(project, filter: "unresolved", q: query, assignee: assignee_param),
               class: "inbox-filter-link #{"is-active" if filter == "unresolved"}",
               aria: { current: ("page" if filter == "unresolved") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
@@ -8,7 +10,7 @@
     <span class="filter-count"><%= counts[:unresolved] %></span>
   <% end %>
 
-  <%= link_to project_path(project, filter: "introduced_today", q: query),
+  <%= link_to project_path(project, filter: "introduced_today", q: query, assignee: assignee_param),
               class: "inbox-filter-link #{"is-active" if filter == "introduced_today"}",
               aria: { current: ("page" if filter == "introduced_today") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
@@ -17,7 +19,7 @@
     <span class="filter-count"><%= counts[:introduced_today] %></span>
   <% end %>
 
-  <%= link_to project_path(project, filter: "resolved", q: query),
+  <%= link_to project_path(project, filter: "resolved", q: query, assignee: assignee_param),
               class: "inbox-filter-link #{"is-active" if filter == "resolved"}",
               aria: { current: ("page" if filter == "resolved") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
@@ -26,7 +28,7 @@
     <span class="filter-count"><%= counts[:resolved] %></span>
   <% end %>
 
-  <%= link_to project_path(project, filter: "ignored", q: query),
+  <%= link_to project_path(project, filter: "ignored", q: query, assignee: assignee_param),
               class: "inbox-filter-link #{"is-active" if filter == "ignored"}",
               aria: { current: ("page" if filter == "ignored") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
@@ -35,7 +37,7 @@
     <span class="filter-count"><%= counts[:ignored] %></span>
   <% end %>
 
-  <%= link_to project_path(project, filter: "archived", q: query),
+  <%= link_to project_path(project, filter: "archived", q: query, assignee: assignee_param),
               class: "inbox-filter-link #{"is-active" if filter == "archived"}",
               aria: { current: ("page" if filter == "archived") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",
@@ -44,7 +46,7 @@
     <span class="filter-count"><%= counts[:archived] %></span>
   <% end %>
 
-  <%= link_to project_path(project, filter: "all", q: query),
+  <%= link_to project_path(project, filter: "all", q: query, assignee: assignee_param),
               class: "inbox-filter-link #{"is-active" if filter == "all"}",
               aria: { current: ("page" if filter == "all") },
               data: { turbo_frame: "project_inbox", turbo_action: "advance",

@@ -10,6 +10,8 @@ class User < ApplicationRecord
   has_many :project_notification_preferences, dependent: :destroy
   has_many :email_notification_deliveries, dependent: :destroy
   has_many :shared_projects, through: :project_memberships, source: :project
+  has_many :assigned_error_groups, class_name: "ErrorGroup", foreign_key: :assigned_user_id, dependent: :nullify
+  has_many :error_group_assignments_made, class_name: "ErrorGroup", foreign_key: :assigned_by_user_id, dependent: :nullify
 
   before_validation :ensure_uuid
   before_validation :normalize_name

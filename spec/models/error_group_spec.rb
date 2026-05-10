@@ -18,6 +18,18 @@ RSpec.describe ErrorGroup, type: :model do
       expect(a.options[:optional]).to be true
     end
 
+    it "belongs to assignee and assigned_by users optionally" do
+      assignee = described_class.reflect_on_association(:assignee)
+      assigned_by = described_class.reflect_on_association(:assigned_by)
+
+      expect(assignee.macro).to eq(:belongs_to)
+      expect(assignee.class_name).to eq("User")
+      expect(assignee.options[:optional]).to be true
+      expect(assigned_by.macro).to eq(:belongs_to)
+      expect(assigned_by.class_name).to eq("User")
+      expect(assigned_by.options[:optional]).to be true
+    end
+
     it "has many error_occurrences dependent destroy" do
       a = described_class.reflect_on_association(:error_occurrences)
       expect(a.macro).to eq(:has_many)
@@ -69,6 +81,48 @@ RSpec.describe ErrorGroup, type: :model do
       expect(group).to be_unresolved
       expect(group.resolved_at).to be_nil
       expect(group.reopen_count).to eq(1)
+    end
+  end
+
+  describe "assignment" do
+    it "assigns an error group to the project owner" do
+      group = create(:error_group, project: project)
+
+      group.assign_to!(project.user, assigned_by: project.user)
+
+      expect(group.reload.assignee).to eq(project.user)
+      expect(group.assigned_by).to eq(project.user)
+      expect(group.assigned_at).to be_present
+    end
+
+    it "assigns an error group to a project member" do
+      member = create(:user)
+      create(:project_membership, project: project, user: member)
+      group = create(:error_group, project: project)
+
+      group.assign_to!(member, assigned_by: project.user)
+
+      expect(group.reload.assignee).to eq(member)
+    end
+
+    it "rejects assignment to a user without project access" do
+      group = create(:error_group, project: project)
+      outsider = create(:user)
+
+      group.assignee = outsider
+
+      expect(group).not_to be_valid
+      expect(group.errors[:assignee]).to include("must have access to this project")
+    end
+
+    it "clears an assignment" do
+      group = create(:error_group, project: project, assignee: project.user, assigned_by: project.user, assigned_at: Time.current)
+
+      group.clear_assignment!
+
+      expect(group.reload.assignee).to be_nil
+      expect(group.assigned_by).to be_nil
+      expect(group.assigned_at).to be_nil
     end
   end
 

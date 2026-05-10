@@ -12,7 +12,7 @@ class DashboardController < ApplicationController
     summary = safe_cache_fetch(
       [ "dashboard_summary", current_user.id, project_ids, cache_time_bucket(DASHBOARD_CACHE_TTL) ],
       expires_in: DASHBOARD_CACHE_TTL
-    ) { Dashboard.summary_for(project_ids) }
+    ) { Dashboard.summary_for(project_ids, viewer: current_user) }
 
     @project_stats = summary[:project_stats]
     @projects_count = summary[:projects_count]
@@ -22,6 +22,10 @@ class DashboardController < ApplicationController
     @active_projects_count = summary[:active_project_ids_last_24h].size
     @quiet_projects_count = [ @projects_count - @active_projects_count, 0 ].max
     @open_error_groups_count = summary[:open_error_groups_count]
+    @assigned_error_groups_count = summary[:assigned_error_groups_count]
+    @projects_with_assigned_errors_count = summary[:projects_with_assigned_errors_count]
+    @unassigned_error_groups_count = summary[:unassigned_error_groups_count]
+    @projects_with_unassigned_errors_count = summary[:projects_with_unassigned_errors_count]
     @new_error_groups_last_24h = summary[:new_error_groups_last_24h]
     @projects_with_open_errors_count = summary[:projects_with_open_errors_count]
     @monitors_count = summary[:monitors_count]
@@ -29,6 +33,7 @@ class DashboardController < ApplicationController
     @unhealthy_monitors_count = @monitor_status_counts.fetch(:missed, 0) + @monitor_status_counts.fetch(:error, 0)
     @recent_context_events = ordered_records(IngestEvent.includes(:project).where(id: summary[:recent_context_event_ids]), summary[:recent_context_event_ids])
     @recent_error_groups = ordered_records(ErrorGroup.includes(:project, :latest_event).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
+    @assigned_error_groups = ordered_records(ErrorGroup.includes(:project, :latest_event).where(id: summary[:assigned_error_group_ids]), summary[:assigned_error_group_ids])
     @project_summaries = ranked_project_summaries(@projects, @project_stats).first(6)
     @dashboard_explorer = dashboard_explorer_config(@projects)
   end

@@ -1,0 +1,47 @@
+<% current_assignee_uuid = group.assignee&.uuid %>
+<% assignment_path = project_error_group_assignment_path(
+  project,
+  group,
+  filter: filter_param,
+  q: query_param,
+  assignee: assignee_param,
+  tab: active_tab,
+  frame_scope: frame_scope,
+  frame: selected_frame_index
+) %>
+
+<div class="detail-assignment-control" id="<%= dom_id(group, :assignment) %>">
+  <span class="detail-assignment-label">Assigned to</span>
+
+  <%= form_with url: assignment_path,
+                method: :patch,
+                class: "detail-assignment-form",
+                data: { turbo_stream: true } do %>
+    <%= select_tag :assigned_user_id,
+                   options_for_select(
+                     [[ "Unassigned", "" ], *assignable_users.map { |user| [ inbox_assignee_label(project, current_user, user), user.uuid ] }],
+                     current_assignee_uuid
+                   ),
+                   class: "form-input detail-assignment-select" %>
+    <%= submit_tag "Save", class: "btn btn-ghost detail-assignment-save" %>
+  <% end %>
+
+  <% if group.assignee != current_user %>
+    <%= button_to "Assign me",
+                  assignment_path,
+                  method: :patch,
+                  params: { assigned_user_id: current_user.uuid },
+                  class: "btn btn-ghost detail-assignment-action",
+                  form_class: "detail-assignment-button-form",
+                  data: { turbo_stream: true } %>
+  <% end %>
+
+  <% if group.assignee.present? %>
+    <%= button_to "Clear",
+                  assignment_path,
+                  method: :delete,
+                  class: "btn btn-ghost detail-assignment-action",
+                  form_class: "detail-assignment-button-form",
+                  data: { turbo_stream: true } %>
+  <% end %>
+</div>

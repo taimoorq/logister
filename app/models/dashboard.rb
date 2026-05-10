@@ -6,7 +6,7 @@ class Dashboard
   EXPLORER_WINDOW_DAYS = 7
   EXPLORER_WINDOW = EXPLORER_WINDOW_DAYS.days
 
-  def self.summary_for(project_ids)
+  def self.summary_for(project_ids, viewer: nil)
     return empty_summary if project_ids.blank?
 
     events_scope = IngestEvent.where(project_id: project_ids)
@@ -15,6 +15,9 @@ class Dashboard
     api_keys_scope = ApiKey.where(project_id: project_ids)
     events_by_type_last_24h = event_type_counts(events_last_24h_scope)
     open_error_group_counts = error_groups_scope.unresolved.group(:project_id).count
+    assigned_error_groups_scope = viewer.present? ? error_groups_scope.unresolved.assigned_to(viewer) : ErrorGroup.none
+    assigned_error_group_counts = viewer.present? ? assigned_error_groups_scope.group(:project_id).count : {}
+    unassigned_error_group_counts = error_groups_scope.unresolved.unassigned.group(:project_id).count
     activity_event_counts = events_last_24h_scope.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count
     latest_event_at_by_project = Project.latest_event_at_by_project(project_ids)
     monitors = CheckInMonitor.where(project_id: project_ids)
@@ -28,6 +31,11 @@ class Dashboard
       active_project_ids_last_24h: events_last_24h_scope.distinct.pluck(:project_id),
       events_by_type_last_24h: events_by_type_last_24h,
       open_error_groups_count: open_error_group_counts.values.sum,
+      assigned_error_groups_count: assigned_error_group_counts.values.sum,
+      assigned_error_group_ids: assigned_error_groups_scope.order(last_seen_at: :desc).limit(5).pluck(:id),
+      projects_with_assigned_errors_count: assigned_error_group_counts.size,
+      unassigned_error_groups_count: unassigned_error_group_counts.values.sum,
+      projects_with_unassigned_errors_count: unassigned_error_group_counts.size,
       new_error_groups_last_24h: relation_count(error_groups_scope.where("first_seen_at >= ?", 24.hours.ago)),
       projects_with_open_errors_count: open_error_group_counts.size,
       monitors_count: monitors.size,
@@ -88,6 +96,11 @@ class Dashboard
       active_project_ids_last_24h: [],
       events_by_type_last_24h: EVENT_TYPE_ORDER.index_with { 0 },
       open_error_groups_count: 0,
+      assigned_error_groups_count: 0,
+      assigned_error_group_ids: [],
+      projects_with_assigned_errors_count: 0,
+      unassigned_error_groups_count: 0,
+      projects_with_unassigned_errors_count: 0,
       new_error_groups_last_24h: 0,
       projects_with_open_errors_count: 0,
       monitors_count: 0,

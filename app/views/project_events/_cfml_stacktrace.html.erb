@@ -17,6 +17,10 @@
     <% if cfml_summary[:detail].present? %>
       <p class="muted mt-2"><%= cfml_summary[:detail] %></p>
     <% end %>
+    <%= render "project_events/request_highlight",
+               http_method: cfml_request[:request_method],
+               target: request_highlight_target(cfml_request[:url], cfml_request[:script_name], query_string: cfml_request[:query_string]),
+               route: cfml_request[:script_name] %>
   </header>
 
   <div class="better-errors-workbench">

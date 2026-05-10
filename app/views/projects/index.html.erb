@@ -59,11 +59,23 @@
       </span>
     </span>
 
-    <%= link_to dashboard_path, class: "project-overview-cell #{dashboard_metric_state_class(@projects_overview.fetch(:open_groups_count, 0))}" do %>
-      <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
-      <span>
-        <strong><%= number_with_delimiter(@projects_overview.fetch(:open_groups_count, 0)) %></strong>
-        <span>Open errors</span>
+    <% open_groups_count = @projects_overview.fetch(:open_groups_count, 0) %>
+    <% open_groups_cell_class = "project-overview-cell #{dashboard_metric_state_class(open_groups_count)}" %>
+    <% if @project_filter == "active" %>
+      <%= link_to dashboard_path, class: open_groups_cell_class do %>
+        <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
+        <span>
+          <strong><%= number_with_delimiter(open_groups_count) %></strong>
+          <span>Open errors</span>
+        </span>
+      <% end %>
+    <% else %>
+      <span class="<%= open_groups_cell_class %>">
+        <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
+        <span>
+          <strong><%= number_with_delimiter(open_groups_count) %></strong>
+          <span>Open errors</span>
+        </span>
       </span>
     <% end %>
 

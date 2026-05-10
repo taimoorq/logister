@@ -1,5 +1,6 @@
 <% filter_param = local_assigns[:filter_param] || "unresolved" %>
 <% query_param = local_assigns[:query_param] || "" %>
+<% assignee_param = local_assigns[:assignee_param].presence || "all" %>
 <% active_tab = local_assigns[:active_tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
 <% turbo_frame_id = local_assigns[:turbo_frame_id].presence %>
 <% wrapper_classes = local_assigns[:wrapper_classes].presence || "detail-tabs-wrap" %>
@@ -12,28 +13,28 @@
      aria-busy="false">
   <nav class="detail-tabs" role="tablist" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
     <%= link_to "Context",
-                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "context"),
+                project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "context"),
                 class: "detail-tab #{'is-active' if active_tab == 'context'}",
                 role: "tab",
                 aria: { controls: "tab-context", selected: (active_tab == "context").to_s, current: ("page" if active_tab == "context") },
                 tabindex: (active_tab == "context" ? 0 : -1),
                 data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to stacktrace_tab_label,
-                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "stacktrace"),
+                project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace"),
                 class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
                 role: "tab",
                 aria: { controls: "tab-stacktrace", selected: (active_tab == "stacktrace").to_s, current: ("page" if active_tab == "stacktrace") },
                 tabindex: (active_tab == "stacktrace" ? 0 : -1),
                 data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to "Occurrences (#{occurrences.size})",
-                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "occurrences"),
+                project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "occurrences"),
                 class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
                 role: "tab",
                 aria: { controls: "tab-occurrences", selected: (active_tab == "occurrences").to_s, current: ("page" if active_tab == "occurrences") },
                 tabindex: (active_tab == "occurrences" ? 0 : -1),
                 data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to "Related logs (#{related_logs.size})",
-                project_event_path(project, event, filter: filter_param, q: query_param, group_uuid: group&.uuid, tab: "related_logs"),
+                project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "related_logs"),
                 class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
                 role: "tab",
                 aria: { controls: "tab-related-logs", selected: (active_tab == "related_logs").to_s, current: ("page" if active_tab == "related_logs") },
@@ -64,6 +65,7 @@
                request_details: request_details,
                filter_param: filter_param,
                query_param: query_param,
+               assignee_param: assignee_param,
                source_excerpt: source_excerpt,
                frame_scope: frame_scope,
                visible_frames: visible_frames,
@@ -99,7 +101,7 @@
               <td><%= render "shared/widgets/severity_badge", level: occurrence_event.level.presence || "error" %></td>
               <td>
                 <%= link_to "View",
-                            project_event_path(project, occurrence_event, filter: filter_param, q: query_param, group_uuid: group&.uuid),
+                            project_event_path(project, occurrence_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
                             class: "inline-link",
                             data: link_data %>
               </td>
@@ -136,7 +138,7 @@
               <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
               <td>
                 <%= link_to "View",
-                            project_event_path(project, log_event, filter: filter_param, q: query_param, group_uuid: group&.uuid),
+                            project_event_path(project, log_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
                             class: "inline-link",
                             data: link_data %>
               </td>

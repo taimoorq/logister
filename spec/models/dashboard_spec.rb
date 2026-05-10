@@ -21,6 +21,9 @@ RSpec.describe Dashboard, type: :model do
         :active_project_ids_last_24h,
         :events_by_type_last_24h,
         :open_error_groups_count,
+        :assigned_error_groups_count,
+        :assigned_error_group_ids,
+        :unassigned_error_groups_count,
         :monitor_status_counts,
         :recent_context_event_ids,
         :recent_error_group_ids,
@@ -48,6 +51,21 @@ RSpec.describe Dashboard, type: :model do
       expect(stats).to include(:open_groups, :activity_events, :latest_event_at)
       expect(stats[:activity_events]).to be >= 1
       expect(stats).not_to include(:total_events, :all_groups, :trend)
+    end
+
+    it "returns assignment counts and latest assigned group ids for the viewer" do
+      project = projects(:one)
+      assigned = create(:error_group, project: project, assignee: user, assigned_by: user, last_seen_at: 5.minutes.ago)
+      create(:error_group, project: project, last_seen_at: 10.minutes.ago)
+      create(:error_group, :resolved, project: project, assignee: user, assigned_by: user, last_seen_at: 1.minute.ago)
+
+      summary = described_class.summary_for([ project.id ], viewer: user)
+
+      expect(summary[:assigned_error_groups_count]).to eq(1)
+      expect(summary[:assigned_error_group_ids]).to eq([ assigned.id ])
+      expect(summary[:projects_with_assigned_errors_count]).to eq(1)
+      expect(summary[:unassigned_error_groups_count]).to be >= 1
+      expect(summary[:projects_with_unassigned_errors_count]).to eq(1)
     end
   end
 
@@ -105,6 +123,9 @@ RSpec.describe Dashboard, type: :model do
       expect(h[:api_keys_count]).to eq(0)
       expect(h[:events_last_24h]).to eq(0)
       expect(h[:open_error_groups_count]).to eq(0)
+      expect(h[:assigned_error_groups_count]).to eq(0)
+      expect(h[:assigned_error_group_ids]).to eq([])
+      expect(h[:unassigned_error_groups_count]).to eq(0)
       expect(h[:monitor_status_counts]).to eq({ ok: 0, missed: 0, error: 0 })
       expect(h[:recent_context_event_ids]).to eq([])
       expect(h[:recent_error_group_ids]).to eq([])

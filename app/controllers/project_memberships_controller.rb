@@ -33,9 +33,19 @@ class ProjectMembershipsController < ApplicationController
     membership_identifier = params[:uuid] || params[:id]
     membership = @project.project_memberships.find_by!(uuid: membership_identifier)
     membership.destroy!
+    assignment_summary = ProjectAssignmentSummary.new(@project)
 
     respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.remove(membership) }
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.remove(membership),
+          turbo_stream.replace(
+            "project_assignment_summary",
+            partial: "projects/assignment_summary",
+            locals: { assignment_summary: assignment_summary }
+          )
+        ]
+      end
       format.html { redirect_to settings_project_path(@project), notice: "Access removed." }
     end
   end

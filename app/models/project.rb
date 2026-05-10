@@ -60,6 +60,16 @@ class Project < ApplicationRecord
     User.where(id: [ user_id, *project_memberships.pluck(:user_id) ]).distinct
   end
 
+  def assignable_users
+    User.where(id: [ user_id, *project_memberships.pluck(:user_id) ]).order(:email)
+  end
+
+  def assignable_user?(user)
+    return false unless user
+
+    user_id == user.id || project_memberships.exists?(user_id: user.id)
+  end
+
   def integration_label
     {
       "ruby" => "Ruby gem",

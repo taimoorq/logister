@@ -97,14 +97,47 @@
                aria-hidden="true"
                data-action="click->nav#closeOnNavLink">
             <% if user_signed_in? %>
+              <% projects_nav_active = request.path.start_with?("/projects") %>
               <%= link_to dashboard_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(dashboard_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" do %>
                 <%= app_icon(:dashboard, css: "w-4 h-4") %>
                 <span>Overview</span>
               <% end %>
-              <%= link_to projects_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(projects_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" do %>
-                <%= app_icon(:projects, css: "w-4 h-4") %>
-                <span>Projects</span>
-              <% end %>
+              <details class="nav-project-menu">
+                <summary class="nav-project-summary <%= projects_nav_active ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white' %>">
+                  <span class="inline-flex min-w-0 items-center gap-2">
+                    <%= app_icon(:projects, css: "w-4 h-4 shrink-0") %>
+                    <span>Projects</span>
+                  </span>
+                  <%= app_icon(:chevron_down, css: "w-4 h-4 shrink-0") %>
+                </summary>
+                <div class="nav-project-dropdown">
+                  <div class="nav-project-list" aria-label="Active projects">
+                    <% if nav_active_projects.any? %>
+                      <% nav_active_projects.each do |project| %>
+                        <%= link_to project_path(project), class: "nav-link nav-project-item" do %>
+                          <%= project_integration_icon(project) %>
+                          <span class="nav-project-item-copy">
+                            <span class="nav-project-item-title"><%= project.name %></span>
+                            <span class="nav-project-item-meta"><%= project.integration_label %></span>
+                          </span>
+                        <% end %>
+                      <% end %>
+                    <% else %>
+                      <p class="nav-project-empty">No active projects yet</p>
+                    <% end %>
+                  </div>
+                  <div class="nav-project-actions">
+                    <%= link_to projects_path, class: "nav-link nav-project-action #{current_page?(projects_path) ? 'bg-blue-50 text-blue-700' : ''}" do %>
+                      <%= app_icon(:all, css: "w-4 h-4") %>
+                      <span>All projects</span>
+                    <% end %>
+                    <%= link_to new_project_path, class: "nav-link nav-project-action nav-project-action-primary" do %>
+                      <%= app_icon(:plus, css: "w-4 h-4") %>
+                      <span>Add project</span>
+                    <% end %>
+                  </div>
+                </div>
+              </details>
               <%= link_to docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-900/60 hover:text-white" do %>
                 <%= app_icon(:all, css: "w-4 h-4") %>
                 <span>Docs</span>

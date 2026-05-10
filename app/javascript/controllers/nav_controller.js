@@ -38,16 +38,26 @@ export default class extends Controller {
   }
 
   closeOnClickOutside(event) {
+    const target = event && event.target
+
+    this.closeMenusOutside(target)
+
     if (this.isDesktop()) return
     if (this.isOpen() && this.hasPanelTarget && this.hasToggleTarget &&
-        !this.panelTarget.contains(event.target) && !this.toggleTarget.contains(event.target)) {
+        !this.panelTarget.contains(target) && !this.toggleTarget.contains(target)) {
       this.close()
     }
   }
 
   closeOnEscape(event) {
-    if (this.isDesktop()) return
-    if (event.key === "Escape" && this.isOpen()) this.close()
+    if (event.key !== "Escape") return
+
+    if (this.hasOpenMenus()) {
+      this.closeOpenMenus()
+      return
+    }
+
+    if (!this.isDesktop() && this.isOpen()) this.close()
   }
 
   closeOnNavLink(event) {
@@ -61,6 +71,18 @@ export default class extends Controller {
     this.panelTarget.querySelectorAll("details[open]").forEach((el) => {
       el.removeAttribute("open")
     })
+  }
+
+  closeMenusOutside(target) {
+    if (!this.hasPanelTarget) return
+
+    this.panelTarget.querySelectorAll("details[open]").forEach((el) => {
+      if (!target || !el.contains(target)) el.removeAttribute("open")
+    })
+  }
+
+  hasOpenMenus() {
+    return this.hasPanelTarget && Boolean(this.panelTarget.querySelector("details[open]"))
   }
 
   applyState(open) {

@@ -1,6 +1,8 @@
 class ErrorGroup < ApplicationRecord
   belongs_to :project
   belongs_to :latest_event, class_name: "IngestEvent", optional: true
+  belongs_to :assignee, class_name: "User", foreign_key: :assigned_user_id, optional: true
+  belongs_to :assigned_by, class_name: "User", foreign_key: :assigned_by_user_id, optional: true
   has_many   :error_occurrences, dependent: :destroy
   has_many   :ingest_events, through: :error_occurrences
   has_many   :email_notification_deliveries, dependent: :nullify
@@ -22,6 +24,8 @@ class ErrorGroup < ApplicationRecord
   validates :title,       presence: true
   validates :status,      presence: true
   validates :fingerprint, uniqueness: { scope: :project_id }
+  validate :assignee_has_project_access
+  validate :assigner_has_project_access
 
   # ── Scopes ────────────────────────────────────────────────────────────────
   scope :open,              -> { where(status: [ :unresolved ]) }
@@ -29,6 +33,8 @@ class ErrorGroup < ApplicationRecord
   scope :introduced_today,  -> { open.where("first_seen_at >= ?", Date.current.beginning_of_day) }
   scope :recent_first,      -> { order(last_seen_at: :desc) }
   scope :by_project,        ->(project) { where(project: project) }
+  scope :assigned_to,       ->(user) { where(assigned_user_id: user&.id) }
+  scope :unassigned,        -> { where(assigned_user_id: nil) }
   scope :with_occurrences,  -> { includes(:latest_event, :error_occurrences) }
 
   # 7-day trend — array of daily occurrence counts oldest→newest
@@ -73,6 +79,22 @@ class ErrorGroup < ApplicationRecord
     )
   end
 
+  def assign_to!(user, assigned_by:)
+    update!(
+      assignee: user,
+      assigned_by: assigned_by,
+      assigned_at: Time.current
+    )
+  end
+
+  def clear_assignment!
+    update!(
+      assignee: nil,
+      assigned_by: nil,
+      assigned_at: nil
+    )
+  end
+
   # Called by the grouping service when a new occurrence arrives.
   # Reopens the group if it was previously resolved/ignored/archived.
   def record_occurrence!(event)
@@ -105,6 +127,18 @@ class ErrorGroup < ApplicationRecord
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid
+  end
+
+  def assignee_has_project_access
+    return if assignee.blank? || project&.assignable_user?(assignee)
+
+    errors.add(:assignee, "must have access to this project")
+  end
+
+  def assigner_has_project_access
+    return if assigned_by.blank? || project&.assignable_user?(assigned_by)
+
+    errors.add(:assigned_by, "must have access to this project")
   end
 
   def derive_title(event)

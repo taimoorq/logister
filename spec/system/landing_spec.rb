@@ -56,6 +56,22 @@ RSpec.describe "Landing and dashboard", type: :system do
     expect(page).to have_current_path(dashboard_path)
   end
 
+  it "opens the signed-in projects dropdown" do
+    sign_in users(:one)
+    visit dashboard_path
+
+    find(".nav-project-menu summary", text: "Projects").click
+
+    within(".nav-project-menu") do
+      expect(page).to have_link(projects(:one).name, href: project_path(projects(:one)))
+      expect(page).to have_link("All projects", href: projects_path)
+      expect(page).to have_link("Add project", href: new_project_path)
+    end
+
+    find("body").send_keys(:escape)
+    expect(page.evaluate_script("document.querySelector('.nav-project-menu').open")).to eq(false)
+  end
+
   it "uses the nav state attributes for the mobile menu" do
     visit root_path
     page.current_window.resize_to(390, 844)

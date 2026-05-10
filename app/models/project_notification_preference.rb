@@ -15,6 +15,7 @@ class ProjectNotificationPreference < ApplicationRecord
   validate :time_zone_is_known
 
   scope :digest_enabled, -> { where(digest_frequency: %w[daily weekly]) }
+  scope :for_active_projects, -> { joins(:project).merge(Project.active) }
 
   def self.for(user:, project:)
     find_or_create_by!(user: user, project: project)

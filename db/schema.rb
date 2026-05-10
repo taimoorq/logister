@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_163000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_10_171000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -81,6 +81,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_163000) do
 
   create_table "error_groups", force: :cascade do |t|
     t.datetime "archived_at"
+    t.datetime "assigned_at"
+    t.bigint "assigned_by_user_id"
+    t.bigint "assigned_user_id"
     t.datetime "created_at", null: false
     t.string "fingerprint", null: false
     t.datetime "first_seen_at"
@@ -109,14 +112,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_163000) do
     t.index "lower((stage)::text) gin_trgm_ops", name: "idx_error_groups_lower_stage_trgm", using: :gin
     t.index "lower((title)::text) gin_trgm_ops", name: "idx_error_groups_lower_title_trgm", using: :gin
     t.index ["archived_at"], name: "index_error_groups_on_archived_at"
+    t.index ["assigned_by_user_id"], name: "index_error_groups_on_assigned_by_user_id"
+    t.index ["assigned_user_id", "status", "last_seen_at"], name: "idx_error_groups_assignee_status_last_seen", order: { last_seen_at: :desc }
+    t.index ["assigned_user_id"], name: "index_error_groups_on_assigned_user_id"
     t.index ["ignored_at"], name: "index_error_groups_on_ignored_at"
     t.index ["last_reopened_at"], name: "index_error_groups_on_last_reopened_at"
     t.index ["latest_event_id"], name: "index_error_groups_on_latest_event_id"
+    t.index ["project_id", "assigned_user_id", "status", "last_seen_at"], name: "idx_error_groups_project_assignee_status_last_seen", order: { last_seen_at: :desc }
     t.index ["project_id", "fingerprint"], name: "index_error_groups_on_project_id_and_fingerprint", unique: true
     t.index ["project_id", "first_seen_at"], name: "index_error_groups_on_project_id_and_first_seen_at"
     t.index ["project_id", "introduced_in_release"], name: "index_error_groups_on_project_id_and_introduced_in_release"
     t.index ["project_id", "last_seen_at"], name: "index_error_groups_on_project_id_and_last_seen_at"
     t.index ["project_id", "regressed_in_release"], name: "index_error_groups_on_project_id_and_regressed_in_release"
+    t.index ["project_id", "status", "assigned_user_id", "last_seen_at"], name: "idx_error_groups_project_status_assignee_last_seen", order: { last_seen_at: :desc }
     t.index ["project_id", "status", "first_seen_at"], name: "idx_error_groups_project_status_first_seen", order: { first_seen_at: :desc }
     t.index ["project_id", "status", "last_seen_at"], name: "idx_error_groups_project_status_last_seen", order: { last_seen_at: :desc }
     t.index ["project_id", "status"], name: "index_error_groups_on_project_id_and_status"
@@ -245,6 +253,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_163000) do
   add_foreign_key "email_notification_deliveries", "users"
   add_foreign_key "error_groups", "ingest_events", column: "latest_event_id"
   add_foreign_key "error_groups", "projects"
+  add_foreign_key "error_groups", "users", column: "assigned_by_user_id", on_delete: :nullify
+  add_foreign_key "error_groups", "users", column: "assigned_user_id", on_delete: :nullify
   add_foreign_key "error_occurrences", "error_groups"
   add_foreign_key "error_occurrences", "ingest_events"
   add_foreign_key "ingest_events", "api_keys"

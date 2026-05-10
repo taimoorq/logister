@@ -22,6 +22,11 @@
       <%= dotnet_summary[:message].to_s.lines.first.to_s.strip.presence || event.message.to_s.lines.first %>
     </p>
 
+    <%= render "project_events/request_highlight",
+               http_method: routing_details[:method],
+               target: request_highlight_target(routing_details[:url], routing_details[:path]),
+               route: routing_details[:endpoint] || routing_details[:route] %>
+
     <% if dotnet_matches.any? %>
       <div class="dotnet-dev-matches">
         <% dotnet_matches.each do |match| %>

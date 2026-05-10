@@ -10,7 +10,8 @@ class ProjectEventsController < ApplicationController
   def index
     @filter        = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query         = params[:q].to_s.strip
-    @groups        = inbox_groups(@project, filter: @filter, query: @query)
+    @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
+    @groups        = inbox_groups(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user)
     @selected_uuid = params[:group_uuid]
 
     if turbo_frame_request?
@@ -19,10 +20,11 @@ class ProjectEventsController < ApplicationController
         groups:        @groups,
         selected_uuid: @selected_uuid,
         filter:        @filter,
-        query:         @query
+        query:         @query,
+        assignee:      @assignee_filter
       }
     else
-      redirect_to project_path(@project, filter: @filter, q: @query, group_uuid: @selected_uuid)
+      redirect_to project_path(@project, filter: @filter, q: @query, assignee: @assignee_filter, group_uuid: @selected_uuid)
     end
   end
 
@@ -35,6 +37,8 @@ class ProjectEventsController < ApplicationController
 
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
+    @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
+    @assignable_users = @project.assignable_users.to_a
     @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
     @frame_scope = params[:frame_scope].presence_in(%w[application all]) || "application"
     @frame = params[:frame].to_i
@@ -48,6 +52,8 @@ class ProjectEventsController < ApplicationController
         related_logs: @related_logs,
         filter:      @filter,
         query:       @query,
+        assignee:    @assignee_filter,
+        assignable_users: @assignable_users,
         tab:         @tab,
         frame_scope: @frame_scope,
         frame:       @frame
@@ -59,6 +65,7 @@ class ProjectEventsController < ApplicationController
           @project,
           filter: @filter,
           q: @query,
+          assignee: @assignee_filter,
           group_uuid: @group&.uuid || params[:group_uuid],
           event_uuid: @event.uuid,
           tab: @tab

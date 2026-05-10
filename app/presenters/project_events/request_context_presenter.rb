@@ -32,6 +32,8 @@ module ProjectEvents
         http_method: request_scalar_value(context, :http_method),
         http_version: http_version,
         params: params,
+        path: request_scalar_value(context, :path),
+        query_string: request_scalar_value(context, :query_string),
         rails_action: rails_action,
         referer: referer,
         request_id: request_scalar_value(context, :request_id),

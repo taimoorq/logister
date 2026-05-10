@@ -1,6 +1,8 @@
 # Error Assignment Plan
 
-This is a planning note for assigning project errors to users without changing the product yet.
+Status: implemented for the first product slice.
+
+This is the implementation record for assigning project errors to users. The shipped slice adds assignment on error groups, assignment-aware inbox filters, dashboard shortcuts, project workload counts, and Hotwire updates in the project inbox.
 
 ## Goals
 
@@ -8,6 +10,15 @@ This is a planning note for assigning project errors to users without changing t
 - Add inbox filters for `Assigned to me`, `Unassigned`, and a selected teammate.
 - Keep the inbox fast for large projects by making assignment filters server-side and indexed.
 - Use Hotwire and Stimulus in the same style as the current project inbox: Turbo owns navigation and partial replacement; Stimulus handles small interaction details.
+
+## Current Architecture Overview
+
+- Assignment state is stored on `error_groups`, because an error group is the durable triage issue while occurrences and ingest events remain immutable context.
+- Project access remains the assignment boundary. Owners and members can be assignees; removing a member clears their assignments so stale ownership does not remain visible.
+- Inbox filtering stays server-side through `ProjectInboxData`, with Redis-backed Rails cache keys scoped by project, status filter, assignee filter, search query, and the latest error-group update timestamp.
+- Cross-project assigned-to-me dashboard counts are built in `Dashboard.summary_for(viewer:)`, cached with the existing dashboard cache bucket, and backed by an assignee/status/last-seen index.
+- Project settings workload counts are isolated in `ProjectAssignmentSummary`, making the aggregate query reusable and straightforward to test.
+- Turbo handles assignment, lifecycle, inbox, and member-removal refreshes; Stimulus only coordinates client-side filter form behavior.
 
 ## Data Model
 
@@ -38,11 +49,18 @@ The inbox commonly filters by project, status, assignee, and recent activity. Ad
 ```ruby
 add_index :error_groups,
   [ :project_id, :assigned_user_id, :status, :last_seen_at ],
-  name: "index_error_groups_on_project_assignee_status_last_seen"
+  order: { last_seen_at: :desc },
+  name: "idx_error_groups_project_assignee_status_last_seen"
 
 add_index :error_groups,
   [ :project_id, :status, :assigned_user_id, :last_seen_at ],
-  name: "index_error_groups_on_project_status_assignee_last_seen"
+  order: { last_seen_at: :desc },
+  name: "idx_error_groups_project_status_assignee_last_seen"
+
+add_index :error_groups,
+  [ :assigned_user_id, :status, :last_seen_at ],
+  order: { last_seen_at: :desc },
+  name: "idx_error_groups_assignee_status_last_seen"
 ```
 
 Keep the existing query-search indexes for text filtering. If assignment filters and text search are combined, apply the project/status/assignee scope first and then the sanitized text condition.
@@ -104,8 +122,13 @@ Project inbox:
 
 Project settings:
 
-- No broad assignment configuration is needed initially.
 - The existing project access section remains the source of who can be assigned.
+- Show unresolved assignment counts beside project members so owners can see workload without leaving settings.
+
+Dashboard:
+
+- Surface a `My assignments` panel for the current user across active projects.
+- Link assigned rows back into the project inbox with `assignee=me` preserved.
 
 Hotwire and Stimulus:
 
@@ -140,8 +163,17 @@ Performance checks:
 
 ## Rollout
 
-1. Add the columns, associations, validations, and indexes.
-2. Add assignment routes and controller behavior.
-3. Add inbox filtering in `ProjectInboxData`.
-4. Add inbox row/detail UI and Turbo Stream updates.
-5. Add tests and verify query plans with seeded or restored production-like data.
+1. Add the columns, associations, validations, and indexes. Done in `20260510170000_add_assignment_to_error_groups.rb` and `20260510171000_add_assignee_status_last_seen_index_to_error_groups.rb`.
+2. Add assignment routes and controller behavior. Done through `ErrorGroupAssignmentsController`.
+3. Add inbox filtering in `ProjectInboxData`. Done for `all`, `me`, `unassigned`, and teammate UUID filters.
+4. Add inbox row/detail UI and Turbo Stream updates. Done for row chips, the assignee selector, assign-to-me, clear, and detail refreshes.
+5. Add dashboard and project-settings workload surfaces. Done through `Dashboard.summary_for(viewer:)` and `ProjectAssignmentSummary`.
+6. Add tests and verify query plans with seeded or restored production-like data. Request/model tests are in place; query-plan checks should use production-like event volume before widening the feature.
+
+## Current Product Behavior
+
+- Project owners and members can assign an unresolved, resolved, ignored, or archived error group to any user with project access.
+- Inbox filters accept `assignee=all`, `assignee=me`, `assignee=unassigned`, or a project user UUID and remain server-rendered for deep links.
+- Dashboard data only uses active projects, so archived projects do not appear in assigned-to-me dashboard shortcuts.
+- Removing a project member clears their assignments and clears assignment audit metadata when they were the assigner.
+- Assignment changes do not send email in this slice; first-occurrence and digest emails remain the only project error notification channels.

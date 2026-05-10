@@ -14,64 +14,148 @@
   <% instance_variables = event_instance_variables(exception_data) %>
   <% filter_param = local_assigns[:filter] || "unresolved" %>
   <% query_param  = local_assigns[:query]  || "" %>
+  <% assignee_param = local_assigns[:assignee].presence || "all" %>
+  <% assignable_users = local_assigns[:assignable_users] || project.assignable_users.to_a %>
   <% related_logs = local_assigns[:related_logs] || [] %>
   <% active_tab   = local_assigns[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
   <% stacktrace_tab_label = event_stacktrace_tab_label(project, event) %>
   <% stacktrace_partial = event_stacktrace_partial(project, event) %>
+  <% detail_title = truncate(group&.title || event.message.to_s.lines.first, length: 120) %>
+  <% detail_status = group&.status || "unresolved" %>
+  <% detail_assignee_label = if group&.assignee.present?
+    inbox_assignee_label(project, current_user, group.assignee)
+  else
+    "Unassigned"
+  end %>
 
   <%# ── Action bar ──────────────────────────────────────────────────────── %>
   <header class="detail-actionbar card">
-    <div class="detail-actionbar-left">
-      <span class="detail-status-badge status-<%= group&.status || "unresolved" %>">
-        <%= (group&.status || "unresolved").upcase %>
-      </span>
-      <h2 class="detail-title"><%= truncate(group&.title || event.message.to_s.lines.first, length: 120) %></h2>
-      <% if group&.subtitle.present? %>
-        <p class="muted detail-subtitle"><%= group.subtitle %></p>
-      <% end %>
-      <p class="muted">
-        <%= project.name %>
-        · <%= local_time_tag(event.occurred_at, format: :long) %>
-        <% if group %>
-          · <strong><%= group.occurrence_count %></strong> total occurrences
-          <% if group.introduced_in_release.present? %>
-            · introduced in <code><%= group.introduced_in_release %></code>
-          <% end %>
-          <% if group.regressed_in_release.present? %>
-            · regressed in <code><%= group.regressed_in_release %></code>
-          <% end %>
-          · first seen <%= local_time_tag(group.first_seen_at, format: :date_only) %>
-          · last seen <%= local_time_tag(group.last_seen_at, format: :date_only) %>
+    <div class="detail-actionbar-main">
+      <div class="detail-actionbar-left">
+        <div class="detail-title-row">
+          <span class="detail-status-badge status-<%= detail_status %>">
+            <%= detail_status.upcase %>
+          </span>
+          <h2 class="detail-title"><%= detail_title %></h2>
+        </div>
+        <% if group&.subtitle.present? %>
+          <p class="detail-subtitle"><%= group.subtitle %></p>
         <% end %>
-      </p>
+      </div>
+
+      <% if group %>
+        <div class="detail-actionbar-actions">
+          <% if group.unresolved? %>
+            <%= button_to "Mark as fixed",
+                          resolve_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          method: :patch,
+                          class: "btn btn-resolve",
+                          data: { turbo_stream: true } %>
+            <%= button_to "Ignore",
+                          ignore_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          method: :patch,
+                          class: "btn btn-ghost",
+                          data: { turbo_stream: true } %>
+            <%= button_to "Archive",
+                          archive_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          method: :patch,
+                          class: "btn btn-ghost",
+                          data: { turbo_stream: true } %>
+          <% else %>
+            <%= button_to "Reopen",
+                          reopen_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          method: :patch,
+                          class: "btn btn-reopen",
+                          data: { turbo_stream: true } %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
 
     <% if group %>
-      <div class="detail-actionbar-actions">
-        <% if group.unresolved? %>
-          <%= button_to "Mark as fixed",
-                        resolve_project_error_group_path(project, group, filter: filter_param, q: query_param),
-                        method: :patch,
-                        class: "btn btn-resolve",
-                        data: { turbo_stream: true } %>
-          <%= button_to "Ignore",
-                        ignore_project_error_group_path(project, group, filter: filter_param, q: query_param),
-                        method: :patch,
-                        class: "btn btn-ghost",
-                        data: { turbo_stream: true } %>
-          <%= button_to "Archive",
-                        archive_project_error_group_path(project, group, filter: filter_param, q: query_param),
-                        method: :patch,
-                        class: "btn btn-ghost",
-                        data: { turbo_stream: true } %>
-        <% else %>
-          <%= button_to "Reopen",
-                        reopen_project_error_group_path(project, group, filter: filter_param, q: query_param),
-                        method: :patch,
-                        class: "btn btn-reopen",
-                        data: { turbo_stream: true } %>
-        <% end %>
-      </div>
+      <details class="detail-context-disclosure">
+        <summary>
+          <span class="detail-context-summary-title">Issue context</span>
+          <span class="detail-context-summary-meta">
+            <%= project.name %>
+            · <%= number_with_delimiter(group.occurrence_count) %> occurrences
+            · <%= detail_assignee_label %>
+          </span>
+        </summary>
+
+        <div class="detail-context-body">
+          <dl class="detail-context-grid">
+            <div>
+              <dt>Project</dt>
+              <dd><%= project.name %></dd>
+            </div>
+            <div>
+              <dt>Occurred</dt>
+              <dd><%= local_time_tag(event.occurred_at, format: :long) %></dd>
+            </div>
+            <div>
+              <dt>First seen</dt>
+              <dd><%= local_time_tag(group.first_seen_at, format: :date_only) %></dd>
+            </div>
+            <div>
+              <dt>Last seen</dt>
+              <dd><%= local_time_tag(group.last_seen_at, format: :date_only) %></dd>
+            </div>
+            <div>
+              <dt>Occurrences</dt>
+              <dd><%= number_with_delimiter(group.occurrence_count) %></dd>
+            </div>
+            <div>
+              <dt>Assigned</dt>
+              <dd><%= detail_assignee_label %></dd>
+            </div>
+            <% if group.introduced_in_release.present? %>
+              <div>
+                <dt>Introduced</dt>
+                <dd><code><%= group.introduced_in_release %></code></dd>
+              </div>
+            <% end %>
+            <% if group.regressed_in_release.present? %>
+              <div>
+                <dt>Regressed</dt>
+                <dd><code><%= group.regressed_in_release %></code></dd>
+              </div>
+            <% end %>
+          </dl>
+
+          <%= render "project_events/assignment_control",
+                     project: project,
+                     group: group,
+                     assignable_users: assignable_users,
+                     filter_param: filter_param,
+                     query_param: query_param,
+                     assignee_param: assignee_param,
+                     active_tab: active_tab,
+                     frame_scope: frame_scope,
+                     selected_frame_index: selected_frame_index %>
+        </div>
+      </details>
+    <% elsif event.present? %>
+      <details class="detail-context-disclosure">
+        <summary>
+          <span class="detail-context-summary-title">Event context</span>
+          <span class="detail-context-summary-meta">
+            <%= project.name %> · <%= local_time_tag(event.occurred_at, format: :long) %>
+          </span>
+        </summary>
+        <div class="detail-context-body">
+          <dl class="detail-context-grid">
+            <div>
+              <dt>Project</dt>
+              <dd><%= project.name %></dd>
+            </div>
+            <div>
+              <dt>Occurred</dt>
+              <dd><%= local_time_tag(event.occurred_at, format: :long) %></dd>
+            </div>
+          </dl>
+        </div>
+      </details>
     <% end %>
   </header>
 
@@ -83,6 +167,7 @@
              related_logs: related_logs,
              filter_param: filter_param,
              query_param: query_param,
+             assignee_param: assignee_param,
              active_tab: active_tab,
              stacktrace_tab_label: stacktrace_tab_label,
              stacktrace_partial: stacktrace_partial,

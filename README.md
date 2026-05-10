@@ -23,8 +23,11 @@ This app is the self-hosted and self-hostable analytics dashboard for Logister:
 - user authentication and project management
 - project API keys
 - event ingestion over HTTP
-- inbox and error-group triage UI
+- cross-app dashboard overview with server-backed explorer charts
+- inbox and error-group triage UI with team assignment
 - monitor/check-in visibility
+- project lifecycle controls for active, archived, restored, and deleted projects
+- project email notifications for first occurrences and daily or weekly digests
 - optional ClickHouse-backed analytics
 
 If you are trying to instrument an application, the language integrations live in separate packages and guides:
@@ -68,7 +71,7 @@ Use the product guide when you want the user-facing map of what Logister helps t
 
 - https://docs.logister.org/product/
 
-At a high level, Logister helps teams run their own observability hub, connect services, triage grouped errors, inspect event context and related logs, review metrics/logs/transactions/check-ins, watch scheduled work, understand performance and release health, and share project visibility with teammates.
+At a high level, Logister helps teams run their own observability hub, connect services, scan cross-app dashboard signals, triage and assign grouped errors, inspect event context and related logs, review metrics/logs/transactions/check-ins, watch scheduled work, understand performance and release health, archive retired services without losing history, and share project visibility with teammates.
 
 ## Self-hosted runtime
 
@@ -89,7 +92,7 @@ The basic self-host flow is:
 2. Create a project in Logister.
 3. Generate an API key for that project.
 4. Connect an app using one of the supported integrations or direct HTTP ingestion.
-5. Verify events appear in the inbox.
+5. Verify errors appear in the inbox and non-error telemetry appears in activity, performance, or monitors.
 
 ## Integrating apps with Logister
 
@@ -124,6 +127,7 @@ bin/dev
 A few things are worth knowing before you start changing the app locally:
 
 - `bin/dev` is the normal local entrypoint. It runs the Rails app and watches Tailwind assets.
+- The app UI is server-rendered Rails 8 with Hotwire, Turbo, Stimulus, Propshaft, importmap, and Tailwind. Keep new interactive behavior on that path unless there is a strong product reason to do otherwise.
 - Redis-backed behavior matters. Sidekiq, caching, and some operational flows behave more realistically when Redis is available.
 - PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path.
 - The public docs are hosted separately on `docs.logister.org`, so app links to docs intentionally point out of the Rails app.
@@ -160,6 +164,9 @@ Use [cloudflare-docs/README.md](cloudflare-docs/README.md) for the full Cloudfla
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards and expected behavior |
 | [SECURITY.md](SECURITY.md) | Security policy and how to report vulnerabilities |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
+| [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
+| [docs/1.0-release-plan.md](docs/1.0-release-plan.md) | 1.0 release scope, gates, rollout, and rollback plan |
+| [docs/error-assignment-plan.md](docs/error-assignment-plan.md) | Implementation record for team assignment on grouped errors |
 | [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | GitHub-facing pointer to the canonical CFML docs |
 
 ## Source and related repos

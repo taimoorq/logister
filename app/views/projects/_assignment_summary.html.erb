@@ -1,0 +1,15 @@
+<div id="project_assignment_summary"
+     class="mb-3 grid grid-cols-1 gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 sm:grid-cols-3">
+  <span>
+    <strong class="block text-slate-900"><%= number_with_delimiter(assignment_summary.total_open_count) %></strong>
+    <span>Open issues</span>
+  </span>
+  <span>
+    <strong class="block text-slate-900"><%= number_with_delimiter(assignment_summary.assigned_open_count) %></strong>
+    <span>Assigned</span>
+  </span>
+  <span>
+    <strong class="block text-slate-900"><%= number_with_delimiter(assignment_summary.unassigned_open_count) %></strong>
+    <span>Unassigned</span>
+  </span>
+</div>

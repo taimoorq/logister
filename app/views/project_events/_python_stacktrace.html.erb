@@ -21,6 +21,16 @@
       in <%= selected_frame&.dig(:method_name).presence || "unknown" %>
     </p>
     <h3 class="better-errors-message"><%= python_summary[:message] %></h3>
+    <%= render "project_events/request_highlight",
+               http_method: execution_details[:method] || request_details[:http_method],
+               target: request_highlight_target(
+                 execution_details[:url],
+                 request_details[:url],
+                 execution_details[:path],
+                 request_details[:path],
+                 query_string: execution_details[:query_string] || request_details[:query_string]
+               ),
+               route: execution_details[:route] || execution_details[:endpoint] %>
   </header>
 
   <div class="better-errors-workbench">

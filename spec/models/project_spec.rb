@@ -87,6 +87,21 @@ RSpec.describe Project, type: :model do
     end
   end
 
+  describe "#assignable_users" do
+    it "includes the owner and project members" do
+      project = create(:project, user: users(:one))
+      member = create(:user)
+      outsider = create(:user)
+      create(:project_membership, project: project, user: member)
+
+      expect(project.assignable_users).to include(users(:one), member)
+      expect(project.assignable_users).not_to include(outsider)
+      expect(project.assignable_user?(users(:one))).to be true
+      expect(project.assignable_user?(member)).to be true
+      expect(project.assignable_user?(outsider)).to be false
+    end
+  end
+
   describe "archive lifecycle" do
     it "moves projects between active and archived scopes and revokes active api keys" do
       project = create(:project, user: users(:one))

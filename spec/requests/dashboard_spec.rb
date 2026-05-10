@@ -18,6 +18,30 @@ RSpec.describe "Dashboard", type: :request do
         expect(response).to have_http_status(:success)
       end
 
+      it "renders active accessible projects in the top navigation dropdown" do
+        active_project = create(:project, :python, user: users(:one), name: "Alpha Nav App")
+        shared_project = create(:project, :dotnet, user: users(:two), name: "Shared Nav App")
+        archived_project = create(:project, :archived, user: users(:one), name: "Archived Nav App")
+        create(:project_membership, project: shared_project, user: users(:one))
+
+        get dashboard_path
+
+        document = Nokogiri::HTML.parse(response.body)
+        menu = document.at_css(".nav-project-menu")
+
+        expect(menu).to be_present
+
+        project_names = menu.css(".nav-project-item-title").map { |node| node.text.strip }
+
+        expect(menu.at_css("summary").text).to include("Projects")
+        expect(project_names).to include(projects(:one).name, active_project.name, shared_project.name)
+        expect(project_names).not_to include(archived_project.name)
+        expect(menu.at_css("a[href='#{project_path(active_project)}']")).to be_present
+        expect(menu.at_css("a[href='#{project_path(shared_project)}']")).to be_present
+        expect(menu.at_css("a[href='#{projects_path}']")).to be_present
+        expect(menu.at_css(".nav-project-action-primary")["href"]).to eq(new_project_path)
+      end
+
       it "shows overview content and project count" do
         get dashboard_path
         expect(response.body).to include(projects(:one).name)
@@ -54,6 +78,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(document.at_css("a.projects-new-button")["href"]).to eq(new_project_path)
         expect(document.at_css("a[href='#{projects_path}']")).to be_present
         expect(document.text).to include("Needs attention", "Event mix", "Projects at a glance")
+        expect(document.text).to include("My assignments")
         expect(document.text).not_to include("Recent activity")
         expect(document.at_css("[data-controller='dashboard-attention']")).to be_present
         expect(document.css(".dashboard-event-mix-row[data-dashboard-attention-target='filter']").size).to eq(Dashboard::EVENT_TYPE_ORDER.size)
@@ -65,6 +90,28 @@ RSpec.describe "Dashboard", type: :request do
         expect(project_row.at_css(".project-type-icon-ruby use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-ruby\z})
         expect(project_row.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")).to be_present
         expect(project_row.at_css("a[href='#{activity_project_path(project)}']")).to be_present
+      end
+
+      it "shows assigned-to-me bugs as account-wide dashboard shortcuts" do
+        project = projects(:one)
+        group = create(:error_group,
+                       project: project,
+                       assignee: users(:one),
+                       assigned_by: users(:one),
+                       title: "Assigned checkout failure")
+
+        get dashboard_path
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        panel = document.at_css(".dashboard-assignment-panel")
+        row = panel.at_css("a[href='#{project_path(project, group_uuid: group.uuid, assignee: 'me')}']")
+
+        expect(panel).to be_present
+        expect(panel.text).to include("My assignments", "Assigned checkout failure")
+        expect(panel.text).to include("Assigned to me")
+        expect(row).to be_present
       end
 
       it "renders the server-backed dashboard explorer shell" do

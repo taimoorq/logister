@@ -183,6 +183,55 @@
   .auth-link {
     @apply inline-flex items-center rounded-full border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:text-blue-700 hover:border-blue-200 hover:bg-blue-50 no-underline;
   }
+  .nav-project-menu {
+    @apply relative w-full md:w-auto;
+  }
+  .nav-project-summary {
+    @apply flex w-full cursor-pointer select-none list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium md:w-auto;
+  }
+  .nav-project-summary::-webkit-details-marker {
+    display: none;
+  }
+  .nav-project-menu[open] .nav-project-summary {
+    @apply bg-blue-800/70 text-white;
+  }
+  .nav-project-dropdown {
+    @apply z-30 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm md:absolute md:left-0 md:mt-2 md:w-80;
+  }
+  .nav-project-list {
+    @apply overflow-y-auto py-1;
+    max-height: min(28rem, calc(100vh - 5rem));
+  }
+  .nav-project-item {
+    @apply flex min-w-0 items-center gap-3 px-3 py-2.5 text-sm text-slate-700 no-underline hover:bg-slate-50;
+  }
+  .nav-project-item .project-type-icon {
+    @apply h-8 w-8;
+  }
+  .nav-project-item .project-type-icon svg {
+    @apply h-4 w-4;
+  }
+  .nav-project-item-copy {
+    @apply min-w-0 flex-1;
+  }
+  .nav-project-item-title {
+    @apply block truncate font-semibold text-slate-900;
+  }
+  .nav-project-item-meta {
+    @apply block truncate text-xs text-slate-500;
+  }
+  .nav-project-empty {
+    @apply px-3 py-3 text-sm text-slate-500;
+  }
+  .nav-project-actions {
+    @apply border-t border-slate-200 p-2;
+  }
+  .nav-project-action {
+    @apply flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50;
+  }
+  .nav-project-action-primary {
+    @apply text-blue-700 hover:bg-blue-50;
+  }
   .sidebar-action-link {
     @apply block py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 no-underline;
   }
@@ -669,6 +718,52 @@
   .dashboard-event-bar span {
     @apply block h-full rounded-full bg-blue-400;
   }
+  .dashboard-assignment-panel {
+    @apply mt-4 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm;
+  }
+  .dashboard-assignment-header {
+    @apply flex items-start justify-between gap-3 border-b border-slate-100 px-3 py-3;
+  }
+  .dashboard-assignment-header h3 {
+    @apply text-sm font-semibold text-slate-900;
+  }
+  .dashboard-assignment-header p {
+    @apply mt-0.5 text-xs text-slate-500;
+  }
+  .dashboard-assignment-summary {
+    @apply grid grid-cols-2 border-b border-slate-100 bg-slate-50;
+  }
+  .dashboard-assignment-summary > span {
+    @apply min-w-0 border-r border-slate-200 px-3 py-2 last:border-r-0;
+  }
+  .dashboard-assignment-summary strong {
+    @apply block text-sm font-semibold text-slate-900;
+  }
+  .dashboard-assignment-summary span span {
+    @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .dashboard-assignment-list {
+    @apply divide-y divide-slate-100;
+  }
+  .dashboard-assignment-row {
+    @apply block px-3 py-2.5 text-slate-700 no-underline hover:bg-blue-50;
+  }
+  .dashboard-assignment-title {
+    @apply block truncate text-sm font-semibold text-slate-900;
+  }
+  .dashboard-assignment-meta {
+    @apply mt-0.5 block truncate text-xs text-slate-500;
+  }
+  .dashboard-assignment-empty {
+    @apply px-3 py-3 text-sm text-slate-500;
+  }
+  .dashboard-assignment-empty strong {
+    @apply block text-sm font-semibold text-slate-900;
+  }
+  .dashboard-assignment-empty span {
+    @apply mt-1 block;
+  }
   .dashboard-event-badge {
     @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700;
   }
@@ -724,6 +819,24 @@
   .project-command-panel {
     @apply mb-4 border-b border-slate-200 bg-transparent pb-4;
   }
+  .project-archived-notice {
+    @apply mb-4 flex flex-col gap-3 rounded-md border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900 sm:flex-row sm:items-center sm:justify-between;
+  }
+  .project-archived-notice-main {
+    @apply flex min-w-0 items-start gap-3;
+  }
+  .project-archived-notice-icon {
+    @apply mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-violet-200 bg-white text-violet-800;
+  }
+  .project-archived-notice-title {
+    @apply block font-semibold text-violet-950;
+  }
+  .project-archived-notice-copy {
+    @apply mt-0.5 text-violet-800;
+  }
+  .project-archived-notice-link {
+    @apply inline-flex shrink-0 items-center justify-center rounded-md border border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-violet-800 no-underline hover:bg-violet-100;
+  }
   .project-command-main {
     @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
   }
@@ -749,8 +862,23 @@
   .project-command-actions {
     @apply flex flex-col gap-2 sm:flex-row sm:items-center;
   }
+  .project-signals-menu {
+    @apply relative;
+  }
+  .project-signals-menu summary {
+    @apply inline-flex h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 no-underline shadow-sm hover:bg-slate-50;
+  }
+  .project-signals-menu summary::-webkit-details-marker {
+    display: none;
+  }
+  .project-signals-menu[open] summary {
+    @apply border-blue-200 bg-blue-50 text-blue-700;
+  }
+  .project-signals-menu .project-overview-strip {
+    @apply absolute right-0 z-30 mt-2 w-[min(38rem,calc(100vw-2rem))] shadow-lg;
+  }
   .project-overview-strip {
-    @apply mt-3 grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;
+    @apply grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;
   }
   .projects-overview-strip {
     @apply mb-4 grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;
@@ -803,6 +931,7 @@
   }
   .inbox-workbench {
     @apply grid grid-cols-1 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] gap-4 items-start;
+    --inbox-workbench-height: clamp(36rem, calc(100vh - 18rem), 56rem);
   }
   .inbox-workbench-filters {
     @apply min-w-0 lg:col-span-2;
@@ -819,6 +948,12 @@
   .inbox-filter-search-input {
     @apply h-9 min-w-0 flex-1 text-sm;
   }
+  .inbox-assignee-filter {
+    @apply flex min-w-0 items-center gap-2 sm:w-64 sm:shrink-0;
+  }
+  .inbox-assignee-select {
+    @apply h-9 min-w-0 flex-1 text-sm;
+  }
   .inbox-filter-projects-link {
     @apply inline-flex h-8 shrink-0 items-center justify-center rounded-md px-2 text-xs font-semibold text-blue-600 no-underline hover:bg-blue-50 hover:text-blue-700;
   }
@@ -830,10 +965,24 @@
   }
   .inbox-workbench-list,
   .inbox-workbench-detail {
-    @apply min-w-0;
+    @apply min-w-0 min-h-0;
+  }
+  .inbox-workbench-list {
+    @apply flex flex-col;
+    height: var(--inbox-workbench-height);
+  }
+  .inbox-workbench-detail {
+    @apply min-h-0;
+  }
+  .inbox-workbench-detail turbo-frame#error_detail {
+    @apply flex min-h-0 flex-col gap-4 overflow-hidden;
+    height: var(--inbox-workbench-height);
   }
   .inbox-pane-header {
-    @apply flex items-center justify-between gap-2 rounded-t-xl border border-slate-200 border-b-0 bg-white px-4 py-3;
+    @apply shrink-0 flex items-center justify-between gap-2 rounded-t-xl border border-slate-200 border-b-0 bg-white px-4 py-3;
+  }
+  .inbox-workbench-list turbo-frame#project_inbox {
+    @apply flex min-h-0 flex-1 flex-col;
   }
   .inbox-toolbar {
     @apply rounded-xl bg-white border border-slate-200 shadow-sm p-3 md:p-4 flex flex-col gap-3 md:gap-4;
@@ -887,10 +1036,11 @@
     @apply bg-blue-100 border-blue-200 text-blue-700;
   }
   .inbox-table-wrap {
-    @apply rounded-b-xl bg-white border border-slate-200 shadow-sm overflow-hidden;
+    @apply min-h-0 flex-1 rounded-b-xl bg-white border border-slate-200 shadow-sm overflow-hidden;
   }
   .inbox-list-scroll {
-    @apply max-h-[62vh] overflow-y-auto;
+    @apply h-full overflow-y-auto;
+    scrollbar-gutter: stable;
   }
   .inbox-table {
     @apply min-w-full divide-y divide-slate-200;
@@ -976,6 +1126,9 @@
   .error-meta-trend {
     @apply w-[4.75rem] justify-between px-1.5;
   }
+  .error-meta-assignee span {
+    @apply max-w-32 truncate;
+  }
   .error-meta-sparkline {
     @apply block min-w-0 flex-1;
   }
@@ -1016,25 +1169,92 @@
     @apply p-6 text-center text-slate-600 h-[30rem] md:h-[34rem] flex items-center justify-center;
   }
   .empty-detail {
-    @apply flex items-center justify-center min-h-[200px] rounded-xl bg-white border border-slate-200 shadow-sm p-6;
+    @apply flex h-full min-h-0 items-center justify-center rounded-xl bg-white border border-slate-200 shadow-sm p-6;
   }
   .pill {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200;
   }
   .detail-actionbar {
-    @apply flex flex-wrap justify-between items-start gap-4 rounded-xl bg-white border border-slate-200 shadow-sm p-5;
+    @apply shrink-0 rounded-xl bg-white border border-slate-200 shadow-sm p-4;
+  }
+  .detail-actionbar-main {
+    @apply flex min-w-0 flex-wrap items-start justify-between gap-3;
   }
   .detail-actionbar-left {
     @apply min-w-0 flex-1;
   }
+  .detail-title-row {
+    @apply flex min-w-0 flex-wrap items-center gap-2;
+  }
   .detail-actionbar-actions {
     @apply flex flex-wrap gap-2 shrink-0;
   }
+  .detail-context-disclosure {
+    @apply mt-3 rounded-lg border border-slate-200 bg-slate-50;
+  }
+  .detail-context-disclosure summary {
+    @apply flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm text-slate-600;
+  }
+  .detail-context-disclosure summary::-webkit-details-marker {
+    display: none;
+  }
+  .detail-context-disclosure summary::after {
+    @apply shrink-0 text-slate-400;
+    content: "Show";
+  }
+  .detail-context-disclosure[open] summary {
+    @apply border-b border-slate-200;
+  }
+  .detail-context-disclosure[open] summary::after {
+    content: "Hide";
+  }
+  .detail-context-summary-title {
+    @apply shrink-0 font-semibold text-slate-900;
+  }
+  .detail-context-summary-meta {
+    @apply min-w-0 flex-1 truncate text-right text-xs text-slate-500;
+  }
+  .detail-context-body {
+    @apply px-3 py-3;
+  }
+  .detail-context-grid {
+    @apply grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 xl:grid-cols-3;
+  }
+  .detail-context-grid > div {
+    @apply min-w-0;
+  }
+  .detail-context-grid dt {
+    @apply text-[11px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .detail-context-grid dd {
+    @apply mt-0.5 truncate text-slate-900;
+  }
+  .detail-assignment-control {
+    @apply mt-3 flex w-fit max-w-full flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-2;
+  }
+  .detail-assignment-label {
+    @apply shrink-0 text-xs font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .detail-assignment-form {
+    @apply flex min-w-0 flex-[1_1_28rem] flex-nowrap items-center gap-2;
+  }
+  .detail-assignment-select {
+    @apply h-9 min-w-[13rem] flex-1 text-sm;
+  }
+  .detail-assignment-save,
+  .detail-assignment-action {
+    @apply h-9 shrink-0 px-3 text-xs;
+  }
+  .detail-assignment-button-form {
+    @apply m-0 shrink-0;
+  }
   .detail-title {
-    @apply text-base font-bold text-slate-900 mt-1 mb-0.5 break-words;
+    @apply min-w-0 flex-1 text-base font-bold text-slate-900 break-words;
   }
   .detail-subtitle {
-    @apply text-slate-600 text-sm;
+    @apply mt-1 text-sm text-slate-600;
   }
   .detail-status-badge {
     @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider;
@@ -1052,10 +1272,11 @@
     @apply bg-violet-50 text-violet-800 border border-violet-200;
   }
   .detail-tabs-wrap {
-    @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5;
+    @apply min-h-0 flex-1 overflow-y-auto rounded-xl bg-white border border-slate-200 shadow-sm p-5;
+    scrollbar-gutter: stable;
   }
   .detail-tabs {
-    @apply flex gap-1 border-b border-slate-200 pb-3 mb-4 flex-wrap;
+    @apply sticky top-0 z-10 flex gap-1 border-b border-slate-200 bg-white pb-3 mb-4 flex-wrap;
   }
   .detail-tab {
     @apply px-3 py-2 rounded-lg text-sm font-medium text-slate-600 bg-transparent border border-transparent cursor-pointer;
@@ -1117,6 +1338,18 @@
   }
   .better-errors-message {
     @apply text-2xl font-semibold text-white leading-tight m-0;
+  }
+  .request-highlight {
+    @apply mt-3 flex max-w-full flex-wrap items-center gap-2 text-sm;
+  }
+  .request-highlight-method {
+    @apply inline-flex h-7 shrink-0 items-center rounded-md border border-emerald-300/40 bg-emerald-400/15 px-2 font-mono text-xs font-bold text-emerald-100;
+  }
+  .request-highlight-target {
+    @apply min-w-0 max-w-full truncate rounded-md border border-white/10 bg-white/10 px-2 py-1 font-mono text-xs text-white;
+  }
+  .request-highlight-route {
+    @apply min-w-0 max-w-full truncate text-xs font-medium text-slate-300;
   }
   .better-errors-workbench {
     @apply grid grid-cols-1 xl:grid-cols-[22rem_1fr] gap-4 p-4;
@@ -1211,6 +1444,18 @@
   }
   .dotnet-dev-lede {
     @apply mt-5 mb-0 text-base sm:text-lg leading-relaxed text-slate-900;
+  }
+  .dotnet-dev-header .request-highlight {
+    @apply mt-3;
+  }
+  .dotnet-dev-header .request-highlight-method {
+    @apply border-sky-200 bg-sky-50 text-sky-900;
+  }
+  .dotnet-dev-header .request-highlight-target {
+    @apply border-slate-200 bg-slate-50 text-slate-900;
+  }
+  .dotnet-dev-header .request-highlight-route {
+    @apply text-slate-600;
   }
   .dotnet-dev-matches {
     @apply mt-5 space-y-1 text-base sm:text-lg font-medium text-slate-900 break-words;
@@ -1359,6 +1604,7 @@
   @media (max-width: 1023px) {
     .inbox-workbench {
       @apply grid-cols-1;
+      --inbox-workbench-height: clamp(28rem, 68vh, 42rem);
     }
 
     .inbox-table:not(.inbox-table-compact) th.col-num,
@@ -1382,8 +1628,17 @@
       @apply left-0 right-auto w-full min-w-0;
     }
 
+    .project-signals-menu .project-overview-strip {
+      @apply left-0 right-auto w-[calc(100vw-2rem)];
+    }
+
+    .inbox-filter-search,
+    .inbox-assignee-filter {
+      @apply w-full;
+    }
+
     .inbox-list-scroll {
-      @apply max-h-[55vh];
+      max-height: none;
     }
 
     .inbox-table th,
@@ -1430,11 +1685,23 @@
     }
 
     .detail-actionbar {
-      @apply flex-col items-stretch gap-3 p-4;
+      @apply p-3;
+    }
+
+    .detail-actionbar-main {
+      @apply flex-col items-stretch;
     }
 
     .detail-actionbar-left {
       @apply w-full;
+    }
+
+    .detail-context-disclosure summary {
+      @apply flex-col items-start gap-1.5;
+    }
+
+    .detail-context-summary-meta {
+      @apply w-full text-left;
     }
 
     .detail-actionbar-actions {
@@ -1443,6 +1710,23 @@
 
     .detail-actionbar-actions .btn {
       @apply flex-1 justify-center;
+    }
+
+    .detail-assignment-control,
+    .detail-assignment-form {
+      @apply w-full;
+    }
+
+    .detail-assignment-select {
+      @apply min-w-0;
+    }
+
+    .detail-assignment-button-form {
+      @apply flex-1;
+    }
+
+    .detail-assignment-button-form .detail-assignment-action {
+      @apply w-full justify-center;
     }
 
     .detail-tabs-wrap {

@@ -8,7 +8,7 @@ RSpec.describe "Project events", type: :request do
 
     it "redirects to project when not a Turbo Frame request" do
       get project_events_path(projects(:one))
-      expect(response).to redirect_to(project_path(projects(:one), filter: "unresolved", q: ""))
+      expect(response).to redirect_to(project_path(projects(:one), filter: "unresolved", q: "", assignee: "all"))
     end
   end
 
@@ -21,6 +21,23 @@ RSpec.describe "Project events", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Stacktrace")
         expect(response.body).to include(ingest_events(:one).message)
+      end
+
+      it "shows archived project state on standalone event pages" do
+        project = create(:project, user: users(:one), name: "Archived Event App")
+        api_key = create(:api_key, project: project, user: users(:one))
+        event = create(:ingest_event, project: project, api_key: api_key, message: "Archived project event")
+        project.archive!
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+
+        expect(document.at_css(".project-archived-notice").text).to include("Archived project")
+        expect(document.at_css(".event-breadcrumb a[href='#{projects_path(filter: 'archived')}']")).to be_present
+        expect(response.body).to include("Archived project event")
       end
 
       it "renders the Turbo detail frame when requested from the inbox" do
@@ -86,6 +103,8 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("ColdFusion exception")
         expect(response.body).to include("Variable CUSTOMER is undefined.")
         expect(response.body).to include("/srv/www/app/orders/show.cfm")
+        expect(response.body).to include("GET")
+        expect(response.body).to include("/orders/show.cfm?id=42")
         expect(response.body).to include("Template Frames")
       end
     end
@@ -190,6 +209,7 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("500")
         expect(response.body).to include("Path params")
         expect(response.body).to include("ord_123")
+        expect(response.body).to include("https://api.example.com/checkouts?preview=true")
         expect(response.body).to include("PytestClient/1.0")
         expect(response.body).to include("trace-python-1")
         expect(response.body).to include("POST /checkouts/{order_id}")
@@ -364,6 +384,7 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("Routing")
         expect(response.body).to include("InvalidOperationException")
         expect(response.body).to include("ApprovalService.ApproveAsync")
+        expect(response.body).to include("https://quriatime.example.com/approvals/123?approval_id=123")
         expect(response.body).to include("/src/QuriaTime.Web/Services/ApprovalService.cs")
         expect(response.body).to include("approval_id")
         expect(response.body).to include("User-Agent")
@@ -486,6 +507,7 @@ RSpec.describe "Project events", type: :request do
             os: "macOS",
             route: "/checkout",
             release: "web@2026.04.22",
+            url: "https://app.example.com/checkout?step=shipping",
             user_agent: "Mozilla/5.0",
             breadcrumbs: [
               { category: "ui.click", message: "Clicked checkout button" }
@@ -500,6 +522,7 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include("JavaScript")
         expect(response.body).to include("renderCheckout")
         expect(response.body).to include("Chrome 135")
+        expect(response.body).to include("https://app.example.com/checkout?step=shipping")
         expect(response.body).to include("Breadcrumbs")
         expect(response.body).to include("Source map hint")
         expect(response.body).to include("Exception chain")
@@ -585,6 +608,10 @@ RSpec.describe "Project events", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("clientIp")
       expect(response.body).to include("66.241.125.180")
+      expect(response.body).to include("request-highlight")
+      expect(response.body).to include("GET")
+      expect(response.body).to include("https://example.com/content/slug")
+      expect(response.body).to include("blogs#show")
     end
   end
 end

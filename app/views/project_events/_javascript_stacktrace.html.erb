@@ -18,6 +18,10 @@
       in <%= runtime_details[:component].presence || runtime_details[:route].presence || selected_frame&.dig(:method_name).presence || "javascript runtime" %>
     </p>
     <h3 class="better-errors-message"><%= javascript_summary[:message] %></h3>
+    <%= render "project_events/request_highlight",
+               http_method: request_details[:http_method],
+               target: request_highlight_target(runtime_details[:url], request_details[:url], request_details[:path]),
+               route: runtime_details[:route] || runtime_details[:component] %>
   </header>
 
   <div class="better-errors-workbench">

@@ -16,4 +16,27 @@ module ProjectsHelper
 
     "Ruby integration docs"
   end
+
+  def project_collection_path(project)
+    project&.archived? ? projects_path(filter: "archived") : projects_path
+  end
+
+  def inbox_assignee_options(project, viewer, users = nil)
+    assignable_users = users || project.assignable_users
+    [
+      [ "Everyone", "all" ],
+      [ "Assigned to me", "me" ],
+      [ "Unassigned", "unassigned" ],
+      *assignable_users.map { |user| [ inbox_assignee_label(project, viewer, user), user.uuid ] }
+    ]
+  end
+
+  def inbox_assignee_label(project, viewer, user)
+    label = user.name.presence || user.email
+    suffixes = []
+    suffixes << "owner" if project.owned_by?(user)
+    suffixes << "you" if viewer == user
+
+    suffixes.any? ? "#{label} (#{suffixes.join(", ")})" : label
+  end
 end

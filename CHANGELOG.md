@@ -2,12 +2,40 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v1.0.0 - 2026-05-10
+
+### Added
+
+- First stable self-hosted Logister release, packaging the current Rails 8 app, PostgreSQL, Redis, Sidekiq, Fly deployment, and Cloudflare Pages docs path as the supported operating model.
+- Cross-app dashboard explorer powered by server-side aggregate endpoints, Stimulus, and vendored ECharts through the Rails asset pipeline.
+- Team assignment for grouped errors, including assignee chips, assign-to-me actions, dashboard shortcuts, project workload counts, and inbox filters for everyone, assigned-to-me, unassigned, or a teammate.
+- Project lifecycle controls for archive, restore, and delete flows, with archived projects kept accessible from archived/all views.
+- Project error email notifications through SMTP/Amazon SES, including first-occurrence alerts and daily or weekly digest preferences.
+- Runtime-aware event detail views for Ruby, .NET, Python, JavaScript/TypeScript, and CFML, including prominent request method and URL/path context when events provide it.
+- Static public docs, repo docs, `llms.txt`, and a dedicated 1.0 release plan that describe the shipped product and self-hosting path.
+
+### Changed
+
+- Reworked the dashboard, project overview, inbox, error detail, and top navigation around active projects, assigned work, project signals, and efficient drill-downs.
+- Moved larger debugging payloads into fixed-height, scrollable panes so long traces and context blocks are easier to consume.
+- Reduced dashboard, project, and inbox data fan-out with bounded Rails aggregates, Redis-backed cache windows, and server-side chart/filter endpoints.
+- Archived projects now disappear from active dashboards, active project lists, and the top navigation, and archiving revokes active API tokens.
+- Release automation now treats the top changelog entry as the GitHub Release body after CI, CodeQL, Fly deploy, and Fly health checks pass.
+
+### Fixed
+
+- Added and verified database indexes for high-volume dashboard, projects, inbox, assignment, notification, and search paths.
+- Hardened dashboard explorer filtering and JSON rendering to satisfy CI security checks while keeping self-hosted installs free of checked-in secrets.
+- Fixed dashboard chart rendering issues caused by stale assets, sparse timeline buckets, and Stimulus state collisions.
+- Tightened docs, testing, and architecture notes so self-hosters and contributors can understand the current app surface without relying on tribal knowledge.
+
 ## v0.1.8 - 2026-05-10
 
 ### Added
 
 - Cross-app dashboard explorer powered by server-side aggregate endpoints, Stimulus, and vendored ECharts through the Rails asset pipeline.
 - Interactive Event mix filtering for the Needs attention feed, so users can switch between open errors and recent log, metric, transaction, or check-in context without leaving the dashboard.
+- Error assignment controls for project users, including assignee chips, assign-to-me actions, dashboard shortcuts, project workload counts, and inbox filters for everyone, assigned-to-me, unassigned, or a teammate.
 - Project archiving and restoring from project settings, keeping historical data available while hiding archived apps from active dashboard and project views.
 - A Logister-styled reset-password form that matches the sign-in, sign-up, forgot-password, and confirmation pages.
 
