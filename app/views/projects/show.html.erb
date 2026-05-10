@@ -99,11 +99,12 @@
   <section class="inbox-workbench-list" data-inbox-target="listPane" aria-busy="false">
     <header class="inbox-pane-header">
       <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]">Error groups</h2>
-      <p class="text-xs text-slate-500"><%= @groups.size %> shown</p>
+      <p class="text-xs text-slate-500"><%= @groups.size %> shown · newest first</p>
     </header>
     <%= render "inbox_table",
                project:       @project,
                groups:        @groups,
+               group_trends:  @group_trends,
                selected_uuid: @selected_group&.uuid,
                filter:        @filter,
                query:         @query %>

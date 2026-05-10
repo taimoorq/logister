@@ -60,16 +60,18 @@ class Project < ApplicationRecord
     ]
   end
 
-  # Stats for project index: raw event volume, activity volume, open error groups,
+  # Stats for project index: recent event volume, activity volume, open error groups,
   # total error groups, and 7-day raw event trend per project.
   def self.stats_for(project_ids)
     return {} if project_ids.blank?
 
-    stats = Hash.new do |h, k|
-      h[k] = { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, latest_event_at: nil, trend: Array.new(7, 0) }
+    stats = project_ids.index_with do
+      { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, latest_event_at: nil, trend: Array.new(7, 0) }
     end
     project_error_groups = ErrorGroup.where(project_id: project_ids)
     project_events = IngestEvent.where(project_id: project_ids)
+    trend_dates = 7.times.map { |i| Date.current - (6 - i) }
+    recent_events = project_events.where("occurred_at >= ?", trend_dates.first.beginning_of_day)
 
     project_error_groups.group(:project_id).count.each do |pid, count|
       stats[pid][:all_groups] = count
@@ -79,11 +81,7 @@ class Project < ApplicationRecord
       stats[pid][:open_groups] = count
     end
 
-    project_events.group(:project_id).count.each do |pid, count|
-      stats[pid][:total_events] = count
-    end
-
-    project_events.where.not(event_type: :error).group(:project_id).count.each do |pid, count|
+    recent_events.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count.each do |pid, count|
       stats[pid][:activity_events] = count
     end
 
@@ -91,14 +89,15 @@ class Project < ApplicationRecord
       stats[pid][:latest_event_at] = occurred_at
     end
 
-    trend_dates = 7.times.map { |i| Date.current - (6 - i) }
-    project_events
-      .where("occurred_at >= ?", trend_dates.first.beginning_of_day)
+    recent_events
       .group(:project_id, "DATE(occurred_at)")
       .count
       .each do |(pid, date), count|
         idx = trend_dates.index(date.to_date)
-        stats[pid][:trend][idx] = count if idx
+        next unless idx
+
+        stats[pid][:trend][idx] = count
+        stats[pid][:total_events] += count
       end
 
     stats
@@ -109,10 +108,7 @@ class Project < ApplicationRecord
 
     [
       ErrorGroup.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0,
-      IngestEvent.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0,
-      ErrorOccurrence.joins(:error_group)
-                     .where(error_groups: { project_id: project_ids })
-                     .maximum(:updated_at)&.utc&.to_i || 0
+      IngestEvent.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0
     ]
   end
 

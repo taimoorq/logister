@@ -1,4 +1,5 @@
 <turbo-frame id="project_inbox" target="error_detail">
+  <% group_trends = local_assigns.fetch(:group_trends, {}) %>
   <div class="inbox-table-wrap">
     <% if groups.any? %>
       <div class="inbox-list-scroll">
@@ -8,7 +9,7 @@
               <% row_clickable = group.latest_event.present? %>
               <% first_seen_words = time_ago_in_words(group.first_seen_at) %>
               <% last_seen_words = time_ago_in_words(group.last_seen_at) %>
-              <% trend_points = group.trend %>
+              <% trend_points = group_trends.fetch(group.id) { group.trend } %>
               <% trend_total = trend_points.sum %>
               <% trend_tooltip = "7 day trend: #{trend_points.join(", ")} occurrences. #{trend_total} total in the last 7 days." %>
               <% stage = group.stage.presence || "production" %>

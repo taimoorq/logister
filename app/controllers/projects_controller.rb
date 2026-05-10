@@ -8,9 +8,10 @@ class ProjectsController < ApplicationController
   before_action :set_owned_project, only: [ :edit, :update, :destroy ]
 
   def index
-    @projects      = current_user.accessible_projects.order(created_at: :desc)
-    project_ids    = @projects.pluck(:id)
+    @projects      = current_user.accessible_projects.order(created_at: :desc).to_a
+    project_ids    = @projects.map(&:id)
     @project_stats = project_ids.any? ? cached_project_stats(project_ids) : {}
+    @projects_overview = projects_overview(@projects, @project_stats)
   end
 
   def show
@@ -25,6 +26,7 @@ class ProjectsController < ApplicationController
       return render partial: "projects/inbox_table", locals: {
         project:       @project,
         groups:        @groups,
+        group_trends:  inbox_group_trends(@project, @groups),
         selected_uuid: @selected_uuid,
         filter:        @filter,
         query:         @query
@@ -33,6 +35,7 @@ class ProjectsController < ApplicationController
 
     # Full page load — build everything the workbench needs for the inbox.
     @counts  = inbox_counts(@project)
+    @group_trends = inbox_group_trends(@project, @groups)
     @project_overview = project_overview(@project)
     @selected_group = if params[:group_uuid].present?
       @project.error_groups.find_by(uuid: params[:group_uuid])
@@ -100,8 +103,21 @@ class ProjectsController < ApplicationController
   end
 
   def cached_project_stats(project_ids)
-    cache_key = [ "projects_stats", current_user.id, Project.stats_cache_version(project_ids) ]
+    cache_key = [ "projects_stats", current_user.id, project_ids, Project.stats_cache_version(project_ids) ]
     safe_cache_fetch(cache_key, expires_in: 45.seconds) { Project.stats_for(project_ids) }
+  end
+
+  def projects_overview(projects, project_stats)
+    stats = projects.filter_map { |project| project_stats[project.id] }
+    active_projects_count = stats.count { |project| project[:activity_events].to_i.positive? }
+
+    {
+      projects_count: projects.size,
+      open_groups_count: stats.sum { |project| project[:open_groups].to_i },
+      activity_events_count: stats.sum { |project| project[:activity_events].to_i },
+      active_projects_count: active_projects_count,
+      quiet_projects_count: [ projects.size - active_projects_count, 0 ].max
+    }
   end
 
   def project_overview(project)

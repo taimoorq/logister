@@ -10,6 +10,10 @@ class Dashboard
     events_last_24h_scope = events_scope.where("occurred_at >= ?", 24.hours.ago)
     error_groups_scope = ErrorGroup.where(project_id: project_ids)
     api_keys_scope = ApiKey.where(project_id: project_ids)
+    events_by_type_last_24h = event_type_counts(events_last_24h_scope)
+    open_error_group_counts = error_groups_scope.unresolved.group(:project_id).count
+    activity_event_counts = events_last_24h_scope.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count
+    latest_event_at_by_project = events_scope.group(:project_id).maximum(:occurred_at)
     monitors = CheckInMonitor.where(project_id: project_ids)
                              .select(:id, :last_status, :last_check_in_at, :expected_interval_seconds)
                              .to_a
@@ -17,21 +21,20 @@ class Dashboard
     {
       projects_count: project_ids.size,
       api_keys_count: relation_count(api_keys_scope),
-      events_last_24h: relation_count(events_last_24h_scope),
+      events_last_24h: events_by_type_last_24h.values.sum,
       active_project_ids_last_24h: events_last_24h_scope.distinct.pluck(:project_id),
-      events_by_type_last_24h: event_type_counts(events_last_24h_scope),
-      open_error_groups_count: relation_count(error_groups_scope.unresolved),
+      events_by_type_last_24h: events_by_type_last_24h,
+      open_error_groups_count: open_error_group_counts.values.sum,
       new_error_groups_last_24h: relation_count(error_groups_scope.where("first_seen_at >= ?", 24.hours.ago)),
-      projects_with_open_errors_count: error_groups_scope.unresolved.distinct.count(:project_id),
+      projects_with_open_errors_count: open_error_group_counts.size,
       monitors_count: monitors.size,
       monitor_status_counts: monitor_status_counts(monitors),
       recent_event_ids: events_scope.order(occurred_at: :desc).limit(20).pluck(:id),
       recent_error_group_ids: error_groups_scope.unresolved.order(last_seen_at: :desc).limit(6).pluck(:id),
-      error_event_ids: events_scope.where(event_type: IngestEvent.event_types[:error])
-                                   .where("occurred_at >= ?", 7.days.ago)
-                                   .order(occurred_at: :desc)
-                                   .limit(320)
-                                   .pluck(:id)
+      project_stats: project_stats(project_ids,
+                                   open_error_group_counts: open_error_group_counts,
+                                   activity_event_counts: activity_event_counts,
+                                   latest_event_at_by_project: latest_event_at_by_project)
     }
   end
 
@@ -60,7 +63,7 @@ class Dashboard
       monitor_status_counts: { ok: 0, missed: 0, error: 0 },
       recent_event_ids: [],
       recent_error_group_ids: [],
-      error_event_ids: []
+      project_stats: {}
     }
   end
 
@@ -85,4 +88,15 @@ class Dashboard
     end
   end
   private_class_method :monitor_status_counts
+
+  def self.project_stats(project_ids, open_error_group_counts:, activity_event_counts:, latest_event_at_by_project:)
+    project_ids.index_with do |project_id|
+      {
+        open_groups: open_error_group_counts[project_id].to_i,
+        activity_events: activity_event_counts[project_id].to_i,
+        latest_event_at: latest_event_at_by_project[project_id]
+      }
+    end
+  end
+  private_class_method :project_stats
 end

@@ -24,18 +24,30 @@ RSpec.describe Dashboard, type: :model do
         :monitor_status_counts,
         :recent_event_ids,
         :recent_error_group_ids,
-        :error_event_ids
+        :project_stats
       )
       expect(summary[:projects_count]).to be >= 1
       expect(summary[:events_by_type_last_24h]).to include("error", "log", "metric", "transaction", "check_in")
       expect(summary[:monitor_status_counts]).to include(:ok, :missed, :error)
       expect(summary[:recent_event_ids]).to be_an(Array)
-      expect(summary[:error_event_ids]).to be_an(Array)
+      expect(summary[:project_stats]).to be_a(Hash)
     end
 
     it "limits recent_event_ids to 20" do
       summary = described_class.summary_for(project_ids)
       expect(summary[:recent_event_ids].size).to be <= 20
+    end
+
+    it "returns dashboard-specific project stats without full project index aggregates" do
+      project = projects(:one)
+      create(:ingest_event, :log, project: project, api_key: api_keys(:one), occurred_at: 30.minutes.ago)
+
+      summary = described_class.summary_for([ project.id ])
+      stats = summary[:project_stats].fetch(project.id)
+
+      expect(stats).to include(:open_groups, :activity_events, :latest_event_at)
+      expect(stats[:activity_events]).to be >= 1
+      expect(stats).not_to include(:total_events, :all_groups, :trend)
     end
   end
 
@@ -62,7 +74,7 @@ RSpec.describe Dashboard, type: :model do
       expect(h[:monitor_status_counts]).to eq({ ok: 0, missed: 0, error: 0 })
       expect(h[:recent_event_ids]).to eq([])
       expect(h[:recent_error_group_ids]).to eq([])
-      expect(h[:error_event_ids]).to eq([])
+      expect(h[:project_stats]).to eq({})
     end
   end
 end

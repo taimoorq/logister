@@ -26,5 +26,39 @@
     </div>
   </section>
 
+  <section class="projects-overview-strip" aria-label="Project overview">
+    <span class="project-overview-cell">
+      <span class="project-overview-icon"><%= app_icon(:projects, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(@projects_overview.fetch(:projects_count, 0)) %></strong>
+        <span>Apps watched</span>
+      </span>
+    </span>
+
+    <%= link_to dashboard_path, class: "project-overview-cell #{dashboard_metric_state_class(@projects_overview.fetch(:open_groups_count, 0))}" do %>
+      <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(@projects_overview.fetch(:open_groups_count, 0)) %></strong>
+        <span>Open errors</span>
+      </span>
+    <% end %>
+
+    <span class="project-overview-cell">
+      <span class="project-overview-icon"><%= app_icon(:chart, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(@projects_overview.fetch(:activity_events_count, 0)) %></strong>
+        <span>Activity 7d</span>
+      </span>
+    </span>
+
+    <span class="project-overview-cell">
+      <span class="project-overview-icon"><%= app_icon(:check, css: "w-4 h-4") %></span>
+      <span>
+        <strong><%= number_with_delimiter(@projects_overview.fetch(:quiet_projects_count, 0)) %></strong>
+        <span>Quiet apps</span>
+      </span>
+    </span>
+  </section>
+
   <%= render "project_cards", projects: @projects, project_stats: @project_stats %>
 </div>

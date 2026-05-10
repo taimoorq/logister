@@ -18,6 +18,8 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Ruby gem")
+        expect(response.body).to include("Apps watched")
+        expect(response.body).to include("Activity 7d")
         expect(response.body).to include(">Docs<")
         expect(response.body).to include("documentation section")
         expect(response.body).to include("https://docs.logister.org/")
@@ -53,7 +55,7 @@ RSpec.describe "Projects", type: :request do
         expect(all_errors_link).to be_present
         expect(all_errors_link.text).to include("All error groups", "0", "No errors yet")
         expect(activity_link).to be_present
-        expect(activity_link.text).to include("Activity events", "2", "View activity")
+        expect(activity_link.text).to include("Activity 7d", "2", "View activity")
         expect(card.at_css(".project-card-line-chart")).to be_present
         expect(card.text).to include("No open errors")
       end
@@ -203,6 +205,25 @@ RSpec.describe "Projects", type: :request do
         expect(metadata.at_css(".severity-compact.severity-error")["title"]).to eq("Severity: error")
         expect(metadata.at_css(".error-meta-time")["title"]).to include("First seen", "Last seen")
         expect(metadata.css(".inbox-info-icon").size).to be >= 3
+      end
+
+      it "limits the initial inbox list for high-volume projects" do
+        project = create(:project, user: users(:one), name: "Large Inbox")
+        ProjectInboxData::INBOX_LIMIT.next.times do |offset|
+          create(:error_group,
+                 project: project,
+                 title: "Large inbox error #{offset}",
+                 last_seen_at: offset.minutes.ago,
+                 first_seen_at: offset.minutes.ago)
+        end
+
+        get project_path(project, filter: "unresolved")
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        expect(document.css("tr.inbox-row").size).to eq(ProjectInboxData::INBOX_LIMIT)
+        expect(document.at_css(".inbox-pane-header").text).to include("#{ProjectInboxData::INBOX_LIMIT} shown", "newest first")
       end
 
       it "ignores a selected event when it does not belong to the selected group" do

@@ -14,12 +14,14 @@ All notable changes to Logister will be documented in this file.
 
 - Redesigned the dashboard overview around account-wide reliability signals, recent activity, event mix, monitor health, and compact project links.
 - Tightened the dashboard and project inbox headers with compact status strips for faster scanning across apps and within one app.
+- Added a compact projects-page overview and optimized dashboard, project, and inbox aggregation for larger event volumes.
 - Switched outbound email configuration away from the old SendGrid-specific adapter and onto standard Rails SMTP settings for SES-backed delivery.
 - Consolidated CI, release, and Fly deploy checks so successful production deploys publish the newest changelog entry as the latest GitHub release.
 
 ### Fixed
 
 - Hardened Fly deploys around release commands, worker sizing, health checks, and serialized machine updates.
+- Added high-volume dashboard and inbox indexes, including Redis-friendly cache-version indexes and trigram search indexes for error-group lookup.
 - Adjusted CI gating so deploys wait for the required app checks and GitHub's default CodeQL setup before publishing a release.
 
 ## v0.1.6 - 2026-05-01

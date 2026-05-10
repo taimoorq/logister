@@ -4,6 +4,7 @@ module ProjectInboxData
   extend ActiveSupport::Concern
 
   INBOX_FILTERS = %w[unresolved introduced_today resolved ignored archived all].freeze
+  INBOX_LIMIT = 100
 
   private
 
@@ -24,13 +25,44 @@ module ProjectInboxData
     group_ids = safe_cache_fetch(cache_key, expires_in: 20.seconds) do
       scope = base_inbox_scope(project, normalized_filter)
       scope = apply_inbox_query(scope, normalized_query) if normalized_query.present?
-      scope.recent_first.pluck(:id)
+      scope.recent_first.limit(INBOX_LIMIT).pluck(:id)
     end
 
     return [] if group_ids.empty?
 
     groups_by_id = project.error_groups.where(id: group_ids).includes(:latest_event).index_by(&:id)
     group_ids.filter_map { |id| groups_by_id[id] }
+  end
+
+  def inbox_group_trends(project, groups, days: 7)
+    group_ids = groups.map(&:id)
+    return {} if group_ids.empty?
+
+    cache_key = [
+      "project",
+      project.id,
+      "inbox_group_trends",
+      days,
+      Digest::SHA256.hexdigest(group_ids.join(",")),
+      inbox_cache_version(project)
+    ]
+
+    safe_cache_fetch(cache_key, expires_in: 20.seconds) do
+      start_date = days.days.ago.to_date
+      trend_dates = (0...days).map { |offset| start_date + offset }
+      trends = group_ids.index_with { Array.new(days, 0) }
+
+      ErrorOccurrence.where(error_group_id: group_ids)
+                     .where("occurred_at >= ?", start_date.beginning_of_day)
+                     .group(:error_group_id, "DATE(occurred_at)")
+                     .count
+                     .each do |(group_id, date), count|
+        idx = trend_dates.index(date.to_date)
+        trends[group_id][idx] = count if idx
+      end
+
+      trends
+    end
   end
 
   # Per-status counts for the sidebar navigation.
