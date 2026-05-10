@@ -18,7 +18,7 @@ Canonical product and integration documentation for Logister lives on this docs 
 
 ## Operations
 - Local development: https://docs.logister.org/local-development/
-- Deployment config: https://docs.logister.org/deployment/
+- Deployment config and `.env.sample` reference: https://docs.logister.org/deployment/
 - ClickHouse: https://docs.logister.org/clickhouse/
 
 ## Audience

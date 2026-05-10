@@ -26,7 +26,7 @@ Canonical documentation lives on the public docs host:
 - Product guide: https://docs.logister.org/product/
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Local development: https://docs.logister.org/local-development/
-- Deployment: https://docs.logister.org/deployment/
+- Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
 - ClickHouse: https://docs.logister.org/clickhouse/
 - HTTP API: https://docs.logister.org/http-api/
 - Ruby integration: https://docs.logister.org/integrations/ruby/

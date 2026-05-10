@@ -20,6 +20,7 @@ All notable changes to Logister will be documented in this file.
 - Moved larger debugging payloads into fixed-height, scrollable panes so long traces and context blocks are easier to consume.
 - Reduced dashboard, project, and inbox data fan-out with bounded Rails aggregates, Redis-backed cache windows, and server-side chart/filter endpoints.
 - Archived projects now disappear from active dashboards, active project lists, and the top navigation, and archiving revokes active API tokens.
+- Expanded the self-hosting environment sample and deployment docs so operators can map each supported Rails, PostgreSQL, Redis, Sidekiq, SES, ClickHouse, Turnstile, analytics, and Cloudflare docs setting to the provider value they need.
 - Release automation now treats the top changelog entry as the GitHub Release body after CI, CodeQL, Fly deploy, and Fly health checks pass.
 
 ### Fixed

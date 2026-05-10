@@ -122,6 +122,10 @@ bin/rails db:prepare
 bin/dev
 ```
 
+The repo uses `.env.sample` as the example environment file. For self-hosted production installs, copy the entries you need into your deploy provider's secret/config store rather than committing a filled-in `.env` file. The public deployment guide explains what each sample entry does and where to get provider values such as PostgreSQL URLs, Redis URLs, SES SMTP credentials, Turnstile keys, ClickHouse credentials, and analytics IDs:
+
+- https://docs.logister.org/deployment/#env-reference
+
 ## Local development nuances
 
 A few things are worth knowing before you start changing the app locally:
