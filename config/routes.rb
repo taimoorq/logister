@@ -46,6 +46,8 @@ Rails.application.routes.draw do
 
   resources :projects, only: [ :index, :show, :new, :create, :edit, :update, :destroy ], param: :uuid do
     member do
+      patch :archive
+      patch :restore
       get :settings, to: "project_settings#show"
       get :performance, to: "project_performance#show"
       get :monitors, to: "project_monitors#show"

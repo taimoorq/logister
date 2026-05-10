@@ -23,6 +23,14 @@ RSpec.describe "Dashboard", type: :request do
         expect(response.body).to include(projects(:one).name)
       end
 
+      it "does not include archived projects in active dashboard data" do
+        archived_project = create(:project, :archived, user: users(:one), name: "Archived Dashboard App")
+
+        get dashboard_path
+
+        expect(response.body).not_to include(archived_project.name)
+      end
+
       it "renders overview cards and compact project shortcuts" do
         project = projects(:one)
         create(:ingest_event, :log, project: project, api_key: api_keys(:one), occurred_at: 30.minutes.ago)

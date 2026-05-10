@@ -224,11 +224,31 @@
   .projects-inline-link {
     @apply text-sm font-semibold text-blue-600 no-underline hover:text-blue-700;
   }
+  .projects-filter-tabs {
+    @apply flex flex-wrap gap-2;
+  }
+  .projects-filter-tab {
+    @apply inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 no-underline hover:border-slate-300 hover:bg-slate-50;
+  }
+  .projects-filter-tab.is-active,
+  .projects-filter-tab[aria-current="page"] {
+    @apply border-blue-200 bg-blue-50 text-blue-700;
+  }
+  .projects-filter-tab strong {
+    @apply ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600;
+  }
+  .projects-filter-tab.is-active strong,
+  .projects-filter-tab[aria-current="page"] strong {
+    @apply bg-white text-blue-700;
+  }
   .project-card-grid {
     @apply grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-3;
   }
   .project-card {
     @apply overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition-colors;
+  }
+  .project-card.is-archived {
+    @apply border-violet-200 bg-violet-50/40;
   }
   .project-card:hover {
     @apply border-slate-300 shadow;
@@ -247,6 +267,12 @@
   }
   .project-card-access {
     @apply shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-500;
+  }
+  .project-card-badges {
+    @apply flex shrink-0 flex-col items-end gap-1;
+  }
+  .project-card-archived-badge {
+    @apply border-violet-200 bg-violet-50 text-violet-800;
   }
   .project-type-icon {
     @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md;

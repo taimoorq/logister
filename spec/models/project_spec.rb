@@ -87,6 +87,27 @@ RSpec.describe Project, type: :model do
     end
   end
 
+  describe "archive lifecycle" do
+    it "moves projects between active and archived scopes and revokes active api keys" do
+      project = create(:project, user: users(:one))
+      api_key = create(:api_key, project: project, user: users(:one))
+
+      expect(described_class.active).to include(project)
+      expect(described_class.archived).not_to include(project)
+
+      project.archive!
+      expect(project.reload).to be_archived
+      expect(api_key.reload.revoked_at).to be_present
+      expect(described_class.active).not_to include(project)
+      expect(described_class.archived).to include(project)
+
+      project.restore!
+      expect(project.reload).not_to be_archived
+      expect(api_key.reload.revoked_at).to be_present
+      expect(described_class.active).to include(project)
+    end
+  end
+
   describe "#to_param" do
     it "returns uuid" do
       expect(projects(:one).to_param).to eq(projects(:one).uuid)

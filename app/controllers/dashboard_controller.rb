@@ -5,7 +5,7 @@ class DashboardController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    accessible = current_user.accessible_projects
+    accessible = current_user.active_projects
     @projects = accessible.order(created_at: :desc).to_a
     project_ids = @projects.map(&:id)
 
@@ -34,7 +34,7 @@ class DashboardController < ApplicationController
   end
 
   def explorer
-    projects = current_user.accessible_projects.order(created_at: :desc).to_a
+    projects = current_user.active_projects.order(created_at: :desc).to_a
     project_ids = projects.map(&:id)
     filters = dashboard_explorer_filters(project_ids)
     explorer = safe_cache_fetch(

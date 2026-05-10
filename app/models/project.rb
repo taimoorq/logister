@@ -14,6 +14,9 @@ class Project < ApplicationRecord
 
   enum :integration_kind, { ruby: "ruby", cfml: "cfml", javascript: "javascript", python: "python", dotnet: "dotnet" }, default: :ruby, validate: true, prefix: :integration
 
+  scope :active, -> { where(archived_at: nil) }
+  scope :archived, -> { where.not(archived_at: nil) }
+
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: { scope: :user_id }
   validates :uuid, presence: true, uniqueness: true
@@ -34,6 +37,23 @@ class Project < ApplicationRecord
 
   def owned_by?(viewer)
     user_id == viewer.id
+  end
+
+  def archived?
+    archived_at.present?
+  end
+
+  def archive!
+    archive_time = Time.current
+
+    transaction do
+      update!(archived_at: archive_time)
+      api_keys.active.update_all(revoked_at: archive_time, updated_at: archive_time)
+    end
+  end
+
+  def restore!
+    update!(archived_at: nil)
   end
 
   def notification_recipients

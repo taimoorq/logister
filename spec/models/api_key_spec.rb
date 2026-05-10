@@ -36,6 +36,14 @@ RSpec.describe ApiKey, type: :model do
       expect(key).not_to be_valid
       expect(key.errors[:name]).to be_present
     end
+
+    it "does not allow new keys for archived projects" do
+      project = create(:project, :archived, user: users(:one))
+      key = described_class.new(project: project, user: users(:one), name: "Archived key")
+
+      expect(key).not_to be_valid
+      expect(key.errors[:project]).to include("is archived")
+    end
   end
 
   describe ".authenticate" do
@@ -55,6 +63,11 @@ RSpec.describe ApiKey, type: :model do
 
     it "returns nil for revoked key" do
       api_keys(:one).revoke!
+      expect(ApiKey.authenticate("test-token-one")).to be_nil
+    end
+
+    it "returns nil when the project is archived" do
+      projects(:one).update!(archived_at: Time.current)
       expect(ApiKey.authenticate("test-token-one")).to be_nil
     end
   end

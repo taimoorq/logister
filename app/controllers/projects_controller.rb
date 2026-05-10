@@ -1,4 +1,5 @@
 class ProjectsController < ApplicationController
+  PROJECT_FILTERS = %w[active archived all].freeze
   PROJECT_OVERVIEW_CACHE_TTL = 30.seconds
   PROJECT_STATS_CACHE_TTL = 45.seconds
 
@@ -8,10 +9,13 @@ class ProjectsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :set_accessible_project, only: [ :show ]
-  before_action :set_owned_project, only: [ :edit, :update, :destroy ]
+  before_action :set_owned_project, only: [ :edit, :update, :archive, :restore, :destroy ]
 
   def index
-    @projects      = current_user.accessible_projects.order(created_at: :desc).to_a
+    accessible = current_user.accessible_projects
+    @project_filter = params[:filter].presence_in(PROJECT_FILTERS) || "active"
+    @project_filter_counts = project_filter_counts(accessible)
+    @projects = filtered_projects(accessible, @project_filter).order(created_at: :desc).to_a
     project_ids    = @projects.map(&:id)
     @project_stats = project_ids.any? ? cached_project_stats(project_ids) : {}
     @projects_overview = projects_overview(@projects, @project_stats)
@@ -89,6 +93,16 @@ class ProjectsController < ApplicationController
     end
   end
 
+  def archive
+    @project.archive!
+    redirect_to projects_path, notice: "Project #{@project.name} was archived. Its data is still available from archived projects."
+  end
+
+  def restore
+    @project.restore!
+    redirect_to project_path(@project), notice: "Project #{@project.name} is active again."
+  end
+
   def destroy
     project_name = @project.name
 
@@ -103,6 +117,22 @@ class ProjectsController < ApplicationController
 
   def project_params
     params.require(:project).permit(:name, :description, :integration_kind)
+  end
+
+  def filtered_projects(scope, filter)
+    case filter
+    when "archived" then scope.archived
+    when "all" then scope
+    else scope.active
+    end
+  end
+
+  def project_filter_counts(scope)
+    {
+      active: scope.active.count,
+      archived: scope.archived.count,
+      all: scope.count
+    }
   end
 
   def cached_project_stats(project_ids)

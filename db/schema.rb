@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_161000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_10_163000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -196,6 +196,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_161000) do
   end
 
   create_table "projects", force: :cascade do |t|
+    t.datetime "archived_at"
     t.datetime "created_at", null: false
     t.text "description"
     t.string "integration_kind", default: "ruby", null: false
@@ -205,6 +206,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_161000) do
     t.bigint "user_id", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["integration_kind"], name: "index_projects_on_integration_kind"
+    t.index ["user_id", "archived_at"], name: "idx_projects_user_archived_at"
     t.index ["user_id", "slug"], name: "index_projects_on_user_id_and_slug", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id"
     t.index ["uuid"], name: "index_projects_on_uuid", unique: true

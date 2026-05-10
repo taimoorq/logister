@@ -9,6 +9,9 @@
           <code><%= @project.slug %></code>
           <span><%= @project.integration_label %></span>
           <span><%= @project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+          <% if @project.archived? %>
+            <span>Archived</span>
+          <% end %>
         </p>
       </div>
     </div>

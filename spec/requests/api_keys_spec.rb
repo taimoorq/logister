@@ -45,6 +45,17 @@ RSpec.describe "Api keys", type: :request do
         expect(key.project_id).to eq(project.id)
         expect(key.name).to eq("CI key")
       end
+
+      it "does not create keys for archived projects" do
+        archived_project = create(:project, :archived, user: users(:one))
+
+        expect {
+          post project_api_keys_path(archived_project), params: { api_key: { name: "Archived key" } }
+        }.not_to change(ApiKey, :count)
+
+        expect(response).to redirect_to(settings_project_path(archived_project))
+        expect(flash[:alert]).to include("Project is archived")
+      end
     end
 
     context "when signed in as shared member" do

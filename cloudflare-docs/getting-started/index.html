@@ -121,7 +121,8 @@
               <h2>Every setup begins with a project.</h2>
               <p>
                 In Logister, a project represents one monitored app or service. Each project has its own API keys,
-                settings, events, monitors, and integration guidance.
+                settings, events, monitors, and integration guidance. If a service is retired later, archive the project to
+                keep its history while removing it from active dashboards and project lists.
               </p>
             </section>
 
@@ -176,11 +177,12 @@
               <h2>Create the token your app will use.</h2>
               <p>
                 API keys are generated per project from project settings. The token is shown once at creation time,
-                so copy it into your environment or secret manager right away.
+                so copy it into your environment or secret manager right away. Archived projects cannot generate new
+                tokens, and archiving a project disables active tokens for that project.
               </p>
               <div class="note warn">
                 <h4>Important</h4>
-                <p>The token is not shown again after creation. Store it before you leave the settings page.</p>
+                <p>The token is not shown again after creation. Store it before you leave the settings page. If you restore an archived project and want it to send events again, generate a fresh token.</p>
               </div>
             </section>
 

@@ -7,6 +7,11 @@
       <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200 ml-2 align-middle">
         <%= @project.integration_label %>
       </span>
+      <% if @project.archived? %>
+        <span class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 border border-violet-200 ml-2 align-middle">
+          Archived
+        </span>
+      <% end %>
       <% if @project.owned_by?(current_user) %>
         <%= link_to "Edit", edit_project_path(@project), class: "ml-2 text-sm text-blue-600 hover:underline" %>
       <% end %>

@@ -29,6 +29,14 @@ class User < ApplicationRecord
     Project.accessible_to(self)
   end
 
+  def active_projects
+    accessible_projects.active
+  end
+
+  def archived_projects
+    accessible_projects.archived
+  end
+
   private
 
   def ensure_uuid

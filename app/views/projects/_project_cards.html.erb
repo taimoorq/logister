@@ -1,5 +1,6 @@
 <% projects = local_assigns.fetch(:projects) %>
 <% project_stats = local_assigns.fetch(:project_stats, {}) %>
+<% project_filter = local_assigns.fetch(:project_filter, "active") %>
 
 <section class="project-card-grid">
   <% if projects.any? %>
@@ -10,14 +11,19 @@
       <% all_groups = stats[:all_groups].to_i %>
       <% trend = Array(stats[:trend]) %>
       <% latest_event_at = stats[:latest_event_at] %>
-      <article class="project-card" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>" style="view-transition-name: <%= dom_id(project) %>; view-transition-class: project-card;">
+      <article class="project-card <%= "is-archived" if project.archived? %>" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>" style="view-transition-name: <%= dom_id(project) %>; view-transition-class: project-card;">
         <%= link_to project_path(project), class: "project-card-header", aria: { label: "Open #{project.name} inbox" } do %>
           <%= project_integration_icon(project) %>
           <span class="project-card-title-block">
             <span class="project-card-title"><%= project.name %></span>
             <span class="project-card-subtitle"><%= project.integration_label %></span>
           </span>
-          <span class="project-card-access"><%= project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+          <span class="project-card-badges">
+            <% if project.archived? %>
+              <span class="project-card-access project-card-archived-badge">Archived</span>
+            <% end %>
+            <span class="project-card-access"><%= project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+          </span>
         <% end %>
 
         <div class="project-card-chart">
@@ -57,7 +63,13 @@
     <% end %>
   <% else %>
     <div class="project-card-empty">
-      <p>No projects yet. Create your first project to start ingesting events from Ruby, .NET, Python, JavaScript, or CFML apps.</p>
+      <p>
+        <% if project_filter == "archived" %>
+          No archived projects yet. Archive a project when you want to keep its history without showing it as active.
+        <% else %>
+          No projects yet. Create your first project to start ingesting events from Ruby, .NET, Python, JavaScript, or CFML apps.
+        <% end %>
+      </p>
       <div class="project-card-empty-actions">
         <%= link_to "Create project", new_project_path, class: "btn-primary" %>
         <%= link_to "Browse docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "btn-ghost" %>

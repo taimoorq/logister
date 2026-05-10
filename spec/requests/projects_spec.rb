@@ -18,8 +18,9 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Ruby gem")
-        expect(response.body).to include("Apps watched")
+        expect(response.body).to include("Active apps")
         expect(response.body).to include("Activity 7d")
+        expect(response.body).to include("Active", "Archived", "All")
         expect(response.body).to include(">Docs<")
         expect(response.body).to include("documentation section")
         expect(response.body).to include("https://docs.logister.org/")
@@ -58,6 +59,25 @@ RSpec.describe "Projects", type: :request do
         expect(activity_link.text).to include("Activity 7d", "2", "View activity")
         expect(card.at_css(".project-card-line-chart")).to be_present
         expect(card.text).to include("No open errors")
+      end
+
+      it "hides archived projects from the default list and shows them from the archived filter" do
+        archived_project = create(:project, :archived, user: users(:one), name: "Resting App")
+
+        get projects_path
+
+        expect(response.body).not_to include("Resting App")
+
+        get projects_path(filter: "archived")
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Resting App", "Archived apps")
+
+        document = Nokogiri::HTML.parse(response.body)
+        card = document.css(".project-card.is-archived").find { |node| node.text.include?(archived_project.name) }
+
+        expect(card).to be_present
+        expect(card.text).to include("Archived")
       end
     end
 
@@ -802,6 +822,51 @@ RSpec.describe "Projects", type: :request do
           delete project_path(projects(:one))
         }.not_to change(Project, :count)
         expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+
+  describe "PATCH /projects/:uuid/archive" do
+    context "when owner" do
+      before { sign_in users(:one) }
+
+      it "archives the project and redirects to active projects" do
+        project = projects(:one)
+        api_key = api_keys(:one)
+
+        patch archive_project_path(project)
+
+        expect(response).to redirect_to(projects_path)
+        expect(project.reload).to be_archived
+        expect(api_key.reload.revoked_at).to be_present
+      end
+    end
+
+    context "when shared member" do
+      before { sign_in users(:two) }
+
+      it "returns 404 and does not archive" do
+        project = projects(:one)
+
+        patch archive_project_path(project)
+
+        expect(response).to have_http_status(:not_found)
+        expect(project.reload).not_to be_archived
+      end
+    end
+  end
+
+  describe "PATCH /projects/:uuid/restore" do
+    context "when owner" do
+      before { sign_in users(:one) }
+
+      it "restores an archived project" do
+        project = create(:project, :archived, user: users(:one))
+
+        patch restore_project_path(project)
+
+        expect(response).to redirect_to(project_path(project))
+        expect(project.reload).not_to be_archived
       end
     end
   end

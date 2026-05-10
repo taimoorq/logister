@@ -27,5 +27,9 @@ FactoryBot.define do
     trait :cfml do
       integration_kind { "cfml" }
     end
+
+    trait :archived do
+      archived_at { Time.current }
+    end
   end
 end

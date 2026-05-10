@@ -15,6 +15,7 @@ class ApiKey < ApplicationRecord
   validates :uuid, presence: true, uniqueness: true
   validates :name, presence: true
   validates :token_digest, presence: true, uniqueness: true
+  validate :project_must_be_active, on: :create
 
   def to_param
     uuid
@@ -35,7 +36,7 @@ class ApiKey < ApplicationRecord
   def self.authenticate(token)
     return nil if token.blank?
 
-    active.find_by(token_digest: digest(token))
+    active.joins(:project).merge(Project.active).find_by(token_digest: digest(token))
   end
 
   def self.digest(token)
@@ -61,5 +62,11 @@ class ApiKey < ApplicationRecord
 
   def token_prefix
     ENV.fetch("LOGISTER_API_KEY_PREFIX", DEFAULT_TOKEN_PREFIX)
+  end
+
+  def project_must_be_active
+    return unless project&.archived?
+
+    errors.add(:project, "is archived")
   end
 end

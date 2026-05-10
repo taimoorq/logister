@@ -26,12 +26,36 @@
     </div>
   </section>
 
+  <nav class="projects-filter-tabs" aria-label="Project status">
+    <%= link_to projects_path,
+                class: "projects-filter-tab #{"is-active" if @project_filter == "active"}",
+                aria: { current: ("page" if @project_filter == "active") } do %>
+      <%= app_icon(:check, css: "w-3.5 h-3.5") %>
+      <span>Active</span>
+      <strong><%= number_with_delimiter(@project_filter_counts.fetch(:active, 0)) %></strong>
+    <% end %>
+    <%= link_to projects_path(filter: "archived"),
+                class: "projects-filter-tab #{"is-active" if @project_filter == "archived"}",
+                aria: { current: ("page" if @project_filter == "archived") } do %>
+      <%= app_icon(:archive, css: "w-3.5 h-3.5") %>
+      <span>Archived</span>
+      <strong><%= number_with_delimiter(@project_filter_counts.fetch(:archived, 0)) %></strong>
+    <% end %>
+    <%= link_to projects_path(filter: "all"),
+                class: "projects-filter-tab #{"is-active" if @project_filter == "all"}",
+                aria: { current: ("page" if @project_filter == "all") } do %>
+      <%= app_icon(:all, css: "w-3.5 h-3.5") %>
+      <span>All</span>
+      <strong><%= number_with_delimiter(@project_filter_counts.fetch(:all, 0)) %></strong>
+    <% end %>
+  </nav>
+
   <section class="projects-overview-strip" aria-label="Project overview">
     <span class="project-overview-cell">
       <span class="project-overview-icon"><%= app_icon(:projects, css: "w-4 h-4") %></span>
       <span>
         <strong><%= number_with_delimiter(@projects_overview.fetch(:projects_count, 0)) %></strong>
-        <span>Apps watched</span>
+        <span><%= @project_filter == "archived" ? "Archived apps" : (@project_filter == "all" ? "Total apps" : "Active apps") %></span>
       </span>
     </span>
 
@@ -60,5 +84,5 @@
     </span>
   </section>
 
-  <%= render "project_cards", projects: @projects, project_stats: @project_stats %>
+  <%= render "project_cards", projects: @projects, project_stats: @project_stats, project_filter: @project_filter %>
 </div>

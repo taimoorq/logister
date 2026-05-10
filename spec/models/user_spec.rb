@@ -84,5 +84,14 @@ RSpec.describe User, type: :model do
       member = users(:two)
       expect(member.accessible_projects).to include(projects(:one))
     end
+
+    it "keeps archived projects accessible while splitting active and archived lists" do
+      user = users(:one)
+      archived_project = create(:project, :archived, user: user)
+
+      expect(user.accessible_projects).to include(archived_project)
+      expect(user.active_projects).not_to include(archived_project)
+      expect(user.archived_projects).to include(archived_project)
+    end
   end
 end

@@ -1,6 +1,12 @@
 <%= render "projects/header" %>
 
 <section class="space-y-6">
+  <% if @project.archived? %>
+    <div class="rounded-md border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+      This project is archived. Its data is still available here, but it is hidden from active dashboard and project views.
+    </div>
+  <% end %>
+
   <% if @project.owned_by?(current_user) %>
     <div class="flex flex-wrap items-center gap-2">
       <%= link_to edit_project_path(@project), class: "btn-ghost inline-flex items-center gap-2" do %>
@@ -69,12 +75,18 @@
       <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5" id="api-key-form">
         <turbo-frame id="project_api_keys">
           <h2 class="text-base font-bold text-slate-900 mb-3">API keys</h2>
-          <%= form_with model: [@project, ApiKey.new] do |f| %>
-            <div class="space-y-3 mb-4">
-              <%= f.label :name, "Key label", class: "form-label" %>
-              <%= f.text_field :name, required: true, placeholder: "production", class: "form-input" %>
+          <% if @project.archived? %>
+            <div class="rounded-lg bg-violet-50 border border-violet-200 px-4 py-3 text-sm text-violet-900 mb-4">
+              API tokens are disabled while this project is archived. Restore the project before generating a new token.
             </div>
-            <%= f.submit "Generate key", class: "btn-primary" %>
+          <% else %>
+            <%= form_with model: [@project, ApiKey.new] do |f| %>
+              <div class="space-y-3 mb-4">
+                <%= f.label :name, "Key label", class: "form-label" %>
+                <%= f.text_field :name, required: true, placeholder: "production", class: "form-input" %>
+              </div>
+              <%= f.submit "Generate key", class: "btn-primary" %>
+            <% end %>
           <% end %>
 
           <div id="api_key_new_token" class="mt-3">
@@ -149,15 +161,45 @@
       </article>
 
       <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2">
-        <h2 class="text-base font-bold text-slate-900 mb-2">Danger zone</h2>
-        <p class="text-slate-600 text-sm mb-3">
-          Deleting a project permanently removes its API keys, memberships, and event data.
-        </p>
-        <%= button_to "Delete project",
-                      project_path(@project),
-                      method: :delete,
-                      class: "btn-ghost text-red-600 border-red-300 hover:bg-red-50",
-                      form: { data: { turbo_confirm: "Delete this project permanently?" } } %>
+        <h2 class="text-base font-bold text-slate-900 mb-2">Project lifecycle</h2>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-1"><%= @project.archived? ? "Restore project" : "Archive project" %></h3>
+            <p class="text-slate-600 text-sm mb-3">
+              <% if @project.archived? %>
+                Restore this project when you want it to appear in active dashboards and project lists again.
+              <% else %>
+                Archive this project to keep its data while hiding it from active dashboards and project lists.
+              <% end %>
+            </p>
+            <% if @project.archived? %>
+              <%= button_to restore_project_path(@project),
+                            method: :patch,
+                            class: "btn-ghost inline-flex items-center gap-2" do %>
+                <%= app_icon(:check, css: "w-4 h-4") %><span>Restore project</span>
+              <% end %>
+            <% else %>
+              <%= button_to archive_project_path(@project),
+                            method: :patch,
+                            class: "btn-ghost inline-flex items-center gap-2",
+                            form: { data: { turbo_confirm: "Archive this project? Its data will be kept and hidden from active dashboards." } } do %>
+                <%= app_icon(:archive, css: "w-4 h-4") %><span>Archive project</span>
+              <% end %>
+            <% end %>
+          </div>
+
+          <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+            <h3 class="text-sm font-semibold text-red-900 mb-1">Delete project</h3>
+            <p class="text-red-800 text-sm mb-3">
+              Deleting a project permanently removes its API keys, memberships, and event data.
+            </p>
+            <%= button_to "Delete project",
+                          project_path(@project),
+                          method: :delete,
+                          class: "btn-ghost text-red-700 border-red-300 hover:bg-red-100",
+                          form: { data: { turbo_confirm: "Delete this project permanently?" } } %>
+          </div>
+        </div>
       </article>
     <% end %>
 
