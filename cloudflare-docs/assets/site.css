@@ -394,6 +394,36 @@ code, pre {
   padding: 0.16rem 0.38rem;
   border-radius: 0.45rem;
 }
+.infra-cell-title {
+  display: block;
+  font-weight: 750;
+  color: var(--text);
+}
+.infra-label {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.35rem;
+  padding: 0.14rem 0.48rem;
+  border: 1px solid rgba(30, 95, 145, 0.24);
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.infra-label-optional {
+  border-color: rgba(100, 116, 139, 0.28);
+  background: #f8fafc;
+  color: var(--muted-2);
+}
+.infra-label-recommended {
+  border-color: rgba(180, 83, 9, 0.28);
+  background: #fffbeb;
+  color: #92400e;
+}
 
 .code-block,
 .output-block {
