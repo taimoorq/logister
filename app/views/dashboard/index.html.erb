@@ -68,9 +68,10 @@
     </article>
   </section>
 
-  <section class="dashboard-explorer" data-controller="dashboard-explorer" aria-label="Cross-app event explorer">
-    <script type="application/json" data-dashboard-explorer-target="payload"><%= raw json_ld(@dashboard_explorer) %></script>
-
+  <section class="dashboard-explorer"
+           data-controller="dashboard-explorer"
+           data-dashboard-explorer-payload-value="<%= @dashboard_explorer.to_json %>"
+           aria-label="Cross-app event explorer">
     <div class="dashboard-explorer-header">
       <div>
         <p class="dashboard-kicker">Explorer</p>

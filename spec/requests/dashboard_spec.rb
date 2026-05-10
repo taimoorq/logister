@@ -53,9 +53,10 @@ RSpec.describe "Dashboard", type: :request do
 
         document = Nokogiri::HTML.parse(response.body)
         explorer = document.at_css("[data-controller='dashboard-explorer']")
-        payload = JSON.parse(explorer.at_css("script[data-dashboard-explorer-target='payload']").text)
+        payload = JSON.parse(explorer["data-dashboard-explorer-payload-value"])
 
         expect(explorer).to be_present
+        expect(explorer.at_css("script[data-dashboard-explorer-target='payload']")).to be_nil
         expect(payload["endpoint"]).to eq(dashboard_explorer_path)
         expect(payload["rows"]).to be_nil
         expect(document.css("[data-dashboard-explorer-target$='Chart']").size).to eq(4)

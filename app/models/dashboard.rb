@@ -128,7 +128,12 @@ class Dashboard
   def self.explorer_scope(project_ids, since:, event_type:, environment:)
     relation = IngestEvent.where(project_id: project_ids).where("occurred_at >= ?", since)
     relation = relation.where(event_type: event_type) if event_type.present? && IngestEvent.event_types.key?(event_type)
-    relation = relation.where("#{environment_expression} = ?", environment) if environment.present?
+    if environment.present?
+      relation = relation.where(
+        "COALESCE(NULLIF(context->>'environment', ''), 'unknown') = ?",
+        environment
+      )
+    end
     relation
   end
   private_class_method :explorer_scope

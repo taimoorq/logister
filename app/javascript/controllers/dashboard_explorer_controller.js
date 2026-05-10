@@ -13,7 +13,6 @@ const FALLBACK_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", 
 
 export default class extends Controller {
   static targets = [
-    "payload",
     "timelineChart",
     "eventTypeChart",
     "projectChart",
@@ -22,6 +21,9 @@ export default class extends Controller {
     "filters",
     "resetButton"
   ]
+  static values = {
+    payload: Object
+  }
 
   connect() {
     this.payload = this.readPayload()
@@ -63,11 +65,7 @@ export default class extends Controller {
   }
 
   readPayload() {
-    try {
-      return JSON.parse(this.payloadTarget.textContent)
-    } catch (_error) {
-      return { event_types: [], projects: [] }
-    }
+    return this.hasPayloadValue ? this.payloadValue : { event_types: [], projects: [] }
   }
 
   initializeCharts() {
