@@ -22,20 +22,20 @@ RSpec.describe Dashboard, type: :model do
         :events_by_type_last_24h,
         :open_error_groups_count,
         :monitor_status_counts,
-        :recent_event_ids,
+        :recent_context_event_ids,
         :recent_error_group_ids,
         :project_stats
       )
       expect(summary[:projects_count]).to be >= 1
       expect(summary[:events_by_type_last_24h]).to include("error", "log", "metric", "transaction", "check_in")
       expect(summary[:monitor_status_counts]).to include(:ok, :missed, :error)
-      expect(summary[:recent_event_ids]).to be_an(Array)
+      expect(summary[:recent_context_event_ids]).to be_an(Array)
       expect(summary[:project_stats]).to be_a(Hash)
     end
 
-    it "limits recent_event_ids to 20" do
+    it "limits recent_context_event_ids to 12" do
       summary = described_class.summary_for(project_ids)
-      expect(summary[:recent_event_ids].size).to be <= 20
+      expect(summary[:recent_context_event_ids].size).to be <= 12
     end
 
     it "returns dashboard-specific project stats without full project index aggregates" do
@@ -98,19 +98,6 @@ RSpec.describe Dashboard, type: :model do
     end
   end
 
-  describe ".cache_version" do
-    it "returns empty array when project_ids blank" do
-      expect(described_class.cache_version([])).to eq([])
-    end
-
-    it "returns array of cache version integers for project_ids" do
-      version = described_class.cache_version(project_ids)
-      expect(version).to be_an(Array)
-      expect(version.size).to eq(4)
-      expect(version).to all(be_a(Integer))
-    end
-  end
-
   describe ".empty_summary" do
     it "returns hash with zero counts and empty arrays" do
       h = described_class.empty_summary
@@ -119,7 +106,7 @@ RSpec.describe Dashboard, type: :model do
       expect(h[:events_last_24h]).to eq(0)
       expect(h[:open_error_groups_count]).to eq(0)
       expect(h[:monitor_status_counts]).to eq({ ok: 0, missed: 0, error: 0 })
-      expect(h[:recent_event_ids]).to eq([])
+      expect(h[:recent_context_event_ids]).to eq([])
       expect(h[:recent_error_group_ids]).to eq([])
       expect(h[:project_stats]).to eq({})
     end

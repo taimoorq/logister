@@ -1,4 +1,7 @@
 class ProjectsController < ApplicationController
+  PROJECT_OVERVIEW_CACHE_TTL = 30.seconds
+  PROJECT_STATS_CACHE_TTL = 45.seconds
+
   include ProjectInboxData
   include ProjectEventDetailData
   include ProjectScope
@@ -103,8 +106,8 @@ class ProjectsController < ApplicationController
   end
 
   def cached_project_stats(project_ids)
-    cache_key = [ "projects_stats", current_user.id, project_ids, Project.stats_cache_version(project_ids) ]
-    safe_cache_fetch(cache_key, expires_in: 45.seconds) { Project.stats_for(project_ids) }
+    cache_key = [ "projects_stats", current_user.id, project_ids, cache_time_bucket(PROJECT_STATS_CACHE_TTL) ]
+    safe_cache_fetch(cache_key, expires_in: PROJECT_STATS_CACHE_TTL) { Project.stats_for(project_ids) }
   end
 
   def projects_overview(projects, project_stats)
@@ -121,7 +124,10 @@ class ProjectsController < ApplicationController
   end
 
   def project_overview(project)
-    safe_cache_fetch([ "project", project.id, "overview", project_overview_cache_version(project) ], expires_in: 30.seconds) do
+    safe_cache_fetch(
+      [ "project", project.id, "overview", cache_time_bucket(PROJECT_OVERVIEW_CACHE_TTL) ],
+      expires_in: PROJECT_OVERVIEW_CACHE_TTL
+    ) do
       events = project.ingest_events
       events_last_24h = events.where("occurred_at >= ?", 24.hours.ago)
       monitors = project.check_in_monitors
@@ -135,18 +141,11 @@ class ProjectsController < ApplicationController
       {
         events_last_24h: events_last_24h.count,
         activity_events_last_24h: events_last_24h.where.not(event_type: IngestEvent.event_types[:error]).count,
-        latest_event_at: events.maximum(:occurred_at),
+        latest_event_at: Project.latest_event_at_by_project([ project.id ])[project.id],
         monitors_count: monitors.size,
         monitor_status_counts: monitor_status_counts,
         unhealthy_monitors_count: monitor_status_counts.fetch(:missed, 0) + monitor_status_counts.fetch(:error, 0)
       }
     end
-  end
-
-  def project_overview_cache_version(project)
-    [
-      project.ingest_events.maximum(:updated_at)&.utc&.to_i || 0,
-      project.check_in_monitors.maximum(:updated_at)&.utc&.to_i || 0
-    ]
   end
 end

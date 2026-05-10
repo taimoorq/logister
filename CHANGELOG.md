@@ -2,6 +2,26 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v0.1.8 - 2026-05-10
+
+### Added
+
+- Cross-app dashboard explorer powered by server-side aggregate endpoints, Stimulus, and vendored ECharts through the Rails asset pipeline.
+- Interactive Event mix filtering for the Needs attention feed, so users can switch between open errors and recent log, metric, transaction, or check-in context without leaving the dashboard.
+- A Logister-styled reset-password form that matches the sign-in, sign-up, forgot-password, and confirmation pages.
+
+### Changed
+
+- Reworked the dashboard layout so high-priority attention items, event mix, explorer slice totals, and project signals each have clearer space and mobile-friendly behavior.
+- Moved project counts into a bottom Project overview row beside Projects at a glance, tying the counts to the project shortcuts instead of crowding the top of the page.
+- Reduced dashboard data fan-out by serving chart data from bounded Rails aggregates and keeping client-side chart behavior focused on rendering and filtering.
+
+### Fixed
+
+- Added dashboard, project, and inbox database indexes for large event volumes, including inbox stage search, and removed expensive cache-version scans from dashboard/project overview loads.
+- Fixed dashboard chart rendering issues caused by stale assets, sparse timeline buckets, and Stimulus state collisions.
+- Hardened dashboard explorer filtering and JSON rendering to satisfy CI security checks while keeping self-hosted installs free of checked-in secrets.
+
 ## v0.1.7 - 2026-05-10
 
 ### Added

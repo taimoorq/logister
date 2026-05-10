@@ -25,6 +25,7 @@ RSpec.describe "Dashboard", type: :request do
 
       it "renders overview cards and compact project shortcuts" do
         project = projects(:one)
+        create(:ingest_event, :log, project: project, api_key: api_keys(:one), occurred_at: 30.minutes.ago)
 
         get dashboard_path
 
@@ -32,14 +33,24 @@ RSpec.describe "Dashboard", type: :request do
 
         document = Nokogiri::HTML.parse(response.body)
         project_row = document.css(".dashboard-project-row").find { |node| node.text.include?(project.name) }
+        project_overview = document.at_css(".dashboard-project-overview-grid")
 
         expect(document.at_css(".dashboard-page")).to be_present
-        expect(document.css(".dashboard-title-metrics > span").size).to eq(4)
+        expect(document.at_css(".dashboard-title-row .dashboard-title-metrics")).to be_nil
+        expect(project_overview).to be_present
+        expect(project_overview.css(".dashboard-title-metrics > span").size).to eq(4)
         expect(document.at_css(".projects-search input[aria-label='Search projects']")).to be_nil
-        expect(document.css(".dashboard-metric-card").size).to eq(4)
+        expect(project_overview.css(".dashboard-metric-card").size).to eq(4)
+        expect(project_overview.at_css(".dashboard-project-summary-panel")).to be_present
+        expect(project_overview.at_css(".dashboard-project-overview-main")).to be_present
         expect(document.at_css("a.projects-new-button")["href"]).to eq(new_project_path)
         expect(document.at_css("a[href='#{projects_path}']")).to be_present
-        expect(document.text).to include("Needs attention", "Event mix", "Recent activity", "Projects at a glance")
+        expect(document.text).to include("Needs attention", "Event mix", "Projects at a glance")
+        expect(document.text).not_to include("Recent activity")
+        expect(document.at_css("[data-controller='dashboard-attention']")).to be_present
+        expect(document.css(".dashboard-event-mix-row[data-dashboard-attention-target='filter']").size).to eq(Dashboard::EVENT_TYPE_ORDER.size)
+        expect(document.at_css(".dashboard-attention-row[data-event-type='error']")).to be_present
+        expect(document.at_css(".dashboard-attention-row-context")).to be_present
         expect(document.at_css(".project-card")).to be_nil
         expect(project_row).to be_present
         expect(project_row.at_css(".dashboard-project-main")["href"]).to eq(project_path(project))
@@ -57,6 +68,9 @@ RSpec.describe "Dashboard", type: :request do
 
         expect(explorer).to be_present
         expect(explorer.at_css("script[data-dashboard-explorer-target='payload']")).to be_nil
+        expect(explorer.at_css(".dashboard-explorer-slice[aria-label='Current explorer slice']")).to be_present
+        expect(explorer.at_css(".dashboard-explorer-summary[data-dashboard-explorer-target='summary']")).to be_present
+        expect(explorer.at_css(".dashboard-explorer-filters[data-dashboard-explorer-target='filters']")).to be_present
         expect(payload["endpoint"]).to eq(dashboard_explorer_path)
         expect(payload["window_days"]).to eq(Dashboard::EXPLORER_WINDOW_DAYS)
         expect(payload["rows"]).to be_nil

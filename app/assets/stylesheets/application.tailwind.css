@@ -348,10 +348,10 @@
     @apply gap-2;
   }
   .dashboard-title-metrics {
-    @apply grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-4 lg:col-span-2;
+    @apply grid grid-cols-2 gap-1.5 border-t border-slate-100 pt-2 sm:grid-cols-4;
   }
   .dashboard-title-metrics > span {
-    @apply min-w-0 border-l-2 border-slate-300 bg-transparent px-3 py-1.5;
+    @apply min-w-0 rounded-md border border-l-2 border-slate-200 bg-white px-2.5 py-1.5 shadow-sm;
   }
   .dashboard-title-metrics > span:nth-child(1) {
     @apply border-l-blue-500;
@@ -366,17 +366,17 @@
     @apply border-l-violet-500;
   }
   .dashboard-title-metrics strong {
-    @apply block truncate text-base font-semibold text-slate-900;
+    @apply block truncate text-sm font-semibold leading-tight text-slate-900 sm:text-base;
   }
   .dashboard-title-metrics span span {
-    @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
+    @apply mt-0.5 block truncate text-[10px] font-semibold uppercase text-slate-500 sm:text-[11px];
     letter-spacing: 0;
   }
   .dashboard-metric-grid {
-    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4;
+    @apply grid grid-cols-2 gap-2 md:grid-cols-4;
   }
   .dashboard-metric-card {
-    @apply flex min-h-28 flex-col rounded-md border-0 border-l-4 bg-slate-50 p-3 text-slate-600 no-underline ring-1 ring-slate-200 transition-colors;
+    @apply flex min-h-24 flex-col rounded-md border-0 border-l-4 bg-slate-50 p-2.5 text-slate-600 no-underline ring-1 ring-slate-200 transition-colors sm:p-3;
   }
   .dashboard-metric-grid .dashboard-metric-card:nth-child(1) {
     @apply border-l-blue-500 bg-blue-50;
@@ -394,17 +394,17 @@
     @apply ring-slate-300 brightness-[0.98];
   }
   .dashboard-metric-icon {
-    @apply mb-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/80 text-slate-600 ring-1 ring-slate-200;
+    @apply mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/80 text-slate-600 ring-1 ring-slate-200 sm:h-8 sm:w-8;
   }
   .dashboard-metric-label {
-    @apply text-xs font-semibold uppercase text-slate-400;
+    @apply truncate text-[10px] font-semibold uppercase text-slate-400 sm:text-xs;
     letter-spacing: 0;
   }
   .dashboard-metric-card strong {
-    @apply mt-1 text-2xl font-bold leading-tight text-slate-900;
+    @apply mt-0.5 text-xl font-bold leading-tight text-slate-900 sm:text-2xl;
   }
   .dashboard-metric-card > span:last-child {
-    @apply mt-auto pt-2 text-sm text-slate-500;
+    @apply mt-auto truncate pt-1 text-xs text-slate-500 sm:text-sm;
   }
   .dashboard-metric-state-ok .dashboard-metric-icon {
     @apply bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200;
@@ -424,11 +424,33 @@
   .dashboard-explorer-header p:not(.dashboard-kicker) {
     @apply mt-1 text-sm text-slate-500;
   }
-  .dashboard-explorer-actions {
-    @apply flex flex-col gap-2 lg:items-end;
+  .dashboard-explorer-workbench {
+    @apply mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start;
+  }
+  .dashboard-explorer-main {
+    @apply min-w-0 xl:order-1;
+  }
+  .dashboard-explorer-slice {
+    @apply min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3 xl:sticky xl:top-[5.2rem] xl:order-2;
+  }
+  .dashboard-explorer-slice-header {
+    @apply flex items-start justify-between gap-3;
+  }
+  .dashboard-explorer-slice-header h3 {
+    @apply text-sm font-semibold text-slate-900;
+  }
+  .dashboard-explorer-filter-panel {
+    @apply mt-3 border-t border-slate-200 pt-3;
+  }
+  .dashboard-explorer-filter-heading {
+    @apply mb-2 flex items-center justify-between gap-2;
+  }
+  .dashboard-explorer-filter-heading span {
+    @apply text-[11px] font-semibold uppercase text-slate-400;
+    letter-spacing: 0;
   }
   .dashboard-explorer-filters {
-    @apply flex min-h-9 flex-wrap items-center gap-2;
+    @apply flex min-h-8 flex-wrap items-center gap-2;
   }
   .dashboard-explorer-filter,
   .dashboard-explorer-reset {
@@ -448,20 +470,20 @@
     @apply border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .dashboard-explorer-summary {
-    @apply mt-4 grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-slate-50;
+    @apply mt-3 grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-white xl:grid-cols-1;
   }
   .dashboard-explorer-summary span {
-    @apply min-w-0 border-r border-slate-200 px-3 py-2 text-slate-500 last:border-r-0;
+    @apply min-w-0 border-r border-slate-200 px-3 py-2 text-slate-500 last:border-r-0 xl:border-b xl:border-r-0 xl:last:border-b-0;
   }
   .dashboard-explorer-summary strong {
-    @apply block truncate text-lg font-semibold text-slate-900;
+    @apply block truncate text-lg font-semibold leading-tight text-slate-900;
   }
   .dashboard-explorer-summary span span {
     @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
     letter-spacing: 0;
   }
   .dashboard-explorer-layout {
-    @apply mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3;
+    @apply grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3;
   }
   .dashboard-explorer-card {
     @apply min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3 shadow-sm;
@@ -488,8 +510,30 @@
   .dashboard-grid {
     @apply grid grid-cols-1 gap-5 xl:grid-cols-2;
   }
+  .dashboard-priority-grid {
+    @apply grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start;
+  }
+  .dashboard-project-overview-grid {
+    @apply grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start;
+  }
   .dashboard-panel {
     @apply overflow-visible bg-transparent;
+  }
+  .dashboard-attention-panel {
+    @apply min-w-0;
+  }
+  .dashboard-event-mix-panel {
+    @apply min-w-0 xl:sticky xl:top-[5.2rem];
+  }
+  .dashboard-project-overview-main,
+  .dashboard-project-summary-panel {
+    @apply min-w-0;
+  }
+  .dashboard-project-summary-panel .dashboard-title-metrics {
+    @apply border-t-0 pt-0 sm:grid-cols-2;
+  }
+  .dashboard-project-summary-panel .dashboard-metric-grid {
+    @apply mt-3 grid-cols-2 md:grid-cols-2;
   }
   .dashboard-panel-wide {
     @apply xl:col-span-2;
@@ -507,24 +551,67 @@
     @apply text-sm font-semibold text-blue-600 no-underline hover:text-blue-700;
   }
   .dashboard-attention-list,
-  .dashboard-activity-list,
   .dashboard-project-list {
     @apply overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm divide-y divide-slate-100;
   }
   .dashboard-attention-row {
-    @apply flex flex-col gap-3 border-l-2 border-l-red-400 px-4 py-3 text-slate-700 no-underline hover:bg-red-50 sm:flex-row sm:items-center sm:justify-between;
+    @apply grid grid-cols-1 gap-3 border-l-2 border-l-red-400 px-4 py-3 text-slate-700 md:grid-cols-[minmax(0,1fr)_auto] md:items-center;
+  }
+  .dashboard-attention-row[hidden] {
+    @apply hidden;
+  }
+  .dashboard-attention-row-context {
+    @apply border-l-blue-400;
+  }
+  .dashboard-attention-main {
+    @apply min-w-0;
+  }
+  .dashboard-attention-title-row {
+    @apply flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center;
   }
   .dashboard-attention-title {
-    @apply block truncate text-sm font-semibold text-slate-900;
+    @apply block min-w-0 truncate text-sm font-semibold text-slate-900 no-underline hover:text-blue-700;
   }
   .dashboard-attention-meta {
     @apply mt-1 block truncate text-xs text-slate-500;
   }
-  .dashboard-attention-side {
-    @apply flex shrink-0 items-baseline gap-2 text-sm text-slate-500 sm:flex-col sm:items-end sm:gap-0;
+  .dashboard-attention-chip {
+    @apply inline-flex w-fit items-center rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-semibold uppercase text-red-800;
   }
-  .dashboard-attention-side strong {
-    @apply text-lg font-semibold text-red-700;
+  .dashboard-attention-latest {
+    @apply mt-2 line-clamp-2 text-sm text-slate-600;
+  }
+  .dashboard-attention-latest span {
+    @apply mr-1 text-[11px] font-semibold uppercase text-slate-400;
+    letter-spacing: 0;
+  }
+  .dashboard-attention-side {
+    @apply grid gap-2 md:w-[21rem];
+  }
+  .dashboard-attention-stats {
+    @apply grid grid-cols-3 gap-1 overflow-hidden rounded-md border border-slate-200 bg-slate-50;
+  }
+  .dashboard-attention-stats-compact {
+    @apply grid-cols-2;
+  }
+  .dashboard-attention-stats > span {
+    @apply min-w-0 border-r border-slate-200 px-2 py-1.5 last:border-r-0;
+  }
+  .dashboard-attention-stats strong {
+    @apply block truncate text-sm font-semibold text-slate-900;
+  }
+  .dashboard-attention-stats span span {
+    @apply mt-0.5 block truncate text-[10px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .dashboard-attention-actions {
+    @apply flex flex-wrap justify-start gap-1 md:justify-end;
+  }
+  .dashboard-attention-action {
+    @apply inline-flex h-7 items-center rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600 no-underline hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
+  }
+  .dashboard-attention-empty[hidden] {
+    @apply hidden;
   }
   .dashboard-empty-state {
     @apply rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500;
@@ -536,7 +623,13 @@
     @apply mt-1 block;
   }
   .dashboard-event-mix {
-    @apply space-y-3 rounded-md bg-slate-900 px-4 py-4 shadow-sm ring-1 ring-slate-800;
+    @apply space-y-2 rounded-md bg-slate-900 px-3 py-3 shadow-sm ring-1 ring-slate-800;
+  }
+  .dashboard-event-mix-row {
+    @apply block w-full rounded-md border border-transparent px-2 py-2 text-left transition-colors hover:bg-white/5;
+  }
+  .dashboard-event-mix-row.is-active {
+    @apply border-blue-300/40 bg-blue-900/40;
   }
   .dashboard-event-mix-label {
     @apply mb-1 flex items-center justify-between gap-3 text-sm;
@@ -567,18 +660,6 @@
   }
   .dashboard-event-badge-check-in {
     @apply border-blue-200 bg-blue-50 text-blue-800;
-  }
-  .dashboard-activity-row {
-    @apply flex items-start gap-3 px-4 py-3 text-slate-700 no-underline hover:bg-slate-50;
-  }
-  .dashboard-activity-main {
-    @apply min-w-0 flex-1;
-  }
-  .dashboard-activity-main strong {
-    @apply block truncate text-sm font-semibold text-slate-900;
-  }
-  .dashboard-activity-main span {
-    @apply mt-1 block truncate text-xs text-slate-500;
   }
   .dashboard-project-row {
     @apply grid grid-cols-1 gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center;

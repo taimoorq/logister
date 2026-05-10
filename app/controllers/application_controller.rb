@@ -31,4 +31,8 @@ class ApplicationController < ActionController::Base
     Rails.logger.warn("cache fetch failed key=#{key.inspect}: #{e.class} #{e.message}")
     block.call
   end
+
+  def cache_time_bucket(duration)
+    Time.current.to_i / duration.to_i
+  end
 end

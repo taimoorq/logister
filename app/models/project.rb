@@ -85,7 +85,7 @@ class Project < ApplicationRecord
       stats[pid][:activity_events] = count
     end
 
-    project_events.group(:project_id).maximum(:occurred_at).each do |pid, occurred_at|
+    latest_event_at_by_project(project_ids).each do |pid, occurred_at|
       stats[pid][:latest_event_at] = occurred_at
     end
 
@@ -103,13 +103,31 @@ class Project < ApplicationRecord
     stats
   end
 
-  def self.stats_cache_version(project_ids)
-    return [] if project_ids.blank?
+  def self.latest_event_at_by_project(project_ids)
+    ids = Array(project_ids).filter_map { |project_id| Integer(project_id, exception: false) }.uniq
+    return {} if ids.blank?
 
-    [
-      ErrorGroup.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0,
-      IngestEvent.where(project_id: project_ids).maximum(:updated_at)&.utc&.to_i || 0
-    ]
+    sql = sanitize_sql_array([
+      <<~SQL.squish,
+        SELECT requested_projects.project_id, latest_events.occurred_at
+        FROM unnest(ARRAY[?]::bigint[]) AS requested_projects(project_id)
+        LEFT JOIN LATERAL (
+          SELECT occurred_at
+          FROM ingest_events
+          WHERE ingest_events.project_id = requested_projects.project_id
+          ORDER BY occurred_at DESC
+          LIMIT 1
+        ) latest_events ON TRUE
+      SQL
+      ids
+    ])
+
+    connection.exec_query(sql).each_with_object({}) do |row, latest_events|
+      occurred_at = row["occurred_at"]
+      next if occurred_at.blank?
+
+      latest_events[row["project_id"].to_i] = occurred_at
+    end
   end
 
   private

@@ -1,4 +1,5 @@
 class DashboardController < ApplicationController
+  DASHBOARD_CACHE_TTL = 30.seconds
   MAX_EXPLORER_ENVIRONMENT_FILTER_LENGTH = 80
 
   before_action :authenticate_user!
@@ -9,8 +10,8 @@ class DashboardController < ApplicationController
     project_ids = @projects.map(&:id)
 
     summary = safe_cache_fetch(
-      [ "dashboard_summary", current_user.id, project_ids, Dashboard.cache_version(project_ids) ],
-      expires_in: 30.seconds
+      [ "dashboard_summary", current_user.id, project_ids, cache_time_bucket(DASHBOARD_CACHE_TTL) ],
+      expires_in: DASHBOARD_CACHE_TTL
     ) { Dashboard.summary_for(project_ids) }
 
     @project_stats = summary[:project_stats]
@@ -26,7 +27,7 @@ class DashboardController < ApplicationController
     @monitors_count = summary[:monitors_count]
     @monitor_status_counts = summary[:monitor_status_counts]
     @unhealthy_monitors_count = @monitor_status_counts.fetch(:missed, 0) + @monitor_status_counts.fetch(:error, 0)
-    @recent_events = ordered_records(IngestEvent.includes(:project).where(id: summary[:recent_event_ids]), summary[:recent_event_ids]).first(8)
+    @recent_context_events = ordered_records(IngestEvent.includes(:project).where(id: summary[:recent_context_event_ids]), summary[:recent_context_event_ids])
     @recent_error_groups = ordered_records(ErrorGroup.includes(:project, :latest_event).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
     @project_summaries = ranked_project_summaries(@projects, @project_stats).first(6)
     @dashboard_explorer = dashboard_explorer_config(@projects)
@@ -37,8 +38,8 @@ class DashboardController < ApplicationController
     project_ids = projects.map(&:id)
     filters = dashboard_explorer_filters(project_ids)
     explorer = safe_cache_fetch(
-      [ "dashboard_explorer", current_user.id, project_ids, filters, Dashboard.cache_version(project_ids) ],
-      expires_in: 30.seconds
+      [ "dashboard_explorer", current_user.id, project_ids, filters, cache_time_bucket(DASHBOARD_CACHE_TTL) ],
+      expires_in: DASHBOARD_CACHE_TTL
     ) { Dashboard.explorer_for(project_ids, **filters) }
 
     render json: dashboard_explorer_response(projects, explorer)

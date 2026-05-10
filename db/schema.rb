@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_154000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_10_161000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -106,6 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_154000) do
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index "lower((COALESCE(subtitle, ''::character varying))::text) gin_trgm_ops", name: "idx_error_groups_lower_subtitle_trgm", using: :gin
     t.index "lower((fingerprint)::text) gin_trgm_ops", name: "idx_error_groups_lower_fingerprint_trgm", using: :gin
+    t.index "lower((stage)::text) gin_trgm_ops", name: "idx_error_groups_lower_stage_trgm", using: :gin
     t.index "lower((title)::text) gin_trgm_ops", name: "idx_error_groups_lower_title_trgm", using: :gin
     t.index ["archived_at"], name: "index_error_groups_on_archived_at"
     t.index ["ignored_at"], name: "index_error_groups_on_ignored_at"

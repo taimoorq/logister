@@ -141,17 +141,18 @@ RSpec.describe Project, type: :model do
     end
   end
 
-  describe ".stats_cache_version" do
-    it "returns empty array when project_ids blank" do
-      expect(described_class.stats_cache_version([])).to eq([])
-    end
+  describe ".latest_event_at_by_project" do
+    it "returns the newest event time for each project without entries for quiet projects" do
+      loud_project = create(:project, user: users(:one))
+      quiet_project = create(:project, user: users(:one))
+      api_key = create(:api_key, project: loud_project, user: users(:one))
+      create(:ingest_event, :log, project: loud_project, api_key: api_key, occurred_at: 2.days.ago)
+      latest = create(:ingest_event, :transaction, project: loud_project, api_key: api_key, occurred_at: 1.hour.ago)
 
-    it "returns array of two integers for project_ids" do
-      ids = [ projects(:one).id ]
-      version = described_class.stats_cache_version(ids)
-      expect(version).to be_an(Array)
-      expect(version.size).to eq(2)
-      expect(version).to all(be_a(Integer))
+      latest_events = described_class.latest_event_at_by_project([ loud_project.id, quiet_project.id, "not-an-id" ])
+
+      expect(latest_events.keys).to contain_exactly(loud_project.id)
+      expect(latest_events[loud_project.id]).to be_within(1.second).of(latest.occurred_at)
     end
   end
 end
