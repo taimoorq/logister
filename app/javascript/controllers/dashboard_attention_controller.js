@@ -20,7 +20,7 @@ export default class extends Controller {
 
   filter(event) {
     event.preventDefault()
-    this.applyFilter(event.currentTarget.dataset.eventType || "error")
+    this.transition(() => this.applyFilter(event.currentTarget.dataset.eventType || "error"))
   }
 
   applyFilter(eventType) {
@@ -60,5 +60,15 @@ export default class extends Controller {
     } else {
       this.subtitleTarget.textContent = `${visibleCount} recent ${label.toLowerCase()} ${visibleCount === 1 ? "event" : "events"} across apps`
     }
+  }
+
+  transition(callback) {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (reduceMotion || typeof document.startViewTransition !== "function") {
+      callback()
+      return
+    }
+
+    document.startViewTransition(callback)
   }
 }
