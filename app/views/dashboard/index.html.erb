@@ -1,25 +1,188 @@
-<div data-controller="project-search" class="projects-page">
-  <section class="projects-command-row">
-    <div class="projects-search">
-      <span class="projects-search-icon"><%= app_icon(:search, css: "w-4 h-4") %></span>
-      <input type="search" placeholder="Search projects" aria-label="Search projects"
-             class="form-input projects-search-input"
-             data-action="input->project-search#filter">
-    </div>
-
-    <%= link_to new_project_path, class: "projects-new-button" do %>
-      <%= app_icon(:plus, css: "w-4 h-4") %>
-      <span>New project</span>
-    <% end %>
-  </section>
-
-  <section class="projects-title-row">
+<div class="dashboard-page">
+  <section class="dashboard-title-row">
     <div>
-      <h1>Projects</h1>
-      <p><%= pluralize(@projects_count, "project") %> · <%= pluralize(@events_last_24h, "event") %> in the last 24 hours</p>
+      <p class="dashboard-kicker">Overview</p>
+      <h1>All apps</h1>
+      <p><%= pluralize(@active_projects_count, "active project") %> · <%= pluralize(@events_last_24h, "event") %> in the last 24 hours</p>
     </div>
-    <%= link_to "Manage projects", projects_path, class: "projects-secondary-link" %>
+
+    <div class="dashboard-action-row">
+      <%= link_to projects_path, class: "projects-secondary-button" do %>
+        <%= app_icon(:projects, css: "w-4 h-4") %>
+        <span>All projects</span>
+      <% end %>
+      <%= link_to new_project_path, class: "projects-new-button" do %>
+        <%= app_icon(:plus, css: "w-4 h-4") %>
+        <span>New project</span>
+      <% end %>
+    </div>
   </section>
 
-  <%= render "projects/project_cards", projects: @projects, project_stats: @project_stats %>
+  <section class="dashboard-metric-grid" aria-label="Account-wide status">
+    <%= link_to projects_path, class: "dashboard-metric-card dashboard-metric-link" do %>
+      <span class="dashboard-metric-icon"><%= app_icon(:projects, css: "w-5 h-5") %></span>
+      <span class="dashboard-metric-label">Apps watched</span>
+      <strong><%= @projects_count %></strong>
+      <span><%= pluralize(@quiet_projects_count, "quiet app") %></span>
+    <% end %>
+
+    <article class="dashboard-metric-card">
+      <span class="dashboard-metric-icon"><%= app_icon(:chart, css: "w-5 h-5") %></span>
+      <span class="dashboard-metric-label">Events today</span>
+      <strong><%= number_with_delimiter(@events_last_24h) %></strong>
+      <span><%= pluralize(@events_by_type_last_24h.fetch("error", 0), "error event") %></span>
+    </article>
+
+    <%= link_to(@recent_error_groups.first ? project_path(@recent_error_groups.first.project, group_uuid: @recent_error_groups.first.uuid) : projects_path,
+                class: "dashboard-metric-card dashboard-metric-link #{dashboard_metric_state_class(@open_error_groups_count)}") do %>
+      <span class="dashboard-metric-icon"><%= app_icon(:warning, css: "w-5 h-5") %></span>
+      <span class="dashboard-metric-label">Errors for review</span>
+      <strong><%= @open_error_groups_count %></strong>
+      <span><%= pluralize(@projects_with_open_errors_count, "affected app") %></span>
+    <% end %>
+
+    <article class="dashboard-metric-card <%= dashboard_metric_state_class(@unhealthy_monitors_count) %>">
+      <span class="dashboard-metric-icon"><%= app_icon(:check, css: "w-5 h-5") %></span>
+      <span class="dashboard-metric-label">Monitor issues</span>
+      <strong><%= @unhealthy_monitors_count %></strong>
+      <span><%= pluralize(@monitors_count, "monitor") %> tracked</span>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="dashboard-panel dashboard-panel-wide">
+      <div class="dashboard-panel-header">
+        <div>
+          <h2>Needs attention</h2>
+          <p><%= pluralize(@new_error_groups_last_24h, "new error group") %> first seen in the last 24 hours</p>
+        </div>
+        <%= link_to "Projects", projects_path, class: "dashboard-panel-link" %>
+      </div>
+
+      <% if @recent_error_groups.any? %>
+        <div class="dashboard-attention-list">
+          <% @recent_error_groups.each do |group| %>
+            <%= link_to project_path(group.project, group_uuid: group.uuid), class: "dashboard-attention-row" do %>
+              <span class="dashboard-attention-main">
+                <span class="dashboard-attention-title"><%= group.title %></span>
+                <span class="dashboard-attention-meta"><%= group.project.name %> · <%= group.subtitle.presence || group.stage %></span>
+              </span>
+              <span class="dashboard-attention-side">
+                <strong><%= number_with_delimiter(group.occurrence_count) %></strong>
+                <span><%= group.last_seen_at.present? ? "#{time_ago_in_words(group.last_seen_at)} ago" : "No activity" %></span>
+              </span>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="dashboard-empty-state">
+          <strong>No open error groups</strong>
+          <span>Across all accessible apps.</span>
+        </div>
+      <% end %>
+    </article>
+
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <h2>Event mix</h2>
+          <p>Last 24 hours</p>
+        </div>
+      </div>
+      <% max_event_count = @events_by_type_last_24h.values.map(&:to_i).max.to_i %>
+      <div class="dashboard-event-mix">
+        <% Dashboard::EVENT_TYPE_ORDER.each do |event_type| %>
+          <% count = @events_by_type_last_24h.fetch(event_type, 0).to_i %>
+          <% width = max_event_count.positive? ? ((count.to_f / max_event_count) * 100).round : 0 %>
+          <div class="dashboard-event-mix-row">
+            <div class="dashboard-event-mix-label">
+              <span class="<%= dashboard_event_badge_class(event_type) %>"><%= dashboard_event_type_label(event_type) %></span>
+              <strong><%= number_with_delimiter(count) %></strong>
+            </div>
+            <div class="dashboard-event-bar" aria-hidden="true">
+              <span style="width: <%= width %>%"></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </article>
+
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <h2>Recent activity</h2>
+          <p>Newest events across apps</p>
+        </div>
+      </div>
+
+      <% if @recent_events.any? %>
+        <div class="dashboard-activity-list">
+          <% @recent_events.each do |event| %>
+            <%= link_to project_event_path(event.project, event), class: "dashboard-activity-row" do %>
+              <span class="<%= dashboard_event_badge_class(event.event_type) %>"><%= dashboard_event_type_label(event.event_type) %></span>
+              <span class="dashboard-activity-main">
+                <strong><%= event.message.to_s.lines.first.to_s.strip.presence || "(untitled event)" %></strong>
+                <span><%= event.project.name %> · <%= event.occurred_at.present? ? "#{time_ago_in_words(event.occurred_at)} ago" : "Unknown time" %></span>
+              </span>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="dashboard-empty-state">
+          <strong>No events yet</strong>
+          <span>Create an API key and send your first event.</span>
+        </div>
+      <% end %>
+    </article>
+
+    <article class="dashboard-panel dashboard-panel-wide">
+      <div class="dashboard-panel-header">
+        <div>
+          <h2>Projects at a glance</h2>
+          <p>Compact shortcuts into the apps that need the next look</p>
+        </div>
+        <%= link_to "View all", projects_path, class: "dashboard-panel-link" %>
+      </div>
+
+      <% if @project_summaries.any? %>
+        <div class="dashboard-project-list">
+          <% @project_summaries.each do |project| %>
+            <% stats = @project_stats[project.id] || { open_groups: 0, activity_events: 0, latest_event_at: nil } %>
+            <div class="dashboard-project-row" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>">
+              <%= link_to project_path(project), class: "dashboard-project-main" do %>
+                <%= project_integration_icon(project) %>
+                <span>
+                  <strong><%= project.name %></strong>
+                  <span><%= project.integration_label %> · <%= project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+                </span>
+              <% end %>
+              <div class="dashboard-project-stats">
+                <%= link_to project_path(project, filter: "unresolved") do %>
+                  <strong><%= stats.fetch(:open_groups, 0).to_i %></strong>
+                  <span>Open errors</span>
+                <% end %>
+                <%= link_to activity_project_path(project) do %>
+                  <strong><%= stats.fetch(:activity_events, 0).to_i %></strong>
+                  <span>Activity</span>
+                <% end %>
+                <span>
+                  <strong><%= stats[:latest_event_at].present? ? "#{time_ago_in_words(stats[:latest_event_at])} ago" : "--" %></strong>
+                  <span>Latest event</span>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="dashboard-empty-state">
+          <strong>No projects yet</strong>
+          <span>Create a project to start ingesting app events.</span>
+          <div class="project-card-empty-actions mt-4">
+            <%= link_to "Create project", new_project_path, class: "btn-primary" %>
+            <%= link_to "Browse docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "btn-ghost" %>
+          </div>
+        </div>
+      <% end %>
+    </article>
+  </section>
 </div>

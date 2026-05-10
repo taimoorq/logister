@@ -2,6 +2,25 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v0.1.7 - 2026-05-10
+
+### Added
+
+- Project error email notifications through Amazon SES, including first-occurrence alerts and daily or weekly digest preferences per project.
+- Branded HTML and plain-text error emails with project, environment, release, occurrence, and triage links for self-hosted installs.
+- Product, self-hosting, and privacy documentation updates that cover the current deployment and notification setup.
+
+### Changed
+
+- Redesigned the dashboard overview around account-wide reliability signals, recent activity, event mix, monitor health, and compact project links.
+- Switched outbound email configuration away from the old SendGrid-specific adapter and onto standard Rails SMTP settings for SES-backed delivery.
+- Consolidated CI, release, and Fly deploy checks so successful production deploys publish the newest changelog entry as the latest GitHub release.
+
+### Fixed
+
+- Hardened Fly deploys around release commands, worker sizing, health checks, and serialized machine updates.
+- Adjusted CI gating so deploys wait for the required app checks and GitHub's default CodeQL setup before publishing a release.
+
 ## v0.1.6 - 2026-05-01
 
 ### Added

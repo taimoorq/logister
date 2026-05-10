@@ -18,10 +18,17 @@ RSpec.describe Dashboard, type: :model do
         :projects_count,
         :api_keys_count,
         :events_last_24h,
+        :active_project_ids_last_24h,
+        :events_by_type_last_24h,
+        :open_error_groups_count,
+        :monitor_status_counts,
         :recent_event_ids,
+        :recent_error_group_ids,
         :error_event_ids
       )
       expect(summary[:projects_count]).to be >= 1
+      expect(summary[:events_by_type_last_24h]).to include("error", "log", "metric", "transaction", "check_in")
+      expect(summary[:monitor_status_counts]).to include(:ok, :missed, :error)
       expect(summary[:recent_event_ids]).to be_an(Array)
       expect(summary[:error_event_ids]).to be_an(Array)
     end
@@ -37,10 +44,10 @@ RSpec.describe Dashboard, type: :model do
       expect(described_class.cache_version([])).to eq([])
     end
 
-    it "returns array of two integers for project_ids" do
+    it "returns array of cache version integers for project_ids" do
       version = described_class.cache_version(project_ids)
       expect(version).to be_an(Array)
-      expect(version.size).to eq(2)
+      expect(version.size).to eq(4)
       expect(version).to all(be_a(Integer))
     end
   end
@@ -51,7 +58,10 @@ RSpec.describe Dashboard, type: :model do
       expect(h[:projects_count]).to eq(0)
       expect(h[:api_keys_count]).to eq(0)
       expect(h[:events_last_24h]).to eq(0)
+      expect(h[:open_error_groups_count]).to eq(0)
+      expect(h[:monitor_status_counts]).to eq({ ok: 0, missed: 0, error: 0 })
       expect(h[:recent_event_ids]).to eq([])
+      expect(h[:recent_error_group_ids]).to eq([])
       expect(h[:error_event_ids]).to eq([])
     end
   end

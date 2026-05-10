@@ -23,7 +23,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(response.body).to include(projects(:one).name)
       end
 
-      it "renders project cards with inbox headers and clickable counts" do
+      it "renders overview cards and compact project shortcuts" do
         project = projects(:one)
 
         get dashboard_path
@@ -31,19 +31,20 @@ RSpec.describe "Dashboard", type: :request do
         expect(response).to have_http_status(:success)
 
         document = Nokogiri::HTML.parse(response.body)
-        card = document.css(".project-card").find { |node| node.text.include?(project.name) }
+        project_row = document.css(".dashboard-project-row").find { |node| node.text.include?(project.name) }
 
-        expect(document.at_css(".projects-page")).to be_present
-        expect(document.at_css(".projects-search input[aria-label='Search projects']")).to be_present
+        expect(document.at_css(".dashboard-page")).to be_present
+        expect(document.at_css(".projects-search input[aria-label='Search projects']")).to be_nil
+        expect(document.css(".dashboard-metric-card").size).to eq(4)
         expect(document.at_css("a.projects-new-button")["href"]).to eq(new_project_path)
-        expect(card).to be_present
-        expect(card.at_css(".project-card-header")["href"]).to eq(project_path(project))
-        expect(card.at_css(".project-type-icon-ruby use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-ruby\z})
-        expect(card.at_css(".project-card-health")).to be_nil
-        expect(card.text).not_to include("Session stability", "User stability", "Performance score")
-        expect(card.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")).to be_present
-        expect(card.at_css("a[href='#{project_path(project, filter: 'all')}']")).to be_present
-        expect(card.at_css("a[href='#{activity_project_path(project)}']")).to be_present
+        expect(document.at_css("a[href='#{projects_path}']")).to be_present
+        expect(document.text).to include("Needs attention", "Event mix", "Recent activity", "Projects at a glance")
+        expect(document.at_css(".project-card")).to be_nil
+        expect(project_row).to be_present
+        expect(project_row.at_css(".dashboard-project-main")["href"]).to eq(project_path(project))
+        expect(project_row.at_css(".project-type-icon-ruby use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-ruby\z})
+        expect(project_row.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")).to be_present
+        expect(project_row.at_css("a[href='#{activity_project_path(project)}']")).to be_present
       end
     end
   end
