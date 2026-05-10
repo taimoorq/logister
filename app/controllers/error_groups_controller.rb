@@ -42,8 +42,9 @@ class ErrorGroupsController < ApplicationController
   def respond_with_stream
     filter  = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     query   = params[:q].to_s.strip
-    @groups = inbox_groups(@project, filter: filter, query: query)
-    @counts = inbox_counts(@project)
+    assignee = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
+    @groups = inbox_groups(@project, filter: filter, query: query, assignee: assignee, viewer: current_user)
+    @counts = inbox_counts(@project, assignee: assignee, viewer: current_user)
 
     respond_to do |format|
       format.turbo_stream do
@@ -51,12 +52,12 @@ class ErrorGroupsController < ApplicationController
           # Re-render the inbox list with the group removed/updated
           turbo_stream.replace("project_inbox",
             partial: "projects/inbox_table",
-            locals: { project: @project, groups: @groups, selected_uuid: nil, filter: filter, query: query }
+            locals: { project: @project, groups: @groups, selected_uuid: nil, filter: filter, query: query, assignee: assignee }
           ),
           # Update sidebar counts
           turbo_stream.replace("inbox_counts",
             partial: "projects/inbox_counts",
-            locals: { project: @project, counts: @counts, filter: filter, query: query }
+            locals: { project: @project, counts: @counts, filter: filter, query: query, assignee: assignee }
           ),
           # Clear the detail pane
           turbo_stream.replace("error_detail",
@@ -64,7 +65,7 @@ class ErrorGroupsController < ApplicationController
           )
         ]
       end
-      format.html { redirect_to project_path(@project, filter: filter, q: query) }
+      format.html { redirect_to project_path(@project, filter: filter, q: query, assignee: assignee) }
     end
   end
 end

@@ -5,6 +5,7 @@ class ProjectErrorFirstOccurrenceAlertJob < ApplicationJob
 
   def perform(error_group_id)
     group = ErrorGroup.includes(:project, :latest_event).find(error_group_id)
+    return if group.project.archived?
 
     group.project.notification_recipients.find_each do |user|
       next if user.respond_to?(:confirmed?) && !user.confirmed?

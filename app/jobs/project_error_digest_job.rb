@@ -5,6 +5,7 @@ class ProjectErrorDigestJob < ApplicationJob
 
   def perform(preference_id, period_start_at, period_end_at, frequency)
     preference = ProjectNotificationPreference.includes(:project, :user).find(preference_id)
+    return if preference.project.archived?
     return unless preference.digest_frequency == frequency
 
     period_start = Time.zone.parse(period_start_at.to_s)

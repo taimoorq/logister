@@ -9,6 +9,7 @@ class ProjectSettingsController < ApplicationController
     @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
     @api_keys = @project.api_keys.order(created_at: :desc)
     @notification_preference = ProjectNotificationPreference.for(user: current_user, project: @project)
+    @assignment_summary = ProjectAssignmentSummary.new(@project)
 
     render "projects/settings"
   end

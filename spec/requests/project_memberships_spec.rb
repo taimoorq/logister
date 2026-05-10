@@ -81,6 +81,18 @@ RSpec.describe "Project memberships", type: :request do
         follow_redirect!
         expect(response.body).to include("Access removed")
       end
+
+      it "refreshes assignment workload counts for turbo removals" do
+        membership = project_memberships(:one)
+        create(:error_group, project: project, assignee: membership.user, assigned_by: users(:one))
+
+        delete project_project_membership_path(project, membership),
+               headers: { "ACCEPT" => "text/vnd.turbo-stream.html" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+        expect(response.body).to include("project_assignment_summary")
+      end
     end
 
     context "when signed in as shared member" do

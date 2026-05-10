@@ -1,5 +1,6 @@
 <turbo-frame id="project_inbox" target="error_detail">
   <% group_trends = local_assigns.fetch(:group_trends, {}) %>
+  <% assignee_param = local_assigns[:assignee].presence || "all" %>
   <div class="inbox-table-wrap">
     <% if groups.any? %>
       <div class="inbox-list-scroll">
@@ -24,7 +25,7 @@
                 <td class="inbox-error-cell">
                   <% if group.latest_event %>
                     <%= link_to project_event_path(project, group.latest_event,
-                                  filter: filter, q: query, group_uuid: group.uuid),
+                                  filter: filter, q: query, assignee: assignee_param, group_uuid: group.uuid),
                                 class: "error-row-link",
                                 data: {
                                   turbo_frame: "error_detail",
@@ -69,6 +70,12 @@
                       <span class="severity-compact-dot" aria-hidden="true"></span>
                       <span><%= severity %></span>
                     </span>
+                    <span class="error-meta-chip error-meta-assignee"
+                          title="<%= group.assignee.present? ? "Assigned to #{inbox_assignee_label(project, current_user, group.assignee)}" : "Unassigned" %>"
+                          aria-label="<%= group.assignee.present? ? "Assigned to #{inbox_assignee_label(project, current_user, group.assignee)}" : "Unassigned" %>">
+                      <%= app_icon(:account, css: "inbox-info-icon") %>
+                      <span><%= group.assignee.present? ? (group.assignee.name.presence || group.assignee.email) : "Unassigned" %></span>
+                    </span>
                     <span class="error-meta-chip error-meta-time"
                           title="First seen <%= first_seen_words %> ago. Last seen <%= last_seen_words %> ago."
                           aria-label="First seen <%= first_seen_words %> ago. Last seen <%= last_seen_words %> ago.">
@@ -93,7 +100,7 @@
         <% end %>
         <% if query.present? %>
           <%= link_to "Clear search",
-                      project_path(project, filter: filter),
+                      project_path(project, filter: filter, assignee: assignee_param),
                       class: "inline-link",
                       data: { turbo_frame: "project_inbox" } %>
         <% end %>

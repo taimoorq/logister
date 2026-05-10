@@ -8,29 +8,32 @@ module ProjectInboxData
 
   private
 
-  # Returns error groups filtered by tab + query.
-  def inbox_groups(project, filter:, query: nil)
+  # Returns error groups filtered by tab + assignment + query.
+  def inbox_groups(project, filter:, query: nil, assignee: "all", viewer: nil)
     normalized_filter = filter.to_s.presence_in(INBOX_FILTERS) || "unresolved"
     normalized_query = query.to_s.strip.downcase
+    normalized_assignee = normalize_inbox_assignee_filter(project, assignee, viewer: viewer)
 
     cache_key = [
       "project",
       project.id,
       "inbox_groups",
       normalized_filter,
+      normalized_assignee,
       Digest::SHA256.hexdigest(normalized_query),
       inbox_cache_version(project)
     ]
 
     group_ids = safe_cache_fetch(cache_key, expires_in: 20.seconds) do
       scope = base_inbox_scope(project, normalized_filter)
+      scope = apply_inbox_assignee(scope, project, normalized_assignee, viewer: viewer)
       scope = apply_inbox_query(scope, normalized_query) if normalized_query.present?
       scope.recent_first.limit(INBOX_LIMIT).pluck(:id)
     end
 
     return [] if group_ids.empty?
 
-    groups_by_id = project.error_groups.where(id: group_ids).includes(:latest_event).index_by(&:id)
+    groups_by_id = project.error_groups.where(id: group_ids).includes(:latest_event, :assignee).index_by(&:id)
     group_ids.filter_map { |id| groups_by_id[id] }
   end
 
@@ -66,10 +69,11 @@ module ProjectInboxData
   end
 
   # Per-status counts for the sidebar navigation.
-  def inbox_counts(project)
-    cache_key = [ "project", project.id, "inbox_counts", inbox_cache_version(project) ]
+  def inbox_counts(project, assignee: "all", viewer: nil)
+    normalized_assignee = normalize_inbox_assignee_filter(project, assignee, viewer: viewer)
+    cache_key = [ "project", project.id, "inbox_counts", normalized_assignee, inbox_cache_version(project) ]
     safe_cache_fetch(cache_key, expires_in: 30.seconds) do
-      groups = project.error_groups
+      groups = apply_inbox_assignee(project.error_groups, project, normalized_assignee, viewer: viewer)
       {
         unresolved:       groups.unresolved.count,
         introduced_today: groups.introduced_today.count,
@@ -95,6 +99,33 @@ module ProjectInboxData
     end
   end
 
+  def normalize_inbox_assignee_filter(project, assignee, viewer: nil)
+    user = inbox_viewer(viewer)
+    raw = assignee.to_s.strip
+
+    return "all" if raw.blank? || raw == "all"
+    return "me" if raw == "me" && user.present?
+    return "unassigned" if raw == "unassigned"
+    return raw if project.assignable_users.exists?(uuid: raw)
+
+    "all"
+  end
+
+  def apply_inbox_assignee(scope, project, assignee, viewer: nil)
+    case assignee
+    when "me"
+      user = inbox_viewer(viewer)
+      user.present? ? scope.assigned_to(user) : scope
+    when "unassigned"
+      scope.unassigned
+    when "all"
+      scope
+    else
+      assignable = project.assignable_users.find_by(uuid: assignee)
+      assignable.present? ? scope.assigned_to(assignable) : scope
+    end
+  end
+
   def apply_inbox_query(scope, query)
     term = "%#{ActiveRecord::Base.sanitize_sql_like(query.downcase)}%"
     scope.where(
@@ -105,5 +136,12 @@ module ProjectInboxData
 
   def inbox_cache_version(project)
     project.error_groups.maximum(:updated_at)&.utc&.to_i || 0
+  end
+
+  def inbox_viewer(viewer)
+    return viewer if viewer.present?
+    return current_user if respond_to?(:current_user, true)
+
+    nil
   end
 end

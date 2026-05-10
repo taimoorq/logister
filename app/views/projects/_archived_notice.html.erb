@@ -1,0 +1,20 @@
+<% project = local_assigns.fetch(:project) %>
+<% show_settings_link = local_assigns.fetch(:show_settings_link, true) %>
+
+<% if project.archived? %>
+  <div class="project-archived-notice" role="status">
+    <div class="project-archived-notice-main">
+      <span class="project-archived-notice-icon"><%= app_icon(:archive, css: "w-4 h-4") %></span>
+      <div>
+        <strong class="project-archived-notice-title">Archived project</strong>
+        <p class="project-archived-notice-copy">
+          Historical data is still available, but this project is hidden from active dashboards, active project lists, and the top navigation.
+        </p>
+      </div>
+    </div>
+
+    <% if show_settings_link && project.owned_by?(current_user) %>
+      <%= link_to "Restore in settings", settings_project_path(project), class: "project-archived-notice-link" %>
+    <% end %>
+  </div>
+<% end %>

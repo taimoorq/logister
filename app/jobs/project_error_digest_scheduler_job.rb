@@ -39,7 +39,7 @@ class ProjectErrorDigestSchedulerJob < ApplicationJob
   private
 
   def enqueue_due_digests(now)
-    ProjectNotificationPreference.digest_enabled.find_each do |preference|
+    ProjectNotificationPreference.digest_enabled.for_active_projects.find_each do |preference|
       window = preference.due_digest_window(now)
       next unless window
 

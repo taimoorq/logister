@@ -8,6 +8,8 @@ module ProjectEvents
       http_method: [ [ "httpMethod" ], [ "http_method" ], [ "method" ], [ "request", "httpMethod" ], [ "request", "http_method" ], [ "request", "method" ] ],
       http_version: [ [ "httpVersion" ], [ "http_version" ], [ "request", "httpVersion" ], [ "request", "http_version" ], [ "request", "version" ] ],
       params: [ [ "params" ], [ "request", "params" ] ],
+      path: [ [ "path" ], [ "pathname" ], [ "request", "path" ], [ "request", "pathname" ], [ "request", "fullpath" ], [ "request", "original_fullpath" ] ],
+      query_string: [ [ "queryString" ], [ "query_string" ], [ "request", "queryString" ], [ "request", "query_string" ] ],
       rails_action: [ [ "railsAction" ], [ "rails_action" ], [ "request", "railsAction" ], [ "request", "rails_action" ] ],
       referer: [ [ "referer" ], [ "referrer" ], [ "request", "referer" ], [ "request", "referrer" ] ],
       request_id: [ [ "requestId" ], [ "request_id" ], [ "request", "requestId" ], [ "request", "request_id" ], [ "request", "id" ] ],

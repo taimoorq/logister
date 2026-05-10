@@ -1,3 +1,10 @@
+<% open_errors_count = @counts.fetch(:unresolved, 0) %>
+<% introduced_today_count = @counts.fetch(:introduced_today, 0) %>
+<% events_last_24h = @project_overview.fetch(:events_last_24h, 0) %>
+<% unhealthy_monitors_count = @project_overview.fetch(:unhealthy_monitors_count, 0) %>
+<% monitors_count = @project_overview.fetch(:monitors_count, 0) %>
+<% monitors_label = monitors_count.positive? ? "#{pluralize(monitors_count, "monitor")} tracked" : "No monitors" %>
+
 <section class="project-command-panel">
   <div class="project-command-main">
     <div class="project-command-identity">
@@ -17,7 +24,51 @@
     </div>
 
     <div class="project-command-actions">
-      <%= link_to projects_path, class: "projects-secondary-button" do %>
+      <details class="project-signals-menu">
+        <summary>
+          <%= app_icon(:chart, css: "w-4 h-4") %>
+          <span>Project signals</span>
+        </summary>
+
+        <div class="project-overview-strip" aria-label="Project status">
+          <%= link_to project_path(@project, filter: "unresolved"),
+                      class: "project-overview-cell #{dashboard_metric_state_class(open_errors_count)}" do %>
+            <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
+            <span>
+              <strong><%= number_with_delimiter(open_errors_count) %></strong>
+              <span>Open errors</span>
+            </span>
+          <% end %>
+
+          <%= link_to project_path(@project, filter: "introduced_today"),
+                      class: "project-overview-cell #{dashboard_metric_state_class(introduced_today_count)}" do %>
+            <span class="project-overview-icon"><%= app_icon(:calendar, css: "w-4 h-4") %></span>
+            <span>
+              <strong><%= number_with_delimiter(introduced_today_count) %></strong>
+              <span>Introduced today</span>
+            </span>
+          <% end %>
+
+          <%= link_to activity_project_path(@project), class: "project-overview-cell" do %>
+            <span class="project-overview-icon"><%= app_icon(:chart, css: "w-4 h-4") %></span>
+            <span>
+              <strong><%= number_with_delimiter(events_last_24h) %></strong>
+              <span>Events 24h</span>
+            </span>
+          <% end %>
+
+          <%= link_to monitors_project_path(@project),
+                      class: "project-overview-cell #{dashboard_metric_state_class(unhealthy_monitors_count)}" do %>
+            <span class="project-overview-icon"><%= app_icon(:check, css: "w-4 h-4") %></span>
+            <span>
+              <strong><%= number_with_delimiter(unhealthy_monitors_count) %></strong>
+              <span><%= monitors_label %></span>
+            </span>
+          <% end %>
+        </div>
+      </details>
+
+      <%= link_to project_collection_path(@project), class: "projects-secondary-button" do %>
         <%= app_icon(:projects, css: "w-4 h-4") %>
         <span>All projects</span>
       <% end %>
@@ -30,52 +81,10 @@
     </div>
   </div>
 
-  <% open_errors_count = @counts.fetch(:unresolved, 0) %>
-  <% introduced_today_count = @counts.fetch(:introduced_today, 0) %>
-  <% events_last_24h = @project_overview.fetch(:events_last_24h, 0) %>
-  <% unhealthy_monitors_count = @project_overview.fetch(:unhealthy_monitors_count, 0) %>
-  <% monitors_count = @project_overview.fetch(:monitors_count, 0) %>
-  <% monitors_label = monitors_count.positive? ? "#{pluralize(monitors_count, "monitor")} tracked" : "No monitors" %>
-
-  <div class="project-overview-strip" aria-label="Project status">
-    <%= link_to project_path(@project, filter: "unresolved"),
-                class: "project-overview-cell #{dashboard_metric_state_class(open_errors_count)}" do %>
-      <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
-      <span>
-        <strong><%= number_with_delimiter(open_errors_count) %></strong>
-        <span>Open errors</span>
-      </span>
-    <% end %>
-
-    <%= link_to project_path(@project, filter: "introduced_today"),
-                class: "project-overview-cell #{dashboard_metric_state_class(introduced_today_count)}" do %>
-      <span class="project-overview-icon"><%= app_icon(:calendar, css: "w-4 h-4") %></span>
-      <span>
-        <strong><%= number_with_delimiter(introduced_today_count) %></strong>
-        <span>Introduced today</span>
-      </span>
-    <% end %>
-
-    <%= link_to activity_project_path(@project), class: "project-overview-cell" do %>
-      <span class="project-overview-icon"><%= app_icon(:chart, css: "w-4 h-4") %></span>
-      <span>
-        <strong><%= number_with_delimiter(events_last_24h) %></strong>
-        <span>Events 24h</span>
-      </span>
-    <% end %>
-
-    <%= link_to monitors_project_path(@project),
-                class: "project-overview-cell #{dashboard_metric_state_class(unhealthy_monitors_count)}" do %>
-      <span class="project-overview-icon"><%= app_icon(:check, css: "w-4 h-4") %></span>
-      <span>
-        <strong><%= number_with_delimiter(unhealthy_monitors_count) %></strong>
-        <span><%= monitors_label %></span>
-      </span>
-    <% end %>
-  </div>
-
   <%= render "nav" %>
 </section>
+
+<%= render "projects/archived_notice", project: @project %>
 
 <div class="inbox-workbench min-w-0"
      data-controller="inbox"
@@ -87,15 +96,29 @@
                     class: "inbox-filter-search",
                     data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "searchForm", action: "submit->inbox#onSearchSubmit" } do |f| %>
         <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
+        <%= f.hidden_field :assignee, value: @assignee_filter, data: { inbox_target: "assigneeField" } %>
         <%= f.label :q, "Search inbox", class: "kicker inbox-filter-search-label" %>
         <%= f.search_field :q, value: @query, placeholder: "Search errors...",
                            class: "form-input inbox-filter-search-input",
                            data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
       <% end %>
 
-      <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query %>
+      <%= form_with url: project_path(@project), method: :get,
+                    class: "inbox-assignee-filter",
+                    data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "assigneeForm" } do |f| %>
+        <%= f.hidden_field :filter, value: @filter %>
+        <%= f.hidden_field :q, value: @query %>
+        <%= f.label :assignee, "Assignee", class: "kicker inbox-filter-search-label" %>
+        <%= f.select :assignee,
+                     inbox_assignee_options(@project, current_user, @assignable_users),
+                     { selected: @assignee_filter },
+                     class: "form-input inbox-assignee-select",
+                     data: { action: "change->inbox#submitAssigneeFilter" } %>
+      <% end %>
 
-      <%= link_to "All projects", projects_path, class: "inbox-filter-projects-link" %>
+      <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query, assignee: @assignee_filter %>
+
+      <%= link_to "All projects", project_collection_path(@project), class: "inbox-filter-projects-link" %>
     </div>
   </section>
 
@@ -110,7 +133,8 @@
                group_trends:  @group_trends,
                selected_uuid: @selected_group&.uuid,
                filter:        @filter,
-               query:         @query %>
+               query:         @query,
+               assignee:      @assignee_filter %>
   </section>
 
   <section class="inbox-workbench-detail" data-inbox-target="detailPane" aria-busy="false">
@@ -122,6 +146,8 @@
                  occurrences: @detail_occurrences,
                  related_logs: @detail_related_logs,
                  filter:      @filter,
+                 assignee:    @assignee_filter,
+                 assignable_users: @assignable_users,
                  query:       @query,
                  tab:         @tab,
                  frame_scope: params[:frame_scope],

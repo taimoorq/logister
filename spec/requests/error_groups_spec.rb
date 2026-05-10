@@ -40,7 +40,7 @@ RSpec.describe "Error groups", type: :request do
 
       patch resolve_project_error_group_path(project, group)
 
-      expect(response).to redirect_to(project_path(project, filter: "unresolved", q: ""))
+      expect(response).to redirect_to(project_path(project, filter: "unresolved", q: "", assignee: "all"))
     end
 
     it "returns 404 for group in another project" do
@@ -104,6 +104,66 @@ RSpec.describe "Error groups", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(group.reload).to be_unresolved
+    end
+  end
+
+  describe "PATCH /projects/:project_uuid/error_groups/:error_group_uuid/assignment" do
+    before { sign_in users(:one) }
+
+    it "assigns the group to a project member and returns turbo stream" do
+      group = create_error_group_for_project
+      member = create(:user)
+      create(:project_membership, project: project, user: member)
+
+      patch project_error_group_assignment_path(project, group),
+            params: { assigned_user_id: member.uuid },
+            headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+      expect(group.reload.assignee).to eq(member)
+      expect(group.assigned_by).to eq(users(:one))
+      expect(response.body).to include("project_inbox", "inbox_counts", "error_detail")
+    end
+
+    it "lets a shared member assign a visible group to themselves" do
+      group = create_error_group_for_project
+      sign_in users(:two)
+
+      patch project_error_group_assignment_path(project, group),
+            params: { assigned_user_id: users(:two).uuid }
+
+      expect(response).to redirect_to(project_path(project, filter: "unresolved", q: "", assignee: "all", group_uuid: group.uuid))
+      expect(group.reload.assignee).to eq(users(:two))
+      expect(group.assigned_by).to eq(users(:two))
+    end
+
+    it "returns 404 for a user without project access" do
+      group = create_error_group_for_project
+      outsider = create(:user)
+
+      patch project_error_group_assignment_path(project, group),
+            params: { assigned_user_id: outsider.uuid }
+
+      expect(response).to have_http_status(:not_found)
+      expect(group.reload.assignee).to be_nil
+    end
+  end
+
+  describe "DELETE /projects/:project_uuid/error_groups/:error_group_uuid/assignment" do
+    before { sign_in users(:one) }
+
+    it "clears the assignment" do
+      group = create_error_group_for_project
+      group.assign_to!(users(:one), assigned_by: users(:one))
+
+      delete project_error_group_assignment_path(project, group),
+             headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      expect(response).to have_http_status(:ok)
+      expect(group.reload.assignee).to be_nil
+      expect(group.assigned_by).to be_nil
+      expect(group.assigned_at).to be_nil
     end
   end
 

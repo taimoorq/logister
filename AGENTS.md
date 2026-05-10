@@ -33,8 +33,8 @@ Elements that move or appear/disappear have `view-transition-name` (and optional
 |-------|----------|--------|
 | Project inbox (show) | `project_inbox` | Inbox table; filter links and search form target this. |
 | Project inbox (show) | `error_detail` | Error detail pane; row links target this. |
-| Project show | `project_api_keys` | Wraps API key form + table (streams update inside it). |
-| Project show | (none) | Memberships use streams only; no frame wrapper. |
+| Project settings | `project_api_keys` | Wraps API key form + table (streams update inside it). |
+| Project settings | (none) | Memberships and assignment workload counts use streams only; no frame wrapper. |
 
 - **Inbox:** `ProjectsController#show` and `ProjectEventsController#index` detect `Turbo-Frame: project_inbox` and render only `projects/inbox_table`. Row links use `data: { turbo_frame: "error_detail" }` so the detail pane updates.
 - **Error detail:** `ProjectEventsController#show` detects `Turbo-Frame: error_detail` and renders `project_events/event_detail`. Actions (resolve/ignore/archive/reopen) use Turbo Stream responses that replace `project_inbox`, `inbox_counts`, and `error_detail`.
@@ -44,8 +44,9 @@ Elements that move or appear/disappear have `view-transition-name` (and optional
 Used when one action should update several DOM regions:
 
 - **Error group actions** (`ErrorGroupsController`): PATCH resolve/ignore/archive/reopen respond with `format.turbo_stream` replacing `project_inbox`, `inbox_counts`, and `error_detail`.
+- **Error assignment actions** (`ErrorGroupAssignmentsController`): PATCH/DELETE assignment update the inbox table, inbox counts, and detail pane while preserving current `filter`, `q`, and `assignee` params.
 - **API keys** (`ApiKeysController`): Create responds with prepend row + replace “new token” message; destroy responds with remove row. Buttons/forms use `data: { turbo_stream: true }` where needed so the request accepts Turbo Stream.
-- **Project memberships** (`ProjectMembershipsController`): Create responds with append row + replace message; destroy responds with remove row.
+- **Project memberships** (`ProjectMembershipsController`): Create responds with append row + replace message; destroy responds with remove row and refreshes assignment workload counts when needed.
 
 ### Stimulus controllers
 
@@ -54,8 +55,9 @@ Used when one action should update several DOM regions:
 | `inbox` | Project show | Debounced search (submit form into frame), filter tab active state, row selection highlight. |
 | `tabs` | Error detail (stacktrace / context / occurrences / logs) | Switch panels. |
 | `local_time` | Body | Convert `<time data-local="…">` to user’s local timezone. |
-| `nav` | Layout nav | Mobile menu open/close, escape and outside-click close. |
+| `nav` | Layout nav | Mobile menu and project/account dropdown open/close, escape and outside-click close. |
 | `project_search` | Projects index | Client-side filter of project cards by name/slug. |
+| `dashboard_explorer` | Dashboard | Render ECharts, fetch scoped explorer data from Rails endpoints, and connect chart selections to server summaries. |
 
 - All JS behavior that isn’t “just a link/form” lives in a Stimulus controller; no inline scripts in the layout (except optional third-party snippets).
 - Controllers are in `app/javascript/controllers/` and are loaded via importmap.
@@ -65,8 +67,8 @@ Used when one action should update several DOM regions:
 - **Controllers:** Standard REST; shared logic in `ApplicationController` or concerns (e.g. `ProjectInboxData`).
 - **Views:** One directory per resource; partials with leading `_`; shared partials under `shared/` (e.g. `shared/widgets/_sparkline.html.erb`).
 - **Partials for streams:** Rows and one-off messages used by Turbo Streams live next to the resource (e.g. `api_keys/_row.html.erb`, `project_memberships/_row.html.erb`).
-- **Models:** Domain logic, scopes, and small helpers; heavy or cross-model logic in service objects under `app/services/` (e.g. `ErrorGroupingService`, `Logister::ClickhouseClient`).
-- **Jobs:** Sidekiq jobs in `app/jobs/`; enqueued from controllers or models as needed.
+- **Models:** Domain logic, scopes, and small helpers; heavy or cross-model logic in service objects under `app/services/` (e.g. `ErrorGroupingService`, `Logister::ClickhouseClient`). Keep reusable aggregates like `ProjectAssignmentSummary` small and easy to test.
+- **Jobs:** Sidekiq jobs in `app/jobs/`; enqueued from controllers, models, or scheduled worker entrypoints as needed. Project error notification jobs should skip archived projects.
 
 ## Adding new “single-place” behavior
 
@@ -115,7 +117,7 @@ Used when one action should update several DOM regions:
 
 ### Hotwire, Turbo, and Stimulus
 
-- **Docs pages should not special-case Hotwire unless necessary.** Public docs should work as normal Turbo Drive pages. Only opt out with `data: { turbo: false }` for flows that already require full reloads, like Devise auth links.
+- **Cloudflare docs are plain static pages.** The Rails app links to `docs.logister.org`; do not assume the static docs have the Rails importmap, Turbo, or Stimulus runtime.
 - **Keep JS boot standard.** Turbo is loaded in `app/javascript/application.js`, Stimulus controllers are registered in `app/javascript/controllers/index.js`, and layouts should use `javascript_importmap_tags`.
 - **Use Stimulus for small behavior only.** Existing docs behavior such as copy buttons and nav toggles should remain Stimulus-driven or simple DOM behavior, not custom page-specific JS frameworks.
 - **When debugging rendering, separate HTML issues from CSS issues.** First confirm the expected classes are present in the rendered HTML. Then confirm the final compiled CSS actually contains selectors for those classes. This prevents wasting time changing views when the real problem is stale or missing assets.
@@ -128,11 +130,12 @@ Used when one action should update several DOM regions:
 
 ### Integrations and companion packages
 
-- **Language integrations are first-class project types.** The app currently recognizes Ruby, JavaScript / TypeScript, and CFML projects. Project labels, settings copy, and docs links should stay aligned with those supported integration kinds.
-- **Client SDKs live in separate repos.** `logister-ruby` and `logister-js` are companion packages with their own release cycles. Do not couple their version numbers or changelogs directly to this Rails app.
+- **Language integrations are first-class project types.** The app currently recognizes Ruby, .NET / ASP.NET Core, Python, JavaScript / TypeScript, and CFML projects. Project labels, settings copy, event presenters, and docs links should stay aligned with those supported integration kinds.
+- **Client SDKs live in separate repos.** `logister-ruby`, `logister-dotnet`, `logister-python`, and `logister-js` are companion packages with their own release cycles. Do not couple their version numbers or changelogs directly to this Rails app.
 - **The Rails app should explain what package to use, not re-implement package docs.** In project settings and marketing pages, point users to the canonical integration docs and package repos instead of duplicating large SDK setup guides inside the app.
 - **When adding a new integration, update all discovery surfaces together.** That includes:
   - project integration labels and settings guidance
+  - project event presenters and request/activity/performance copy when the language has specific event shapes
   - external docs nav and sitemap in `cloudflare-docs/`
   - `public/llms.txt`
   - public marketing/about copy if the supported-language story changes

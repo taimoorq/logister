@@ -16,13 +16,15 @@
 <% local_variables = event_local_variables(exception_data) %>
 <% instance_variables = event_instance_variables(exception_data) %>
 
+<%= render "projects/archived_notice", project: @project %>
+
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
 
   <%# ── Left sidebar ──────────────────────────────────────────────────────── %>
   <aside class="flex flex-col gap-4 lg:sticky lg:top-24">
     <%# Breadcrumb %>
     <nav class="event-breadcrumb">
-      <%= link_to projects_path, class: "breadcrumb-link" do %>
+      <%= link_to project_collection_path(@project), class: "breadcrumb-link" do %>
         <span class="inline-flex items-center gap-1.5"><%= app_icon(:arrow_left, css: "w-4 h-4") %><span>All projects</span></span>
       <% end %>
       <%= link_to @project.name, project_path(@project), class: "breadcrumb-link" %>

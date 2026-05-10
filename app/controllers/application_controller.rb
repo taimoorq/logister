@@ -5,7 +5,7 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
-  helper_method :admin_user?
+  helper_method :admin_user?, :nav_active_projects
 
   def default_url_options
     super.merge(Rails.application.routes.default_url_options)
@@ -23,6 +23,12 @@ class ApplicationController < ActionController::Base
     return false if admin_emails.empty?
 
     admin_emails.include?(current_user.email.to_s.downcase)
+  end
+
+  def nav_active_projects
+    return [] unless user_signed_in?
+
+    @nav_active_projects ||= current_user.active_projects.order(:name).to_a
   end
 
   def safe_cache_fetch(key, expires_in:, race_condition_ttl: 5.seconds, &block)

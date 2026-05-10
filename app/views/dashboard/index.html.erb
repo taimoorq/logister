@@ -214,6 +214,49 @@
           </button>
         <% end %>
       </div>
+
+      <div class="dashboard-assignment-panel" aria-label="Your assigned issues">
+        <div class="dashboard-assignment-header">
+          <div>
+            <h3>My assignments</h3>
+            <p>Open bugs across active apps</p>
+          </div>
+          <% if @assigned_error_groups.first %>
+            <%= link_to "Open", project_path(@assigned_error_groups.first.project, group_uuid: @assigned_error_groups.first.uuid, assignee: "me"), class: "dashboard-panel-link" %>
+          <% else %>
+            <%= link_to "Projects", projects_path, class: "dashboard-panel-link" %>
+          <% end %>
+        </div>
+
+        <div class="dashboard-assignment-summary">
+          <span>
+            <strong><%= number_with_delimiter(@assigned_error_groups_count) %></strong>
+            <span>Assigned to me</span>
+          </span>
+          <span>
+            <strong><%= number_with_delimiter(@unassigned_error_groups_count) %></strong>
+            <span>Unassigned</span>
+          </span>
+        </div>
+
+        <% if @assigned_error_groups.any? %>
+          <div class="dashboard-assignment-list">
+            <% @assigned_error_groups.each do |group| %>
+              <%= link_to project_path(group.project, group_uuid: group.uuid, assignee: "me"), class: "dashboard-assignment-row" do %>
+                <span class="dashboard-assignment-title"><%= group.title %></span>
+                <span class="dashboard-assignment-meta">
+                  <%= group.project.name %> · <%= group.last_seen_at.present? ? "#{time_ago_in_words(group.last_seen_at)} ago" : "No events yet" %>
+                </span>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="dashboard-assignment-empty">
+            <strong>Nothing assigned to you</strong>
+            <span><%= pluralize(@unassigned_error_groups_count, "open issue") %> still <%= @unassigned_error_groups_count == 1 ? "needs" : "need" %> an owner.</span>
+          </div>
+        <% end %>
+      </div>
     </aside>
   </section>
 

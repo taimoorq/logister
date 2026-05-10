@@ -6,7 +6,7 @@ import { Controller } from "@hotwired/stimulus"
 //   - Row selection highlight
 export default class extends Controller {
   static get targets() {
-    return ["detailPane", "filterLink", "filterField", "listPane", "searchForm", "searchInput"]
+    return ["assigneeField", "assigneeForm", "detailPane", "filterLink", "filterField", "listPane", "searchForm", "searchInput"]
   }
 
   connect() {
@@ -30,6 +30,17 @@ export default class extends Controller {
 
   onSearchSubmit() {
     // Form naturally submits into turbo-frame; hook available for future use.
+  }
+
+  submitAssigneeFilter(event) {
+    const form = event.currentTarget.form || (this.hasAssigneeFormTarget ? this.assigneeFormTarget : null)
+    if (!form) return
+
+    if (this.hasAssigneeFieldTarget) {
+      this.assigneeFieldTarget.value = event.currentTarget.value || "all"
+    }
+
+    form.requestSubmit()
   }
 
   // ── Filter tab switching ─────────────────────────────────────────────────

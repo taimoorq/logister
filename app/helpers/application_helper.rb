@@ -35,6 +35,22 @@ module ApplicationHelper
     ProjectEvents::RequestContextPresenter.new(event).details
   end
 
+  def request_highlight_target(*candidates, query_string: nil)
+    target = candidates.compact_blank.first.to_s.strip
+    return nil if target.blank?
+
+    query = query_string.to_s.strip.delete_prefix("?")
+    if query.present? && !target.include?("?") && !target.end_with?("?")
+      target = "#{target}?#{query}"
+    end
+
+    target
+  end
+
+  def request_highlight_method(value)
+    value.to_s.strip.upcase.presence
+  end
+
   def pretty_context_json(value)
     JSON.pretty_generate(value)
   rescue StandardError

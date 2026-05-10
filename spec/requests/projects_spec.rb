@@ -63,6 +63,7 @@ RSpec.describe "Projects", type: :request do
 
       it "hides archived projects from the default list and shows them from the archived filter" do
         archived_project = create(:project, :archived, user: users(:one), name: "Resting App")
+        create(:error_group, project: archived_project)
 
         get projects_path
 
@@ -78,6 +79,7 @@ RSpec.describe "Projects", type: :request do
 
         expect(card).to be_present
         expect(card.text).to include("Archived")
+        expect(document.at_css(".projects-overview-strip a[href='#{dashboard_path}']")).to be_nil
       end
     end
 
@@ -102,7 +104,23 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
       end
 
-      it "renders a compact project status strip above the inbox" do
+      it "keeps archived projects accessible while routing project-list links back to archived projects" do
+        project = create(:project, :archived, user: users(:one), name: "Archived Inbox App")
+
+        get project_path(project)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        menu = document.at_css(".nav-project-menu")
+
+        expect(document.at_css(".project-archived-notice").text).to include("Archived project")
+        expect(document.at_css("a.projects-secondary-button[href='#{projects_path(filter: 'archived')}']")).to be_present
+        expect(document.at_css("a.inbox-filter-projects-link[href='#{projects_path(filter: 'archived')}']")).to be_present
+        expect(menu.css(".nav-project-item-title").map { |node| node.text.strip }).not_to include(project.name)
+      end
+
+      it "renders project status signals in a tucked-away disclosure" do
         project = create(:project, user: users(:one), name: "Status Strip")
         api_key = create(:api_key, project: project, user: users(:one))
         create(:ingest_event, :grouped, project: project, api_key: api_key, message: "Grouped status error")
@@ -114,9 +132,12 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
 
         document = Nokogiri::HTML.parse(response.body)
-        strip = document.at_css(".project-overview-strip")
+        menu = document.at_css(".project-signals-menu")
+        strip = menu&.at_css(".project-overview-strip")
 
         expect(document.at_css(".project-command-panel")).to be_present
+        expect(menu).to be_present
+        expect(menu.at_css("summary").text).to include("Project signals")
         expect(strip).to be_present
         expect(strip.at_css("a[href='#{project_path(project, filter: 'unresolved')}']").text).to include("1", "Open errors")
         expect(strip.at_css("a[href='#{project_path(project, filter: 'introduced_today')}']").text).to include("1", "Introduced today")
@@ -227,6 +248,63 @@ RSpec.describe "Projects", type: :request do
         expect(metadata.css(".inbox-info-icon").size).to be >= 3
       end
 
+      it "filters the inbox by assignee while preserving server-rendered controls" do
+        project = create(:project, user: users(:one), name: "Assigned Inbox")
+        api_key = create(:api_key, project: project, user: users(:one))
+        member = create(:user, name: "Project Member")
+        create(:project_membership, project: project, user: member)
+
+        mine = create(:error_group, :with_occurrence,
+                      project: project,
+                      api_key: api_key,
+                      title: "Mine assigned error",
+                      assignee: users(:one),
+                      assigned_by: users(:one),
+                      assigned_at: Time.current)
+        create(:error_group, :with_occurrence,
+               project: project,
+               api_key: api_key,
+               title: "Member assigned error",
+               assignee: member,
+               assigned_by: users(:one),
+               assigned_at: Time.current)
+        create(:error_group, :with_occurrence,
+               project: project,
+               api_key: api_key,
+               title: "Unassigned error")
+
+        get project_path(project, filter: "unresolved", assignee: "me", group_uuid: mine.uuid)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        rows_text = document.css("tr.inbox-row").map(&:text).join(" ")
+        selected_option = document.at_css("select[name='assignee'] option[selected]")
+
+        expect(rows_text).to include("Mine assigned error")
+        expect(rows_text).not_to include("Member assigned error", "Unassigned error")
+        expect(rows_text).to include(users(:one).name.presence || users(:one).email)
+        expect(selected_option["value"]).to eq("me")
+        expect(document.at_css("input[name='assignee'][value='me']")).to be_present
+        expect(document.at_css("#inbox_counts .inbox-filter-link[aria-current='page']").text).to include("Open", "1")
+
+        get project_path(project, filter: "unresolved", assignee: "unassigned")
+
+        document = Nokogiri::HTML.parse(response.body)
+        rows_text = document.css("tr.inbox-row").map(&:text).join(" ")
+
+        expect(rows_text).to include("Unassigned error")
+        expect(rows_text).not_to include("Mine assigned error", "Member assigned error")
+
+        get project_path(project, filter: "unresolved", assignee: member.uuid)
+
+        document = Nokogiri::HTML.parse(response.body)
+        rows_text = document.css("tr.inbox-row").map(&:text).join(" ")
+
+        expect(rows_text).to include("Member assigned error")
+        expect(rows_text).not_to include("Mine assigned error", "Unassigned error")
+      end
+
       it "limits the initial inbox list for high-volume projects" do
         project = create(:project, user: users(:one), name: "Large Inbox")
         ProjectInboxData::INBOX_LIMIT.next.times do |offset|
@@ -330,6 +408,42 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
         expect(response.body).to include('target="_blank"')
+      end
+
+      it "shows archived state in settings without allowing new API keys" do
+        project = create(:project, :archived, user: users(:one), name: "Archived Settings App")
+
+        get settings_project_path(project)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+
+        expect(document.at_css(".project-archived-notice").text).to include("Archived project")
+        expect(document.text).to include("API tokens are disabled while this project is archived")
+        expect(document.at_css("input[name='api_key[name]']")).to be_nil
+        expect(document.at_css("form[action='#{restore_project_path(project)}']")).to be_present
+        expect(document.at_css(".sidebar-action-link")["href"]).to eq(projects_path(filter: "archived"))
+      end
+
+      it "shows assignment workload counts for project members" do
+        project = create(:project, user: users(:one), name: "Assigned Settings")
+        member = create(:user, name: "Settings Member")
+        create(:project_membership, project: project, user: member)
+        create(:error_group, project: project, assignee: users(:one), assigned_by: users(:one))
+        create(:error_group, project: project, assignee: member, assigned_by: users(:one))
+        create(:error_group, project: project)
+
+        get settings_project_path(project)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        access_table = document.at_css("#project_memberships_tbody")
+
+        expect(document.text).to include("Open assignments", "Open issues", "Assigned", "Unassigned")
+        expect(document.at_css("a[href='#{project_path(project, filter: 'unresolved', assignee: users(:one).uuid)}']").text.strip).to eq("1")
+        expect(access_table.at_css("a[href='#{project_path(project, filter: 'unresolved', assignee: member.uuid)}']").text.strip).to eq("1")
       end
 
       it "shows JavaScript-specific integration guidance for logister-js projects" do

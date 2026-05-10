@@ -14,6 +14,7 @@ class ProjectNotificationPreferencesController < ApplicationController
       @owner = @project.user
       @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
       @api_keys = @project.api_keys.order(created_at: :desc)
+      @assignment_summary = ProjectAssignmentSummary.new(@project)
       render "projects/settings", status: :unprocessable_content
     end
   end

@@ -1,0 +1,17 @@
+<% request_method = request_highlight_method(local_assigns[:http_method]) %>
+<% request_target = local_assigns[:target].to_s.strip.presence %>
+<% request_route = local_assigns[:route].to_s.strip.presence %>
+
+<% if request_method.present? || request_target.present? || request_route.present? %>
+  <p class="request-highlight" aria-label="Request details">
+    <% if request_method.present? %>
+      <span class="request-highlight-method"><%= request_method %></span>
+    <% end %>
+    <% if request_target.present? %>
+      <code class="request-highlight-target" title="<%= request_target %>"><%= request_target %></code>
+    <% end %>
+    <% if request_route.present? %>
+      <span class="request-highlight-route"><%= request_route %></span>
+    <% end %>
+  </p>
+<% end %>

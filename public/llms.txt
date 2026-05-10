@@ -36,10 +36,12 @@ Canonical documentation lives on the public docs host:
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
 ## Product summary
-- Captures and groups application errors.
-- Stores stacktrace, request context, occurrence history, and status.
+- Captures and groups application errors into triageable error groups.
+- Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, and status.
 - Accepts `error`, `log`, `metric`, `transaction`, and `check_in` events.
-- Helps teams triage grouped errors, inspect event context, connect related logs, review performance, watch scheduled work, receive project error emails and digests, share project visibility, and operate the self-hosted app.
+- Provides a cross-app dashboard with server-backed explorer charts, needs-attention summaries, active-project shortcuts, and assigned-to-me links.
+- Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
+- Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
 - Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
 
 ## Primary audience

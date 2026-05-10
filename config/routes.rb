@@ -59,6 +59,8 @@ Rails.application.routes.draw do
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
 
     resources :error_groups, only: [], param: :uuid do
+      resource :assignment, only: [ :update, :destroy ], controller: "error_group_assignments"
+
       member do
         patch :resolve
         patch :ignore

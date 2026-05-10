@@ -15,6 +15,18 @@ RSpec.describe ProjectNotificationPreference, type: :model do
     end
   end
 
+  describe ".for_active_projects" do
+    it "excludes preferences for archived projects" do
+      active_project = create(:project, user: users(:one))
+      archived_project = create(:project, :archived, user: users(:one))
+      active_preference = create(:project_notification_preference, :daily, project: active_project, user: users(:one))
+      archived_preference = create(:project_notification_preference, :daily, project: archived_project, user: users(:one))
+
+      expect(described_class.for_active_projects).to include(active_preference)
+      expect(described_class.for_active_projects).not_to include(archived_preference)
+    end
+  end
+
   describe "#due_digest_window" do
     it "returns the previous day after the local send hour for daily digests" do
       preference = build(:project_notification_preference, :daily, digest_send_hour: 9, time_zone: "UTC")

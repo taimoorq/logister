@@ -22,7 +22,7 @@ Canonical product and integration documentation for Logister lives on this docs 
 - ClickHouse: https://docs.logister.org/clickhouse/
 
 ## Audience
-- Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, grouped error triage, event investigation, related logs, performance visibility, check-in monitors, project error email alerts, digest summaries, activity review, release visibility, project sharing, and active or archived project views
+- Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, grouped error triage, error assignment with dashboard and project workload views, assignee-filtered inboxes, event investigation with request method and URL/path context, related logs, performance visibility, check-in monitors, project error email alerts, digest summaries, activity review, release visibility, project sharing, and active or archived project views
 - Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project alert and digest delivery, and optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
 - Ruby teams using `logister-ruby`
 - .NET teams using `logister-dotnet` with ASP.NET Core and C# services

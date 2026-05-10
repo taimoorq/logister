@@ -45,8 +45,8 @@ Requires PostgreSQL and Redis for the test environment (same as development). En
 
 ## Coverage focus
 
-- **Models**: Validations, associations, `accessible_to` / scopes, lifecycle (e.g. `ErrorGroup` resolve/ignore/reopen).
-- **Requests**: Public pages (home, about, legal), auth redirects, API ingest (create, auth, validation), projects CRUD and access (owner vs member), project events, dashboard, admin users, profile.
-- **Services**: Event ingestor → Clickhouse payload mapping; error grouping (create/update group, fingerprint derivation).
-- **Jobs**: `ClickhouseIngestJob` delegates to `EventIngestor`, discards on missing record.
-
+- **Models**: Validations, associations, `accessible_to` / active / archived scopes, assignment cleanup, API key lifecycle, notification preferences, and error-group lifecycle.
+- **Requests**: Public pages (home, about, legal), auth redirects, API ingest (create, auth, validation), projects CRUD and access (owner vs member), archived-project access, project events, assignment actions, dashboard, admin users, profile.
+- **Services and presenters**: Event ingestor → ClickHouse payload mapping, error grouping, project event presenters, request context extraction, and language-specific stack/log rendering.
+- **Jobs**: `ClickhouseIngestJob`, first-occurrence project error alerts, digest scheduling, digest delivery, and archived-project skips.
+- **System specs**: Keep these focused on critical browser behavior such as auth, navigation/dropdowns, and representative Hotwire flows. Prefer request specs for the full Turbo Stream matrix.

@@ -20,4 +20,15 @@ RSpec.describe ProjectErrorFirstOccurrenceAlertJob, type: :job do
     expect(EmailNotificationDelivery.sent.count).to eq(1)
     expect(ProjectNotificationPreference.find_by(project: project, user: project.user)).to be_present
   end
+
+  it "does not email for archived projects" do
+    project = create(:project)
+    group = create(:error_group, :with_occurrence, project: project)
+    project.archive!
+
+    described_class.perform_now(group.id)
+
+    expect(ActionMailer::Base.deliveries).to be_empty
+    expect(EmailNotificationDelivery.count).to eq(0)
+  end
 end

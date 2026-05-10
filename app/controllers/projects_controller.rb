@@ -24,8 +24,10 @@ class ProjectsController < ApplicationController
   def show
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
+    @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
+    @assignable_users = @project.assignable_users.to_a
     @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
-    @groups = inbox_groups(@project, filter: @filter, query: @query)
+    @groups = inbox_groups(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user)
 
     # Turbo Frame request targeting the inbox list — return only the table partial.
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
@@ -36,12 +38,13 @@ class ProjectsController < ApplicationController
         group_trends:  inbox_group_trends(@project, @groups),
         selected_uuid: @selected_uuid,
         filter:        @filter,
-        query:         @query
+        query:         @query,
+        assignee:      @assignee_filter
       }
     end
 
     # Full page load — build everything the workbench needs for the inbox.
-    @counts  = inbox_counts(@project)
+    @counts  = inbox_counts(@project, assignee: @assignee_filter, viewer: current_user)
     @group_trends = inbox_group_trends(@project, @groups)
     @project_overview = project_overview(@project)
     @selected_group = if params[:group_uuid].present?
