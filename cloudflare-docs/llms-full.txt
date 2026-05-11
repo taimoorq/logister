@@ -25,7 +25,7 @@ Canonical product and integration documentation lives on https://docs.logister.o
 - .NET / ASP.NET Core error monitoring: https://docs.logister.org/use-cases/dotnet-error-monitoring/
 - JavaScript / TypeScript error monitoring: https://docs.logister.org/use-cases/javascript-error-monitoring/
 - ColdFusion / CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker and GHCR self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Docker, GHCR, and Docker Hub self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
 - Amazon SES error alert emails and digests: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 
@@ -42,7 +42,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 
 ## Operational Use Cases
 
-- Docker and GHCR self-hosting: Logister publishes versioned release images for teams that want to pin app versions and run separate Rails web and Sidekiq worker containers.
+- Docker, GHCR, and Docker Hub self-hosting: Logister publishes versioned release images for teams that want to pin app versions and run separate Rails web and Sidekiq worker containers.
 - Error assignment and team triage: Logister stores ownership on grouped errors so teammates can filter inboxes by assignee, claim unassigned work, and move production issues through fixed, ignored, archived, or reopened states.
 - Amazon SES error alert emails and digests: Logister sends first-occurrence alerts and daily or weekly project digest emails through standard Rails SMTP settings, commonly backed by SES in self-hosted deployments.
 
@@ -61,16 +61,17 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 
 - GitHub Releases: https://github.com/taimoorq/logister/releases
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
-- Current versioned image: `ghcr.io/taimoorq/logister:v1.1.0`
-- Latest image: `ghcr.io/taimoorq/logister:latest`
-- Release workflow publishes version, latest, and short-SHA Docker tags after CI, Fly deploy, and health checks pass.
+- Docker Hub package: https://hub.docker.com/r/taimoorq/logister
+- Current versioned images: `ghcr.io/taimoorq/logister:v1.1.0` or `docker.io/taimoorq/logister:v1.1.0`
+- Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
+- Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass.
 
 ## Maintainer And Discovery Context
 
 - 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM discovery plan: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-discovery-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
-- Public docs, GitHub Releases, GHCR images, package pages, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
+- Public docs, GitHub Releases, GHCR images, Docker Hub images, package pages, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
 
 ## License And Brand
 
@@ -90,7 +91,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - .NET error monitoring: https://docs.logister.org/use-cases/dotnet-error-monitoring/
 - JavaScript error monitoring: https://docs.logister.org/use-cases/javascript-error-monitoring/
 - CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker and GHCR self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Docker, GHCR, and Docker Hub self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
 - Amazon SES error alerts: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - Getting started: https://docs.logister.org/getting-started/

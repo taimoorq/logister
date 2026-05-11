@@ -9,7 +9,7 @@ Run these checks after a release reaches production and the docs deploy has fini
 - Confirm the homepage, About page, public docs, `llms.txt`, `llms-full.txt`, `robots.txt`, and `sitemap.xml` return `200` responses.
 - Confirm the homepage and docs pages use the current product language from [seo-llm-discovery-plan.md](seo-llm-discovery-plan.md).
 - Confirm GitHub Releases show the new version as the latest release.
-- Confirm the GHCR package is public and the versioned Docker image can be pulled without authentication.
+- Confirm the GHCR and Docker Hub packages are public and the versioned Docker image can be pulled without authentication from both registries.
 - Confirm `README.md`, `CHANGELOG.md`, public docs, and AI-readable files mention the same current version.
 
 Suggested URL checks:
@@ -89,12 +89,12 @@ Use privacy-conscious analytics and server logs to understand whether discovery 
 
 Track these public-page signals:
 
-- Search and AI answer engine referrers to the homepage, docs home, comparison pages, runtime pages, and Docker/GHCR self-hosting page.
-- Clicks from public docs to GitHub source, GitHub Releases, GHCR package, and SDK package pages.
+- Search and AI answer engine referrers to the homepage, docs home, comparison pages, runtime pages, and Docker registry self-hosting page.
+- Clicks from public docs to GitHub source, GitHub Releases, GHCR package, Docker Hub package, and SDK package pages.
 - Clicks from comparison pages to getting started, self-hosting, deployment, HTTP API, and integration docs.
 - Search Console query growth for the target phrases in this plan.
 - GitHub stars, forks, release views, release downloads, issue activity, and discussions from new self-hosters.
-- GHCR image pulls where package visibility and GitHub reporting make that available.
+- GHCR and Docker Hub image pulls where package visibility and registry reporting make that available.
 - SDK package installs and package page traffic for RubyGems, PyPI, npm, and NuGet.
 
 Useful paths to compare after each release:
@@ -110,14 +110,15 @@ Useful paths to compare after each release:
 - `https://github.com/taimoorq/logister/releases`
 - `https://github.com/taimoorq/logister/pkgs/container/logister`
 
-## GitHub and GHCR Checks
+## GitHub And Registry Checks
 
-Use GitHub and GHCR as discovery surfaces for self-hosters:
+Use GitHub, GHCR, and Docker Hub as discovery surfaces for self-hosters:
 
 - Confirm repository description and topics still match the current product positioning.
 - Confirm the latest release body comes from the top changelog entry.
 - Confirm the GHCR image has version, `latest`, and short-SHA tags.
-- Confirm package visibility is public.
+- Confirm the Docker Hub image has version, `latest`, and short-SHA tags.
+- Confirm package visibility is public in both registries.
 - Confirm Docker pull instructions use the current versioned image.
 
 Suggested checks:
@@ -128,6 +129,7 @@ gh release view v1.1.0 --json tagName,isLatest,isDraft,isPrerelease,publishedAt,
 gh api /user/packages/container/logister --jq '{name, visibility, html_url}'
 gh api /user/packages/container/logister/versions --jq '.[] | {id, tags: .metadata.container.tags, updated_at}'
 docker pull ghcr.io/taimoorq/logister:v1.1.0
+docker pull docker.io/taimoorq/logister:v1.1.0
 ```
 
 ## Package and SDK Checks
@@ -149,5 +151,5 @@ For every public release:
 2. Deploy the app and docs.
 3. Run the release checklist.
 4. Resubmit sitemaps if public docs changed substantially.
-5. Review search, AI crawler, GitHub, GHCR, and package signals after 24 hours and again after 7 days.
+5. Review search, AI crawler, GitHub, GHCR, Docker Hub, and package signals after 24 hours and again after 7 days.
 6. Add any positioning or documentation gaps back to the next SEO and LLM discovery plan pass.

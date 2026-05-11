@@ -17,7 +17,7 @@ Supporting phrases can vary naturally, but should consistently reinforce:
 - Error monitoring and grouped bug triage
 - Team ownership, assignment, and status workflows
 - Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse
-- Versioned GHCR Docker images and GitHub Releases
+- Versioned GHCR and Docker Hub images plus GitHub Releases
 - Runtime support for Ruby, .NET, Python, JavaScript/TypeScript, and CFML
 
 ## Completed Work Plan
@@ -33,7 +33,7 @@ Supporting phrases can vary naturally, but should consistently reinforce:
    - .NET / ASP.NET Core error monitoring
    - JavaScript / TypeScript error monitoring
    - ColdFusion / CFML error monitoring
-   - Docker and GHCR self-hosting
+   - Docker registry self-hosting
    - Error assignment and team triage
    - Amazon SES error alert emails and digests
 3. Done: Expand LLM-readable files:
@@ -48,13 +48,13 @@ Supporting phrases can vary naturally, but should consistently reinforce:
    - Keep private app, admin, and API areas out of public indexing.
    - List `llms.txt`, `llms-full.txt`, and sitemaps clearly.
 6. Done: Strengthen GitHub and release discoverability:
-   - Keep README focused on self-hosting, GHCR images, docs, SDKs, license, and trademark rules.
+   - Keep README focused on self-hosting, registry images, docs, SDKs, license, and trademark rules.
    - Use GitHub topics for self-hosted error monitoring, alternatives, Rails, Redis, PostgreSQL, Sidekiq, Docker, and observability.
 7. Done: Measure:
    - Google Search Console and Bing Webmaster Tools.
    - Cloudflare logs for AI crawler traffic.
    - Referrers from AI answer engines and search.
-   - GitHub stars, forks, releases, GHCR pulls, SDK installs, and docs-to-self-hosting clicks.
+   - GitHub stars, forks, releases, GHCR and Docker Hub pulls, SDK installs, and docs-to-self-hosting clicks.
    - Use [seo-llm-measurement-runbook.md](seo-llm-measurement-runbook.md) after each public release or major docs update.
 
 ## Implementation Record
@@ -62,11 +62,11 @@ Supporting phrases can vary naturally, but should consistently reinforce:
 - Standardize the core phrase.
 - Add the first intent pages for self-hosted error monitoring and major comparison searches.
 - Add runtime intent pages for Rails, Python, .NET / ASP.NET Core, JavaScript / TypeScript, and CFML error monitoring.
-- Add operational intent pages for Docker/GHCR self-hosting, team error assignment, and Amazon SES alert emails or digest summaries.
+- Add operational intent pages for Docker registry self-hosting, team error assignment, and Amazon SES alert emails or digest summaries.
 - Add `llms-full.txt` to the app and docs surfaces.
 - Wire new docs pages into the docs index, sitemap, robots, and tests.
 - Update GitHub repository description, homepage, and topics so repository discovery matches the public positioning.
-- Add a measurement runbook for release-time URL, sitemap, search console, AI crawler, GitHub, GHCR, and SDK package checks.
+- Add a measurement runbook for release-time URL, sitemap, search console, AI crawler, GitHub, container registry, and SDK package checks.
 
 ## Release Maintenance Checklist
 
@@ -76,9 +76,9 @@ Use this short checklist whenever a future release changes product positioning, 
 2. Add any new public docs pages to `cloudflare-docs/sitemap.xml`, `cloudflare-docs/llms.txt`, `cloudflare-docs/llms-full.txt`, `public/llms.txt`, and `public/llms-full.txt` when relevant.
 3. Keep page-visible copy and structured data aligned. Do not add schema claims that the visible page does not support.
 4. Keep `robots.txt` focused on public discovery while excluding private app, admin, and API surfaces.
-5. Confirm GitHub repository description, homepage, topics, release notes, GHCR package visibility, and SDK package pages still match the current positioning.
+5. Confirm GitHub repository description, homepage, topics, release notes, GHCR and Docker Hub package visibility, and SDK package pages still match the current positioning.
 6. Run [seo-llm-measurement-runbook.md](seo-llm-measurement-runbook.md) after production and docs deploys.
 
 ## Finished State
 
-This plan is complete for the `v1.1.0` positioning release. Future SEO and LLM work should start from measurement data: search queries, crawler logs, docs referrers, GitHub/GHCR/package signals, and questions from self-hosters.
+This plan is complete for the `v1.1.0` positioning release. Future SEO and LLM work should start from measurement data: search queries, crawler logs, docs referrers, GitHub/GHCR/Docker Hub/package signals, and questions from self-hosters.

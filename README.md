@@ -2,7 +2,7 @@
 
 Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. It gives teams one place to collect application errors, logs, metrics, transactions, and check-ins so they can see what is going wrong, assign ownership, investigate faster, and ship with more confidence.
 
-Use this repository when you want to run Logister yourself or fork it for your own needs. It provides the web UI, project/API key management, ingest endpoints, background jobs, release automation, GHCR Docker images, and operational docs for your own self-hosted instance. `logister.org` is a secondary hosted/public instance of the same product direction, not the primary deployment model.
+Use this repository when you want to run Logister yourself or fork it for your own needs. It provides the web UI, project/API key management, ingest endpoints, background jobs, release automation, GHCR and Docker Hub images, and operational docs for your own self-hosted instance. `logister.org` is a secondary hosted/public instance of the same product direction, not the primary deployment model.
 
 ## Table Of Contents
 
@@ -32,7 +32,7 @@ This app is the self-hosted and self-hostable analytics dashboard for Logister:
 - project lifecycle controls for active, archived, restored, and deleted projects
 - project email notifications for first occurrences and daily or weekly digests
 - optional ClickHouse-backed analytics
-- release versions published as GitHub Releases and Docker images in GitHub Container Registry
+- release versions published as GitHub Releases and Docker images in GitHub Container Registry and Docker Hub
 
 If you are trying to instrument an application, the language integrations live in separate packages and guides:
 
@@ -56,7 +56,7 @@ Canonical setup and integration docs live on `docs.logister.org`, with self-host
 - .NET / ASP.NET Core error monitoring: https://docs.logister.org/use-cases/dotnet-error-monitoring/
 - JavaScript / TypeScript error monitoring: https://docs.logister.org/use-cases/javascript-error-monitoring/
 - ColdFusion / CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker and GHCR self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Docker registry self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
 - Amazon SES error alert emails and digests: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - Self-hosting: https://docs.logister.org/self-hosting/
@@ -140,11 +140,14 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 - https://docs.logister.org/deployment/#env-reference
 
-Release images are published to GitHub Container Registry after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image instead:
+Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image instead:
 
 - `ghcr.io/taimoorq/logister:v1.1.0`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
+- `docker.io/taimoorq/logister:v1.1.0`
+- `docker.io/taimoorq/logister:latest`
+- `docker.io/taimoorq/logister:<short-sha>`
 
 The self-hosting guide includes a Docker option for either managed PostgreSQL/Redis or a single-host Compose-style stack with optional ClickHouse:
 
@@ -204,8 +207,8 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
 | [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |
-| [docs/seo-llm-measurement-runbook.md](docs/seo-llm-measurement-runbook.md) | Release-time checks for search, AI crawler, GitHub, GHCR, and package discoverability |
-| [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and GHCR verification plan |
+| [docs/seo-llm-measurement-runbook.md](docs/seo-llm-measurement-runbook.md) | Release-time checks for search, AI crawler, GitHub, container registries, and package discoverability |
+| [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and container registry verification plan |
 | [docs/1.0-release-plan.md](docs/1.0-release-plan.md) | 1.0 release scope, gates, rollout, and rollback plan |
 | [docs/error-assignment-plan.md](docs/error-assignment-plan.md) | Implementation record for team assignment on grouped errors |
 | [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | GitHub-facing pointer to the canonical CFML docs |

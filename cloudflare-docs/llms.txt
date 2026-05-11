@@ -18,7 +18,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - .NET / ASP.NET Core error monitoring use case: https://docs.logister.org/use-cases/dotnet-error-monitoring/
 - JavaScript / TypeScript error monitoring use case: https://docs.logister.org/use-cases/javascript-error-monitoring/
 - ColdFusion / CFML error monitoring use case: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker and GHCR self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Docker, GHCR, and Docker Hub self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage use case: https://docs.logister.org/use-cases/error-assignment-team-triage/
 - Amazon SES error alert emails and digests use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - HTTP API: https://docs.logister.org/http-api/
@@ -35,7 +35,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 ## Operations
 - Local development: https://docs.logister.org/local-development/
 - Deployment config and `.env.sample` reference: https://docs.logister.org/deployment/
-- Docker self-hosting option and GHCR images: https://docs.logister.org/self-hosting/#docker
+- Docker self-hosting option and registry images: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 
 ## Self-hosting and releases
@@ -44,8 +44,9 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Brand policy: Logister name, logo, wordmark, visual identity, and brand assets are not licensed for use in forks or redistributed versions. Public forks should replace Logister branding with their own branding. See https://github.com/taimoorq/logister/blob/main/TRADEMARKS.md
 - GitHub Releases: https://github.com/taimoorq/logister/releases
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
-- Versioned Docker image: `ghcr.io/taimoorq/logister:v1.1.0`
-- Latest Docker image: `ghcr.io/taimoorq/logister:latest`
+- Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v1.1.0` or `docker.io/taimoorq/logister:v1.1.0`
+- Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, and optional ClickHouse
 - Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 

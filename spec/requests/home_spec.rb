@@ -16,7 +16,7 @@ RSpec.describe "Home", type: :request do
         get root_path
         expect(response).to have_http_status(:success)
         expect(response.body).to include("An open source alternative for teams who want to self-host error monitoring.")
-        expect(response.body).to include("Versioned GHCR images")
+        expect(response.body).to include("Versioned registry images")
         expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("logister-dotnet")
@@ -144,6 +144,8 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
       expect(response.body).to include("GHCR image package")
       expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.0")
+      expect(response.body).to include("Docker Hub image package")
+      expect(response.body).to include("docker.io/taimoorq/logister:v1.1.0")
       expect(response.body).to include("https://docs.logister.org/use-cases/")
       expect(response.body).to include("https://docs.logister.org/use-cases/rails-error-monitoring/")
       expect(response.body).to include("https://docs.logister.org/use-cases/python-error-monitoring/")
@@ -173,10 +175,11 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
       expect(response.body).to include("Sentry alternative")
       expect(response.body).to include("Rails error monitoring")
-      expect(response.body).to include("Docker and GHCR self-hosting")
+      expect(response.body).to include("Docker, GHCR, and Docker Hub self-hosting")
       expect(response.body).to include("Error assignment and team triage")
       expect(response.body).to include("Amazon SES error alert emails")
       expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.0")
+      expect(response.body).to include("docker.io/taimoorq/logister:v1.1.0")
       expect(response.body).to include("TRADEMARKS.md")
     end
   end
