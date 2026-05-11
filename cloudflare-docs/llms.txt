@@ -47,6 +47,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Versioned Docker image: `ghcr.io/taimoorq/logister:v1.1.0`
 - Latest Docker image: `ghcr.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, and optional ClickHouse
+- Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Audience
 - Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, grouped error triage, error assignment with dashboard and project workload views, assignee-filtered inboxes, event investigation with request method and URL/path context, related logs, performance visibility, check-in monitors, project error email alerts, digest summaries, activity review, release visibility, project sharing, and active or archived project views

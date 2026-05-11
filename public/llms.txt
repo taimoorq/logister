@@ -62,6 +62,7 @@ Canonical documentation lives on the public docs host:
 - Latest Docker image: `ghcr.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
+- Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Product summary
 - Captures and groups application errors into triageable error groups.

@@ -14,6 +14,9 @@ All notable changes to Logister will be documented in this file.
 - Runtime-focused SEO docs for Rails, Python, .NET / ASP.NET Core, JavaScript / TypeScript, and CFML error monitoring.
 - Operations-focused SEO docs for Docker/GHCR self-hosting, team error assignment workflows, and Amazon SES error alert emails or digest summaries.
 - Expanded `llms-full.txt` files for the app and docs domains so AI tools can read a denser product, stack, release, license, brand, and comparison context.
+- SEO and LLM measurement runbook for release-time URL, sitemap, search console, AI crawler, referral, GitHub, GHCR, and SDK package checks.
+- AI-readable maintainer and discovery links for release, SEO, and measurement runbooks.
+- Completed SEO and LLM release maintenance checklist for keeping homepage, docs, robots, sitemaps, structured data, GitHub, GHCR, and package surfaces aligned in future releases.
 - Account-wide dashboard event drilldown from explorer filters so chart slices can open the matching recent events.
 
 ### Changed

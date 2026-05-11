@@ -65,6 +65,13 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - Latest image: `ghcr.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags after CI, Fly deploy, and health checks pass.
 
+## Maintainer And Discovery Context
+
+- 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
+- SEO and LLM discovery plan: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-discovery-plan.md
+- SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
+- Public docs, GitHub Releases, GHCR images, package pages, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
+
 ## License And Brand
 
 - Code license: MIT License at https://github.com/taimoorq/logister/blob/main/LICENSE
@@ -90,6 +97,8 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Deployment config: https://docs.logister.org/deployment/
 - Docker self-hosting: https://docs.logister.org/self-hosting/#docker
+- 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
+- SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
 - HTTP API: https://docs.logister.org/http-api/
 - Ruby integration: https://docs.logister.org/integrations/ruby/
 - .NET integration: https://docs.logister.org/integrations/dotnet/
