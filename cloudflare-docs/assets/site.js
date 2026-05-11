@@ -91,6 +91,95 @@ function createConsentScript(category) {
   return script;
 }
 
+function enhanceSidebarSections(sidebar) {
+  const groups = Array.from(sidebar.querySelectorAll(".sidebar-group"));
+  const hasActiveGroup = groups.some((group) => Boolean(group.querySelector("a.active")));
+
+  groups.forEach((group, index) => {
+    if (group.dataset.sidebarEnhanced === "true") return;
+
+    const label = Array.from(group.children).find((child) => child.classList.contains("sidebar-label"));
+    const links = Array.from(group.children).filter((child) => child.tagName === "A");
+    if (!label || links.length === 0) return;
+
+    const title = (label.textContent || "Section").trim();
+    const panel = document.createElement("div");
+    const panelId = `sidebar-section-${index}-${slugifySidebarTitle(title)}`;
+    panel.id = panelId;
+    panel.className = "sidebar-group-panel";
+
+    while (label.nextSibling) {
+      panel.appendChild(label.nextSibling);
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sidebar-section-toggle";
+    button.setAttribute("aria-controls", panelId);
+
+    const buttonLabel = document.createElement("span");
+    buttonLabel.className = "sidebar-section-label";
+    buttonLabel.textContent = title;
+
+    const chevron = document.createElement("span");
+    chevron.className = "sidebar-section-chevron";
+    chevron.setAttribute("aria-hidden", "true");
+
+    button.append(buttonLabel, chevron);
+    group.replaceChild(button, label);
+    group.appendChild(panel);
+    group.dataset.sidebarEnhanced = "true";
+
+    const storageKey = `logister-docs-sidebar:${window.location.pathname}:${title}`;
+    const hasActiveLink = Boolean(panel.querySelector("a.active"));
+    const storedState = readSidebarState(storageKey);
+    const defaultOpen = hasActiveLink || (!hasActiveGroup && index === 0);
+    const isOpen = hasActiveLink || (storedState === null ? defaultOpen : storedState);
+
+    setSidebarSectionState(group, button, panel, isOpen);
+
+    button.addEventListener("click", () => {
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      const nextOpen = !expanded;
+      setSidebarSectionState(group, button, panel, nextOpen);
+      writeSidebarState(storageKey, nextOpen);
+    });
+  });
+}
+
+function slugifySidebarTitle(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "section";
+}
+
+function setSidebarSectionState(group, button, panel, isOpen) {
+  button.setAttribute("aria-expanded", String(isOpen));
+  panel.hidden = !isOpen;
+  group.classList.toggle("is-open", isOpen);
+}
+
+function readSidebarState(key) {
+  try {
+    const value = window.localStorage.getItem(key);
+    if (value === "open") return true;
+    if (value === "closed") return false;
+  } catch (_error) {
+    return null;
+  }
+
+  return null;
+}
+
+function writeSidebarState(key, isOpen) {
+  try {
+    window.localStorage.setItem(key, isOpen ? "open" : "closed");
+  } catch (_error) {
+    return;
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadDocsAnalytics();
 
@@ -107,6 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (sidebar) {
+    enhanceSidebarSections(sidebar);
+
     const sidebarToggle = document.createElement("button");
     sidebarToggle.type = "button";
     sidebarToggle.className = "sidebar-toggle";

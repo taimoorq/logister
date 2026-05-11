@@ -21,6 +21,7 @@ All notable changes to Logister will be documented in this file.
 
 ### Changed
 
+- Condensed the Cloudflare docs sidebar with accessible collapsible sections so the static docs can grow without overwhelming the navigation.
 - Repositioned the homepage, About page, public docs, SEO metadata, robots rules, and `llms.txt` around Logister as a forkable, self-hosted error monitoring and bug triage alternative.
 - Updated self-hosting and AI-readable release references for the next `v1.1.0` Docker image published to GitHub Container Registry.
 - Expanded public project documentation so self-hosters understand the supported release distribution path, permissive code license, and separate Logister brand policy.

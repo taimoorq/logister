@@ -203,28 +203,80 @@ code, pre {
 .sidebar {
   position: sticky;
   top: 5.9rem;
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border);
   border-radius: 1.35rem;
   box-shadow: var(--shadow);
-  padding: 1.1rem;
+  padding: 0.8rem;
 }
-.sidebar-group + .sidebar-group { margin-top: 1.15rem; }
+.sidebar-group + .sidebar-group { margin-top: 0.35rem; }
 .sidebar-label {
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--muted-2);
-  margin: 0 0 0.55rem;
+  margin: 0 0 0.45rem;
+}
+.sidebar-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 0;
+  background: transparent;
+  border-radius: 0.8rem;
+  color: var(--muted-2);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5rem 0.55rem;
+  text-align: left;
+}
+.sidebar-section-toggle:hover {
+  background: #f8fafc;
+  color: var(--text);
+}
+.sidebar-section-label {
+  min-width: 0;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+.sidebar-section-chevron {
+  width: 0.46rem;
+  height: 0.46rem;
+  flex: 0 0 auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+.sidebar-section-toggle[aria-expanded="true"] .sidebar-section-chevron {
+  transform: rotate(225deg);
+}
+.sidebar-group-panel {
+  display: grid;
+  gap: 0.12rem;
+  margin-top: 0.12rem;
+}
+.sidebar-group-panel[hidden] {
+  display: none;
 }
 .sidebar a {
   display: block;
-  padding: 0.7rem 0.82rem;
-  border-radius: 0.85rem;
+  padding: 0.52rem 0.62rem;
+  border-radius: 0.72rem;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.35;
 }
 .sidebar a:hover { background: #f8fafc; color: var(--text); }
 .sidebar a.active {
@@ -235,11 +287,11 @@ code, pre {
 .sidebar hr {
   border: 0;
   border-top: 1px solid var(--border);
-  margin: 1rem 0;
+  margin: 0.75rem 0;
 }
 .sidebar-card {
-  margin-top: 1rem;
-  padding: 1rem;
+  margin-top: 0.75rem;
+  padding: 0.85rem;
   border-radius: 1rem;
   background: linear-gradient(180deg, rgba(239, 246, 255, 0.9) 0%, rgba(248, 250, 252, 0.92) 100%);
   border: 1px solid rgba(37, 99, 235, 0.12);

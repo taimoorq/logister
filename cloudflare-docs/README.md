@@ -6,7 +6,7 @@ This directory contains a standalone static version of the Logister documentatio
 
 - `index.html` and subdirectory `index.html` files provide the static documentation pages.
 - `assets/site.css` contains the docs-specific theme and layout styles.
-- `assets/site.js` provides mobile navigation and copy-to-clipboard behavior for code blocks.
+- `assets/site.js` provides mobile navigation, collapsible sidebar sections, analytics loading, and copy-to-clipboard behavior for code blocks.
 - `functions/assets/analytics-config.js/index.js` serves runtime analytics and Probo Cookie Banner configuration from Cloudflare Pages secrets.
 - `assets/logister-logo.svg` is copied locally so the docs do not depend on the app asset pipeline.
 
@@ -86,6 +86,7 @@ This static export mirrors the current public docs pages from the main Logister 
 When you add or change docs pages in this folder:
 
 - update any repeated sidebar or footer integration links if navigation changed
+- keep sidebar groups as `<div class="sidebar-group"><p class="sidebar-label">...</p>...</div>`; `assets/site.js` turns those groups into accessible collapsible sections at runtime
 - update `sitemap.xml` when you add a new public page
 - preview locally with `wrangler pages dev cloudflare-docs`
 - deploy through the GitHub Actions workflow or `wrangler pages deploy cloudflare-docs --project-name=<project>`
