@@ -31,6 +31,7 @@ Rails.application.routes.draw do
 
   get "dashboard", to: "dashboard#index"
   get "dashboard/explorer", to: "dashboard#explorer", as: :dashboard_explorer
+  get "dashboard/events", to: "dashboard_events#index", as: :dashboard_events
   get "health/clickhouse", to: "health#clickhouse"
   resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
   get "account/security", to: redirect("/users/edit"), as: :account_security

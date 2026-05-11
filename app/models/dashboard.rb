@@ -3,6 +3,7 @@
 class Dashboard
   EVENT_TYPE_ORDER = %w[error log metric transaction check_in].freeze
   EXPLORER_ENVIRONMENT_LIMIT = 8
+  EXPLORER_EVENT_LIMIT = 200
   EXPLORER_WINDOW_DAYS = 7
   EXPLORER_WINDOW = EXPLORER_WINDOW_DAYS.days
 
@@ -49,16 +50,16 @@ class Dashboard
     }
   end
 
-  def self.explorer_for(project_ids, since: nil, event_type: nil, project_id: nil, environment: nil)
+  def self.explorer_for(project_ids, since: nil, event_type: nil, project_id: nil, environment: nil, occurred_on: nil)
     return empty_explorer if project_ids.blank?
 
     since ||= explorer_window_start
     project_ids = filtered_project_ids(project_ids, project_id)
     return empty_explorer if project_ids.blank?
 
-    events_scope = explorer_scope(project_ids, since:, event_type:, environment:)
+    events_scope = explorer_scope(project_ids, since:, event_type:, environment:, occurred_on:)
     open_error_group_counts = ErrorGroup.where(project_id: project_ids).unresolved.group(:project_id).count
-    days = explorer_days(since)
+    days = explorer_days_for(since, occurred_on)
 
     {
       window_started_at: since.utc.iso8601,
@@ -70,6 +71,19 @@ class Dashboard
       projects: explorer_project_counts(events_scope, open_error_group_counts),
       environments: explorer_environment_counts(events_scope)
     }
+  end
+
+  def self.explorer_events_for(project_ids, since: nil, event_type: nil, project_id: nil, environment: nil, occurred_on: nil, limit: EXPLORER_EVENT_LIMIT)
+    return IngestEvent.none if project_ids.blank?
+
+    since ||= explorer_window_start
+    project_ids = filtered_project_ids(project_ids, project_id)
+    return IngestEvent.none if project_ids.blank?
+
+    explorer_scope(project_ids, since:, event_type:, environment:, occurred_on:)
+      .includes(:project, :error_group)
+      .order(occurred_at: :desc, id: :desc)
+      .limit(limit)
   end
 
   def self.empty_explorer
@@ -129,6 +143,13 @@ class Dashboard
   end
   private_class_method :explorer_days
 
+  def self.explorer_days_for(since, occurred_on)
+    day = explorer_filter_date(occurred_on)
+
+    day.present? ? [ day.iso8601 ] : explorer_days(since)
+  end
+  private_class_method :explorer_days_for
+
   def self.event_type_counts(relation)
     counts = relation.group(:event_type).count
 
@@ -148,9 +169,12 @@ class Dashboard
   end
   private_class_method :filtered_project_ids
 
-  def self.explorer_scope(project_ids, since:, event_type:, environment:)
+  def self.explorer_scope(project_ids, since:, event_type:, environment:, occurred_on:)
     relation = IngestEvent.where(project_id: project_ids).where("occurred_at >= ?", since)
     relation = relation.where(event_type: event_type) if event_type.present? && IngestEvent.event_types.key?(event_type)
+    if (day = explorer_filter_date(occurred_on))
+      relation = relation.where(occurred_at: day.all_day)
+    end
     if environment.present?
       relation = relation.where(
         "COALESCE(NULLIF(context->>'environment', ''), 'unknown') = ?",
@@ -215,6 +239,17 @@ class Dashboard
     "COALESCE(NULLIF(context->>'environment', ''), 'unknown')"
   end
   private_class_method :environment_expression
+
+  def self.explorer_filter_date(value)
+    return value if value.is_a?(Date)
+    return value.to_date if value.respond_to?(:to_date)
+    return if value.blank?
+
+    Date.iso8601(value.to_s)
+  rescue ArgumentError
+    nil
+  end
+  private_class_method :explorer_filter_date
 
   def self.event_type_name(value)
     return value.to_s if IngestEvent.event_types.key?(value.to_s)

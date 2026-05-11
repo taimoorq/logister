@@ -114,6 +114,43 @@ RSpec.describe Dashboard, type: :model do
       expect(explorer[:projects]).to contain_exactly(hash_including(project_id: project.id, count: 1))
       expect(explorer[:environments]).to eq([ { name: "staging", count: 1 } ])
     end
+
+    it "applies an occurred-on filter before aggregating" do
+      travel_to Time.zone.local(2026, 5, 10, 12, 0, 0) do
+        project = create(:project)
+        api_key = create(:api_key, project: project, user: project.user)
+        create(:ingest_event, :log, project: project, api_key: api_key, occurred_at: Time.zone.local(2026, 5, 9, 14, 0, 0))
+        create(:ingest_event, :log, project: project, api_key: api_key, occurred_at: Time.zone.local(2026, 5, 10, 14, 0, 0))
+
+        explorer = described_class.explorer_for([ project.id ], occurred_on: Date.new(2026, 5, 9))
+
+        expect(explorer[:days]).to eq([ "2026-05-09" ])
+        expect(explorer[:totals]).to eq(events: 1, active_projects: 1, environments: 1)
+        expect(explorer[:timeline]).to contain_exactly({ day: "2026-05-09", event_type: "log", count: 1 })
+      end
+    end
+  end
+
+  describe ".explorer_events_for" do
+    it "returns bounded recent events for the current explorer slice" do
+      travel_to Time.zone.local(2026, 5, 10, 12, 0, 0) do
+        project = create(:project)
+        api_key = create(:api_key, project: project, user: project.user)
+        older = create(:ingest_event, :log, project: project, api_key: api_key, context: { "environment" => "production" }, occurred_at: 2.hours.ago)
+        newer = create(:ingest_event, :log, project: project, api_key: api_key, context: { "environment" => "production" }, occurred_at: 1.hour.ago)
+        create(:ingest_event, :metric, project: project, api_key: api_key, context: { "environment" => "production" }, occurred_at: 30.minutes.ago)
+
+        events = described_class.explorer_events_for(
+          [ project.id ],
+          event_type: "log",
+          environment: "production",
+          occurred_on: Date.new(2026, 5, 10),
+          limit: 10
+        )
+
+        expect(events.to_a).to eq([ newer, older ])
+      end
+    end
   end
 
   describe ".empty_summary" do

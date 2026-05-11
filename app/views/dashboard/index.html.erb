@@ -42,6 +42,12 @@
 
         <div class="dashboard-explorer-summary" data-dashboard-explorer-target="summary"></div>
 
+        <%= link_to dashboard_events_path,
+                    class: "dashboard-explorer-open",
+                    data: { dashboard_explorer_target: "openEventsLink" } do %>
+          Open matching events
+        <% end %>
+
         <div class="dashboard-explorer-filter-panel">
           <div class="dashboard-explorer-filter-heading">
             <span>Filters</span>

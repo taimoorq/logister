@@ -1,6 +1,7 @@
 class DashboardController < ApplicationController
   DASHBOARD_CACHE_TTL = 30.seconds
-  MAX_EXPLORER_ENVIRONMENT_FILTER_LENGTH = 80
+
+  include DashboardExplorerFiltering
 
   before_action :authenticate_user!
 
@@ -47,7 +48,7 @@ class DashboardController < ApplicationController
       expires_in: DASHBOARD_CACHE_TTL
     ) { Dashboard.explorer_for(project_ids, **filters) }
 
-    render json: dashboard_explorer_response(projects, explorer)
+    render json: dashboard_explorer_response(projects, explorer, filters)
   end
 
   private
@@ -72,6 +73,7 @@ class DashboardController < ApplicationController
   def dashboard_explorer_config(projects)
     {
       endpoint: dashboard_explorer_path,
+      events_endpoint: dashboard_events_path,
       window_days: Dashboard::EXPLORER_WINDOW_DAYS,
       event_types: Dashboard::EVENT_TYPE_ORDER.map do |event_type|
         { key: event_type, label: helpers.dashboard_event_type_label(event_type) }
@@ -89,11 +91,12 @@ class DashboardController < ApplicationController
     }
   end
 
-  def dashboard_explorer_response(projects, explorer)
+  def dashboard_explorer_response(projects, explorer, filters)
     projects_by_id = projects.index_by(&:id)
     event_type_counts = explorer[:event_types] || {}
 
     {
+      events_url: dashboard_events_path(dashboard_explorer_query_params(filters)),
       window_started_at: explorer[:window_started_at],
       window_days: explorer[:window_days],
       days: explorer[:days],
@@ -123,17 +126,5 @@ class DashboardController < ApplicationController
       end,
       environments: explorer[:environments]
     }
-  end
-
-  def dashboard_explorer_filters(project_ids)
-    event_type = params[:event_type].to_s
-    project_id = params[:project_id].to_i
-    environment = params[:environment].to_s.strip.first(MAX_EXPLORER_ENVIRONMENT_FILTER_LENGTH)
-
-    {}.tap do |filters|
-      filters[:event_type] = event_type if IngestEvent.event_types.key?(event_type)
-      filters[:project_id] = project_id if project_ids.include?(project_id)
-      filters[:environment] = environment if environment.present?
-    end
   end
 end

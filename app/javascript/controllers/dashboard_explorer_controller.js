@@ -19,6 +19,7 @@ export default class extends Controller {
     "environmentChart",
     "summary",
     "filters",
+    "openEventsLink",
     "resetButton"
   ]
   static values = {
@@ -27,7 +28,7 @@ export default class extends Controller {
 
   connect() {
     this.payload = this.readPayload()
-    this.filters = { eventType: null, projectId: null, environment: null }
+    this.filters = { eventType: null, projectId: null, environment: null, occurredOn: null }
     this.eventTypes = this.payload.event_types || []
     this.projects = this.payload.projects || []
     this.projectById = new Map(this.projects.map((project) => [project.id, project]))
@@ -60,7 +61,7 @@ export default class extends Controller {
 
   resetFilters(event) {
     event?.preventDefault()
-    this.filters = { eventType: null, projectId: null, environment: null }
+    this.filters = { eventType: null, projectId: null, environment: null, occurredOn: null }
     this.renderShell()
     this.fetchData()
   }
@@ -85,6 +86,7 @@ export default class extends Controller {
     this.charts.projects = echarts.init(this.projectChartTarget, null, { renderer: "canvas" })
     this.charts.environments = echarts.init(this.environmentChartTarget, null, { renderer: "canvas" })
 
+    this.charts.timeline.on("click", (params) => this.toggleFilter("occurredOn", params.data?.filterValue))
     this.charts.eventTypes.on("click", (params) => this.toggleFilter("eventType", params.data?.filterValue))
     this.charts.projects.on("click", (params) => this.toggleFilter("projectId", params.data?.filterValue))
     this.charts.environments.on("click", (params) => this.toggleFilter("environment", params.data?.filterValue))
@@ -93,6 +95,7 @@ export default class extends Controller {
   renderShell() {
     this.renderSummary({ events: 0, active_projects: 0, environments: 0 })
     this.renderFilterChips()
+    this.renderOpenEventsLink()
     this.resetButtonTarget.disabled = !this.hasActiveFilters()
   }
 
@@ -132,6 +135,18 @@ export default class extends Controller {
     if (this.filters.eventType) url.searchParams.set("event_type", this.filters.eventType)
     if (this.filters.projectId) url.searchParams.set("project_id", this.filters.projectId)
     if (this.filters.environment) url.searchParams.set("environment", this.filters.environment)
+    if (this.filters.occurredOn) url.searchParams.set("occurred_on", this.filters.occurredOn)
+
+    return url
+  }
+
+  eventsUrl() {
+    const url = new URL(this.payload.events_endpoint || "/dashboard/events", window.location.origin)
+
+    if (this.filters.eventType) url.searchParams.set("event_type", this.filters.eventType)
+    if (this.filters.projectId) url.searchParams.set("project_id", this.filters.projectId)
+    if (this.filters.environment) url.searchParams.set("environment", this.filters.environment)
+    if (this.filters.occurredOn) url.searchParams.set("occurred_on", this.filters.occurredOn)
 
     return url
   }
@@ -139,6 +154,7 @@ export default class extends Controller {
   renderData(data) {
     this.renderSummary(data.totals || { events: 0, active_projects: 0, environments: 0 })
     this.renderFilterChips()
+    this.renderOpenEventsLink(data)
     this.renderTimeline(data)
     this.renderEventTypes(data)
     this.renderProjects(data)
@@ -152,6 +168,7 @@ export default class extends Controller {
       <span><strong>--</strong><span>Active apps</span></span>
       <span><strong>--</strong><span>Environments</span></span>
     `
+    this.renderOpenEventsLink()
   }
 
   toggleFilter(key, value) {
@@ -185,9 +202,22 @@ export default class extends Controller {
       chips.push(this.filterChip("environment", this.filters.environment))
     }
 
+    if (this.filters.occurredOn) {
+      chips.push(this.filterChip("occurredOn", shortDateLabel(this.filters.occurredOn)))
+    }
+
     this.filtersTarget.innerHTML = chips.length > 0
       ? chips.join("")
       : '<span class="dashboard-explorer-filter-empty">No filters applied</span>'
+  }
+
+  renderOpenEventsLink(data = null) {
+    const eventCount = Number(data?.totals?.events) || 0
+
+    this.openEventsLinkTarget.href = data?.events_url || this.eventsUrl()
+    this.openEventsLinkTarget.textContent = eventCount > 0
+      ? `Open ${formatNumber(eventCount)} matching events`
+      : "Open matching events"
   }
 
   filterChip(key, label) {
@@ -210,9 +240,12 @@ export default class extends Controller {
       symbolSize: 5,
       emphasis: { focus: "series" },
       color: EVENT_COLORS[eventType.key],
-      data: days.map((day) => counts.get(timelineKey(day, eventType.key)) || 0)
+      data: days.map((day) => ({
+        value: counts.get(timelineKey(day, eventType.key)) || 0,
+        filterValue: day
+      }))
     }))
-    const hasData = series.some((line) => line.data.some((value) => value > 0))
+    const hasData = series.some((line) => line.data.some((point) => point.value > 0))
 
     this.setChartOption(this.charts.timeline, {
       aria: { enabled: true },

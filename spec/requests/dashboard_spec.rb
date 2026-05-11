@@ -126,29 +126,72 @@ RSpec.describe "Dashboard", type: :request do
         expect(explorer.at_css(".dashboard-explorer-slice[aria-label='Current explorer slice']")).to be_present
         expect(explorer.at_css(".dashboard-explorer-summary[data-dashboard-explorer-target='summary']")).to be_present
         expect(explorer.at_css(".dashboard-explorer-filters[data-dashboard-explorer-target='filters']")).to be_present
+        expect(explorer.at_css(".dashboard-explorer-open[data-dashboard-explorer-target='openEventsLink']")["href"]).to eq(dashboard_events_path)
         expect(payload["endpoint"]).to eq(dashboard_explorer_path)
+        expect(payload["events_endpoint"]).to eq(dashboard_events_path)
         expect(payload["window_days"]).to eq(Dashboard::EXPLORER_WINDOW_DAYS)
         expect(payload["rows"]).to be_nil
         expect(document.css("[data-dashboard-explorer-target$='Chart']").size).to eq(4)
       end
 
       it "returns filtered explorer aggregates as JSON" do
-        project = projects(:one)
-        create(:ingest_event, :log, project: project, api_key: api_keys(:one), context: { "environment" => "production" }, occurred_at: 30.minutes.ago)
+        travel_to Time.zone.local(2026, 5, 10, 12, 0, 0) do
+          project = projects(:one)
+          create(:ingest_event, :log, project: project, api_key: api_keys(:one), context: { "environment" => "production" }, occurred_at: 30.minutes.ago)
 
-        get dashboard_explorer_path, params: { event_type: "log", project_id: project.id, environment: "production" }
+          occurred_on = Time.current.to_date.iso8601
+          get dashboard_explorer_path, params: { event_type: "log", project_id: project.id, environment: "production", occurred_on: occurred_on }
 
-        expect(response).to have_http_status(:success)
-        expect(response.media_type).to eq("application/json")
+          expect(response).to have_http_status(:success)
+          expect(response.media_type).to eq("application/json")
 
-        data = JSON.parse(response.body)
+          data = JSON.parse(response.body)
 
-        expect(data.dig("totals", "events")).to be >= 1
-        expect(data["days"]).to be_an(Array)
-        expect(data["days"].size).to eq(Dashboard::EXPLORER_WINDOW_DAYS)
-        expect(data["event_types"].find { |event_type| event_type["key"] == "log" }["count"]).to be >= 1
-        expect(data["projects"].map { |project_row| project_row["id"] }).to include(project.id)
-        expect(data["environments"]).to include(hash_including("name" => "production"))
+          expect(data.dig("totals", "events")).to be >= 1
+          expect(data["days"]).to be_an(Array)
+          expect(data["days"]).to eq([ occurred_on ])
+          expect(data["events_url"]).to include(dashboard_events_path)
+          expect(data["events_url"]).to include("event_type=log")
+          expect(data["events_url"]).to include("project_id=#{project.id}")
+          expect(data["events_url"]).to include("environment=production")
+          expect(data["events_url"]).to include("occurred_on=#{occurred_on}")
+          expect(data["event_types"].find { |event_type| event_type["key"] == "log" }["count"]).to be >= 1
+          expect(data["projects"].map { |project_row| project_row["id"] }).to include(project.id)
+          expect(data["environments"]).to include(hash_including("name" => "production"))
+        end
+      end
+
+      it "renders account-wide matching events for an explorer slice" do
+        travel_to Time.zone.local(2026, 5, 10, 12, 0, 0) do
+          project = projects(:one)
+          other_project = create(:project, user: users(:two), name: "Hidden Events App")
+          other_key = create(:api_key, project: other_project, user: users(:two))
+          matching_event = create(:ingest_event,
+                                  :log,
+                                  project: project,
+                                  api_key: api_keys(:one),
+                                  message: "checkout worker lagged",
+                                  context: { "environment" => "production", "release" => "2026.05.10" },
+                                  occurred_at: 30.minutes.ago)
+          create(:ingest_event,
+                 :log,
+                 project: other_project,
+                 api_key: other_key,
+                 message: "private service event",
+                 context: { "environment" => "production" },
+                 occurred_at: 20.minutes.ago)
+
+          get dashboard_events_path, params: { event_type: "log", project_id: project.id, environment: "production", occurred_on: "2026-05-10" }
+
+          expect(response).to have_http_status(:success)
+
+          document = Nokogiri::HTML.parse(response.body)
+          event_link = document.at_css("a[href='#{project_event_path(project, matching_event)}']")
+
+          expect(document.text).to include("Matching events", "checkout worker lagged", project.name, "Logs", "production", "2026.05.10")
+          expect(document.text).not_to include("private service event", "Hidden Events App")
+          expect(event_link).to be_present
+        end
       end
 
       it "bounds arbitrary environment filters before querying" do

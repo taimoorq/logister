@@ -1,0 +1,89 @@
+<div class="dashboard-page">
+  <section class="dashboard-title-row">
+    <div class="dashboard-title-copy">
+      <p class="dashboard-kicker">Explorer drilldown</p>
+      <h1>Matching events</h1>
+      <p>
+        Latest <%= number_with_delimiter([ @events.size, @event_limit ].min) %>
+        events from the dashboard explorer window.
+      </p>
+    </div>
+
+    <div class="dashboard-action-row">
+      <%= link_to dashboard_path, class: "projects-secondary-button" do %>
+        <%= app_icon(:chart, css: "w-4 h-4") %>
+        <span>Back to dashboard</span>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="dashboard-events-panel">
+    <div class="dashboard-events-toolbar">
+      <div>
+        <p class="dashboard-kicker">Current slice</p>
+        <% if @filter_labels.any? %>
+          <div class="dashboard-events-filter-list">
+            <% @filter_labels.each do |label| %>
+              <span><%= label %></span>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="dashboard-events-muted">No filters applied.</p>
+        <% end %>
+      </div>
+
+      <% if @events.size == @event_limit %>
+        <p class="dashboard-events-muted">Showing the latest <%= number_with_delimiter(@event_limit) %> matches.</p>
+      <% end %>
+    </div>
+
+    <% if @events.any? %>
+      <div class="dashboard-events-list">
+        <% @events.each do |event| %>
+          <% event_project = event.project %>
+          <% event_environment = IngestEvent.environment(event, "unknown") %>
+          <% event_release = IngestEvent.release(event) %>
+          <% event_title = event.message.to_s.lines.first.to_s.strip.presence || "(untitled event)" %>
+          <% event_url = if event.error_group.present?
+                           project_path(event_project, group_uuid: event.error_group.uuid, event_uuid: event.uuid)
+                         else
+                           project_event_path(event_project, event)
+                         end %>
+
+          <article class="dashboard-events-row">
+            <div class="dashboard-events-main">
+              <div class="dashboard-events-title-row">
+                <%= link_to event_title, event_url, class: "dashboard-events-title" %>
+                <span class="<%= dashboard_event_badge_class(event.event_type) %>"><%= dashboard_event_type_label(event.event_type) %></span>
+              </div>
+              <p class="dashboard-events-meta">
+                <%= event_project.name %>
+                <span>·</span>
+                <%= local_time_tag(event.occurred_at, format: :long) %>
+                <span>·</span>
+                <%= event_environment %>
+                <% if event_release.present? %>
+                  <span>·</span>
+                  <%= event_release %>
+                <% end %>
+              </p>
+              <% if event.fingerprint.present? %>
+                <p class="dashboard-events-submeta"><%= event.fingerprint %></p>
+              <% end %>
+            </div>
+
+            <div class="dashboard-events-actions">
+              <%= link_to "Open event", event_url, class: "dashboard-attention-action" %>
+              <%= link_to "Project", project_path(event_project), class: "dashboard-attention-action" %>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="dashboard-empty-state">
+        <strong>No events match this slice</strong>
+        <span>Try removing one filter or returning to the dashboard explorer.</span>
+      </div>
+    <% end %>
+  </section>
+</div>
