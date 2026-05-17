@@ -409,7 +409,7 @@ jobs:
 
       - name: Set up Docker Buildx
         if: steps.release_config.outputs.enabled == 'true'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
         if: steps.release_config.outputs.enabled == 'true'
