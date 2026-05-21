@@ -475,7 +475,7 @@ jobs:
 
       - name: Publish container images
         if: steps.release_config.outputs.enabled == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
