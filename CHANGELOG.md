@@ -2,6 +2,27 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v1.1.1 - 2026-05-21
+
+### Added
+
+- Client submission monitoring for intake failures, reported through the `logister-ruby` gem so rejected ingest and check-in submissions create sanitized Logister events instead of disappearing into server logs.
+- Diagnostics for failed client submissions, including endpoint, status, request metadata, authentication source, token digest prefix, project/API key state when resolvable, payload shape, and validation errors without storing raw bearer tokens.
+- Loop protection so Logister does not recursively self-report rejected client-submission monitoring events.
+- Self-monitoring for ClickHouse ingest failures and the error digest scheduler, reported through `logister-ruby` logs, metrics, and check-ins.
+- Optional Quay.io container image mirroring for release builds when `QUAY_USERNAME` and `QUAY_TOKEN` GitHub Actions secrets are configured.
+
+### Changed
+
+- Updated the Rails app to `logister-ruby` v0.2.4, which moves shared Ruby error enrichment into the gem for other Ruby/Rails apps to use.
+- Broadened API intake normalization for CFML/Lucee-style uppercase `EVENT` and `CHECK_IN` envelopes and nested payload keys.
+- Standardized SDK option parity around metric value/unit fields and check-in release, interval, trace ID, and request ID fields across the Ruby, .NET, Python, and JavaScript clients.
+
+### Fixed
+
+- CFML events from quria now render stack frames when the payload provides `exception.stacktrace` or `exception.stack_trace` instead of only `tagContext`/`tag_context`.
+- Missing envelopes and invalid ingest/check-in payloads now return explicit client errors while also creating internal monitoring events for triage.
+
 ## v1.1.0 - 2026-05-10
 
 ### Added

@@ -14,7 +14,10 @@ module ProjectEvents
         exception_hash["tag_context"] || exception_hash[:tag_context]
       return parse_backtrace_frames(tag_context) if tag_context.present?
 
-      parse_backtrace_frames(exception_hash["backtrace"] || exception_hash[:backtrace])
+      trace = exception_hash["stacktrace"] || exception_hash[:stacktrace] ||
+        exception_hash["stack_trace"] || exception_hash[:stack_trace] ||
+        exception_hash["backtrace"] || exception_hash[:backtrace]
+      parse_backtrace_frames(trace)
     end
 
     def summary(fallback_message = nil)

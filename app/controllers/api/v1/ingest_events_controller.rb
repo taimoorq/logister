@@ -1,7 +1,10 @@
 class Api::V1::IngestEventsController < ApplicationController
+  include ClientSubmissionMonitoring
+
   skip_before_action :verify_authenticity_token
   skip_before_action :require_modern_browser, raise: false
   before_action :authenticate_api_key!
+  rescue_from ActionController::ParameterMissing, with: :render_bad_request
 
   def create
     event = @api_key.project.ingest_events.new(event_params)
@@ -16,39 +19,83 @@ class Api::V1::IngestEventsController < ApplicationController
       @api_key.touch_last_used!
       render json: { id: event.uuid, legacy_id: event.id, status: "accepted" }, status: :created
     else
+      report_client_submission_failure(
+        reason: "invalid_event",
+        status: :unprocessable_content,
+        errors: event.errors.full_messages
+      )
       render json: { errors: event.errors.full_messages }, status: :unprocessable_content
     end
   end
 
   private
 
-  def authenticate_api_key!
-    token = bearer_token || request.headers["X-Api-Key"]
-    @api_key = ApiKey.authenticate(token)
-
-    render json: { error: "Unauthorized" }, status: :unauthorized unless @api_key
-  end
-
-  def bearer_token
-    header = request.headers["Authorization"].to_s
-    return nil unless header.start_with?("Bearer ")
-
-    header.delete_prefix("Bearer ").strip
-  end
-
   def event_params
-    raw_event = params.require(:event)
-    # Build a plain hash so :context (and its nested keys) are not stripped when passed to Model.new
-    safe = raw_event.permit(:event_type, :level, :message, :fingerprint, :occurred_at).to_h
-    raw_context = raw_event.to_unsafe_h["context"] || raw_event.to_unsafe_h[:context] || {}
-    context_hash = raw_context.respond_to?(:to_unsafe_h) ? raw_context.to_unsafe_h : raw_context.to_h
-    safe["context"] = context_hash.deep_stringify_keys
-    normalize_event_payload(safe)
+    raw_event = fetch_event_payload
+    event_hash = normalized_event_hash(raw_event).with_indifferent_access
+
+    safe = event_hash.slice("event_type", "level", "message", "fingerprint", "occurred_at")
+    raw_context = event_hash["context"] || {}
+    safe["context"] = normalize_context_hash(raw_context)
+    normalize_event_payload(safe, event_hash)
   end
 
-  def normalize_event_payload(attrs)
+  def fetch_event_payload
+    raw_event = params[:event] || params[:EVENT]
+    raise ActionController::ParameterMissing.new(:event) if raw_event.blank?
+
+    raw_event
+  end
+
+  def normalized_event_hash(raw_event)
+    unless raw_event.respond_to?(:to_unsafe_h) || raw_event.respond_to?(:to_h)
+      raise ActionController::ParameterMissing.new(:event)
+    end
+
+    event_hash = raw_event.respond_to?(:to_unsafe_h) ? raw_event.to_unsafe_h : raw_event.to_h
+
+    event_hash.each_with_object({}) do |(key, value), normalized|
+      normalized[normalize_payload_key(key)] = value
+    end
+  end
+
+  def normalize_payload_key(key)
+    key.to_s.underscore.downcase
+  end
+
+  def normalize_context_hash(raw_context)
+    context_hash =
+      if raw_context.respond_to?(:to_unsafe_h)
+        raw_context.to_unsafe_h
+      elsif raw_context.respond_to?(:to_h)
+        raw_context.to_h
+      else
+        {}
+      end
+
+    add_normalized_context_keys(context_hash)
+  end
+
+  def add_normalized_context_keys(value)
+    case value
+    when Hash
+      value.each_with_object({}) do |(key, nested_value), normalized|
+        string_key = key.to_s
+        normalized_value = add_normalized_context_keys(nested_value)
+        normalized[string_key] = normalized_value
+
+        normalized_key = normalize_payload_key(key)
+        normalized[normalized_key] = normalized_value unless normalized.key?(normalized_key)
+      end
+    when Array
+      value.map { |nested_value| add_normalized_context_keys(nested_value) }
+    else
+      value
+    end
+  end
+
+  def normalize_event_payload(attrs, raw_event)
     context = attrs["context"].is_a?(Hash) ? attrs["context"].deep_dup : {}
-    raw_event = params.require(:event)
 
     merge_context_value!(context, "environment", raw_event[:environment], fallback: Rails.env)
     merge_context_value!(context, "release", raw_event[:release])
@@ -80,5 +127,14 @@ class Api::V1::IngestEventsController < ApplicationController
       ip: request.remote_ip,
       user_agent: request.user_agent
     }
+  end
+
+  def render_bad_request(error)
+    report_client_submission_failure(
+      reason: "missing_event_envelope",
+      status: :bad_request,
+      exception: error
+    )
+    render json: { error: error.message }, status: :bad_request
   end
 end

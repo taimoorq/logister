@@ -357,6 +357,30 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Resolve optional registry mirrors
+        id: registry_mirrors
+        if: steps.release_config.outputs.enabled == 'true'
+        run: |
+          quay_enabled=false
+          if [ -n "${QUAY_USERNAME}" ] || [ -n "${QUAY_TOKEN}" ]; then
+            if [ -z "${QUAY_USERNAME}" ] || [ -z "${QUAY_TOKEN}" ]; then
+              echo "Quay mirror is partially configured. Add both QUAY_USERNAME and QUAY_TOKEN, or remove both secrets."
+              exit 1
+            fi
+            quay_enabled=true
+          fi
+          quay_namespace="${QUAY_NAMESPACE}"
+          if [ -z "${quay_namespace}" ] && [ -n "${QUAY_USERNAME}" ]; then
+            quay_namespace="${QUAY_USERNAME%%+*}"
+          fi
+
+          echo "quay_enabled=${quay_enabled}" >> "$GITHUB_OUTPUT"
+          echo "quay_namespace=${quay_namespace}" >> "$GITHUB_OUTPUT"
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+          QUAY_NAMESPACE: ${{ secrets.QUAY_NAMESPACE }}
+
       - name: Extract release metadata
         id: release_meta
         if: steps.release_config.outputs.enabled == 'true'
@@ -393,18 +417,33 @@ jobs:
         if: steps.release_config.outputs.enabled == 'true'
         env:
           RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          QUAY_NAMESPACE: ${{ steps.registry_mirrors.outputs.quay_namespace }}
+          QUAY_ENABLED: ${{ steps.registry_mirrors.outputs.quay_enabled }}
         run: |
           ruby <<'RUBY' >> "$GITHUB_OUTPUT"
           repository = ENV.fetch("GITHUB_REPOSITORY").downcase
           sha = ENV.fetch("GITHUB_SHA")
           release_tag = ENV.fetch("RELEASE_TAG")
-          image = "ghcr.io/#{repository}"
+          short_sha = sha[0, 12]
+          images = [
+            "ghcr.io/#{repository}",
+            "docker.io/#{ENV.fetch("DOCKERHUB_USERNAME")}/logister"
+          ]
+          images << "quay.io/#{ENV.fetch("QUAY_NAMESPACE")}/logister" if ENV["QUAY_ENABLED"] == "true"
 
-          puts "image=#{image}"
-          puts "version_tag=#{image}:#{release_tag}"
-          puts "latest_tag=#{image}:latest"
-          puts "short_sha=#{sha[0, 12]}"
-          puts "sha_tag=#{image}:#{sha[0, 12]}"
+          tags = images.flat_map do |image|
+            [
+              "#{image}:#{release_tag}",
+              "#{image}:latest",
+              "#{image}:#{short_sha}"
+            ]
+          end
+
+          puts "short_sha=#{short_sha}"
+          puts "tags<<EOF"
+          puts tags
+          puts "EOF"
           RUBY
 
       - name: Set up Docker Buildx
@@ -426,19 +465,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Publish container images to GHCR and Docker Hub
+      - name: Log in to Quay.io
+        if: steps.release_config.outputs.enabled == 'true' && steps.registry_mirrors.outputs.quay_enabled == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Publish container images
         if: steps.release_config.outputs.enabled == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: |
-            ${{ steps.container_meta.outputs.version_tag }}
-            ${{ steps.container_meta.outputs.latest_tag }}
-            ${{ steps.container_meta.outputs.sha_tag }}
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/logister:${{ steps.release_meta.outputs.tag_name }}
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/logister:latest
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/logister:${{ steps.container_meta.outputs.short_sha }}
+          tags: ${{ steps.container_meta.outputs.tags }}
           labels: |
             org.opencontainers.image.title=Logister
             org.opencontainers.image.description=Self-hostable error monitoring and bug triage for applications

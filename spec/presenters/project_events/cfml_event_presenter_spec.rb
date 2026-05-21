@@ -3,6 +3,30 @@
 require "rails_helper"
 
 RSpec.describe ProjectEvents::CfmlEventPresenter do
+  describe "#frames" do
+    it "accepts quria-style stacktrace frames" do
+      presenter = described_class.new(
+        nil,
+        {
+          "stacktrace" => [
+            {
+              "template" => "/var/www/index.cfm",
+              "line" => 42,
+              "type" => "Expression"
+            }
+          ]
+        }
+      )
+
+      frames = presenter.frames
+
+      expect(frames.size).to eq(1)
+      expect(frames.first[:file]).to eq("/var/www/index.cfm")
+      expect(frames.first[:line_number]).to eq(42)
+      expect(frames.first[:method_name]).to eq("Expression")
+    end
+  end
+
   describe "#request_details" do
     it "prefers CGI details and falls back to generic request metadata" do
       event = Struct.new(:context).new(

@@ -32,4 +32,35 @@ RSpec.describe ClickhouseIngestJob, type: :job do
       end
     }.not_to raise_error
   end
+
+  it "reports ClickHouse ingest failures through Logister" do
+    event = ingest_events(:one)
+    ingestor = instance_double(Logister::EventIngestor)
+    allow(Logister::EventIngestor).to receive(:new).and_return(ingestor)
+    allow(ingestor).to receive(:call).and_raise(Logister::ClickhouseClient::Error, "insert failed")
+    allow(Logister).to receive(:report_log)
+    allow(Logister).to receive(:report_metric)
+
+    described_class.perform_now(event.id)
+
+    expect(Logister).to have_received(:report_log).with(
+      hash_including(
+        message: "ClickHouse ingest failed",
+        level: "error",
+        fingerprint: "logister:clickhouse_ingest:failure",
+        context: hash_including(
+          clickhouse_ingest: hash_including(ingest_event_id: event.id)
+        )
+      )
+    )
+    expect(Logister).to have_received(:report_metric).with(
+      hash_including(
+        message: "logister.clickhouse.ingest_failure",
+        level: "error",
+        context: hash_including(
+          metric: hash_including(name: "logister.clickhouse.ingest_failure", value: 1, unit: "count")
+        )
+      )
+    )
+  end
 end

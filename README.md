@@ -142,12 +142,14 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image instead:
 
-- `ghcr.io/taimoorq/logister:v1.1.0`
+- `ghcr.io/taimoorq/logister:v1.1.1`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v1.1.0`
+- `docker.io/taimoorq/logister:v1.1.1`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
+
+The release workflow also supports an optional Quay.io mirror. Add `QUAY_USERNAME` and `QUAY_TOKEN` as GitHub Actions secrets to publish `quay.io/<namespace>/logister` with the same version, `latest`, and short-SHA tags. If the Quay login is a robot account such as `namespace+robot`, the workflow derives the image namespace automatically; set `QUAY_NAMESPACE` if you want to override it.
 
 The self-hosting guide includes a Docker option for either managed PostgreSQL/Redis or a single-host Compose-style stack with optional ClickHouse:
 
@@ -206,6 +208,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [TRADEMARKS.md](TRADEMARKS.md) | Logister brand and trademark policy for forks, hosted services, and redistributed versions |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
+| [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
 | [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |
 | [docs/seo-llm-measurement-runbook.md](docs/seo-llm-measurement-runbook.md) | Release-time checks for search, AI crawler, GitHub, container registries, and package discoverability |
 | [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and container registry verification plan |

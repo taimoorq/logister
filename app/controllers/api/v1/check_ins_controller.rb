@@ -1,7 +1,10 @@
 class Api::V1::CheckInsController < ApplicationController
+  include ClientSubmissionMonitoring
+
   skip_before_action :verify_authenticity_token
   skip_before_action :require_modern_browser, raise: false
   before_action :authenticate_api_key!
+  rescue_from ActionController::ParameterMissing, with: :render_bad_request
 
   def create
     monitor_payload = check_in_params
@@ -29,27 +32,19 @@ class Api::V1::CheckInsController < ApplicationController
       @api_key.touch_last_used!
       render json: { id: event.uuid, status: "accepted" }, status: :created
     else
+      report_client_submission_failure(
+        reason: "invalid_check_in",
+        status: :unprocessable_content,
+        errors: event.errors.full_messages
+      )
       render json: { errors: event.errors.full_messages }, status: :unprocessable_content
     end
   end
 
   private
 
-  def authenticate_api_key!
-    token = bearer_token || request.headers["X-Api-Key"]
-    @api_key = ApiKey.authenticate(token)
-    render json: { error: "Unauthorized" }, status: :unauthorized unless @api_key
-  end
-
-  def bearer_token
-    header = request.headers["Authorization"].to_s
-    return nil unless header.start_with?("Bearer ")
-
-    header.delete_prefix("Bearer ").strip
-  end
-
   def check_in_params
-    payload = params.require(:check_in).permit(
+    payload = normalized_check_in_payload.permit(
       :slug, :status, :occurred_at, :environment, :release,
       :expected_interval_seconds, :duration_ms, :trace_id, :request_id
     )
@@ -67,10 +62,49 @@ class Api::V1::CheckInsController < ApplicationController
     }
   end
 
+  def fetch_check_in_payload
+    candidates = [ params[:check_in], params[:CHECK_IN] ].compact
+    raw_check_in = candidates.find { |candidate| check_in_payload_candidate?(candidate) }
+    raise ActionController::ParameterMissing.new(:check_in) unless raw_check_in
+
+    raw_check_in
+  end
+
+  def check_in_payload_candidate?(candidate)
+    return false unless candidate.respond_to?(:to_unsafe_h) || candidate.respond_to?(:to_h)
+
+    candidate_hash = candidate.respond_to?(:to_unsafe_h) ? candidate.to_unsafe_h : candidate.to_h
+    normalized_keys = candidate_hash.keys.map { |key| key.to_s.underscore.downcase }
+    (normalized_keys & %w[slug status occurred_at environment release expected_interval_seconds duration_ms trace_id request_id]).any?
+  end
+
+  def normalized_check_in_payload
+    raw_check_in = fetch_check_in_payload
+    unless raw_check_in.respond_to?(:to_unsafe_h) || raw_check_in.respond_to?(:to_h)
+      raise ActionController::ParameterMissing.new(:check_in)
+    end
+
+    check_in_hash = raw_check_in.respond_to?(:to_unsafe_h) ? raw_check_in.to_unsafe_h : raw_check_in.to_h
+    normalized = check_in_hash.each_with_object({}) do |(key, value), attrs|
+      attrs[key.to_s.underscore.downcase] = value
+    end
+
+    ActionController::Parameters.new(normalized)
+  end
+
   def request_context
     {
       ip: request.remote_ip,
       user_agent: request.user_agent
     }
+  end
+
+  def render_bad_request(error)
+    report_client_submission_failure(
+      reason: "missing_check_in_envelope",
+      status: :bad_request,
+      exception: error
+    )
+    render json: { error: error.message }, status: :bad_request
   end
 end

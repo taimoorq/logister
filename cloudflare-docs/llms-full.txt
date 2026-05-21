@@ -62,7 +62,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - GitHub Releases: https://github.com/taimoorq/logister/releases
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
-- Current versioned images: `ghcr.io/taimoorq/logister:v1.1.0` or `docker.io/taimoorq/logister:v1.1.0`
+- Current versioned images: `ghcr.io/taimoorq/logister:v1.1.1` or `docker.io/taimoorq/logister:v1.1.1`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass.
 
