@@ -557,8 +557,19 @@
     @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
     letter-spacing: 0;
   }
+  .dashboard-explorer-actions {
+    @apply mt-3 flex flex-col gap-2;
+  }
+  .dashboard-explorer-open,
+  .dashboard-explorer-project {
+    @apply flex h-9 items-center justify-center rounded-md px-3 text-xs font-bold uppercase no-underline;
+    letter-spacing: 0;
+  }
   .dashboard-explorer-open {
-    @apply mt-3 flex h-9 items-center justify-center rounded-md bg-blue-600 px-3 text-xs font-bold uppercase text-white no-underline hover:bg-blue-700;
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+  .dashboard-explorer-project {
+    @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
     letter-spacing: 0;
   }
   .dashboard-explorer-layout {

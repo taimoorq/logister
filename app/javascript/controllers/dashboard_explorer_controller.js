@@ -20,6 +20,7 @@ export default class extends Controller {
     "summary",
     "filters",
     "openEventsLink",
+    "openProjectLink",
     "resetButton"
   ]
   static values = {
@@ -31,7 +32,7 @@ export default class extends Controller {
     this.filters = { eventType: null, projectId: null, environment: null, occurredOn: null }
     this.eventTypes = this.payload.event_types || []
     this.projects = this.payload.projects || []
-    this.projectById = new Map(this.projects.map((project) => [project.id, project]))
+    this.projectById = new Map(this.projects.map((project) => [String(project.id), project]))
     this.typeLabelByKey = new Map(this.eventTypes.map((eventType) => [eventType.key, eventType.label]))
     this.charts = {}
 
@@ -96,6 +97,7 @@ export default class extends Controller {
     this.renderSummary({ events: 0, active_projects: 0, environments: 0 })
     this.renderFilterChips()
     this.renderOpenEventsLink()
+    this.renderOpenProjectLink()
     this.resetButtonTarget.disabled = !this.hasActiveFilters()
   }
 
@@ -155,6 +157,7 @@ export default class extends Controller {
     this.renderSummary(data.totals || { events: 0, active_projects: 0, environments: 0 })
     this.renderFilterChips()
     this.renderOpenEventsLink(data)
+    this.renderOpenProjectLink(data)
     this.renderTimeline(data)
     this.renderEventTypes(data)
     this.renderProjects(data)
@@ -169,6 +172,7 @@ export default class extends Controller {
       <span><strong>--</strong><span>Environments</span></span>
     `
     this.renderOpenEventsLink()
+    this.renderOpenProjectLink()
   }
 
   toggleFilter(key, value) {
@@ -195,7 +199,7 @@ export default class extends Controller {
     }
 
     if (this.filters.projectId) {
-      chips.push(this.filterChip("projectId", this.projectById.get(this.filters.projectId)?.name || "Project"))
+      chips.push(this.filterChip("projectId", this.projectById.get(String(this.filters.projectId))?.name || "Project"))
     }
 
     if (this.filters.environment) {
@@ -218,6 +222,35 @@ export default class extends Controller {
     this.openEventsLinkTarget.textContent = eventCount > 0
       ? `Open ${formatNumber(eventCount)} matching events`
       : "Open matching events"
+  }
+
+  renderOpenProjectLink(data = null) {
+    if (!this.hasOpenProjectLinkTarget) return
+
+    const project = this.projectForInboxLink(data)
+
+    if (!project?.url) {
+      this.openProjectLinkTarget.hidden = true
+      this.openProjectLinkTarget.removeAttribute("href")
+      this.openProjectLinkTarget.textContent = "Open project inbox"
+      this.openProjectLinkTarget.removeAttribute("aria-label")
+      return
+    }
+
+    this.openProjectLinkTarget.hidden = false
+    this.openProjectLinkTarget.href = project.url
+    this.openProjectLinkTarget.textContent = "Open project inbox"
+    this.openProjectLinkTarget.setAttribute("aria-label", `Open ${project.name} project inbox`)
+  }
+
+  projectForInboxLink(data = null) {
+    if (this.filters.projectId) return this.projectById.get(String(this.filters.projectId))
+
+    const projectRows = data?.projects || []
+    if (projectRows.length !== 1) return null
+
+    const project = projectRows[0]
+    return this.projectById.get(String(project.id)) || project
   }
 
   filterChip(key, label) {
@@ -283,7 +316,7 @@ export default class extends Controller {
     const chartData = (data.projects || []).map((project) => ({
       name: project.name,
       value: project.count,
-      filterValue: project.id,
+      filterValue: String(project.id),
       openErrors: project.open_errors || 0,
       itemStyle: { color: project.open_errors > 0 ? "#ef4444" : "#2563eb" }
     })).sort((a, b) => b.value - a.value).slice(0, 8)

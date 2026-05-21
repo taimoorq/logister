@@ -127,9 +127,11 @@ RSpec.describe "Dashboard", type: :request do
         expect(explorer.at_css(".dashboard-explorer-summary[data-dashboard-explorer-target='summary']")).to be_present
         expect(explorer.at_css(".dashboard-explorer-filters[data-dashboard-explorer-target='filters']")).to be_present
         expect(explorer.at_css(".dashboard-explorer-open[data-dashboard-explorer-target='openEventsLink']")["href"]).to eq(dashboard_events_path)
+        expect(explorer.at_css(".dashboard-explorer-project[data-dashboard-explorer-target='openProjectLink'][hidden]")).to be_present
         expect(payload["endpoint"]).to eq(dashboard_explorer_path)
         expect(payload["events_endpoint"]).to eq(dashboard_events_path)
         expect(payload["window_days"]).to eq(Dashboard::EXPLORER_WINDOW_DAYS)
+        expect(payload["projects"]).to include(hash_including("name" => projects(:one).name, "url" => project_path(projects(:one))))
         expect(payload["rows"]).to be_nil
         expect(document.css("[data-dashboard-explorer-target$='Chart']").size).to eq(4)
       end
@@ -156,7 +158,8 @@ RSpec.describe "Dashboard", type: :request do
           expect(data["events_url"]).to include("environment=production")
           expect(data["events_url"]).to include("occurred_on=#{occurred_on}")
           expect(data["event_types"].find { |event_type| event_type["key"] == "log" }["count"]).to be >= 1
-          expect(data["projects"].map { |project_row| project_row["id"] }).to include(project.id)
+          project_row = data["projects"].find { |row| row["id"] == project.id }
+          expect(project_row).to include("url" => project_path(project), "activity_url" => activity_project_path(project))
           expect(data["environments"]).to include(hash_including("name" => "production"))
         end
       end
