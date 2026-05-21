@@ -34,7 +34,7 @@ module IngestEventReporting
     end
 
     def transaction_stats(project, since: 24.hours.ago, apdex_threshold_ms: 300.0)
-      events = recent_transactions(since, 2000).where(project: project).to_a
+      events = recent_transactions(since, 2000).where(project: project).select(:id, :level, :context).to_a
       return { count: 0, throughput_per_minute: 0.0, p50_ms: 0.0, p95_ms: 0.0, error_rate: 0.0, apdex: 0.0 } if events.empty?
 
       durations = events.map { |event| duration_ms(event) }.select(&:positive?).sort

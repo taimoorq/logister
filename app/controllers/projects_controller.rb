@@ -1,5 +1,6 @@
 class ProjectsController < ApplicationController
   PROJECT_FILTERS = %w[active archived all].freeze
+  PROJECT_DASHBOARD_CACHE_TTL = 30.seconds
   PROJECT_OVERVIEW_CACHE_TTL = 30.seconds
   PROJECT_STATS_CACHE_TTL = 45.seconds
   LEGACY_INBOX_PARAMS = %w[filter q assignee group_uuid event_uuid tab frame_scope frame].freeze
@@ -30,7 +31,8 @@ class ProjectsController < ApplicationController
 
     @counts = inbox_counts(@project, viewer: current_user)
     @project_overview = project_overview(@project)
-    @event_type_counts_last_24h = project_event_type_counts(@project, since: 24.hours.ago)
+    dashboard_metrics = project_dashboard_metrics(@project)
+    @event_type_counts_last_24h = dashboard_metrics[:event_type_counts_last_24h]
     @events_last_24h = @event_type_counts_last_24h.values.sum
     @activity_events_last_24h = @event_type_counts_last_24h.except("error").values.sum
     @recent_error_groups = @project.error_groups
@@ -42,10 +44,8 @@ class ProjectsController < ApplicationController
                                       .where.not(event_type: IngestEvent.event_types[:error])
                                       .order(occurred_at: :desc)
                                       .limit(5)
-    @latest_event = @project.ingest_events.order(occurred_at: :desc).first
-    @db_query_events = @project.ingest_events.recent_db_queries(24.hours.ago).to_a
-    @db_stats = IngestEvent.db_stats_from_events(@db_query_events)
-    @transaction_stats = IngestEvent.transaction_stats(@project, since: 24.hours.ago)
+    @db_stats = dashboard_metrics[:db_stats]
+    @transaction_stats = dashboard_metrics[:transaction_stats]
   end
 
   def inbox
@@ -224,6 +224,22 @@ class ProjectsController < ApplicationController
 
     Dashboard::EVENT_TYPE_ORDER.index_with do |event_type|
       counts[event_type].to_i + counts[IngestEvent.event_types[event_type]].to_i
+    end
+  end
+
+  def project_dashboard_metrics(project)
+    safe_cache_fetch(
+      [ "project", project.id, "dashboard_metrics", cache_time_bucket(PROJECT_DASHBOARD_CACHE_TTL) ],
+      expires_in: PROJECT_DASHBOARD_CACHE_TTL
+    ) do
+      since = 24.hours.ago
+      db_query_events = project.ingest_events.recent_db_queries(since).select(:id, :context).to_a
+
+      {
+        event_type_counts_last_24h: project_event_type_counts(project, since: since),
+        db_stats: IngestEvent.db_stats_from_events(db_query_events),
+        transaction_stats: IngestEvent.transaction_stats(project, since: since)
+      }
     end
   end
 end

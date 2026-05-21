@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_171000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_21_153000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -166,6 +166,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_171000) do
     t.index ["error_group_id"], name: "index_ingest_events_on_error_group_id"
     t.index ["project_id", "event_type", "occurred_at"], name: "idx_ingest_events_project_occurred_type", order: { occurred_at: :desc }
     t.index ["project_id", "event_type"], name: "index_ingest_events_on_project_id_and_event_type"
+    t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_activity_occurred", order: { occurred_at: :desc }, where: "(event_type <> 0)"
+    t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_db_query_occurred", order: { occurred_at: :desc }, where: "((event_type = 1) AND (message = 'db.query'::text))"
+    t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_transactions_occurred", order: { occurred_at: :desc }, where: "(event_type = 2)"
     t.index ["project_id", "occurred_at"], name: "index_ingest_events_on_project_id_and_occurred_at"
     t.index ["project_id", "updated_at"], name: "idx_ingest_events_project_updated_at", order: { updated_at: :desc }
     t.index ["project_id"], name: "index_ingest_events_on_project_id"

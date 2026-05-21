@@ -197,7 +197,7 @@
             <% end %>
           <% end %>
         </div>
-      <% elsif @latest_event.present? %>
+      <% elsif latest_event_at.present? %>
         <div class="dashboard-empty-state mt-4">
           <strong>Only error events so far</strong>
           <span>Recent logs, metrics, transactions, and check-ins will show up here.</span>
