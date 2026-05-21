@@ -2,13 +2,14 @@ class ProjectsController < ApplicationController
   PROJECT_FILTERS = %w[active archived all].freeze
   PROJECT_OVERVIEW_CACHE_TTL = 30.seconds
   PROJECT_STATS_CACHE_TTL = 45.seconds
+  LEGACY_INBOX_PARAMS = %w[filter q assignee group_uuid event_uuid tab frame_scope frame].freeze
 
   include ProjectInboxData
   include ProjectEventDetailData
   include ProjectScope
 
   before_action :authenticate_user!
-  before_action :set_accessible_project, only: [ :show ]
+  before_action :set_accessible_project, only: [ :show, :inbox ]
   before_action :set_owned_project, only: [ :edit, :update, :archive, :restore, :destroy ]
 
   def index
@@ -22,54 +23,33 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
-    @query  = params[:q].to_s.strip
-    @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
-    @assignable_users = @project.assignable_users.to_a
-    @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
-    @groups = inbox_groups(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user)
-
-    # Turbo Frame request targeting the inbox list — return only the table partial.
-    if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
-      @selected_uuid = params[:group_uuid]
-      return render partial: "projects/inbox_table", locals: {
-        project:       @project,
-        groups:        @groups,
-        group_trends:  inbox_group_trends(@project, @groups),
-        selected_uuid: @selected_uuid,
-        filter:        @filter,
-        query:         @query,
-        assignee:      @assignee_filter
-      }
+    if legacy_inbox_request?
+      render_project_inbox
+      return
     end
 
-    # Full page load — build everything the workbench needs for the inbox.
-    @counts  = inbox_counts(@project, assignee: @assignee_filter, viewer: current_user)
-    @group_trends = inbox_group_trends(@project, @groups)
+    @counts = inbox_counts(@project, viewer: current_user)
     @project_overview = project_overview(@project)
-    @selected_group = if params[:group_uuid].present?
-      @project.error_groups.find_by(uuid: params[:group_uuid])
-    else
-      @groups.first
-    end
+    @event_type_counts_last_24h = project_event_type_counts(@project, since: 24.hours.ago)
+    @events_last_24h = @event_type_counts_last_24h.values.sum
+    @activity_events_last_24h = @event_type_counts_last_24h.except("error").values.sum
+    @recent_error_groups = @project.error_groups
+                                   .unresolved
+                                   .includes(:latest_event, :assignee)
+                                   .recent_first
+                                   .limit(5)
+    @recent_activity_events = @project.ingest_events
+                                      .where.not(event_type: IngestEvent.event_types[:error])
+                                      .order(occurred_at: :desc)
+                                      .limit(5)
+    @latest_event = @project.ingest_events.order(occurred_at: :desc).first
+    @db_query_events = @project.ingest_events.recent_db_queries(24.hours.ago).to_a
+    @db_stats = IngestEvent.db_stats_from_events(@db_query_events)
+    @transaction_stats = IngestEvent.transaction_stats(@project, since: 24.hours.ago)
+  end
 
-    @selected_event = if params[:event_uuid].present?
-      @project.ingest_events.find_by(uuid: params[:event_uuid])
-    end
-
-    # Safety: if the requested event does not belong to the selected group, ignore it.
-    if @selected_event && @selected_group && @selected_event.error_group_id != @selected_group.id
-      @selected_event = nil
-    end
-
-    detail_event = @selected_event || @selected_group&.latest_event
-    return unless detail_event.present?
-
-    detail_data = build_project_event_detail(@project, detail_event, group: @selected_group)
-    @detail_event = detail_data[:event]
-    @detail_group = detail_data[:group]
-    @detail_occurrences = detail_data[:occurrences]
-    @detail_related_logs = detail_data[:related_logs]
+  def inbox
+    render_project_inbox
   end
 
   def new
@@ -117,6 +97,63 @@ class ProjectsController < ApplicationController
   end
 
   private
+
+  def render_project_inbox
+    @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
+    @query  = params[:q].to_s.strip
+    @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
+    @assignable_users = @project.assignable_users.to_a
+    @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
+    @groups = inbox_groups(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user)
+
+    # Turbo Frame request targeting the inbox list — return only the table partial.
+    if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
+      @selected_uuid = params[:group_uuid]
+      return render partial: "projects/inbox_table", locals: {
+        project:       @project,
+        groups:        @groups,
+        group_trends:  inbox_group_trends(@project, @groups),
+        selected_uuid: @selected_uuid,
+        filter:        @filter,
+        query:         @query,
+        assignee:      @assignee_filter
+      }
+    end
+
+    # Full page load — build everything the workbench needs for the inbox.
+    @counts  = inbox_counts(@project, assignee: @assignee_filter, viewer: current_user)
+    @group_trends = inbox_group_trends(@project, @groups)
+    @project_overview = project_overview(@project)
+    @selected_group = if params[:group_uuid].present?
+      @project.error_groups.find_by(uuid: params[:group_uuid])
+    else
+      @groups.first
+    end
+
+    @selected_event = if params[:event_uuid].present?
+      @project.ingest_events.find_by(uuid: params[:event_uuid])
+    end
+
+    # Safety: if the requested event does not belong to the selected group, ignore it.
+    if @selected_event && @selected_group && @selected_event.error_group_id != @selected_group.id
+      @selected_event = nil
+    end
+
+    detail_event = @selected_event || @selected_group&.latest_event
+    if detail_event.present?
+      detail_data = build_project_event_detail(@project, detail_event, group: @selected_group)
+      @detail_event = detail_data[:event]
+      @detail_group = detail_data[:group]
+      @detail_occurrences = detail_data[:occurrences]
+      @detail_related_logs = detail_data[:related_logs]
+    end
+
+    render :inbox unless performed?
+  end
+
+  def legacy_inbox_request?
+    (request.query_parameters.keys & LEGACY_INBOX_PARAMS).any?
+  end
 
   def project_params
     params.require(:project).permit(:name, :description, :integration_kind)
@@ -179,6 +216,14 @@ class ProjectsController < ApplicationController
         monitor_status_counts: monitor_status_counts,
         unhealthy_monitors_count: monitor_status_counts.fetch(:missed, 0) + monitor_status_counts.fetch(:error, 0)
       }
+    end
+  end
+
+  def project_event_type_counts(project, since:)
+    counts = project.ingest_events.where("occurred_at >= ?", since).group(:event_type).count
+
+    Dashboard::EVENT_TYPE_ORDER.index_with do |event_type|
+      counts[event_type].to_i + counts[IngestEvent.event_types[event_type]].to_i
     end
   end
 end

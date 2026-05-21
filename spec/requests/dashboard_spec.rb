@@ -88,7 +88,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(project_row).to be_present
         expect(project_row.at_css(".dashboard-project-main")["href"]).to eq(project_path(project))
         expect(project_row.at_css(".project-type-icon-ruby use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-ruby\z})
-        expect(project_row.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")).to be_present
+        expect(project_row.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved')}']")).to be_present
         expect(project_row.at_css("a[href='#{activity_project_path(project)}']")).to be_present
       end
 
@@ -106,7 +106,7 @@ RSpec.describe "Dashboard", type: :request do
 
         document = Nokogiri::HTML.parse(response.body)
         panel = document.at_css(".dashboard-assignment-panel")
-        row = panel.at_css("a[href='#{project_path(project, group_uuid: group.uuid, assignee: 'me')}']")
+        row = panel.at_css("a[href='#{inbox_project_path(project, group_uuid: group.uuid, assignee: 'me')}']")
 
         expect(panel).to be_present
         expect(panel.text).to include("My assignments", "Assigned checkout failure")

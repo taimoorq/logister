@@ -65,7 +65,7 @@ class ErrorGroupsController < ApplicationController
           )
         ]
       end
-      format.html { redirect_to project_path(@project, filter: filter, q: query, assignee: assignee) }
+      format.html { redirect_to inbox_project_path(@project, filter: filter, q: query, assignee: assignee) }
     end
   end
 end

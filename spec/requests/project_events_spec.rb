@@ -6,9 +6,9 @@ RSpec.describe "Project events", type: :request do
   describe "GET /projects/:project_uuid/events" do
     before { sign_in users(:one) }
 
-    it "redirects to project when not a Turbo Frame request" do
+    it "redirects to the project inbox when not a Turbo Frame request" do
       get project_events_path(projects(:one))
-      expect(response).to redirect_to(project_path(projects(:one), filter: "unresolved", q: "", assignee: "all"))
+      expect(response).to redirect_to(inbox_project_path(projects(:one), filter: "unresolved", q: "", assignee: "all"))
     end
   end
 

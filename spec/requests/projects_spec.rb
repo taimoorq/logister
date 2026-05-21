@@ -47,8 +47,8 @@ RSpec.describe "Projects", type: :request do
         expect(card.at_css(".project-card-health")).to be_nil
         expect(card.text).not_to include("Session stability", "User stability", "Performance score")
 
-        open_errors_link = card.at_css("a[href='#{project_path(project, filter: 'unresolved')}']")
-        all_errors_link = card.at_css("a[href='#{project_path(project, filter: 'all')}']")
+        open_errors_link = card.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved')}']")
+        all_errors_link = card.at_css("a[href='#{inbox_project_path(project, filter: 'all')}']")
         activity_link = card.at_css("a[href='#{activity_project_path(project)}']")
 
         expect(open_errors_link).to be_present
@@ -115,16 +115,17 @@ RSpec.describe "Projects", type: :request do
         menu = document.at_css(".nav-project-menu")
 
         expect(document.at_css(".project-archived-notice").text).to include("Archived project")
-        expect(document.at_css("a.projects-secondary-button[href='#{projects_path(filter: 'archived')}']")).to be_present
-        expect(document.at_css("a.inbox-filter-projects-link[href='#{projects_path(filter: 'archived')}']")).to be_present
+        expect(document.at_css(".sidebar-action-link[href='#{projects_path(filter: 'archived')}']")).to be_present
         expect(menu.css(".nav-project-item-title").map { |node| node.text.strip }).not_to include(project.name)
       end
 
-      it "renders project status signals in a tucked-away disclosure" do
+      it "renders a project dashboard that summarizes inbox, activity, and performance collection" do
         project = create(:project, user: users(:one), name: "Status Strip")
         api_key = create(:api_key, project: project, user: users(:one))
         create(:ingest_event, :grouped, project: project, api_key: api_key, message: "Grouped status error")
         create(:ingest_event, :log, project: project, api_key: api_key, occurred_at: 2.hours.ago)
+        create(:ingest_event, :transaction, project: project, api_key: api_key, occurred_at: 20.minutes.ago, context: { duration_ms: 128.4 })
+        create(:ingest_event, :metric, project: project, api_key: api_key, message: "db.query", occurred_at: 10.minutes.ago, context: { duration_ms: 42.5 })
         create(:check_in_monitor, :missed, project: project)
 
         get project_path(project)
@@ -132,17 +133,13 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
 
         document = Nokogiri::HTML.parse(response.body)
-        menu = document.at_css(".project-signals-menu")
-        strip = menu&.at_css(".project-overview-strip")
 
-        expect(document.at_css(".project-command-panel")).to be_present
-        expect(menu).to be_present
-        expect(menu.at_css("summary").text).to include("Project signals")
-        expect(strip).to be_present
-        expect(strip.at_css("a[href='#{project_path(project, filter: 'unresolved')}']").text).to include("1", "Open errors")
-        expect(strip.at_css("a[href='#{project_path(project, filter: 'introduced_today')}']").text).to include("1", "Introduced today")
-        expect(strip.at_css("a[href='#{activity_project_path(project)}']").text).to include("2", "Events 24h")
-        expect(strip.at_css("a[href='#{monitors_project_path(project)}']").text).to include("1", "1 monitor tracked")
+        expect(document.at_css(".inbox-workbench")).to be_nil
+        expect(document.text).to include("Inbox", "Error groups", "Activity", "Events and logs", "Performance", "Transactions")
+        expect(document.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved')}']").text).to include("1", "Open")
+        expect(document.css("a[href='#{activity_project_path(project)}']").map(&:text).join(" ")).to include("View activity")
+        expect(document.css("a[href='#{performance_project_path(project)}']").map(&:text).join(" ")).to include("View performance")
+        expect(document.text).to include("Logs 1", "Transactions 1", "DB queries", "1")
       end
 
       it "points activity-only .NET projects from the empty inbox to Activity" do
@@ -150,7 +147,7 @@ RSpec.describe "Projects", type: :request do
         api_key = create(:api_key, project: project, user: users(:one))
         create(:ingest_event, :transaction, project: project, api_key: api_key)
 
-        get project_path(project)
+        get inbox_project_path(project)
 
         expect(response).to have_http_status(:success)
 
@@ -189,7 +186,7 @@ RSpec.describe "Projects", type: :request do
         latest_event.update!(error_group: error_group)
         ErrorOccurrence.create!(error_group: error_group, ingest_event: latest_event, occurred_at: latest_event.occurred_at)
 
-        get project_path(project, group_uuid: error_group.uuid)
+        get inbox_project_path(project, group_uuid: error_group.uuid)
 
         expect(response).to have_http_status(:success)
         detail_frame = Nokogiri::HTML.parse(response.body).at_css('turbo-frame#error_detail')
@@ -200,7 +197,7 @@ RSpec.describe "Projects", type: :request do
       end
 
       it "marks the active filter and selected inbox row with accessible state attributes" do
-        get project_path(projects(:system_inbox), filter: "unresolved", group_uuid: error_groups(:system_primary_group).uuid)
+        get inbox_project_path(projects(:system_inbox), filter: "unresolved", group_uuid: error_groups(:system_primary_group).uuid)
 
         expect(response).to have_http_status(:success)
 
@@ -215,7 +212,7 @@ RSpec.describe "Projects", type: :request do
       end
 
       it "renders the inbox controls as a top filter bar and uses compact row metadata" do
-        get project_path(projects(:system_inbox), filter: "unresolved", group_uuid: error_groups(:system_primary_group).uuid)
+        get inbox_project_path(projects(:system_inbox), filter: "unresolved", group_uuid: error_groups(:system_primary_group).uuid)
 
         expect(response).to have_http_status(:success)
 
@@ -273,7 +270,7 @@ RSpec.describe "Projects", type: :request do
                api_key: api_key,
                title: "Unassigned error")
 
-        get project_path(project, filter: "unresolved", assignee: "me", group_uuid: mine.uuid)
+        get inbox_project_path(project, filter: "unresolved", assignee: "me", group_uuid: mine.uuid)
 
         expect(response).to have_http_status(:success)
 
@@ -288,7 +285,7 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css("input[name='assignee'][value='me']")).to be_present
         expect(document.at_css("#inbox_counts .inbox-filter-link[aria-current='page']").text).to include("Open", "1")
 
-        get project_path(project, filter: "unresolved", assignee: "unassigned")
+        get inbox_project_path(project, filter: "unresolved", assignee: "unassigned")
 
         document = Nokogiri::HTML.parse(response.body)
         rows_text = document.css("tr.inbox-row").map(&:text).join(" ")
@@ -296,7 +293,7 @@ RSpec.describe "Projects", type: :request do
         expect(rows_text).to include("Unassigned error")
         expect(rows_text).not_to include("Mine assigned error", "Member assigned error")
 
-        get project_path(project, filter: "unresolved", assignee: member.uuid)
+        get inbox_project_path(project, filter: "unresolved", assignee: member.uuid)
 
         document = Nokogiri::HTML.parse(response.body)
         rows_text = document.css("tr.inbox-row").map(&:text).join(" ")
@@ -315,7 +312,7 @@ RSpec.describe "Projects", type: :request do
                  first_seen_at: offset.minutes.ago)
         end
 
-        get project_path(project, filter: "unresolved")
+        get inbox_project_path(project, filter: "unresolved")
 
         expect(response).to have_http_status(:success)
 
@@ -366,7 +363,7 @@ RSpec.describe "Projects", type: :request do
         mismatched_event.update!(error_group: other_group)
         ErrorOccurrence.create!(error_group: other_group, ingest_event: mismatched_event, occurred_at: mismatched_event.occurred_at)
 
-        get project_path(project, group_uuid: selected_group.uuid, event_uuid: mismatched_event.uuid)
+        get inbox_project_path(project, group_uuid: selected_group.uuid, event_uuid: mismatched_event.uuid)
 
         expect(response).to have_http_status(:success)
         detail_frame = Nokogiri::HTML.parse(response.body).at_css('turbo-frame#error_detail')
@@ -442,8 +439,8 @@ RSpec.describe "Projects", type: :request do
         access_table = document.at_css("#project_memberships_tbody")
 
         expect(document.text).to include("Open assignments", "Open issues", "Assigned", "Unassigned")
-        expect(document.at_css("a[href='#{project_path(project, filter: 'unresolved', assignee: users(:one).uuid)}']").text.strip).to eq("1")
-        expect(access_table.at_css("a[href='#{project_path(project, filter: 'unresolved', assignee: member.uuid)}']").text.strip).to eq("1")
+        expect(document.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved', assignee: users(:one).uuid)}']").text.strip).to eq("1")
+        expect(access_table.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved', assignee: member.uuid)}']").text.strip).to eq("1")
       end
 
       it "shows JavaScript-specific integration guidance for logister-js projects" do

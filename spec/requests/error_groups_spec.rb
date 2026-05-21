@@ -40,7 +40,7 @@ RSpec.describe "Error groups", type: :request do
 
       patch resolve_project_error_group_path(project, group)
 
-      expect(response).to redirect_to(project_path(project, filter: "unresolved", q: "", assignee: "all"))
+      expect(response).to redirect_to(inbox_project_path(project, filter: "unresolved", q: "", assignee: "all"))
     end
 
     it "returns 404 for group in another project" do
@@ -133,7 +133,7 @@ RSpec.describe "Error groups", type: :request do
       patch project_error_group_assignment_path(project, group),
             params: { assigned_user_id: users(:two).uuid }
 
-      expect(response).to redirect_to(project_path(project, filter: "unresolved", q: "", assignee: "all", group_uuid: group.uuid))
+      expect(response).to redirect_to(inbox_project_path(project, filter: "unresolved", q: "", assignee: "all", group_uuid: group.uuid))
       expect(group.reload.assignee).to eq(users(:two))
       expect(group.assigned_by).to eq(users(:two))
     end

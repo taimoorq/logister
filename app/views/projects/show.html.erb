@@ -1,159 +1,213 @@
+<%= render "projects/header" %>
+
 <% open_errors_count = @counts.fetch(:unresolved, 0) %>
 <% introduced_today_count = @counts.fetch(:introduced_today, 0) %>
-<% events_last_24h = @project_overview.fetch(:events_last_24h, 0) %>
-<% unhealthy_monitors_count = @project_overview.fetch(:unhealthy_monitors_count, 0) %>
-<% monitors_count = @project_overview.fetch(:monitors_count, 0) %>
-<% monitors_label = monitors_count.positive? ? "#{pluralize(monitors_count, "monitor")} tracked" : "No monitors" %>
+<% all_error_groups_count = @counts.fetch(:all, 0) %>
+<% latest_event_at = @project_overview.fetch(:latest_event_at, nil) %>
+<% activity_types = Dashboard::EVENT_TYPE_ORDER.reject { |event_type| event_type == "error" } %>
+<% active_activity_types = activity_types.select { |event_type| @event_type_counts_last_24h.fetch(event_type, 0).positive? } %>
+<% transaction_count = @transaction_stats.fetch(:count, 0).to_i %>
+<% db_query_count = @db_stats.fetch(:count, 0).to_i %>
+<% performance_events_count = transaction_count + db_query_count %>
+<% error_rate_percent = (@transaction_stats.fetch(:error_rate, 0.0).to_f * 100.0).round(1) %>
 
-<section class="project-command-panel">
-  <div class="project-command-main">
-    <div class="project-command-identity">
-      <%= project_integration_icon(@project) %>
-      <div>
-        <p class="dashboard-kicker">Project inbox</p>
-        <h1><%= @project.name %></h1>
-        <p>
-          <code><%= @project.slug %></code>
-          <span><%= @project.integration_label %></span>
-          <span><%= @project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
-          <% if @project.archived? %>
-            <span>Archived</span>
-          <% end %>
-        </p>
+<section class="space-y-6">
+  <section class="grid grid-cols-1 gap-4 lg:grid-cols-3" aria-label="Project collection areas">
+    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="dashboard-kicker">Inbox</p>
+          <h2 class="text-lg font-bold text-slate-900">Error groups</h2>
+        </div>
+        <span class="project-overview-icon <%= dashboard_metric_state_class(open_errors_count) %>"><%= app_icon(:warning, css: "w-5 h-5") %></span>
       </div>
-    </div>
 
-    <div class="project-command-actions">
-      <details class="project-signals-menu">
-        <summary>
-          <%= app_icon(:chart, css: "w-4 h-4") %>
-          <span>Project signals</span>
-        </summary>
+      <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
+        <%= link_to inbox_project_path(@project, filter: "unresolved"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
+          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(open_errors_count) %></strong>
+          <span class="text-xs font-semibold uppercase text-slate-500">Open</span>
+        <% end %>
+        <%= link_to inbox_project_path(@project, filter: "introduced_today"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
+          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(introduced_today_count) %></strong>
+          <span class="text-xs font-semibold uppercase text-slate-500">New today</span>
+        <% end %>
+        <%= link_to inbox_project_path(@project, filter: "all"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
+          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(all_error_groups_count) %></strong>
+          <span class="text-xs font-semibold uppercase text-slate-500">All groups</span>
+        <% end %>
+      </div>
 
-        <div class="project-overview-strip" aria-label="Project status">
-          <%= link_to project_path(@project, filter: "unresolved"),
-                      class: "project-overview-cell #{dashboard_metric_state_class(open_errors_count)}" do %>
-            <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
-            <span>
-              <strong><%= number_with_delimiter(open_errors_count) %></strong>
-              <span>Open errors</span>
-            </span>
-          <% end %>
+      <p class="mt-4 text-sm text-slate-600">
+        <%= open_errors_count.positive? ? "#{pluralize(open_errors_count, "open error group")} waiting for review." : "No open error groups right now." %>
+      </p>
 
-          <%= link_to project_path(@project, filter: "introduced_today"),
-                      class: "project-overview-cell #{dashboard_metric_state_class(introduced_today_count)}" do %>
-            <span class="project-overview-icon"><%= app_icon(:calendar, css: "w-4 h-4") %></span>
-            <span>
-              <strong><%= number_with_delimiter(introduced_today_count) %></strong>
-              <span>Introduced today</span>
-            </span>
-          <% end %>
+      <%= link_to inbox_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
+        <%= app_icon(:folder_open, css: "w-4 h-4") %>
+        <span>Open inbox</span>
+      <% end %>
+    </article>
 
-          <%= link_to activity_project_path(@project), class: "project-overview-cell" do %>
-            <span class="project-overview-icon"><%= app_icon(:chart, css: "w-4 h-4") %></span>
-            <span>
-              <strong><%= number_with_delimiter(events_last_24h) %></strong>
-              <span>Events 24h</span>
-            </span>
-          <% end %>
+    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="dashboard-kicker">Activity</p>
+          <h2 class="text-lg font-bold text-slate-900">Events and logs</h2>
+        </div>
+        <span class="project-overview-icon"><%= app_icon(:chart, css: "w-5 h-5") %></span>
+      </div>
 
-          <%= link_to monitors_project_path(@project),
-                      class: "project-overview-cell #{dashboard_metric_state_class(unhealthy_monitors_count)}" do %>
-            <span class="project-overview-icon"><%= app_icon(:check, css: "w-4 h-4") %></span>
-            <span>
-              <strong><%= number_with_delimiter(unhealthy_monitors_count) %></strong>
-              <span><%= monitors_label %></span>
-            </span>
+      <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <strong class="block text-2xl font-semibold text-slate-900"><%= number_with_delimiter(@activity_events_last_24h) %></strong>
+        <span class="text-xs font-semibold uppercase text-slate-500">Activity events 24h</span>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        <% activity_types.each do |event_type| %>
+          <span class="<%= dashboard_event_badge_class(event_type) %>">
+            <%= dashboard_event_type_label(event_type) %> <%= number_with_delimiter(@event_type_counts_last_24h.fetch(event_type, 0)) %>
+          </span>
+        <% end %>
+      </div>
+
+      <p class="mt-4 text-sm text-slate-600">
+        <%= active_activity_types.any? ? "#{active_activity_types.map { |event_type| dashboard_event_type_label(event_type).downcase }.to_sentence} arrived in the last 24 hours." : "No logs, metrics, transactions, or check-ins in the last 24 hours." %>
+      </p>
+
+      <%= link_to activity_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
+        <%= app_icon(:chart, css: "w-4 h-4") %>
+        <span>View activity</span>
+      <% end %>
+    </article>
+
+    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="dashboard-kicker">Performance</p>
+          <h2 class="text-lg font-bold text-slate-900">Transactions</h2>
+        </div>
+        <span class="project-overview-icon"><%= app_icon(:dashboard, css: "w-5 h-5") %></span>
+      </div>
+
+      <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(transaction_count) %></strong>
+          <span class="text-xs font-semibold uppercase text-slate-500">Transactions</span>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <strong class="block text-xl font-semibold text-slate-900"><%= @transaction_stats.fetch(:p95_ms, 0.0) %> ms</strong>
+          <span class="text-xs font-semibold uppercase text-slate-500">P95</span>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(db_query_count) %></strong>
+          <span class="text-xs font-semibold uppercase text-slate-500">DB queries</span>
+        </div>
+      </div>
+
+      <p class="mt-4 text-sm text-slate-600">
+        <%= performance_events_count.positive? ? "#{pluralize(performance_events_count, "performance event")} collected in the last 24 hours. Transaction error rate is #{error_rate_percent}%." : "No transaction or database timing events in the last 24 hours." %>
+      </p>
+
+      <%= link_to performance_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
+        <%= app_icon(:dashboard, css: "w-4 h-4") %>
+        <span>View performance</span>
+      <% end %>
+    </article>
+  </section>
+
+  <section class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]" aria-label="Recent project signals">
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <h2>Recent errors</h2>
+          <p>Newest unresolved groups</p>
+        </div>
+        <%= link_to "Inbox", inbox_project_path(@project), class: "dashboard-panel-link" %>
+      </div>
+
+      <% if @recent_error_groups.any? %>
+        <div class="dashboard-attention-list">
+          <% @recent_error_groups.each do |group| %>
+            <article class="dashboard-attention-row">
+              <div class="dashboard-attention-main">
+                <div class="dashboard-attention-title-row">
+                  <%= link_to group.title, inbox_project_path(@project, group_uuid: group.uuid), class: "dashboard-attention-title" %>
+                  <span class="dashboard-attention-chip"><%= group.severity.presence || "error" %></span>
+                </div>
+                <span class="dashboard-attention-meta"><%= group.subtitle.presence || group.stage.presence || "Error" %> · <%= group.assignee.present? ? "Assigned to #{group.assignee.name.presence || group.assignee.email}" : "Unassigned" %></span>
+              </div>
+              <div class="dashboard-attention-side">
+                <div class="dashboard-attention-stats dashboard-attention-stats-compact">
+                  <span>
+                    <strong><%= number_with_delimiter(group.occurrence_count) %></strong>
+                    <span>Events</span>
+                  </span>
+                  <span>
+                    <strong><%= group.last_seen_at.present? ? "#{time_ago_in_words(group.last_seen_at)} ago" : "--" %></strong>
+                    <span>Last seen</span>
+                  </span>
+                </div>
+              </div>
+            </article>
           <% end %>
         </div>
-      </details>
-
-      <%= link_to project_collection_path(@project), class: "projects-secondary-button" do %>
-        <%= app_icon(:projects, css: "w-4 h-4") %>
-        <span>All projects</span>
+      <% else %>
+        <div class="dashboard-empty-state">
+          <strong>No unresolved error groups</strong>
+          <span>Errors will appear here as groups are opened or reopened.</span>
+        </div>
       <% end %>
-      <% if @project.owned_by?(current_user) %>
-        <%= link_to settings_project_path(@project), class: "projects-secondary-button" do %>
-          <%= app_icon(:settings, css: "w-4 h-4") %>
-          <span>Settings</span>
-        <% end %>
-      <% end %>
-    </div>
-  </div>
+    </article>
 
-  <%= render "nav" %>
+    <aside class="dashboard-panel">
+      <div class="dashboard-panel-header">
+        <div>
+          <h2>Latest collection</h2>
+          <p><%= latest_event_at.present? ? "#{time_ago_in_words(latest_event_at)} ago" : "No events yet" %></p>
+        </div>
+      </div>
+
+      <div class="dashboard-title-metrics" aria-label="Project totals">
+        <span>
+          <strong><%= number_with_delimiter(@events_last_24h) %></strong>
+          <span>Events 24h</span>
+        </span>
+        <span>
+          <strong><%= number_with_delimiter(@event_type_counts_last_24h.fetch("error", 0)) %></strong>
+          <span>Error events</span>
+        </span>
+        <span>
+          <strong><%= number_with_delimiter(@project_overview.fetch(:monitors_count, 0)) %></strong>
+          <span>Monitors</span>
+        </span>
+        <span>
+          <strong><%= number_with_delimiter(@project_overview.fetch(:unhealthy_monitors_count, 0)) %></strong>
+          <span>Monitor issues</span>
+        </span>
+      </div>
+
+      <% if @recent_activity_events.any? %>
+        <div class="mt-4 flex flex-col divide-y divide-slate-200 border-t border-slate-200">
+          <% @recent_activity_events.each do |event| %>
+            <%= link_to project_event_path(@project, event), class: "flex min-w-0 items-start justify-between gap-3 py-3 text-slate-600 no-underline hover:text-slate-900" do %>
+              <span class="min-w-0">
+                <span class="<%= dashboard_event_badge_class(event.event_type) %>"><%= dashboard_event_type_label(event.event_type) %></span>
+                <strong class="mt-1 block truncate text-sm font-semibold text-slate-900"><%= event.message.to_s.lines.first.to_s.strip.presence || "(untitled event)" %></strong>
+              </span>
+              <span class="shrink-0 text-xs text-slate-500"><%= event.occurred_at.present? ? "#{time_ago_in_words(event.occurred_at)} ago" : "--" %></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% elsif @latest_event.present? %>
+        <div class="dashboard-empty-state mt-4">
+          <strong>Only error events so far</strong>
+          <span>Recent logs, metrics, transactions, and check-ins will show up here.</span>
+        </div>
+      <% else %>
+        <div class="dashboard-empty-state mt-4">
+          <strong>No events collected yet</strong>
+          <span>Events will populate the inbox, activity, and performance pages as they arrive.</span>
+        </div>
+      <% end %>
+    </aside>
+  </section>
 </section>
-
-<%= render "projects/archived_notice", project: @project %>
-
-<div class="inbox-workbench min-w-0"
-     data-controller="inbox"
-     data-inbox-project-uuid-value="<%= @project.uuid %>"
-     data-action="turbo:frame-load@document->inbox#onFrameLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch">
-  <section class="inbox-workbench-filters" aria-label="Inbox filters">
-    <div class="inbox-filter-bar">
-      <%= form_with url: project_path(@project), method: :get,
-                    class: "inbox-filter-search",
-                    data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "searchForm", action: "submit->inbox#onSearchSubmit" } do |f| %>
-        <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
-        <%= f.hidden_field :assignee, value: @assignee_filter, data: { inbox_target: "assigneeField" } %>
-        <%= f.label :q, "Search inbox", class: "kicker inbox-filter-search-label" %>
-        <%= f.search_field :q, value: @query, placeholder: "Search errors...",
-                           class: "form-input inbox-filter-search-input",
-                           data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
-      <% end %>
-
-      <%= form_with url: project_path(@project), method: :get,
-                    class: "inbox-assignee-filter",
-                    data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "assigneeForm" } do |f| %>
-        <%= f.hidden_field :filter, value: @filter %>
-        <%= f.hidden_field :q, value: @query %>
-        <%= f.label :assignee, "Assignee", class: "kicker inbox-filter-search-label" %>
-        <%= f.select :assignee,
-                     inbox_assignee_options(@project, current_user, @assignable_users),
-                     { selected: @assignee_filter },
-                     class: "form-input inbox-assignee-select",
-                     data: { action: "change->inbox#submitAssigneeFilter" } %>
-      <% end %>
-
-      <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query, assignee: @assignee_filter %>
-
-      <%= link_to "All projects", project_collection_path(@project), class: "inbox-filter-projects-link" %>
-    </div>
-  </section>
-
-  <section class="inbox-workbench-list" data-inbox-target="listPane" aria-busy="false">
-    <header class="inbox-pane-header">
-      <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]">Error groups</h2>
-      <p class="text-xs text-slate-500"><%= @groups.size %> shown · newest first</p>
-    </header>
-    <%= render "inbox_table",
-               project:       @project,
-               groups:        @groups,
-               group_trends:  @group_trends,
-               selected_uuid: @selected_group&.uuid,
-               filter:        @filter,
-               query:         @query,
-               assignee:      @assignee_filter %>
-  </section>
-
-  <section class="inbox-workbench-detail" data-inbox-target="detailPane" aria-busy="false">
-    <% if @detail_event.present? %>
-      <%= render "project_events/event_detail",
-                 project:     @project,
-                 event:       @detail_event,
-                 group:       @detail_group,
-                 occurrences: @detail_occurrences,
-                 related_logs: @detail_related_logs,
-                 filter:      @filter,
-                 assignee:    @assignee_filter,
-                 assignable_users: @assignable_users,
-                 query:       @query,
-                 tab:         @tab,
-                 frame_scope: params[:frame_scope],
-                 frame:       params[:frame] %>
-    <% else %>
-      <%= render "empty_detail" %>
-    <% end %>
-  </section>
-</div>

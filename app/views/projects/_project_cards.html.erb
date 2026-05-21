@@ -12,7 +12,7 @@
       <% trend = Array(stats[:trend]) %>
       <% latest_event_at = stats[:latest_event_at] %>
       <article class="project-card <%= "is-archived" if project.archived? %>" data-project-name="<%= project.name.downcase %>" data-project-slug="<%= project.slug.downcase %>" style="view-transition-name: <%= dom_id(project) %>; view-transition-class: project-card;">
-        <%= link_to project_path(project), class: "project-card-header", aria: { label: "Open #{project.name} inbox" } do %>
+        <%= link_to project_path(project), class: "project-card-header", aria: { label: "Open #{project.name} overview" } do %>
           <%= project_integration_icon(project) %>
           <span class="project-card-title-block">
             <span class="project-card-title"><%= project.name %></span>
@@ -41,13 +41,13 @@
             <% end %>
           </div>
 
-          <%= link_to project_path(project, filter: "unresolved"), class: "project-card-footer-item project-card-count-link" do %>
+          <%= link_to inbox_project_path(project, filter: "unresolved"), class: "project-card-footer-item project-card-count-link" do %>
             <span class="project-card-footer-label">Errors for review</span>
             <strong><%= open_groups %></strong>
             <span><%= open_groups.positive? ? "Open error #{'group'.pluralize(open_groups)}" : "No open errors" %></span>
           <% end %>
 
-          <%= link_to project_path(project, filter: "all"), class: "project-card-footer-item project-card-count-link" do %>
+          <%= link_to inbox_project_path(project, filter: "all"), class: "project-card-footer-item project-card-count-link" do %>
             <span class="project-card-footer-label">All error groups</span>
             <strong><%= all_groups %></strong>
             <span><%= all_groups.positive? ? "View all errors" : "No errors yet" %></span>

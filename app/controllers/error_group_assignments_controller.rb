@@ -69,7 +69,7 @@ class ErrorGroupAssignmentsController < ApplicationController
 
       redirect_params = { filter: filter, q: query, assignee: assignee }
       redirect_params[:group_uuid] = selected_uuid if selected_uuid.present?
-      format.html { redirect_to project_path(@project, redirect_params), notice: "Assignment updated." }
+      format.html { redirect_to inbox_project_path(@project, redirect_params), notice: "Assignment updated." }
     end
   end
 

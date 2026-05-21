@@ -5,7 +5,7 @@
   <td class="px-3 py-2 text-sm text-slate-900"><%= member.email %></td>
   <td class="px-3 py-2 text-sm text-slate-600"><%= membership.role %></td>
   <td class="px-3 py-2 text-sm text-slate-600">
-    <%= link_to project_path(project, filter: "unresolved", assignee: member.uuid), class: "font-semibold text-blue-600 no-underline hover:text-blue-700" do %>
+    <%= link_to inbox_project_path(project, filter: "unresolved", assignee: member.uuid), class: "font-semibold text-blue-600 no-underline hover:text-blue-700" do %>
       <%= number_with_delimiter(assignment_summary.open_count_for(member)) %>
     <% end %>
   </td>

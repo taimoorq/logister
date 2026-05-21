@@ -232,15 +232,15 @@ export default class extends Controller {
     if (!project?.url) {
       this.openProjectLinkTarget.hidden = true
       this.openProjectLinkTarget.removeAttribute("href")
-      this.openProjectLinkTarget.textContent = "Open project inbox"
+      this.openProjectLinkTarget.textContent = "Open project"
       this.openProjectLinkTarget.removeAttribute("aria-label")
       return
     }
 
     this.openProjectLinkTarget.hidden = false
     this.openProjectLinkTarget.href = project.url
-    this.openProjectLinkTarget.textContent = "Open project inbox"
-    this.openProjectLinkTarget.setAttribute("aria-label", `Open ${project.name} project inbox`)
+    this.openProjectLinkTarget.textContent = "Open project"
+    this.openProjectLinkTarget.setAttribute("aria-label", `Open ${project.name} project`)
   }
 
   projectForInboxLink(data = null) {

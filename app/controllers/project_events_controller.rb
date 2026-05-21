@@ -24,7 +24,7 @@ class ProjectEventsController < ApplicationController
         assignee:      @assignee_filter
       }
     else
-      redirect_to project_path(@project, filter: @filter, q: @query, assignee: @assignee_filter, group_uuid: @selected_uuid)
+      redirect_to inbox_project_path(@project, filter: @filter, q: @query, assignee: @assignee_filter, group_uuid: @selected_uuid)
     end
   end
 
@@ -61,7 +61,7 @@ class ProjectEventsController < ApplicationController
     else
       # Fallback: if this came from the project inbox workflow, keep users in that workbench.
       if params[:group_uuid].present? || params[:filter].present? || params[:q].present?
-        redirect_to project_path(
+        redirect_to inbox_project_path(
           @project,
           filter: @filter,
           q: @query,

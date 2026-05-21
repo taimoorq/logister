@@ -16,8 +16,8 @@ RSpec.describe "Project inbox", type: :system do
   it "updates the detail pane through Turbo when opening a different inbox row" do
     sign_in_via_browser(email: users(:one).email, password: "password123")
 
-    visit project_path(projects(:system_inbox))
-    expect(page).to have_current_path(project_path(projects(:system_inbox)))
+    visit inbox_project_path(projects(:system_inbox))
+    expect(page).to have_current_path(inbox_project_path(projects(:system_inbox)))
     expect(page).to have_css("turbo-frame#error_detail")
 
     within("turbo-frame#error_detail") do
@@ -38,7 +38,7 @@ RSpec.describe "Project inbox", type: :system do
   it "renders the inbox filters and error rows in the compact layout" do
     sign_in_via_browser(email: users(:one).email, password: "password123")
 
-    visit project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
+    visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
 
     expect(page).to have_css(".inbox-workbench > .inbox-workbench-filters .inbox-filter-bar")
     expect(page).to have_no_css(".inbox-workbench-sidebar")
@@ -73,8 +73,8 @@ RSpec.describe "Project inbox", type: :system do
   it "switches detail tabs within the Turbo frame" do
     sign_in_via_browser(email: users(:one).email, password: "password123")
 
-    visit project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
-    expect(page).to have_current_path(project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid))
+    visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
+    expect(page).to have_current_path(inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid))
     expect(page).to have_css("turbo-frame#error_detail")
 
     within("turbo-frame#error_detail") do

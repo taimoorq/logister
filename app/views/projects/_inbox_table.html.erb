@@ -100,7 +100,7 @@
         <% end %>
         <% if query.present? %>
           <%= link_to "Clear search",
-                      project_path(project, filter: filter, assignee: assignee_param),
+                      inbox_project_path(project, filter: filter, assignee: assignee_param),
                       class: "inline-link",
                       data: { turbo_frame: "project_inbox" } %>
         <% end %>

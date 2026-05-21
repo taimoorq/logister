@@ -52,7 +52,7 @@
                       class: "dashboard-explorer-project",
                       hidden: true,
                       data: { dashboard_explorer_target: "openProjectLink" } do %>
-            Open project inbox
+            Open project
           <% end %>
         </div>
 
@@ -121,7 +121,7 @@
                    style="view-transition-name: <%= dom_id(group, :dashboard) %>; view-transition-class: dashboard-error-card;">
             <div class="dashboard-attention-main">
               <div class="dashboard-attention-title-row">
-                <%= link_to group.title, project_path(group.project, group_uuid: group.uuid), class: "dashboard-attention-title" %>
+                <%= link_to group.title, inbox_project_path(group.project, group_uuid: group.uuid), class: "dashboard-attention-title" %>
                 <span class="dashboard-attention-chip"><%= group.severity.presence || "error" %></span>
               </div>
               <span class="dashboard-attention-meta"><%= group.project.name %> · <%= group.subtitle.presence || group.stage %> · <%= group.stage %></span>
@@ -147,7 +147,7 @@
                 </span>
               </div>
               <div class="dashboard-attention-actions">
-                <%= link_to "Open issue", project_path(group.project, group_uuid: group.uuid), class: "dashboard-attention-action" %>
+                <%= link_to "Open issue", inbox_project_path(group.project, group_uuid: group.uuid), class: "dashboard-attention-action" %>
                 <% if latest_event.present? %>
                   <%= link_to "Latest event", project_event_path(group.project, latest_event), class: "dashboard-attention-action" %>
                 <% end %>
@@ -236,7 +236,7 @@
             <p>Open bugs across active apps</p>
           </div>
           <% if @assigned_error_groups.first %>
-            <%= link_to "Open", project_path(@assigned_error_groups.first.project, group_uuid: @assigned_error_groups.first.uuid, assignee: "me"), class: "dashboard-panel-link" %>
+            <%= link_to "Open", inbox_project_path(@assigned_error_groups.first.project, group_uuid: @assigned_error_groups.first.uuid, assignee: "me"), class: "dashboard-panel-link" %>
           <% else %>
             <%= link_to "Projects", projects_path, class: "dashboard-panel-link" %>
           <% end %>
@@ -256,7 +256,7 @@
         <% if @assigned_error_groups.any? %>
           <div class="dashboard-assignment-list">
             <% @assigned_error_groups.each do |group| %>
-              <%= link_to project_path(group.project, group_uuid: group.uuid, assignee: "me"), class: "dashboard-assignment-row" do %>
+              <%= link_to inbox_project_path(group.project, group_uuid: group.uuid, assignee: "me"), class: "dashboard-assignment-row" do %>
                 <span class="dashboard-assignment-title"><%= group.title %></span>
                 <span class="dashboard-assignment-meta">
                   <%= group.project.name %> · <%= group.last_seen_at.present? ? "#{time_ago_in_words(group.last_seen_at)} ago" : "No events yet" %>
@@ -297,7 +297,7 @@
                 </span>
               <% end %>
               <div class="dashboard-project-stats">
-                <%= link_to project_path(project, filter: "unresolved") do %>
+                <%= link_to inbox_project_path(project, filter: "unresolved") do %>
                   <strong><%= stats.fetch(:open_groups, 0).to_i %></strong>
                   <span>Open errors</span>
                 <% end %>
@@ -367,7 +367,7 @@
           <span><%= pluralize(@events_by_type_last_24h.fetch("error", 0), "error event") %></span>
         </article>
 
-        <%= link_to(@recent_error_groups.first ? project_path(@recent_error_groups.first.project, group_uuid: @recent_error_groups.first.uuid) : projects_path,
+        <%= link_to(@recent_error_groups.first ? inbox_project_path(@recent_error_groups.first.project, group_uuid: @recent_error_groups.first.uuid) : projects_path,
                     class: "dashboard-metric-card dashboard-metric-link #{dashboard_metric_state_class(@open_error_groups_count)}") do %>
           <span class="dashboard-metric-icon"><%= app_icon(:warning, css: "w-5 h-5") %></span>
           <span class="dashboard-metric-label">Errors for review</span>
