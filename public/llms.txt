@@ -36,7 +36,7 @@ Canonical documentation lives on the public docs host:
 - .NET / ASP.NET Core error monitoring use case: https://docs.logister.org/use-cases/dotnet-error-monitoring/
 - JavaScript / TypeScript error monitoring use case: https://docs.logister.org/use-cases/javascript-error-monitoring/
 - ColdFusion / CFML error monitoring use case: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker, GHCR, and Docker Hub self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Docker, GHCR, Docker Hub, and optional Quay self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage use case: https://docs.logister.org/use-cases/error-assignment-team-triage/
 - Amazon SES error alert emails and digests use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - Self-hosting: https://docs.logister.org/self-hosting/
@@ -59,7 +59,8 @@ Canonical documentation lives on the public docs host:
 - GitHub Releases: https://github.com/taimoorq/logister/releases
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v1.1.0` or `docker.io/taimoorq/logister:v1.1.0`
+- Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v1.1.1` or `docker.io/taimoorq/logister:v1.1.1`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
@@ -73,7 +74,7 @@ Canonical documentation lives on the public docs host:
 - Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
 - Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
-- Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, and GHCR or Docker Hub release images.
+- Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, GHCR and Docker Hub release images, and optional Quay mirrors.
 
 ## Primary audience
 - Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.
@@ -89,6 +90,7 @@ Canonical documentation lives on the public docs host:
 - RubyGems: https://rubygems.org/gems/logister-ruby
 - Ruby source: https://github.com/taimoorq/logister-ruby
 - .NET source: https://github.com/taimoorq/logister-dotnet
+- .NET packages: `Logister` and `Logister.AspNetCore` on NuGet
 - PyPI: https://pypi.org/project/logister-python/
 - Python source: https://github.com/taimoorq/logister-python
 - npm: https://www.npmjs.com/package/logister-js

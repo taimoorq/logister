@@ -64,7 +64,9 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
 
-  public_url = URI.parse(ENV.fetch("LOGISTER_PUBLIC_URL", "https://logister.org"))
+  public_url_value = ENV["LOGISTER_PUBLIC_URL"].to_s.strip
+  public_url_value = "https://logister.org" if public_url_value.empty?
+  public_url = URI.parse(public_url_value)
   public_url_options = { host: public_url.host, protocol: public_url.scheme }
   public_url_options[:port] = public_url.port unless [ 80, 443 ].include?(public_url.port)
 

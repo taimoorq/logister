@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
-  docs_base_url = ENV.fetch("LOGISTER_DOCS_URL", "https://docs.logister.org").chomp("/")
+  docs_base_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
+  docs_base_url = "https://docs.logister.org" if docs_base_url.empty?
+  docs_base_url = docs_base_url.chomp("/")
 
   devise_for :users, controllers: {
     sessions: "users/sessions",
@@ -21,6 +23,7 @@ Rails.application.routes.draw do
   get "docs/integrations/cfml", to: redirect("#{docs_base_url}/integrations/cfml/", status: 301)
   get "docs/integrations/python", to: redirect("#{docs_base_url}/integrations/python/", status: 301)
   get "docs/integrations/dotnet", to: redirect("#{docs_base_url}/integrations/dotnet/", status: 301)
+  get "robots.txt", to: "home#robots", defaults: { format: :text }
   get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }
   get "about", to: "home#about"
   get "privacy", to: "home#privacy"

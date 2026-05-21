@@ -12,9 +12,13 @@ This directory contains a standalone static version of the Logister documentatio
 
 ## Suggested Cloudflare Pages setup
 
-Use `cloudflare-docs` as the project root or output directory and deploy it as a plain static site.
+Use `cloudflare-docs` as the project root or output directory and deploy it as a plain static site. Before deploying, run the lightweight metadata build so `sitemap.xml` and `robots.txt` use the configured docs host instead of assuming the official production domain.
 
-No build step is required unless you later decide to add a static-site generator on top of this folder.
+```bash
+LOGISTER_DOCS_URL=https://docs.example.com bin/build-cloudflare-docs
+```
+
+`LOGISTER_DOCS_URL` defaults to `https://docs.logister.org`. `DOCS_SITEMAP_LASTMOD` can be set when you want to pin sitemap `lastmod` during a release.
 
 ## Local preview
 
@@ -24,7 +28,7 @@ To preview the static docs locally with Cloudflare Pages behavior, run this from
 wrangler pages dev cloudflare-docs
 ```
 
-That serves the `cloudflare-docs/` directory locally so you can verify layout, navigation, copy buttons, and other static-site behavior before deploying.
+That serves the `cloudflare-docs/` directory locally so you can verify layout, navigation, copy buttons, sitemap, robots, and other static-site behavior before deploying.
 
 ## GitHub Actions deployment
 
@@ -40,9 +44,14 @@ Set these GitHub repository settings before enabling it:
 - Secret: `CLOUDFLARE_ACCOUNT_ID`
 - Variable: `CLOUDFLARE_PAGES_PROJECT`
 
-The workflow deploys this directory directly with:
+The workflow runs `bin/build-cloudflare-docs` first, then deploys this directory directly with:
 
 - `wrangler pages deploy cloudflare-docs --project-name=<project>`
+
+Optional GitHub repository variables:
+
+- `LOGISTER_DOCS_URL` sets the public docs host used in generated metadata.
+- `DOCS_SITEMAP_LASTMOD` pins the sitemap date for a release.
 
 ## Runtime docs configuration
 
@@ -70,6 +79,13 @@ This static export mirrors the current public docs pages from the main Logister 
 - Overview
 - Getting started
 - Product guide
+- Use cases and comparisons
+- Self-hosted error monitoring
+- Sentry, Bugsnag, and Bugzilla alternatives
+- Rails, Python, .NET, JavaScript, and CFML error monitoring use cases
+- Docker registry self-hosting
+- Error assignment and team triage
+- Amazon SES alert emails and digests
 - Self-hosting
 - Local development
 - Deployment config
@@ -80,6 +96,7 @@ This static export mirrors the current public docs pages from the main Logister 
 - Python integration
 - JavaScript integration
 - CFML integration
+- `llms.txt` and `llms-full.txt`
 
 ## Updating the docs
 
@@ -87,6 +104,6 @@ When you add or change docs pages in this folder:
 
 - update any repeated sidebar or footer integration links if navigation changed
 - keep sidebar groups as `<div class="sidebar-group"><p class="sidebar-label">...</p>...</div>`; `assets/site.js` turns those groups into accessible collapsible sections at runtime
-- update `sitemap.xml` when you add a new public page
+- run `bin/build-cloudflare-docs` when you add a new public page so `sitemap.xml` and `robots.txt` stay aligned
 - preview locally with `wrangler pages dev cloudflare-docs`
 - deploy through the GitHub Actions workflow or `wrangler pages deploy cloudflare-docs --project-name=<project>`

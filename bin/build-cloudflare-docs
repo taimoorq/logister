@@ -1,0 +1,109 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "cgi"
+require "date"
+require "pathname"
+
+repo_root = Pathname.new(__dir__).join("..").expand_path
+docs_root = repo_root.join("cloudflare-docs")
+docs_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
+docs_url = "https://docs.logister.org" if docs_url.empty?
+docs_url = docs_url.chomp("/")
+
+lastmod = ENV["DOCS_SITEMAP_LASTMOD"].to_s.strip
+lastmod = Date.today.iso8601 if lastmod.empty?
+
+preferred_paths = [
+  "/",
+  "/llms.txt",
+  "/llms-full.txt",
+  "/getting-started/",
+  "/product/",
+  "/use-cases/",
+  "/use-cases/self-hosted-error-monitoring/",
+  "/use-cases/sentry-alternative/",
+  "/use-cases/bugsnag-alternative/",
+  "/use-cases/bugzilla-alternative/",
+  "/use-cases/rails-error-monitoring/",
+  "/use-cases/python-error-monitoring/",
+  "/use-cases/dotnet-error-monitoring/",
+  "/use-cases/javascript-error-monitoring/",
+  "/use-cases/cfml-error-monitoring/",
+  "/use-cases/docker-ghcr-self-hosting/",
+  "/use-cases/error-assignment-team-triage/",
+  "/use-cases/amazon-ses-error-alerts/",
+  "/self-hosting/",
+  "/local-development/",
+  "/deployment/",
+  "/clickhouse/",
+  "/http-api/",
+  "/integrations/ruby/",
+  "/integrations/dotnet/",
+  "/integrations/python/",
+  "/integrations/cfml/",
+  "/integrations/javascript/"
+]
+
+html_paths = Dir[docs_root.join("**/index.html")].map do |file|
+  relative = Pathname.new(file).relative_path_from(docs_root).to_s
+  relative == "index.html" ? "/" : "/#{relative.delete_suffix("index.html")}"
+end
+
+text_paths = %w[llms.txt llms-full.txt].select do |file_name|
+  docs_root.join(file_name).file?
+end.map do |file_name|
+  "/#{file_name}"
+end
+
+paths = (html_paths + text_paths).uniq
+ordered_paths = preferred_paths.select { |path| paths.include?(path) } + (paths - preferred_paths).sort
+
+sitemap = +"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+sitemap << "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
+ordered_paths.each do |path|
+  sitemap << "  <url>\n"
+  sitemap << "    <loc>#{CGI.escapeHTML("#{docs_url}#{path}")}</loc>\n"
+  sitemap << "    <lastmod>#{lastmod}</lastmod>\n"
+  sitemap << "  </url>\n"
+end
+sitemap << "</urlset>\n"
+
+docs_root.join("sitemap.xml").write(sitemap)
+
+robots = <<~ROBOTS
+  User-agent: OAI-SearchBot
+  Allow: /
+
+  User-agent: GPTBot
+  Allow: /
+
+  User-agent: ChatGPT-User
+  Allow: /
+
+  User-agent: ClaudeBot
+  Allow: /
+
+  User-agent: Claude-SearchBot
+  Allow: /
+
+  User-agent: Claude-User
+  Allow: /
+
+  User-agent: PerplexityBot
+  Allow: /
+
+  User-agent: Google-Extended
+  Allow: /
+
+  User-agent: *
+  Allow: /
+  Allow: /llms.txt
+  Allow: /llms-full.txt
+
+  Sitemap: #{docs_url}/sitemap.xml
+ROBOTS
+
+docs_root.join("robots.txt").write(robots)
+
+puts "Built Cloudflare docs metadata for #{docs_url}"

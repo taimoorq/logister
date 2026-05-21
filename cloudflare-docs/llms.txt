@@ -18,7 +18,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - .NET / ASP.NET Core error monitoring use case: https://docs.logister.org/use-cases/dotnet-error-monitoring/
 - JavaScript / TypeScript error monitoring use case: https://docs.logister.org/use-cases/javascript-error-monitoring/
 - ColdFusion / CFML error monitoring use case: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker, GHCR, and Docker Hub self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
+- Docker, GHCR, Docker Hub, and optional Quay self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage use case: https://docs.logister.org/use-cases/error-assignment-team-triage/
 - Amazon SES error alert emails and digests use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - HTTP API: https://docs.logister.org/http-api/
@@ -45,6 +45,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - GitHub Releases: https://github.com/taimoorq/logister/releases
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
+- Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
 - Versioned Docker images: `ghcr.io/taimoorq/logister:v1.1.1` or `docker.io/taimoorq/logister:v1.1.1`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, and optional ClickHouse
@@ -65,6 +66,11 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - App source: https://github.com/taimoorq/logister
 - Secondary hosted/public app: https://logister.org/
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
+- Ruby SDK package: https://rubygems.org/gems/logister-ruby
 - .NET SDK source: https://github.com/taimoorq/logister-dotnet
+- .NET SDK packages: `Logister` and `Logister.AspNetCore` on NuGet
 - Python SDK source: https://github.com/taimoorq/logister-python
+- Python SDK package: https://pypi.org/project/logister-python/
 - JavaScript SDK source: https://github.com/taimoorq/logister-js
+- JavaScript SDK package: https://www.npmjs.com/package/logister-js
+- CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://docs.logister.org/integrations/cfml/

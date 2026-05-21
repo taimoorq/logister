@@ -53,7 +53,14 @@ pip install 'logister-python[flask]'</code></pre></div><div class="note tip"><h4
 client = LogisterClient.from_env(default_context={"service": "api"})
 
 client.capture_message("Application booted")
-client.capture_metric("cache.hit_rate", 0.98, context={"cache": "primary"})</code></pre></div><p>Package links: <a href="https://pypi.org/project/logister-python/">PyPI</a> and <a href="https://github.com/taimoorq/logister-python">GitHub</a>. Self-hosted backend: <a href="https://github.com/taimoorq/logister">Logister app on GitHub</a>.</p></section>
+client.capture_metric(
+    "cache.hit_rate",
+    0.98,
+    unit="ratio",
+    level="info",
+    fingerprint="metric:cache.hit_rate",
+    context={"cache": "primary"},
+)</code></pre></div><p>Package links: <a href="https://pypi.org/project/logister-python/">PyPI</a> and <a href="https://github.com/taimoorq/logister-python">GitHub</a>. Self-hosted backend: <a href="https://github.com/taimoorq/logister">Logister app on GitHub</a>.</p></section>
             <section id="logging" class="section"><p class="eyebrow">Python logging</p><h2>Forward standard <code>logging</code> records without changing every call site.</h2><div class="code-block"><div class="code-head"><span class="code-language">python</span><button class="copy-button" data-copy-button data-copy-target="#python-logging">Copy</button></div><pre><code id="python-logging">import logging
 from logister import LogisterClient, instrument_logging
 
@@ -101,7 +108,15 @@ client.capture_exception(
     context={"component": "checkout", "order_id": 1234},
 )
 
-client.check_in("nightly-import", "ok", expected_interval_seconds=3600)</code></pre></div><p>Captured Python exceptions include structured traceback frames, chained exceptions from <code>raise ... from ...</code>, and runtime metadata like Python version, platform, hostname, and process ID.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
+client.check_in(
+    "nightly-import",
+    "ok",
+    release="worker@2026.05.21",
+    expected_interval_seconds=3600,
+    duration_ms=842.7,
+    trace_id="trace-123",
+    request_id="req-123",
+)</code></pre></div><p>Captured Python exceptions include structured traceback frames, chained exceptions from <code>raise ... from ...</code>, and runtime metadata like Python version, platform, hostname, and process ID. Metric captures accept value, unit, level, fingerprint, environment, release, trace ID, request ID, session ID, and user ID fields.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
 transactions visible
 uncaught framework errors visible
 Celery task events visible

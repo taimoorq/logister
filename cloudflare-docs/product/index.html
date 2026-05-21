@@ -47,7 +47,7 @@
               <p class="eyebrow">Positioning</p>
               <h2>An open source alternative for teams that want control of error monitoring and triage.</h2>
               <p>Logister sits between traditional bug trackers and paid error monitoring platforms. It gives teams grouped production errors, assignment, status workflows, occurrence history, request context, related logs, release signals, and scheduled-work monitors while keeping source code, deployment, data, and release versions under the operator's control.</p>
-              <table><thead><tr><th>Teams compare Logister with...</th><th>Why Logister fits</th></tr></thead><tbody><tr><td>Bugzilla-style issue tracking</td><td>Grouped errors become assignable work with status, owner, occurrence, and project context.</td></tr><tr><td>Bugsnag, Sentry, and paid error monitoring</td><td>Application exceptions, logs, metrics, transactions, check-ins, and release context stay in a self-hosted app.</td></tr><tr><td>Ad hoc internal dashboards</td><td>Forkable Rails source, public docs, environment references, and GHCR or Docker Hub images give operators a repeatable base.</td></tr></tbody></table>
+              <table><thead><tr><th>Teams compare Logister with...</th><th>Why Logister fits</th></tr></thead><tbody><tr><td>Bugzilla-style issue tracking</td><td>Grouped errors become assignable work with status, owner, occurrence, and project context.</td></tr><tr><td>Bugsnag, Sentry, and paid error monitoring</td><td>Application exceptions, logs, metrics, transactions, check-ins, and release context stay in a self-hosted app.</td></tr><tr><td>Ad hoc internal dashboards</td><td>Forkable Rails source, public docs, environment references, GHCR and Docker Hub images, and optional Quay mirrors give operators a repeatable base.</td></tr></tbody></table>
             </section>
 
             <section id="connect" class="section">
@@ -123,7 +123,7 @@
             <section id="operate" class="section">
               <p class="eyebrow">Run it yourself</p>
               <h2>Self-host Logister with clear operational checkpoints.</h2>
-              <p>Logister is designed to be self-hosted as a Rails app with PostgreSQL, Redis, and background jobs. ClickHouse is optional and can be added when you want a dedicated analytics store. The operations docs cover local boot, deployment variables, GHCR and Docker Hub images, release versions, health checks, email, Turnstile, consent-gated analytics, and ClickHouse setup.</p>
+              <p>Logister is designed to be self-hosted as a Rails app with PostgreSQL, Redis, and background jobs. ClickHouse is optional and can be added when you want a dedicated analytics store. The operations docs cover local boot, deployment variables, GHCR and Docker Hub images, optional Quay mirrors, release versions, health checks, email, Turnstile, consent-gated analytics, and ClickHouse setup.</p>
               <div class="output-block"><div class="output-head"><span class="output-label">Useful health checks</span></div><pre><code>GET /up
 GET /health/clickhouse</code></pre></div>
             </section>

@@ -1,7 +1,11 @@
 module ApplicationHelper
   include ProjectEvents::PayloadSupport
 
-  DOCS_BASE_URL = ENV.fetch("LOGISTER_DOCS_URL", "https://docs.logister.org").chomp("/").freeze
+  DOCS_BASE_URL = begin
+    docs_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
+    docs_url = "https://docs.logister.org" if docs_url.empty?
+    docs_url.chomp("/")
+  end.freeze
   DOCS_PATHS = {
     overview: "/",
     getting_started: "/getting-started/",
@@ -374,7 +378,8 @@ module ApplicationHelper
     host = url_options[:host].presence
     return request.base_url if host.blank?
 
-    protocol = url_options[:protocol].presence || request.protocol.delete_suffix("://")
+    raw_protocol = url_options[:protocol].presence || request.protocol
+    protocol = raw_protocol.to_s.delete_suffix("://").delete_suffix(":")
     port = url_options[:port].presence
 
     base_url = +"#{protocol}://#{host}"

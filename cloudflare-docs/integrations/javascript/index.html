@@ -106,17 +106,25 @@ await client.captureTransaction("nightly-import", 1824, {
   context: { environment: process.env.NODE_ENV ?? "development" }
 });</code></pre></div><div class="note tip"><h4>Need another framework?</h4><p>If you are on Next.js, NestJS, Fastify, or another JavaScript framework, start with the shared client or the <a href="/http-api/">HTTP API</a>. That gives you working ingestion today while the package grows more framework-specific integrations over time.</p></div></section>
             <section id="custom-events" class="section"><p class="eyebrow">Custom events</p><h2>Report metrics, logs, and check-ins from the same client.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-events">Copy</button></div><pre><code id="js-events">await client.captureMetric("cache.hit_rate", 0.98, {
+  unit: "ratio",
+  traceId: "trace-123",
+  requestId: "req-123",
   context: { service: "checkout-api" }
 });
 
 await client.captureMessage("Queue backlog rising", {
-  level: "warning",
+  level: "warn",
   context: { queue: "emails" }
 });
 
 await client.checkIn("nightly-import", "ok", {
+  release: "worker@2026.05.21",
+  durationMs: 842.7,
+  expectedIntervalSeconds: 3600,
+  traceId: "trace-123",
+  requestId: "req-123",
   context: { environment: "production" }
-});</code></pre></div><p>Captured JavaScript exceptions include structured stack frames and chained causes when the original error uses <code>cause</code>.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
+});</code></pre></div><p>Captured JavaScript exceptions include structured stack frames and chained causes when the original error uses <code>cause</code>. Capture options support per-event environment, release, trace ID, request ID, session ID, and user ID fields; metric events include structured metric context; check-ins send release and monitor metadata to the check-in endpoint.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
 transactions visible
 uncaught route errors visible
 console logging events visible

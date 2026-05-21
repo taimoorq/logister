@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "cloudflare-docs/**"
+      - "bin/build-cloudflare-docs"
       - ".github/workflows/cloudflare-docs-deploy.yml"
   workflow_dispatch:
 
@@ -49,6 +50,12 @@ jobs:
             echo "Missing CLOUDFLARE_PAGES_PROJECT GitHub variable."
             exit 1
           fi
+
+      - name: Build docs metadata
+        env:
+          LOGISTER_DOCS_URL: ${{ vars.LOGISTER_DOCS_URL }}
+          DOCS_SITEMAP_LASTMOD: ${{ vars.DOCS_SITEMAP_LASTMOD }}
+        run: bin/build-cloudflare-docs
 
       - name: Deploy static docs
         uses: cloudflare/wrangler-action@v3

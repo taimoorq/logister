@@ -19,6 +19,9 @@ RSpec.describe "Routes", type: :routing do
     it "routes GET /terms to home#terms" do
       expect(get: "/terms").to route_to(controller: "home", action: "terms")
     end
+    it "routes GET /robots.txt to home#robots" do
+      expect(get: "/robots.txt").to route_to(controller: "home", action: "robots", format: :text)
+    end
     it "routes GET /up to rails/health#show" do
       expect(get: "/up").to route_to(controller: "rails/health", action: "show")
     end

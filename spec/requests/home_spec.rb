@@ -34,7 +34,7 @@ RSpec.describe "Home", type: :request do
       end
 
       it "uses the configured https canonical URL even for http requests" do
-        Rails.application.routes.default_url_options = { host: "logister.org", protocol: "https" }
+        Rails.application.routes.default_url_options = { host: "logister.org", protocol: "https://" }
 
         get root_path, headers: { "HOST" => "logister.org" }
 
@@ -42,6 +42,7 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include('<link rel="canonical" href="https://logister.org/">')
         expect(response.body).to include('<meta property="og:url" content="https://logister.org/">')
         expect(response.body).to include("&quot;url&quot;:&quot;https://logister.org/&quot;")
+        expect(response.body).not_to include("://://")
       end
     end
 
@@ -143,9 +144,10 @@ RSpec.describe "Home", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
       expect(response.body).to include("GHCR image package")
-      expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.0")
+      expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.1")
       expect(response.body).to include("Docker Hub image package")
-      expect(response.body).to include("docker.io/taimoorq/logister:v1.1.0")
+      expect(response.body).to include("docker.io/taimoorq/logister:v1.1.1")
+      expect(response.body).to include("Optional Quay image mirror")
       expect(response.body).to include("https://docs.logister.org/use-cases/")
       expect(response.body).to include("https://docs.logister.org/use-cases/rails-error-monitoring/")
       expect(response.body).to include("https://docs.logister.org/use-cases/python-error-monitoring/")
@@ -175,12 +177,38 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
       expect(response.body).to include("Sentry alternative")
       expect(response.body).to include("Rails error monitoring")
-      expect(response.body).to include("Docker, GHCR, and Docker Hub self-hosting")
+      expect(response.body).to include("Docker, GHCR, Docker Hub, and optional Quay self-hosting")
       expect(response.body).to include("Error assignment and team triage")
       expect(response.body).to include("Amazon SES error alert emails")
-      expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.0")
-      expect(response.body).to include("docker.io/taimoorq/logister:v1.1.0")
+      expect(response.body).to include("ghcr.io/taimoorq/logister:v1.1.1")
+      expect(response.body).to include("docker.io/taimoorq/logister:v1.1.1")
+      expect(response.body).to include("quay.io/taimoorq/logister")
       expect(response.body).to include("TRADEMARKS.md")
+    end
+  end
+
+  describe "GET /robots.txt" do
+    it "returns robots rules with configured app and docs sitemap hosts" do
+      original_docs_url = ENV["LOGISTER_DOCS_URL"]
+      ENV["LOGISTER_DOCS_URL"] = "https://docs.example.test"
+      Rails.application.routes.default_url_options = { host: "errors.example.test", protocol: "https://" }
+
+      get "/robots.txt", headers: { "HOST" => "errors.example.test" }
+
+      expect(response).to have_http_status(:success)
+      expect(response.media_type).to eq("text/plain")
+      expect(response.body).to include("Disallow: /admin")
+      expect(response.body).to include("Disallow: /api")
+      expect(response.body).to include("Allow: /llms.txt")
+      expect(response.body).to include("Sitemap: https://errors.example.test/sitemap.xml")
+      expect(response.body).to include("Sitemap: https://docs.example.test/sitemap.xml")
+      expect(response.body).not_to include("://://")
+    ensure
+      if original_docs_url
+        ENV["LOGISTER_DOCS_URL"] = original_docs_url
+      else
+        ENV.delete("LOGISTER_DOCS_URL")
+      end
     end
   end
 

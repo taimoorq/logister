@@ -43,7 +43,7 @@
             <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>.NET / ASP.NET Core</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates the app when sending events</td></tr><tr><td>Logister instance base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>.NET 8+ app</td><td>Lets you use the first Logister .NET SDK packages</td></tr></tbody></table></section>
             <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use the .NET integration to make ASP.NET Core failures easier to act on.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch uncaught request exceptions</td><td>Inbox issues with .NET exception details, stack frames, request URL, request ID, trace ID, user ID, framework metadata, and runtime metadata.</td></tr><tr><td>Understand failed ASP.NET requests</td><td>A .NET-focused detail view with stack, query, optional cookies, headers, routing, runtime, inner exceptions, and exception data when captured.</td></tr><tr><td>Track request latency</td><td>Request transaction events that power the project performance view when request transactions are enabled.</td></tr><tr><td>Monitor workers and business signals</td><td>Metrics, logs, custom transactions, and check-ins from injected <code>LogisterClient</code> calls.</td></tr><tr><td>Connect deploys and traces</td><td>Release, request ID, and trace ID context that helps Logister show release health and related logs.</td></tr></tbody></table></section>
             <section id="install" class="section"><p class="eyebrow">Install</p><h2>Install the base client or ASP.NET Core package.</h2><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-install">Copy</button></div><pre><code id="dotnet-install">dotnet add package Logister
-dotnet add package Logister.AspNetCore</code></pre></div><p>Until NuGet packages are published, reference the local project from the <code>logister-dotnet</code> repository.</p><div class="code-block"><div class="code-head"><span class="code-language">xml</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-projectref">Copy</button></div><pre><code id="dotnet-projectref">&lt;ProjectReference Include="../logister-dotnet/src/Logister/Logister.csproj" /&gt;
+dotnet add package Logister.AspNetCore</code></pre></div><p>The SDK source, issues, and release history live in the public <a href="https://github.com/taimoorq/logister-dotnet">logister-dotnet repository</a>. For local development, forks, or unreleased SDK changes, reference the project from that repo directly.</p><div class="code-block"><div class="code-head"><span class="code-language">xml</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-projectref">Copy</button></div><pre><code id="dotnet-projectref">&lt;ProjectReference Include="../logister-dotnet/src/Logister/Logister.csproj" /&gt;
 &lt;ProjectReference Include="../logister-dotnet/src/Logister.AspNetCore/Logister.AspNetCore.csproj" /&gt;</code></pre></div></section>
             <section id="aspnetcore" class="section"><p class="eyebrow">ASP.NET Core</p><h2>Capture uncaught exceptions and optional request transactions.</h2><div class="code-block"><div class="code-head"><span class="code-language">csharp</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-aspnet">Copy</button></div><pre><code id="dotnet-aspnet">using Logister.AspNetCore;
 
@@ -66,8 +66,20 @@ app.UseLogisterRequestTransactions();</code></pre></div><p>The exception middlew
             "timesheet.approvals.pending",
             pending,
             new MetricOptions { Unit = "count" });
+
+        await logister.CheckInAsync(
+            "nightly-import",
+            "ok",
+            new CheckInOptions
+            {
+                Release = "worker@2026.05.21",
+                ExpectedIntervalSeconds = 3600,
+                DurationMs = 122.5,
+                TraceId = "trace-123",
+                RequestId = "req-123"
+            });
     }
-}</code></pre></div><p>The same client supports <code>CaptureExceptionAsync()</code>, <code>CaptureMessageAsync()</code>, <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, and <code>CheckInAsync()</code>.</p></section>
+}</code></pre></div><p>The same client supports <code>CaptureExceptionAsync()</code>, <code>CaptureMessageAsync()</code>, <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, and <code>CheckInAsync()</code>. Capture options support per-event environment, release, trace ID, request ID, session ID, and user ID fields; check-ins also send top-level release and monitor timing metadata to match the HTTP API.</p></section>
             <section id="configuration" class="section"><p class="eyebrow">Configuration</p><h2>Configure with appsettings or environment variables.</h2><div class="code-block"><div class="code-head"><span class="code-language">json</span><button class="copy-button" data-copy-button data-copy-target="#dotnet-config">Copy</button></div><pre><code id="dotnet-config">{
   "Logister": {
     "ApiKey": "your-project-api-token",

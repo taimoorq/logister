@@ -105,13 +105,14 @@ Used when one action should update several DOM regions:
   3. Step-by-step setup or usage flow
   4. Verification section
   5. Next steps or troubleshooting
-- **Keep docs hosting concerns separate from Rails concerns.** Analytics, robots, sitemap, and metadata for `docs.logister.org` belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
+- **Keep docs hosting concerns separate from Rails concerns.** Analytics, docs robots, docs sitemap, and docs metadata for the configured docs host belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
 
 ### SEO and crawl surfaces
 
-- **Treat `logister.org` and `docs.logister.org` as separate hosts.** Each host should own its own canonical URLs, robots policy, and sitemap.
+- **Treat the app host and docs host as separate hosts.** The official hosts are `logister.org` and `docs.logister.org`, but forks can configure their own with `LOGISTER_PUBLIC_URL` and `LOGISTER_DOCS_URL`. Each host should own its own canonical URLs, robots policy, and sitemap.
 - **The Rails sitemap is intentionally app-only.** `app/views/home/sitemap.xml.builder` should include only Rails-hosted public pages like home/about/privacy/terms, not external docs URLs.
-- **Use `robots.txt` for discovery across hosts.** `public/robots.txt` advertises both the app sitemap and the docs sitemap so crawlers can discover both surfaces from the main domain.
+- **Use dynamic `robots.txt` for discovery across hosts.** `home#robots` advertises both the app sitemap and the docs sitemap so crawlers can discover both surfaces from the main domain. It must derive the app host from Rails URL settings / `LOGISTER_PUBLIC_URL` and the docs host from `LOGISTER_DOCS_URL`; do not reintroduce a hardcoded `public/robots.txt`.
+- **Generate static docs metadata before deploy.** Run `bin/build-cloudflare-docs` when docs pages change so `cloudflare-docs/sitemap.xml` and `cloudflare-docs/robots.txt` include the current docs pages and the configured `LOGISTER_DOCS_URL`.
 - **Keep `llms.txt` current with the real product shape.** `public/llms.txt` should describe the self-hosted app, supported languages, companion packages, and public docs URLs. It should not drift back to a Ruby-only description.
 - **Static docs pages should carry strong metadata.** In `cloudflare-docs/`, keep page-level canonical tags, `robots`, Open Graph, Twitter tags, and JSON-LD structured data aligned with the actual audience and technology on each page.
 
@@ -137,7 +138,8 @@ Used when one action should update several DOM regions:
   - project integration labels and settings guidance
   - project event presenters and request/activity/performance copy when the language has specific event shapes
   - external docs nav and sitemap in `cloudflare-docs/`
-  - `public/llms.txt`
+  - `public/llms.txt` and `public/llms-full.txt`
+  - `cloudflare-docs/llms.txt` and `cloudflare-docs/llms-full.txt`
   - public marketing/about copy if the supported-language story changes
 
 ### Deploy and release learnings
@@ -145,6 +147,8 @@ Used when one action should update several DOM regions:
 - **On Fly, database setup belongs in the release phase.** `fly.toml` uses `release_command = './bin/rails db:prepare'`; the web entrypoint should not also run `db:prepare` on every boot.
 - **Docs deployment is independent of app deployment.** Changes under `cloudflare-docs/` ship through the Cloudflare Pages workflow, not the Rails deploy path.
 - **App and package releases are separate.** This repo’s releases describe the Rails app and hosted/self-hosted product. `logister-js` and other client packages should keep their own changelog, tags, and GitHub releases.
+- **Release complete features across every public surface.** When a feature changes ingestion, monitoring, SDK behavior, self-hosting, or release distribution, update the Rails app, Cloudflare docs, app `llms` files, docs `llms` files, sitemap/robots metadata, changelog/release notes, image registry references, package READMEs, and companion SDK versions together. A feature is not release-ready if the code works but the public docs, package surfaces, or discovery files still describe the old behavior.
+- **Version and publish each affected artifact deliberately.** The Rails app, Ruby gem, .NET SDK, Python package, JavaScript package, Docker images, and optional Quay mirror have separate release mechanics. Bump only the artifacts that changed, keep their changelogs accurate, and verify their publish workflows before calling the update done.
 
 ### Helpful CLI workflow learnings
 
