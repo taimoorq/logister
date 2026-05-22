@@ -43,6 +43,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(tour_root).to be_present
         expect(tour_root["data-action"]).to include("click->product-tour#startForNewUser:capture", "turbo:before-cache@document->product-tour#beforeCache")
         expect(document.at_css(".tour-help-button[data-action='click->product-tour#start']")).to be_present
+        expect(document.at_css(".tour-help-button .tour-help-button-mark")&.text).to eq("?")
         expect(document.css("[data-tg-group='dashboard']").map { |node| node["data-tg-title"] }).to include("Dashboard overview", "Explorer", "Attention queue", "Project signals")
       end
 

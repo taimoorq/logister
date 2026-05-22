@@ -130,6 +130,9 @@
   .tour-help-button {
     @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 shadow-sm hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
   }
+  .tour-help-button-mark {
+    @apply text-base font-bold leading-none;
+  }
   .tg-dialog {
     @apply border border-slate-200 shadow-lg;
     border-radius: 0.5rem !important;
@@ -150,9 +153,24 @@
   .tg-dialog-footer .tg-dialog-btn {
     @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
   }
-  .tg-dialog-footer #tg-dialog-next-btn,
-  .tg-dialog-footer button.tg-dialog-btn:last-child {
-    @apply border-blue-600 bg-blue-600 text-white hover:bg-blue-700;
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn#tg-dialog-next-btn,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn#tg-dialog-next-btn:hover,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn#tg-dialog-next-btn:focus,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn#tg-dialog-next-btn:active,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn:last-child,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn:last-child:hover,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn:last-child:focus,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn:last-child:active {
+    border-color: var(--app-primary-600);
+    background-color: var(--app-primary-600);
+    color: var(--app-primary-contrast) !important;
+  }
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn#tg-dialog-next-btn:hover,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn#tg-dialog-next-btn:focus,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn:last-child:hover,
+  .tg-dialog .tg-dialog-footer button.tg-dialog-btn:last-child:focus {
+    border-color: var(--app-primary-700);
+    background-color: var(--app-primary-700);
   }
   .action-link {
     @apply inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 no-underline;

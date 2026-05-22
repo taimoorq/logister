@@ -10,9 +10,13 @@ export default class extends Controller {
 
   connect() {
     this.autoStarted = false
+    this.autoStartFrame = null
+    this.autoStartTimer = null
+    this.startForNewUser()
   }
 
   disconnect() {
+    this.cancelAutoStart()
     this.closeTour()
   }
 
@@ -26,7 +30,7 @@ export default class extends Controller {
     if (!this.autoOnInteractionValue || this.autoStarted || this.tourCompleted() || this.ignoredInteraction(event)) return
 
     this.autoStarted = true
-    window.requestAnimationFrame(() => this.startTour())
+    this.queueAutoStart()
   }
 
   beforeCache() {
@@ -34,14 +38,44 @@ export default class extends Controller {
   }
 
   startTour({ force = false } = {}) {
-    if (!this.groupValue || (!force && this.tourCompleted()) || !this.hasTourSteps()) return
+    if (!this.groupValue || (!force && this.tourCompleted()) || !this.hasTourSteps()) return false
 
     const client = this.tourClient()
-    if (!client || client.isVisible) return
+    if (!client || client.isVisible) return false
 
     client.start(this.groupValue).catch((error) => {
       if (window.console) console.warn("Unable to start product tour", error)
     })
+
+    return true
+  }
+
+  queueAutoStart(attempt = 0) {
+    this.cancelAutoStart()
+
+    this.autoStartFrame = window.requestAnimationFrame(() => {
+      this.autoStartFrame = null
+      if (!this.element.isConnected || this.startTour()) return
+
+      if (attempt >= 10 || this.tourCompleted()) {
+        this.autoStarted = false
+        return
+      }
+
+      this.autoStartTimer = window.setTimeout(() => this.queueAutoStart(attempt + 1), 100)
+    })
+  }
+
+  cancelAutoStart() {
+    if (this.autoStartFrame) {
+      window.cancelAnimationFrame(this.autoStartFrame)
+      this.autoStartFrame = null
+    }
+
+    if (this.autoStartTimer) {
+      window.clearTimeout(this.autoStartTimer)
+      this.autoStartTimer = null
+    }
   }
 
   tourClient() {
@@ -98,6 +132,8 @@ export default class extends Controller {
   }
 
   ignoredInteraction(event) {
+    if (!event) return false
+
     const target = event.target
     if (!(target instanceof Element)) return true
 
