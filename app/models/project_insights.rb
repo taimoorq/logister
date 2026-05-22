@@ -71,6 +71,14 @@ class ProjectInsights
     "check_in" => "#2563eb"
   }.freeze
 
+  METRIC_CATEGORY_LABELS = {
+    "health" => "Health",
+    "activity" => "Activity",
+    "performance" => "Performance",
+    "monitors" => "Monitors",
+    "metrics" => "Custom metrics"
+  }.freeze
+
   BASE_METRICS = {
     "events.total" => {
       key: "events.total",
@@ -78,7 +86,9 @@ class ProjectInsights
       description: "Every activity, error, metric, transaction, and check-in event.",
       unit: "count",
       kind: "count",
-      source: "Activity"
+      source: "Activity",
+      category: "activity",
+      category_label: METRIC_CATEGORY_LABELS.fetch("activity")
     },
     "errors.count" => {
       key: "errors.count",
@@ -86,7 +96,9 @@ class ProjectInsights
       description: "Error events captured by the project.",
       unit: "count",
       kind: "count",
-      source: "Inbox"
+      source: "Inbox",
+      category: "health",
+      category_label: METRIC_CATEGORY_LABELS.fetch("health")
     },
     "activity.count" => {
       key: "activity.count",
@@ -94,7 +106,9 @@ class ProjectInsights
       description: "Non-error events flowing into Activity.",
       unit: "count",
       kind: "count",
-      source: "Activity"
+      source: "Activity",
+      category: "activity",
+      category_label: METRIC_CATEGORY_LABELS.fetch("activity")
     },
     "logs.count" => {
       key: "logs.count",
@@ -102,7 +116,9 @@ class ProjectInsights
       description: "Log events captured by the project.",
       unit: "count",
       kind: "count",
-      source: "Activity"
+      source: "Activity",
+      category: "activity",
+      category_label: METRIC_CATEGORY_LABELS.fetch("activity")
     },
     "check_ins.count" => {
       key: "check_ins.count",
@@ -110,7 +126,9 @@ class ProjectInsights
       description: "Monitor check-in events captured by the project.",
       unit: "count",
       kind: "count",
-      source: "Activity"
+      source: "Activity",
+      category: "monitors",
+      category_label: METRIC_CATEGORY_LABELS.fetch("monitors")
     },
     "transactions.count" => {
       key: "transactions.count",
@@ -118,7 +136,9 @@ class ProjectInsights
       description: "Transaction events from Performance.",
       unit: "count",
       kind: "count",
-      source: "Performance"
+      source: "Performance",
+      category: "performance",
+      category_label: METRIC_CATEGORY_LABELS.fetch("performance")
     },
     "transactions.avg" => {
       key: "transactions.avg",
@@ -126,7 +146,9 @@ class ProjectInsights
       description: "Average transaction duration from Performance.",
       unit: "ms",
       kind: "duration",
-      source: "Performance"
+      source: "Performance",
+      category: "performance",
+      category_label: METRIC_CATEGORY_LABELS.fetch("performance")
     },
     "transactions.p95" => {
       key: "transactions.p95",
@@ -134,7 +156,9 @@ class ProjectInsights
       description: "95th percentile transaction duration from Performance.",
       unit: "ms",
       kind: "duration",
-      source: "Performance"
+      source: "Performance",
+      category: "performance",
+      category_label: METRIC_CATEGORY_LABELS.fetch("performance")
     },
     "db.query.count" => {
       key: "db.query.count",
@@ -142,7 +166,9 @@ class ProjectInsights
       description: "Database query metric events.",
       unit: "count",
       kind: "count",
-      source: "Performance"
+      source: "Performance",
+      category: "performance",
+      category_label: METRIC_CATEGORY_LABELS.fetch("performance")
     },
     "db.query.avg" => {
       key: "db.query.avg",
@@ -150,7 +176,9 @@ class ProjectInsights
       description: "Average database query duration.",
       unit: "ms",
       kind: "duration",
-      source: "Performance"
+      source: "Performance",
+      category: "performance",
+      category_label: METRIC_CATEGORY_LABELS.fetch("performance")
     },
     "db.query.p95" => {
       key: "db.query.p95",
@@ -158,7 +186,9 @@ class ProjectInsights
       description: "95th percentile database query duration.",
       unit: "ms",
       kind: "duration",
-      source: "Performance"
+      source: "Performance",
+      category: "performance",
+      category_label: METRIC_CATEGORY_LABELS.fetch("performance")
     }
   }.freeze
 
@@ -344,6 +374,8 @@ class ProjectInsights
           unit: "count",
           kind: "count",
           source: "Metrics",
+          category: "metrics",
+          category_label: METRIC_CATEGORY_LABELS.fetch("metrics"),
           events: count
         }
 
@@ -358,6 +390,8 @@ class ProjectInsights
             unit: "value",
             kind: "number",
             source: "Metrics",
+            category: "metrics",
+            category_label: METRIC_CATEGORY_LABELS.fetch("metrics"),
             events: numeric_counts.fetch(name)
           }
         ]

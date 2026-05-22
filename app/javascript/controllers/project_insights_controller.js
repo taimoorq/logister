@@ -8,6 +8,15 @@ const EVENT_COLORS = {
   transaction: "#059669",
   check_in: "#2563eb"
 }
+const METRIC_CATEGORY_ORDER = ["health", "activity", "performance", "monitors", "metrics", "other"]
+const METRIC_CATEGORY_COPY = {
+  health: { label: "Health", description: "Errors and user-impacting failures" },
+  activity: { label: "Activity", description: "Events and logs moving through the app" },
+  performance: { label: "Performance", description: "Transactions, database work, and durations" },
+  monitors: { label: "Monitors", description: "Check-ins and background job heartbeats" },
+  metrics: { label: "Custom metrics", description: "Application-specific counters and values" },
+  other: { label: "Other signals", description: "Collected series outside the standard groups" }
+}
 
 export default class extends Controller {
   static targets = [
@@ -254,10 +263,11 @@ export default class extends Controller {
 
   renderError() {
     this.setStatus("Unable to load dashboard data")
-    this.summaryTarget.innerHTML = this.summaryCell("--", "Events") +
-      this.summaryCell("--", "Errors") +
-      this.summaryCell("--", "Transactions") +
-      this.summaryCell("--", "Metrics")
+    this.summaryTarget.innerHTML = this.summaryCell("--", "Events", "All matching signals") +
+      this.summaryCell("--", "Errors", "Health signals") +
+      this.summaryCell("--", "Transactions", "Performance spans") +
+      this.summaryCell("--", "Metrics", "Custom measurements") +
+      this.summaryCell("--", "Check-ins", "Monitors and jobs")
     this.charts.metrics.setOption({ graphic: emptyGraphic(true, "Unable to load metrics"), series: [] }, true)
     this.charts.events.setOption({ graphic: emptyGraphic(true, "Unable to load activity"), series: [] }, true)
   }
@@ -273,7 +283,7 @@ export default class extends Controller {
     const currentKey = this.attributeKeySelectTarget.value
     const selectedKey = this.attributeByKey.has(currentKey) ? currentKey : ""
     const optionHtml = [
-      '<option value="">Choose dimension</option>',
+      '<option value="">Choose attribute</option>',
       ...this.attributeCatalog.map((attribute) => (
         `<option value="${escapeHtml(attribute.key)}">${escapeHtml(attribute.label)} (${formatNumber(attribute.count)})</option>`
       ))
@@ -305,7 +315,7 @@ export default class extends Controller {
     const entries = Object.entries(this.attributeFilters)
 
     if (entries.length === 0) {
-      this.attributeFiltersTarget.innerHTML = '<span class="project-insights-filter-empty">No dimension filters</span>'
+      this.attributeFiltersTarget.innerHTML = '<span class="project-insights-filter-empty">No attribute filters</span>'
       return
     }
 
@@ -344,28 +354,46 @@ export default class extends Controller {
       return
     }
 
-    this.metricListTarget.innerHTML = this.catalog.map((metric) => {
-      const selected = this.selectedMetrics.includes(metric.key)
-      const events = metric.events ? `<span>${formatNumber(metric.events)} events</span>` : ""
+    this.metricListTarget.innerHTML = groupedMetrics(this.catalog).map((group) => `
+      <section class="project-insights-metric-group">
+        <div class="project-insights-metric-group-header">
+          <div>
+            <strong>${escapeHtml(group.label)}</strong>
+            <span>${escapeHtml(group.description)}</span>
+          </div>
+          <span>${formatNumber(group.metrics.length)}</span>
+        </div>
+        <div class="project-insights-metric-group-list">
+          ${group.metrics.map((metric) => this.metricButton(metric)).join("")}
+        </div>
+      </section>
+    `).join("")
+  }
 
-      return `
-        <button type="button"
-                class="project-insights-metric ${selected ? "is-selected" : ""}"
-                data-action="project-insights#addMetric"
-                data-metric-key="${escapeHtml(metric.key)}"
-                ${selected ? "disabled" : ""}>
+  metricButton(metric) {
+    const selected = this.selectedMetrics.includes(metric.key)
+    const events = metric.events ? `<span>${formatNumber(metric.events)} events</span>` : ""
+
+    return `
+      <button type="button"
+              class="project-insights-metric ${selected ? "is-selected" : ""}"
+              data-action="project-insights#addMetric"
+              data-metric-key="${escapeHtml(metric.key)}"
+              ${selected ? "disabled" : ""}>
+        <span class="project-insights-metric-topline">
           <span class="project-insights-metric-main">
             <strong>${escapeHtml(metric.label)}</strong>
             <span>${escapeHtml(metric.description || metric.source || "")}</span>
           </span>
-          <span class="project-insights-metric-meta">
-            <span>${escapeHtml(metric.source || "Metric")}</span>
-            <span>${escapeHtml(metric.unit || "count")}</span>
-            ${events}
-          </span>
-        </button>
-      `
-    }).join("")
+          <span class="project-insights-metric-action">${selected ? "Added" : "Add"}</span>
+        </span>
+        <span class="project-insights-metric-meta">
+          <span>${escapeHtml(metric.source || "Metric")}</span>
+          <span>${escapeHtml(metric.unit || "count")}</span>
+          ${events}
+        </span>
+      </button>
+    `
   }
 
   renderActiveMetrics() {
@@ -391,17 +419,19 @@ export default class extends Controller {
   }
 
   renderSummary(summary) {
-    this.summaryTarget.innerHTML = this.summaryCell(summary.events, "Events") +
-      this.summaryCell(summary.errors, "Errors") +
-      this.summaryCell(summary.transactions, "Transactions") +
-      this.summaryCell(summary.metrics, "Metrics")
+    this.summaryTarget.innerHTML = this.summaryCell(summary.events, "Events", "All matching signals") +
+      this.summaryCell(summary.errors, "Errors", "Health signals") +
+      this.summaryCell(summary.transactions, "Transactions", "Performance spans") +
+      this.summaryCell(summary.metrics, "Metrics", "Custom measurements") +
+      this.summaryCell(summary.check_ins, "Check-ins", "Monitors and jobs")
   }
 
-  summaryCell(value, label) {
+  summaryCell(value, label, detail) {
     return `
       <div class="project-insights-summary-cell">
         <strong>${formatNumber(value)}</strong>
         <span>${escapeHtml(label)}</span>
+        <small>${escapeHtml(detail)}</small>
       </div>
     `
   }
@@ -624,6 +654,38 @@ function attributeFiltersFromServer(filters) {
     normalized[String(filter.key)] = String(filter.value)
     return normalized
   }, {})
+}
+
+function groupedMetrics(metrics) {
+  const groups = new Map()
+
+  metrics.forEach((metric) => {
+    const key = metric.category || "other"
+    const fallback = METRIC_CATEGORY_COPY.other
+    const copy = METRIC_CATEGORY_COPY[key] || fallback
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        label: metric.category_label || copy.label,
+        description: copy.description,
+        metrics: []
+      })
+    }
+
+    groups.get(key).metrics.push(metric)
+  })
+
+  return Array.from(groups.values()).sort((left, right) => {
+    const leftIndex = METRIC_CATEGORY_ORDER.indexOf(left.key)
+    const rightIndex = METRIC_CATEGORY_ORDER.indexOf(right.key)
+
+    return categorySortIndex(leftIndex) - categorySortIndex(rightIndex) || left.label.localeCompare(right.label)
+  })
+}
+
+function categorySortIndex(index) {
+  return index === -1 ? METRIC_CATEGORY_ORDER.length : index
 }
 
 function populateSelect(target, options, selectedValue, emptyLabel) {

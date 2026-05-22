@@ -24,10 +24,10 @@ RSpec.describe "Project insights", type: :request do
         get insights_project_path(project)
 
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("Dashboard lab")
+        expect(response.body).to include("Telemetry explorer")
         expect(response.body).to include("project-insights")
-        expect(response.body).to include("Metric catalog")
-        expect(response.body).to include("Dimension")
+        expect(response.body).to include("Series catalog")
+        expect(response.body).to include("Attribute")
         expect(response.body).not_to include("queue.depth")
         expect(response.body).to include(insights_data_project_path(project))
       end
@@ -78,6 +78,8 @@ RSpec.describe "Project insights", type: :request do
         expect(series_by_key.fetch("metric:queue.depth").fetch("data").sum { |point| point.fetch("value") }).to eq(2)
         expect(series_by_key.fetch("metric_value:queue.depth").fetch("data").map { |point| point.fetch("value") }.max).to eq(9.0)
         expect(json.fetch("metric_catalog").map { |metric| metric.fetch("key") }).to include("metric:queue.depth", "metric_value:queue.depth")
+        expect(json.fetch("metric_catalog")).to include(hash_including("key" => "errors.count", "category" => "health"))
+        expect(json.fetch("metric_catalog")).to include(hash_including("key" => "metric:queue.depth", "category" => "metrics"))
         expect(json.fetch("environments").map { |environment| environment.fetch("name") }).to include("production")
         expect(json.fetch("attributes").map { |attribute| attribute.fetch("key") }).to include("tenant_id", "plan")
         expect(json.fetch("attribute_filters")).to include(hash_including("key" => "tenant_id", "value" => "acme"))
