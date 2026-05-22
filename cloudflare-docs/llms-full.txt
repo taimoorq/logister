@@ -35,7 +35,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 ## Supported Runtimes
 
 - Ruby and Rails apps use `logister-ruby`: https://github.com/taimoorq/logister-ruby and https://rubygems.org/gems/logister-ruby
-- .NET and ASP.NET Core apps use `logister-dotnet`: https://github.com/taimoorq/logister-dotnet with `Logister` and `Logister.AspNetCore` NuGet packages.
+- .NET and ASP.NET Core apps use `logister-dotnet`: https://github.com/taimoorq/logister-dotnet with NuGet packages https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore.
 - Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
 - JavaScript and TypeScript apps use `logister-js`: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.

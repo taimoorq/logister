@@ -52,10 +52,10 @@ Current client coverage after the 2026-05-21 parity pass:
 
 | Client | Release | Notes |
 | --- | --- | --- |
-| Ruby | `logister-ruby` v0.2.5 | Manual errors share Rails enrichment; metrics accept value/unit; check-ins accept environment, release, occurred-at, trace ID, and request ID options. |
-| .NET | `Logister` / `Logister.AspNetCore` v0.1.2 | Check-ins now include top-level release plus interval, trace ID, and request ID coverage. |
+| Ruby | `logister-ruby` v0.2.6 | Manual errors share Rails enrichment; metrics accept value/unit; check-ins accept environment, release, occurred-at, trace ID, and request ID options. |
+| .NET | `Logister` / `Logister.AspNetCore` v0.1.3 | Check-ins now include top-level release plus interval, trace ID, and request ID coverage. |
 | Python | `logister-python` v0.2.1 | Metrics now accept unit, level, and fingerprint while preserving structured metric context. |
-| JavaScript | `logister-js` v0.2.2 | Capture calls accept per-event routing fields; metrics include structured metric context; check-ins include release, interval, trace ID, and request ID. |
+| JavaScript | `logister-js` v0.2.3 | Capture calls accept per-event routing fields; metrics include structured metric context; check-ins include release, interval, trace ID, and request ID. |
 
 ## Logister Self-Monitoring
 

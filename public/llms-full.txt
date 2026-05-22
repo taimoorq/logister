@@ -16,10 +16,10 @@ The primary Logister deployment model is self-hosting. The public hosted app at 
 
 ## Supported Runtimes
 
-- Ruby and Rails apps use `logister-ruby`.
-- .NET and ASP.NET Core apps use `logister-dotnet`.
-- Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging.
-- JavaScript and TypeScript apps use `logister-js`.
+- Ruby and Rails apps use `logister-ruby`: https://github.com/taimoorq/logister-ruby and https://rubygems.org/gems/logister-ruby
+- .NET and ASP.NET Core apps use `logister-dotnet`: https://github.com/taimoorq/logister-dotnet with NuGet packages https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore.
+- Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
+- JavaScript and TypeScript apps use `logister-js`: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
 - Unsupported runtimes can use the HTTP API directly.
 
@@ -55,7 +55,7 @@ The primary Logister deployment model is self-hosting. The public hosted app at 
 - 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM discovery plan: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-discovery-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
-- Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, package pages, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
+- Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, RubyGems, NuGet, PyPI, npm package pages, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
 
 ## License And Brand
 

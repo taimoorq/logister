@@ -90,7 +90,8 @@ Canonical documentation lives on the public docs host:
 - RubyGems: https://rubygems.org/gems/logister-ruby
 - Ruby source: https://github.com/taimoorq/logister-ruby
 - .NET source: https://github.com/taimoorq/logister-dotnet
-- .NET packages: `Logister` and `Logister.AspNetCore` on NuGet
+- .NET base package: https://www.nuget.org/packages/Logister
+- .NET ASP.NET Core package: https://www.nuget.org/packages/Logister.AspNetCore
 - PyPI: https://pypi.org/project/logister-python/
 - Python source: https://github.com/taimoorq/logister-python
 - npm: https://www.npmjs.com/package/logister-js

@@ -36,10 +36,10 @@ This app is the self-hosted and self-hostable analytics dashboard for Logister:
 
 If you are trying to instrument an application, the language integrations live in separate packages and guides:
 
-- Ruby package for Ruby apps and Rails services: https://github.com/taimoorq/logister-ruby
-- Python package for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python
-- JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js
-- .NET package for .NET 8+ apps, ASP.NET Core services, workers, and C# services: https://github.com/taimoorq/logister-dotnet
+- Ruby package for Ruby apps and Rails services: https://github.com/taimoorq/logister-ruby and https://rubygems.org/gems/logister-ruby
+- Python package for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
+- JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
+- .NET package for .NET 8+ apps, ASP.NET Core services, workers, and C# services: https://github.com/taimoorq/logister-dotnet, https://www.nuget.org/packages/Logister, and https://www.nuget.org/packages/Logister.AspNetCore
 
 ## Public docs
 
@@ -114,10 +114,10 @@ Use the guide that matches the app you want to connect:
 
 | Integration | Best for | Package / path |
 |----------|-------------|-------------|
-| Ruby | Rails and Ruby apps | `logister-ruby` + https://docs.logister.org/integrations/ruby/ |
-| .NET / ASP.NET Core | .NET 8+ apps, ASP.NET Core services, workers, and C# services | `logister-dotnet` packages `Logister` and `Logister.AspNetCore` + https://docs.logister.org/integrations/dotnet/ |
-| Python | FastAPI, Django, Flask, Celery, Python services, and native Python logging capture | `logister-python` + https://docs.logister.org/integrations/python/ |
-| JavaScript / TypeScript | JavaScript and TypeScript services with optional Express middleware and console capture | `logister-js` + https://docs.logister.org/integrations/javascript/ |
+| Ruby | Rails and Ruby apps | `logister-ruby` on RubyGems: https://rubygems.org/gems/logister-ruby + https://docs.logister.org/integrations/ruby/ |
+| .NET / ASP.NET Core | .NET 8+ apps, ASP.NET Core services, workers, and C# services | NuGet packages `Logister` and `Logister.AspNetCore`: https://www.nuget.org/packages/Logister + https://www.nuget.org/packages/Logister.AspNetCore + https://docs.logister.org/integrations/dotnet/ |
+| Python | FastAPI, Django, Flask, Celery, Python services, and native Python logging capture | `logister-python` on PyPI: https://pypi.org/project/logister-python/ + https://docs.logister.org/integrations/python/ |
+| JavaScript / TypeScript | JavaScript and TypeScript services with optional Express middleware and console capture | `logister-js` on npm: https://www.npmjs.com/package/logister-js + https://docs.logister.org/integrations/javascript/ |
 | CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
 | Direct HTTP API | Custom clients and unsupported runtimes | https://docs.logister.org/http-api/ |
 
@@ -224,6 +224,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - Python package: https://github.com/taimoorq/logister-python
 - JavaScript package: https://github.com/taimoorq/logister-js
 - RubyGems: https://rubygems.org/gems/logister-ruby
-- .NET package IDs: `Logister` and `Logister.AspNetCore` (use project references from `logister-dotnet` until NuGet packages are published)
+- NuGet base package: https://www.nuget.org/packages/Logister
+- NuGet ASP.NET Core package: https://www.nuget.org/packages/Logister.AspNetCore
 - PyPI: https://pypi.org/project/logister-python/
 - npm: https://www.npmjs.com/package/logister-js

@@ -139,10 +139,10 @@ docker pull quay.io/taimoorq/logister:v1.1.1
 
 Keep language package surfaces aligned with the app and docs:
 
-- Ruby package: RubyGems page, README, install snippet, supported Rails/Rack notes.
-- Python package: PyPI page, README, install snippet, supported framework notes.
-- JavaScript package: npm page, README, browser and Node notes.
-- .NET packages: NuGet pages once published, README, ASP.NET Core notes.
+- Ruby package: RubyGems page at https://rubygems.org/gems/logister-ruby, README, install snippet, supported Rails/Rack notes.
+- Python package: PyPI page at https://pypi.org/project/logister-python/, README, install snippet, supported framework notes.
+- JavaScript package: npm page at https://www.npmjs.com/package/logister-js, README, browser and Node notes.
+- .NET packages: NuGet pages at https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore, README, ASP.NET Core notes.
 
 For each package, verify the description says it reports errors or events to Logister and links back to the public docs.
 

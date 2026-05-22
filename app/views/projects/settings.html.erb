@@ -285,6 +285,12 @@ instrument_fastapi(app, client)</code></pre>
                         target: "_blank",
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package page:
+            <%= link_to "PyPI",
+                        "https://pypi.org/project/logister-python/",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% elsif @project.integration_dotnet? %>
@@ -323,6 +329,18 @@ app.UseLogisterRequestTransactions();</code></pre>
             Public setup guide:
             <%= link_to ".NET integration docs",
                         docs_site_url(:dotnet_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package pages:
+            <%= link_to "Logister",
+                        "https://www.nuget.org/packages/Logister",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
+            and
+            <%= link_to "Logister.AspNetCore",
+                        "https://www.nuget.org/packages/Logister.AspNetCore",
                         target: "_blank",
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
@@ -370,6 +388,12 @@ const client = new LogisterClient({
                         target: "_blank",
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package page:
+            <%= link_to "npm",
+                        "https://www.npmjs.com/package/logister-js",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% else %>
@@ -385,7 +409,7 @@ const client = new LogisterClient({
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
-            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>gem "logister-ruby", "~> 0.1.2"
+            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>gem "logister-ruby", "~> 0.2.6"
 
 Logister.configure do |config|
   config.api_key = "your-project-api-token"
@@ -396,6 +420,12 @@ end</code></pre>
           <p class="text-sm text-slate-600">
             Public setup guide:
             <%= link_to "Ruby integration docs", docs_site_url(:ruby_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package page:
+            <%= link_to "RubyGems",
+                        "https://rubygems.org/gems/logister-ruby",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% end %>
