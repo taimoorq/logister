@@ -35,12 +35,16 @@ export default class extends Controller {
     this.projectById = new Map(this.projects.map((project) => [String(project.id), project]))
     this.typeLabelByKey = new Map(this.eventTypes.map((eventType) => [eventType.key, eventType.label]))
     this.charts = {}
+    this.resizeHandler = () => this.queueResize()
+    this.beforeCacheHandler = () => this.beforeCache()
+
+    if (this.isTurboPreview()) return
 
     this.initializeCharts()
     this.renderShell()
     this.fetchData()
-    this.resizeHandler = () => this.queueResize()
     window.addEventListener("resize", this.resizeHandler)
+    document.addEventListener("turbo:before-cache", this.beforeCacheHandler)
 
     if ("ResizeObserver" in window) {
       this.resizeObserver = new ResizeObserver(() => this.queueResize())
@@ -55,9 +59,18 @@ export default class extends Controller {
   disconnect() {
     this.abortController?.abort()
     window.removeEventListener("resize", this.resizeHandler)
+    document.removeEventListener("turbo:before-cache", this.beforeCacheHandler)
     this.resizeObserver?.disconnect()
     cancelAnimationFrame(this.resizeFrame)
-    Object.values(this.charts).forEach((chart) => chart.dispose())
+    this.teardownCharts()
+  }
+
+  beforeCache() {
+    this.abortController?.abort()
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
+    cancelAnimationFrame(this.resizeFrame)
+    this.teardownCharts({ clear: true })
   }
 
   resetFilters(event) {
@@ -82,15 +95,21 @@ export default class extends Controller {
   }
 
   initializeCharts() {
-    this.charts.timeline = echarts.init(this.timelineChartTarget, null, { renderer: "canvas" })
-    this.charts.eventTypes = echarts.init(this.eventTypeChartTarget, null, { renderer: "canvas" })
-    this.charts.projects = echarts.init(this.projectChartTarget, null, { renderer: "canvas" })
-    this.charts.environments = echarts.init(this.environmentChartTarget, null, { renderer: "canvas" })
+    this.charts.timeline = this.initializeChart(this.timelineChartTarget)
+    this.charts.eventTypes = this.initializeChart(this.eventTypeChartTarget)
+    this.charts.projects = this.initializeChart(this.projectChartTarget)
+    this.charts.environments = this.initializeChart(this.environmentChartTarget)
 
     this.charts.timeline.on("click", (params) => this.toggleFilter("occurredOn", params.data?.filterValue))
     this.charts.eventTypes.on("click", (params) => this.toggleFilter("eventType", params.data?.filterValue))
     this.charts.projects.on("click", (params) => this.toggleFilter("projectId", params.data?.filterValue))
     this.charts.environments.on("click", (params) => this.toggleFilter("environment", params.data?.filterValue))
+  }
+
+  initializeChart(target) {
+    echarts.getInstanceByDom(target)?.dispose()
+
+    return echarts.init(target, null, { renderer: "canvas" })
   }
 
   renderShell() {
@@ -407,6 +426,26 @@ export default class extends Controller {
 
   chartColors() {
     return this.eventTypes.map((eventType) => EVENT_COLORS[eventType.key] || "#2563eb")
+  }
+
+  isTurboPreview() {
+    return document.documentElement.hasAttribute("data-turbo-preview")
+  }
+
+  teardownCharts({ clear = false } = {}) {
+    Object.values(this.charts || {}).forEach((chart) => chart.dispose())
+    this.charts = {}
+
+    if (clear) this.chartTargets().forEach((target) => target.replaceChildren())
+  }
+
+  chartTargets() {
+    return [
+      ...this.timelineChartTargets,
+      ...this.eventTypeChartTargets,
+      ...this.projectChartTargets,
+      ...this.environmentChartTargets
+    ]
   }
 }
 

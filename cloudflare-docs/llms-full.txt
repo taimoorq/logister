@@ -87,7 +87,7 @@ All maintained add-ons send the same core telemetry families into the main app: 
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
-- Current versioned images: `ghcr.io/taimoorq/logister:v2.0.1` or `docker.io/taimoorq/logister:v2.0.1`
+- Current versioned images: `ghcr.io/taimoorq/logister:v2.0.2` or `docker.io/taimoorq/logister:v2.0.2`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
 

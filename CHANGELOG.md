@@ -2,6 +2,16 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.2 - 2026-05-22
+
+### Changed
+
+- Updated public self-hosting references for the `v2.0.2` release image tag.
+
+### Fixed
+
+- Prevented the main dashboard explorer charts from rendering twice during Turbo cached preview visits.
+
 ## v2.0.1 - 2026-05-22
 
 ### Changed
