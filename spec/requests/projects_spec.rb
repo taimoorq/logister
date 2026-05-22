@@ -530,6 +530,66 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
+      it "filters and cursor-paginates transaction events" do
+        project = create(:project, user: users(:one), name: "Transaction Browser")
+        api_key = create(:api_key, project: project, user: users(:one))
+        create(:ingest_event,
+               :transaction,
+               project: project,
+               api_key: api_key,
+               level: "error",
+               message: "checkout newest transaction",
+               occurred_at: 1.minute.ago,
+               context: { "transaction_name" => "POST /checkout", "duration_ms" => 650, "status" => 503 })
+        create(:ingest_event,
+               :transaction,
+               project: project,
+               api_key: api_key,
+               level: "error",
+               message: "checkout older transaction",
+               occurred_at: 10.minutes.ago,
+               context: { "transaction_name" => "POST /checkout", "duration_ms" => 700, "status" => 500 })
+        create(:ingest_event,
+               :transaction,
+               project: project,
+               api_key: api_key,
+               message: "healthcheck transaction",
+               occurred_at: 2.minutes.ago,
+               context: { "transaction_name" => "GET /health", "duration_ms" => 25, "status" => 200 })
+        create(:ingest_event,
+               project: project,
+               api_key: api_key,
+               event_type: :error,
+               level: "error",
+               message: "Checkout failed",
+               occurred_at: 30.seconds.ago,
+               context: { "transaction_name" => "POST /checkout" })
+
+        get performance_project_path(project, period: "all", status: "errored", min_duration_ms: "500", q: "checkout", per_page: 1)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        table = document.at_css("table[aria-label='Transaction events']")
+        rows = table.css("tbody tr")
+        older_link = document.css("nav[aria-label='Pagination'] a").find { |link| link.text.strip == "Older" }
+
+        expect(rows.size).to eq(1)
+        expect(rows.first.text).to include("POST /checkout", "650.0 ms", "503 error", "1", "View event", "Open error")
+        expect(rows.first.text).not_to include("GET /health")
+        expect(older_link).to be_present
+        expect(older_link["href"]).to include("before=", "status=errored", "q=checkout")
+
+        get older_link["href"]
+
+        document = Nokogiri::HTML.parse(response.body)
+        rows = document.css("table[aria-label='Transaction events'] tbody tr")
+
+        expect(rows.size).to eq(1)
+        expect(rows.first.text).to include("POST /checkout", "700.0 ms", "500 error")
+        expect(document.css("nav[aria-label='Pagination'] a").map { |link| link.text.strip }).to include("Newer")
+      end
+
       it "shows JavaScript integration docs on JavaScript performance pages" do
         project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node Perf")
 
@@ -651,6 +711,52 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Custom events")
         expect(response.body).to include("Ruby integration docs")
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+      end
+
+      it "filters and cursor-paginates custom events" do
+        project = create(:project, user: users(:one), name: "Activity Browser")
+        api_key = create(:api_key, project: project, user: users(:one))
+        create(:ingest_event,
+               :log,
+               project: project,
+               api_key: api_key,
+               message: "paged log newest",
+               occurred_at: 1.minute.ago)
+        create(:ingest_event,
+               :log,
+               project: project,
+               api_key: api_key,
+               message: "paged log older",
+               occurred_at: 10.minutes.ago)
+        create(:ingest_event,
+               :transaction,
+               project: project,
+               api_key: api_key,
+               message: "paged transaction hidden",
+               occurred_at: 2.minutes.ago)
+
+        get activity_project_path(project, event_type: "log", q: "paged", per_page: 1)
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        rows = document.css("table[aria-label='Custom events'] tbody tr")
+        older_link = document.css("nav[aria-label='Pagination'] a").find { |link| link.text.strip == "Older" }
+
+        expect(rows.size).to eq(1)
+        expect(rows.first.text).to include("paged log newest")
+        expect(rows.first.text).not_to include("paged log older", "paged transaction hidden")
+        expect(older_link).to be_present
+        expect(older_link["href"]).to include("before=", "event_type=log", "q=paged")
+
+        get older_link["href"]
+
+        document = Nokogiri::HTML.parse(response.body)
+        rows = document.css("table[aria-label='Custom events'] tbody tr")
+
+        expect(rows.size).to eq(1)
+        expect(rows.first.text).to include("paged log older")
+        expect(document.css("nav[aria-label='Pagination'] a").map { |link| link.text.strip }).to include("Newer")
       end
 
       it "shows JavaScript-specific empty-state guidance for JavaScript projects" do

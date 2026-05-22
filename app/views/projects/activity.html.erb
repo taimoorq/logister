@@ -6,13 +6,66 @@
       <h2 class="text-lg font-bold text-slate-900">Custom events</h2>
       <p class="text-slate-500 text-sm">
         Metrics, logs, transactions, and check-ins sent from your
-        <%= @project.integration_label %> integration (last 200).
+        <%= @project.integration_label %> integration.
         <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
       </p>
     </div>
+
+    <%= form_with url: activity_project_path(@project), method: :get, local: true, class: "mb-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end" do %>
+      <div>
+        <%= label_tag :event_type, "Type", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= select_tag :event_type,
+                       options_for_select(@activity_event_type_options, @activity_filters[:event_type]),
+                       class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div>
+        <%= label_tag :period, "Period", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= select_tag :period,
+                       options_for_select(@activity_period_options, @activity_filters[:period]),
+                       class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div>
+        <%= label_tag :environment, "Environment", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= text_field_tag :environment,
+                           @activity_filters[:environment],
+                           placeholder: "production",
+                           class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div>
+        <%= label_tag :release, "Release", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= text_field_tag :release,
+                           @activity_filters[:release],
+                           placeholder: "2026.05.22",
+                           class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div>
+        <%= label_tag :q, "Search", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= text_field_tag :q,
+                           @activity_filters[:q],
+                           placeholder: "message or name",
+                           class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div class="flex gap-2">
+        <%= hidden_field_tag :per_page, @activity_filters[:per_page] %>
+        <%= submit_tag "Apply", class: "inline-flex items-center justify-center rounded-md border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700" %>
+        <% if @activity_filters_active %>
+          <%= link_to "Reset", activity_project_path(@project), class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <span class="text-xs font-semibold text-slate-500 uppercase">Rows</span>
+      <% @per_page_options.each do |per_page| %>
+        <%= link_to per_page,
+                    activity_project_path(@project, @activity_filters.merge(per_page: per_page).compact_blank),
+                    class: "inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs font-semibold no-underline #{@activity_filters[:per_page] == per_page ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'}" %>
+      <% end %>
+    </div>
+
     <% if @activity_events.any? %>
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200">
+        <table class="min-w-full divide-y divide-slate-200" aria-label="Custom events">
           <thead class="bg-slate-50">
             <tr>
               <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Type</th>
@@ -58,9 +111,16 @@
           </tbody>
         </table>
       </div>
+      <%= render "shared/cursor_pagination",
+                 page: @activity_page,
+                 base_path: activity_project_path(@project),
+                 params: @activity_filters,
+                 page_label: "events" %>
     <% else %>
       <p class="text-slate-600 text-sm">
-        <% if @project.integration_cfml? %>
+        <% if @activity_filters_active %>
+          No custom events match these filters.
+        <% elsif @project.integration_cfml? %>
           No custom events yet. Follow the
           <%= link_to "CFML integration docs", docs_site_url(:cfml_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
           to send metrics, logs, transactions, and check-ins from your Lucee or ColdFusion app.

@@ -1,0 +1,29 @@
+<% base_params = local_assigns.fetch(:params, {}).compact_blank.except(:before, :after) %>
+<% page_label = local_assigns.fetch(:page_label, "rows") %>
+<% page_url = lambda do |extra_params|
+  query = base_params.merge(extra_params).compact_blank.to_query
+  query.present? ? "#{base_path}?#{query}" : base_path
+end %>
+
+<nav class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" aria-label="Pagination">
+  <p class="text-xs text-slate-500">
+    Showing <%= page.records.size %> <%= page_label %>, newest first
+  </p>
+  <div class="inline-flex items-center gap-2">
+    <% if page.has_previous? %>
+      <%= link_to "Newer",
+                  page_url.call(after: page.previous_cursor),
+                  class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+    <% else %>
+      <span class="inline-flex items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-400">Newer</span>
+    <% end %>
+
+    <% if page.has_next? %>
+      <%= link_to "Older",
+                  page_url.call(before: page.next_cursor),
+                  class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+    <% else %>
+      <span class="inline-flex items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-400">Older</span>
+    <% end %>
+  </div>
+</nav>
