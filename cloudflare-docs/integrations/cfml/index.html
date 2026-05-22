@@ -37,12 +37,12 @@
             <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a class="active" href="/integrations/cfml/">CFML integration</a><a href="/integrations/javascript/">JavaScript integration</a></div>
             <hr>
-            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#outcomes">What you get</a><a href="#flow">Setup flow</a><a href="#error">Send an error</a><a href="#handling">Error handling</a><a href="#types">Event types</a><a href="#detail">More detail</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#outcomes">What you get</a><a href="#flow">Setup flow</a><a href="#error">Send an error</a><a href="#handling">Error handling</a><a href="#types">Event types</a><a href="#examples">Useful examples</a><a href="#detail">More detail</a></div>
           </aside>
           <article class="article">
             <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>CFML</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates each request to Logister</td></tr><tr><td>Logister host URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Access to <code>Application.cfc</code></td><td>Lets you hook uncaught exceptions centrally</td></tr></tbody></table></section>
-            <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use CFML events to make Lucee and ColdFusion failures visible in the same Logister workflow.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch uncaught CFML exceptions</td><td>Inbox issues with CFML exception summary, detail text, and template frames when you include <code>tagContext</code>, <code>tag_context</code>, <code>stacktrace</code>, or <code>stack_trace</code>.</td></tr><tr><td>Understand the request around the error</td><td>Request details from CGI context such as script name, method, and query string.</td></tr><tr><td>Add performance visibility gradually</td><td>Transaction events for requests or CFC methods, and metric events for query, cache, or outbound HTTP timings.</td></tr><tr><td>Watch scheduled tasks</td><td>Check-ins for scheduled tasks and cron-style jobs on the monitor page.</td></tr><tr><td>Keep custom logs close to errors</td><td>Log events with request, release, or user metadata in the activity feed and related-log tab.</td></tr></tbody></table></section>
-            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project, choose <code>CFML</code>, and generate an API key.</li><li>Add a small <code>LogisterClient.cfc</code> wrapper around <code>cfhttp</code>.</li><li>Hook uncaught exceptions into <code>Application.cfc.onError()</code>.</li><li>Send request timings as <code>transaction</code> events and query timings as <code>metric</code> events.</li></ol><div class="note tip"><h4>Tip</h4><p>Start with uncaught exception capture, then add transactions, metrics, logs, and check-ins one by one as you verify each payload shape.</p></div></section>
+            <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use CFML events to make Lucee and ColdFusion failures visible in the same Logister workflow.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch uncaught CFML exceptions</td><td>Inbox issues with CFML exception summary, detail text, and template frames when you include <code>tagContext</code>, <code>tag_context</code>, <code>stacktrace</code>, or <code>stack_trace</code>.</td></tr><tr><td>Understand the request around the error</td><td>Request details from CGI context such as script name, method, and query string.</td></tr><tr><td>Add performance visibility gradually</td><td>Transaction events for requests or CFC methods, span events for request load waterfalls, and metric events for query, cache, or outbound HTTP timings.</td></tr><tr><td>Watch scheduled tasks</td><td>Check-ins for scheduled tasks and cron-style jobs on the monitor page.</td></tr><tr><td>Keep custom logs close to errors</td><td>Log events with request, release, or user metadata in the activity feed and related-log tab.</td></tr></tbody></table></section>
+            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project, choose <code>CFML</code>, and generate an API key.</li><li>Add a small <code>LogisterClient.cfc</code> wrapper around <code>cfhttp</code>.</li><li>Hook uncaught exceptions into <code>Application.cfc.onError()</code>.</li><li>Send request timings as <code>transaction</code> events, request load pieces as <code>span</code> events, and query timings as <code>metric</code> events.</li></ol><div class="note tip"><h4>Tip</h4><p>Start with uncaught exception capture, then add transactions, spans, metrics, logs, and check-ins one by one as you verify each payload shape.</p></div></section>
             <section id="error" class="section"><p class="eyebrow">Start with</p><h2>Send a structured error event.</h2><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#cfml-endpoint">Copy</button></div><pre><code id="cfml-endpoint">POST /api/v1/ingest_events</code></pre></div><p>Logister accepts the canonical lowercase <code>event</code> envelope and common CFML/Lucee uppercase variants such as <code>EVENT</code>. Nested event keys are normalized too, so <code>eventType</code>, <code>event_type</code>, <code>traceId</code>, and <code>trace_id</code> all map to the expected fields.</p><div class="code-block"><div class="code-head"><span class="code-language">cfml</span><button class="copy-button" data-copy-button data-copy-target="#cfml-error">Copy</button></div><pre><code id="cfml-error">application.logister.sendEvent(
   eventType = "error",
   level = "error",
@@ -78,7 +78,54 @@ stack frames rendered from tagContext or stacktrace</code></pre></div></section>
     }
   );
 }</code></pre></div><div class="note warn"><h4>Important</h4><p>If you omit both tag context and stacktrace fields, Logister can still store the event, but the CFML error view loses the template-frame detail that makes debugging much easier.</p></div></section>
-            <section id="types" class="section"><p class="eyebrow">Event types</p><h2>Use structured event types consistently.</h2><table><thead><tr><th>Event type</th><th>Typical CFML use</th></tr></thead><tbody><tr><td><code>transaction</code></td><td>Request timing, CFC method timing, remote call latency</td></tr><tr><td><code>metric</code></td><td><code>db.query</code>, cache timings, outbound HTTP timings</td></tr><tr><td><code>log</code></td><td>Application logs with request or release metadata</td></tr><tr><td><code>check_in</code></td><td>Scheduled jobs, task runners, cron-style heartbeats</td></tr></tbody></table><dl><dt>Error</dt><dd>Start here so you can confirm payload authentication and exception rendering.</dd><dt>Transaction</dt><dd>Add request timings next so the performance view becomes useful quickly.</dd><dt>Metric</dt><dd>Layer in <code>db.query</code> and other timings for deeper latency analysis.</dd><dt>Check-in</dt><dd>Finish with scheduled jobs and cron heartbeats for monitor coverage.</dd></dl></section>
+            <section id="types" class="section"><p class="eyebrow">Event types</p><h2>Use structured event types consistently.</h2><table><thead><tr><th>Event type</th><th>Typical CFML use</th></tr></thead><tbody><tr><td><code>error</code></td><td>Unhandled exceptions from <code>Application.cfc.onError()</code> or manual rescue paths</td></tr><tr><td><code>transaction</code></td><td>Request timing, CFC method timing, remote call latency</td></tr><tr><td><code>span</code></td><td>Root request spans plus child spans for database, render, cache, HTTP, queue, or internal work</td></tr><tr><td><code>metric</code></td><td><code>db.query</code>, cache timings, outbound HTTP timings, queue depth, business counters</td></tr><tr><td><code>log</code></td><td>Application logs with request or release metadata</td></tr><tr><td><code>check_in</code></td><td>Scheduled jobs, task runners, cron-style heartbeats</td></tr></tbody></table><dl><dt>Error</dt><dd>Start here so you can confirm payload authentication and exception rendering.</dd><dt>Transaction</dt><dd>Add request timings next so the performance view becomes useful quickly.</dd><dt>Span</dt><dd>Add root and child spans when you want request load waterfall charts.</dd><dt>Metric</dt><dd>Layer in <code>db.query</code> and other timings for deeper latency analysis.</dd><dt>Check-in</dt><dd>Finish with scheduled jobs and cron heartbeats for monitor coverage.</dd></dl></section>
+            <section id="examples" class="section"><p class="eyebrow">Useful examples</p><h2>Send one focused event for each CFML workflow you care about.</h2><h3>Request transaction and root span</h3><div class="code-block"><div class="code-head"><span class="code-language">cfml</span><button class="copy-button" data-copy-button data-copy-target="#cfml-transaction-span">Copy</button></div><pre><code id="cfml-transaction-span">traceId = createUUID();
+requestId = traceId;
+rootSpanId = replace(createUUID(), "-", "", "all");
+requestDurationMs = getTickCount() - request.startedAt;
+
+application.logister.sendEvent(
+  eventType = "transaction",
+  level = "info",
+  message = cgi.request_method &amp; " " &amp; cgi.script_name,
+  transactionName = cgi.request_method &amp; " " &amp; cgi.script_name,
+  durationMs = requestDurationMs,
+  traceId = traceId,
+  requestId = requestId,
+  context = { service = "cfml-web", route = cgi.script_name }
+);
+
+application.logister.sendEvent(
+  eventType = "span",
+  name = cgi.request_method &amp; " " &amp; cgi.script_name,
+  kind = "server",
+  traceId = traceId,
+  spanId = rootSpanId,
+  durationMs = requestDurationMs,
+  context = { route = cgi.script_name, service = "cfml-web" }
+);</code></pre></div><h3>Database metric and scheduled-task check-in</h3><div class="code-block"><div class="code-head"><span class="code-language">cfml</span><button class="copy-button" data-copy-button data-copy-target="#cfml-metric-checkin">Copy</button></div><pre><code id="cfml-metric-checkin">application.logister.sendEvent(
+  eventType = "metric",
+  level = "info",
+  message = "db.query",
+  durationMs = queryDurationMs,
+  context = {
+    value = queryDurationMs,
+    unit = "ms",
+    query = "Order lookup",
+    service = "cfml-web"
+  }
+);
+
+application.logister.sendEvent(
+  eventType = "check_in",
+  level = "info",
+  message = "nightly-reconcile",
+  checkInSlug = "nightly-reconcile",
+  checkInStatus = "ok",
+  expectedIntervalSeconds = 3600,
+  durationMs = reconcileDurationMs,
+  context = { service = "cfml-worker" }
+);</code></pre></div><p>Use transactions for total work, spans for waterfalls, metrics for numeric series, logs for narrative context, and check-ins for scheduled tasks. Keep keys stable and low-cardinality so Insights filters stay useful.</p></section>
             <section id="detail" class="section"><p class="eyebrow">More detail</p><h2>Need more reference material?</h2><p>The static docs now carry the CFML setup flow directly. For lower-level payload details, pair this page with the <a href="/http-api/">HTTP API reference</a> so you can verify exact request shapes and authentication headers.</p></section>
           </article>
         </div>

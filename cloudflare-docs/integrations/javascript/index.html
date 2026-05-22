@@ -37,13 +37,13 @@
             <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a class="active" href="/integrations/javascript/">JavaScript integration</a></div>
             <hr>
-            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#outcomes">What you get</a><a href="#flow">Setup flow</a><a href="#install">Install</a><a href="#express">Express</a><a href="#console">Console logging</a><a href="#other-frameworks">Other frameworks</a><a href="#custom-events">Custom events</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#outcomes">What you get</a><a href="#flow">Setup flow</a><a href="#install">Install</a><a href="#express">Express</a><a href="#browser">Browser timing</a><a href="#console">Console logging</a><a href="#other-frameworks">Other frameworks</a><a href="#custom-events">Custom events</a></div>
           </aside>
           <article class="article">
             <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>JavaScript / TypeScript</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates your app when sending events</td></tr><tr><td>Logister instance base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Node 18+ app</td><td>Lets you run the published <code>logister-js</code> package</td></tr></tbody></table></section>
-            <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use the JavaScript integration to connect server-side errors, logs, and request timing.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch Express request failures</td><td>Inbox issues with structured JavaScript stack frames, request context, route or URL metadata, runtime details, and chained causes when available.</td></tr><tr><td>Keep console output visible</td><td><code>console</code> activity in the project activity feed, with <code>console.error(Error)</code> reported as error events.</td></tr><tr><td>Measure server work</td><td>Transaction events for request handlers, scripts, jobs, and custom operations that feed the performance view.</td></tr><tr><td>Correlate logs and errors</td><td>Request, trace, session, or user identifiers shared across log and error events so related logs appear in the detail pane.</td></tr><tr><td>Monitor recurring jobs</td><td>Check-ins from workers and scripts that show up as monitor status.</td></tr></tbody></table></section>
-            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project and generate an API key.</li><li>Install <code>logister-js</code> in the JavaScript or TypeScript app.</li><li>Configure the client with the project API key and base URL.</li><li>Add the Express middleware and error handler if you run Express, or start with direct shared-client calls in your framework.</li><li>Attach <code>instrumentConsole()</code> if you want standard console activity to flow into Logister too.</li><li>Use the shared client for custom metrics, logs, transactions, and check-ins.</li></ol><div class="note tip"><h4>Tip</h4><p>JavaScript teams usually get the fastest value by starting with uncaught errors plus request or job timing, then adding console capture and custom events once the noisy operational paths are under control.</p></div></section>
-            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Install <code>logister-js</code> from npm.</h2><p>Use the published npm package when you want a Node or TypeScript service to send errors, logs, metrics, transactions, and check-ins into Logister with the package manager your team already uses. The npm listing is the canonical package page for install commands, version history, and package metadata.</p><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#js-install">Copy</button></div><pre><code id="js-install">npm install logister-js
+            <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use the JavaScript integration to connect server-side errors, logs, and request timing.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch Express request failures</td><td>Inbox issues with structured JavaScript stack frames, request context, route or URL metadata, runtime details, and chained causes when available.</td></tr><tr><td>Keep console output visible</td><td><code>console</code> activity in the project activity feed, with <code>console.error(Error)</code> reported as error events.</td></tr><tr><td>Measure server work</td><td>Transaction and span events for request handlers, scripts, jobs, browser page loads, and custom operations that feed the performance view.</td></tr><tr><td>Correlate logs and errors</td><td>Request, trace, session, or user identifiers shared across log and error events so related logs appear in the detail pane.</td></tr><tr><td>Monitor recurring jobs</td><td>Check-ins from workers and scripts that show up as monitor status.</td></tr></tbody></table></section>
+            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project and generate an API key.</li><li>Install <code>logister-js</code> in the JavaScript or TypeScript app.</li><li>Configure the client with the project API key and base URL.</li><li>Add the Express middleware and error handler if you run Express, or start with direct shared-client calls in your framework.</li><li>Attach <code>instrumentConsole()</code> if you want standard console activity to flow into Logister too.</li><li>Use the shared client for custom metrics, logs, transactions, spans, and check-ins.</li></ol><div class="note tip"><h4>Tip</h4><p>JavaScript teams usually get the fastest value by starting with uncaught errors plus request or job timing, then adding request spans, console capture, browser timing, and custom events once the noisy operational paths are under control.</p></div></section>
+            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Install <code>logister-js</code> from npm.</h2><p>Use the published npm package when you want a Node or TypeScript service to send errors, logs, metrics, transactions, spans, and check-ins into Logister with the package manager your team already uses. The npm listing is the canonical package page for install commands, version history, and package metadata.</p><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#js-install">Copy</button></div><pre><code id="js-install">npm install logister-js
 yarn add logister-js
 pnpm add logister-js
 bun add logister-js</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-client">Copy</button></div><pre><code id="js-client">import { LogisterClient } from "logister-js";
@@ -65,13 +65,28 @@ const client = new LogisterClient({
   baseUrl: process.env.LOGISTER_BASE_URL ?? "https://your-logister-host.example"
 });
 
-app.use(createLogisterMiddleware({ client }));
+app.use(createLogisterMiddleware({ client, captureRequestSpans: true }));
 
 app.get("/orders/:id", async (_req, res) =&gt; {
   res.json({ ok: true });
 });
 
-app.use(createLogisterErrorHandler({ client }));</code></pre></div><div class="note warn"><h4>Important</h4><p>Register the Logister request middleware before your routes and the Logister error handler before your final Express error response middleware. This is the most natural path if your backend already thinks in middleware and request lifecycle hooks.</p></div></section>
+app.use(createLogisterErrorHandler({ client }));</code></pre></div><div class="note warn"><h4>Important</h4><p>Register the Logister request middleware before your routes and the Logister error handler before your final Express error response middleware. Set <code>captureRequestSpans: true</code> when you want completed requests to appear in request load waterfall charts.</p></div></section>
+            <section id="browser" class="section"><p class="eyebrow">Browser timing</p><h2>Capture page-load and resource timing from browser code.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-browser">Copy</button></div><pre><code id="js-browser">import { LogisterClient } from "logister-js";
+import { capturePageLoad } from "logister-js/browser";
+
+const client = new LogisterClient({
+  apiKey: window.LOGISTER_API_KEY,
+  baseUrl: "https://your-logister-host.example",
+  environment: "production",
+  release: window.LOGISTER_RELEASE
+});
+
+await capturePageLoad(client, {
+  route: window.location.pathname,
+  includeResources: true,
+  maxResources: 20
+});</code></pre></div><p>The browser entrypoint sends a root <code>browser</code> span for page load timing and optional child <code>resource</code> spans for images, scripts, stylesheets, and API calls exposed through the browser performance API.</p></section>
             <section id="console" class="section"><p class="eyebrow">Console logging</p><h2>Forward console output without rewriting every call site.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-console">Copy</button></div><pre><code id="js-console">import { LogisterClient } from "logister-js";
 import { instrumentConsole } from "logister-js/console";
 
@@ -87,7 +102,7 @@ const restoreConsole = instrumentConsole(client, {
 console.warn("Queue backlog rising", { queue: "emails" });
 
 restoreConsole();</code></pre></div><p>This is the low-friction path when a JavaScript service already leans on <code>console.warn()</code> and <code>console.error()</code> during jobs, scripts, and server-side debugging. The console integration sends <code>console.debug/info/log/warn/error</code> calls as Logister <code>log</code> events and records <code>console.error()</code> calls that include an <code>Error</code> object as <code>error</code> events.</p></section>
-            <section id="other-frameworks" class="section"><p class="eyebrow">Other frameworks</p><h2>Use the shared client even if your app is not on Express.</h2><p><code>logister-js</code> is first-class for Node, Express, and TypeScript apps today, but other JavaScript developers are not blocked. If your framework can run JavaScript and make HTTP requests, you can still send events into Logister.</p><table><thead><tr><th>Scenario</th><th>Recommended path</th></tr></thead><tbody><tr><td>Custom Node server, Fastify, scripts, workers, cron jobs</td><td>Use the shared <code>LogisterClient</code> directly and call <code>captureException</code>, <code>captureMessage</code>, <code>captureMetric</code>, <code>captureTransaction</code>, or <code>checkIn</code>.</td></tr><tr><td>Framework without a first-class Logister middleware yet</td><td>Wrap the framework's request lifecycle or error hooks with the shared client, then add custom events where you need more context.</td></tr><tr><td>Runtime where you do not want the SDK yet</td><td>Send JSON directly to the <a href="/http-api/">HTTP API</a> using the project API key.</td></tr></tbody></table><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-other-frameworks">Copy</button></div><pre><code id="js-other-frameworks">import { LogisterClient } from "logister-js";
+            <section id="other-frameworks" class="section"><p class="eyebrow">Other frameworks</p><h2>Use the shared client even if your app is not on Express.</h2><p><code>logister-js</code> is first-class for Node, Express, and TypeScript apps today, but other JavaScript developers are not blocked. If your framework can run JavaScript and make HTTP requests, you can still send events into Logister.</p><table><thead><tr><th>Scenario</th><th>Recommended path</th></tr></thead><tbody><tr><td>Custom Node server, Fastify, scripts, workers, cron jobs</td><td>Use the shared <code>LogisterClient</code> directly and call <code>captureException</code>, <code>captureMessage</code>, <code>captureMetric</code>, <code>captureTransaction</code>, <code>captureSpan</code>, or <code>checkIn</code>.</td></tr><tr><td>Framework without a first-class Logister middleware yet</td><td>Wrap the framework's request lifecycle or error hooks with the shared client, then add custom events where you need more context.</td></tr><tr><td>Runtime where you do not want the SDK yet</td><td>Send JSON directly to the <a href="/http-api/">HTTP API</a> using the project API key.</td></tr></tbody></table><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-other-frameworks">Copy</button></div><pre><code id="js-other-frameworks">import { LogisterClient } from "logister-js";
 
 const client = new LogisterClient({
   apiKey: process.env.LOGISTER_API_KEY ?? "",
@@ -105,11 +120,20 @@ try {
 await client.captureTransaction("nightly-import", 1824, {
   context: { environment: process.env.NODE_ENV ?? "development" }
 });</code></pre></div><div class="note tip"><h4>Need another framework?</h4><p>If you are on Next.js, NestJS, Fastify, or another JavaScript framework, start with the shared client or the <a href="/http-api/">HTTP API</a>. That gives you working ingestion today while the package grows more framework-specific integrations over time.</p></div></section>
-            <section id="custom-events" class="section"><p class="eyebrow">Custom events</p><h2>Report metrics, logs, and check-ins from the same client.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-events">Copy</button></div><pre><code id="js-events">await client.captureMetric("cache.hit_rate", 0.98, {
+            <section id="custom-events" class="section"><p class="eyebrow">Custom events</p><h2>Report metrics, logs, spans, and check-ins from the same client.</h2><div class="code-block"><div class="code-head"><span class="code-language">typescript</span><button class="copy-button" data-copy-button data-copy-target="#js-events">Copy</button></div><pre><code id="js-events">await client.captureMetric("cache.hit_rate", 0.98, {
   unit: "ratio",
   traceId: "trace-123",
   requestId: "req-123",
   context: { service: "checkout-api" }
+});
+
+await client.captureSpan("render checkout", 82.1, {
+  kind: "render",
+  status: "ok",
+  traceId: "trace-123",
+  parentSpanId: "span-root",
+  requestId: "req-123",
+  context: { route: "POST /checkout" }
 });
 
 await client.captureMessage("Queue backlog rising", {
@@ -124,11 +148,13 @@ await client.checkIn("nightly-import", "ok", {
   traceId: "trace-123",
   requestId: "req-123",
   context: { environment: "production" }
-});</code></pre></div><p>Captured JavaScript exceptions include structured stack frames and chained causes when the original error uses <code>cause</code>. Capture options support per-event environment, release, trace ID, request ID, session ID, and user ID fields; metric events include structured metric context; check-ins send release and monitor metadata to the check-in endpoint.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
+});</code></pre></div><p>Captured JavaScript exceptions include structured stack frames and chained causes when the original error uses <code>cause</code>. Capture options support per-event environment, release, trace ID, request ID, session ID, and user ID fields; span options add span ID, parent span ID, kind, status, and start/end timestamps; metric events include structured metric context; check-ins send release and monitor metadata to the check-in endpoint.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
 transactions visible
+request spans visible
 uncaught route errors visible
 console logging events visible
-custom metrics and check-ins present</code></pre></div></section>
+browser page-load spans visible if enabled
+custom metrics, spans, and check-ins present</code></pre></div></section>
           </article>
         </div>
       </main>

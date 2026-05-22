@@ -69,9 +69,9 @@ Canonical documentation lives on the public docs host:
 ## Product summary
 - Captures and groups application errors into triageable error groups.
 - Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, and status.
-- Accepts `error`, `log`, `metric`, `transaction`, and `check_in` events.
+- Accepts `error`, `log`, `metric`, `transaction`, `span`, and `check_in` events.
 - Provides a cross-app dashboard with server-backed explorer charts, needs-attention summaries, active-project shortcuts, and assigned-to-me links.
-- Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
+- Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review transaction and span-backed performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
 - Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
 - Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, GHCR and Docker Hub release images, and optional Quay mirrors.

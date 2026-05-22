@@ -6,7 +6,7 @@ Canonical product and integration documentation lives on https://docs.logister.o
 
 ## What Logister Does
 
-- Captures application errors, logs, metrics, transactions, and check-ins.
+- Captures application errors, logs, metrics, transactions, spans, and check-ins.
 - Groups repeated errors into triageable error groups.
 - Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, and environment when integrations provide them.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
@@ -50,8 +50,8 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 ## Insights Beta
 
 - The project Insights tab is part of the 2.0 beta workstream and is intended for live project exploration before the finalized 2.0 dashboard surface.
-- It helps users see what Logister is collecting at a glance, especially when the project inbox has no active errors but logs, metrics, transactions, check-ins, or performance data are still arriving.
-- Best uses include release validation, instrumentation audits, performance triage, worker or queue monitoring, and narrowing recent events by environment, release, custom dimensions, or metric series.
+- It helps users see what Logister is collecting at a glance, especially when the project inbox has no active errors but logs, metrics, transactions, spans, check-ins, or performance data are still arriving.
+- Best uses include release validation, instrumentation audits, span-backed request load analysis, performance triage, worker or queue monitoring, and narrowing recent events by environment, release, custom dimensions, or metric series.
 - Best instrumentation practices: always send stable `environment` and `release` values when available; use stable top-level context keys such as `service`, `region`, `queue`, `route`, `tenant_tier`, or `feature_flag`; avoid raw IDs, emails, request bodies, and high-cardinality values as dashboard dimensions; keep custom metric names consistent; send numeric metric values in `context.value` when average value series should appear in the metric catalog.
 - The current Insights beta uses PostgreSQL indexes and short Redis cache windows for the product UI. Optional ClickHouse remains useful for raw event analytics, high-volume custom reporting, and future materialized dashboard rollups, but is not required for the beta Insights tab.
 

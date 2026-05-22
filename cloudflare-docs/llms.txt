@@ -66,6 +66,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 ## Product and packages
 - App source: https://github.com/taimoorq/logister
 - Secondary hosted/public app: https://logister.org/
+- Supported telemetry: Logister accepts errors, logs, metrics, transactions, spans, and check-ins. Span payloads feed request load waterfall charts when they include trace IDs, span IDs, parent span IDs, kind, duration, and route or service context.
 - Insights beta: project-level dashboard workspace that combines Inbox, Activity, and Performance signals with ECharts, time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, and recent matching events. Best results come from consistent `environment`, `release`, stable custom context attributes, and numeric custom metric values in `context.value`.
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
 - Ruby SDK package: https://rubygems.org/gems/logister-ruby

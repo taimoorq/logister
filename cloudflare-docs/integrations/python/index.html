@@ -41,9 +41,9 @@
           </aside>
           <article class="article">
             <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>Python</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Project API token</td><td>Authenticates your app when sending events</td></tr><tr><td>Logister instance base URL</td><td>Used to build the ingest and check-in endpoints</td></tr><tr><td>Python 3.11+ app</td><td>Lets you install and run <code>logister-python</code></td></tr></tbody></table></section>
-            <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use the Python integration across APIs, workers, and scheduled tasks.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch web request failures</td><td>Inbox issues from FastAPI, Django, or Flask with structured traceback frames, request metadata, route context, and runtime details.</td></tr><tr><td>Keep existing logs useful</td><td>Standard <code>logging</code> records in the activity feed, with <code>logger.exception(...)</code> and <code>exc_info</code> records reported as errors.</td></tr><tr><td>Understand worker behavior</td><td>Celery task runtime, failures, retries, queue metadata, worker hostnames, and optional check-ins.</td></tr><tr><td>Debug with Python context</td><td>Chained exceptions, runtime metadata, logger metadata, and optional frame locals when enabled.</td></tr><tr><td>Monitor custom operations</td><td>Metrics, transactions, logs, and check-ins from the shared client.</td></tr></tbody></table></section>
-            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project and generate an API key.</li><li>Install <code>logister-python</code> in the Python app.</li><li>Configure the client with environment variables or direct initialization.</li><li>Add the framework integration you need first: FastAPI, Django, Flask, or Celery.</li><li>Attach <code>instrument_logging()</code> if you want standard Python <code>logging</code> records to flow into Logister too.</li><li>Use the shared client for metrics, logs, transactions, and check-ins across the rest of the app.</li></ol><div class="note tip"><h4>Tip</h4><p>Python teams usually get the most value by starting with uncaught exceptions plus request or task timing, then layering in logging, custom metrics, and check-ins once the main API and worker paths are visible.</p></div></section>
-            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Install <code>logister-python</code> from PyPI.</h2><p>Use the published PyPI package when you want a Python API, worker, scheduler, or internal service to send errors, logs, metrics, transactions, and check-ins into Logister.</p><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#python-install">Copy</button></div><pre><code id="python-install">pip install logister-python
+            <section id="outcomes" class="section"><p class="eyebrow">What you get</p><h2>Use the Python integration across APIs, workers, and scheduled tasks.</h2><table><thead><tr><th>Need</th><th>What appears in Logister</th></tr></thead><tbody><tr><td>Catch web request failures</td><td>Inbox issues from FastAPI, Django, or Flask with structured traceback frames, request metadata, route context, and runtime details.</td></tr><tr><td>Keep existing logs useful</td><td>Standard <code>logging</code> records in the activity feed, with <code>logger.exception(...)</code> and <code>exc_info</code> records reported as errors.</td></tr><tr><td>Understand request load</td><td>Optional FastAPI, Django, and Flask request spans that feed request load waterfall charts on the performance page.</td></tr><tr><td>Understand worker behavior</td><td>Celery task runtime, failures, retries, queue metadata, worker hostnames, and optional check-ins.</td></tr><tr><td>Debug with Python context</td><td>Chained exceptions, runtime metadata, logger metadata, and optional frame locals when enabled.</td></tr><tr><td>Monitor custom operations</td><td>Metrics, transactions, spans, logs, and check-ins from the shared client.</td></tr></tbody></table></section>
+            <section id="flow" class="section"><p class="eyebrow">Setup flow</p><h2>Recommended installation path</h2><ol><li>Create the project and generate an API key.</li><li>Install <code>logister-python</code> in the Python app.</li><li>Configure the client with environment variables or direct initialization.</li><li>Add the framework integration you need first: FastAPI, Django, Flask, or Celery.</li><li>Attach <code>instrument_logging()</code> if you want standard Python <code>logging</code> records to flow into Logister too.</li><li>Use the shared client for metrics, logs, transactions, spans, and check-ins across the rest of the app.</li></ol><div class="note tip"><h4>Tip</h4><p>Python teams usually get the most value by starting with uncaught exceptions plus request or task timing, then layering in logging, request spans, custom metrics, and check-ins once the main API and worker paths are visible.</p></div></section>
+            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Install <code>logister-python</code> from PyPI.</h2><p>Use the published PyPI package when you want a Python API, worker, scheduler, or internal service to send errors, logs, metrics, transactions, spans, and check-ins into Logister.</p><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#python-install">Copy</button></div><pre><code id="python-install">pip install logister-python
 uv add logister-python
 pip install 'logister-python[fastapi]'
 pip install 'logister-python[django]'
@@ -75,20 +75,20 @@ from logister import LogisterClient, instrument_fastapi
 
 app = FastAPI()
 logister = LogisterClient.from_env(default_context={"service": "api"})
-instrument_fastapi(app, logister)</code></pre></div><p>The FastAPI integration records each request as a <code>transaction</code> and captures uncaught request exceptions as <code>error</code> events, including route, full URL, selected headers, path params, status code, and common correlation headers.</p></section>
+instrument_fastapi(app, logister, capture_spans=True)</code></pre></div><p>The FastAPI integration records each request as a <code>transaction</code>, optionally records a root <code>server</code> span when <code>capture_spans=True</code>, and captures uncaught request exceptions as <code>error</code> events, including route, full URL, selected headers, path params, status code, and common correlation headers.</p></section>
             <section id="django" class="section"><p class="eyebrow">Django</p><h2>Use middleware for request timing and uncaught view errors.</h2><div class="code-block"><div class="code-head"><span class="code-language">python</span><button class="copy-button" data-copy-button data-copy-target="#python-django">Copy</button></div><pre><code id="python-django">MIDDLEWARE = [
     # ...
     "logister.django.LogisterMiddleware",
 ]</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">python</span><button class="copy-button" data-copy-button data-copy-target="#python-django-configured">Copy</button></div><pre><code id="python-django-configured">from logister import LogisterClient, build_django_middleware
 
 logister = LogisterClient.from_env(default_context={"service": "django-web"})
-ConfiguredLogisterMiddleware = build_django_middleware(logister)</code></pre></div><p>The Django middleware captures request duration as a <code>transaction</code> and uses <code>process_exception()</code> to report uncaught exceptions as <code>error</code> events.</p></section>
+ConfiguredLogisterMiddleware = build_django_middleware(logister, capture_spans=True)</code></pre></div><p>The Django middleware captures request duration as a <code>transaction</code>, can emit root request spans with <code>capture_spans=True</code>, and uses <code>process_exception()</code> to report uncaught exceptions as <code>error</code> events.</p></section>
             <section id="flask" class="section"><p class="eyebrow">Flask</p><h2>Instrument request timing and uncaught request exceptions with app hooks.</h2><div class="code-block"><div class="code-head"><span class="code-language">python</span><button class="copy-button" data-copy-button data-copy-target="#python-flask">Copy</button></div><pre><code id="python-flask">from flask import Flask
 from logister import LogisterClient, instrument_flask
 
 app = Flask(__name__)
 logister = LogisterClient.from_env(default_context={"service": "flask-web"})
-instrument_flask(app, logister)</code></pre></div><p>The Flask integration records each request as a <code>transaction</code> and captures uncaught request exceptions as <code>error</code> events, including full URL, endpoint, blueprint, selected headers, status code, and common correlation headers.</p></section>
+instrument_flask(app, logister, capture_spans=True)</code></pre></div><p>The Flask integration records each request as a <code>transaction</code>, can emit root request spans with <code>capture_spans=True</code>, and captures uncaught request exceptions as <code>error</code> events, including full URL, endpoint, blueprint, selected headers, status code, and common correlation headers.</p></section>
             <section id="celery" class="section"><p class="eyebrow">Celery</p><h2>Instrument task runtime, failures, retries, and optional check-ins.</h2><div class="code-block"><div class="code-head"><span class="code-language">python</span><button class="copy-button" data-copy-button data-copy-target="#python-celery">Copy</button></div><pre><code id="python-celery">from celery import Celery
 from logister import LogisterClient, instrument_celery
 
@@ -100,7 +100,18 @@ instrument_celery(
     logister,
     monitor_slug_factory=lambda task: getattr(task, "name", None),
 )</code></pre></div><p>The Celery integration captures task runtime as <code>transaction</code> events, failures as <code>error</code> events, retries as warning <code>log</code> events, and optional monitor heartbeats as <code>check_in</code> events, plus task metadata like queue, module, retries, ETA, and worker hostname when Celery exposes them.</p></section>
-            <section id="custom-events" class="section"><p class="eyebrow">Custom events</p><h2>Use the same client for direct metrics, logs, and check-ins.</h2><div class="code-block"><div class="code-head"><span class="code-language">python</span><button class="copy-button" data-copy-button data-copy-target="#python-events">Copy</button></div><pre><code id="python-events">client.capture_transaction("POST /checkout", 182.4, request_id="req_123")
+            <section id="custom-events" class="section"><p class="eyebrow">Custom events</p><h2>Use the same client for direct metrics, logs, spans, and check-ins.</h2><div class="code-block"><div class="code-head"><span class="code-language">python</span><button class="copy-button" data-copy-button data-copy-target="#python-events">Copy</button></div><pre><code id="python-events">client.capture_transaction("POST /checkout", 182.4, request_id="req_123")
+
+client.capture_span(
+    "render checkout",
+    82.1,
+    kind="render",
+    status="ok",
+    trace_id="trace-123",
+    parent_span_id="span-root",
+    request_id="req-123",
+    context={"route": "POST /checkout"},
+)
 
 client.capture_exception(
     exc,
@@ -116,12 +127,13 @@ client.check_in(
     duration_ms=842.7,
     trace_id="trace-123",
     request_id="req-123",
-)</code></pre></div><p>Captured Python exceptions include structured traceback frames, chained exceptions from <code>raise ... from ...</code>, and runtime metadata like Python version, platform, hostname, and process ID. Metric captures accept value, unit, level, fingerprint, environment, release, trace ID, request ID, session ID, and user ID fields.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
+)</code></pre></div><p>Captured Python exceptions include structured traceback frames, chained exceptions from <code>raise ... from ...</code>, and runtime metadata like Python version, platform, hostname, and process ID. Metric captures accept value, unit, level, fingerprint, environment, release, trace ID, request ID, session ID, and user ID fields. Span captures accept span ID, parent span ID, kind, status, start/end timestamps, trace ID, request ID, and custom context for request load charts.</p><div class="output-block"><div class="output-head"><span class="output-label">Verification</span></div><pre><code>Activity page checklist
 transactions visible
+request spans visible
 uncaught framework errors visible
 Celery task events visible
 Python logging events visible
-custom metrics and check-ins present</code></pre></div></section>
+custom metrics, spans, and check-ins present</code></pre></div></section>
           </article>
         </div>
       </main>
