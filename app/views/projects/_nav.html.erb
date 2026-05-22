@@ -1,15 +1,44 @@
-<nav class="mb-4 flex flex-wrap items-center gap-2 text-sm">
+<nav class="mb-4 flex flex-wrap items-center gap-2 text-sm" aria-label="Project sections">
   <% tabs = [
     ["Overview", project_path(@project)],
-    ["Inbox", inbox_project_path(@project)],
-    ["Insights", insights_project_path(@project)],
-    ["Performance", performance_project_path(@project)],
+    ["Inbox", inbox_project_path(@project)]
+  ] %>
+  <% insights_tabs = [
+    ["Telemetry insights", "Charts, signal mix, and metric series", insights_project_path(@project)],
+    ["Performance", "Transactions, spans, and database load", performance_project_path(@project)]
+  ] %>
+  <% trailing_tabs = [
     ["Monitors", monitors_project_path(@project)],
     ["Activity", activity_project_path(@project)],
     ["Settings", settings_project_path(@project)]
   ] %>
+  <% insights_active = insights_tabs.any? { |_label, _description, path| current_page?(path) } %>
 
   <% tabs.each do |label, path| %>
+    <% active = current_page?(path) %>
+    <%= link_to label, path,
+                class: "inline-flex items-center px-2.5 py-1.5 rounded-lg border text-xs font-medium #{active ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}" %>
+  <% end %>
+
+  <details class="project-nav-insights relative">
+    <summary class="project-nav-insights-summary inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium <%= insights_active ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50" %>">
+      <span>Insights</span>
+      <%= app_icon(:chevron_down, css: "h-3.5 w-3.5 shrink-0") %>
+    </summary>
+    <div class="project-nav-insights-menu absolute left-1/2 top-full z-20 mt-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+      <% insights_tabs.each do |label, description, path| %>
+        <% active = current_page?(path) %>
+        <%= link_to path,
+                    class: "block rounded-md px-3 py-2 text-sm no-underline #{active ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"}",
+                    aria: { current: ("page" if active) } do %>
+          <span class="block font-semibold"><%= label %></span>
+          <span class="mt-0.5 block text-xs <%= active ? "text-blue-600" : "text-slate-500" %>"><%= description %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </details>
+
+  <% trailing_tabs.each do |label, path| %>
     <% active = current_page?(path) %>
     <%= link_to label, path,
                 class: "inline-flex items-center px-2.5 py-1.5 rounded-lg border text-xs font-medium #{active ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}" %>

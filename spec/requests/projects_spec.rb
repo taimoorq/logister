@@ -530,6 +530,24 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
+      it "groups insights and performance under the project insights menu" do
+        project = projects(:one)
+
+        get performance_project_path(project)
+
+        document = Nokogiri::HTML.parse(response.body)
+        nav = document.at_css("nav[aria-label='Project sections']")
+        insights_menu = nav.at_css(".project-nav-insights")
+        insights_links = insights_menu.css("a")
+        active_link = insights_menu.at_css("a[aria-current='page']")
+
+        expect(insights_menu.at_css("summary").text).to include("Insights")
+        expect(insights_links.map { |link| link["href"] }).to include(insights_project_path(project), performance_project_path(project))
+        expect(insights_links.map(&:text).join(" ")).to include("Telemetry insights", "Charts, signal mix, and metric series")
+        expect(insights_links.map(&:text).join(" ")).to include("Performance", "Transactions, spans, and database load")
+        expect(active_link["href"]).to eq(performance_project_path(project))
+      end
+
       it "filters and cursor-paginates transaction events" do
         project = create(:project, user: users(:one), name: "Transaction Browser")
         api_key = create(:api_key, project: project, user: users(:one))

@@ -290,6 +290,18 @@
   .projects-filter-tab[aria-current="page"] strong {
     @apply bg-white text-blue-700;
   }
+  .project-nav-insights-summary::-webkit-details-marker {
+    display: none;
+  }
+  .project-nav-insights-summary svg {
+    @apply transition-transform;
+  }
+  .project-nav-insights[open] .project-nav-insights-summary {
+    @apply border-blue-200 bg-blue-50 text-blue-700;
+  }
+  .project-nav-insights[open] .project-nav-insights-summary svg {
+    @apply rotate-180;
+  }
   .project-card-grid {
     @apply grid grid-cols-1 gap-5 lg:grid-cols-2 2xl:grid-cols-3;
   }

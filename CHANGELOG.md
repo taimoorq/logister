@@ -2,6 +2,18 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.1 - 2026-05-22
+
+### Changed
+
+- Grouped project Telemetry insights and Performance under a single Insights navigation menu so related analysis views are easier to discover.
+- Reformatted the project Insights metric picker so each chart series shows labeled source, unit, key, and event details instead of ambiguous badges.
+- Updated public self-hosting references for the `v2.0.1` release image tag.
+
+### Fixed
+
+- Fixed authenticated navigation logo rendering so the brand mark keeps its color and detail on dark headers.
+
 ## v2.0.0 - 2026-05-22
 
 ### Added
