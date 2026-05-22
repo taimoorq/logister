@@ -12,6 +12,7 @@ chart: analytics-board-graph-line
 calendar: calendar-date
 check: form-validation-check-square-1
 warning: alerts-warning-triangle
+notifications: alert-alarm-bell
 archive: archive-box
 all: lists-bullets
 folder_open: office-folder

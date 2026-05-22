@@ -23,6 +23,11 @@ RSpec.describe "Routes protection", type: :request do
       get admin_users_path
       expect(response).to redirect_to(new_user_session_path)
     end
+
+    it "redirects notification dismissal to sign in" do
+      post dismiss_notification_path, params: { notification_key: "release_update:2.0.3" }
+      expect(response).to redirect_to(new_user_session_path)
+    end
   end
 
   describe "shared member permissions" do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_22_224500) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -259,6 +259,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_224500) do
     t.index ["uuid"], name: "index_trace_spans_on_uuid", unique: true
   end
 
+  create_table "user_notification_dismissals", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "dismissed_at", null: false
+    t.string "notification_key", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["user_id", "notification_key"], name: "idx_user_notification_dismissals_uniqueness", unique: true
+    t.index ["user_id"], name: "index_user_notification_dismissals_on_user_id"
+    t.index ["uuid"], name: "index_user_notification_dismissals_on_uuid", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "confirmation_sent_at"
     t.string "confirmation_token"
@@ -306,4 +318,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_224500) do
   add_foreign_key "projects", "users"
   add_foreign_key "trace_spans", "api_keys"
   add_foreign_key "trace_spans", "projects"
+  add_foreign_key "user_notification_dismissals", "users"
 end

@@ -71,6 +71,37 @@ RSpec.describe "Dashboard", type: :request do
         expect(menu.at_css(".nav-project-action-primary")["href"]).to eq(new_project_path)
       end
 
+      it "renders a dismissible release update notification in the top navigation" do
+        update = Logister::ReleaseUpdateChecker::Result.new(
+          current_version: "2.0.2",
+          latest_version: "2.0.3",
+          release_name: "Logister v2.0.3",
+          release_url: "https://github.com/taimoorq/logister/releases/tag/v2.0.3",
+          published_at: "2026-05-22T22:00:00Z"
+        )
+        allow(Logister::ReleaseUpdateChecker).to receive(:call).and_return(update)
+
+        get dashboard_path
+
+        document = Nokogiri::HTML.parse(response.body)
+        notification_menu = document.css("details").find { |node| node.at_css("summary")&.text&.include?("Notifications") || node.at_css("summary[aria-label='1 notification available']") }
+
+        expect(notification_menu).to be_present
+        expect(notification_menu.text).to include("Update available")
+        expect(notification_menu.text).to include("Logister v2.0.3 is available. This instance is running v2.0.2.")
+        expect(notification_menu.at_css("a[href='https://github.com/taimoorq/logister/releases/tag/v2.0.3']")).to be_present
+        expect(notification_menu.at_css("form[action='#{dismiss_notification_path(notification_key: update.notification_key)}']")).to be_present
+
+        post dismiss_notification_path, params: { notification_key: update.notification_key }
+
+        expect(response).to redirect_to(dashboard_path)
+        expect(users(:one).user_notification_dismissals.exists?(notification_key: update.notification_key)).to eq(true)
+
+        get dashboard_path
+
+        expect(response.body).not_to include("Logister v2.0.3 is available")
+      end
+
       it "shows overview content and project count" do
         get dashboard_path
         expect(response.body).to include(projects(:one).name)

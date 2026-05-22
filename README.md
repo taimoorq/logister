@@ -138,6 +138,7 @@ This is the shortest production path. Use the public docs when you need provider
    | `REDIS_URL` | Redis URL |
    | `LOGISTER_PUBLIC_URL` | Canonical HTTPS app URL |
    | `LOGISTER_ADMIN_EMAILS` | Comma-separated operator emails |
+   | `LOGISTER_UPDATE_CHECKS_ENABLED` | Optional, set `false` to disable daily GitHub release checks |
 
    Keep real values in your deploy provider, Docker secrets, Fly secrets, Kamal secrets, or another secret manager. Do not commit a filled-in `.env.production`.
 
