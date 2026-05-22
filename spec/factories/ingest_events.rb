@@ -71,4 +71,19 @@ FactoryBot.define do
       end
     end
   end
+
+  factory :trace_span do
+    association :project
+    api_key { association :api_key, project: project, user: project.user }
+    sequence(:trace_id) { |n| "trace-#{n}" }
+    sequence(:span_id) { |n| "span-#{n}" }
+    parent_span_id { nil }
+    sequence(:name) { |n| "GET /requests/#{n}" }
+    kind { "server" }
+    status { "ok" }
+    duration_ms { 180.5 }
+    started_at { Time.current }
+    ended_at { started_at + (duration_ms.to_f / 1000.0) }
+    context { { "route" => name, "request_id" => "req-123", "environment" => "production" } }
+  end
 end

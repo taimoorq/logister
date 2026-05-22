@@ -8,7 +8,8 @@
 <% active_activity_types = activity_types.select { |event_type| @event_type_counts_last_24h.fetch(event_type, 0).positive? } %>
 <% transaction_count = @transaction_stats.fetch(:count, 0).to_i %>
 <% db_query_count = @db_stats.fetch(:count, 0).to_i %>
-<% performance_events_count = transaction_count + db_query_count %>
+<% request_span_count = @request_span_count_last_24h.to_i %>
+<% performance_events_count = transaction_count + db_query_count + request_span_count %>
 <% error_rate_percent = (@transaction_stats.fetch(:error_rate, 0.0).to_f * 100.0).round(1) %>
 
 <section class="space-y-6">
@@ -83,7 +84,7 @@
       <div class="flex items-start justify-between gap-3">
         <div>
           <p class="dashboard-kicker">Performance</p>
-          <h2 class="text-lg font-bold text-slate-900">Transactions</h2>
+          <h2 class="text-lg font-bold text-slate-900">Request timing</h2>
         </div>
         <span class="project-overview-icon"><%= app_icon(:dashboard, css: "w-5 h-5") %></span>
       </div>
@@ -104,7 +105,7 @@
       </div>
 
       <p class="mt-4 text-sm text-slate-600">
-        <%= performance_events_count.positive? ? "#{pluralize(performance_events_count, "performance event")} collected in the last 24 hours. Transaction error rate is #{error_rate_percent}%." : "No transaction or database timing events in the last 24 hours." %>
+        <%= performance_events_count.positive? ? "#{pluralize(performance_events_count, "performance signal")} collected in the last 24 hours, including #{pluralize(request_span_count, "request span")}. Transaction error rate is #{error_rate_percent}%." : "No spans, transactions, or database timing events in the last 24 hours." %>
       </p>
 
       <%= link_to performance_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>

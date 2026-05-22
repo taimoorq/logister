@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_21_201500) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -226,6 +226,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_201500) do
     t.index ["uuid"], name: "index_projects_on_uuid", unique: true
   end
 
+  create_table "trace_spans", force: :cascade do |t|
+    t.bigint "api_key_id", null: false
+    t.jsonb "context", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.float "duration_ms", default: 0.0, null: false
+    t.datetime "ended_at"
+    t.string "kind", default: "internal", null: false
+    t.string "name", null: false
+    t.string "parent_span_id"
+    t.bigint "project_id", null: false
+    t.string "span_id", null: false
+    t.datetime "started_at", null: false
+    t.string "status"
+    t.string "trace_id", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["api_key_id"], name: "index_trace_spans_on_api_key_id"
+    t.index ["context"], name: "index_trace_spans_on_context", opclass: :jsonb_path_ops, using: :gin
+    t.index ["project_id", "kind", "started_at"], name: "index_trace_spans_on_project_id_and_kind_and_started_at", order: { started_at: :desc }
+    t.index ["project_id", "started_at"], name: "index_trace_spans_on_project_id_and_started_at", order: { started_at: :desc }
+    t.index ["project_id", "trace_id", "parent_span_id"], name: "idx_trace_spans_trace_parent"
+    t.index ["project_id", "trace_id", "span_id"], name: "index_trace_spans_on_project_id_and_trace_id_and_span_id", unique: true
+    t.index ["project_id", "trace_id", "started_at"], name: "index_trace_spans_on_project_id_and_trace_id_and_started_at", order: { started_at: :desc }
+    t.index ["project_id"], name: "index_trace_spans_on_project_id"
+    t.index ["uuid"], name: "index_trace_spans_on_uuid", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "confirmation_sent_at"
     t.string "confirmation_token"
@@ -271,4 +298,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_201500) do
   add_foreign_key "project_notification_preferences", "projects"
   add_foreign_key "project_notification_preferences", "users"
   add_foreign_key "projects", "users"
+  add_foreign_key "trace_spans", "api_keys"
+  add_foreign_key "trace_spans", "projects"
 end

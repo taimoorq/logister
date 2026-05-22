@@ -11,6 +11,7 @@ class ProjectPerformanceController < ApplicationController
     @release_cards = IngestEvent.released_error_groups(@project, lookback: 45.days, limit: 6)
     @transaction_stats = IngestEvent.transaction_stats(@project, since: 24.hours.ago)
     @slow_transactions = IngestEvent.slow_transactions_with_errors(@project, since: 24.hours.ago, limit: 20)
+    @request_breakdown = ProjectPerformance.request_breakdown(@project, since: 24.hours.ago)
 
     render "projects/performance"
   end

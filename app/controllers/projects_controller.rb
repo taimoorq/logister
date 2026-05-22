@@ -46,6 +46,9 @@ class ProjectsController < ApplicationController
                                       .limit(5)
     @db_stats = dashboard_metrics[:db_stats]
     @transaction_stats = dashboard_metrics[:transaction_stats]
+    @request_span_count_last_24h = @project.trace_spans
+                                            .where(kind: TraceSpan::ROOT_KINDS, started_at: 24.hours.ago..)
+                                            .count
   end
 
   def inbox

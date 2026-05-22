@@ -10,10 +10,11 @@ Each maintained client should support these event types:
 - log/message
 - metric
 - transaction
+- span
 - check-in
 - custom ingest event
 
-Each error/log/metric/transaction capture path should support:
+Each error/log/metric/transaction/span capture path should support:
 
 - level
 - message override where applicable
@@ -26,6 +27,17 @@ Each error/log/metric/transaction capture path should support:
 - request ID
 - session ID
 - user ID
+
+Each span capture path should support:
+
+- span name
+- duration
+- span ID
+- parent span ID
+- kind such as `server`, `browser`, `db`, `render`, `http`, or `resource`
+- status
+- started-at and ended-at timestamps
+- trace ID and request ID
 
 Each metric capture path should support:
 
@@ -48,14 +60,14 @@ Each check-in capture path should support:
 - request ID
 - context
 
-Current client coverage after the 2026-05-21 parity pass:
+Current client coverage after the 2026-05-22 parity pass:
 
 | Client | Release | Notes |
 | --- | --- | --- |
-| Ruby | `logister-ruby` v0.2.6 | Manual errors share Rails enrichment; metrics accept value/unit; check-ins accept environment, release, occurred-at, trace ID, and request ID options. |
-| .NET | `Logister` / `Logister.AspNetCore` v0.1.3 | Check-ins now include top-level release plus interval, trace ID, and request ID coverage. |
-| Python | `logister-python` v0.2.1 | Metrics now accept unit, level, and fingerprint while preserving structured metric context. |
-| JavaScript | `logister-js` v0.2.3 | Capture calls accept per-event routing fields; metrics include structured metric context; check-ins include release, interval, trace ID, and request ID. |
+| Ruby | `logister-ruby` v0.2.6 | Adds manual span capture plus opt-in Rails request spans; metrics accept value/unit; check-ins accept environment, release, occurred-at, trace ID, and request ID options. |
+| .NET | `Logister` / `Logister.AspNetCore` v0.1.3 | Adds manual span capture plus opt-in ASP.NET Core request spans; check-ins include top-level release plus interval, trace ID, and request ID coverage. |
+| Python | `logister-python` v0.2.2 | Adds manual span capture plus opt-in FastAPI, Django, and Flask request spans; metrics accept unit, level, and fingerprint while preserving structured metric context. |
+| JavaScript | `logister-js` v0.2.3 | Adds manual spans, opt-in Express request spans, and browser page-load/resource spans; capture calls accept per-event routing fields. |
 
 ## Logister Self-Monitoring
 
@@ -65,6 +77,7 @@ Currently instrumented:
 
 - API client submission failures: unauthorized, missing/invalid envelopes, and validation errors are reported as sanitized Logister log events with payload shape and API key/project diagnostics.
 - ClickHouse ingest failures: `ClickhouseIngestJob` reports both an error log and a count metric when optional analytics writes fail.
+- ClickHouse span ingest failures: `ClickhouseSpanIngestJob` reports both an error log and a count metric when optional span analytics writes fail.
 - Error digest scheduler health: `ProjectErrorDigestSchedulerJob` reports hourly check-ins with queued digest counts, reports error check-ins on scheduler failures, and reports schedule-enqueue failures as logs.
 
 Good candidates for future additions:

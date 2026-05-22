@@ -597,6 +597,9 @@
   .dashboard-explorer-chart-tall {
     @apply h-72;
   }
+  .performance-breakdown-chart {
+    @apply h-[28rem] w-full min-w-0;
+  }
   .project-insights {
     @apply space-y-4;
   }

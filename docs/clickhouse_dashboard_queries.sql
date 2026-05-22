@@ -77,3 +77,32 @@ WHERE project_id = {project_id:UInt64}
 GROUP BY environment, release
 ORDER BY errors DESC
 LIMIT 50;
+
+-- 6) Slowest request/page-load root spans for stacked load-time charts
+SELECT
+  trace_id,
+  anyLast(name) AS request_name,
+  anyLast(route) AS route,
+  anyLast(request_id) AS request_id,
+  max(duration_ms) AS duration_ms,
+  min(started_at) AS started_at
+FROM logister.spans_raw
+WHERE project_id = {project_id:UInt64}
+  AND kind IN ('server', 'browser')
+  AND parent_span_id = ''
+  AND started_at >= now() - INTERVAL 24 HOUR
+GROUP BY trace_id
+ORDER BY duration_ms DESC
+LIMIT 25;
+
+-- 7) Span timing segments for the selected request roots
+SELECT
+  trace_id,
+  kind,
+  sum(duration_ms) AS duration_ms
+FROM logister.spans_raw
+WHERE project_id = {project_id:UInt64}
+  AND trace_id IN ({trace_ids:Array(String)})
+  AND parent_span_id != ''
+GROUP BY trace_id, kind
+ORDER BY trace_id, duration_ms DESC;

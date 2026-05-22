@@ -122,6 +122,46 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(created.context["release"]).to eq("2026.03.02")
     end
 
+    it "accepts span events into the trace span store" do
+      expect {
+        post api_v1_ingest_events_path,
+             params: {
+               event: {
+                 event_type: "span",
+                 name: "GET /checkout",
+                 kind: "server",
+                 trace_id: "trace-123",
+                 span_id: "span-root",
+                 duration_ms: 245.7,
+                 started_at: "2026-05-22T12:00:00Z",
+                 context: {
+                   route: "GET /checkout",
+                   request_id: "req-123",
+                   timing_breakdown: {
+                     db: 40.2,
+                     render: 80.0
+                   }
+                 }
+               }
+             },
+             as: :json,
+             headers: auth_headers
+      }.to have_enqueued_job(ClickhouseSpanIngestJob)
+        .and change(TraceSpan, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body["type"]).to eq("span")
+
+      span = TraceSpan.order(:id).last
+      expect(span.project_id).to eq(api_keys(:one).project_id)
+      expect(span.trace_id).to eq("trace-123")
+      expect(span.span_id).to eq("span-root")
+      expect(span.kind).to eq("server")
+      expect(span.duration_ms).to eq(245.7)
+      expect(span.context["trace_id"]).to eq("trace-123")
+      expect(span.context["request_id"]).to eq("req-123")
+    end
+
     it "accepts CFML-style uppercase event envelopes" do
       post api_v1_ingest_events_path,
            params: {

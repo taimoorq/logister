@@ -7,7 +7,10 @@ class Api::V1::IngestEventsController < ApplicationController
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
 
   def create
-    event = @api_key.project.ingest_events.new(event_params)
+    raw_event = normalized_event_payload_hash
+    return create_trace_span(raw_event) if span_payload?(raw_event)
+
+    event = @api_key.project.ingest_events.new(event_params(raw_event))
     event.api_key = @api_key
     event.occurred_at ||= Time.current
 
@@ -30,14 +33,93 @@ class Api::V1::IngestEventsController < ApplicationController
 
   private
 
-  def event_params
-    raw_event = fetch_event_payload
-    event_hash = normalized_event_hash(raw_event).with_indifferent_access
+  def create_trace_span(raw_event)
+    span = @api_key.project.trace_spans.new(trace_span_params(raw_event))
+    span.api_key = @api_key
 
+    if span.save
+      ClickhouseSpanIngestJob.perform_later(span.id, request_context)
+      @api_key.touch_last_used!
+      render json: { id: span.uuid, legacy_id: span.id, status: "accepted", type: "span" }, status: :created
+    else
+      report_client_submission_failure(
+        reason: "invalid_span",
+        status: :unprocessable_content,
+        errors: span.errors.full_messages
+      )
+      render json: { errors: span.errors.full_messages }, status: :unprocessable_content
+    end
+  end
+
+  def normalized_event_payload_hash
+    raw_event = fetch_event_payload
+    normalized_event_hash(raw_event).with_indifferent_access
+  end
+
+  def event_params(event_hash)
     safe = event_hash.slice("event_type", "level", "message", "fingerprint", "occurred_at")
     raw_context = event_hash["context"] || {}
     safe["context"] = normalize_context_hash(raw_context)
     normalize_event_payload(safe, event_hash)
+  end
+
+  def span_payload?(event_hash)
+    event_hash["event_type"].to_s == "span"
+  end
+
+  def trace_span_params(event_hash)
+    context = normalize_context_hash(event_hash["context"] || {})
+    normalized = normalize_span_payload(event_hash, context)
+
+    {
+      trace_id: normalized.fetch("trace_id"),
+      span_id: normalized.fetch("span_id"),
+      parent_span_id: normalized["parent_span_id"],
+      name: normalized.fetch("name"),
+      kind: normalized["kind"],
+      status: normalized["status"],
+      duration_ms: normalized["duration_ms"],
+      started_at: normalized["started_at"],
+      ended_at: normalized["ended_at"],
+      context: context
+    }
+  end
+
+  def normalize_span_payload(event_hash, context)
+    normalized = {
+      "trace_id" => first_present(
+        event_hash[:trace_id], event_hash[:traceId], context["trace_id"], context["traceId"],
+        context.dig("trace", "traceId")
+      ),
+      "span_id" => first_present(
+        event_hash[:span_id], event_hash[:spanId], context["span_id"], context["spanId"],
+        context.dig("trace", "spanId")
+      ),
+      "parent_span_id" => first_present(
+        event_hash[:parent_span_id], event_hash[:parentSpanId],
+        context["parent_span_id"], context["parentSpanId"],
+        context.dig("trace", "parentSpanId")
+      ),
+      "name" => first_present(event_hash[:name], event_hash[:message], context["name"], context["span_name"], "span"),
+      "kind" => first_present(event_hash[:kind], event_hash[:span_kind], event_hash[:spanKind], context["kind"], context["span_kind"], context["spanKind"], "internal"),
+      "status" => first_present(event_hash[:status], context["status"]),
+      "duration_ms" => numeric_duration(first_present(event_hash[:duration_ms], event_hash[:durationMs], context["duration_ms"], context["durationMs"])),
+      "started_at" => parse_timestamp(first_present(event_hash[:started_at], event_hash[:startedAt], event_hash[:occurred_at], context["started_at"], context["startedAt"], Time.current)),
+      "ended_at" => parse_optional_timestamp(first_present(event_hash[:ended_at], event_hash[:endedAt], context["ended_at"], context["endedAt"]))
+    }
+
+    context["trace_id"] ||= normalized["trace_id"]
+    context["span_id"] ||= normalized["span_id"]
+    context["parent_span_id"] ||= normalized["parent_span_id"] if normalized["parent_span_id"].present?
+    context["span_kind"] ||= normalized["kind"]
+    context["duration_ms"] ||= normalized["duration_ms"]
+    context["environment"] ||= first_present(event_hash[:environment], context["environment"], Rails.env)
+    context["release"] ||= first_present(event_hash[:release], context["release"])
+    context["service"] ||= first_present(event_hash[:service], context["service"])
+    context["request_id"] ||= first_present(event_hash[:request_id], event_hash[:requestId], context["request_id"], context["requestId"])
+    context["transaction_name"] ||= first_present(event_hash[:transaction_name], event_hash[:transactionName], context["transaction_name"], context["transactionName"])
+
+    normalized
   end
 
   def fetch_event_payload
@@ -120,6 +202,29 @@ class Api::V1::IngestEventsController < ApplicationController
     return if context[key].present? || context[key.to_sym].present?
 
     context[key] = final_value
+  end
+
+  def first_present(*values)
+    values.find(&:present?)
+  end
+
+  def numeric_duration(value)
+    value.to_f.positive? ? value.to_f : 0.0
+  end
+
+  def parse_timestamp(value)
+    return value if value.is_a?(Time)
+    return value.to_time if value.respond_to?(:to_time) && !value.is_a?(String)
+
+    Time.zone.parse(value.to_s)
+  rescue ArgumentError, TypeError
+    Time.current
+  end
+
+  def parse_optional_timestamp(value)
+    return if value.blank?
+
+    parse_timestamp(value)
   end
 
   def request_context

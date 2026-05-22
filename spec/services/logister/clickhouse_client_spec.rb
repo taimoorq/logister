@@ -10,6 +10,7 @@ RSpec.describe Logister::ClickhouseClient do
       clickhouse_url: "https://clickhouse.example.com",
       clickhouse_database: "logister",
       clickhouse_events_table: "events",
+      clickhouse_spans_table: "spans",
       clickhouse_username: nil,
       clickhouse_password: nil
     )
@@ -36,6 +37,18 @@ RSpec.describe Logister::ClickhouseClient do
       expect(JSON.parse(body)).to eq(
         "sql" => "SELECT 1 FORMAT TabSeparated\n{\"ok\":true}\n"
       )
+    end
+  end
+
+  describe "#insert_span!" do
+    it "inserts rows into the configured spans table" do
+      client = described_class.new(config: config)
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
+      allow(client).to receive(:post_query).and_return(response)
+
+      client.insert_span!({ span_id: "abc123" })
+
+      expect(client).to have_received(:post_query).with(/INSERT INTO logister\.spans FORMAT JSONEachRow/, "{\"span_id\":\"abc123\"}\n")
     end
   end
 

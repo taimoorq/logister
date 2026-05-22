@@ -16,15 +16,11 @@ module Logister
     end
 
     def insert_event!(attributes)
-      return unless enabled?
+      insert_row!(@config.clickhouse_events_table, attributes)
+    end
 
-      query = "INSERT INTO #{full_table_name} FORMAT JSONEachRow"
-      body = "#{attributes.to_json}\n"
-
-      response = post_query(query, body)
-      return if response.is_a?(Net::HTTPSuccess)
-
-      raise Error, "ClickHouse insert failed: #{response.code} #{response.body.to_s.strip}"
+    def insert_span!(attributes)
+      insert_row!(@config.clickhouse_spans_table, attributes)
     end
 
     def select_rows!(query)
@@ -50,8 +46,20 @@ module Logister
 
     private
 
-    def full_table_name
-      "#{@config.clickhouse_database}.#{@config.clickhouse_events_table}"
+    def insert_row!(table_name, attributes)
+      return unless enabled?
+
+      query = "INSERT INTO #{full_table_name(table_name)} FORMAT JSONEachRow"
+      body = "#{attributes.to_json}\n"
+
+      response = post_query(query, body)
+      return if response.is_a?(Net::HTTPSuccess)
+
+      raise Error, "ClickHouse insert failed: #{response.code} #{response.body.to_s.strip}"
+    end
+
+    def full_table_name(table_name)
+      "#{@config.clickhouse_database}.#{table_name}"
     end
 
     def post_query(query, body)
@@ -95,7 +103,7 @@ module Logister
     end
 
     def health_cache_key
-      [ "clickhouse", "health", @config.clickhouse_url, @config.clickhouse_database, @config.clickhouse_events_table ]
+      [ "clickhouse", "health", @config.clickhouse_url, @config.clickhouse_database, @config.clickhouse_events_table, @config.clickhouse_spans_table ]
     end
 
     def with_http_connection(uri)

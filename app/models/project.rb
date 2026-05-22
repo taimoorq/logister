@@ -2,6 +2,7 @@ class Project < ApplicationRecord
   belongs_to :user
   has_many :api_keys, dependent: :destroy
   has_many :ingest_events, dependent: :destroy
+  has_many :trace_spans, dependent: :destroy
   has_many :error_groups, dependent: :destroy
   has_many :check_in_monitors, dependent: :destroy
   has_many :project_memberships, dependent: :destroy

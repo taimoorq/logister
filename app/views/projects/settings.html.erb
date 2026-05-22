@@ -255,6 +255,7 @@
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install <code>logister-python</code> in the Python service or worker you want to monitor.</li>
               <li>Use <code>instrument_fastapi</code> for FastAPI apps, <code>LogisterMiddleware</code> for Django apps, <code>instrument_flask</code> for Flask apps, and <code>instrument_celery</code> for Celery workers.</li>
+              <li>Pass <code>capture_spans=True</code> to FastAPI, Django, or Flask instrumentation when you want request load waterfall charts.</li>
               <li>Attach <code>instrument_logging(client, logger=...)</code> if you want standard Python <code>logging</code> records and <code>logger.exception(...)</code> events to flow into Logister automatically.</li>
               <li>Use the shared client for the parts Python teams usually customize after that: business metrics, job heartbeats, and service-specific logs or transactions.</li>
               <li>Set <code>LOGISTER_RELEASE</code> for deploy tracking, and optionally <code>LOGISTER_CAPTURE_LOCALS=true</code> when you want frame locals in Python error details.</li>
@@ -268,7 +269,7 @@
 from logister import LogisterClient, instrument_fastapi
 
 client = LogisterClient.from_env(default_context={"service": "api"})
-instrument_fastapi(app, client)</code></pre>
+instrument_fastapi(app, client, capture_spans=True)</code></pre>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -301,7 +302,8 @@ instrument_fastapi(app, client)</code></pre>
               <li>Install <code>Logister.AspNetCore</code> in the ASP.NET Core app you want to monitor.</li>
               <li>Use <code>AddLogister(builder.Configuration)</code> to register the client and <code>UseLogisterExceptionReporting()</code> to capture uncaught request exceptions.</li>
               <li>Turn on <code>UseLogisterRequestTransactions()</code> when you want ASP.NET Core request timings in the performance view.</li>
-              <li>Use the shared <code>LogisterClient</code> for business metrics, check-ins, worker errors, and service-specific logs.</li>
+              <li>Set <code>CaptureRequestSpans = true</code> when you want request load waterfall charts.</li>
+              <li>Use the shared <code>LogisterClient</code> for business metrics, spans, check-ins, worker errors, and service-specific logs.</li>
               <li>Set <code>LOGISTER_RELEASE</code> for deploy tracking and include request IDs or trace IDs so .NET errors can be linked to nearby logs.</li>
             </ul>
           </div>
@@ -312,7 +314,10 @@ instrument_fastapi(app, client)</code></pre>
 
 using Logister.AspNetCore;
 
-builder.Services.AddLogister(builder.Configuration);
+builder.Services.AddLogister(builder.Configuration, options =>
+{
+  options.CaptureRequestSpans = true;
+});
 
 app.UseLogisterExceptionReporting();
 app.UseLogisterRequestTransactions();</code></pre>
@@ -321,7 +326,7 @@ app.UseLogisterRequestTransactions();</code></pre>
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Custom metrics</h3>
             <p class="text-sm text-slate-600">
-              Inject <code>LogisterClient</code> anywhere in the app and call <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, <code>CaptureMessageAsync()</code>, or <code>CheckInAsync()</code> for the app-specific metrics you choose.
+              Inject <code>LogisterClient</code> anywhere in the app and call <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, <code>CaptureSpanAsync()</code>, <code>CaptureMessageAsync()</code>, or <code>CheckInAsync()</code> for the app-specific metrics you choose.
             </p>
           </div>
 
@@ -353,6 +358,7 @@ app.UseLogisterRequestTransactions();</code></pre>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install <code>logister-js</code> in the JavaScript or TypeScript service you want to monitor.</li>
               <li>Use the base client for Node workers and scripts, or add <code>createLogisterMiddleware()</code> and <code>createLogisterErrorHandler()</code> if the app runs on Express.</li>
+              <li>Set <code>captureRequestSpans: true</code> for Express request load waterfall charts, or call <code>capturePageLoad()</code> from <code>logister-js/browser</code> for browser navigation and resource timing.</li>
               <li>Attach <code>instrumentConsole(client)</code> if you want standard <code>console</code> output and <code>console.error(error)</code> calls to flow into Logister automatically.</li>
               <li>Set <code>LOGISTER_RELEASE</code> and include route, browser, component, or request metadata so JavaScript teams can tell whether an issue came from a request path, a worker, or bundled client-side code.</li>
               <li>If your frontend stack produces bundles, keep source maps available in your release pipeline so minified frames can be traced back to real source.</li>
@@ -403,7 +409,7 @@ const client = new LogisterClient({
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install the `logister-ruby` gem in the Rails app you want to monitor.</li>
               <li>Configure the project API token and ingest endpoint in the initializer.</li>
-              <li>Enable database metrics if you want query timing in the performance view.</li>
+              <li>Enable database metrics and <code>capture_request_spans</code> if you want request load waterfall charts in the performance view.</li>
             </ul>
           </div>
 
@@ -414,6 +420,7 @@ const client = new LogisterClient({
 Logister.configure do |config|
   config.api_key = "your-project-api-token"
   config.endpoint = "https://your-logister-host.example/api/v1/ingest_events"
+  config.capture_request_spans = true
 end</code></pre>
           </div>
 
@@ -453,6 +460,13 @@ end</code></pre>
         <% else %>
           Send events through the Ruby gem integration.
         <% end %>
+      </p>
+      <p class="text-slate-600 text-sm mb-3">
+        Request load waterfall charts use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">event_type: "span"</code>
+        payloads with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">trace_id</code>,
+        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">span_id</code>,
+        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">kind</code>, and
+        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">duration_ms</code>.
       </p>
       <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>{
   "event": {

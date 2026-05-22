@@ -1,6 +1,6 @@
 # Logister
 
-Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. It gives teams one place to collect application errors, logs, metrics, transactions, and check-ins so they can see what is going wrong, assign ownership, investigate faster, and ship with more confidence.
+Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. It gives teams one place to collect application errors, logs, metrics, transactions, spans, and check-ins so they can see what is going wrong, assign ownership, investigate faster, and ship with more confidence.
 
 Use this repository when you want to run Logister yourself or fork it for your own needs. It provides the web UI, project/API key management, ingest endpoints, background jobs, release automation, GHCR and Docker Hub images, and operational docs for your own self-hosted instance. `logister.org` is a secondary hosted/public instance of the same product direction, not the primary deployment model.
 
@@ -84,7 +84,7 @@ Use the product guide when you want the user-facing map of what Logister helps t
 
 - https://docs.logister.org/product/
 
-At a high level, Logister helps teams run their own observability hub, connect services, scan cross-app dashboard signals, triage and assign grouped errors, inspect event context and related logs, review metrics/logs/transactions/check-ins, watch scheduled work, understand performance and release health, archive retired services without losing history, and share project visibility with teammates.
+At a high level, Logister helps teams run their own observability hub, connect services, scan cross-app dashboard signals, triage and assign grouped errors, inspect event context and related logs, review metrics/logs/transactions/spans/check-ins, watch scheduled work, understand performance and release health, archive retired services without losing history, and share project visibility with teammates.
 
 ## Self-hosted runtime
 
