@@ -8,6 +8,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Docs home: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
 - Product guide: https://docs.logister.org/product/
+- Insights beta guide: https://docs.logister.org/product/#insights-beta
 - Use cases and comparisons: https://docs.logister.org/use-cases/
 - Self-hosted error monitoring use case: https://docs.logister.org/use-cases/self-hosted-error-monitoring/
 - Sentry alternative comparison: https://docs.logister.org/use-cases/sentry-alternative/
@@ -52,7 +53,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Audience
-- Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, grouped error triage, error assignment with dashboard and project workload views, assignee-filtered inboxes, event investigation with request method and URL/path context, related logs, performance visibility, check-in monitors, project error email alerts, digest summaries, activity review, release visibility, project sharing, and active or archived project views
+- Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, project Insights beta dashboards, grouped error triage, error assignment with dashboard and project workload views, assignee-filtered inboxes, event investigation with request method and URL/path context, related logs, performance visibility, check-in monitors, project error email alerts, digest summaries, activity review, release visibility, project sharing, and active or archived project views
 - Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project alert and digest delivery, and optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
 - Teams comparing self-hosted and open source alternatives to Bugzilla, Bugsnag, Sentry, and other paid monitoring or issue triage tools
 - Ruby teams using `logister-ruby`
@@ -65,6 +66,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 ## Product and packages
 - App source: https://github.com/taimoorq/logister
 - Secondary hosted/public app: https://logister.org/
+- Insights beta: project-level dashboard workspace that combines Inbox, Activity, and Performance signals with ECharts, time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, and recent matching events. Best results come from consistent `environment`, `release`, stable custom context attributes, and numeric custom metric values in `context.value`.
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
 - Ruby SDK package: https://rubygems.org/gems/logister-ruby
 - .NET SDK source: https://github.com/taimoorq/logister-dotnet

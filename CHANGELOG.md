@@ -2,6 +2,14 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.0-beta.2 - 2026-05-22
+
+### Changed
+
+- Expanded public docs for the Insights beta with dashboard recipes, instrumentation guidance, custom attribute best practices, and ClickHouse positioning.
+- Aligned AI-readable docs with the Insights beta so `llms.txt` and `llms-full.txt` explain the new project dashboard surface.
+- Rebuilt the Cloudflare docs sitemap metadata for the beta docs update.
+
 ## v2.0.0-beta.1 - 2026-05-21
 
 ### Beta

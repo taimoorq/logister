@@ -11,6 +11,7 @@ Canonical product and integration documentation lives on https://docs.logister.o
 - Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, and environment when integrations provide them.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
+- Provides a project Insights beta tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event mix, metric series, and recent matching events.
 - Sends first-occurrence error emails and daily or weekly digest summaries through SMTP, commonly Amazon SES.
 - Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.
 
@@ -45,6 +46,14 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting: Logister publishes versioned release images for teams that want to pin app versions and run separate Rails web and Sidekiq worker containers. GHCR and Docker Hub are default public registries; Quay is an optional mirror when release credentials are configured.
 - Error assignment and team triage: Logister stores ownership on grouped errors so teammates can filter inboxes by assignee, claim unassigned work, and move production issues through fixed, ignored, archived, or reopened states.
 - Amazon SES error alert emails and digests: Logister sends first-occurrence alerts and daily or weekly project digest emails through standard Rails SMTP settings, commonly backed by SES in self-hosted deployments.
+
+## Insights Beta
+
+- The project Insights tab is part of the 2.0 beta workstream and is intended for live project exploration before the finalized 2.0 dashboard surface.
+- It helps users see what Logister is collecting at a glance, especially when the project inbox has no active errors but logs, metrics, transactions, check-ins, or performance data are still arriving.
+- Best uses include release validation, instrumentation audits, performance triage, worker or queue monitoring, and narrowing recent events by environment, release, custom dimensions, or metric series.
+- Best instrumentation practices: always send stable `environment` and `release` values when available; use stable top-level context keys such as `service`, `region`, `queue`, `route`, `tenant_tier`, or `feature_flag`; avoid raw IDs, emails, request bodies, and high-cardinality values as dashboard dimensions; keep custom metric names consistent; send numeric metric values in `context.value` when average value series should appear in the metric catalog.
+- The current Insights beta uses PostgreSQL indexes and short Redis cache windows for the product UI. Optional ClickHouse remains useful for raw event analytics, high-volume custom reporting, and future materialized dashboard rollups, but is not required for the beta Insights tab.
 
 ## Self-Hosted Stack
 
@@ -86,6 +95,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 
 - Docs home: https://docs.logister.org/
 - Product guide: https://docs.logister.org/product/
+- Insights beta guide: https://docs.logister.org/product/#insights-beta
 - Use cases: https://docs.logister.org/use-cases/
 - Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
 - Python error monitoring: https://docs.logister.org/use-cases/python-error-monitoring/
