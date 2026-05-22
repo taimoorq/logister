@@ -83,6 +83,13 @@ RSpec.describe "Project insights", type: :request do
         expect(json.fetch("metric_catalog").map { |metric| metric.fetch("key") }).to include("metric:queue.depth", "metric_value:queue.depth")
         expect(json.fetch("metric_catalog")).to include(hash_including("key" => "errors.count", "category" => "health"))
         expect(json.fetch("metric_catalog")).to include(hash_including("key" => "metric:queue.depth", "category" => "metrics"))
+        catalog_by_key = json.fetch("metric_catalog").index_by { |metric| metric.fetch("key") }
+        expect(catalog_by_key.fetch("events.total")).to include("available" => true, "available_events" => 7)
+        expect(catalog_by_key.fetch("transactions.p95")).to include("available" => true, "available_events" => 2)
+        expect(catalog_by_key.fetch("db.query.avg")).to include("available" => true, "available_events" => 1)
+        expect(catalog_by_key.fetch("metric:queue.depth")).to include("available" => true, "available_events" => 2)
+        expect(catalog_by_key.fetch("metric_value:queue.depth")).to include("available" => true, "available_events" => 2)
+        expect(catalog_by_key.fetch("check_ins.count")).to include("available" => false, "available_events" => 0)
         expect(json.fetch("environments").map { |environment| environment.fetch("name") }).to include("production")
         expect(json.fetch("attributes").map { |attribute| attribute.fetch("key") }).to include("tenant_id", "plan")
         expect(json.fetch("attribute_filters")).to include(hash_including("key" => "tenant_id", "value" => "acme"))

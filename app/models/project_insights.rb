@@ -257,6 +257,7 @@ class ProjectInsights
       )
       bucket = WINDOW_OPTIONS.fetch(window_key).fetch(:bucket)
       buckets = buckets_for(since, bucket)
+      summary = summary_for(scope)
 
       {
         generated_at: Time.current.utc.iso8601,
@@ -267,11 +268,11 @@ class ProjectInsights
         attribute_filters: selected_attribute_filters.map do |key, filter|
           { key: key, label: attribute_label(key), value: filter.fetch(:value), type: filter.fetch(:type) }
         end,
-        summary: summary_for(scope),
+        summary: summary,
         event_type_catalog: event_type_catalog,
         event_timeline: event_timeline(scope, buckets, bucket),
         event_types: event_type_breakdown(scope),
-        metric_catalog: catalog,
+        metric_catalog: metric_catalog_with_availability(catalog, scope, summary),
         selected_metrics: selected_metrics,
         metric_series: metric_series(scope, selected_metrics, catalog, buckets, bucket),
         environments: environments_for(project, window: window_key),
@@ -565,6 +566,88 @@ class ProjectInsights
       end
     end
 
+    def metric_catalog_with_availability(catalog, scope, summary)
+      availability = metric_availability_counts(catalog, scope, summary)
+
+      catalog.map do |metric|
+        matching_events = availability.fetch(metric.fetch(:key), 0)
+
+        metric.merge(available: matching_events.positive?, available_events: matching_events)
+      end
+    end
+
+    def metric_availability_counts(catalog, scope, summary)
+      base_counts = {
+        "events.total" => summary.fetch(:events, 0),
+        "errors.count" => summary.fetch(:errors, 0),
+        "activity.count" => summary.fetch(:activity, 0),
+        "logs.count" => summary.fetch(:logs, 0),
+        "check_ins.count" => summary.fetch(:check_ins, 0),
+        "transactions.count" => summary.fetch(:transactions, 0)
+      }
+
+      base_counts
+        .merge(standard_metric_availability_counts(scope))
+        .merge(custom_metric_availability_counts(catalog, scope))
+    end
+
+    def standard_metric_availability_counts(scope)
+      duration_filter = duration_value_present_sql
+      transaction_duration_count = scope.where(event_type: IngestEvent.event_types.fetch("transaction"))
+                                        .where(duration_filter)
+                                        .count
+      db_query_count, db_query_duration_count = db_query_scope(scope).pick(
+        Arel.sql("COUNT(*)"),
+        Arel.sql("COUNT(*) FILTER (WHERE #{duration_filter})")
+      )
+
+      transaction_duration_count = transaction_duration_count.to_i
+      db_query_count = db_query_count.to_i
+      db_query_duration_count = db_query_duration_count.to_i
+
+      {
+        "transactions.avg" => transaction_duration_count,
+        "transactions.p95" => transaction_duration_count,
+        "db.query.count" => db_query_count,
+        "db.query.avg" => db_query_duration_count,
+        "db.query.p95" => db_query_duration_count
+      }
+    end
+
+    def custom_metric_availability_counts(catalog, scope)
+      names = custom_metric_catalog_names(catalog)
+      return {} if names.blank?
+
+      custom_scope = scope.where(event_type: IngestEvent.event_types.fetch("metric"), message: names)
+      counts = custom_scope.group(:message)
+                           .pluck(
+                             :message,
+                             Arel.sql("COUNT(*)"),
+                             Arel.sql("COUNT(*) FILTER (WHERE context->>'value' ~ #{sql_quote(NUMERIC_SQL_PATTERN)})")
+                           )
+                           .each_with_object({}) do |(message, count, numeric_count), grouped|
+        grouped[message.to_s] = { count: count.to_i, numeric_count: numeric_count.to_i }
+      end
+
+      names.each_with_object({}) do |name, availability|
+        counts_for_name = counts.fetch(name, { count: 0, numeric_count: 0 })
+
+        availability[custom_metric_key(name)] = counts_for_name.fetch(:count)
+        availability[custom_metric_value_key(name)] = counts_for_name.fetch(:numeric_count)
+      end
+    end
+
+    def custom_metric_catalog_names(catalog)
+      catalog.filter_map do |metric|
+        key = metric.fetch(:key)
+        if key.start_with?("metric_value:")
+          custom_metric_value_name(key)
+        elsif key.start_with?("metric:")
+          custom_metric_name(key)
+        end
+      end.uniq
+    end
+
     def metric_data(scope, metric_key, buckets, bucket)
       case metric_key
       when "events.total"
@@ -765,6 +848,14 @@ class ProjectInsights
       return context_key if NUMERIC_CONTEXT_KEYS.include?(context_key)
 
       raise ArgumentError, "Unsupported numeric context key: #{context_key.inspect}"
+    end
+
+    def duration_value_present_sql
+      "COALESCE(context->>'duration_ms', context->>'durationMs') ~ #{sql_quote(NUMERIC_SQL_PATTERN)}"
+    end
+
+    def sql_quote(value)
+      ApplicationRecord.connection.quote(value)
     end
 
     def ingest_events_table

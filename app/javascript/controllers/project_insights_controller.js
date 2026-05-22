@@ -420,24 +420,30 @@ export default class extends Controller {
       return
     }
 
-    this.metricListTarget.innerHTML = groupedMetrics(this.catalog).map((group) => `
-      <section class="project-insights-metric-group" ${transitionAttributes("insights-catalog", group.key, "project-insights-catalog")}>
-        <div class="project-insights-metric-group-header">
-          <div>
-            <strong>${escapeHtml(group.label)}</strong>
-            <span>${escapeHtml(group.description)}</span>
+    this.metricListTarget.innerHTML = groupedMetrics(this.catalog).map((group) => {
+      const availableCount = group.metrics.filter((metric) => metricAvailability(metric).hasData).length
+
+      return `
+        <section class="project-insights-metric-group" ${transitionAttributes("insights-catalog", group.key, "project-insights-catalog")}>
+          <div class="project-insights-metric-group-header">
+            <div>
+              <strong>${escapeHtml(group.label)}</strong>
+              <span>${escapeHtml(group.description)}</span>
+            </div>
+            <span>${formatNumber(availableCount)}/${formatNumber(group.metrics.length)} with data</span>
           </div>
-          <span>${formatNumber(group.metrics.length)}</span>
-        </div>
-        <div class="project-insights-metric-group-list">
-          ${group.metrics.map((metric) => this.metricButton(metric)).join("")}
-        </div>
-      </section>
-    `).join("")
+          <div class="project-insights-metric-group-list">
+            ${group.metrics.map((metric) => this.metricButton(metric)).join("")}
+          </div>
+        </section>
+      `
+    }).join("")
   }
 
   metricButton(metric) {
     const selected = this.selectedMetrics.includes(metric.key)
+    const availability = metricAvailability(metric)
+    const availabilityClass = availability.hasData ? "has-data" : "is-empty"
     const detailRows = metricDetailItems(metric).map((detail) => `
       <span class="project-insights-metric-detail">
         <span>${escapeHtml(detail.label)}</span>
@@ -447,7 +453,7 @@ export default class extends Controller {
 
     return `
       <button type="button"
-              class="project-insights-metric ${selected ? "is-selected" : ""}"
+              class="project-insights-metric ${availabilityClass} ${selected ? "is-selected" : ""}"
               data-action="project-insights#addMetric"
               data-metric-key="${escapeHtml(metric.key)}"
               ${transitionAttributes("insights-metric", metric.key, "project-insights-catalog")}
@@ -821,17 +827,30 @@ function categorySortIndex(index) {
 }
 
 function metricDetailItems(metric) {
+  const availability = metricAvailability(metric)
   const details = [
     { label: "Source", value: metric.source || "Metric" },
     { label: "Unit", value: metricUnitLabel(metric.unit) },
+    { label: "Matching", value: availability.hasData ? eventCountLabel(availability.count) : "No data" },
     { label: "Key", value: metric.key || "metric" }
   ]
 
-  if (metric.events) {
+  if (metric.events && metric.available_events === undefined) {
     details.push({ label: "Events", value: formatNumber(metric.events) })
   }
 
   return details
+}
+
+function metricAvailability(metric) {
+  const count = Number(metric.available_events ?? metric.events ?? 0) || 0
+  const hasData = metric.available === undefined ? count > 0 : metric.available === true
+
+  return { count, hasData }
+}
+
+function eventCountLabel(count) {
+  return `${formatNumber(count)} ${Number(count) === 1 ? "event" : "events"}`
 }
 
 function metricUnitLabel(unit) {
@@ -852,7 +871,12 @@ function populateSelect(target, options, selectedValue, emptyLabel) {
   const optionHtml = [
     `<option value="">${escapeHtml(emptyLabel)}</option>`,
     selectedMissing ? `<option value="${escapeHtml(selectedValue)}">${escapeHtml(selectedValue)}</option>` : "",
-    ...rows.map((row) => `<option value="${escapeHtml(row.name)}">${escapeHtml(row.name)}</option>`)
+    ...rows.map((row) => {
+      const count = Number(row.count || 0)
+      const label = count > 0 ? `${row.name} (${formatNumber(count)})` : row.name
+
+      return `<option value="${escapeHtml(row.name)}">${escapeHtml(label)}</option>`
+    })
   ].join("")
 
   target.innerHTML = optionHtml
