@@ -72,7 +72,7 @@
         <div class="flex justify-between items-center h-14 min-h-[3.5rem]">
           <div class="flex items-center gap-3 min-w-0">
             <%= link_to(user_signed_in? ? dashboard_path : root_path, class: "flex items-center gap-2 no-underline font-semibold shrink-0 #{user_signed_in? ? 'text-white hover:text-blue-100' : 'text-slate-800 hover:text-slate-600'}") do %>
-              <%= image_tag "logister-logo.svg", alt: "Logister", class: "h-6 w-auto #{'brightness-0 invert' if user_signed_in?}", width: 232, height: 48 %>
+              <%= image_tag(user_signed_in? ? "logister-logo-light.svg" : "logister-logo.svg", alt: "Logister", class: "h-6 w-auto", width: 232, height: 48) %>
             <% end %>
             <% if user_signed_in? %>
               <div class="hidden md:block h-5 w-px bg-blue-300/40"></div>

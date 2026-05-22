@@ -18,6 +18,18 @@ RSpec.describe "Dashboard", type: :request do
         expect(response).to have_http_status(:success)
       end
 
+      it "uses the dark-nav logo without flattening the icon colors" do
+        get dashboard_path
+
+        document = Nokogiri::HTML.parse(response.body)
+        logo = document.at_css("nav img[alt='Logister']")
+
+        expect(logo).to be_present
+        expect(logo["src"]).to include("logister-logo-light")
+        expect(logo["class"]).not_to include("brightness-0")
+        expect(logo["class"]).not_to include("invert")
+      end
+
       it "renders active accessible projects in the top navigation dropdown" do
         active_project = create(:project, :python, user: users(:one), name: "Alpha Nav App")
         shared_project = create(:project, :dotnet, user: users(:two), name: "Shared Nav App")
