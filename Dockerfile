@@ -49,6 +49,7 @@ RUN bundle install && \
 
 # Install Node packages used by asset generation in the throw-away build stage.
 COPY package.json package-lock.json ./
+COPY script/sync_npm_assets.mjs ./script/sync_npm_assets.mjs
 RUN npm ci
 
 # Copy application code
