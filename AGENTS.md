@@ -119,9 +119,10 @@ Used when one action should update several DOM regions:
 ### Hotwire, Turbo, and Stimulus
 
 - **Cloudflare docs are plain static pages.** The Rails app links to `docs.logister.org`; do not assume the static docs have the Rails importmap, Turbo, or Stimulus runtime.
-- **Keep JS boot standard.** Turbo is loaded in `app/javascript/application.js`, Stimulus controllers are registered in `app/javascript/controllers/index.js`, and layouts should use `javascript_importmap_tags`.
+- **Keep JS boot standard.** Turbo is loaded in `app/javascript/application.js`, Stimulus controllers are registered in `app/javascript/controllers/index.js`, and layouts should use `app_javascript_tags` so importmap and npm-backed classic scripts share one path.
 - **Use Stimulus for small behavior only.** Existing docs behavior such as copy buttons and nav toggles should remain Stimulus-driven or simple DOM behavior, not custom page-specific JS frameworks.
 - **Prefer Stimulus actions and lifecycle over page-load JavaScript.** Attach behavior with `data-controller`, `data-action`, targets, and values. Initialize third-party UI in `connect()`, dispose it in `disconnect()`, and use `turbo:before-cache@document` to remove transient DOM before Turbo snapshots the page. See [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md).
+- **Classify npm browser bundles before wiring them.** ES module builds belong in `config/importmap.rb` and Stimulus imports. UMD/IIFE browser bundles belong in the shared layout helper with `javascript_include_tag`, then Stimulus should read the package's `window` global.
 - **When debugging rendering, separate HTML issues from CSS issues.** First confirm the expected classes are present in the rendered HTML. Then confirm the final compiled CSS actually contains selectors for those classes. This prevents wasting time changing views when the real problem is stale or missing assets.
 
 ### Working habits that helped

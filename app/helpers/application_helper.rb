@@ -348,7 +348,10 @@ module ApplicationHelper
   end
 
   def app_javascript_tags
-    javascript_importmap_tags
+    safe_join([
+      javascript_include_tag("tour", defer: true, "data-turbo-track": "reload"),
+      javascript_importmap_tags
+    ])
   end
 
   def docs_site_url(section = :overview)

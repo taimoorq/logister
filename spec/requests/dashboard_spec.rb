@@ -37,7 +37,7 @@ RSpec.describe "Dashboard", type: :request do
         importmap = document.at_css("script[type='importmap']").text
 
         expect(document.at_css("link[href*='css/tour.min']")).to be_present
-        expect(importmap).to include("tourguide", "tour")
+        expect(document.at_css("script[src*='tour'][defer]")).to be_present
         expect(importmap).to include("echarts", "echarts.esm.min")
         tour_root = document.at_css(".dashboard-page[data-controller='product-tour'][data-product-tour-group-value='dashboard']")
         expect(tour_root).to be_present
