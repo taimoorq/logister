@@ -2,6 +2,13 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.0-beta.4 - 2026-05-22
+
+### Changed
+
+- Linked the app README, static docs, in-app project setup guidance, and AI-readable docs directly to the public RubyGems, NuGet, PyPI, and npm package pages.
+- Updated release readiness docs with the current SDK package versions and concrete package-manager verification links.
+
 ## v2.0.0-beta.3 - 2026-05-22
 
 ### Changed
