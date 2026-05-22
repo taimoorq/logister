@@ -28,13 +28,14 @@ Third-party JavaScript should be npm-managed and exposed through the Rails asset
 
 - Add the package to `package.json` and `package-lock.json`.
 - Add the package dist directory to `config/initializers/assets.rb` when Propshaft needs to serve files from `node_modules`.
-- Pin browser imports in `config/importmap.rb`.
-- Import the package from the Stimulus controller that owns the behavior.
+- Pin browser-ready ES module imports in `config/importmap.rb`.
+- Load browser-only UMD/IIFE bundles with `javascript_include_tag` from the shared layout helper, then read their `window` global from the Stimulus controller that owns the behavior.
+- Keep CI aligned with those asset paths: jobs that render Rails views or precompile assets must run `npm ci` before Rails boots against npm-backed assets.
 - Dispose third-party instances in `disconnect()`.
 
 ## Current examples
 
-- `product-tour` uses Stimulus values and actions for TourGuide.js. It starts from page-level wrappers, can auto-start on first interaction, and removes TourGuide's generated DOM in `turbo:before-cache` so Turbo snapshots stay clean.
+- `product-tour` uses Stimulus values and actions for TourGuide.js. TourGuide's UMD bundle is npm-managed, served by Propshaft, loaded by the layout as a classic deferred script, and read from `window.tourguide`. The controller starts from page-level wrappers, can auto-start on first interaction, and removes TourGuide's generated DOM in `turbo:before-cache` so Turbo snapshots stay clean.
 - `performance-breakdown`, `dashboard-explorer`, and `project-insights` own ECharts instances from Stimulus controllers and dispose them in `disconnect()`.
 - `frame-tabs` listens for Turbo frame events and filters by the managed frame id before updating loading state.
 

@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import "tourguide"
 
 const TOUR_COMPLETE_STORAGE_KEY = "tg_tours_complete"
 
