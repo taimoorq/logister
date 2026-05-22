@@ -13,10 +13,13 @@ RSpec.describe "Project insights", type: :request do
     context "when signed in" do
       before { sign_in users(:one) }
 
-      it "renders the isolated dashboard builder shell" do
+      it "renders the isolated dashboard builder shell without blocking on aggregates" do
         project = create(:project, user: users(:one), name: "Insights App")
         api_key = create(:api_key, project: project, user: users(:one))
         create(:ingest_event, :metric, project: project, api_key: api_key, message: "queue.depth", occurred_at: 10.minutes.ago)
+
+        expect(ProjectInsights).not_to receive(:catalog_for)
+        expect(ProjectInsights).not_to receive(:filter_options)
 
         get insights_project_path(project)
 
@@ -25,7 +28,7 @@ RSpec.describe "Project insights", type: :request do
         expect(response.body).to include("project-insights")
         expect(response.body).to include("Metric catalog")
         expect(response.body).to include("Dimension")
-        expect(response.body).to include("queue.depth")
+        expect(response.body).not_to include("queue.depth")
         expect(response.body).to include(insights_data_project_path(project))
       end
     end

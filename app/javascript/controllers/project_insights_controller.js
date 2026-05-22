@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import * as echarts from "echarts"
 
 const SERIES_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", "#0f766e", "#475569", "#db2777"]
 const EVENT_COLORS = {
@@ -32,6 +31,7 @@ export default class extends Controller {
   }
 
   connect() {
+    this.connected = true
     this.payload = this.hasPayloadValue ? this.payloadValue : {}
     const savedState = this.readSavedState()
     this.window = savedState.window || this.payload.default_window || "24h"
@@ -48,33 +48,52 @@ export default class extends Controller {
       ? savedState.metrics.slice(0, 8)
       : this.normalizeSelectedMetrics(this.payload.default_metrics || [])
     this.charts = {}
+    this.chartsReady = false
 
-    this.initializeCharts()
     this.refreshSelectTarget.value = String(this.refreshSeconds)
     this.renderWindowButtons()
     this.renderAttributeControls()
     this.renderMetricControls()
-    this.fetchData()
-    this.scheduleRefresh()
+    this.setStatus("Loading charts...")
+    this.loadCharts()
 
     this.resizeHandler = () => this.queueResize()
     window.addEventListener("resize", this.resizeHandler)
-
-    if ("ResizeObserver" in window) {
-      this.resizeObserver = new ResizeObserver(() => this.queueResize())
-      this.resizeObserver.observe(this.element)
-      this.resizeObserver.observe(this.metricChartTarget)
-      this.resizeObserver.observe(this.eventChartTarget)
-    }
   }
 
   disconnect() {
+    this.connected = false
     this.abortController?.abort()
     this.resizeObserver?.disconnect()
     window.removeEventListener("resize", this.resizeHandler)
     clearInterval(this.refreshTimer)
     cancelAnimationFrame(this.resizeFrame)
-    Object.values(this.charts).forEach((chart) => chart.dispose())
+    Object.values(this.charts || {}).forEach((chart) => chart.dispose())
+  }
+
+  async loadCharts() {
+    try {
+      const echarts = await import("echarts")
+      if (!this.connected) return
+
+      this.initializeCharts(echarts)
+      this.chartsReady = true
+      this.fetchData()
+      this.scheduleRefresh()
+      this.observeChartResizes()
+    } catch (error) {
+      console.warn("[Logister] Project insights charts failed to load", error)
+      this.setStatus("Unable to load charts")
+    }
+  }
+
+  observeChartResizes() {
+    if (!("ResizeObserver" in window)) return
+
+    this.resizeObserver = new ResizeObserver(() => this.queueResize())
+    this.resizeObserver.observe(this.element)
+    this.resizeObserver.observe(this.metricChartTarget)
+    this.resizeObserver.observe(this.eventChartTarget)
   }
 
   selectWindow(event) {
@@ -163,12 +182,14 @@ export default class extends Controller {
     this.fetchData()
   }
 
-  initializeCharts() {
+  initializeCharts(echarts) {
     this.charts.metrics = echarts.init(this.metricChartTarget, null, { renderer: "canvas" })
     this.charts.events = echarts.init(this.eventChartTarget, null, { renderer: "canvas" })
   }
 
   fetchData() {
+    if (!this.chartsReady) return
+
     this.abortController?.abort()
     this.abortController = new AbortController()
     const controller = this.abortController
@@ -520,7 +541,7 @@ export default class extends Controller {
   scheduleRefresh() {
     clearInterval(this.refreshTimer)
 
-    if (this.refreshSeconds > 0) {
+    if (this.chartsReady && this.refreshSeconds > 0) {
       this.refreshTimer = setInterval(() => this.fetchData(), this.refreshSeconds * 1000)
     }
   }
@@ -560,7 +581,7 @@ export default class extends Controller {
   }
 
   setLoading(loading) {
-    Object.values(this.charts).forEach((chart) => {
+    Object.values(this.charts || {}).forEach((chart) => {
       if (loading) {
         chart.showLoading("default", { text: "", color: "#2563eb", maskColor: "rgba(248, 250, 252, 0.78)" })
       } else {
@@ -574,9 +595,11 @@ export default class extends Controller {
   }
 
   queueResize() {
+    if (!this.chartsReady) return
+
     cancelAnimationFrame(this.resizeFrame)
     this.resizeFrame = requestAnimationFrame(() => {
-      Object.values(this.charts).forEach((chart) => chart.resize())
+      Object.values(this.charts || {}).forEach((chart) => chart.resize())
     })
   }
 }

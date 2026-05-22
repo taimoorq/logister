@@ -8,6 +8,8 @@ class ProjectInsights
   MAX_ATTRIBUTE_KEYS = 12
   MAX_ATTRIBUTE_VALUES = 25
   MAX_ATTRIBUTE_FILTERS = 6
+  METRIC_CATALOG_SAMPLE_LIMIT = 5_000
+  ATTRIBUTE_CATALOG_SAMPLE_LIMIT = 2_000
   ATTRIBUTE_KEY_PATTERN = /\A[a-z][a-z0-9_.:-]{0,63}\z/
   NUMERIC_SQL_PATTERN = "^-?[0-9]+(\\.[0-9]+)?$"
   NUMERIC_CONTEXT_KEYS = %w[
@@ -278,11 +280,16 @@ class ProjectInsights
           attrs.value #>> '{}' AS attribute_value,
           jsonb_typeof(attrs.value) AS attribute_type,
           COUNT(*) AS count
-        FROM ingest_events
-        CROSS JOIN LATERAL jsonb_each(ingest_events.context) AS attrs(key, value)
-        WHERE ingest_events.project_id = #{ApplicationRecord.connection.quote(project.id)}
-          AND ingest_events.occurred_at >= #{ApplicationRecord.connection.quote(since)}
-          AND attrs.value #>> '{}' <> ''
+        FROM (
+          SELECT context
+          FROM ingest_events
+          WHERE project_id = #{ApplicationRecord.connection.quote(project.id)}
+            AND occurred_at >= #{ApplicationRecord.connection.quote(since)}
+          ORDER BY occurred_at DESC
+          LIMIT #{ATTRIBUTE_CATALOG_SAMPLE_LIMIT}
+        ) sampled_events
+        CROSS JOIN LATERAL jsonb_each(sampled_events.context) AS attrs(key, value)
+        WHERE attrs.value #>> '{}' <> ''
           AND jsonb_typeof(attrs.value) IN ('string', 'number', 'boolean')
         GROUP BY attrs.key, attrs.value, jsonb_typeof(attrs.value)
         ORDER BY COUNT(*) DESC
@@ -319,15 +326,12 @@ class ProjectInsights
     private
 
     def custom_metric_catalog(project, since)
-      counts = project.ingest_events
-                      .where(event_type: IngestEvent.event_types.fetch("metric"))
-                      .where.not(message: "db.query")
-                      .where("occurred_at >= ?", since)
-                      .group(:message)
-                      .order(Arel.sql("COUNT(*) DESC"))
-                      .limit(MAX_CUSTOM_METRICS)
-                      .count
-      numeric_counts = numeric_custom_metric_counts(project, since)
+      sampled_metrics = sampled_metric_events(project, since)
+      counts = sampled_metrics.group(:message)
+                              .order(Arel.sql("COUNT(*) DESC"))
+                              .limit(MAX_CUSTOM_METRICS)
+                              .count
+      numeric_counts = numeric_custom_metric_counts(sampled_metrics)
 
       counts.flat_map do |message, count|
         name = message.to_s.strip
@@ -360,16 +364,25 @@ class ProjectInsights
       end
     end
 
-    def numeric_custom_metric_counts(project, since)
+    def sampled_metric_events(project, since)
+      recent_metrics = project.ingest_events
+                              .where(event_type: IngestEvent.event_types.fetch("metric"))
+                              .where.not(message: "db.query")
+                              .where("occurred_at >= ?", since)
+                              .select(:message, :context, :occurred_at)
+                              .order(occurred_at: :desc)
+                              .limit(METRIC_CATALOG_SAMPLE_LIMIT)
+
+      IngestEvent.from(recent_metrics, :ingest_events)
+    end
+
+    def numeric_custom_metric_counts(sampled_metrics)
       value_node = numeric_context_value_node("value")
-      project.ingest_events
-             .where(event_type: IngestEvent.event_types.fetch("metric"))
-             .where.not(message: "db.query")
-             .where("occurred_at >= ?", since)
-             .where(value_node.not_eq(nil))
-             .group(:message)
-             .count
-             .transform_keys { |message| message.to_s.strip }
+
+      sampled_metrics.where(value_node.not_eq(nil))
+                     .group(:message)
+                     .count
+                     .transform_keys { |message| message.to_s.strip }
     end
 
     def normalize_metric_keys(metrics, catalog)

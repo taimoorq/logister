@@ -2,6 +2,14 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.0-beta.3 - 2026-05-22
+
+### Changed
+
+- Optimized the Insights beta so the page shell renders before aggregate dashboard queries run and ECharts loads only when the Insights controller is active.
+- Reduced Insights catalog work by sampling recent custom metric and dimension data for selector discovery while keeping selected dashboard slices served through the cached data endpoint.
+- Hardened deploy-time release publishing so GitHub releases and container images are only published for a new top changelog version and skipped on repeat deploys of an already-published version.
+
 ## v2.0.0-beta.2 - 2026-05-22
 
 ### Changed

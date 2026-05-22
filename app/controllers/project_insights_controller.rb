@@ -5,7 +5,7 @@ require "digest"
 class ProjectInsightsController < ApplicationController
   include ProjectScope
 
-  INSIGHTS_SHELL_CACHE_TTL = 30.seconds
+  INSIGHTS_SHELL_CACHE_TTL = 1.minute
   INSIGHTS_DATA_CACHE_TTL = 10.seconds
 
   before_action :authenticate_user!
@@ -31,13 +31,10 @@ class ProjectInsightsController < ApplicationController
         @project.id,
         "insights_shell",
         window,
-        project_insights_cache_version,
         cache_time_bucket(INSIGHTS_SHELL_CACHE_TTL)
       ],
       expires_in: INSIGHTS_SHELL_CACHE_TTL
     ) do
-      filter_options = ProjectInsights.filter_options(@project, window: window)
-
       {
         project_uuid: @project.uuid,
         endpoint: insights_data_project_path(@project),
@@ -46,10 +43,10 @@ class ProjectInsightsController < ApplicationController
         windows: ProjectInsights.window_options,
         event_types: ProjectInsights.event_type_catalog,
         default_metrics: ProjectInsights.default_metric_keys,
-        metric_catalog: ProjectInsights.catalog_for(@project, window: window),
-        environments: filter_options.fetch(:environments),
-        releases: filter_options.fetch(:releases),
-        attributes: filter_options.fetch(:attributes)
+        metric_catalog: [],
+        environments: [],
+        releases: [],
+        attributes: []
       }
     end
   end
@@ -61,7 +58,6 @@ class ProjectInsightsController < ApplicationController
         @project.id,
         "insights_data",
         ProjectInsights.normalize_window(params[:window]),
-        project_insights_cache_version,
         cache_time_bucket(INSIGHTS_DATA_CACHE_TTL),
         Digest::SHA256.hexdigest(insights_cache_dimensions.to_json)
       ],
@@ -99,9 +95,5 @@ class ProjectInsightsController < ApplicationController
       end
 
     filters.transform_keys(&:to_s).sort.to_h
-  end
-
-  def project_insights_cache_version
-    @project_insights_cache_version ||= @project.ingest_events.maximum(:updated_at)&.utc&.to_i || 0
   end
 end
