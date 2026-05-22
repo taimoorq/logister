@@ -11,7 +11,7 @@ Canonical product and integration documentation lives on https://docs.logister.o
 - Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, and environment when integrations provide them.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
-- Provides a project Insights beta tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event mix, metric series, and recent matching events.
+- Provides a project Insights tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event mix, metric series, and recent matching events.
 - Sends first-occurrence error emails and daily or weekly digest summaries through SMTP, commonly Amazon SES.
 - Supports optional S3-compatible archive exports for older hot telemetry before pruning high-volume non-error rows from PostgreSQL.
 - Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.
@@ -50,13 +50,13 @@ All maintained add-ons send the same core telemetry families into the main app: 
 - Error assignment and team triage: Logister stores ownership on grouped errors so teammates can filter inboxes by assignee, claim unassigned work, and move production issues through fixed, ignored, archived, or reopened states.
 - Amazon SES error alert emails and digests: Logister sends first-occurrence alerts and daily or weekly project digest emails through standard Rails SMTP settings, commonly backed by SES in self-hosted deployments.
 
-## Insights Beta
+## Insights
 
-- The project Insights tab is part of the 2.0 beta workstream and is intended for live project exploration before the finalized 2.0 dashboard surface.
+- The project Insights tab is the 2.0 project-level dashboard workspace for live telemetry exploration.
 - It helps users see what Logister is collecting at a glance, especially when the project inbox has no active errors but logs, metrics, transactions, spans, check-ins, or performance data are still arriving.
 - Best uses include release validation, instrumentation audits, span-backed request load analysis, performance triage, worker or queue monitoring, and narrowing recent events by environment, release, custom dimensions, or metric series.
 - Best instrumentation practices: always send stable `environment` and `release` values when available; use stable top-level context keys such as `service`, `region`, `queue`, `route`, `tenant_tier`, or `feature_flag`; avoid raw IDs, emails, request bodies, and high-cardinality values as dashboard dimensions; keep custom metric names consistent; send numeric metric values in `context.value` when average value series should appear in the metric catalog.
-- The current Insights beta uses PostgreSQL indexes, bounded catalog sampling, and short Redis cache windows for the product UI. Optional ClickHouse remains useful for raw event/span analytics, high-volume custom reporting, and materialized rollups, but is not required for the beta Insights tab.
+- Insights uses PostgreSQL indexes, bounded catalog sampling, and short Redis cache windows for the product UI. Optional ClickHouse remains useful for raw event/span analytics, high-volume custom reporting, and materialized rollups, but is not required for the Insights tab.
 
 ## Self-Hosted Stack
 
@@ -86,7 +86,7 @@ All maintained add-ons send the same core telemetry families into the main app: 
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
-- Current versioned images: `ghcr.io/taimoorq/logister:v1.1.1` or `docker.io/taimoorq/logister:v1.1.1`
+- Current versioned images: `ghcr.io/taimoorq/logister:v2.0.0` or `docker.io/taimoorq/logister:v2.0.0`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
 
@@ -109,7 +109,7 @@ All maintained add-ons send the same core telemetry families into the main app: 
 
 - Docs home: https://docs.logister.org/
 - Product guide: https://docs.logister.org/product/
-- Insights beta guide: https://docs.logister.org/product/#insights-beta
+- Insights guide: https://docs.logister.org/product/#insights
 - Use cases: https://docs.logister.org/use-cases/
 - Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
 - Python error monitoring: https://docs.logister.org/use-cases/python-error-monitoring/

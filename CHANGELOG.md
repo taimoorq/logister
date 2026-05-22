@@ -2,6 +2,23 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.0 - 2026-05-22
+
+### Added
+
+- Promoted the 2.0 observability surface to a stable release, covering project Insights, logs, metrics, transactions, spans, check-ins, optional ClickHouse analytics, and S3-compatible telemetry archives.
+- Added stable 2.0 release distribution references for GHCR, Docker Hub, and optional Quay images tagged `v2.0.0`, `latest`, and the release commit SHA.
+
+### Changed
+
+- Updated the production runtime to Ruby 4.0.5 and Bundler 4.0.10.
+- Pinned the production Docker base to `ruby:4.0.5-slim-bookworm` for a small, stable Debian base with the app's PostgreSQL, libvips, and jemalloc runtime packages.
+- Updated self-hosting docs, Cloudflare-hosted docs, AI-readable docs, and homepage metadata so the public release surfaces point at Logister 2.0.
+
+### Fixed
+
+- Verified the 2.0 release candidate under Ruby 4.0.5 with the full RSpec suite and a Docker base-stage build.
+
 ## v2.0.0-beta.4 - 2026-05-22
 
 ### Changed

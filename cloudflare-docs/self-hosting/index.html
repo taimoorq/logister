@@ -120,7 +120,7 @@
               <p class="eyebrow">Prerequisites</p>
               <h2>What you need before booting the app.</h2>
               <ul>
-                <li>Ruby <code>4.0.3</code></li>
+                <li>Ruby <code>4.0.5</code></li>
                 <li>PostgreSQL <code>&gt;= 14</code></li>
                 <li>Redis <code>&gt;= 7</code></li>
                 <li>Optional ClickHouse if you want a dedicated analytics store</li>
@@ -164,12 +164,12 @@
                   <span class="code-language">shell</span>
                   <button class="copy-button" data-copy-button data-copy-target="#docker-build-code">Copy</button>
                 </div>
-                <pre><code id="docker-build-code">docker pull ghcr.io/taimoorq/logister:v1.1.1
-docker pull docker.io/taimoorq/logister:v1.1.1
+                <pre><code id="docker-build-code">docker pull ghcr.io/taimoorq/logister:v2.0.0
+docker pull docker.io/taimoorq/logister:v2.0.0
 cp .env.sample .env.production
 # Edit .env.production with production URLs and secrets before starting containers.</code></pre>
               </div>
-              <p>Each release publishes three image tags to the configured registries: the version tag such as <code>v1.1.1</code>, <code>latest</code>, and the short commit SHA. GHCR and Docker Hub are the default public registries; Quay can be enabled as an additional mirror. If you prefer to build from source, the repository still includes a production <code>Dockerfile</code>.</p>
+              <p>Each release publishes three image tags to the configured registries: the version tag such as <code>v2.0.0</code>, <code>latest</code>, and the short commit SHA. GHCR and Docker Hub are the default public registries; Quay can be enabled as an additional mirror. If you prefer to build from source, the repository still includes a production <code>Dockerfile</code>.</p>
               <table>
                 <thead><tr><th>Docker shape</th><th>Use when</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -186,7 +186,7 @@ cp .env.sample .env.production
                 </div>
                 <pre><code id="docker-compose-selfhost-code">services:
   web:
-    image: ghcr.io/taimoorq/logister:v1.1.1
+    image: ghcr.io/taimoorq/logister:v2.0.0
     env_file: .env.production
     command: ./bin/thrust ./bin/rails server -b 0.0.0.0 -p 80
     ports:
@@ -196,7 +196,7 @@ cp .env.sample .env.production
       - redis
 
   worker:
-    image: ghcr.io/taimoorq/logister:v1.1.1
+    image: ghcr.io/taimoorq/logister:v2.0.0
     env_file: .env.production
     command: bundle exec sidekiq -C config/sidekiq.yml
     depends_on:
