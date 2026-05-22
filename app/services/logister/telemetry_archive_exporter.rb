@@ -24,6 +24,7 @@ module Logister
     end
 
     def call
+      @exported_at = Time.current.utc
       exported_rows = 0
       objects = []
 
@@ -67,7 +68,7 @@ module Logister
     def relation
       scope = model.where("created_at < ?", @before)
       scope = scope.where("created_at >= ?", @after) if @after
-      scope.order(:id)
+      scope
     end
 
     def model
@@ -100,24 +101,23 @@ module Logister
       {
         archive_version: 1,
         record_type: @record_type,
-        exported_at: Time.current.utc.iso8601,
+        exported_at: @exported_at.iso8601,
         attributes: record.attributes.as_json
       }
     end
 
     def object_key(records)
       timestamp = records.first.created_at.utc
-      exported_at = Time.current.utc.strftime("%Y%m%dT%H%M%SZ")
       range = "#{records.first.id}-#{records.last.id}"
 
       [
-        @prefix,
+        @prefix.presence,
         @record_type,
         "year=#{timestamp.year}",
         "month=#{timestamp.strftime('%m')}",
         "day=#{timestamp.strftime('%d')}",
-        "#{exported_at}-#{range}.jsonl.gz"
-      ].join("/")
+        "#{@exported_at.strftime('%Y%m%dT%H%M%SZ')}-#{range}.jsonl.gz"
+      ].compact.join("/")
     end
   end
 end

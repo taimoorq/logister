@@ -3,6 +3,32 @@ require "digest"
 module Logister
   class ClickhouseFailureReporter
     DEFAULT_THROTTLE_SECONDS = 60
+    EVENT_FAILURE_OPTIONS = {
+      kind: "event",
+      subject_key: :ingest_event_id,
+      log_message: "ClickHouse ingest failed",
+      log_fingerprint: "logister:clickhouse_ingest:failure",
+      metric_name: "logister.clickhouse.ingest_failure",
+      metric_fingerprint: "logister:metric:clickhouse_ingest_failure"
+    }.freeze
+    SPAN_FAILURE_OPTIONS = {
+      kind: "span",
+      subject_key: :trace_span_id,
+      log_message: "ClickHouse span ingest failed",
+      log_fingerprint: "logister:clickhouse_span_ingest:failure",
+      metric_name: "logister.clickhouse.span_ingest_failure",
+      metric_fingerprint: "logister:metric:clickhouse_span_ingest_failure"
+    }.freeze
+
+    class << self
+      def report_event_failure(ingest_event_id, error)
+        new(**EVENT_FAILURE_OPTIONS, subject_id: ingest_event_id, error: error).call
+      end
+
+      def report_span_failure(trace_span_id, error)
+        new(**SPAN_FAILURE_OPTIONS, subject_id: trace_span_id, error: error).call
+      end
+    end
 
     def initialize(kind:, subject_key:, subject_id:, error:, log_message:, log_fingerprint:, metric_name:, metric_fingerprint:)
       @kind = kind.to_s

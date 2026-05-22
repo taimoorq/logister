@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_223000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -165,6 +165,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
     t.index "project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC", name: "idx_ingest_events_project_release_occurred", where: "(COALESCE((context ->> 'release'::text), ''::text) <> ''::text)"
     t.index ["api_key_id"], name: "index_ingest_events_on_api_key_id"
     t.index ["context"], name: "idx_ingest_events_context_path_ops", opclass: :jsonb_path_ops, using: :gin
+    t.index ["created_at", "id"], name: "idx_ingest_events_retention_created_id"
     t.index ["error_group_id"], name: "index_ingest_events_on_error_group_id"
     t.index ["project_id", "event_type", "occurred_at"], name: "idx_ingest_events_project_occurred_type", order: { occurred_at: :desc }
     t.index ["project_id", "event_type"], name: "index_ingest_events_on_project_id_and_event_type"
@@ -244,6 +245,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_210000) do
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["api_key_id"], name: "index_trace_spans_on_api_key_id"
     t.index ["context"], name: "index_trace_spans_on_context", opclass: :jsonb_path_ops, using: :gin
+    t.index ["created_at", "id"], name: "idx_trace_spans_retention_created_id"
     t.index ["project_id", "kind", "started_at"], name: "index_trace_spans_on_project_id_and_kind_and_started_at", order: { started_at: :desc }
     t.index ["project_id", "started_at"], name: "index_trace_spans_on_project_id_and_started_at", order: { started_at: :desc }
     t.index ["project_id", "trace_id", "parent_span_id"], name: "idx_trace_spans_trace_parent"

@@ -7,6 +7,7 @@ module Logister
     class Error < StandardError; end
     HEALTH_CACHE_TTL = 30.seconds
     SCHEMA_CACHE_TTL = 30.seconds
+    IDENTIFIER_PATTERN = /\A[A-Za-z_][A-Za-z0-9_]*\z/
     REQUIRED_TABLES = %w[
       events_raw
       events_1m
@@ -117,7 +118,7 @@ module Logister
     end
 
     def full_table_name(table_name)
-      "#{@config.clickhouse_database}.#{table_name}"
+      "#{clickhouse_identifier(@config.clickhouse_database)}.#{clickhouse_identifier(table_name)}"
     end
 
     def schema_statements(schema_sql)
@@ -169,6 +170,13 @@ module Logister
       "'#{escaped}'"
     end
 
+    def clickhouse_identifier(value)
+      identifier = value.to_s
+      return identifier if identifier.match?(IDENTIFIER_PATTERN)
+
+      raise Error, "Unsafe ClickHouse identifier: #{identifier.inspect}"
+    end
+
     def post_query(query, body)
       uri = build_uri(query)
       request = Net::HTTP::Post.new(uri)
@@ -200,12 +208,15 @@ module Logister
 
     def build_uri(query)
       uri = URI.parse(@config.clickhouse_url)
-      uri.query = URI.encode_www_form(query: query) unless query_api_mode?
+      unless query_api_mode?(uri)
+        params = URI.decode_www_form(uri.query.to_s)
+        params << [ "query", query ]
+        uri.query = URI.encode_www_form(params)
+      end
       uri
     end
 
-    def query_api_mode?
-      uri = URI.parse(@config.clickhouse_url)
+    def query_api_mode?(uri = URI.parse(@config.clickhouse_url))
       uri.host == "queries.clickhouse.cloud"
     end
 

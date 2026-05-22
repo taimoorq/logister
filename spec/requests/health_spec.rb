@@ -21,7 +21,13 @@ RSpec.describe "Health", type: :request do
     context "when ClickHouse is enabled and healthy" do
       before do
         Rails.configuration.x.logister.clickhouse_enabled = true
-        client = instance_double(Logister::ClickhouseClient, enabled?: true, ready?: true)
+        client = instance_double(
+          Logister::ClickhouseClient,
+          schema_status: {
+            enabled: true,
+            ready: true
+          }
+        )
         allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
       end
 
@@ -40,10 +46,10 @@ RSpec.describe "Health", type: :request do
         Rails.configuration.x.logister.clickhouse_enabled = true
         client = instance_double(
           Logister::ClickhouseClient,
-          enabled?: true,
-          ready?: false,
           schema_status: {
+            enabled: true,
             healthy: true,
+            ready: false,
             database: "logister",
             missing_tables: [ "spans_raw" ],
             present_tables: [ "events_raw" ]

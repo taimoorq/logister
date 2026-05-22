@@ -38,6 +38,28 @@ RSpec.describe Logister::ClickhouseClient do
         "sql" => "SELECT 1 FORMAT TabSeparated\n{\"ok\":true}\n"
       )
     end
+
+    it "rejects unsafe ClickHouse table identifiers before sending a request" do
+      unsafe_config = config.dup
+      unsafe_config.clickhouse_events_table = "events;DROP TABLE users"
+      client = described_class.new(config: unsafe_config)
+      expect(client).not_to receive(:post_query)
+
+      expect {
+        client.insert_event!({ event_id: "abc123" })
+      }.to raise_error(Logister::ClickhouseClient::Error, /Unsafe ClickHouse identifier/)
+    end
+
+    it "rejects unsafe ClickHouse database identifiers before sending a request" do
+      unsafe_config = config.dup
+      unsafe_config.clickhouse_database = "logister-prod"
+      client = described_class.new(config: unsafe_config)
+      expect(client).not_to receive(:post_query)
+
+      expect {
+        client.insert_event!({ event_id: "abc123" })
+      }.to raise_error(Logister::ClickhouseClient::Error, /Unsafe ClickHouse identifier/)
+    end
   end
 
   describe "#insert_span!" do
@@ -91,6 +113,26 @@ RSpec.describe Logister::ClickhouseClient do
       expect(client.execute!("CREATE TABLE logister.events")).to eq("created")
 
       expect(client).to have_received(:post_query).with("CREATE TABLE logister.events", "")
+    end
+
+    it "returns an empty result when ClickHouse is disabled" do
+      disabled_config = config.dup
+      disabled_config.clickhouse_enabled = false
+      client = described_class.new(config: disabled_config)
+
+      expect(client.execute!("SELECT 1")).to eq("")
+    end
+  end
+
+  describe "#build_uri" do
+    it "preserves existing endpoint query parameters" do
+      query_config = config.dup
+      query_config.clickhouse_url = "https://clickhouse.example.com/?session_id=abc"
+      client = described_class.new(config: query_config)
+
+      params = URI.decode_www_form(client.send(:build_uri, "SELECT 1").query)
+
+      expect(params).to include([ "session_id", "abc" ], [ "query", "SELECT 1" ])
     end
   end
 
@@ -160,6 +202,20 @@ RSpec.describe Logister::ClickhouseClient do
         database: "logister"
       )
       expect(status[:missing_tables]).to include("spans")
+    end
+
+    it "reports disabled status without probing ClickHouse" do
+      disabled_config = config.dup
+      disabled_config.clickhouse_enabled = false
+      client = described_class.new(config: disabled_config)
+      expect(client).not_to receive(:post_query)
+
+      expect(client.schema_status).to include(
+        enabled: false,
+        healthy: false,
+        ready: false,
+        missing_tables: []
+      )
     end
   end
 end
