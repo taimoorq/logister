@@ -9,6 +9,12 @@ class ProjectInsights
   MAX_ATTRIBUTE_VALUES = 25
   MAX_ATTRIBUTE_FILTERS = 6
   ATTRIBUTE_KEY_PATTERN = /\A[a-z][a-z0-9_.:-]{0,63}\z/
+  NUMERIC_SQL_PATTERN = "^-?[0-9]+(\\.[0-9]+)?$"
+  NUMERIC_CONTEXT_KEYS = %w[
+    duration_ms
+    durationMs
+    value
+  ].freeze
 
   RESERVED_ATTRIBUTE_KEYS = %w[
     backtrace
@@ -247,7 +253,7 @@ class ProjectInsights
       since = since_for(normalize_window(window))
       counts = project.ingest_events
                       .where("occurred_at >= ?", since)
-                      .group(Arel.sql(environment_sql))
+                      .group(environment_node)
                       .count
 
       ranked_filter_options(counts)
@@ -355,11 +361,12 @@ class ProjectInsights
     end
 
     def numeric_custom_metric_counts(project, since)
+      value_node = numeric_context_value_node("value")
       project.ingest_events
              .where(event_type: IngestEvent.event_types.fetch("metric"))
              .where.not(message: "db.query")
              .where("occurred_at >= ?", since)
-             .where("#{numeric_context_value_sql('ingest_events', 'value')} IS NOT NULL")
+             .where(value_node.not_eq(nil))
              .group(:message)
              .count
              .transform_keys { |message| message.to_s.strip }
@@ -416,7 +423,7 @@ class ProjectInsights
 
     def events_scope(project, since:, environment:, release:, attribute_filters:)
       scope = project.ingest_events.where("occurred_at >= ?", since)
-      scope = scope.where("#{environment_sql} = ?", environment) if environment.present?
+      scope = scope.where(environment_node.eq(environment)) if environment.present?
       scope = scope.where("context->>'release' = ?", release) if release.present?
       attribute_filters.each do |key, filter|
         scope = apply_attribute_filter(scope, key, filter)
@@ -450,10 +457,6 @@ class ProjectInsights
       value
     end
 
-    def environment_sql
-      "COALESCE(NULLIF(context->>'environment', ''), 'unknown')"
-    end
-
     def summary_for(scope)
       counts = normalize_event_counts(scope.group(:event_type).count)
       total_events = counts.values.sum
@@ -480,8 +483,8 @@ class ProjectInsights
     end
 
     def event_timeline(scope, buckets, bucket)
-      bucket_expr = bucket_expression(bucket)
-      counts = scope.group(Arel.sql(bucket_expr), :event_type).count
+      node = bucket_node(bucket)
+      counts = scope.group(node, :event_type).count
       rows = buckets.index_by { |bucket_time| bucket_time.utc.iso8601 }.transform_values do |bucket_time|
         row = { timestamp: bucket_time.utc.iso8601 }
         EVENT_TYPE_LABELS.keys.each { |event_type| row[event_type] = 0 }
@@ -560,7 +563,7 @@ class ProjectInsights
     end
 
     def count_data(scope, buckets, bucket)
-      counts = scope.group(Arel.sql(bucket_expression(bucket))).count
+      counts = scope.group(bucket_node(bucket)).count
       values = counts.transform_keys { |bucket_time| bucket_timestamp(bucket_time, bucket) }
 
       buckets.map do |bucket_time|
@@ -587,55 +590,23 @@ class ProjectInsights
     end
 
     def duration_values(scope, bucket, aggregate)
-      inner_sql = scope.select(:occurred_at, :context).to_sql
-      bucket_expr = bucket_expression(bucket, table_name: "scoped_events")
-      aggregate_sql = aggregate == :p95 ? "percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms)" : "AVG(duration_ms)"
-      duration_sql = duration_value_sql
-      sql = <<~SQL.squish
-        SELECT bucket, #{aggregate_sql} AS value
-        FROM (
-          SELECT #{bucket_expr} AS bucket, #{duration_sql} AS duration_ms
-          FROM (#{inner_sql}) scoped_events
-        ) duration_rows
-        WHERE duration_ms IS NOT NULL
-        GROUP BY bucket
-      SQL
+      node = bucket_node(bucket)
+      duration_node = duration_value_node
+      aggregate_node = aggregate_node_for(aggregate, duration_node)
 
-      ApplicationRecord.connection.exec_query(sql).each_with_object({}) do |row, values|
-        values[bucket_timestamp(row.fetch("bucket"), bucket)] = row.fetch("value").to_f
+      scope.where(duration_node.not_eq(nil)).group(node).pluck(node, aggregate_node).each_with_object({}) do |(bucket_time, value), values|
+        values[bucket_timestamp(bucket_time, bucket)] = value.to_f
       end
     end
 
     def numeric_values(scope, bucket, context_key:)
-      inner_sql = scope.select(:occurred_at, :context).to_sql
-      bucket_expr = bucket_expression(bucket, table_name: "scoped_events")
-      value_sql = numeric_context_value_sql("scoped_events", context_key)
-      sql = <<~SQL.squish
-        SELECT bucket, AVG(numeric_value) AS value
-        FROM (
-          SELECT #{bucket_expr} AS bucket, #{value_sql} AS numeric_value
-          FROM (#{inner_sql}) scoped_events
-        ) numeric_rows
-        WHERE numeric_value IS NOT NULL
-        GROUP BY bucket
-      SQL
+      node = bucket_node(bucket)
+      value_node = numeric_context_value_node(context_key)
+      aggregate_node = Arel::Nodes::NamedFunction.new("AVG", [ value_node ])
 
-      ApplicationRecord.connection.exec_query(sql).each_with_object({}) do |row, values|
-        values[bucket_timestamp(row.fetch("bucket"), bucket)] = row.fetch("value").to_f
+      scope.where(value_node.not_eq(nil)).group(node).pluck(node, aggregate_node).each_with_object({}) do |(bucket_time, value), values|
+        values[bucket_timestamp(bucket_time, bucket)] = value.to_f
       end
-    end
-
-    def duration_value_sql
-      raw_duration = "COALESCE(scoped_events.context->>'duration_ms', scoped_events.context->>'durationMs')"
-
-      "CASE WHEN #{raw_duration} ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN #{raw_duration}::double precision ELSE NULL END"
-    end
-
-    def numeric_context_value_sql(table_name, context_key)
-      quoted_key = ApplicationRecord.connection.quote_string(context_key.to_s)
-      raw_value = "(#{table_name}.context->>'#{quoted_key}')"
-
-      "CASE WHEN #{raw_value} ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN #{raw_value}::double precision ELSE NULL END"
     end
 
     def empty_data(buckets)
@@ -677,8 +648,80 @@ class ProjectInsights
       end
     end
 
-    def bucket_expression(bucket, table_name: "ingest_events")
-      "date_trunc('#{bucket}', #{table_name}.occurred_at)"
+    def bucket_node(bucket)
+      Arel::Nodes::NamedFunction.new(
+        "date_trunc",
+        [ Arel::Nodes.build_quoted(valid_bucket_name(bucket)), ingest_events_table[:occurred_at] ]
+      )
+    end
+
+    def valid_bucket_name(bucket)
+      bucket = bucket.to_s
+      return bucket if WINDOW_OPTIONS.values.any? { |option| option.fetch(:bucket) == bucket }
+
+      raise ArgumentError, "Unsupported insights bucket: #{bucket.inspect}"
+    end
+
+    def environment_node
+      Arel::Nodes::NamedFunction.new(
+        "COALESCE",
+        [
+          Arel::Nodes::NamedFunction.new("NULLIF", [ json_text_node("environment"), Arel::Nodes.build_quoted("") ]),
+          Arel::Nodes.build_quoted("unknown")
+        ]
+      )
+    end
+
+    def duration_value_node
+      raw_duration = Arel::Nodes::NamedFunction.new(
+        "COALESCE",
+        [ json_text_node("duration_ms"), json_text_node("durationMs") ]
+      )
+
+      numeric_case_node(raw_duration)
+    end
+
+    def numeric_context_value_node(context_key)
+      numeric_case_node(json_text_node(valid_numeric_context_key(context_key)))
+    end
+
+    def json_text_node(context_key)
+      Arel::Nodes::InfixOperation.new(
+        "->>",
+        ingest_events_table[:context],
+        Arel::Nodes.build_quoted(context_key)
+      )
+    end
+
+    def numeric_case_node(raw_value)
+      Arel::Nodes::Case.new
+                       .when(Arel::Nodes::Regexp.new(raw_value, Arel::Nodes.build_quoted(NUMERIC_SQL_PATTERN)))
+                       .then(double_precision_cast_node(raw_value))
+                       .else(nil)
+    end
+
+    def double_precision_cast_node(node)
+      Arel::Nodes::NamedFunction.new("CAST", [ node.as(Arel.sql("double precision")) ])
+    end
+
+    def aggregate_node_for(aggregate, value_node)
+      return Arel::Nodes::NamedFunction.new("AVG", [ value_node ]) unless aggregate == :p95
+
+      percentile_node = Arel::Nodes::NamedFunction.new("percentile_cont", [ Arel::Nodes.build_quoted(0.95) ])
+      ordering_node = Arel::Nodes::Window.new.order(value_node)
+
+      Arel::Nodes::InfixOperation.new("WITHIN GROUP", percentile_node, ordering_node)
+    end
+
+    def valid_numeric_context_key(context_key)
+      context_key = context_key.to_s
+      return context_key if NUMERIC_CONTEXT_KEYS.include?(context_key)
+
+      raise ArgumentError, "Unsupported numeric context key: #{context_key.inspect}"
+    end
+
+    def ingest_events_table
+      IngestEvent.arel_table
     end
 
     def bucket_timestamp(value, bucket)
