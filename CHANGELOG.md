@@ -2,6 +2,16 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.3 - 2026-05-22
+
+### Added
+
+- Added cached release update checks and a dismissible navigation notification so operators can see when a newer Logister version is available.
+
+### Changed
+
+- Updated public self-hosting references for the `v2.0.3` release image tag.
+
 ## v2.0.2 - 2026-05-22
 
 ### Changed
