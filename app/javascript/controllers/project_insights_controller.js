@@ -438,7 +438,12 @@ export default class extends Controller {
 
   metricButton(metric) {
     const selected = this.selectedMetrics.includes(metric.key)
-    const events = metric.events ? `<span>${formatNumber(metric.events)} events</span>` : ""
+    const detailRows = metricDetailItems(metric).map((detail) => `
+      <span class="project-insights-metric-detail">
+        <span>${escapeHtml(detail.label)}</span>
+        <strong>${escapeHtml(detail.value)}</strong>
+      </span>
+    `).join("")
 
     return `
       <button type="button"
@@ -447,17 +452,15 @@ export default class extends Controller {
               data-metric-key="${escapeHtml(metric.key)}"
               ${transitionAttributes("insights-metric", metric.key, "project-insights-catalog")}
               ${selected ? "disabled" : ""}>
-        <span class="project-insights-metric-topline">
-          <span class="project-insights-metric-main">
+        <span class="project-insights-metric-summary">
+          <span class="project-insights-metric-copy">
             <strong>${escapeHtml(metric.label)}</strong>
             <span>${escapeHtml(metric.description || metric.source || "")}</span>
           </span>
-          <span class="project-insights-metric-action">${selected ? "Added" : "Add"}</span>
+          <span class="project-insights-metric-action">${selected ? "Selected" : "Add"}</span>
         </span>
-        <span class="project-insights-metric-meta">
-          <span>${escapeHtml(metric.source || "Metric")}</span>
-          <span>${escapeHtml(metric.unit || "count")}</span>
-          ${events}
+        <span class="project-insights-metric-details">
+          ${detailRows}
         </span>
       </button>
     `
@@ -815,6 +818,32 @@ function groupedMetrics(metrics) {
 
 function categorySortIndex(index) {
   return index === -1 ? METRIC_CATEGORY_ORDER.length : index
+}
+
+function metricDetailItems(metric) {
+  const details = [
+    { label: "Source", value: metric.source || "Metric" },
+    { label: "Unit", value: metricUnitLabel(metric.unit) },
+    { label: "Key", value: metric.key || "metric" }
+  ]
+
+  if (metric.events) {
+    details.push({ label: "Events", value: formatNumber(metric.events) })
+  }
+
+  return details
+}
+
+function metricUnitLabel(unit) {
+  switch (unit) {
+    case "ms":
+      return "Milliseconds"
+    case "value":
+      return "Numeric value"
+    case "count":
+    default:
+      return "Count"
+  }
 }
 
 function populateSelect(target, options, selectedValue, emptyLabel) {

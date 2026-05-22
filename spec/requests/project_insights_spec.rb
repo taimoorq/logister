@@ -27,7 +27,7 @@ RSpec.describe "Project insights", type: :request do
         expect(response.body).to include("project-insights")
         expect(response.body).to include("view-transition-class: project-insights-panel")
         expect(response.body).to include("Overview")
-        expect(response.body).to include("Series catalog")
+        expect(response.body).to include("Add chart series")
         expect(response.body).to include("Attribute")
         expect(response.body).not_to include("Analysis workbook")
         expect(response.body).not_to include("Health readout")
