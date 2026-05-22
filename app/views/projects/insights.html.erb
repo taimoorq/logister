@@ -64,6 +64,36 @@
     </button>
   </div>
 
+  <div class="project-insights-attribute-bar" aria-label="Dimension filters">
+    <label class="project-insights-select project-insights-attribute-select">
+      <span>Dimension</span>
+      <select data-project-insights-target="attributeKeySelect" data-action="project-insights#changeAttributeKey">
+        <option value="">Choose dimension</option>
+        <% @insights_payload[:attributes].each do |attribute| %>
+          <option value="<%= attribute.fetch(:key) %>">
+            <%= attribute.fetch(:label) %> (<%= number_with_delimiter(attribute.fetch(:count)) %>)
+          </option>
+        <% end %>
+      </select>
+    </label>
+
+    <label class="project-insights-select project-insights-attribute-select">
+      <span>Value</span>
+      <select data-project-insights-target="attributeValueSelect">
+        <option value="">Choose value</option>
+      </select>
+    </label>
+
+    <button type="button" class="project-insights-filter-add" data-action="project-insights#addAttributeFilter">
+      <%= app_icon(:filter, css: "w-4 h-4") %>
+      <span>Add filter</span>
+    </button>
+
+    <div class="project-insights-filter-list" data-project-insights-target="attributeFilters">
+      <span class="project-insights-filter-empty">No dimension filters</span>
+    </div>
+  </div>
+
   <div class="project-insights-summary" data-project-insights-target="summary" aria-live="polite">
     <div class="project-insights-summary-cell">
       <strong>--</strong>

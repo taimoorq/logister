@@ -24,6 +24,7 @@ RSpec.describe "Project insights", type: :request do
         expect(response.body).to include("Dashboard lab")
         expect(response.body).to include("project-insights")
         expect(response.body).to include("Metric catalog")
+        expect(response.body).to include("Dimension")
         expect(response.body).to include("queue.depth")
         expect(response.body).to include(insights_data_project_path(project))
       end
@@ -37,7 +38,13 @@ RSpec.describe "Project insights", type: :request do
       travel_to Time.zone.local(2026, 5, 21, 12, 0, 0) do
         project = create(:project, user: users(:one), name: "Chartable App")
         api_key = create(:api_key, project: project, user: users(:one))
-        context = { "environment" => "production", "release" => "2026.05.21" }
+        context = {
+          "environment" => "production",
+          "release" => "2026.05.21",
+          "tenant_id" => "acme",
+          "plan" => "pro"
+        }
+        beta_context = context.merge("tenant_id" => "beta", "plan" => "free")
 
         create(:ingest_event, project: project, api_key: api_key, message: "Checkout failed", context: context, occurred_at: 50.minutes.ago)
         create(:ingest_event, :log, project: project, api_key: api_key, message: "Checkout started", context: context, occurred_at: 45.minutes.ago)
@@ -45,11 +52,14 @@ RSpec.describe "Project insights", type: :request do
         create(:ingest_event, :transaction, project: project, api_key: api_key, context: context.merge("duration_ms" => 200), occurred_at: 35.minutes.ago)
         create(:ingest_event, :metric, project: project, api_key: api_key, message: "db.query", context: context.merge("duration_ms" => 50), occurred_at: 30.minutes.ago)
         create(:ingest_event, :metric, project: project, api_key: api_key, message: "queue.depth", context: context.merge("value" => 7), occurred_at: 25.minutes.ago)
+        create(:ingest_event, :metric, project: project, api_key: api_key, message: "queue.depth", context: context.merge("value" => 9), occurred_at: 24.minutes.ago)
+        create(:ingest_event, :log, project: project, api_key: api_key, message: "Other tenant", context: beta_context, occurred_at: 20.minutes.ago)
 
         get insights_data_project_path(project), params: {
           window: "1h",
           environment: "production",
-          metrics: [ "events.total", "transactions.p95", "db.query.avg", "metric:queue.depth" ]
+          attributes: { tenant_id: "acme" },
+          metrics: [ "events.total", "transactions.p95", "db.query.avg", "metric:queue.depth", "metric_value:queue.depth" ]
         }
 
         expect(response).to have_http_status(:success)
@@ -57,15 +67,42 @@ RSpec.describe "Project insights", type: :request do
         json = JSON.parse(response.body)
         series_by_key = json.fetch("metric_series").index_by { |series| series.fetch("key") }
 
-        expect(json.fetch("summary")).to include("events" => 6, "errors" => 1, "transactions" => 2, "metrics" => 2)
-        expect(json.fetch("selected_metrics")).to include("events.total", "transactions.p95", "db.query.avg", "metric:queue.depth")
-        expect(series_by_key.fetch("events.total").fetch("data").sum { |point| point.fetch("value") }).to eq(6)
+        expect(json.fetch("summary")).to include("events" => 7, "errors" => 1, "transactions" => 2, "metrics" => 3)
+        expect(json.fetch("selected_metrics")).to include("events.total", "transactions.p95", "db.query.avg", "metric:queue.depth", "metric_value:queue.depth")
+        expect(series_by_key.fetch("events.total").fetch("data").sum { |point| point.fetch("value") }).to eq(7)
         expect(series_by_key.fetch("transactions.p95").fetch("data").map { |point| point.fetch("value") }.max).to be > 0
         expect(series_by_key.fetch("db.query.avg").fetch("data").map { |point| point.fetch("value") }.max).to eq(50.0)
-        expect(series_by_key.fetch("metric:queue.depth").fetch("data").sum { |point| point.fetch("value") }).to eq(1)
-        expect(json.fetch("metric_catalog").map { |metric| metric.fetch("key") }).to include("metric:queue.depth")
+        expect(series_by_key.fetch("metric:queue.depth").fetch("data").sum { |point| point.fetch("value") }).to eq(2)
+        expect(series_by_key.fetch("metric_value:queue.depth").fetch("data").map { |point| point.fetch("value") }.max).to eq(9.0)
+        expect(json.fetch("metric_catalog").map { |metric| metric.fetch("key") }).to include("metric:queue.depth", "metric_value:queue.depth")
         expect(json.fetch("environments").map { |environment| environment.fetch("name") }).to include("production")
+        expect(json.fetch("attributes").map { |attribute| attribute.fetch("key") }).to include("tenant_id", "plan")
+        expect(json.fetch("attribute_filters")).to include(hash_including("key" => "tenant_id", "value" => "acme"))
         expect(json.fetch("recent_events").first).to include("environment" => "production")
+        expect(json.fetch("recent_events").flat_map { |event| event.fetch("attributes") }.map { |attribute| attribute.fetch("key") }).to include("tenant_id")
+      end
+    end
+
+    it "caches repeated dashboard data requests for the same project slice" do
+      cache_store = ActiveSupport::Cache::MemoryStore.new
+      allow(Rails).to receive(:cache).and_return(cache_store)
+
+      travel_to Time.zone.local(2026, 5, 21, 12, 0, 0) do
+        project = create(:project, user: users(:one), name: "Cached App")
+        api_key = create(:api_key, project: project, user: users(:one))
+        create(:ingest_event, :log, project: project, api_key: api_key, context: { "environment" => "production" }, occurred_at: 5.minutes.ago)
+
+        expect(ProjectInsights).to receive(:dashboard_for).once.and_call_original
+
+        2.times do
+          get insights_data_project_path(project), params: {
+            window: "1h",
+            environment: "production",
+            metrics: [ "events.total" ]
+          }
+
+          expect(response).to have_http_status(:success)
+        end
       end
     end
   end

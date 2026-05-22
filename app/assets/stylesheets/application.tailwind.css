@@ -615,6 +615,9 @@
   .project-insights-toolbar {
     @apply flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm xl:flex-row xl:items-end;
   }
+  .project-insights-attribute-bar {
+    @apply flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm lg:flex-row lg:items-end;
+  }
   .project-insights-control-group {
     @apply inline-flex w-full overflow-hidden rounded-md border border-slate-200 bg-slate-50 xl:w-auto;
   }
@@ -634,8 +637,29 @@
   .project-insights-refresh {
     @apply xl:ml-auto xl:w-32;
   }
+  .project-insights-attribute-select {
+    @apply lg:w-56;
+  }
   .project-insights-refresh-button {
     @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm hover:bg-slate-700;
+  }
+  .project-insights-filter-add {
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
+  }
+  .project-insights-filter-list {
+    @apply flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-2;
+  }
+  .project-insights-filter-chip {
+    @apply inline-flex h-8 max-w-full items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-2.5 text-xs font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
+  }
+  .project-insights-filter-chip span:first-child {
+    @apply truncate;
+  }
+  .project-insights-filter-chip span:last-child {
+    @apply text-slate-400;
+  }
+  .project-insights-filter-empty {
+    @apply text-xs font-medium text-slate-400;
   }
   .project-insights-summary {
     @apply grid grid-cols-2 gap-2 lg:grid-cols-4;

@@ -2,6 +2,28 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.0.0-beta.1 - 2026-05-21
+
+### Beta
+
+- This prerelease starts the 2.0 dashboard workstream. It is intended for testing the new project Insights experience before the stable 2.0 release.
+
+### Added
+
+- Project Insights dashboard lab that combines Activity, Inbox, and Performance signals into a live ECharts interface.
+- Custom metric catalog support so project dashboards can add or remove collected metric series, including numeric `context.value` metric averages.
+- Dimension filters for client-reported custom attributes such as tenant, plan, region, or service, with matching attributes visible in the recent event stream.
+- Redis-backed caching for repeated Insights dashboard slices so live refresh does not repeatedly recompute the same project/window/filter aggregates.
+- ClickHouse read-query support for future high-volume dashboard panels, alongside the existing optional ClickHouse ingest path.
+
+### Changed
+
+- The release workflow now treats hyphenated versions such as `v2.0.0-beta.1` as GitHub prereleases and avoids publishing beta builds as `latest` container tags.
+
+### Fixed
+
+- Added PostgreSQL indexes for release filters, metric-message series, and JSONB custom attribute filtering used by the new Insights interface.
+
 ## v1.1.1 - 2026-05-21
 
 ### Added

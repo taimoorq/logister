@@ -27,6 +27,16 @@ module Logister
       raise Error, "ClickHouse insert failed: #{response.code} #{response.body.to_s.strip}"
     end
 
+    def select_rows!(query)
+      return [] unless enabled?
+
+      formatted_query = query.match?(/\bFORMAT\s+JSONEachRow\b/i) ? query : "#{query} FORMAT JSONEachRow"
+      response = post_query(formatted_query, "")
+      return parse_json_each_row(response.body) if response.is_a?(Net::HTTPSuccess)
+
+      raise Error, "ClickHouse query failed: #{response.code} #{response.body.to_s.strip}"
+    end
+
     def healthy?
       return false unless enabled?
 
@@ -61,6 +71,15 @@ module Logister
         { sql: "#{query}\n#{body}" }.to_json
       else
         body
+      end
+    end
+
+    def parse_json_each_row(body)
+      body.to_s.each_line.filter_map do |line|
+        stripped = line.strip
+        next if stripped.empty?
+
+        JSON.parse(stripped)
       end
     end
 

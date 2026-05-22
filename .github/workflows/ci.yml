@@ -399,6 +399,8 @@ jobs:
 
           version = version_match[1]
           version = "#{tag_prefix}#{version}" unless version.start_with?(tag_prefix)
+          prerelease = version.include?("-")
+          configured_make_latest = "${{ steps.release_config.outputs.make_latest }}"
           release_date = version_match[2]
           release_start = version_match.begin(0)
           next_heading = changelog.index(/^##\s+/, version_match.end(0))
@@ -407,6 +409,8 @@ jobs:
           puts "tag_name=#{version}"
           puts "release_name=#{app_name} #{version}"
           puts "release_date=#{release_date}"
+          puts "prerelease=#{prerelease ? "true" : "false"}"
+          puts "make_latest=#{prerelease ? "false" : configured_make_latest}"
           puts "release_body<<EOF"
           puts release_body
           puts "EOF"
@@ -417,6 +421,7 @@ jobs:
         if: steps.release_config.outputs.enabled == 'true'
         env:
           RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
+          PRERELEASE: ${{ steps.release_meta.outputs.prerelease }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           QUAY_NAMESPACE: ${{ steps.registry_mirrors.outputs.quay_namespace }}
           QUAY_ENABLED: ${{ steps.registry_mirrors.outputs.quay_enabled }}
@@ -425,6 +430,7 @@ jobs:
           repository = ENV.fetch("GITHUB_REPOSITORY").downcase
           sha = ENV.fetch("GITHUB_SHA")
           release_tag = ENV.fetch("RELEASE_TAG")
+          prerelease = ENV["PRERELEASE"] == "true"
           short_sha = sha[0, 12]
           images = [
             "ghcr.io/#{repository}",
@@ -433,11 +439,12 @@ jobs:
           images << "quay.io/#{ENV.fetch("QUAY_NAMESPACE")}/logister" if ENV["QUAY_ENABLED"] == "true"
 
           tags = images.flat_map do |image|
-            [
+            image_tags = [
               "#{image}:#{release_tag}",
-              "#{image}:latest",
               "#{image}:#{short_sha}"
             ]
+            image_tags.insert(1, "#{image}:latest") unless prerelease
+            image_tags
           end
 
           puts "short_sha=#{short_sha}"
@@ -497,6 +504,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: ${{ steps.release_meta.outputs.release_name }}
           body: ${{ steps.release_meta.outputs.release_body }}
-          make_latest: ${{ steps.release_config.outputs.make_latest }}
+          prerelease: ${{ steps.release_meta.outputs.prerelease }}
+          make_latest: ${{ steps.release_meta.outputs.make_latest }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

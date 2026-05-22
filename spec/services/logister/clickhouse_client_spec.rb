@@ -39,6 +39,35 @@ RSpec.describe Logister::ClickhouseClient do
     end
   end
 
+  describe "#select_rows!" do
+    it "returns JSONEachRow query rows" do
+      client = described_class.new(config: config)
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
+      allow(response).to receive(:body).and_return(%({"bucket":"2026-05-21 12:00:00","count":2}\n{"bucket":"2026-05-21 12:01:00","count":3}\n))
+      allow(client).to receive(:post_query).and_return(response)
+
+      rows = client.select_rows!("SELECT bucket, count FROM logister.events_1m")
+
+      expect(rows).to eq(
+        [
+          { "bucket" => "2026-05-21 12:00:00", "count" => 2 },
+          { "bucket" => "2026-05-21 12:01:00", "count" => 3 }
+        ]
+      )
+      expect(client).to have_received(:post_query).with(/FORMAT JSONEachRow\z/, "")
+    end
+
+    it "raises when ClickHouse returns a non-success response" do
+      client = described_class.new(config: config)
+      response = instance_double(Net::HTTPResponse, code: "500", body: "nope")
+      allow(client).to receive(:post_query).and_return(response)
+
+      expect {
+        client.select_rows!("SELECT 1")
+      }.to raise_error(Logister::ClickhouseClient::Error, /500 nope/)
+    end
+  end
+
   describe "#healthy?" do
     let(:cache_store) { ActiveSupport::Cache::MemoryStore.new }
 

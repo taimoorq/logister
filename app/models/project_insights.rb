@@ -5,6 +5,40 @@ class ProjectInsights
   MAX_CUSTOM_METRICS = 12
   MAX_SELECTED_METRICS = 8
   MAX_FILTER_LENGTH = 80
+  MAX_ATTRIBUTE_KEYS = 12
+  MAX_ATTRIBUTE_VALUES = 25
+  MAX_ATTRIBUTE_FILTERS = 6
+  ATTRIBUTE_KEY_PATTERN = /\A[a-z][a-z0-9_.:-]{0,63}\z/
+
+  RESERVED_ATTRIBUTE_KEYS = %w[
+    backtrace
+    breadcrumbs
+    check_in_slug
+    check_in_status
+    duration_ms
+    durationMs
+    environment
+    exception
+    expected_interval_seconds
+    params
+    query
+    release
+    request
+    request_id
+    requestId
+    response
+    session_id
+    sessionId
+    sql
+    stacktrace
+    trace_id
+    traceId
+    transaction_name
+    transactionName
+    user_id
+    userId
+    value
+  ].freeze
 
   WINDOW_OPTIONS = {
     "1h" => { label: "1h", duration: 1.hour, bucket: "minute" },
@@ -158,20 +192,31 @@ class ProjectInsights
     def filter_options(project, window: DEFAULT_WINDOW)
       {
         environments: environments_for(project, window: window),
-        releases: releases_for(project, window: window)
+        releases: releases_for(project, window: window),
+        attributes: attribute_catalog_for(project, window: window)
       }
     end
 
-    def dashboard_for(project, window:, metrics:, environment:, release:)
+    def dashboard_for(project, window:, metrics:, environment:, release:, attribute_filters: nil)
       window_key = normalize_window(window)
       since = since_for(window_key)
       catalog = catalog_for(project, window: window_key)
+      attribute_catalog = attribute_catalog_for(project, window: window_key)
       selected_metrics = normalize_metric_keys(metrics, catalog)
+      selected_attribute_filters = normalize_attribute_filters(attribute_filters, attribute_catalog)
+      attribute_filter_values = selected_attribute_filters.transform_values { |filter| filter.fetch(:value) }
       filters = {
         environment: normalize_filter(environment),
-        release: normalize_filter(release)
+        release: normalize_filter(release),
+        attributes: attribute_filter_values
       }
-      scope = events_scope(project, since: since, environment: filters[:environment], release: filters[:release])
+      scope = events_scope(
+        project,
+        since: since,
+        environment: filters[:environment],
+        release: filters[:release],
+        attribute_filters: selected_attribute_filters
+      )
       bucket = WINDOW_OPTIONS.fetch(window_key).fetch(:bucket)
       buckets = buckets_for(since, bucket)
 
@@ -180,7 +225,10 @@ class ProjectInsights
         window: window_key,
         bucket: bucket,
         buckets: buckets.map { |bucket_time| bucket_time.utc.iso8601 },
-        filters: filters.compact,
+        filters: filters.compact_blank,
+        attribute_filters: selected_attribute_filters.map do |key, filter|
+          { key: key, label: attribute_label(key), value: filter.fetch(:value), type: filter.fetch(:type) }
+        end,
         summary: summary_for(scope),
         event_type_catalog: event_type_catalog,
         event_timeline: event_timeline(scope, buckets, bucket),
@@ -190,6 +238,7 @@ class ProjectInsights
         metric_series: metric_series(scope, selected_metrics, catalog, buckets, bucket),
         environments: environments_for(project, window: window_key),
         releases: releases_for(project, window: window_key),
+        attributes: attribute_catalog,
         recent_events: recent_events(scope)
       }
     end
@@ -215,6 +264,52 @@ class ProjectInsights
       ranked_filter_options(counts)
     end
 
+    def attribute_catalog_for(project, window: DEFAULT_WINDOW)
+      since = since_for(normalize_window(window))
+      sql = <<~SQL.squish
+        SELECT
+          attrs.key AS attribute_key,
+          attrs.value #>> '{}' AS attribute_value,
+          jsonb_typeof(attrs.value) AS attribute_type,
+          COUNT(*) AS count
+        FROM ingest_events
+        CROSS JOIN LATERAL jsonb_each(ingest_events.context) AS attrs(key, value)
+        WHERE ingest_events.project_id = #{ApplicationRecord.connection.quote(project.id)}
+          AND ingest_events.occurred_at >= #{ApplicationRecord.connection.quote(since)}
+          AND attrs.value #>> '{}' <> ''
+          AND jsonb_typeof(attrs.value) IN ('string', 'number', 'boolean')
+        GROUP BY attrs.key, attrs.value, jsonb_typeof(attrs.value)
+        ORDER BY COUNT(*) DESC
+        LIMIT #{(MAX_ATTRIBUTE_KEYS * MAX_ATTRIBUTE_VALUES * 3).to_i}
+      SQL
+
+      rows = ApplicationRecord.connection.exec_query(sql)
+      grouped = rows.each_with_object({}) do |row, attributes|
+        key = row.fetch("attribute_key").to_s
+        next unless visible_attribute_key?(key)
+
+        value = normalize_filter(row.fetch("attribute_value"))
+        next if value.blank?
+
+        attributes[key] ||= { count: 0, values: [] }
+        attributes[key][:count] += row.fetch("count").to_i
+        attributes[key][:values] << { name: value, type: row.fetch("attribute_type"), count: row.fetch("count").to_i }
+      end
+
+      grouped.sort_by { |key, payload| [ -payload[:count], key ] }
+             .first(MAX_ATTRIBUTE_KEYS)
+             .map do |key, payload|
+        {
+          key: key,
+          label: attribute_label(key),
+          count: payload.fetch(:count),
+          values: payload.fetch(:values)
+                         .sort_by { |value| [ -value.fetch(:count), value.fetch(:name) ] }
+                         .first(MAX_ATTRIBUTE_VALUES)
+        }
+      end
+    end
+
     private
 
     def custom_metric_catalog(project, since)
@@ -226,12 +321,13 @@ class ProjectInsights
                       .order(Arel.sql("COUNT(*) DESC"))
                       .limit(MAX_CUSTOM_METRICS)
                       .count
+      numeric_counts = numeric_custom_metric_counts(project, since)
 
-      counts.filter_map do |message, count|
+      counts.flat_map do |message, count|
         name = message.to_s.strip
-        next if name.blank?
+        next [] if name.blank?
 
-        {
+        count_metric = {
           key: custom_metric_key(name),
           label: name.truncate(64),
           description: "Metric event count for #{name.truncate(80)}.",
@@ -240,7 +336,33 @@ class ProjectInsights
           source: "Metrics",
           events: count
         }
+
+        next [ count_metric ] unless numeric_counts.key?(name)
+
+        [
+          count_metric,
+          {
+            key: custom_metric_value_key(name),
+            label: "Avg #{name.truncate(58)}",
+            description: "Average numeric context.value for #{name.truncate(80)}.",
+            unit: "value",
+            kind: "number",
+            source: "Metrics",
+            events: numeric_counts.fetch(name)
+          }
+        ]
       end
+    end
+
+    def numeric_custom_metric_counts(project, since)
+      project.ingest_events
+             .where(event_type: IngestEvent.event_types.fetch("metric"))
+             .where.not(message: "db.query")
+             .where("occurred_at >= ?", since)
+             .where("#{numeric_context_value_sql('ingest_events', 'value')} IS NOT NULL")
+             .group(:message)
+             .count
+             .transform_keys { |message| message.to_s.strip }
     end
 
     def normalize_metric_keys(metrics, catalog)
@@ -260,15 +382,72 @@ class ProjectInsights
       value.to_s.strip.first(MAX_FILTER_LENGTH).presence
     end
 
+    def normalize_attribute_filters(filters, attribute_catalog)
+      catalog_by_key = attribute_catalog.index_by { |attribute| attribute.fetch(:key) }
+      raw_filters =
+        if filters.respond_to?(:to_unsafe_h)
+          filters.to_unsafe_h
+        elsif filters.respond_to?(:to_h)
+          filters.to_h
+        else
+          {}
+        end
+
+      raw_filters.each_with_object({}) do |(key, value), normalized|
+        break normalized if normalized.size >= MAX_ATTRIBUTE_FILTERS
+
+        key = key.to_s
+        attribute = catalog_by_key[key]
+        next if attribute.blank?
+
+        value = normalize_filter(value)
+        next if value.blank?
+
+        catalog_value = attribute.fetch(:values).find { |option| option.fetch(:name) == value }
+        next if catalog_value.blank?
+
+        normalized[key] = { value: value, type: catalog_value.fetch(:type) }
+      end
+    end
+
     def since_for(window)
       WINDOW_OPTIONS.fetch(window).fetch(:duration).ago
     end
 
-    def events_scope(project, since:, environment:, release:)
+    def events_scope(project, since:, environment:, release:, attribute_filters:)
       scope = project.ingest_events.where("occurred_at >= ?", since)
       scope = scope.where("#{environment_sql} = ?", environment) if environment.present?
       scope = scope.where("context->>'release' = ?", release) if release.present?
+      attribute_filters.each do |key, filter|
+        scope = apply_attribute_filter(scope, key, filter)
+      end
       scope
+    end
+
+    def apply_attribute_filter(scope, key, filter)
+      value = typed_attribute_value(filter.fetch(:value), filter.fetch(:type))
+
+      scope.where("context @> ?::jsonb", { key => value }.to_json)
+    end
+
+    def typed_attribute_value(value, type)
+      case type
+      when "number"
+        numeric_attribute_value(value)
+      when "boolean"
+        value.to_s == "true"
+      else
+        value.to_s
+      end
+    end
+
+    def numeric_attribute_value(value)
+      value = value.to_s
+      return value.to_i if value.match?(/\A-?\d+\z/)
+
+      Float(value)
+    rescue ArgumentError, TypeError
+      value
     end
 
     def environment_sql
@@ -361,7 +540,14 @@ class ProjectInsights
       when "db.query.p95"
         duration_data(db_query_scope(scope), buckets, bucket, aggregate: :p95)
       else
-        if metric_key.start_with?("metric:")
+        if metric_key.start_with?("metric_value:")
+          numeric_value_data(
+            scope.where(event_type: IngestEvent.event_types.fetch("metric"), message: custom_metric_value_name(metric_key)),
+            buckets,
+            bucket,
+            context_key: "value"
+          )
+        elsif metric_key.start_with?("metric:")
           count_data(scope.where(event_type: IngestEvent.event_types.fetch("metric"), message: custom_metric_name(metric_key)), buckets, bucket)
         else
           empty_data(buckets)
@@ -391,6 +577,15 @@ class ProjectInsights
       end
     end
 
+    def numeric_value_data(scope, buckets, bucket, context_key:)
+      values = numeric_values(scope, bucket, context_key: context_key)
+
+      buckets.map do |bucket_time|
+        value = values.fetch(bucket_time.utc.iso8601, 0)
+        { timestamp: bucket_time.utc.iso8601, value: value.to_f.round(2) }
+      end
+    end
+
     def duration_values(scope, bucket, aggregate)
       inner_sql = scope.select(:occurred_at, :context).to_sql
       bucket_expr = bucket_expression(bucket, table_name: "scoped_events")
@@ -411,10 +606,36 @@ class ProjectInsights
       end
     end
 
+    def numeric_values(scope, bucket, context_key:)
+      inner_sql = scope.select(:occurred_at, :context).to_sql
+      bucket_expr = bucket_expression(bucket, table_name: "scoped_events")
+      value_sql = numeric_context_value_sql("scoped_events", context_key)
+      sql = <<~SQL.squish
+        SELECT bucket, AVG(numeric_value) AS value
+        FROM (
+          SELECT #{bucket_expr} AS bucket, #{value_sql} AS numeric_value
+          FROM (#{inner_sql}) scoped_events
+        ) numeric_rows
+        WHERE numeric_value IS NOT NULL
+        GROUP BY bucket
+      SQL
+
+      ApplicationRecord.connection.exec_query(sql).each_with_object({}) do |row, values|
+        values[bucket_timestamp(row.fetch("bucket"), bucket)] = row.fetch("value").to_f
+      end
+    end
+
     def duration_value_sql
       raw_duration = "COALESCE(scoped_events.context->>'duration_ms', scoped_events.context->>'durationMs')"
 
       "CASE WHEN #{raw_duration} ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN #{raw_duration}::double precision ELSE NULL END"
+    end
+
+    def numeric_context_value_sql(table_name, context_key)
+      quoted_key = ApplicationRecord.connection.quote_string(context_key.to_s)
+      raw_value = "(#{table_name}.context->>'#{quoted_key}')"
+
+      "CASE WHEN #{raw_value} ~ '^-?[0-9]+(\\.[0-9]+)?$' THEN #{raw_value}::double precision ELSE NULL END"
     end
 
     def empty_data(buckets)
@@ -491,7 +712,8 @@ class ProjectInsights
           occurred_at: event.occurred_at.utc.iso8601,
           environment: context["environment"].presence || "unknown",
           release: context["release"].presence,
-          duration_ms: duration_value(context)
+          duration_ms: duration_value(context),
+          attributes: event_attributes(context)
         }
       end
     end
@@ -506,9 +728,45 @@ class ProjectInsights
     end
 
     def ranked_filter_options(counts)
-      counts.sort_by { |name, count| [-count, name.to_s] }
+      counts.sort_by { |name, count| [ -count, name.to_s ] }
             .first(20)
             .map { |name, count| { name: name.presence || "unknown", count: count } }
+    end
+
+    def event_attributes(context)
+      attributes = []
+
+      context.each do |key, value|
+        next unless visible_attribute_key?(key)
+        next unless scalar_attribute_value?(value)
+
+        normalized_value = normalize_filter(value)
+        next if normalized_value.blank?
+
+        attributes << { key: key, label: attribute_label(key), value: normalized_value }
+        break if attributes.size >= 5
+      end
+
+      attributes
+    end
+
+    def visible_attribute_key?(key)
+      key = key.to_s
+      key.match?(ATTRIBUTE_KEY_PATTERN) &&
+        key == canonical_attribute_key(key) &&
+        !RESERVED_ATTRIBUTE_KEYS.include?(key)
+    end
+
+    def canonical_attribute_key(key)
+      key.to_s.underscore.downcase
+    end
+
+    def scalar_attribute_value?(value)
+      value.is_a?(String) || value.is_a?(Numeric) || value == true || value == false
+    end
+
+    def attribute_label(key)
+      key.to_s.tr("_.:-", "    ").squish.titleize
     end
 
     def custom_metric_key(name)
@@ -517,6 +775,14 @@ class ProjectInsights
 
     def custom_metric_name(metric_key)
       metric_key.delete_prefix("metric:")
+    end
+
+    def custom_metric_value_key(name)
+      "metric_value:#{name}"
+    end
+
+    def custom_metric_value_name(metric_key)
+      metric_key.delete_prefix("metric_value:")
     end
   end
 end

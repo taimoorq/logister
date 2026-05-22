@@ -19,6 +19,9 @@ export default class extends Controller {
     "activeMetrics",
     "environmentSelect",
     "releaseSelect",
+    "attributeKeySelect",
+    "attributeValueSelect",
+    "attributeFilters",
     "refreshSelect",
     "status",
     "windowButton",
@@ -37,6 +40,9 @@ export default class extends Controller {
     this.refreshSeconds = Number(savedState.refreshSeconds ?? this.payload.refresh_seconds ?? 30)
     this.catalog = this.payload.metric_catalog || []
     this.catalogByKey = new Map(this.catalog.map((metric) => [metric.key, metric]))
+    this.attributeCatalog = this.payload.attributes || []
+    this.attributeByKey = new Map(this.attributeCatalog.map((attribute) => [attribute.key, attribute]))
+    this.attributeFilters = normalizeAttributeFilters(savedState.attributeFilters || {})
     this.eventTypes = this.payload.event_types || []
     this.selectedMetrics = Array.isArray(savedState.metrics) && savedState.metrics.length > 0
       ? savedState.metrics.slice(0, 8)
@@ -46,6 +52,7 @@ export default class extends Controller {
     this.initializeCharts()
     this.refreshSelectTarget.value = String(this.refreshSeconds)
     this.renderWindowButtons()
+    this.renderAttributeControls()
     this.renderMetricControls()
     this.fetchData()
     this.scheduleRefresh()
@@ -89,6 +96,37 @@ export default class extends Controller {
 
   changeRelease(event) {
     this.release = event.currentTarget.value
+    this.saveState()
+    this.fetchData()
+  }
+
+  changeAttributeKey() {
+    this.renderAttributeValues()
+  }
+
+  addAttributeFilter(event) {
+    event.preventDefault()
+
+    const key = this.attributeKeySelectTarget.value
+    const value = this.attributeValueSelectTarget.value
+    if (!key || !value) return
+
+    this.attributeFilters = { ...this.attributeFilters, [key]: value }
+    this.renderAttributeControls()
+    this.saveState()
+    this.fetchData()
+  }
+
+  removeAttributeFilter(event) {
+    event.preventDefault()
+
+    const key = event.currentTarget.dataset.attributeKey
+    if (!key) return
+
+    const nextFilters = { ...this.attributeFilters }
+    delete nextFilters[key]
+    this.attributeFilters = nextFilters
+    this.renderAttributeControls()
     this.saveState()
     this.fetchData()
   }
@@ -165,6 +203,9 @@ export default class extends Controller {
 
     if (this.environment) url.searchParams.set("environment", this.environment)
     if (this.release) url.searchParams.set("release", this.release)
+    Object.entries(this.attributeFilters).forEach(([key, value]) => {
+      if (key && value) url.searchParams.set(`attributes[${key}]`, value)
+    })
     this.selectedMetrics.forEach((metricKey) => url.searchParams.append("metrics[]", metricKey))
 
     return url
@@ -173,10 +214,14 @@ export default class extends Controller {
   renderData(data) {
     this.catalog = data.metric_catalog || this.catalog
     this.catalogByKey = new Map(this.catalog.map((metric) => [metric.key, metric]))
+    this.attributeCatalog = data.attributes || this.attributeCatalog
+    this.attributeByKey = new Map(this.attributeCatalog.map((attribute) => [attribute.key, attribute]))
+    this.attributeFilters = attributeFiltersFromServer(data.attribute_filters) || this.attributeFilters
     this.eventTypes = data.event_type_catalog || this.eventTypes
     this.selectedMetrics = data.selected_metrics || this.selectedMetrics
 
     this.renderFilterSelects(data)
+    this.renderAttributeControls()
     this.renderMetricControls()
     this.renderSummary(data.summary || {})
     this.renderMetricChart(data)
@@ -199,6 +244,64 @@ export default class extends Controller {
   renderFilterSelects(data) {
     populateSelect(this.environmentSelectTarget, data.environments || [], this.environment, "All environments")
     populateSelect(this.releaseSelectTarget, data.releases || [], this.release, "All releases")
+  }
+
+  renderAttributeControls() {
+    if (!this.hasAttributeKeySelectTarget || !this.hasAttributeValueSelectTarget || !this.hasAttributeFiltersTarget) return
+
+    const currentKey = this.attributeKeySelectTarget.value
+    const selectedKey = this.attributeByKey.has(currentKey) ? currentKey : ""
+    const optionHtml = [
+      '<option value="">Choose dimension</option>',
+      ...this.attributeCatalog.map((attribute) => (
+        `<option value="${escapeHtml(attribute.key)}">${escapeHtml(attribute.label)} (${formatNumber(attribute.count)})</option>`
+      ))
+    ].join("")
+
+    this.attributeKeySelectTarget.innerHTML = optionHtml
+    this.attributeKeySelectTarget.value = selectedKey
+    this.renderAttributeValues()
+    this.renderAttributeFilters()
+  }
+
+  renderAttributeValues() {
+    if (!this.hasAttributeValueSelectTarget || !this.hasAttributeKeySelectTarget) return
+
+    const attribute = this.attributeByKey.get(this.attributeKeySelectTarget.value)
+    const values = attribute?.values || []
+    const optionHtml = [
+      '<option value="">Choose value</option>',
+      ...values.map((value) => (
+        `<option value="${escapeHtml(value.name)}">${escapeHtml(value.name)} (${formatNumber(value.count)})</option>`
+      ))
+    ].join("")
+
+    this.attributeValueSelectTarget.innerHTML = optionHtml
+    this.attributeValueSelectTarget.disabled = values.length === 0
+  }
+
+  renderAttributeFilters() {
+    const entries = Object.entries(this.attributeFilters)
+
+    if (entries.length === 0) {
+      this.attributeFiltersTarget.innerHTML = '<span class="project-insights-filter-empty">No dimension filters</span>'
+      return
+    }
+
+    this.attributeFiltersTarget.innerHTML = entries.map(([key, value]) => {
+      const attribute = this.attributeByKey.get(key) || { label: key }
+
+      return `
+        <button type="button"
+                class="project-insights-filter-chip"
+                data-action="project-insights#removeAttributeFilter"
+                data-attribute-key="${escapeHtml(key)}"
+                aria-label="Remove ${escapeHtml(attribute.label)} filter">
+          <span>${escapeHtml(attribute.label)}=${escapeHtml(value)}</span>
+          <span aria-hidden="true">x</span>
+        </button>
+      `
+    }).join("")
   }
 
   renderWindowButtons() {
@@ -326,8 +429,7 @@ export default class extends Controller {
       yAxis: [
         {
           type: "value",
-          name: "count",
-          minInterval: 1,
+          name: "count/value",
           axisLabel: { formatter: compactNumber, color: "#64748b" },
           splitLine: { lineStyle: { color: "#e2e8f0" } }
         },
@@ -389,23 +491,30 @@ export default class extends Controller {
       return
     }
 
-    this.recentEventsTarget.innerHTML = events.map((event) => `
-      <div class="project-insights-recent-row">
-        <span class="project-insights-event-dot" style="background-color: ${EVENT_COLORS[event.event_type] || "#64748b"}"></span>
-        <div>
-          <div class="project-insights-recent-title">
-            <strong>${escapeHtml(event.message || event.label || "Event")}</strong>
-            <span>${escapeHtml(event.label || event.event_type || "Event")}</span>
-          </div>
-          <div class="project-insights-recent-meta">
-            <span>${escapeHtml(timeOnly(event.occurred_at))}</span>
-            <span>${escapeHtml(event.environment || "unknown")}</span>
-            ${event.release ? `<span>${escapeHtml(event.release)}</span>` : ""}
-            ${event.duration_ms ? `<span>${formatValue(event.duration_ms, "ms")}</span>` : ""}
+    this.recentEventsTarget.innerHTML = events.map((event) => {
+      const attributes = (event.attributes || []).map((attribute) => (
+        `<span>${escapeHtml(attribute.label)}=${escapeHtml(attribute.value)}</span>`
+      )).join("")
+
+      return `
+        <div class="project-insights-recent-row">
+          <span class="project-insights-event-dot" style="background-color: ${EVENT_COLORS[event.event_type] || "#64748b"}"></span>
+          <div>
+            <div class="project-insights-recent-title">
+              <strong>${escapeHtml(event.message || event.label || "Event")}</strong>
+              <span>${escapeHtml(event.label || event.event_type || "Event")}</span>
+            </div>
+            <div class="project-insights-recent-meta">
+              <span>${escapeHtml(timeOnly(event.occurred_at))}</span>
+              <span>${escapeHtml(event.environment || "unknown")}</span>
+              ${event.release ? `<span>${escapeHtml(event.release)}</span>` : ""}
+              ${event.duration_ms ? `<span>${formatValue(event.duration_ms, "ms")}</span>` : ""}
+              ${attributes}
+            </div>
           </div>
         </div>
-      </div>
-    `).join("")
+      `
+    }).join("")
   }
 
   scheduleRefresh() {
@@ -437,6 +546,7 @@ export default class extends Controller {
         window: this.window,
         environment: this.environment,
         release: this.release,
+        attributeFilters: this.attributeFilters,
         refreshSeconds: this.refreshSeconds,
         metrics: this.selectedMetrics
       }))
@@ -469,6 +579,28 @@ export default class extends Controller {
       Object.values(this.charts).forEach((chart) => chart.resize())
     })
   }
+}
+
+function normalizeAttributeFilters(filters) {
+  if (!filters || typeof filters !== "object" || Array.isArray(filters)) return {}
+
+  return Object.entries(filters).reduce((normalized, [key, value]) => {
+    if (!key || value === undefined || value === null || value === "") return normalized
+
+    normalized[String(key)] = String(value)
+    return normalized
+  }, {})
+}
+
+function attributeFiltersFromServer(filters) {
+  if (!Array.isArray(filters)) return null
+
+  return filters.reduce((normalized, filter) => {
+    if (!filter?.key || !filter?.value) return normalized
+
+    normalized[String(filter.key)] = String(filter.value)
+    return normalized
+  }, {})
 }
 
 function populateSelect(target, options, selectedValue, emptyLabel) {
@@ -534,7 +666,7 @@ function compactNumber(value) {
 
 function formatValue(value, unit) {
   const number = Number(value) || 0
-  const formatted = new Intl.NumberFormat(undefined, { maximumFractionDigits: unit === "ms" ? 1 : 0 }).format(number)
+  const formatted = new Intl.NumberFormat(undefined, { maximumFractionDigits: unit === "count" ? 0 : 2 }).format(number)
 
   return unit === "ms" ? `${formatted} ms` : formatted
 }
