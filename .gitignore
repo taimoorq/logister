@@ -47,6 +47,9 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+/app/assets/npm/*
+!/app/assets/npm/
+!/app/assets/npm/.keep
 
 # Vite Ruby
 /public/vite*

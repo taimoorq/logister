@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_22_223000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_224500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -27,6 +27,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_223000) do
     t.bigint "user_id", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["last_used_at"], name: "index_api_keys_on_last_used_at"
+    t.index ["project_id", "created_at"], name: "idx_api_keys_project_created_at", order: { created_at: :desc }
     t.index ["project_id", "updated_at"], name: "idx_api_keys_project_updated_at", order: { updated_at: :desc }
     t.index ["project_id"], name: "index_api_keys_on_project_id"
     t.index ["revoked_at"], name: "index_api_keys_on_revoked_at"
@@ -188,6 +189,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_223000) do
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["project_id", "user_id"], name: "index_project_memberships_on_project_id_and_user_id", unique: true
     t.index ["project_id"], name: "index_project_memberships_on_project_id"
+    t.index ["user_id", "project_id"], name: "idx_project_memberships_user_project"
     t.index ["user_id"], name: "index_project_memberships_on_user_id"
     t.index ["uuid"], name: "index_project_memberships_on_uuid", unique: true
   end
@@ -221,6 +223,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_223000) do
     t.bigint "user_id", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index ["integration_kind"], name: "index_projects_on_integration_kind"
+    t.index ["user_id", "archived_at", "created_at"], name: "idx_projects_user_archived_created_at", order: { created_at: :desc }
+    t.index ["user_id", "archived_at", "name"], name: "idx_projects_user_archived_name"
     t.index ["user_id", "archived_at"], name: "idx_projects_user_archived_at"
     t.index ["user_id", "slug"], name: "index_projects_on_user_id_and_slug", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id"

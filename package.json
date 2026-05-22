@@ -4,6 +4,10 @@
   "overrides": {
     "picomatch": "4.0.4"
   },
+  "scripts": {
+    "assets:sync": "node script/sync_npm_assets.mjs",
+    "postinstall": "node script/sync_npm_assets.mjs"
+  },
   "devDependencies": {
     "@iconify-json/streamline-freehand": "^1.2.1",
     "@tailwindcss/typography": "^0.5.19",

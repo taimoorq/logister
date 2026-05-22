@@ -27,13 +27,10 @@ class Project < ApplicationRecord
   end
 
   def self.accessible_to(user)
-    # Use a subquery to avoid the PostgreSQL restriction that ORDER BY columns
-    # must appear in the SELECT list when DISTINCT is used.
-    ids = left_outer_joins(:project_memberships)
-            .where("projects.user_id = :uid OR project_memberships.user_id = :uid", uid: user.id)
-            .distinct
-            .pluck(:id)
-    where(id: ids)
+    return none unless user
+
+    shared_project_ids = ProjectMembership.where(user_id: user.id).select(:project_id)
+    where(user_id: user.id).or(where(id: shared_project_ids))
   end
 
   def owned_by?(viewer)
