@@ -597,6 +597,149 @@
   .dashboard-explorer-chart-tall {
     @apply h-72;
   }
+  .project-insights {
+    @apply space-y-4;
+  }
+  .project-insights-header {
+    @apply flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between;
+  }
+  .project-insights-header h2 {
+    @apply text-lg font-semibold text-slate-900;
+  }
+  .project-insights-header p:not(.dashboard-kicker) {
+    @apply mt-1 text-sm text-slate-500;
+  }
+  .project-insights-status {
+    @apply inline-flex h-8 shrink-0 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-600;
+  }
+  .project-insights-toolbar {
+    @apply flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm xl:flex-row xl:items-end;
+  }
+  .project-insights-control-group {
+    @apply inline-flex w-full overflow-hidden rounded-md border border-slate-200 bg-slate-50 xl:w-auto;
+  }
+  .project-insights-segment {
+    @apply h-9 flex-1 border-r border-slate-200 px-3 text-xs font-semibold text-slate-600 last:border-r-0 hover:bg-white xl:flex-none;
+  }
+  .project-insights-segment.is-active {
+    @apply bg-blue-600 text-white hover:bg-blue-600;
+  }
+  .project-insights-select {
+    @apply flex min-w-0 flex-col gap-1 text-[11px] font-semibold uppercase text-slate-400 xl:w-40;
+    letter-spacing: 0;
+  }
+  .project-insights-select select {
+    @apply h-9 rounded-md border border-slate-200 bg-white px-3 text-sm font-medium normal-case text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100;
+  }
+  .project-insights-refresh {
+    @apply xl:ml-auto xl:w-32;
+  }
+  .project-insights-refresh-button {
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm hover:bg-slate-700;
+  }
+  .project-insights-summary {
+    @apply grid grid-cols-2 gap-2 lg:grid-cols-4;
+  }
+  .project-insights-summary-cell {
+    @apply min-w-0 rounded-md border border-slate-200 bg-white p-3 shadow-sm;
+  }
+  .project-insights-summary-cell strong {
+    @apply block truncate text-xl font-semibold leading-tight text-slate-900;
+  }
+  .project-insights-summary-cell span {
+    @apply mt-1 block truncate text-[11px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .project-insights-layout {
+    @apply grid grid-cols-1 gap-4 xl:grid-cols-[20rem_minmax(0,1fr)] xl:items-start;
+  }
+  .project-insights-catalog,
+  .project-insights-panel {
+    @apply min-w-0 rounded-md border border-slate-200 bg-white p-3 shadow-sm;
+  }
+  .project-insights-catalog {
+    @apply xl:sticky xl:top-[5.2rem];
+  }
+  .project-insights-main {
+    @apply min-w-0 space-y-4;
+  }
+  .project-insights-secondary-grid {
+    @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
+  }
+  .project-insights-panel-header {
+    @apply mb-3 flex items-start justify-between gap-3;
+  }
+  .project-insights-panel-header h3 {
+    @apply text-sm font-semibold text-slate-900;
+  }
+  .project-insights-panel-header span {
+    @apply mt-0.5 block text-xs text-slate-500;
+  }
+  .project-insights-chart {
+    @apply h-72 w-full min-w-0;
+  }
+  .project-insights-chart-main {
+    @apply h-80;
+  }
+  .project-insights-metric-list {
+    @apply space-y-2;
+  }
+  .project-insights-metric {
+    @apply flex w-full flex-col gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-blue-200 disabled:bg-blue-50;
+  }
+  .project-insights-metric-main strong {
+    @apply block text-sm font-semibold text-slate-900;
+  }
+  .project-insights-metric-main span {
+    @apply mt-0.5 block text-xs leading-5 text-slate-500;
+  }
+  .project-insights-metric-meta {
+    @apply flex flex-wrap gap-1.5;
+  }
+  .project-insights-metric-meta span {
+    @apply rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] font-semibold uppercase text-slate-500;
+    letter-spacing: 0;
+  }
+  .project-insights-active {
+    @apply mt-4 border-t border-slate-200 pt-4;
+  }
+  .project-insights-active-list {
+    @apply flex flex-wrap gap-2;
+  }
+  .project-insights-active-chip {
+    @apply inline-flex h-8 max-w-full items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100;
+  }
+  .project-insights-active-chip span:first-child {
+    @apply truncate;
+  }
+  .project-insights-active-chip span:last-child {
+    @apply text-blue-400;
+  }
+  .project-insights-empty {
+    @apply rounded-md border border-dashed border-slate-200 bg-slate-50 p-3 text-sm text-slate-500;
+  }
+  .project-insights-recent {
+    @apply max-h-72 space-y-2 overflow-y-auto pr-1;
+  }
+  .project-insights-recent-row {
+    @apply grid grid-cols-[0.625rem_minmax(0,1fr)] gap-3 rounded-md border border-slate-200 bg-slate-50 p-3;
+  }
+  .project-insights-event-dot {
+    @apply mt-1.5 h-2.5 w-2.5 rounded-full;
+  }
+  .project-insights-recent-title {
+    @apply flex min-w-0 items-baseline justify-between gap-3;
+  }
+  .project-insights-recent-title strong {
+    @apply truncate text-sm font-semibold text-slate-900;
+  }
+  .project-insights-recent-title span {
+    @apply shrink-0 text-[11px] font-semibold uppercase text-slate-400;
+    letter-spacing: 0;
+  }
+  .project-insights-recent-meta {
+    @apply mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs text-slate-500;
+  }
   .dashboard-grid {
     @apply grid grid-cols-1 gap-5 xl:grid-cols-2;
   }

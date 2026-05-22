@@ -1,0 +1,141 @@
+<% content_for :title, "#{@project.name} insights" %>
+
+<%= render "projects/header" %>
+
+<section class="project-insights"
+         data-controller="project-insights"
+         data-project-insights-payload-value="<%= json_escape(@insights_payload.to_json) %>">
+  <div class="project-insights-header">
+    <div>
+      <p class="dashboard-kicker">Project insights</p>
+      <h2>Dashboard lab</h2>
+      <p>Build a live project view from Activity, Inbox, and Performance signals.</p>
+    </div>
+    <div class="project-insights-status" data-project-insights-target="status">Waiting for data</div>
+  </div>
+
+  <div class="project-insights-toolbar" aria-label="Dashboard controls">
+    <div class="project-insights-control-group" role="group" aria-label="Time range">
+      <% @insights_payload[:windows].each do |window| %>
+        <button type="button"
+                class="project-insights-segment"
+                data-project-insights-target="windowButton"
+                data-action="project-insights#selectWindow"
+                data-window="<%= window.fetch(:key) %>"
+                aria-pressed="<%= window.fetch(:key) == @insights_payload[:default_window] %>">
+          <%= window.fetch(:label) %>
+        </button>
+      <% end %>
+    </div>
+
+    <label class="project-insights-select">
+      <span>Environment</span>
+      <select data-project-insights-target="environmentSelect" data-action="project-insights#changeEnvironment">
+        <option value="">All environments</option>
+        <% @insights_payload[:environments].each do |environment| %>
+          <option value="<%= environment.fetch(:name) %>"><%= environment.fetch(:name) %></option>
+        <% end %>
+      </select>
+    </label>
+
+    <label class="project-insights-select">
+      <span>Release</span>
+      <select data-project-insights-target="releaseSelect" data-action="project-insights#changeRelease">
+        <option value="">All releases</option>
+        <% @insights_payload[:releases].each do |release| %>
+          <option value="<%= release.fetch(:name) %>"><%= release.fetch(:name) %></option>
+        <% end %>
+      </select>
+    </label>
+
+    <label class="project-insights-select project-insights-refresh">
+      <span>Live refresh</span>
+      <select data-project-insights-target="refreshSelect" data-action="project-insights#changeRefresh">
+        <option value="15">15s</option>
+        <option value="30" selected>30s</option>
+        <option value="60">60s</option>
+        <option value="0">Off</option>
+      </select>
+    </label>
+
+    <button type="button" class="project-insights-refresh-button" data-action="project-insights#refreshNow">
+      <%= app_icon(:chart, css: "w-4 h-4") %>
+      <span>Refresh</span>
+    </button>
+  </div>
+
+  <div class="project-insights-summary" data-project-insights-target="summary" aria-live="polite">
+    <div class="project-insights-summary-cell">
+      <strong>--</strong>
+      <span>Events</span>
+    </div>
+    <div class="project-insights-summary-cell">
+      <strong>--</strong>
+      <span>Errors</span>
+    </div>
+    <div class="project-insights-summary-cell">
+      <strong>--</strong>
+      <span>Transactions</span>
+    </div>
+    <div class="project-insights-summary-cell">
+      <strong>--</strong>
+      <span>Metrics</span>
+    </div>
+  </div>
+
+  <div class="project-insights-layout">
+    <aside class="project-insights-catalog" aria-label="Metric catalog">
+      <div class="project-insights-panel-header">
+        <div>
+          <h3>Metric catalog</h3>
+          <span>Add or remove collected series</span>
+        </div>
+      </div>
+      <div class="project-insights-metric-list" data-project-insights-target="metricList"></div>
+
+      <div class="project-insights-active">
+        <div class="project-insights-panel-header">
+          <div>
+            <h3>Active series</h3>
+            <span>Shown on the main chart</span>
+          </div>
+        </div>
+        <div class="project-insights-active-list" data-project-insights-target="activeMetrics"></div>
+      </div>
+    </aside>
+
+    <div class="project-insights-main">
+      <article class="project-insights-panel project-insights-panel-wide">
+        <div class="project-insights-panel-header">
+          <div>
+            <h3>Combined metric view</h3>
+            <span>Counts and durations share one timeline</span>
+          </div>
+        </div>
+        <div class="project-insights-chart project-insights-chart-main" data-project-insights-target="metricChart"></div>
+      </article>
+
+      <div class="project-insights-secondary-grid">
+        <article class="project-insights-panel">
+          <div class="project-insights-panel-header">
+            <div>
+              <h3>Signal mix</h3>
+              <span>Activity by event type</span>
+            </div>
+          </div>
+          <div class="project-insights-chart" data-project-insights-target="eventChart"></div>
+        </article>
+
+        <article class="project-insights-panel">
+          <div class="project-insights-panel-header">
+            <div>
+              <h3>Recent stream</h3>
+              <span>Latest matching events</span>
+            </div>
+          </div>
+          <div class="project-insights-recent" data-project-insights-target="recentEvents"></div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>

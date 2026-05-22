@@ -54,6 +54,8 @@ Rails.application.routes.draw do
       patch :archive
       patch :restore
       get :settings, to: "project_settings#show"
+      get "insights/data", to: "project_insights#data", as: :insights_data
+      get :insights, to: "project_insights#show"
       get :performance, to: "project_performance#show"
       get :monitors, to: "project_monitors#show"
       get :activity, to: "project_activity#show"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_21_153000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_21_195000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -162,10 +162,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_21_153000) do
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
     t.index "project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC", name: "idx_ingest_events_project_environment_occurred"
+    t.index "project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC", name: "idx_ingest_events_project_release_occurred", where: "(COALESCE((context ->> 'release'::text), ''::text) <> ''::text)"
     t.index ["api_key_id"], name: "index_ingest_events_on_api_key_id"
     t.index ["error_group_id"], name: "index_ingest_events_on_error_group_id"
     t.index ["project_id", "event_type", "occurred_at"], name: "idx_ingest_events_project_occurred_type", order: { occurred_at: :desc }
     t.index ["project_id", "event_type"], name: "index_ingest_events_on_project_id_and_event_type"
+    t.index ["project_id", "message", "occurred_at"], name: "idx_ingest_events_project_metric_message_occurred", order: { occurred_at: :desc }, where: "(event_type = 1)"
     t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_activity_occurred", order: { occurred_at: :desc }, where: "(event_type <> 0)"
     t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_db_query_occurred", order: { occurred_at: :desc }, where: "((event_type = 1) AND (message = 'db.query'::text))"
     t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_transactions_occurred", order: { occurred_at: :desc }, where: "(event_type = 2)"
