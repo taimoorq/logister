@@ -10,6 +10,7 @@ Use this repository when you want to run Logister yourself or fork it for your o
 - [Public docs](#public-docs)
 - [Product functionality](#product-functionality)
 - [Self-hosted runtime](#self-hosted-runtime)
+- [Self-host quickstart](#self-host-quickstart)
 - [Integrating apps with Logister](#integrating-apps-with-logister)
 - [Running the app locally](#running-the-app-locally)
 - [Local development nuances](#local-development-nuances)
@@ -102,13 +103,89 @@ Logister runs as a Rails app with this baseline infrastructure:
 - Optional consent-gated analytics: Google Analytics or Cloudflare Web Analytics
 - Supported deployment shapes: Fly, Kamal, Docker image, or a Docker Compose-style single-host stack
 
-The basic self-host flow is:
+Use the optional services only when you need them. A practical first production install is one web process, one Sidekiq worker, PostgreSQL, Redis, SMTP if users need email, and HTTPS termination through your platform, proxy, or load balancer.
 
-1. Boot the self-hosted Logister app.
-2. Create a project in Logister.
-3. Generate an API key for that project.
-4. Connect an app using one of the supported integrations or direct HTTP ingestion.
-5. Verify errors appear in the inbox and non-error telemetry appears in activity, performance, or monitors.
+## Self-host quickstart
+
+This is the shortest production path. Use the public docs when you need provider-specific detail, but follow these steps in order.
+
+1. Provision required services.
+   - PostgreSQL for app data and hot telemetry.
+   - Redis for Rails cache and Sidekiq jobs.
+   - A host that can run one web container and one worker container.
+
+2. Choose an app image.
+
+   ```bash
+   docker pull ghcr.io/taimoorq/logister:v2.0.1
+   # or
+   docker pull docker.io/taimoorq/logister:v2.0.1
+   ```
+
+3. Create production config from the sample.
+
+   ```bash
+   cp .env.sample .env.production
+   ```
+
+4. Set the required production values in your host or secret manager.
+
+   | Variable | What to set |
+   |----------|-------------|
+   | `RAILS_ENV` | `production` |
+   | `RAILS_MASTER_KEY` | Rails credentials key for this deployment |
+   | `DATABASE_URL` | PostgreSQL runtime URL |
+   | `REDIS_URL` | Redis URL |
+   | `LOGISTER_PUBLIC_URL` | Canonical HTTPS app URL |
+   | `LOGISTER_ADMIN_EMAILS` | Comma-separated operator emails |
+
+   Keep real values in your deploy provider, Docker secrets, Fly secrets, Kamal secrets, or another secret manager. Do not commit a filled-in `.env.production`.
+
+5. Prepare the database before the web process receives traffic.
+
+   ```bash
+   ./bin/release
+   ```
+
+   If your provider gives separate pooled and direct PostgreSQL URLs, set `DATABASE_URL` to the runtime URL and `DATABASE_MIGRATION_URL` to the direct migration URL.
+
+6. Run the two required processes from the same image.
+
+   ```bash
+   # Web process
+   ./bin/thrust ./bin/rails server
+
+   # Worker process
+   bundle exec sidekiq -C config/sidekiq.yml
+   ```
+
+7. Add optional services after the baseline works.
+
+   | Optional service | Enable when |
+   |------------------|-------------|
+   | SMTP / Amazon SES | Users need confirmation, password reset, alerts, or digests |
+   | ClickHouse | PostgreSQL-only analytics is not enough for your event volume |
+   | S3-compatible storage | You want archive exports before pruning older hot telemetry |
+   | Cloudflare Turnstile | Public auth forms need bot protection |
+   | Consent-gated analytics | Public product pages need traffic analytics |
+
+8. Verify the install.
+
+   ```text
+   /up responds
+   Web sign-in works
+   Sidekiq starts without Redis errors
+   Project creation works
+   API key generation works
+   A test event appears in the project inbox
+   ```
+
+After the baseline is deployed, the day-one product flow is:
+
+1. Create a project in Logister.
+2. Generate an API key for that project.
+3. Connect an app using one of the supported integrations or direct HTTP ingestion.
+4. Verify errors appear in the inbox and non-error telemetry appears in activity, performance, or monitors.
 
 ## Integrating apps with Logister
 
@@ -136,24 +213,43 @@ All first-party add-ons send the same core telemetry families into the main app 
 
 ## Running the app locally
 
-For full local setup, use the public local-development guide:
+Use this when you are working on the app itself. For a production deployment, use the self-host quickstart above instead.
 
-- https://docs.logister.org/local-development/
+Prerequisites:
+
+- Ruby `4.0.5`
+- PostgreSQL
+- Redis for production-like cache and job behavior
+- Node/npm for npm-backed assets
 
 The shortest local boot path is:
 
 ```bash
 cp .env.sample .env
+npm ci
 bundle install
 bin/rails db:prepare
 bin/dev
 ```
 
-The repo uses `.env.sample` as the example environment file. For self-hosted production installs, copy the entries you need into your deploy provider's secret/config store rather than committing a filled-in `.env` file. The public deployment guide explains what each sample entry does and where to get provider values such as PostgreSQL URLs, Redis URLs, SES SMTP credentials, Turnstile keys, ClickHouse credentials, S3 archive storage credentials, and analytics IDs:
+Run a worker in a second terminal when you need background jobs:
+
+```bash
+bundle exec sidekiq -C config/sidekiq.yml
+```
+
+Use Docker-backed local infrastructure when you do not already have PostgreSQL, Redis, or ClickHouse available:
+
+```bash
+docker compose --profile docker-db up -d
+bin/rails db:prepare
+```
+
+The repo uses `.env.sample` as the example environment file. For self-hosted production installs, copy the entries you need into your deploy provider's secret/config store rather than committing a filled-in `.env` file. The public deployment guide explains the full environment reference:
 
 - https://docs.logister.org/deployment/#env-reference
 
-Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image instead:
+Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
 - `ghcr.io/taimoorq/logister:v2.0.1`
 - `ghcr.io/taimoorq/logister:latest`

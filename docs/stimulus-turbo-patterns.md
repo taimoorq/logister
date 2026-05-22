@@ -27,7 +27,9 @@ Turbo Drive replaces the document body during visits, and Turbo Frames replace s
 Third-party JavaScript should be npm-managed and exposed through the Rails asset pipeline/importmap path.
 
 - Add the package to `package.json` and `package-lock.json`.
-- Add the package dist directory to `config/initializers/assets.rb` when Propshaft needs to serve files from `node_modules`.
+- Copy only the exact browser files Rails serves into ignored `app/assets/npm` through `script/sync_npm_assets.mjs`.
+- Keep `app/assets/npm` in the Propshaft load path rather than adding whole `node_modules` package directories.
+- Run `npm run assets:sync` locally after changing synced asset files. `npm ci` runs the same sync through `postinstall`.
 - Pin browser-ready ES module imports in `config/importmap.rb`.
 - Load browser-only UMD/IIFE bundles with `javascript_include_tag` from the shared layout helper, then read their `window` global from the Stimulus controller that owns the behavior.
 - Keep CI aligned with those asset paths: jobs that render Rails views or precompile assets must run `npm ci` before Rails boots against npm-backed assets.
@@ -35,8 +37,8 @@ Third-party JavaScript should be npm-managed and exposed through the Rails asset
 
 ## Current examples
 
-- `product-tour` uses Stimulus values and actions for TourGuide.js. TourGuide's UMD bundle is npm-managed, served by Propshaft, loaded by the layout as a classic deferred script, and read from `window.tourguide`. The controller starts from page-level wrappers, can auto-start on first interaction, and removes TourGuide's generated DOM in `turbo:before-cache` so Turbo snapshots stay clean.
-- `performance-breakdown`, `dashboard-explorer`, and `project-insights` own ECharts instances from Stimulus controllers and dispose them in `disconnect()`.
+- `product-tour` uses Stimulus values and actions for TourGuide.js. TourGuide's UMD bundle is npm-managed, synced into `app/assets/npm`, served by Propshaft, loaded by the layout as a classic deferred script, and read from `window.tourguide`. The controller starts from page-level wrappers, can auto-start on first interaction, and removes TourGuide's generated DOM in `turbo:before-cache` so Turbo snapshots stay clean.
+- `performance-breakdown`, `dashboard-explorer`, and `project-insights` own ECharts instances from Stimulus controllers, import ECharts through importmap from synced npm assets, and dispose instances in `disconnect()`.
 - `frame-tabs` listens for Turbo frame events and filters by the managed frame id before updating loading state.
 
 ## Verification checklist

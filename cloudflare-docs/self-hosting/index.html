@@ -83,6 +83,7 @@
             <hr>
             <div class="sidebar-group">
               <p class="sidebar-label">On this page</p>
+              <a href="#production-quickstart">Production quickstart</a>
               <a href="#prerequisites">Prerequisites</a>
               <a href="#infrastructure">Infrastructure plan</a>
               <a href="#docker">Docker option</a>
@@ -114,6 +115,22 @@
                   </ul>
                 </aside>
               </div>
+            </section>
+
+            <section id="production-quickstart" class="section">
+              <p class="eyebrow">Production quickstart</p>
+              <h2>Follow this path before tuning optional services.</h2>
+              <ol>
+                <li>Provision PostgreSQL, Redis, and a host that can run one web container plus one worker container.</li>
+                <li>Pull a versioned image from <code>ghcr.io/taimoorq/logister</code> or <code>docker.io/taimoorq/logister</code>.</li>
+                <li>Copy <code>.env.sample</code> to your deploy provider's secret/config store and set <code>RAILS_ENV</code>, <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>LOGISTER_PUBLIC_URL</code>, and <code>LOGISTER_ADMIN_EMAILS</code>.</li>
+                <li>Run <code>./bin/release</code> before the new web container receives traffic.</li>
+                <li>Run the web process with <code>./bin/thrust ./bin/rails server</code>.</li>
+                <li>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>.</li>
+                <li>Verify <code>/up</code>, sign-in, project creation, API key generation, Sidekiq startup, and one test event in the inbox.</li>
+                <li>Add SMTP, ClickHouse, S3-compatible archive storage, Turnstile, or analytics only after the baseline install works.</li>
+              </ol>
+              <div class="note tip"><h4>Keep it boring first</h4><p>A first production install does not need every optional service. Start with web, worker, PostgreSQL, Redis, HTTPS, and backups; add the rest when your operating model actually needs them.</p></div>
             </section>
 
             <section id="prerequisites" class="section">
