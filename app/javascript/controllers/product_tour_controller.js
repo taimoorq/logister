@@ -12,10 +12,13 @@ export default class extends Controller {
     this.autoStarted = false
     this.autoStartFrame = null
     this.autoStartTimer = null
+    this.handleTourCloseClick = this.handleTourCloseClick.bind(this)
+    document.addEventListener("click", this.handleTourCloseClick, true)
     this.startForNewUser()
   }
 
   disconnect() {
+    document.removeEventListener("click", this.handleTourCloseClick, true)
     this.cancelAutoStart()
     this.closeTour()
   }
@@ -78,6 +81,17 @@ export default class extends Controller {
     }
   }
 
+  handleTourCloseClick(event) {
+    const target = event.target
+    if (!(target instanceof Element) || !target.closest("#tg-dialog-close-btn")) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    event.stopImmediatePropagation()
+    this.markTourCompleted()
+    this.exitVisibleTour()
+  }
+
   tourClient() {
     if (this.client) return this.client
 
@@ -94,6 +108,9 @@ export default class extends Controller {
       prevLabel: "Back",
       finishLabel: "Done"
     })
+    this.client.onBeforeExit(() => {
+      if (!this.suppressExitCompletion) this.markTourCompleted()
+    })
 
     return this.client
   }
@@ -103,12 +120,19 @@ export default class extends Controller {
     this.client = null
 
     if (client?.isVisible) {
-      client.exit().catch((error) => {
-        if (window.console) console.warn("Unable to close product tour", error)
+      this.suppressExitCompletion = true
+      this.exitVisibleTour(client).finally(() => {
+        this.suppressExitCompletion = false
       })
     }
 
     this.removeTourArtifacts()
+  }
+
+  exitVisibleTour(client = this.client) {
+    return client?.exit().catch((error) => {
+      if (window.console) console.warn("Unable to close product tour", error)
+    }) || Promise.resolve()
   }
 
   removeTourArtifacts() {
@@ -128,6 +152,19 @@ export default class extends Controller {
       return completedTours.split(",").includes(this.groupValue)
     } catch (_error) {
       return false
+    }
+  }
+
+  markTourCompleted() {
+    try {
+      const completedTours = window.localStorage.getItem(TOUR_COMPLETE_STORAGE_KEY) || ""
+      const tourGroups = completedTours.split(",").filter(Boolean)
+      if (tourGroups.includes(this.groupValue)) return
+
+      tourGroups.push(this.groupValue)
+      window.localStorage.setItem(TOUR_COMPLETE_STORAGE_KEY, tourGroups.join(","))
+    } catch (_error) {
+      return
     }
   }
 
