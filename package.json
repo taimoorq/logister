@@ -9,5 +9,9 @@
     "@tailwindcss/typography": "^0.5.19",
     "vite": "^6.4.2",
     "vite-plugin-ruby": "^5.1.3"
+  },
+  "dependencies": {
+    "@sjmc11/tourguidejs": "^0.0.27",
+    "echarts": "^6.1.0"
   }
 }

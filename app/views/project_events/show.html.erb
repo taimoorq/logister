@@ -15,13 +15,17 @@
 <% source_excerpt = source_excerpt_for_frame(selected_frame) %>
 <% local_variables = event_local_variables(exception_data) %>
 <% instance_variables = event_instance_variables(exception_data) %>
+<% tour_group = "event-detail" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
 
 <%= render "projects/archived_notice", project: @project %>
 
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
 
   <%# ── Left sidebar ──────────────────────────────────────────────────────── %>
-  <aside class="flex flex-col gap-4 lg:sticky lg:top-24">
+  <aside class="flex flex-col gap-4 lg:sticky lg:top-24"
+         <%= tag.attributes(data: product_tour_step_data(tour_group, :sidebar)) %>>
     <%# Breadcrumb %>
     <nav class="event-breadcrumb">
       <%= link_to project_collection_path(@project), class: "breadcrumb-link" do %>
@@ -137,7 +141,8 @@
   <%# ── Main content ───────────────────────────────────────────────────────── %>
   <main class="min-w-0 flex flex-col gap-4">
     <%# Header %>
-    <header class="detail-actionbar">
+    <header class="detail-actionbar"
+            <%= tag.attributes(data: product_tour_step_data(tour_group, :title)) %>>
       <div class="detail-actionbar-left">
         <h1 class="detail-title"><%= @group&.title || @event.message.to_s.lines.first %></h1>
         <% if @group&.subtitle.present? %>
@@ -148,6 +153,7 @@
           &middot; <%= local_time_tag(@event.occurred_at, format: :long) %>
         </p>
       </div>
+      <%= tour_help_button %>
     </header>
 
     <%= render "project_events/event_detail_tabs",
@@ -171,7 +177,9 @@
                backtrace: backtrace,
                local_variables: local_variables,
                instance_variables: instance_variables,
+               tour_group: tour_group,
                wrapper_classes: "detail-tabs-wrap" %>
   </main>
 
+<% end %>
 </div>

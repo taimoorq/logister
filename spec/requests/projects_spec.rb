@@ -135,6 +135,11 @@ RSpec.describe "Projects", type: :request do
         document = Nokogiri::HTML.parse(response.body)
 
         expect(document.at_css(".inbox-workbench")).to be_nil
+        tour_root = document.at_css("[data-product-tour-group-value='project-overview']")
+        expect(tour_root).to be_present
+        expect(tour_root["data-action"]).to include("click->product-tour#startForNewUser:capture", "turbo:before-cache@document->product-tour#beforeCache")
+        expect(document.at_css("nav[data-tg-group='project-overview']")).to be_present
+        expect(document.at_css(".tour-help-button[data-action='click->product-tour#start']")).to be_present
         expect(document.text).to include("Inbox", "Error groups", "Activity", "Events and logs", "Performance", "Transactions")
         expect(document.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved')}']").text).to include("1", "Open")
         expect(document.css("a[href='#{activity_project_path(project)}']").map(&:text).join(" ")).to include("View activity")
@@ -219,6 +224,8 @@ RSpec.describe "Projects", type: :request do
         document = Nokogiri::HTML.parse(response.body)
         filter_bar = document.at_css(".inbox-workbench > .inbox-workbench-filters .inbox-filter-bar")
 
+        expect(document.at_css("[data-product-tour-group-value='project-errors']")).to be_present
+        expect(document.css("[data-tg-group='project-errors']").map { |node| node["data-tg-title"] }).to include("Error command center", "Inbox filters", "Error groups", "Error detail")
         expect(filter_bar).to be_present
         expect(document.at_css(".inbox-workbench > .inbox-workbench-sidebar")).to be_nil
         expect(filter_bar.at_css("form.inbox-filter-search input[name='q']")["placeholder"]).to eq("Search errors...")
@@ -675,7 +682,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
-      it "labels the inbox as errors and groups monitors under the activity menu" do
+      it "groups inbox, events, and monitors under the activity menu" do
         project = projects(:one)
 
         get monitors_project_path(project)
@@ -687,12 +694,12 @@ RSpec.describe "Projects", type: :request do
         activity_links = activity_menu.css("a")
         active_link = activity_menu.at_css("a[aria-current='page']")
 
-        expect(top_links.map { |link| link.text.strip }).to include("Overview", "Errors", "Settings")
-        expect(top_links.map { |link| link.text.strip }).not_to include("Inbox", "Monitors")
-        expect(nav.at_css("> a[href='#{inbox_project_path(project)}']").text.strip).to eq("Errors")
+        expect(top_links.map { |link| link.text.strip }).to include("Overview", "Settings")
+        expect(top_links.map { |link| link.text.strip }).not_to include("Inbox", "Errors", "Monitors")
         expect(activity_menu.at_css("summary").text).to include("Activity")
-        expect(activity_links.map { |link| link["href"] }).to include(activity_project_path(project), monitors_project_path(project))
-        expect(activity_links.map(&:text).join(" ")).to include("Event activity", "Events, logs, and recent telemetry")
+        expect(activity_links.map { |link| link["href"] }).to include(inbox_project_path(project), activity_project_path(project), monitors_project_path(project))
+        expect(activity_links.map(&:text).join(" ")).to include("Inbox", "Errors and user-impacting failures")
+        expect(activity_links.map(&:text).join(" ")).to include("Events", "Events, logs, and recent telemetry")
         expect(activity_links.map(&:text).join(" ")).to include("Monitors", "Check-ins and background job heartbeats")
         expect(active_link["href"]).to eq(monitors_project_path(project))
       end

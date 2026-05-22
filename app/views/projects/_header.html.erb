@@ -1,4 +1,7 @@
-<header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+<%# locals: (tour_group: nil, archived_notice_settings_link: true) %>
+
+<header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4"
+        <%= tag.attributes(data: product_tour_step_data(tour_group, :project_header)) if tour_group.present? %>>
   <div>
     <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
     <p class="text-slate-500 text-sm">
@@ -17,9 +20,14 @@
       <% end %>
     </p>
   </div>
+  <% if tour_group.present? %>
+    <div class="flex items-center gap-2">
+      <%= tour_help_button %>
+    </div>
+  <% end %>
 </header>
 
-<%= render "projects/nav" %>
+<%= render "projects/nav", tour_group: tour_group %>
 <%= render "projects/archived_notice",
            project: @project,
-           show_settings_link: local_assigns.fetch(:archived_notice_settings_link, true) %>
+           show_settings_link: archived_notice_settings_link %>

@@ -1,5 +1,9 @@
-<div data-controller="project-search" class="projects-page">
-  <section class="projects-command-row">
+<% tour_group = "projects-index" %>
+
+<%= render layout: "shared/product_tour_frame",
+           locals: { tour_group: tour_group, controllers: "project-search", html_options: { class: "projects-page" } } do %>
+  <section class="projects-command-row"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :command_row)) %>>
     <div class="projects-search">
       <span class="projects-search-icon"><%= app_icon(:search, css: "w-4 h-4") %></span>
       <input type="search" placeholder="Search projects" aria-label="Search projects"
@@ -8,6 +12,7 @@
     </div>
 
     <div class="projects-action-row">
+      <%= tour_help_button %>
       <%= link_to "Docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "projects-secondary-button" %>
       <%= link_to new_project_path, class: "projects-new-button" do %>
         <%= app_icon(:plus, css: "w-4 h-4") %>
@@ -26,7 +31,9 @@
     </div>
   </section>
 
-  <nav class="projects-filter-tabs" aria-label="Project status">
+  <nav class="projects-filter-tabs"
+       aria-label="Project status"
+       <%= tag.attributes(data: product_tour_step_data(tour_group, :filters)) %>>
     <%= link_to projects_path,
                 class: "projects-filter-tab #{"is-active" if @project_filter == "active"}",
                 aria: { current: ("page" if @project_filter == "active") } do %>
@@ -50,7 +57,9 @@
     <% end %>
   </nav>
 
-  <section class="projects-overview-strip" aria-label="Project overview">
+  <section class="projects-overview-strip"
+           aria-label="Project overview"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :summary)) %>>
     <span class="project-overview-cell">
       <span class="project-overview-icon"><%= app_icon(:projects, css: "w-4 h-4") %></span>
       <span>
@@ -96,5 +105,5 @@
     </span>
   </section>
 
-  <%= render "project_cards", projects: @projects, project_stats: @project_stats, project_filter: @project_filter %>
-</div>
+  <%= render "project_cards", projects: @projects, project_stats: @project_stats, project_filter: @project_filter, tour_group: tour_group %>
+<% end %>

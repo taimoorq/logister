@@ -1,0 +1,179 @@
+en:
+  product_tours:
+    help_button:
+      label: "Show page tour"
+    steps:
+      shared:
+        project_header:
+          order: 1
+          title: "Project header"
+          tour: "This header keeps the project identity, app type, ownership state, and quick links visible while you work."
+        project_navigation:
+          order: 2
+          title: "Project navigation"
+          tour: "Use the project sections to move between the overview, insights, Activity tools like Inbox, Events, and Monitors, and settings."
+      dashboard:
+        overview:
+          order: 1
+          title: "Dashboard overview"
+          tour: "This top row frames the account-wide stability view and gives you shortcuts to project management."
+        explorer:
+          order: 2
+          title: "Explorer"
+          tour: "The explorer turns account-wide telemetry into clickable charts. Selecting chart segments narrows the current event slice."
+        attention_queue:
+          order: 3
+          title: "Attention queue"
+          tour: "This area highlights recent errors, context events, assignments, and event-type filters that need review."
+        project_signals:
+          order: 4
+          title: "Project signals"
+          tour: "Use this lower section to compare projects, jump into affected apps, and scan account-level signal counts."
+      dashboard-events:
+        drilldown:
+          order: 1
+          title: "Explorer drilldown"
+          tour: "This page shows the event slice opened from the dashboard explorer, including the active filter context."
+        matching_events:
+          order: 2
+          title: "Matching events"
+          tour: "Rows show the matching events from the current slice, with direct links back to each event and project."
+      event-detail:
+        sidebar:
+          order: 1
+          title: "Event sidebar"
+          tour: "The sidebar keeps project navigation, grouped issue status, occurrence counts, and event metadata close at hand."
+        title:
+          order: 2
+          title: "Event title"
+          tour: "The action bar identifies the selected event or grouped issue and anchors the event in project and time."
+        tabs:
+          order: 3
+          title: "Event detail tabs"
+          tour: "Tabs switch between structured context, stacktrace frames, occurrence history, and related logs without leaving the event detail."
+      projects-index:
+        command_row:
+          order: 1
+          title: "Find and create projects"
+          tour: "Search narrows the project list instantly, while the actions here open docs or create a new project."
+        filters:
+          order: 2
+          title: "Project filters"
+          tour: "These filters switch between active, archived, and all projects without changing the rest of the workspace."
+        summary:
+          order: 3
+          title: "Fleet summary"
+          tour: "This strip summarizes how many apps are visible, how many open errors exist, recent activity volume, and quiet projects."
+        cards:
+          order: 4
+          title: "Project cards"
+          tour: "Each card opens a project and summarizes recent activity, open errors, total error groups, and event volume."
+      project-overview:
+        sections:
+          order: 3
+          title: "Project sections"
+          tour: "These cards summarize the main workflows: triaging errors, reviewing activity, and inspecting performance."
+        recent_signals:
+          order: 4
+          title: "Recent signals"
+          tour: "Recent errors and latest collection metrics give you a quick read on what changed most recently."
+      project-errors:
+        command_center:
+          order: 1
+          title: "Error command center"
+          tour: "The inbox header combines project identity, signal counts, and project-level shortcuts before the triage workbench."
+        filters:
+          order: 3
+          title: "Inbox filters"
+          tour: "Search, assignee selection, status counts, and quick project navigation keep the error list focused."
+        groups:
+          order: 4
+          title: "Error groups"
+          tour: "The list groups related errors so you can pick the issue that needs attention without opening every event."
+        detail:
+          order: 5
+          title: "Error detail"
+          tour: "The detail pane shows the selected error event, stacktrace, context, occurrences, and related logs."
+      project-insights:
+        lenses:
+          order: 3
+          title: "Insight lenses"
+          tour: "Lenses reshape the same telemetry around overview, health, performance, monitors, or a custom metric set."
+        scope:
+          order: 4
+          title: "Scope controls"
+          tour: "Time range, environment, release, refresh, and attribute filters define exactly which telemetry the charts use."
+        summary:
+          order: 5
+          title: "Scope summary"
+          tour: "These counters update as the current scope changes, giving a fast total for each telemetry type."
+        timeline:
+          order: 6
+          title: "Telemetry timeline"
+          tour: "The main chart plots selected metrics and counts over time; use the series control to add or remove chart lines."
+        signal_mix:
+          order: 7
+          title: "Signal mix"
+          tour: "This chart breaks the current scope into health, logs, metrics, performance, and check-in signals."
+        recent_stream:
+          order: 8
+          title: "Recent stream"
+          tour: "Recent matching events help you move from chart-level trends into the raw telemetry behind them."
+      project-performance:
+        instrumentation_help:
+          order: 3
+          title: "Instrumentation help"
+          tour: "This panel links to integration setup for spans, transactions, and metrics that power the performance view."
+        request_breakdown:
+          order: 4
+          title: "Request load breakdown"
+          tour: "The stacked chart explains where request time is spent across app, database, render, HTTP, cache, queue, resource, and remaining work."
+        transactions:
+          order: 5
+          title: "Transactions"
+          tour: "Transaction metrics and filters help you find slow, failing, or high-volume routes and jobs."
+      project-activity:
+        events:
+          order: 3
+          title: "Activity events"
+          tour: "This page lists logs, metrics, transactions, and check-ins with filters for type, period, environment, release, and search text."
+      project-monitors:
+        status:
+          order: 3
+          title: "Monitor status"
+          tour: "Monitor rows show heartbeat health by slug, environment, status, last check-in time, and expected interval."
+      project-settings:
+        email_notifications:
+          order: 3
+          title: "Email notifications"
+          tour: "Notification settings control first-occurrence alerts and digest timing for this project."
+        api_keys:
+          order: 4
+          title: "API keys"
+          tour: "Project API keys authenticate events sent by your app. New tokens are shown once after generation."
+        access:
+          order: 5
+          title: "Project access"
+          tour: "Invite teammates and review membership roles and open assignment counts from this panel."
+        lifecycle:
+          order: 6
+          title: "Project lifecycle"
+          tour: "Archive keeps history while hiding the project from active views; delete permanently removes project data."
+        integration_guide:
+          order: 7
+          title: "Integration guide"
+          tour: "This guide shows the recommended setup path for the selected integration type."
+      project-new:
+        create_project:
+          order: 1
+          title: "Create a project"
+          tour: "Choose the integration type, name the monitored app, and optionally describe what this project covers."
+        project_form:
+          order: 2
+          title: "Project form"
+          tour: "The integration choice controls the setup guidance shown after the project is created."
+      project-edit:
+        edit_project:
+          order: 3
+          title: "Edit project"
+          tour: "Update the project identity and integration type here. Settings such as API keys and access live on the settings page."

@@ -174,6 +174,7 @@ A few things are worth knowing before you start changing the app locally:
 
 - `bin/dev` is the normal local entrypoint. It runs the Rails app and watches Tailwind assets.
 - The app UI is server-rendered Rails 8 with Hotwire, Turbo, Stimulus, Propshaft, importmap, and Tailwind. Keep new interactive behavior on that path unless there is a strong product reason to do otherwise.
+- For frontend behavior conventions, use [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md).
 - Redis-backed behavior matters. Sidekiq, caching, and some operational flows behave more realistically when Redis is available.
 - PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path; S3-compatible archive storage is optional and only needed when you want compressed exports of older hot telemetry before pruning.
 - The public docs are hosted separately on `docs.logister.org`, so app links to docs intentionally point out of the Rails app.
@@ -221,6 +222,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [TRADEMARKS.md](TRADEMARKS.md) | Logister brand and trademark policy for forks, hosted services, and redistributed versions |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
+| [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md) | Hotwire, Turbo, Stimulus, third-party JS, and asset pipeline conventions |
 | [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
 | [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
 | [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |

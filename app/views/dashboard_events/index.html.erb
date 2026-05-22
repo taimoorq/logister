@@ -1,5 +1,8 @@
-<div class="dashboard-page">
-  <section class="dashboard-title-row">
+<% tour_group = "dashboard-events" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group, html_options: { class: "dashboard-page" } } do %>
+  <section class="dashboard-title-row"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :drilldown)) %>>
     <div class="dashboard-title-copy">
       <p class="dashboard-kicker">Explorer drilldown</p>
       <h1>Matching events</h1>
@@ -10,6 +13,7 @@
     </div>
 
     <div class="dashboard-action-row">
+      <%= tour_help_button %>
       <%= link_to dashboard_path, class: "projects-secondary-button" do %>
         <%= app_icon(:chart, css: "w-4 h-4") %>
         <span>Back to dashboard</span>
@@ -17,7 +21,8 @@
     </div>
   </section>
 
-  <section class="dashboard-events-panel">
+  <section class="dashboard-events-panel"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :matching_events)) %>>
     <div class="dashboard-events-toolbar">
       <div>
         <p class="dashboard-kicker">Current slice</p>
@@ -86,4 +91,4 @@
       </div>
     <% end %>
   </section>
-</div>
+<% end %>

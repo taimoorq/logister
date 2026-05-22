@@ -1,15 +1,17 @@
-<% filter_param = local_assigns[:filter_param] || "unresolved" %>
-<% query_param = local_assigns[:query_param] || "" %>
-<% assignee_param = local_assigns[:assignee_param].presence || "all" %>
-<% active_tab = local_assigns[:active_tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
-<% turbo_frame_id = local_assigns[:turbo_frame_id].presence %>
-<% wrapper_classes = local_assigns[:wrapper_classes].presence || "detail-tabs-wrap" %>
+<%# locals: (project:, event:, group:, occurrences:, related_logs:, stacktrace_tab_label:, stacktrace_partial:, exception_data:, request_details:, frame_scope:, visible_frames:, selected_frame_index:, selected_frame:, source_excerpt:, backtrace:, local_variables:, instance_variables:, filter_param: "unresolved", query_param: "", assignee_param: "all", active_tab: "stacktrace", turbo_frame_id: nil, wrapper_classes: "detail-tabs-wrap", tour_group: nil) %>
+<% filter_param = filter_param.presence || "unresolved" %>
+<% query_param = query_param.to_s %>
+<% assignee_param = assignee_param.presence || "all" %>
+<% active_tab = active_tab.presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
+<% turbo_frame_id = turbo_frame_id.presence %>
+<% wrapper_classes = wrapper_classes.presence || "detail-tabs-wrap" %>
 <% link_data = turbo_frame_id.present? ? { turbo_frame: turbo_frame_id } : {} %>
 
 <div class="<%= wrapper_classes %>"
      data-controller="frame-tabs"
      data-frame-tabs-turbo-frame-value="<%= turbo_frame_id %>"
      data-action="turbo:before-fetch-request@document->frame-tabs#onBeforeFetch turbo:frame-load@document->frame-tabs#onFrameLoad"
+     <%= tag.attributes(data: product_tour_step_data(tour_group, :tabs)) if tour_group.present? %>
      aria-busy="false">
   <nav class="detail-tabs" role="tablist" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
     <%= link_to "Context",

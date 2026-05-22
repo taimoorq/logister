@@ -1,0 +1,7 @@
+<%# locals: (tour_group:, controllers: nil, auto_on_interaction: true, tag_name: :div, html_options: {}) %>
+<% frame_options = html_options.deep_dup %>
+<% frame_options[:data] = product_tour_frame_data(tour_group, data: frame_options[:data], controllers: controllers, auto_on_interaction: auto_on_interaction) %>
+
+<%= tag.public_send(tag_name, **frame_options) do %>
+  <%= yield %>
+<% end %>

@@ -1,7 +1,12 @@
-<%= render "projects/header" %>
+<% tour_group = "project-monitors" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+
+<%= render "projects/header", tour_group: tour_group %>
 
 <section class="space-y-6">
-  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :status)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
       <h2 class="text-lg font-bold text-slate-900">Cron and uptime monitors</h2>
       <p class="text-slate-500 text-sm">
@@ -50,3 +55,4 @@
     <% end %>
   </section>
 </section>
+<% end %>

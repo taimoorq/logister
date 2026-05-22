@@ -341,9 +341,10 @@ module ApplicationHelper
   end
 
   def app_stylesheet_tags
-    return unless tailwind_built?
+    tags = [ stylesheet_link_tag("css/tour.min", media: "all", "data-turbo-track": "reload") ]
+    tags << stylesheet_link_tag("tailwind", media: "all", "data-turbo-track": "reload") if tailwind_built?
 
-    stylesheet_link_tag("tailwind", media: "all", "data-turbo-track": "reload")
+    safe_join(tags)
   end
 
   def app_javascript_tags

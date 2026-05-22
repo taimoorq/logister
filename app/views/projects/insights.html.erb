@@ -1,11 +1,17 @@
 <% content_for :title, "#{@project.name} insights" %>
+<% tour_group = "project-insights" %>
 
-<%= render "projects/header" %>
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+
+<%= render "projects/header", tour_group: tour_group %>
 
 <section class="project-insights"
          data-controller="project-insights"
          data-project-insights-payload-value="<%= json_escape(@insights_payload.to_json) %>">
-  <div class="project-insights-lens-bar" aria-label="Workbook views" style="view-transition-name: insights-lenses; view-transition-class: project-insights-panel;">
+  <div class="project-insights-lens-bar"
+       aria-label="Workbook views"
+       <%= tag.attributes(data: product_tour_step_data(tour_group, :lenses)) %>
+       style="view-transition-name: insights-lenses; view-transition-class: project-insights-panel;">
     <div class="project-insights-lens-actions" role="tablist" aria-label="Insight view presets">
       <button type="button"
               class="project-insights-lens"
@@ -62,7 +68,10 @@
     </div>
   </div>
 
-  <div class="project-insights-scope" aria-label="Dashboard controls" style="view-transition-name: insights-scope; view-transition-class: project-insights-panel;">
+  <div class="project-insights-scope"
+       aria-label="Dashboard controls"
+       <%= tag.attributes(data: product_tour_step_data(tour_group, :scope)) %>
+       style="view-transition-name: insights-scope; view-transition-class: project-insights-panel;">
     <div class="project-insights-scope-row">
       <div class="project-insights-time-control">
         <span class="project-insights-control-label">Time range</span>
@@ -142,7 +151,11 @@
     </div>
   </div>
 
-  <div class="project-insights-summary" data-project-insights-target="summary" aria-live="polite" style="view-transition-name: insights-summary; view-transition-class: project-insights-panel;">
+  <div class="project-insights-summary"
+       data-project-insights-target="summary"
+       aria-live="polite"
+       <%= tag.attributes(data: product_tour_step_data(tour_group, :summary)) %>
+       style="view-transition-name: insights-summary; view-transition-class: project-insights-panel;">
     <div class="project-insights-summary-cell">
       <strong>--</strong>
       <span>Events</span>
@@ -167,7 +180,9 @@
 
   <div class="project-insights-layout">
     <div class="project-insights-main">
-      <article class="project-insights-panel project-insights-metric-panel" style="view-transition-name: insights-timeline; view-transition-class: project-insights-panel;">
+      <article class="project-insights-panel project-insights-metric-panel"
+               <%= tag.attributes(data: product_tour_step_data(tour_group, :timeline)) %>
+               style="view-transition-name: insights-timeline; view-transition-class: project-insights-panel;">
         <div class="project-insights-panel-header">
           <div>
             <h3>Telemetry timeline</h3>
@@ -205,7 +220,9 @@
         <div class="project-insights-chart project-insights-chart-main" data-project-insights-target="metricChart"></div>
       </article>
 
-      <article class="project-insights-panel" style="view-transition-name: insights-signal-mix; view-transition-class: project-insights-panel;">
+      <article class="project-insights-panel"
+               <%= tag.attributes(data: product_tour_step_data(tour_group, :signal_mix)) %>
+               style="view-transition-name: insights-signal-mix; view-transition-class: project-insights-panel;">
         <div class="project-insights-panel-header">
           <div>
             <h3>Signal mix</h3>
@@ -217,7 +234,9 @@
     </div>
 
     <aside class="project-insights-side" aria-label="Investigation tools">
-      <article class="project-insights-panel" style="view-transition-name: insights-recent-stream; view-transition-class: project-insights-panel;">
+      <article class="project-insights-panel"
+               <%= tag.attributes(data: product_tour_step_data(tour_group, :recent_stream)) %>
+               style="view-transition-name: insights-recent-stream; view-transition-class: project-insights-panel;">
         <div class="project-insights-panel-header">
           <div>
             <h3>Recent stream</h3>
@@ -229,3 +248,4 @@
     </aside>
   </div>
 </section>
+<% end %>

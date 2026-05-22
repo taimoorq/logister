@@ -1,8 +1,16 @@
-<%= render "header" %>
+<% tour_group = "project-edit" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+
+<%= render "header", tour_group: tour_group %>
 
 <section class="max-w-xl">
-  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
-    <h2 class="text-lg font-bold text-slate-900 mb-2">Edit project</h2>
+  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8"
+       <%= tag.attributes(data: product_tour_step_data(tour_group, :edit_project)) %>>
+    <div class="mb-2 flex items-center justify-between gap-3">
+      <h2 class="text-lg font-bold text-slate-900">Edit project</h2>
+      <%= tour_help_button %>
+    </div>
     <p class="text-slate-600 text-sm mb-6">Update the project name, description, or integration type.</p>
 
     <%= form_with model: @project, url: project_path(@project), method: :patch do |f| %>
@@ -38,3 +46,4 @@
     <% end %>
   </div>
 </section>
+<% end %>

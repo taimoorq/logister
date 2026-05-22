@@ -1,0 +1,9 @@
+<%# locals: (label:) %>
+
+<%= button_tag(type: "button",
+               class: "tour-help-button",
+               title: label,
+               aria: { label: label },
+               data: { action: "click->product-tour#start", tour_ignore: true }) do %>
+  <%= app_icon(:info, css: "h-4 w-4") %>
+<% end %>

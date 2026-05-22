@@ -1,5 +1,8 @@
-<div class="dashboard-page">
-  <section class="dashboard-title-row">
+<% tour_group = "dashboard" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group, html_options: { class: "dashboard-page" } } do %>
+  <section class="dashboard-title-row"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :overview)) %>>
     <div class="dashboard-title-copy">
       <p class="dashboard-kicker">Overview</p>
       <h1>All apps</h1>
@@ -7,6 +10,7 @@
     </div>
 
     <div class="dashboard-action-row">
+      <%= tour_help_button %>
       <%= link_to projects_path, class: "projects-secondary-button" do %>
         <%= app_icon(:projects, css: "w-4 h-4") %>
         <span>All projects</span>
@@ -21,6 +25,7 @@
   <section class="dashboard-explorer"
            data-controller="dashboard-explorer"
            data-dashboard-explorer-payload-value="<%= @dashboard_explorer.to_json %>"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :explorer)) %>
            aria-label="Cross-app event explorer">
     <div class="dashboard-explorer-header">
       <div>
@@ -102,7 +107,10 @@
     </div>
   </section>
 
-  <section class="dashboard-priority-grid" data-controller="dashboard-attention" data-dashboard-attention-active-value="error">
+  <section class="dashboard-priority-grid"
+           data-controller="dashboard-attention"
+           data-dashboard-attention-active-value="error"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :attention_queue)) %>>
     <article class="dashboard-panel dashboard-attention-panel">
       <div class="dashboard-panel-header">
         <div>
@@ -274,7 +282,9 @@
     </aside>
   </section>
 
-  <section class="dashboard-project-overview-grid" aria-label="Project overview">
+  <section class="dashboard-project-overview-grid"
+           aria-label="Project overview"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :project_signals)) %>>
     <article class="dashboard-panel dashboard-project-overview-main">
       <div class="dashboard-panel-header">
         <div>
@@ -384,4 +394,4 @@
       </div>
     </aside>
   </section>
-</div>
+<% end %>

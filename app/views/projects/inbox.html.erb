@@ -4,8 +4,12 @@
 <% unhealthy_monitors_count = @project_overview.fetch(:unhealthy_monitors_count, 0) %>
 <% monitors_count = @project_overview.fetch(:monitors_count, 0) %>
 <% monitors_label = monitors_count.positive? ? "#{pluralize(monitors_count, "monitor")} tracked" : "No monitors" %>
+<% tour_group = "project-errors" %>
 
-<section class="project-command-panel">
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+
+<section class="project-command-panel"
+         <%= tag.attributes(data: product_tour_step_data(tour_group, :command_center)) %>>
   <div class="project-command-main">
     <div class="project-command-identity">
       <%= project_integration_icon(@project) %>
@@ -24,6 +28,7 @@
     </div>
 
     <div class="project-command-actions">
+      <%= tour_help_button %>
       <details class="project-signals-menu">
         <summary>
           <%= app_icon(:chart, css: "w-4 h-4") %>
@@ -81,7 +86,7 @@
     </div>
   </div>
 
-  <%= render "nav" %>
+  <%= render "nav", tour_group: tour_group %>
 </section>
 
 <%= render "projects/archived_notice", project: @project %>
@@ -90,7 +95,9 @@
      data-controller="inbox"
      data-inbox-project-uuid-value="<%= @project.uuid %>"
      data-action="turbo:frame-load@document->inbox#onFrameLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch">
-  <section class="inbox-workbench-filters" aria-label="Inbox filters">
+  <section class="inbox-workbench-filters"
+           aria-label="Inbox filters"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :filters)) %>>
     <div class="inbox-filter-bar">
       <%= form_with url: inbox_project_path(@project), method: :get,
                     class: "inbox-filter-search",
@@ -122,7 +129,10 @@
     </div>
   </section>
 
-  <section class="inbox-workbench-list" data-inbox-target="listPane" aria-busy="false">
+  <section class="inbox-workbench-list"
+           data-inbox-target="listPane"
+           aria-busy="false"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :groups)) %>>
     <header class="inbox-pane-header">
       <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]">Error groups</h2>
       <p class="text-xs text-slate-500"><%= @groups.size %> shown · newest first</p>
@@ -137,7 +147,10 @@
                assignee:      @assignee_filter %>
   </section>
 
-  <section class="inbox-workbench-detail" data-inbox-target="detailPane" aria-busy="false">
+  <section class="inbox-workbench-detail"
+           data-inbox-target="detailPane"
+           aria-busy="false"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :detail)) %>>
     <% if @detail_event.present? %>
       <%= render "project_events/event_detail",
                  project:     @project,
@@ -156,4 +169,5 @@
       <%= render "empty_detail" %>
     <% end %>
   </section>
+<% end %>
 </div>

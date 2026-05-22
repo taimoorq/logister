@@ -1,7 +1,12 @@
-<%= render "projects/header" %>
+<% tour_group = "project-performance" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+
+<%= render "projects/header", tour_group: tour_group %>
 
 <section class="space-y-6">
-  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :instrumentation_help)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div>
         <h2 class="text-lg font-bold text-slate-900">Instrumentation help</h2>
@@ -16,7 +21,8 @@
 
   <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
            data-controller="performance-breakdown"
-           data-performance-breakdown-payload-value="<%= json_escape(@request_breakdown.to_json) %>">
+           data-performance-breakdown-payload-value="<%= json_escape(@request_breakdown.to_json) %>"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :request_breakdown)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
       <div>
         <h2 class="text-lg font-bold text-slate-900">Request load breakdown (24h)</h2>
@@ -94,7 +100,8 @@
     </section>
   <% end %>
 
-  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :transactions)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
       <h2 class="text-lg font-bold text-slate-900">Transactions (24h)</h2>
       <p class="text-slate-500 text-sm"><%= @transaction_stats[:count] %> transactions captured</p>
@@ -235,3 +242,4 @@
     <% end %>
   </section>
 </section>
+<% end %>

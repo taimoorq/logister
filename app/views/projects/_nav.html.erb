@@ -1,14 +1,18 @@
-<nav class="mb-4 flex flex-wrap items-center gap-2 text-sm" aria-label="Project sections">
+<%# locals: (tour_group: nil) %>
+
+<nav class="mb-4 flex flex-wrap items-center gap-2 text-sm"
+     aria-label="Project sections"
+     <%= tag.attributes(data: product_tour_step_data(tour_group, :project_navigation)) if tour_group.present? %>>
   <% tabs = [
-    ["Overview", project_path(@project)],
-    ["Errors", inbox_project_path(@project)]
+    ["Overview", project_path(@project)]
   ] %>
   <% insights_tabs = [
     ["Telemetry insights", "Charts, signal mix, and metric series", insights_project_path(@project)],
     ["Performance", "Transactions, spans, and database load", performance_project_path(@project)]
   ] %>
   <% activity_tabs = [
-    ["Event activity", "Events, logs, and recent telemetry", activity_project_path(@project)],
+    ["Inbox", "Errors and user-impacting failures", inbox_project_path(@project)],
+    ["Events", "Events, logs, and recent telemetry", activity_project_path(@project)],
     ["Monitors", "Check-ins and background job heartbeats", monitors_project_path(@project)]
   ] %>
   <% trailing_tabs = [
