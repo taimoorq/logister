@@ -675,6 +675,28 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
+      it "labels the inbox as errors and groups monitors under the activity menu" do
+        project = projects(:one)
+
+        get monitors_project_path(project)
+
+        document = Nokogiri::HTML.parse(response.body)
+        nav = document.at_css("nav[aria-label='Project sections']")
+        top_links = nav.css("> a")
+        activity_menu = nav.at_css(".project-nav-activity")
+        activity_links = activity_menu.css("a")
+        active_link = activity_menu.at_css("a[aria-current='page']")
+
+        expect(top_links.map { |link| link.text.strip }).to include("Overview", "Errors", "Settings")
+        expect(top_links.map { |link| link.text.strip }).not_to include("Inbox", "Monitors")
+        expect(nav.at_css("> a[href='#{inbox_project_path(project)}']").text.strip).to eq("Errors")
+        expect(activity_menu.at_css("summary").text).to include("Activity")
+        expect(activity_links.map { |link| link["href"] }).to include(activity_project_path(project), monitors_project_path(project))
+        expect(activity_links.map(&:text).join(" ")).to include("Event activity", "Events, logs, and recent telemetry")
+        expect(activity_links.map(&:text).join(" ")).to include("Monitors", "Check-ins and background job heartbeats")
+        expect(active_link["href"]).to eq(monitors_project_path(project))
+      end
+
       it "shows JavaScript integration docs on JavaScript monitor pages" do
         project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node Monitor")
 

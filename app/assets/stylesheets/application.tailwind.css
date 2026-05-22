@@ -290,16 +290,16 @@
   .projects-filter-tab[aria-current="page"] strong {
     @apply bg-white text-blue-700;
   }
-  .project-nav-insights-summary::-webkit-details-marker {
+  .project-nav-menu-summary::-webkit-details-marker {
     display: none;
   }
-  .project-nav-insights-summary svg {
+  .project-nav-menu-summary svg {
     @apply transition-transform;
   }
-  .project-nav-insights[open] .project-nav-insights-summary {
+  .project-nav-menu[open] .project-nav-menu-summary {
     @apply border-blue-200 bg-blue-50 text-blue-700;
   }
-  .project-nav-insights[open] .project-nav-insights-summary svg {
+  .project-nav-menu[open] .project-nav-menu-summary svg {
     @apply rotate-180;
   }
   .project-card-grid {
