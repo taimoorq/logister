@@ -28,9 +28,9 @@ module Logister
         kind: @span.kind,
         status: @span.status.to_s,
         duration_ms: @span.duration_ms.to_f,
-        started_at: @span.started_at.utc.iso8601(3),
-        ended_at: @span.ended_at&.utc&.iso8601(3),
-        received_at: Time.current.utc.iso8601(3),
+        started_at: clickhouse_timestamp(@span.started_at),
+        ended_at: @span.ended_at ? clickhouse_timestamp(@span.ended_at) : nil,
+        received_at: clickhouse_timestamp(Time.current),
         environment: context_value("environment", Rails.env),
         service: context_value("service", @span.project.slug),
         release: context_value("release", ""),
@@ -70,6 +70,10 @@ module Logister
 
     def request_user_agent
       @request_context[:user_agent].to_s
+    end
+
+    def clickhouse_timestamp(value)
+      value.utc.strftime("%Y-%m-%d %H:%M:%S.%3N")
     end
   end
 end

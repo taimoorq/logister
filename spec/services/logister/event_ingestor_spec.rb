@@ -37,6 +37,8 @@ RSpec.describe Logister::EventIngestor, type: :model do
     expect(payload[:event_id]).to eq("7f2d5dca-0c4d-4f5e-9997-6f87f5460b88")
     expect(payload[:project_id]).to eq(event.project_id)
     expect(payload[:api_key_id]).to eq(event.api_key_id)
+    expect(payload[:occurred_at]).to match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\z/)
+    expect(payload[:received_at]).to match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\z/)
     expect(payload[:event_type]).to eq("error")
     expect(payload[:environment]).to eq("production")
     expect(payload[:service]).to eq("checkout-service")
@@ -52,6 +54,22 @@ RSpec.describe Logister::EventIngestor, type: :model do
     disabled_client = instance_double(Logister::ClickhouseClient, enabled?: false)
     expect(disabled_client).not_to receive(:insert_event!)
     described_class.new(event: event, request_context: {}, clickhouse_client: disabled_client).call
+  end
+
+  it "does not mirror ClickHouse failure monitoring events back into ClickHouse" do
+    event.update!(
+      fingerprint: "logister:clickhouse_ingest:failure",
+      context: {
+        "clickhouse_ingest" => {
+          "ingest_event_id" => 123,
+          "error" => { "message" => "insert failed" }
+        }
+      }
+    )
+    client = instance_double(Logister::ClickhouseClient, enabled?: true)
+    expect(client).not_to receive(:insert_event!)
+
+    described_class.new(event: event, request_context: {}, clickhouse_client: client).call
   end
 
   it "uses fallback fingerprint when event has no fingerprint in context" do

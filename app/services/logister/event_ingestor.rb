@@ -12,6 +12,7 @@ module Logister
 
     def call
       return unless @clickhouse_client.enabled?
+      return if clickhouse_monitoring_event?
 
       @clickhouse_client.insert_event!(clickhouse_attributes)
     end
@@ -23,8 +24,8 @@ module Logister
         event_id: event_id,
         project_id: @event.project_id,
         api_key_id: @event.api_key_id,
-        occurred_at: @event.occurred_at.utc.iso8601(3),
-        received_at: Time.current.utc.iso8601(3),
+        occurred_at: clickhouse_timestamp(@event.occurred_at),
+        received_at: clickhouse_timestamp(Time.current),
         event_type: normalized_event_type,
         level: @event.level.to_s,
         environment: context_value("environment", Rails.env),
@@ -89,6 +90,14 @@ module Logister
       return value if value.in?(%w[error metric transaction log check_in])
 
       "metric"
+    end
+
+    def clickhouse_monitoring_event?
+      context_hash["clickhouse_ingest"].present? || context_hash[:clickhouse_ingest].present?
+    end
+
+    def clickhouse_timestamp(value)
+      value.utc.strftime("%Y-%m-%d %H:%M:%S.%3N")
     end
   end
 end
