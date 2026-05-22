@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS logister.events_raw
 ENGINE = MergeTree
 PARTITION BY toYYYYMM(occurred_at)
 ORDER BY (project_id, event_type, occurred_at, fingerprint, event_id)
-TTL occurred_at + INTERVAL 90 DAY DELETE
+TTL toDateTime(occurred_at) + INTERVAL 90 DAY DELETE
 SETTINGS index_granularity = 8192;
 
 CREATE TABLE IF NOT EXISTS logister.spans_raw
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS logister.spans_raw
 ENGINE = MergeTree
 PARTITION BY toYYYYMM(started_at)
 ORDER BY (project_id, kind, started_at, trace_id, external_span_id)
-TTL started_at + INTERVAL 90 DAY DELETE
+TTL toDateTime(started_at) + INTERVAL 90 DAY DELETE
 SETTINGS index_granularity = 8192;
 
 CREATE TABLE IF NOT EXISTS logister.request_spans_1m

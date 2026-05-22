@@ -81,6 +81,32 @@ RSpec.describe Logister::ClickhouseClient do
     end
   end
 
+  describe "#execute!" do
+    it "runs raw ClickHouse statements without appending a JSONEachRow format" do
+      client = described_class.new(config: config)
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
+      allow(response).to receive(:body).and_return("created")
+      allow(client).to receive(:post_query).and_return(response)
+
+      expect(client.execute!("CREATE TABLE logister.events")).to eq("created")
+
+      expect(client).to have_received(:post_query).with("CREATE TABLE logister.events", "")
+    end
+  end
+
+  describe "#load_schema!" do
+    it "splits and executes schema statements" do
+      client = described_class.new(config: config)
+      allow(client).to receive(:execute!)
+
+      count = client.load_schema!("CREATE DATABASE logister;\nCREATE TABLE logister.events;\n")
+
+      expect(count).to eq(2)
+      expect(client).to have_received(:execute!).with("CREATE DATABASE logister")
+      expect(client).to have_received(:execute!).with("CREATE TABLE logister.events")
+    end
+  end
+
   describe "#healthy?" do
     let(:cache_store) { ActiveSupport::Cache::MemoryStore.new }
 
@@ -105,6 +131,35 @@ RSpec.describe Logister::ClickhouseClient do
       allow(client).to receive(:post_query).and_raise(StandardError, "timeout")
 
       expect(client.healthy?).to be(false)
+    end
+  end
+
+  describe "#schema_status" do
+    let(:cache_store) { ActiveSupport::Cache::MemoryStore.new }
+
+    before do
+      allow(Rails).to receive(:cache).and_return(cache_store)
+      cache_store.clear
+    end
+
+    it "reports missing ClickHouse tables" do
+      client = described_class.new(config: config)
+      allow(client).to receive(:healthy?).and_return(true)
+      allow(client).to receive(:select_rows!).and_return([
+        { "name" => "events" },
+        { "name" => "events_1m" },
+        { "name" => "mv_events_1m" }
+      ])
+
+      status = client.schema_status
+
+      expect(status).to include(
+        enabled: true,
+        healthy: true,
+        ready: false,
+        database: "logister"
+      )
+      expect(status[:missing_tables]).to include("spans")
     end
   end
 end

@@ -13,6 +13,7 @@ The primary Logister deployment model is self-hosting. The public hosted app at 
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
 - Provides project performance views with transactions, database metrics, release health, and span-backed request load breakdowns.
 - Sends first-occurrence error emails and daily or weekly digest summaries through SMTP, commonly Amazon SES.
+- Supports optional S3-compatible archive exports for older hot telemetry before pruning high-volume non-error rows from PostgreSQL.
 - Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.
 
 ## Supported Runtimes
@@ -23,6 +24,8 @@ The primary Logister deployment model is self-hosting. The public hosted app at 
 - JavaScript and TypeScript apps use `logister-js`: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
 - Unsupported runtimes can use the HTTP API directly.
+
+All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, and CFML direct HTTP payloads.
 
 ## Operational Use Cases
 
@@ -35,11 +38,22 @@ The primary Logister deployment model is self-hosting. The public hosted app at 
 - Rails web app served by Puma.
 - PostgreSQL for accounts, projects, API keys, events, grouped errors, monitors, notification preferences, and sharing.
 - Redis for caching and Sidekiq.
-- Sidekiq worker for async jobs, Action Mailer delivery, first-occurrence alerts, digest scheduling, and optional ClickHouse writes.
+- Sidekiq worker for async jobs, Action Mailer delivery, first-occurrence alerts, digest scheduling, optional ClickHouse writes, and operator-run archive/prune tasks.
 - SMTP/Amazon SES for auth mail, project alerts, and digest emails.
-- Optional ClickHouse for higher-volume event analytics.
+- Optional S3-compatible archive storage through Active Storage for compressed JSONL archive exports.
+- Optional ClickHouse for higher-volume event/span analytics, raw tables, and one-minute rollups.
 - Optional Cloudflare Turnstile for auth bot protection.
 - Optional Cloudflare Pages for static docs hosting.
+
+## Storage And Retention
+
+- PostgreSQL remains the primary system of record for the product UI.
+- ClickHouse is optional and stores a secondary analytics copy of new raw events and spans when enabled.
+- ClickHouse readiness requires the event table, span table, one-minute rollup tables, and materialized views from `docs/clickhouse_schema.sql`.
+- `/health/clickhouse` reports ready only when ClickHouse is enabled, reachable, and schema-ready; it reports missing tables when it can determine them.
+- ClickHouse write failures are reported through `logister-ruby` as throttled logs and count metrics when Logister self-observability is configured.
+- S3-compatible archive storage is optional and uses Active Storage with `ACTIVE_STORAGE_SERVICE=amazon` plus AWS/S3 variables.
+- Archive tasks export `ingest_events` and `trace_spans` as compressed JSONL before `logister:telemetry:prune_hot` removes older non-error hot telemetry.
 
 ## Release Distribution
 
@@ -78,7 +92,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - .NET error monitoring: Logister fits ASP.NET Core and C# teams that want request context, transactions, custom metrics, and check-ins in one triage app.
 - JavaScript error monitoring: Logister fits JavaScript and TypeScript teams using Node, Express, workers, console capture, and structured logs.
 - CFML error monitoring: Logister fits Lucee and Adobe ColdFusion teams sending structured payloads over HTTP.
-- Docker, GHCR, Docker Hub, and optional Quay self-hosting: Logister fits operators who want versioned Docker releases, separate web and worker containers, PostgreSQL, Redis, SMTP, and optional ClickHouse.
+- Docker, GHCR, Docker Hub, and optional Quay self-hosting: Logister fits operators who want versioned Docker releases, separate web and worker containers, PostgreSQL, Redis, SMTP, optional S3-compatible archive storage, and optional ClickHouse.
 - Error assignment and team triage: Logister fits teams that want grouped production errors to become owned work with assignee filters and status workflows.
 - Amazon SES error alerts: Logister fits self-hosters who want first-occurrence alerts and daily or weekly digest emails through SMTP/Amazon SES.
 
@@ -99,6 +113,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Deployment config: https://docs.logister.org/deployment/
 - Docker self-hosting: https://docs.logister.org/self-hosting/#docker
+- ClickHouse: https://docs.logister.org/clickhouse/
 - 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
 - HTTP API: https://docs.logister.org/http-api/

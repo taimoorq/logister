@@ -76,8 +76,8 @@ Logister should report internal operational failures through `logister-ruby` so 
 Currently instrumented:
 
 - API client submission failures: unauthorized, missing/invalid envelopes, and validation errors are reported as sanitized Logister log events with payload shape and API key/project diagnostics.
-- ClickHouse ingest failures: `ClickhouseIngestJob` reports both an error log and a count metric when optional analytics writes fail.
-- ClickHouse span ingest failures: `ClickhouseSpanIngestJob` reports both an error log and a count metric when optional span analytics writes fail.
+- ClickHouse ingest failures: `ClickhouseIngestJob` reports both an error log and a count metric when optional analytics writes fail, throttled by failure signature so one outage cannot create an internal event storm.
+- ClickHouse span ingest failures: `ClickhouseSpanIngestJob` reports both an error log and a count metric when optional span analytics writes fail, using the same signature throttle.
 - Error digest scheduler health: `ProjectErrorDigestSchedulerJob` reports hourly check-ins with queued digest counts, reports error check-ins on scheduler failures, and reports schedule-enqueue failures as logs.
 
 Good candidates for future additions:

@@ -4,24 +4,24 @@
     <meta charset="utf-8">
     <title>Self-hosting | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.">
+    <meta name="description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/self-hosting/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Self-hosting | Logister">
-    <meta property="og:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.">
+    <meta property="og:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://docs.logister.org/self-hosting/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Self-hosting | Logister">
-    <meta name="twitter:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.">
+    <meta name="twitter:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://docs.logister.org/self-hosting/","description":"Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, email, Turnstile, and analytics services.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Open source observability"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://docs.logister.org/self-hosting/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://docs.logister.org/self-hosting/","description":"Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Open source observability"},{"@type":"Thing","name":"S3 archive storage"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://docs.logister.org/self-hosting/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -52,7 +52,7 @@
           <h1>Run Logister yourself.</h1>
           <p>
             Use this page to plan the infrastructure footprint before you deploy. Start with the required app, database,
-            Redis, and worker pieces, then add ClickHouse, email, Turnstile, or analytics only when your install needs them.
+            Redis, and worker pieces, then add ClickHouse, S3-compatible archive storage, email, Turnstile, or analytics only when your install needs them.
           </p>
         </section>
 
@@ -124,6 +124,7 @@
                 <li>PostgreSQL <code>&gt;= 14</code></li>
                 <li>Redis <code>&gt;= 7</code></li>
                 <li>Optional ClickHouse if you want a dedicated analytics store</li>
+                <li>Optional S3-compatible object storage if you want archive exports before pruning older hot telemetry</li>
               </ul>
             </section>
 
@@ -141,22 +142,23 @@
                   <tr><td><span class="infra-cell-title">Web app process</span><span class="infra-label">Required</span></td><td>Serves the Logister UI, auth screens, project pages, public pages, and ingest endpoints.</td><td>Runs Rails on Puma, usually from the provided Docker image. Put it behind HTTPS through your platform, load balancer, or reverse proxy.</td></tr>
                   <tr><td><span class="infra-cell-title">PostgreSQL</span><span class="infra-label">Required</span></td><td>Stores accounts, active and archived projects, API keys, events, error groups, occurrences, monitors, project sharing, and notification preferences.</td><td>Set <code>DATABASE_URL</code>. Start with managed PostgreSQL if you want backups, upgrades, and point-in-time recovery handled for you.</td></tr>
                   <tr><td><span class="infra-cell-title">Redis</span><span class="infra-label">Required</span></td><td>Powers the Rails cache and Sidekiq job queue.</td><td>Set <code>REDIS_URL</code>. TLS Redis URLs such as <code>rediss://...</code> are supported by the Redis client.</td></tr>
-                  <tr><td><span class="infra-cell-title">Sidekiq worker process</span><span class="infra-label">Required</span></td><td>Runs asynchronous jobs, including optional ClickHouse event writes, Action Mailer delivery, first-occurrence error alerts, and digest scheduling.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
+                  <tr><td><span class="infra-cell-title">Sidekiq worker process</span><span class="infra-label">Required</span></td><td>Runs asynchronous jobs, including optional ClickHouse event/span writes, Action Mailer delivery, first-occurrence error alerts, digest scheduling, and operator-run archive/prune tasks.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
                   <tr><td><span class="infra-cell-title">Persistent app storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Keeps any local Active Storage files if your deployment uses local disk storage.</td><td>Normal event data lives in PostgreSQL. If you rely on local Active Storage, mount and back up <code>/rails/storage</code>.</td></tr>
+                  <tr><td><span class="infra-cell-title">S3-compatible archive storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Stores compressed JSONL archive exports for older hot telemetry before you prune high-volume non-error events from PostgreSQL.</td><td>Set <code>ACTIVE_STORAGE_SERVICE=amazon</code> plus the AWS/S3 variables from the deployment guide. Any S3-compatible provider can be used with endpoint/path-style overrides.</td></tr>
                   <tr><td><span class="infra-cell-title">Outbound email / SMTP</span><span class="infra-label infra-label-recommended">Recommended</span></td><td>Enables confirmation, password reset, system mail, first-occurrence error alerts, and daily or weekly project digests.</td><td>The documented path uses Amazon SES SMTP variables, but any compatible SMTP endpoint can be provided through the same settings. Verify the sender domain and keep Sidekiq running for notification delivery.</td></tr>
-                  <tr><td><span class="infra-cell-title">ClickHouse</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds a dedicated analytics store for higher-volume event analysis.</td><td>Keep it disabled until PostgreSQL-only operation is not enough. When enabled, run the worker and verify <code>/health/clickhouse</code>.</td></tr>
+                  <tr><td><span class="infra-cell-title">ClickHouse</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds a dedicated analytics store for higher-volume event and span analysis.</td><td>Keep it disabled until PostgreSQL-only operation is not enough. When enabled, load the schema, run the worker, and verify <code>/health/clickhouse</code> reports ready.</td></tr>
                   <tr><td><span class="infra-cell-title">Cloudflare Turnstile</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds bot protection to auth flows.</td><td>Enable when your public sign-in, sign-up, password, or confirmation forms need extra protection.</td></tr>
                   <tr><td><span class="infra-cell-title">Cookie consent and analytics</span><span class="infra-label infra-label-optional">Optional</span></td><td>Lets operators add consent-gated Google Analytics or Cloudflare Web Analytics.</td><td>Useful for public product pages. It is not required for the app to monitor your services.</td></tr>
                   <tr><td><span class="infra-cell-title">Static docs hosting</span><span class="infra-label infra-label-optional">Optional</span></td><td>Hosts your fork of these public docs separately from the app.</td><td>The repo includes Cloudflare Pages docs, but your self-hosted app can also point to the canonical public docs host.</td></tr>
                 </tbody>
               </table>
-              <div class="note tip"><h4>Start small</h4><p>For a first production install, plan one web process, one Sidekiq worker, managed PostgreSQL, and managed Redis. Add ClickHouse after you know your event volume and retention needs.</p></div>
+              <div class="note tip"><h4>Start small</h4><p>For a first production install, plan one web process, one Sidekiq worker, managed PostgreSQL, and managed Redis. Add S3 archive storage when you need export-before-prune retention, and add ClickHouse after you know your event volume and analytics needs.</p></div>
             </section>
 
             <section id="docker" class="section">
               <p class="eyebrow">Docker option</p>
               <h2>Run the app image with managed services or a Compose-backed single-host stack.</h2>
-              <p>Release images are published to GitHub Container Registry at <code>ghcr.io/taimoorq/logister</code> and Docker Hub at <code>docker.io/taimoorq/logister</code>, with optional Quay mirrors when the release workflow is configured with Quay credentials. Self-hosters can pull a versioned image from any available registry and run separate web and worker containers against PostgreSQL and Redis. ClickHouse is optional, and SMTP, Turnstile, and analytics remain external provider services configured through environment variables.</p>
+              <p>Release images are published to GitHub Container Registry at <code>ghcr.io/taimoorq/logister</code> and Docker Hub at <code>docker.io/taimoorq/logister</code>, with optional Quay mirrors when the release workflow is configured with Quay credentials. Self-hosters can pull a versioned image from any available registry and run separate web and worker containers against PostgreSQL and Redis. ClickHouse, S3-compatible archive storage, SMTP, Turnstile, and analytics remain external provider services configured through environment variables.</p>
               <div class="code-block">
                 <div class="code-head">
                   <span class="code-language">shell</span>
@@ -287,13 +289,13 @@ bin/dev</code></pre>
                 <article class="card">
                   <p class="eyebrow">Deployment config</p>
                   <h3>Set production variables and provider config</h3>
-                  <p>Use this for the full <code>.env.sample</code> reference, Turnstile, analytics, Amazon SES, Cloudflare Pages docs variables, and deployment files.</p>
+                  <p>Use this for the full <code>.env.sample</code> reference, S3 archive storage, Turnstile, analytics, Amazon SES, Cloudflare Pages docs variables, and deployment files.</p>
                   <p><a href="/deployment/">Read deployment config docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">ClickHouse</p>
                   <h3>Enable dedicated analytics storage</h3>
-                  <p>Use this when you want the optional ClickHouse path, schema setup, and event-column mapping.</p>
+                  <p>Use this when you want the optional ClickHouse path, schema readiness, raw event/span tables, and rollups.</p>
                   <p><a href="/clickhouse/">Read ClickHouse docs</a></p>
                 </article>
               </div>
@@ -307,7 +309,7 @@ bin/dev</code></pre>
                 <tbody>
                   <tr><td>Single-node trial</td><td>Evaluation, internal demos, and low-volume installs</td><td>One web process, PostgreSQL, Redis, and one worker. Keep backups on for the database.</td></tr>
                   <tr><td>Small production install</td><td>A team monitoring a few services</td><td>Managed PostgreSQL, managed Redis, one or more web processes, one Sidekiq worker, SMTP if users need account emails.</td></tr>
-                  <tr><td>Growing event volume</td><td>More apps, more logs, or heavier performance/event analysis</td><td>Scale web and worker processes separately, raise <code>SIDEKIQ_CONCURRENCY</code> carefully, monitor PostgreSQL size, then add ClickHouse when analytics volume justifies it.</td></tr>
+                  <tr><td>Growing event volume</td><td>More apps, more logs, or heavier performance/event analysis</td><td>Scale web and worker processes separately, raise <code>SIDEKIQ_CONCURRENCY</code> carefully, monitor PostgreSQL size, archive older telemetry to S3-compatible storage before pruning, then add ClickHouse when analytics volume justifies it.</td></tr>
                   <tr><td>Public self-hosted instance</td><td>Multi-user deployments exposed to the internet</td><td>HTTPS termination, SMTP, Turnstile, admin email allow-list, backups, log retention, and health checks for <code>/up</code> and <code>/health/clickhouse</code> if ClickHouse is enabled.</td></tr>
                 </tbody>
               </table>

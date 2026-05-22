@@ -16,7 +16,7 @@ Supporting phrases can vary naturally, but should consistently reinforce:
 - Self-hosted deployment first
 - Error monitoring and grouped bug triage
 - Team ownership, assignment, and status workflows
-- Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse
+- Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, optional ClickHouse
 - Versioned GHCR and Docker Hub images plus GitHub Releases
 - Runtime support for Ruby, .NET, Python, JavaScript/TypeScript, and CFML
 

@@ -74,7 +74,8 @@ Canonical documentation lives on the public docs host:
 - Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review transaction and span-backed performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
 - Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
-- Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, GHCR and Docker Hub release images, and optional Quay mirrors.
+- Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, optional ClickHouse, GHCR and Docker Hub release images, and optional Quay mirrors.
+- Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.
 
 ## Primary audience
 - Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.

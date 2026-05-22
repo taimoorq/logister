@@ -13,6 +13,7 @@ Canonical product and integration documentation lives on https://docs.logister.o
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
 - Provides a project Insights beta tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event mix, metric series, and recent matching events.
 - Sends first-occurrence error emails and daily or weekly digest summaries through SMTP, commonly Amazon SES.
+- Supports optional S3-compatible archive exports for older hot telemetry before pruning high-volume non-error rows from PostgreSQL.
 - Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.
 
 ## Use Cases And Comparisons
@@ -41,6 +42,8 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
 - Unsupported runtimes can use the HTTP API directly.
 
+All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, and CFML direct HTTP payloads.
+
 ## Operational Use Cases
 
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting: Logister publishes versioned release images for teams that want to pin app versions and run separate Rails web and Sidekiq worker containers. GHCR and Docker Hub are default public registries; Quay is an optional mirror when release credentials are configured.
@@ -53,18 +56,29 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - It helps users see what Logister is collecting at a glance, especially when the project inbox has no active errors but logs, metrics, transactions, spans, check-ins, or performance data are still arriving.
 - Best uses include release validation, instrumentation audits, span-backed request load analysis, performance triage, worker or queue monitoring, and narrowing recent events by environment, release, custom dimensions, or metric series.
 - Best instrumentation practices: always send stable `environment` and `release` values when available; use stable top-level context keys such as `service`, `region`, `queue`, `route`, `tenant_tier`, or `feature_flag`; avoid raw IDs, emails, request bodies, and high-cardinality values as dashboard dimensions; keep custom metric names consistent; send numeric metric values in `context.value` when average value series should appear in the metric catalog.
-- The current Insights beta uses PostgreSQL indexes and short Redis cache windows for the product UI. Optional ClickHouse remains useful for raw event analytics, high-volume custom reporting, and future materialized dashboard rollups, but is not required for the beta Insights tab.
+- The current Insights beta uses PostgreSQL indexes, bounded catalog sampling, and short Redis cache windows for the product UI. Optional ClickHouse remains useful for raw event/span analytics, high-volume custom reporting, and materialized rollups, but is not required for the beta Insights tab.
 
 ## Self-Hosted Stack
 
 - Rails web app served by Puma.
 - PostgreSQL for accounts, projects, API keys, events, grouped errors, monitors, notification preferences, and sharing.
 - Redis for caching and Sidekiq.
-- Sidekiq worker for async jobs, Action Mailer delivery, first-occurrence alerts, digest scheduling, and optional ClickHouse writes.
+- Sidekiq worker for async jobs, Action Mailer delivery, first-occurrence alerts, digest scheduling, optional ClickHouse writes, and operator-run archive/prune tasks.
 - SMTP/Amazon SES for auth mail, project alerts, and digest emails.
-- Optional ClickHouse for higher-volume event analytics.
+- Optional S3-compatible archive storage through Active Storage for compressed JSONL archive exports.
+- Optional ClickHouse for higher-volume event/span analytics, raw tables, and one-minute rollups.
 - Optional Cloudflare Turnstile for auth bot protection.
 - Optional Cloudflare Pages for static docs hosting.
+
+## Storage And Retention
+
+- PostgreSQL remains the primary system of record for the product UI.
+- ClickHouse is optional and stores a secondary analytics copy of new raw events and spans when enabled.
+- ClickHouse readiness requires the event table, span table, one-minute rollup tables, and materialized views from `docs/clickhouse_schema.sql`.
+- `/health/clickhouse` reports ready only when ClickHouse is enabled, reachable, and schema-ready; it reports missing tables when it can determine them.
+- ClickHouse write failures are reported through `logister-ruby` as throttled logs and count metrics when Logister self-observability is configured.
+- S3-compatible archive storage is optional and uses Active Storage with `ACTIVE_STORAGE_SERVICE=amazon` plus AWS/S3 variables.
+- Archive tasks export `ingest_events` and `trace_spans` as compressed JSONL before `logister:telemetry:prune_hot` removes older non-error hot telemetry.
 
 ## Release Distribution
 
@@ -109,6 +123,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Deployment config: https://docs.logister.org/deployment/
 - Docker self-hosting: https://docs.logister.org/self-hosting/#docker
+- ClickHouse: https://docs.logister.org/clickhouse/
 - 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
 - HTTP API: https://docs.logister.org/http-api/

@@ -14,37 +14,15 @@ class ClickhouseIngestJob < ApplicationJob
   private
 
   def report_clickhouse_ingest_failure(ingest_event_id, error)
-    context = {
-      clickhouse_ingest: {
-        ingest_event_id: ingest_event_id,
-        error: {
-          class: error.class.name,
-          message: error.message
-        }
-      }
-    }
-
-    Logister.report_log(
-      message: "ClickHouse ingest failed",
-      level: "error",
-      fingerprint: "logister:clickhouse_ingest:failure",
-      context: context
-    )
-    Logister.report_metric(
-      message: "logister.clickhouse.ingest_failure",
-      level: "error",
-      fingerprint: "logister:metric:clickhouse_ingest_failure",
-      context: context.merge(
-        metric: {
-          name: "logister.clickhouse.ingest_failure",
-          value: 1,
-          unit: "count"
-        },
-        value: 1,
-        unit: "count"
-      )
-    )
-  rescue StandardError => report_error
-    Rails.logger.warn("clickhouse ingest monitoring failed: #{report_error.class} #{report_error.message}")
+    Logister::ClickhouseFailureReporter.new(
+      kind: "event",
+      subject_key: :ingest_event_id,
+      subject_id: ingest_event_id,
+      error: error,
+      log_message: "ClickHouse ingest failed",
+      log_fingerprint: "logister:clickhouse_ingest:failure",
+      metric_name: "logister.clickhouse.ingest_failure",
+      metric_fingerprint: "logister:metric:clickhouse_ingest_failure"
+    ).call
   end
 end

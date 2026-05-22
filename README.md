@@ -31,7 +31,8 @@ This app is the self-hosted and self-hostable analytics dashboard for Logister:
 - monitor/check-in visibility
 - project lifecycle controls for active, archived, restored, and deleted projects
 - project email notifications for first occurrences and daily or weekly digests
-- optional ClickHouse-backed analytics
+- optional ClickHouse-backed event/span analytics
+- optional S3-compatible archive exports for older hot telemetry
 - release versions published as GitHub Releases and Docker images in GitHub Container Registry and Docker Hub
 
 If you are trying to instrument an application, the language integrations live in separate packages and guides:
@@ -95,6 +96,7 @@ Logister runs as a Rails app with this baseline infrastructure:
 - Cache + job queue backend: Redis
 - Background processing: Sidekiq worker process
 - Optional analytics store: ClickHouse
+- Optional cold archive storage: Amazon S3 or an S3-compatible object store through Active Storage
 - Optional bot protection: Cloudflare Turnstile
 - Optional transactional email: Amazon SES
 - Optional consent-gated analytics: Google Analytics or Cloudflare Web Analytics
@@ -121,6 +123,17 @@ Use the guide that matches the app you want to connect:
 | CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
 | Direct HTTP API | Custom clients and unsupported runtimes | https://docs.logister.org/http-api/ |
 
+All first-party add-ons send the same core telemetry families into the main app so the inbox, activity, performance, Insights, and monitor views stay consistent across languages.
+
+| Capability | Ruby | .NET | Python | JavaScript / TypeScript | CFML / HTTP |
+|----------|----------|----------|----------|----------|----------|
+| Errors | Automatic Rails/manual Ruby errors | ASP.NET Core middleware and manual exceptions | FastAPI, Django, Flask, Celery, logging exceptions, manual exceptions | Express middleware, console error capture, manual exceptions | `Application.cfc.onError()` or direct error payloads |
+| Logs | `Logister.report_log` / messages | `CaptureMessageAsync` | Python `logging` integration and manual messages | `instrumentConsole()` and manual messages | Direct `log` events |
+| Metrics | Numeric metrics with value/unit context and DB timing options | `CaptureMetricAsync` | `capture_metric` with value, unit, level, and fingerprint | `captureMetric` | Direct `metric` events |
+| Transactions | Rails/request or manual transactions | ASP.NET Core request transactions and manual transactions | Framework request/task timing and manual transactions | Express/request, browser, job, and manual transactions | Direct request/job transaction events |
+| Spans | Manual spans and opt-in Rails request spans | Manual spans and opt-in ASP.NET Core request spans | Manual spans and opt-in FastAPI/Django/Flask request spans | Manual spans, Express request spans, and browser page/resource spans | Direct root and child span events |
+| Check-ins | Cron, scheduler, and worker check-ins | Worker and scheduled-task check-ins | Celery and manual check-ins | Job/script check-ins | Direct monitor check-ins |
+
 ## Running the app locally
 
 For full local setup, use the public local-development guide:
@@ -136,7 +149,7 @@ bin/rails db:prepare
 bin/dev
 ```
 
-The repo uses `.env.sample` as the example environment file. For self-hosted production installs, copy the entries you need into your deploy provider's secret/config store rather than committing a filled-in `.env` file. The public deployment guide explains what each sample entry does and where to get provider values such as PostgreSQL URLs, Redis URLs, SES SMTP credentials, Turnstile keys, ClickHouse credentials, and analytics IDs:
+The repo uses `.env.sample` as the example environment file. For self-hosted production installs, copy the entries you need into your deploy provider's secret/config store rather than committing a filled-in `.env` file. The public deployment guide explains what each sample entry does and where to get provider values such as PostgreSQL URLs, Redis URLs, SES SMTP credentials, Turnstile keys, ClickHouse credentials, S3 archive storage credentials, and analytics IDs:
 
 - https://docs.logister.org/deployment/#env-reference
 
@@ -162,10 +175,10 @@ A few things are worth knowing before you start changing the app locally:
 - `bin/dev` is the normal local entrypoint. It runs the Rails app and watches Tailwind assets.
 - The app UI is server-rendered Rails 8 with Hotwire, Turbo, Stimulus, Propshaft, importmap, and Tailwind. Keep new interactive behavior on that path unless there is a strong product reason to do otherwise.
 - Redis-backed behavior matters. Sidekiq, caching, and some operational flows behave more realistically when Redis is available.
-- PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path.
+- PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path; S3-compatible archive storage is optional and only needed when you want compressed exports of older hot telemetry before pruning.
 - The public docs are hosted separately on `docs.logister.org`, so app links to docs intentionally point out of the Rails app.
 - On Fly, database preparation should run in the release phase rather than on every web boot. If your database provider gives you separate runtime and migration URLs, set `DATABASE_URL` to the runtime URL and `DATABASE_MIGRATION_URL` to the direct migration/admin URL.
-- On Fly and other production hosts, keep one Sidekiq worker running. It handles ClickHouse writes, Action Mailer delivery, first-occurrence error alerts, and digest scheduling; no separate cron service is required.
+- On Fly and other production hosts, keep one Sidekiq worker running. It handles ClickHouse writes, Action Mailer delivery, first-occurrence error alerts, digest scheduling, and archive/prune tasks you run through Rails; no separate cron service is required for the built-in scheduler jobs.
 
 If you want Docker-backed local infra, or want ClickHouse and PostgreSQL running together locally, use:
 
@@ -209,6 +222,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
 | [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
+| [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
 | [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |
 | [docs/seo-llm-measurement-runbook.md](docs/seo-llm-measurement-runbook.md) | Release-time checks for search, AI crawler, GitHub, container registries, and package discoverability |
 | [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and container registry verification plan |

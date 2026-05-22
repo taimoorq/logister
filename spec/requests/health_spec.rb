@@ -21,7 +21,7 @@ RSpec.describe "Health", type: :request do
     context "when ClickHouse is enabled and healthy" do
       before do
         Rails.configuration.x.logister.clickhouse_enabled = true
-        client = instance_double(Logister::ClickhouseClient, enabled?: true, healthy?: true)
+        client = instance_double(Logister::ClickhouseClient, enabled?: true, ready?: true)
         allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
       end
 
@@ -31,13 +31,24 @@ RSpec.describe "Health", type: :request do
         body = response.parsed_body
         expect(body["status"]).to eq("ok")
         expect(body["clickhouse_enabled"]).to eq(true)
+        expect(body["clickhouse_ready"]).to eq(true)
       end
     end
 
     context "when ClickHouse is enabled but unhealthy" do
       before do
         Rails.configuration.x.logister.clickhouse_enabled = true
-        client = instance_double(Logister::ClickhouseClient, enabled?: true, healthy?: false)
+        client = instance_double(
+          Logister::ClickhouseClient,
+          enabled?: true,
+          ready?: false,
+          schema_status: {
+            healthy: true,
+            database: "logister",
+            missing_tables: [ "spans_raw" ],
+            present_tables: [ "events_raw" ]
+          }
+        )
         allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
       end
 
@@ -47,6 +58,8 @@ RSpec.describe "Health", type: :request do
         body = response.parsed_body
         expect(body["status"]).to eq("degraded")
         expect(body["clickhouse_enabled"]).to eq(true)
+        expect(body["clickhouse_ready"]).to eq(false)
+        expect(body.dig("schema", "missing_tables")).to eq([ "spans_raw" ])
       end
     end
   end

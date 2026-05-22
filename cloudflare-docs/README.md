@@ -68,7 +68,7 @@ wrangler pages secret put DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN --project-name=log
 
 Docs analytics will not load unless both `DOCS_PROBO_COOKIE_BANNER_ID` and `DOCS_PROBO_COOKIE_BANNER_BASE_URL` are configured. Values served through `/assets/analytics-config.js` are visible to browsers at runtime, so do not put server-only credentials there.
 
-For the Rails app itself, keep using `.env.sample` as the operator map. The public deployment page includes a full entry-by-entry reference for Rails, PostgreSQL, Redis, Sidekiq, Amazon SES SMTP, ClickHouse, Turnstile, analytics, and Cloudflare Pages docs variables:
+For the Rails app itself, keep using `.env.sample` as the operator map. The public deployment page includes a full entry-by-entry reference for Rails, PostgreSQL, Redis, Sidekiq, Amazon SES SMTP, S3-compatible archive storage, ClickHouse, Turnstile, analytics, and Cloudflare Pages docs variables:
 
 - https://docs.logister.org/deployment/#env-reference
 
@@ -90,6 +90,7 @@ This static export mirrors the current public docs pages from the main Logister 
 - Local development
 - Deployment config
 - ClickHouse
+- S3-compatible telemetry archive storage through the deployment and self-hosting guides
 - HTTP API
 - Ruby integration
 - .NET integration

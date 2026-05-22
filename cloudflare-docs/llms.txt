@@ -49,12 +49,12 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
 - Versioned Docker images: `ghcr.io/taimoorq/logister:v1.1.1` or `docker.io/taimoorq/logister:v1.1.1`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
-- Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, and optional ClickHouse
+- Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, and optional ClickHouse
 - Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Audience
 - Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, project Insights beta dashboards, grouped error triage, error assignment with dashboard and project workload views, assignee-filtered inboxes, event investigation with request method and URL/path context, related logs, performance visibility, check-in monitors, project error email alerts, digest summaries, activity review, release visibility, project sharing, and active or archived project views
-- Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project alert and digest delivery, and optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
+- Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project alert and digest delivery, S3-compatible archive exports, optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
 - Teams comparing self-hosted and open source alternatives to Bugzilla, Bugsnag, Sentry, and other paid monitoring or issue triage tools
 - Ruby teams using `logister-ruby`
 - .NET teams using `logister-dotnet` with ASP.NET Core and C# services
@@ -68,6 +68,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Secondary hosted/public app: https://logister.org/
 - Supported telemetry: Logister accepts errors, logs, metrics, transactions, spans, and check-ins. Span payloads feed request load waterfall charts when they include trace IDs, span IDs, parent span IDs, kind, duration, and route or service context.
 - Insights beta: project-level dashboard workspace that combines Inbox, Activity, and Performance signals with ECharts, time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, and recent matching events. Best results come from consistent `environment`, `release`, stable custom context attributes, and numeric custom metric values in `context.value`.
+- Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
 - Ruby SDK package: https://rubygems.org/gems/logister-ruby
 - .NET SDK source: https://github.com/taimoorq/logister-dotnet

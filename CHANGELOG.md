@@ -7,6 +7,9 @@ All notable changes to Logister will be documented in this file.
 ### Changed
 
 - Added first-class span ingestion, PostgreSQL/ClickHouse span storage, and a stacked request load breakdown chart on project Performance pages.
+- Added ClickHouse schema readiness checks, idempotent schema load/status tasks, and throttled ClickHouse self-monitoring failure reports to prevent internal event storms.
+- Added S3-backed telemetry archive support with compressed JSONL exports, explicit hot pruning tasks, and Redis retry cleanup tooling for stale ClickHouse jobs.
+- Reduced Insights database pressure by lengthening dashboard cache windows and lowering metric/dimension catalog sample limits.
 - Updated maintained Ruby, .NET, Python, and JavaScript SDK repos with span capture APIs and opt-in request/page-load span instrumentation.
 - Linked the app README, static docs, in-app project setup guidance, and AI-readable docs directly to the public RubyGems, NuGet, PyPI, and npm package pages.
 - Updated release readiness docs with the current SDK package versions and concrete package-manager verification links.

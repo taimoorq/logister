@@ -126,7 +126,7 @@
                   <tr>
                     <td><a href="/self-hosting/">Operations guides</a></td>
                     <td>Teams self-hosting Logister</td>
-                    <td>Local development, deployment, ClickHouse, and HTTP reference</td>
+                    <td>Local development, deployment, S3-compatible archive storage, ClickHouse, and HTTP reference</td>
                   </tr>
                   <tr>
                     <td><a href="/integrations/ruby/">Ruby integration</a></td>
@@ -210,7 +210,7 @@
               <p class="eyebrow">Use cases</p>
               <h2>Start from the problem or comparison your team is evaluating.</h2>
               <div class="card-grid">
-                <article class="card"><p class="eyebrow">Self-hosting</p><h3>Self-hosted error monitoring</h3><p>Run Logister yourself with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional ClickHouse, and registry images.</p><p><a href="/use-cases/self-hosted-error-monitoring/">Read the use case</a></p></article>
+                <article class="card"><p class="eyebrow">Self-hosting</p><h3>Self-hosted error monitoring</h3><p>Run Logister yourself with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3 archive storage, optional ClickHouse, and registry images.</p><p><a href="/use-cases/self-hosted-error-monitoring/">Read the use case</a></p></article>
                 <article class="card"><p class="eyebrow">Comparison</p><h3>Sentry alternative</h3><p>Evaluate Logister when you want forkable source, owned infrastructure, grouped errors, assignment, and release context.</p><p><a href="/use-cases/sentry-alternative/">Compare the fit</a></p></article>
                 <article class="card"><p class="eyebrow">Comparison</p><h3>Bugsnag alternative</h3><p>Evaluate Logister when first-occurrence alerts, digest emails, and team-owned triage should live in your own stack.</p><p><a href="/use-cases/bugsnag-alternative/">Compare the fit</a></p></article>
                 <article class="card"><p class="eyebrow">Comparison</p><h3>Bugzilla alternative</h3><p>Use production error context as the start of bug ownership, not a separate manual ticket-writing step.</p><p><a href="/use-cases/bugzilla-alternative/">Compare the fit</a></p></article>
@@ -228,7 +228,7 @@
                 <article class="card"><p class="eyebrow">Insights beta</p><h3>Build live project views from collected signals</h3><p>The project Insights tab combines Inbox, Activity, and Performance data with metric selection, time windows, environment and release filters, custom attribute filters, and span-backed request load charts.</p></article>
                 <article class="card"><p class="eyebrow">Triage</p><h3>See which errors still need attention</h3><p>Grouped issues, status filters, search, and occurrence history help your team decide what to fix, ignore, archive, or reopen.</p></article>
                 <article class="card"><p class="eyebrow">Investigate</p><h3>Open one event and get the surrounding context</h3><p>Runtime-aware details, request context, release metadata, and related logs keep the investigation close to the problem.</p></article>
-                <article class="card"><p class="eyebrow">Operate</p><h3>Watch performance and project lifecycle</h3><p>Transaction metrics, release health, check-in monitors, archived projects, and notification preferences help teams operate the instance cleanly.</p></article>
+                <article class="card"><p class="eyebrow">Operate</p><h3>Watch performance, retention, and project lifecycle</h3><p>Transaction metrics, release health, check-in monitors, archive exports, hot telemetry pruning, archived projects, and notification preferences help teams operate the instance cleanly.</p></article>
               </div>
               <p><a href="/product/">Read the product guide</a> for the user-focused tour of what teams can do in Logister.</p>
             </section>
@@ -252,37 +252,37 @@
                 <article class="card">
                   <p class="eyebrow">Operations</p>
                   <h3>Self-host Logister</h3>
-                  <p>Use the operations docs for local boot, deployment configuration, ClickHouse, and HTTP payload reference.</p>
+                  <p>Use the operations docs for local boot, deployment configuration, S3-compatible archive storage, ClickHouse, and HTTP payload reference.</p>
                   <p><a href="/self-hosting/">Read self-hosting docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">Ruby</p>
                   <h3>Install the Ruby package</h3>
-                  <p>Use the Ruby integration guide when your app already runs on Ruby or Rails.</p>
+                  <p>Use the Ruby integration guide for Rails exceptions, manual errors, logs, metrics, transactions, spans, check-ins, DB timing, and self-monitoring through <code>logister-ruby</code>.</p>
                   <p><a href="/integrations/ruby/">Read Ruby docs</a> or <a href="https://rubygems.org/gems/logister-ruby">open RubyGems</a>.</p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">.NET</p>
                   <h3>Install the .NET SDK</h3>
-                  <p>Use the .NET integration guide for ASP.NET Core apps, C# services, custom metrics, and check-ins.</p>
+                  <p>Use the .NET integration guide for ASP.NET Core request exceptions, transactions, spans, C# service metrics, logs, and check-ins.</p>
                   <p><a href="/integrations/dotnet/">Read .NET docs</a> or <a href="https://www.nuget.org/packages/Logister.AspNetCore">open NuGet</a>.</p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">Python</p>
                   <h3>Install the package</h3>
-                  <p>Use the Python integration guide for FastAPI, Django, Flask, Celery, shared-client Python apps, and native Python logging capture.</p>
+                  <p>Use the Python integration guide for FastAPI, Django, Flask, Celery, shared-client Python apps, native logging capture, metrics, spans, and check-ins.</p>
                   <p><a href="/integrations/python/">Read Python docs</a> or <a href="https://pypi.org/project/logister-python/">open PyPI</a>.</p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">CFML</p>
                   <h3>Send direct payloads</h3>
-                  <p>Use the CFML guide for Lucee or Adobe ColdFusion apps that talk to Logister over HTTP.</p>
+                  <p>Use the CFML guide for Lucee or Adobe ColdFusion apps that send errors, logs, metrics, transactions, spans, and check-ins over HTTP.</p>
                   <p><a href="/integrations/cfml/">Read CFML docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">JavaScript</p>
                   <h3>Install the npm package</h3>
-                  <p>Use the JavaScript guide for JavaScript and TypeScript apps using the <code>logister-js</code> package, with optional Express middleware and console capture when you need them.</p>
+                  <p>Use the JavaScript guide for JavaScript and TypeScript apps using <code>logister-js</code>, with optional Express middleware, browser timing, console capture, metrics, spans, and check-ins.</p>
                   <p><a href="/integrations/javascript/">Read JavaScript docs</a> or <a href="https://www.npmjs.com/package/logister-js">open npm</a>.</p>
                 </article>
               </div>
@@ -333,7 +333,7 @@
         <div class="footer-inner">
           <div class="footer-copy">
             <strong>Logister documentation</strong>
-            <p>Reference material for integrating errors, metrics, logs, and check-ins into Logister.</p>
+            <p>Reference material for integrating errors, logs, metrics, transactions, spans, and check-ins into Logister.</p>
           </div>
           <div class="footer-links">
             <div class="footer-column">

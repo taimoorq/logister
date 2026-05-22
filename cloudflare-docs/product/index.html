@@ -47,7 +47,7 @@
               <p class="eyebrow">Positioning</p>
               <h2>An open source alternative for teams that want control of error monitoring and triage.</h2>
               <p>Logister sits between traditional bug trackers and paid error monitoring platforms. It gives teams grouped production errors, assignment, status workflows, occurrence history, request context, related logs, release signals, and scheduled-work monitors while keeping source code, deployment, data, and release versions under the operator's control.</p>
-              <table><thead><tr><th>Teams compare Logister with...</th><th>Why Logister fits</th></tr></thead><tbody><tr><td>Bugzilla-style issue tracking</td><td>Grouped errors become assignable work with status, owner, occurrence, and project context.</td></tr><tr><td>Bugsnag, Sentry, and paid error monitoring</td><td>Application exceptions, logs, metrics, transactions, check-ins, and release context stay in a self-hosted app.</td></tr><tr><td>Ad hoc internal dashboards</td><td>Forkable Rails source, public docs, environment references, GHCR and Docker Hub images, and optional Quay mirrors give operators a repeatable base.</td></tr></tbody></table>
+              <table><thead><tr><th>Teams compare Logister with...</th><th>Why Logister fits</th></tr></thead><tbody><tr><td>Bugzilla-style issue tracking</td><td>Grouped errors become assignable work with status, owner, occurrence, and project context.</td></tr><tr><td>Bugsnag, Sentry, and paid error monitoring</td><td>Application exceptions, logs, metrics, transactions, spans, check-ins, and release context stay in a self-hosted app.</td></tr><tr><td>Ad hoc internal dashboards</td><td>Forkable Rails source, public docs, environment references, GHCR and Docker Hub images, optional Quay mirrors, ClickHouse readiness checks, and S3-compatible archive exports give operators a repeatable base.</td></tr></tbody></table>
             </section>
 
             <section id="connect" class="section">
@@ -75,7 +75,7 @@
               <h3>Send data that makes Insights useful</h3>
               <p>Insights gets stronger when integrations send consistent metadata. Always include <code>environment</code> and <code>release</code> when you have them. Use stable custom attributes at the top level of event <code>context</code>, prefer short lowercase keys such as <code>service</code>, <code>region</code>, <code>queue</code>, <code>route</code>, or <code>tenant_tier</code>, and avoid raw IDs, emails, request bodies, or high-cardinality values as dashboard dimensions. For custom metrics, keep metric names consistent and send numeric values in <code>context.value</code> when you want average value series in the catalog.</p>
               <h3>Current implementation notes</h3>
-              <p>Insights uses PostgreSQL indexes and short Redis cache windows for the beta UI. Optional ClickHouse dual-write remains useful for high-volume raw analytics and future reporting work, but the current product tab is designed to work with PostgreSQL and Redis alone. If an Insights view feels slow, first check whether events include the filters you are using, whether the project is sending very high-cardinality custom attributes, and whether the database migrations that add Insights indexes have run.</p>
+              <p>Insights uses PostgreSQL indexes, bounded catalog sampling, and short Redis cache windows for the beta UI. Optional ClickHouse dual-write remains useful for high-volume raw analytics and rollups, but the current product tab is designed to work with PostgreSQL and Redis alone. If an Insights view feels slow, first check whether events include the filters you are using, whether the project is sending very high-cardinality custom attributes, whether live refresh is too aggressive for the project volume, and whether the database migrations that add Insights indexes have run.</p>
             </section>
 
             <section id="project-lifecycle" class="section">
@@ -137,7 +137,7 @@
             <section id="operate" class="section">
               <p class="eyebrow">Run it yourself</p>
               <h2>Self-host Logister with clear operational checkpoints.</h2>
-              <p>Logister is designed to be self-hosted as a Rails app with PostgreSQL, Redis, and background jobs. ClickHouse is optional and can be added when you want a dedicated analytics store. The operations docs cover local boot, deployment variables, GHCR and Docker Hub images, optional Quay mirrors, release versions, health checks, email, Turnstile, consent-gated analytics, and ClickHouse setup.</p>
+              <p>Logister is designed to be self-hosted as a Rails app with PostgreSQL, Redis, and background jobs. ClickHouse is optional and can be added when you want a dedicated analytics store; S3-compatible object storage is optional when you want compressed archive exports before pruning older hot telemetry. The operations docs cover local boot, deployment variables, GHCR and Docker Hub images, optional Quay mirrors, release versions, health checks, email, Turnstile, consent-gated analytics, ClickHouse setup, and archive storage.</p>
               <div class="output-block"><div class="output-head"><span class="output-label">Useful health checks</span></div><pre><code>GET /up
 GET /health/clickhouse</code></pre></div>
             </section>

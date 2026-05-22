@@ -6,7 +6,7 @@ class ProjectInsightsController < ApplicationController
   include ProjectScope
 
   INSIGHTS_SHELL_CACHE_TTL = 1.minute
-  INSIGHTS_DATA_CACHE_TTL = 10.seconds
+  INSIGHTS_DATA_CACHE_TTL = 30.seconds
 
   before_action :authenticate_user!
   before_action :set_accessible_project

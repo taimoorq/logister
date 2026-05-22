@@ -4,24 +4,24 @@
     <meta charset="utf-8">
     <title>Deployment Config | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Environment variables, provider files, email, Turnstile, and analytics settings for self-hosted Logister deploys.">
+    <meta name="description" content="Environment variables, provider files, email, S3 archive storage, ClickHouse, Turnstile, and analytics settings for self-hosted Logister deploys.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/deployment/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Deployment Config | Logister">
-    <meta property="og:description" content="Environment variables, provider files, email, Turnstile, and analytics settings for self-hosted Logister deploys.">
+    <meta property="og:description" content="Environment variables, provider files, email, S3 archive storage, ClickHouse, Turnstile, and analytics settings for self-hosted Logister deploys.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://docs.logister.org/deployment/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Deployment Config | Logister">
-    <meta name="twitter:description" content="Environment variables, provider files, email, Turnstile, and analytics settings for self-hosted Logister deploys.">
+    <meta name="twitter:description" content="Environment variables, provider files, email, S3 archive storage, ClickHouse, Turnstile, and analytics settings for self-hosted Logister deploys.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/deployment/#article","headline":"Configure production deploys without guessing.","name":"Deployment Config | Logister","url":"https://docs.logister.org/deployment/","description":"Environment variables, provider files, email, Turnstile, and analytics settings for self-hosted Logister deploys.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Production deployment"},{"@type":"Thing","name":"Environment variables"},{"@type":"Thing","name":"Self-hosted observability"}],"audience":{"@type":"Audience","audienceType":"Developers"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Deployment config","item":"https://docs.logister.org/deployment/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/deployment/#article","headline":"Configure production deploys without guessing.","name":"Deployment Config | Logister","url":"https://docs.logister.org/deployment/","description":"Environment variables, provider files, email, S3 archive storage, ClickHouse, Turnstile, and analytics settings for self-hosted Logister deploys.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Production deployment"},{"@type":"Thing","name":"Environment variables"},{"@type":"Thing","name":"Self-hosted observability"},{"@type":"Thing","name":"S3 archive storage"}],"audience":{"@type":"Audience","audienceType":"Developers"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Deployment config","item":"https://docs.logister.org/deployment/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -30,21 +30,21 @@
     <div class="site-shell">
       <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Deployment config</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
-        <section class="hero"><span class="hero-kicker">Documentation / Deployment config</span><h1>Configure production deploys without guessing.</h1><p>This page collects the operator-facing configuration for self-hosted Logister: required secrets, optional services, provider-managed files, and the checklist to run before you call a deployment healthy.</p></section>
+        <section class="hero"><span class="hero-kicker">Documentation / Deployment config</span><h1>Configure production deploys without guessing.</h1><p>This page collects the operator-facing configuration for self-hosted Logister: required secrets, optional services, S3-compatible archive storage, provider-managed files, and the checklist to run before you call a deployment healthy.</p></section>
         <div class="docs-layout">
           <aside class="sidebar">
             <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/product/">Product guide</a><a href="/self-hosting/">Self-hosting</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a class="active" href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a href="/integrations/javascript/">JavaScript integration</a></div>
             <hr>
-            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#processes">Process model</a><a href="#required">Required secrets</a><a href="#env-reference">Sample env reference</a><a href="#scaling">Scaling knobs</a><a href="#optional">Optional services</a><a href="#consent-banners">Consent banners</a><a href="#files">Provider files</a><a href="#checklist">Production checklist</a><a href="#verify">Deploy verification</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#processes">Process model</a><a href="#required">Required secrets</a><a href="#env-reference">Sample env reference</a><a href="#scaling">Scaling knobs</a><a href="#optional">Optional services</a><a href="#archive-storage">Archive storage</a><a href="#consent-banners">Consent banners</a><a href="#files">Provider files</a><a href="#checklist">Production checklist</a><a href="#verify">Deploy verification</a></div>
           </aside>
           <article class="article">
             <section id="processes" class="section">
               <p class="eyebrow">Process model</p>
               <h2>Run web traffic and background work as separate responsibilities.</h2>
               <p>The production app can be deployed on Fly, Kamal, Docker, or any platform that can run a Rails web process and a Sidekiq worker against PostgreSQL and Redis. Versioned release images are published to <code>ghcr.io/taimoorq/logister</code> and <code>docker.io/taimoorq/logister</code> after CI, Fly deploy, and Fly health checks pass; the workflow can also publish an optional <code>quay.io/taimoorq/logister</code> mirror when Quay credentials are configured.</p>
-              <table><thead><tr><th>Process</th><th>Purpose</th><th>Typical command</th></tr></thead><tbody><tr><td>Web</td><td>Serves the UI, auth screens, project pages, public pages, health checks, and API ingestion endpoints.</td><td><code>./bin/rails server</code> behind Puma/Thruster or your platform web command</td></tr><tr><td>Worker</td><td>Runs asynchronous jobs such as optional ClickHouse event ingestion, Action Mailer delivery, first-occurrence error alerts, and digest scheduling.</td><td><code>bundle exec sidekiq -C config/sidekiq.yml</code></td></tr><tr><td>Release or migration step</td><td>Prepares the database before the new web process handles traffic.</td><td><code>./bin/rails db:prepare</code></td></tr></tbody></table>
+              <table><thead><tr><th>Process</th><th>Purpose</th><th>Typical command</th></tr></thead><tbody><tr><td>Web</td><td>Serves the UI, auth screens, project pages, public pages, health checks, and API ingestion endpoints.</td><td><code>./bin/rails server</code> behind Puma/Thruster or your platform web command</td></tr><tr><td>Worker</td><td>Runs asynchronous jobs such as optional ClickHouse event/span ingestion, Action Mailer delivery, first-occurrence error alerts, digest scheduling, and operator-run archive/prune tasks.</td><td><code>bundle exec sidekiq -C config/sidekiq.yml</code></td></tr><tr><td>Release or migration step</td><td>Prepares the database before the new web process handles traffic.</td><td><code>./bin/rails db:prepare</code></td></tr></tbody></table>
               <div class="note tip"><h4>Planning note</h4><p>Low-volume installs can start with one web process and one worker. As traffic grows, scale the web and worker process counts separately so ingestion and background jobs do not compete with user-facing requests.</p></div>
             </section>
             <section id="required" class="section">
@@ -82,8 +82,13 @@
                   <tr><td><code>SES_SMTP_ENABLE_STARTTLS_AUTO</code>, <code>SES_SMTP_OPEN_TIMEOUT</code>, <code>SES_SMTP_READ_TIMEOUT</code></td><td>SMTP TLS and timeout tuning.</td><td>Keep the defaults unless your SMTP provider requires different transport settings.</td></tr>
                   <tr><td><code>SES_CONFIGURATION_SET</code></td><td>Optional SES delivery-metrics tag for Logister mail.</td><td>Create a configuration set in SES if you want bounce, complaint, open, or delivery metrics separated for Logister messages.</td></tr>
                   <tr><td><code>LOGISTER_CLICKHOUSE_ENABLED</code></td><td>Turns on optional ClickHouse writes.</td><td>Keep <code>false</code> until PostgreSQL-only operation is not enough. Enable only after ClickHouse schema setup and worker verification.</td></tr>
-                  <tr><td><code>LOGISTER_CLICKHOUSE_URL</code>, <code>LOGISTER_CLICKHOUSE_DATABASE</code>, <code>LOGISTER_CLICKHOUSE_EVENTS_TABLE</code></td><td>ClickHouse endpoint and event table target.</td><td>Use values from your ClickHouse server or ClickHouse Cloud service. Create the database/table from the ClickHouse guide before enabling writes.</td></tr>
-                  <tr><td><code>LOGISTER_CLICKHOUSE_USERNAME</code> / <code>LOGISTER_CLICKHOUSE_PASSWORD</code></td><td>ClickHouse credentials.</td><td>Create a least-privilege ClickHouse user that can insert and query the Logister events table, then store the password as a secret.</td></tr>
+                  <tr><td><code>LOGISTER_CLICKHOUSE_URL</code>, <code>LOGISTER_CLICKHOUSE_DATABASE</code>, <code>LOGISTER_CLICKHOUSE_EVENTS_TABLE</code>, <code>LOGISTER_CLICKHOUSE_SPANS_TABLE</code></td><td>ClickHouse endpoint, database, raw event table, and raw span table targets.</td><td>Use values from your ClickHouse server or ClickHouse Cloud service. Load the schema from the ClickHouse guide before enabling writes, then verify readiness with <code>bin/rails logister:clickhouse:schema:status</code> or <code>/health/clickhouse</code>.</td></tr>
+                  <tr><td><code>LOGISTER_CLICKHOUSE_USERNAME</code> / <code>LOGISTER_CLICKHOUSE_PASSWORD</code></td><td>ClickHouse credentials.</td><td>Create a least-privilege ClickHouse user that can insert into and query the Logister event and span tables, then store the password as a secret.</td></tr>
+                  <tr><td><code>LOGISTER_CLICKHOUSE_FAILURE_THROTTLE_SECONDS</code></td><td>Throttle window for Logister self-monitoring when ClickHouse writes fail.</td><td>Leave the default unless an operator wants more or fewer internal failure reports. Failures are reported through <code>logister-ruby</code> as logs and count metrics when self-observability is configured.</td></tr>
+                  <tr><td><code>ACTIVE_STORAGE_SERVICE</code></td><td>Active Storage service used by production file/archive writes.</td><td>Use <code>local</code> for a simple private install with mounted disk, or <code>amazon</code> when using S3-compatible archive storage.</td></tr>
+                  <tr><td><code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>AWS_REGION</code>, <code>AWS_S3_BUCKET</code></td><td>Amazon S3 credentials and bucket target for the built-in <code>amazon</code> Active Storage service.</td><td>Create a private bucket and a least-privilege IAM user or role that can write only the archive prefix Logister needs. Store the key and secret in your provider secret manager.</td></tr>
+                  <tr><td><code>AWS_S3_ENDPOINT</code>, <code>AWS_S3_FORCE_PATH_STYLE</code></td><td>Optional S3-compatible provider settings.</td><td>Set these only for non-AWS object stores such as MinIO, R2-compatible gateways, or providers that require a custom endpoint or path-style addressing.</td></tr>
+                  <tr><td><code>LOGISTER_ARCHIVE_PREFIX</code>, <code>LOGISTER_ARCHIVE_STORAGE_SERVICE</code></td><td>Telemetry archive object prefix and optional storage-service override.</td><td>Use a low-cardinality prefix such as <code>telemetry</code>. Leave the storage override blank to use <code>ACTIVE_STORAGE_SERVICE</code>, or set it when archives should use a different Active Storage service.</td></tr>
                   <tr><td><code>LOGISTER_TURNSTILE_ENABLED</code></td><td>Enables Cloudflare Turnstile on sign-in, sign-up, password, and confirmation forms.</td><td>Turn on for public instances that need bot protection. Keep off for private/internal installs unless you want the extra challenge.</td></tr>
                   <tr><td><code>LOGISTER_TURNSTILE_SITE_KEY</code> / <code>LOGISTER_TURNSTILE_SECRET_KEY</code></td><td>Cloudflare Turnstile browser key and server verification secret.</td><td>Create a Turnstile widget in Cloudflare, add your app domain, put the site key in config, and keep the secret key in your secret store.</td></tr>
                   <tr><td><code>LOGISTER_COOKIE_CONSENT_ENABLED</code></td><td>Controls whether the cookie consent banner renders.</td><td>Set <code>false</code> for private installs without optional analytics. Keep <code>true</code> when you run public product pages with analytics.</td></tr>
@@ -97,7 +102,7 @@
                   <tr><td><code>DOCS_GOOGLE_TAG_ID</code>, <code>DOCS_CLOUDFLARE_WEB_ANALYTICS_TOKEN</code></td><td>Cloudflare Pages docs analytics IDs.</td><td>Use your own GA4 or Cloudflare Web Analytics values for your docs fork. These become browser-visible runtime config.</td></tr>
                 </tbody>
               </table>
-              <div class="note tip"><h4>Keep secrets out of git</h4><p>Values such as <code>RAILS_MASTER_KEY</code>, database passwords, Redis passwords, SES SMTP passwords, Turnstile secret keys, ClickHouse passwords, and Cloudflare API tokens must live in a provider secret store. The sample file intentionally uses blanks or placeholders.</p></div>
+              <div class="note tip"><h4>Keep secrets out of git</h4><p>Values such as <code>RAILS_MASTER_KEY</code>, database passwords, Redis passwords, SES SMTP passwords, Turnstile secret keys, ClickHouse passwords, AWS access keys, S3-compatible storage secrets, and Cloudflare API tokens must live in a provider secret store. The sample file intentionally uses blanks or placeholders.</p></div>
             </section>
             <section id="scaling" class="section">
               <p class="eyebrow">Scaling knobs</p>
@@ -108,7 +113,20 @@
               <p class="eyebrow">Optional services</p>
               <h2>Enable additional integrations only when you need them.</h2>
               <h3>ClickHouse</h3>
-              <p>ClickHouse is optional. Keep it off until you need dedicated analytics storage or higher-volume event analysis. When you turn it on, set the ClickHouse variables in the <a href="/clickhouse/">ClickHouse guide</a> and verify the worker can write events.</p>
+              <p>ClickHouse is optional. Keep it off until you need dedicated analytics storage or higher-volume event analysis. When you turn it on, set the ClickHouse variables in the <a href="/clickhouse/">ClickHouse guide</a>, load the event/span schema, verify <code>/health/clickhouse</code> reports ready, and keep the worker running so queued writes can drain.</p>
+              <h3 id="archive-storage">S3-compatible archive storage</h3>
+              <p>Archive storage is optional. Use it when you want compressed JSONL exports of older hot telemetry before pruning high-volume non-error events from PostgreSQL. The built-in path uses Active Storage, so self-hosters can keep local disk for small private installs or swap to Amazon S3 and S3-compatible providers without changing app code.</p>
+              <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#archive-storage-code">Copy</button></div><pre><code id="archive-storage-code">ACTIVE_STORAGE_SERVICE=amazon
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=
+LOGISTER_ARCHIVE_PREFIX=telemetry
+# Optional for non-AWS S3-compatible providers:
+# AWS_S3_ENDPOINT=
+# AWS_S3_FORCE_PATH_STYLE=true
+# LOGISTER_ARCHIVE_STORAGE_SERVICE=amazon</code></pre></div>
+              <p>Export hot telemetry with <code>bin/rails "logister:telemetry:archive[ingest_events,30]"</code> or <code>bin/rails "logister:telemetry:archive[trace_spans,30]"</code>. After the archive objects are verified, prune old non-error hot telemetry with <code>CONFIRM=prune bin/rails "logister:telemetry:prune_hot[30]"</code>.</p>
               <h3>Email</h3>
               <p>Email is optional for a private single-user trial, but recommended for real users because account confirmation, password reset, first-occurrence project error alerts, and daily or weekly digest summaries depend on SMTP delivery.</p>
               <ul><li><code>LOGISTER_EMAIL_FROM</code> sets the branded sender for auth, system mail, and project notifications.</li><li><code>SES_REGION</code> selects the Amazon SES region, defaulting to <code>us-east-1</code>.</li><li><code>SES_SMTP_USERNAME</code> and <code>SES_SMTP_PASSWORD</code> enable Amazon SES SMTP delivery in production.</li><li><code>SES_CONFIGURATION_SET</code> optionally tags Logister notification mail for SES delivery metrics.</li><li><code>SES_SMTP_ADDRESS</code>, <code>SES_SMTP_PORT</code>, <code>SES_SMTP_DOMAIN</code>, <code>SES_SMTP_ENABLE_STARTTLS_AUTO</code>, <code>SES_SMTP_OPEN_TIMEOUT</code>, and <code>SES_SMTP_READ_TIMEOUT</code> are available when your SMTP provider needs custom settings.</li><li>Verify the sender domain in SES and publish SPF, DKIM, and DMARC records so notification mail is less likely to be filtered as spam.</li></ul>
@@ -144,7 +162,7 @@ CLOUDFLARE_WEB_ANALYTICS_TOKEN=</code></pre></div>
             <section id="checklist" class="section">
               <p class="eyebrow">Production checklist</p>
               <h2>Run this checklist before calling the rollout complete.</h2>
-              <ol><li>Set the required secrets and connection URLs.</li><li>Configure outbound email if you need system emails, confirmation emails, or project error notifications.</li><li>Pick your deploy method and keep provider config tracked separately from secrets.</li><li>Run migrations during deploy.</li><li>Verify Sidekiq boots against the production Redis instance and that at least one worker process stays running.</li><li>Only then turn on ClickHouse, Turnstile, or analytics tooling if you need them.</li></ol>
+              <ol><li>Set the required secrets and connection URLs.</li><li>Configure outbound email if you need system emails, confirmation emails, or project error notifications.</li><li>Configure S3-compatible archive storage if you plan to export and prune older hot telemetry.</li><li>Pick your deploy method and keep provider config tracked separately from secrets.</li><li>Run migrations during deploy.</li><li>Verify Sidekiq boots against the production Redis instance and that at least one worker process stays running.</li><li>Only then turn on ClickHouse, Turnstile, or analytics tooling if you need them.</li></ol>
             </section>
             <section id="verify" class="section">
               <p class="eyebrow">Deploy verification</p>
@@ -154,7 +172,9 @@ Project creation succeeds
 API key generation works and shows the token once
 Background job processes can connect to Redis
 One test event lands in the project inbox
-First-occurrence alerts enqueue when a new error group is created</code></pre></div>
+First-occurrence alerts enqueue when a new error group is created
+ClickHouse health reports ready if optional ClickHouse is enabled
+Archive export task can write to object storage if optional archives are enabled</code></pre></div>
             </section>
           </article>
         </div>

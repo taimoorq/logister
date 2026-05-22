@@ -6,6 +6,15 @@ module Logister
   class ClickhouseClient
     class Error < StandardError; end
     HEALTH_CACHE_TTL = 30.seconds
+    SCHEMA_CACHE_TTL = 30.seconds
+    REQUIRED_TABLES = %w[
+      events_raw
+      events_1m
+      mv_events_1m
+      spans_raw
+      request_spans_1m
+      mv_request_spans_1m
+    ].freeze
 
     def initialize(config: Rails.configuration.x.logister)
       @config = config
@@ -33,6 +42,21 @@ module Logister
       raise Error, "ClickHouse query failed: #{response.code} #{response.body.to_s.strip}"
     end
 
+    def execute!(query)
+      return "" unless enabled?
+
+      response = post_query(query, "")
+      return response.body.to_s if response.is_a?(Net::HTTPSuccess)
+
+      raise Error, "ClickHouse query failed: #{response.code} #{response.body.to_s.strip}"
+    end
+
+    def load_schema!(schema_sql)
+      statements = schema_statements(schema_sql)
+      statements.each { |statement| execute!(statement) }
+      statements.length
+    end
+
     def healthy?
       return false unless enabled?
 
@@ -42,6 +66,40 @@ module Logister
       end
     rescue StandardError
       false
+    end
+
+    def ready?
+      schema_status.fetch(:ready)
+    end
+
+    def schema_status
+      return disabled_schema_status unless enabled?
+
+      Rails.cache.fetch(schema_cache_key, expires_in: SCHEMA_CACHE_TTL) do
+        present = present_table_names
+        missing = required_table_names - present
+
+        {
+          enabled: true,
+          healthy: healthy?,
+          ready: healthy? && missing.empty?,
+          database: @config.clickhouse_database,
+          required_tables: required_table_names,
+          present_tables: present,
+          missing_tables: missing
+        }
+      end
+    rescue StandardError => e
+      {
+        enabled: true,
+        healthy: false,
+        ready: false,
+        database: @config.clickhouse_database,
+        required_tables: required_table_names,
+        present_tables: [],
+        missing_tables: required_table_names,
+        error: "#{e.class}: #{e.message}"
+      }
     end
 
     private
@@ -60,6 +118,55 @@ module Logister
 
     def full_table_name(table_name)
       "#{@config.clickhouse_database}.#{table_name}"
+    end
+
+    def schema_statements(schema_sql)
+      schema_sql.to_s.split(/;\s*(?:\n|\z)/).filter_map do |statement|
+        stripped = statement.strip
+        stripped.presence
+      end
+    end
+
+    def present_table_names
+      rows = select_rows!(<<~SQL.squish)
+        SELECT name
+        FROM system.tables
+        WHERE database = #{quote_clickhouse_string(@config.clickhouse_database)}
+          AND name IN (#{required_table_names.map { |name| quote_clickhouse_string(name) }.join(", ")})
+        ORDER BY name
+      SQL
+
+      rows.map { |row| row.fetch("name").to_s }.sort
+    end
+
+    def required_table_names
+      REQUIRED_TABLES.map do |table_name|
+        case table_name
+        when "events_raw"
+          @config.clickhouse_events_table
+        when "spans_raw"
+          @config.clickhouse_spans_table
+        else
+          table_name
+        end
+      end.map(&:to_s).uniq.sort
+    end
+
+    def disabled_schema_status
+      {
+        enabled: false,
+        healthy: false,
+        ready: false,
+        database: @config.clickhouse_database,
+        required_tables: required_table_names,
+        present_tables: [],
+        missing_tables: []
+      }
+    end
+
+    def quote_clickhouse_string(value)
+      escaped = value.to_s.gsub("\\") { "\\\\" }.gsub("'") { "\\'" }
+      "'#{escaped}'"
     end
 
     def post_query(query, body)
@@ -104,6 +211,10 @@ module Logister
 
     def health_cache_key
       [ "clickhouse", "health", @config.clickhouse_url, @config.clickhouse_database, @config.clickhouse_events_table, @config.clickhouse_spans_table ]
+    end
+
+    def schema_cache_key
+      [ "clickhouse", "schema", @config.clickhouse_url, @config.clickhouse_database, required_table_names ]
     end
 
     def with_http_connection(uri)
