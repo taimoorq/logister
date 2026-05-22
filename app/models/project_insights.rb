@@ -592,18 +592,11 @@ class ProjectInsights
     end
 
     def standard_metric_availability_counts(scope)
-      duration_filter = duration_value_present_sql
-      transaction_duration_count = scope.where(event_type: IngestEvent.event_types.fetch("transaction"))
-                                        .where(duration_filter)
-                                        .count
-      db_query_count, db_query_duration_count = db_query_scope(scope).pick(
-        Arel.sql("COUNT(*)"),
-        Arel.sql("COUNT(*) FILTER (WHERE #{duration_filter})")
-      )
-
-      transaction_duration_count = transaction_duration_count.to_i
-      db_query_count = db_query_count.to_i
-      db_query_duration_count = db_query_duration_count.to_i
+      transactions = scope.where(event_type: IngestEvent.event_types.fetch("transaction"))
+      db_queries = db_query_scope(scope)
+      transaction_duration_count = duration_event_count(transactions)
+      db_query_count = db_queries.count
+      db_query_duration_count = duration_event_count(db_queries)
 
       {
         "transactions.avg" => transaction_duration_count,
@@ -619,22 +612,20 @@ class ProjectInsights
       return {} if names.blank?
 
       custom_scope = scope.where(event_type: IngestEvent.event_types.fetch("metric"), message: names)
-      counts = custom_scope.group(:message)
-                           .pluck(
-                             :message,
-                             Arel.sql("COUNT(*)"),
-                             Arel.sql("COUNT(*) FILTER (WHERE context->>'value' ~ #{sql_quote(NUMERIC_SQL_PATTERN)})")
-                           )
-                           .each_with_object({}) do |(message, count, numeric_count), grouped|
-        grouped[message.to_s] = { count: count.to_i, numeric_count: numeric_count.to_i }
-      end
+      counts = custom_scope.group(:message).count.transform_keys(&:to_s)
+      numeric_counts = custom_scope.where(numeric_context_value_node("value").not_eq(nil))
+                                   .group(:message)
+                                   .count
+                                   .transform_keys(&:to_s)
 
       names.each_with_object({}) do |name, availability|
-        counts_for_name = counts.fetch(name, { count: 0, numeric_count: 0 })
-
-        availability[custom_metric_key(name)] = counts_for_name.fetch(:count)
-        availability[custom_metric_value_key(name)] = counts_for_name.fetch(:numeric_count)
+        availability[custom_metric_key(name)] = counts.fetch(name, 0)
+        availability[custom_metric_value_key(name)] = numeric_counts.fetch(name, 0)
       end
+    end
+
+    def duration_event_count(scope)
+      scope.where(duration_value_node.not_eq(nil)).count
     end
 
     def custom_metric_catalog_names(catalog)
@@ -848,14 +839,6 @@ class ProjectInsights
       return context_key if NUMERIC_CONTEXT_KEYS.include?(context_key)
 
       raise ArgumentError, "Unsupported numeric context key: #{context_key.inspect}"
-    end
-
-    def duration_value_present_sql
-      "COALESCE(context->>'duration_ms', context->>'durationMs') ~ #{sql_quote(NUMERIC_SQL_PATTERN)}"
-    end
-
-    def sql_quote(value)
-      ApplicationRecord.connection.quote(value)
     end
 
     def ingest_events_table
