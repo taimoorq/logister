@@ -714,6 +714,36 @@
   .project-insights-panel-header span {
     @apply mt-0.5 block text-xs text-slate-500;
   }
+  .project-insights-panel-actions {
+    @apply flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-end;
+  }
+  .project-insights-series-menu {
+    @apply relative shrink-0;
+  }
+  .project-insights-series-toggle {
+    @apply relative inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 shadow-sm hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
+  }
+  .project-insights-series-toggle.is-open {
+    @apply border-blue-200 bg-blue-50 text-blue-700;
+  }
+  .project-insights-series-count {
+    @apply absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold leading-none text-white;
+  }
+  .project-insights-series-popover {
+    @apply absolute right-0 top-full z-30 mt-2 max-h-[34rem] w-[32rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md border border-slate-200 bg-white p-3 shadow-lg;
+  }
+  .project-insights-series-popover[hidden] {
+    @apply hidden;
+  }
+  .project-insights-series-popover-header {
+    @apply mb-3 border-b border-slate-200 pb-3;
+  }
+  .project-insights-series-popover-header h4 {
+    @apply text-sm font-semibold text-slate-900;
+  }
+  .project-insights-series-popover-header p {
+    @apply mt-0.5 text-xs text-slate-500;
+  }
   .project-insights-chart {
     @apply h-72 w-full min-w-0;
   }
@@ -723,8 +753,8 @@
   .project-insights-metric-list {
     @apply space-y-4;
   }
-  .project-insights-series-panel .project-insights-metric-list {
-    @apply max-h-[34rem] overflow-y-auto pr-1;
+  .project-insights-series-popover .project-insights-metric-list {
+    @apply pr-1;
   }
   .project-insights-metric-group {
     @apply space-y-2;

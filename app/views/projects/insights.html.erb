@@ -131,7 +131,34 @@
             <h3>Telemetry timeline</h3>
             <span>Counts, durations, and custom values in the current scope</span>
           </div>
-          <div class="project-insights-active-list" data-project-insights-target="activeMetrics"></div>
+          <div class="project-insights-panel-actions">
+            <div class="project-insights-active-list" data-project-insights-target="activeMetrics"></div>
+            <div class="project-insights-series-menu">
+              <button type="button"
+                      class="project-insights-series-toggle"
+                      data-project-insights-target="seriesToggle"
+                      data-action="project-insights#toggleSeriesCatalog"
+                      aria-label="Open series catalog"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      title="Series catalog">
+                <%= app_icon(:filter, css: "w-4 h-4") %>
+                <span class="sr-only">Series catalog</span>
+                <span class="project-insights-series-count" data-project-insights-target="seriesCount">0</span>
+              </button>
+              <div class="project-insights-series-popover"
+                   data-project-insights-target="seriesPopover"
+                   hidden>
+                <div class="project-insights-series-popover-header">
+                  <div>
+                    <h4>Series catalog</h4>
+                    <p>Grouped by signal category</p>
+                  </div>
+                </div>
+                <div class="project-insights-metric-list" data-project-insights-target="metricList"></div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="project-insights-chart project-insights-chart-main" data-project-insights-target="metricChart"></div>
       </article>
@@ -148,16 +175,6 @@
     </div>
 
     <aside class="project-insights-side" aria-label="Investigation tools">
-      <article class="project-insights-panel project-insights-series-panel">
-        <div class="project-insights-panel-header">
-          <div>
-            <h3>Series catalog</h3>
-            <span>Grouped by signal category</span>
-          </div>
-        </div>
-        <div class="project-insights-metric-list" data-project-insights-target="metricList"></div>
-      </article>
-
       <article class="project-insights-panel">
         <div class="project-insights-panel-header">
           <div>

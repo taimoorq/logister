@@ -33,7 +33,10 @@ export default class extends Controller {
     "refreshSelect",
     "status",
     "windowButton",
-    "recentEvents"
+    "recentEvents",
+    "seriesToggle",
+    "seriesPopover",
+    "seriesCount"
   ]
   static values = {
     payload: Object
@@ -58,6 +61,7 @@ export default class extends Controller {
       : this.normalizeSelectedMetrics(this.payload.default_metrics || [])
     this.charts = {}
     this.chartsReady = false
+    this.seriesCatalogOpen = false
 
     this.refreshSelectTarget.value = String(this.refreshSeconds)
     this.renderWindowButtons()
@@ -67,7 +71,13 @@ export default class extends Controller {
     this.loadCharts()
 
     this.resizeHandler = () => this.queueResize()
+    this.documentClickHandler = (event) => this.closeSeriesCatalogOnOutsideClick(event)
+    this.keydownHandler = (event) => {
+      if (event.key === "Escape") this.closeSeriesCatalog()
+    }
     window.addEventListener("resize", this.resizeHandler)
+    document.addEventListener("click", this.documentClickHandler)
+    document.addEventListener("keydown", this.keydownHandler)
   }
 
   disconnect() {
@@ -75,6 +85,8 @@ export default class extends Controller {
     this.abortController?.abort()
     this.resizeObserver?.disconnect()
     window.removeEventListener("resize", this.resizeHandler)
+    document.removeEventListener("click", this.documentClickHandler)
+    document.removeEventListener("keydown", this.keydownHandler)
     clearInterval(this.refreshTimer)
     cancelAnimationFrame(this.resizeFrame)
     Object.values(this.charts || {}).forEach((chart) => chart.dispose())
@@ -171,8 +183,14 @@ export default class extends Controller {
     this.fetchData()
   }
 
+  toggleSeriesCatalog(event) {
+    event.preventDefault()
+    this.setSeriesCatalogOpen(!this.seriesCatalogOpen)
+  }
+
   addMetric(event) {
     event.preventDefault()
+    event.stopPropagation()
     const metricKey = event.currentTarget.dataset.metricKey
     if (!metricKey || this.selectedMetrics.includes(metricKey)) return
 
@@ -346,6 +364,7 @@ export default class extends Controller {
   renderMetricControls() {
     this.renderMetricCatalog()
     this.renderActiveMetrics()
+    this.renderSeriesCount()
   }
 
   renderMetricCatalog() {
@@ -416,6 +435,12 @@ export default class extends Controller {
         </button>
       `
     }).join("")
+  }
+
+  renderSeriesCount() {
+    if (!this.hasSeriesCountTarget) return
+
+    this.seriesCountTarget.textContent = formatNumber(this.selectedMetrics.length)
   }
 
   renderSummary(summary) {
@@ -622,6 +647,27 @@ export default class extends Controller {
 
   setStatus(text) {
     this.statusTarget.textContent = text
+  }
+
+  closeSeriesCatalogOnOutsideClick(event) {
+    if (!this.seriesCatalogOpen || !this.hasSeriesPopoverTarget || !this.hasSeriesToggleTarget) return
+
+    if (this.seriesPopoverTarget.contains(event.target) || this.seriesToggleTarget.contains(event.target)) return
+
+    this.closeSeriesCatalog()
+  }
+
+  closeSeriesCatalog() {
+    this.setSeriesCatalogOpen(false)
+  }
+
+  setSeriesCatalogOpen(open) {
+    this.seriesCatalogOpen = Boolean(open)
+    if (!this.hasSeriesPopoverTarget || !this.hasSeriesToggleTarget) return
+
+    this.seriesPopoverTarget.hidden = !this.seriesCatalogOpen
+    this.seriesToggleTarget.classList.toggle("is-open", this.seriesCatalogOpen)
+    this.seriesToggleTarget.setAttribute("aria-expanded", String(this.seriesCatalogOpen))
   }
 
   queueResize() {
