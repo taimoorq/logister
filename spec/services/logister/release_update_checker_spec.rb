@@ -16,33 +16,33 @@ RSpec.describe Logister::ReleaseUpdateChecker do
 
   it "returns an update when GitHub has a newer release" do
     ENV["LOGISTER_UPDATE_CHECKS_ENABLED"] = "true"
-    ENV["LOGISTER_RELEASE"] = "v2.0.3"
+    ENV["LOGISTER_RELEASE"] = "v2.1.0"
     checker = described_class.new
 
     allow(checker).to receive(:fetch_latest_release).and_return(
-      "tag_name" => "v2.0.4",
-      "name" => "Logister v2.0.4",
-      "html_url" => "https://github.com/taimoorq/logister/releases/tag/v2.0.4",
+      "tag_name" => "v2.1.1",
+      "name" => "Logister v2.1.1",
+      "html_url" => "https://github.com/taimoorq/logister/releases/tag/v2.1.1",
       "published_at" => "2026-05-22T22:00:00Z"
     )
 
     result = checker.call
 
     expect(result).to have_attributes(
-      current_version: "2.0.3",
-      latest_version: "2.0.4",
-      release_name: "Logister v2.0.4",
-      release_url: "https://github.com/taimoorq/logister/releases/tag/v2.0.4"
+      current_version: "2.1.0",
+      latest_version: "2.1.1",
+      release_name: "Logister v2.1.1",
+      release_url: "https://github.com/taimoorq/logister/releases/tag/v2.1.1"
     )
-    expect(result.notification_key).to eq("release_update:2.0.4")
+    expect(result.notification_key).to eq("release_update:2.1.1")
   end
 
   it "does not return an update when the current release is latest" do
     ENV["LOGISTER_UPDATE_CHECKS_ENABLED"] = "true"
-    ENV["LOGISTER_RELEASE"] = "v2.0.3"
+    ENV["LOGISTER_RELEASE"] = "v2.1.0"
     checker = described_class.new
 
-    allow(checker).to receive(:fetch_latest_release).and_return("tag_name" => "v2.0.3")
+    allow(checker).to receive(:fetch_latest_release).and_return("tag_name" => "v2.1.0")
 
     expect(checker.call).to be_nil
   end

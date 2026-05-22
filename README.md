@@ -117,9 +117,9 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v2.0.3
+   docker pull ghcr.io/taimoorq/logister:v2.1.0
    # or
-   docker pull docker.io/taimoorq/logister:v2.0.3
+   docker pull docker.io/taimoorq/logister:v2.1.0
    ```
 
 3. Create production config from the sample.
@@ -252,10 +252,10 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v2.0.3`
+- `ghcr.io/taimoorq/logister:v2.1.0`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v2.0.3`
+- `docker.io/taimoorq/logister:v2.1.0`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 

@@ -73,10 +73,10 @@ RSpec.describe "Dashboard", type: :request do
 
       it "renders a dismissible release update notification in the top navigation" do
         update = Logister::ReleaseUpdateChecker::Result.new(
-          current_version: "2.0.3",
-          latest_version: "2.0.4",
-          release_name: "Logister v2.0.4",
-          release_url: "https://github.com/taimoorq/logister/releases/tag/v2.0.4",
+          current_version: "2.1.0",
+          latest_version: "2.1.1",
+          release_name: "Logister v2.1.1",
+          release_url: "https://github.com/taimoorq/logister/releases/tag/v2.1.1",
           published_at: "2026-05-22T22:00:00Z"
         )
         allow(Logister::ReleaseUpdateChecker).to receive(:call).and_return(update)
@@ -88,8 +88,8 @@ RSpec.describe "Dashboard", type: :request do
 
         expect(notification_menu).to be_present
         expect(notification_menu.text).to include("Update available")
-        expect(notification_menu.text).to include("Logister v2.0.4 is available. This instance is running v2.0.3.")
-        expect(notification_menu.at_css("a[href='https://github.com/taimoorq/logister/releases/tag/v2.0.4']")).to be_present
+        expect(notification_menu.text).to include("Logister v2.1.1 is available. This instance is running v2.1.0.")
+        expect(notification_menu.at_css("a[href='https://github.com/taimoorq/logister/releases/tag/v2.1.1']")).to be_present
         expect(notification_menu.at_css("form[action='#{dismiss_notification_path(notification_key: update.notification_key)}']")).to be_present
 
         post dismiss_notification_path, params: { notification_key: update.notification_key }
@@ -99,7 +99,7 @@ RSpec.describe "Dashboard", type: :request do
 
         get dashboard_path
 
-        expect(response.body).not_to include("Logister v2.0.4 is available")
+        expect(response.body).not_to include("Logister v2.1.1 is available")
       end
 
       it "shows overview content and project count" do

@@ -47,7 +47,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.0.3` or `docker.io/taimoorq/logister:v2.0.3`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.1.0` or `docker.io/taimoorq/logister:v2.1.0`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, and optional ClickHouse
 - Production setup order: provision PostgreSQL and Redis, set required secrets from `.env.sample`, run `./bin/release`, start one web process and one Sidekiq worker, verify `/up`, sign-in, project creation, API key generation, and a test inbox event, then enable optional services.

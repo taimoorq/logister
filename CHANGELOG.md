@@ -2,6 +2,21 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.1.0 - 2026-05-22
+
+### Added
+
+- Highlighted Project Insights chart series and filter options with matching event counts so users can see which choices have data before adding them.
+
+### Changed
+
+- Kept Insights availability checks on cached dashboard payloads and existing indexed scopes so the clearer filter UI does not add extra browser load requests.
+- Updated public self-hosting references for the `v2.1.0` release image tag.
+
+### Fixed
+
+- Removed Brakeman-flagged dynamic SQL from Insights availability counts while preserving indexed database queries.
+
 ## v2.0.3 - 2026-05-22
 
 ### Added
