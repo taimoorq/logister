@@ -603,20 +603,32 @@
   .project-insights {
     @apply space-y-4;
   }
-  .project-insights-header {
-    @apply flex flex-col gap-4 rounded-md border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between;
-  }
-  .project-insights-header h2 {
-    @apply text-lg font-semibold text-slate-900;
-  }
-  .project-insights-header p:not(.dashboard-kicker) {
-    @apply mt-1 text-sm text-slate-500;
-  }
-  .project-insights-header-actions {
+  .project-insights-toolbar-actions {
     @apply flex flex-col gap-2 sm:flex-row sm:items-center;
   }
   .project-insights-status {
     @apply inline-flex h-8 shrink-0 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-600;
+  }
+  .project-insights-lens-bar {
+    @apply flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 shadow-sm xl:flex-row xl:items-center xl:justify-between;
+  }
+  .project-insights-lens-actions {
+    @apply grid flex-1 grid-cols-1 gap-2 sm:grid-cols-5 xl:max-w-[46rem];
+  }
+  .project-insights-lens {
+    @apply min-w-0 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left transition-colors hover:border-blue-200 hover:bg-blue-50;
+  }
+  .project-insights-lens span {
+    @apply block truncate text-xs font-semibold text-slate-800;
+  }
+  .project-insights-lens small {
+    @apply mt-0.5 block truncate text-[11px] text-slate-500;
+  }
+  .project-insights-lens.is-active {
+    @apply border-blue-200 bg-blue-50;
+  }
+  .project-insights-lens.is-active span {
+    @apply text-blue-700;
   }
   .project-insights-scope {
     @apply rounded-md border border-slate-200 bg-white shadow-sm;
@@ -3491,13 +3503,19 @@
 }
 
 
-/* View Transitions (Turbo 8): snappier duration for cards and list rows */
+/* View Transitions (Turbo 8): keep server-rendered navigation and frame updates feeling continuous. */
 @supports (view-transition-name: none) {
+  ::view-transition-group(.app-shell),
+  ::view-transition-group(.project-insights-panel),
+  ::view-transition-group(.project-insights-event),
+  ::view-transition-group(.project-insights-catalog),
+  ::view-transition-group(.project-insights-chip),
   ::view-transition-group(.project-card),
   ::view-transition-group(.inbox-row),
   ::view-transition-group(.error-detail-pane),
   ::view-transition-group(.dashboard-error-card) {
     animation-duration: 0.25s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   ::view-transition-group(.public-panel) {
@@ -3507,6 +3525,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
   ::view-transition-group(*) {
     animation-duration: 0.01ms !important;
   }

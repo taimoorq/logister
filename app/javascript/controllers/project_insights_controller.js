@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 const SERIES_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", "#0f766e", "#475569", "#db2777"]
+const MAX_SELECTED_METRICS = 8
 const EVENT_COLORS = {
   error: "#ef4444",
   log: "#64748b",
@@ -16,6 +17,23 @@ const METRIC_CATEGORY_COPY = {
   monitors: { label: "Monitors", description: "Check-ins and background job heartbeats" },
   metrics: { label: "Custom metrics", description: "Application-specific counters and values" },
   other: { label: "Other signals", description: "Collected series outside the standard groups" }
+}
+const LENS_PRESETS = {
+  overview: {
+    metrics: ["events.total", "errors.count", "transactions.p95", "db.query.avg"]
+  },
+  health: {
+    metrics: ["errors.count", "events.total", "logs.count", "activity.count"]
+  },
+  performance: {
+    metrics: ["transactions.count", "transactions.avg", "transactions.p95", "db.query.count", "db.query.avg", "db.query.p95"]
+  },
+  monitors: {
+    metrics: ["check_ins.count", "activity.count", "errors.count"]
+  },
+  custom: {
+    metrics: []
+  }
 }
 
 export default class extends Controller {
@@ -36,7 +54,8 @@ export default class extends Controller {
     "recentEvents",
     "seriesToggle",
     "seriesPopover",
-    "seriesCount"
+    "seriesCount",
+    "lensButton"
   ]
   static values = {
     payload: Object
@@ -49,6 +68,7 @@ export default class extends Controller {
     this.window = savedState.window || this.payload.default_window || "24h"
     this.environment = savedState.environment || ""
     this.release = savedState.release || ""
+    this.lens = savedState.lens || "overview"
     this.refreshSeconds = Number(savedState.refreshSeconds ?? this.payload.refresh_seconds ?? 30)
     this.catalog = this.payload.metric_catalog || []
     this.catalogByKey = new Map(this.catalog.map((metric) => [metric.key, metric]))
@@ -57,7 +77,7 @@ export default class extends Controller {
     this.attributeFilters = normalizeAttributeFilters(savedState.attributeFilters || {})
     this.eventTypes = this.payload.event_types || []
     this.selectedMetrics = Array.isArray(savedState.metrics) && savedState.metrics.length > 0
-      ? savedState.metrics.slice(0, 8)
+      ? savedState.metrics.slice(0, MAX_SELECTED_METRICS)
       : this.normalizeSelectedMetrics(this.payload.default_metrics || [])
     this.charts = {}
     this.chartsReady = false
@@ -65,6 +85,7 @@ export default class extends Controller {
 
     this.refreshSelectTarget.value = String(this.refreshSeconds)
     this.renderWindowButtons()
+    this.renderLensButtons()
     this.renderAttributeControls()
     this.renderMetricControls()
     this.setStatus("Loading charts...")
@@ -188,13 +209,26 @@ export default class extends Controller {
     this.setSeriesCatalogOpen(!this.seriesCatalogOpen)
   }
 
+  selectLens(event) {
+    event.preventDefault()
+    const lens = event.currentTarget.dataset.lens
+    if (!lens || !Object.prototype.hasOwnProperty.call(LENS_PRESETS, lens)) return
+
+    this.lens = lens
+    this.selectedMetrics = this.metricsForLens(lens)
+    this.renderMetricControls()
+    this.saveState()
+    this.fetchData()
+  }
+
   addMetric(event) {
     event.preventDefault()
     event.stopPropagation()
     const metricKey = event.currentTarget.dataset.metricKey
     if (!metricKey || this.selectedMetrics.includes(metricKey)) return
 
-    this.selectedMetrics = [...this.selectedMetrics, metricKey].slice(0, 8)
+    this.lens = "custom"
+    this.selectedMetrics = [...this.selectedMetrics, metricKey].slice(0, MAX_SELECTED_METRICS)
     this.renderMetricControls()
     this.saveState()
     this.fetchData()
@@ -203,6 +237,7 @@ export default class extends Controller {
   removeMetric(event) {
     event.preventDefault()
     const metricKey = event.currentTarget.dataset.metricKey
+    this.lens = "custom"
     this.selectedMetrics = this.selectedMetrics.filter((key) => key !== metricKey)
     this.renderMetricControls()
     this.saveState()
@@ -362,9 +397,21 @@ export default class extends Controller {
   }
 
   renderMetricControls() {
+    this.renderLensButtons()
     this.renderMetricCatalog()
     this.renderActiveMetrics()
     this.renderSeriesCount()
+  }
+
+  renderLensButtons() {
+    if (!this.hasLensButtonTarget) return
+
+    this.lensButtonTargets.forEach((button) => {
+      const active = button.dataset.lens === this.lens
+      button.classList.toggle("is-active", active)
+      button.setAttribute("aria-selected", String(active))
+      button.setAttribute("tabindex", active ? "0" : "-1")
+    })
   }
 
   renderMetricCatalog() {
@@ -374,7 +421,7 @@ export default class extends Controller {
     }
 
     this.metricListTarget.innerHTML = groupedMetrics(this.catalog).map((group) => `
-      <section class="project-insights-metric-group">
+      <section class="project-insights-metric-group" ${transitionAttributes("insights-catalog", group.key, "project-insights-catalog")}>
         <div class="project-insights-metric-group-header">
           <div>
             <strong>${escapeHtml(group.label)}</strong>
@@ -398,6 +445,7 @@ export default class extends Controller {
               class="project-insights-metric ${selected ? "is-selected" : ""}"
               data-action="project-insights#addMetric"
               data-metric-key="${escapeHtml(metric.key)}"
+              ${transitionAttributes("insights-metric", metric.key, "project-insights-catalog")}
               ${selected ? "disabled" : ""}>
         <span class="project-insights-metric-topline">
           <span class="project-insights-metric-main">
@@ -429,6 +477,7 @@ export default class extends Controller {
                 class="project-insights-active-chip"
                 data-action="project-insights#removeMetric"
                 data-metric-key="${escapeHtml(metric.key)}"
+                ${transitionAttributes("insights-active", metric.key, "project-insights-chip")}
                 aria-label="Remove ${escapeHtml(metric.label)}">
           <span>${escapeHtml(metric.label)}</span>
           <span aria-hidden="true">x</span>
@@ -484,7 +533,6 @@ export default class extends Controller {
       aria: { enabled: true },
       color: SERIES_COLORS,
       graphic: emptyGraphic(!hasData, series.length > 0 ? "No values in this slice" : "Add a metric to chart"),
-      grid: { left: 48, right: 54, top: 42, bottom: 34 },
       legend: {
         top: 0,
         type: "scroll",
@@ -495,6 +543,19 @@ export default class extends Controller {
         trigger: "axis",
         formatter: (params) => metricTooltipFormatter(params, definitionsByName)
       },
+      dataZoom: [
+        { type: "inside", filterMode: "none", throttle: 50 },
+        {
+          type: "slider",
+          height: 18,
+          bottom: 8,
+          filterMode: "none",
+          borderColor: "#e2e8f0",
+          fillerColor: "rgba(37, 99, 235, 0.14)",
+          handleStyle: { color: "#2563eb" },
+          textStyle: { color: "#64748b" }
+        }
+      ],
       xAxis: {
         type: "category",
         boundaryGap: false,
@@ -516,6 +577,7 @@ export default class extends Controller {
           splitLine: { show: false }
         }
       ],
+      grid: { left: 48, right: 54, top: 42, bottom: 58 },
       series
     }, true)
   }
@@ -545,6 +607,9 @@ export default class extends Controller {
         textStyle: { color: "#475569", fontSize: 11 }
       },
       tooltip: { trigger: "axis", formatter: eventTooltipFormatter },
+      dataZoom: [
+        { type: "inside", filterMode: "none", throttle: 50 }
+      ],
       xAxis: {
         type: "category",
         data: labels,
@@ -573,7 +638,7 @@ export default class extends Controller {
       )).join("")
 
       return `
-        <div class="project-insights-recent-row">
+        <div class="project-insights-recent-row" ${transitionAttributes("insights-event", event.uuid || event.occurred_at || event.message, "project-insights-event")}>
           <span class="project-insights-event-dot" style="background-color: ${EVENT_COLORS[event.event_type] || "#64748b"}"></span>
           <div>
             <div class="project-insights-recent-title">
@@ -608,6 +673,23 @@ export default class extends Controller {
     return selected.length > 0 ? selected : this.catalog.slice(0, 4).map((metric) => metric.key)
   }
 
+  metricsForLens(lens) {
+    if (lens === "custom") {
+      const customMetrics = this.catalog
+        .filter((metric) => metric.category === "metrics")
+        .map((metric) => metric.key)
+        .slice(0, MAX_SELECTED_METRICS)
+
+      return customMetrics.length > 0 ? customMetrics : this.selectedMetrics
+    }
+
+    const presetMetrics = LENS_PRESETS[lens]?.metrics || []
+    const available = new Set(this.catalog.map((metric) => metric.key))
+    const selected = presetMetrics.filter((metricKey) => available.has(metricKey)).slice(0, MAX_SELECTED_METRICS)
+
+    return selected.length > 0 ? selected : this.normalizeSelectedMetrics(this.payload.default_metrics || [])
+  }
+
   readSavedState() {
     try {
       return JSON.parse(window.localStorage.getItem(this.storageKey())) || {}
@@ -622,6 +704,7 @@ export default class extends Controller {
         window: this.window,
         environment: this.environment,
         release: this.release,
+        lens: this.lens,
         attributeFilters: this.attributeFilters,
         refreshSeconds: this.refreshSeconds,
         metrics: this.selectedMetrics
@@ -783,6 +866,20 @@ function eventTooltipFormatter(params) {
   ))
 
   return `${escapeHtml(params[0].axisValueLabel || "")}<br>${rows.length > 0 ? rows.join("<br>") : "No activity"}`
+}
+
+function transitionAttributes(prefix, value, transitionClass) {
+  return `style="view-transition-name: ${transitionName(prefix, value)}; view-transition-class: ${transitionClass};"`
+}
+
+function transitionName(prefix, value) {
+  const identifier = String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72)
+
+  return `${prefix}-${identifier || "item"}`
 }
 
 function formatNumber(value) {

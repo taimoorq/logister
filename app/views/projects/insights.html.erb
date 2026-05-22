@@ -5,13 +5,55 @@
 <section class="project-insights"
          data-controller="project-insights"
          data-project-insights-payload-value="<%= json_escape(@insights_payload.to_json) %>">
-  <div class="project-insights-header">
-    <div>
-      <p class="dashboard-kicker">Project insights</p>
-      <h2>Telemetry explorer</h2>
-      <p>Scope the project, compare signal groups, and open the events behind the charts.</p>
+  <div class="project-insights-lens-bar" aria-label="Workbook views" style="view-transition-name: insights-lenses; view-transition-class: project-insights-panel;">
+    <div class="project-insights-lens-actions" role="tablist" aria-label="Insight view presets">
+      <button type="button"
+              class="project-insights-lens"
+              data-project-insights-target="lensButton"
+              data-action="project-insights#selectLens"
+              data-lens="overview"
+              role="tab">
+        <span>Overview</span>
+        <small>Activity + quality</small>
+      </button>
+      <button type="button"
+              class="project-insights-lens"
+              data-project-insights-target="lensButton"
+              data-action="project-insights#selectLens"
+              data-lens="health"
+              role="tab">
+        <span>Health</span>
+        <small>Errors + logs</small>
+      </button>
+      <button type="button"
+              class="project-insights-lens"
+              data-project-insights-target="lensButton"
+              data-action="project-insights#selectLens"
+              data-lens="performance"
+              role="tab">
+        <span>Performance</span>
+        <small>Transactions + DB</small>
+      </button>
+      <button type="button"
+              class="project-insights-lens"
+              data-project-insights-target="lensButton"
+              data-action="project-insights#selectLens"
+              data-lens="monitors"
+              role="tab">
+        <span>Monitors</span>
+        <small>Check-ins</small>
+      </button>
+      <button type="button"
+              class="project-insights-lens"
+              data-project-insights-target="lensButton"
+              data-action="project-insights#selectLens"
+              data-lens="custom"
+              role="tab">
+        <span>Custom</span>
+        <small>App metrics</small>
+      </button>
     </div>
-    <div class="project-insights-header-actions">
+    <div class="project-insights-toolbar-actions">
       <div class="project-insights-status" data-project-insights-target="status">Waiting for data</div>
       <button type="button" class="project-insights-refresh-button" data-action="project-insights#refreshNow">
         <%= app_icon(:chart, css: "w-4 h-4") %>
@@ -20,7 +62,7 @@
     </div>
   </div>
 
-  <div class="project-insights-scope" aria-label="Dashboard controls">
+  <div class="project-insights-scope" aria-label="Dashboard controls" style="view-transition-name: insights-scope; view-transition-class: project-insights-panel;">
     <div class="project-insights-scope-row">
       <div class="project-insights-time-control">
         <span class="project-insights-control-label">Time range</span>
@@ -100,7 +142,7 @@
     </div>
   </div>
 
-  <div class="project-insights-summary" data-project-insights-target="summary" aria-live="polite">
+  <div class="project-insights-summary" data-project-insights-target="summary" aria-live="polite" style="view-transition-name: insights-summary; view-transition-class: project-insights-panel;">
     <div class="project-insights-summary-cell">
       <strong>--</strong>
       <span>Events</span>
@@ -125,7 +167,7 @@
 
   <div class="project-insights-layout">
     <div class="project-insights-main">
-      <article class="project-insights-panel project-insights-metric-panel">
+      <article class="project-insights-panel project-insights-metric-panel" style="view-transition-name: insights-timeline; view-transition-class: project-insights-panel;">
         <div class="project-insights-panel-header">
           <div>
             <h3>Telemetry timeline</h3>
@@ -163,7 +205,7 @@
         <div class="project-insights-chart project-insights-chart-main" data-project-insights-target="metricChart"></div>
       </article>
 
-      <article class="project-insights-panel">
+      <article class="project-insights-panel" style="view-transition-name: insights-signal-mix; view-transition-class: project-insights-panel;">
         <div class="project-insights-panel-header">
           <div>
             <h3>Signal mix</h3>
@@ -175,7 +217,7 @@
     </div>
 
     <aside class="project-insights-side" aria-label="Investigation tools">
-      <article class="project-insights-panel">
+      <article class="project-insights-panel" style="view-transition-name: insights-recent-stream; view-transition-class: project-insights-panel;">
         <div class="project-insights-panel-header">
           <div>
             <h3>Recent stream</h3>

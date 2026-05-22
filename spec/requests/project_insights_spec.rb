@@ -24,10 +24,13 @@ RSpec.describe "Project insights", type: :request do
         get insights_project_path(project)
 
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("Telemetry explorer")
         expect(response.body).to include("project-insights")
+        expect(response.body).to include("view-transition-class: project-insights-panel")
+        expect(response.body).to include("Overview")
         expect(response.body).to include("Series catalog")
         expect(response.body).to include("Attribute")
+        expect(response.body).not_to include("Analysis workbook")
+        expect(response.body).not_to include("Health readout")
         expect(response.body).not_to include("queue.depth")
         expect(response.body).to include(insights_data_project_path(project))
       end

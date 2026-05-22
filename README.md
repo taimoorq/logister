@@ -225,6 +225,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
 | [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |
 | [docs/seo-llm-measurement-runbook.md](docs/seo-llm-measurement-runbook.md) | Release-time checks for search, AI crawler, GitHub, container registries, and package discoverability |
+| [docs/2.0-release-plan.md](docs/2.0-release-plan.md) | 2.0 release scope, UI continuity plan, Insights GA checklist, and stable release gates |
 | [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and container registry verification plan |
 | [docs/1.0-release-plan.md](docs/1.0-release-plan.md) | 1.0 release scope, gates, rollout, and rollback plan |
 | [docs/error-assignment-plan.md](docs/error-assignment-plan.md) | Implementation record for team assignment on grouped errors |

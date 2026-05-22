@@ -42,9 +42,8 @@
     <% end %>
     <%# Turbo 8: view transitions (crossfade/slide on navigation and morph). Ignored on Turbo 7. %>
     <meta name="turbo-view-transition" content="true">
-    <%# Turbo 8: morphing refresh + preserve scroll when redirecting back to same page. Ignored on Turbo 7. %>
-    <meta name="turbo-refresh-method" content="morph">
-    <meta name="turbo-refresh-scroll" content="preserve">
+    <%# Turbo 8: morphing refresh + preserve scroll when redirecting back to the same page. %>
+    <% turbo_refreshes_with method: :morph, scroll: :preserve %>
 
     <%= yield :head %>
     <%= content_tag(:script, seo_json_ld, type: "application/ld+json") if seo_json_ld.present? %>
@@ -65,6 +64,7 @@
 
   <body class="<%= user_signed_in? ? 'min-h-screen flex flex-col bg-slate-100 text-slate-900 antialiased' : 'min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased' %>" data-controller="local-time" data-action="turbo:load@document->local-time#formatAll turbo:frame-load@document->local-time#formatAll">
     <nav class="nav-shell <%= user_signed_in? ? 'bg-[var(--app-nav-bg)] border-b border-[var(--app-nav-border)] sticky top-0 z-20' : 'bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10' %>"
+         style="view-transition-name: app-nav; view-transition-class: app-shell;"
          data-nav-state="closed"
          data-controller="nav"
          data-action="click@document->nav#closeOnClickOutside keydown@document->nav#closeOnEscape">
@@ -196,7 +196,8 @@
       </div>
     </nav>
 
-    <main class="<%= user_signed_in? ? 'flex-1 w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5' : 'flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8' %>">
+    <main class="<%= user_signed_in? ? 'flex-1 w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5' : 'flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8' %>"
+          style="view-transition-name: app-main; view-transition-class: app-shell;">
       <% if notice %>
         <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800"><%= notice %></div>
       <% end %>
@@ -208,7 +209,8 @@
     </main>
 
     <% unless user_signed_in? %>
-      <footer class="border-t border-slate-200 bg-white">
+      <footer class="border-t border-slate-200 bg-white"
+              style="view-transition-name: app-footer; view-transition-class: app-shell;">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p class="text-sm text-slate-500">© <%= Time.current.year %> Logister</p>
           <div class="flex items-center gap-4 text-sm">
