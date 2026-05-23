@@ -57,17 +57,21 @@ class Project < ApplicationRecord
   end
 
   def notification_recipients
-    User.where(id: [ user_id, *project_memberships.pluck(:user_id) ]).distinct
+    User.where(id: assignable_user_ids).distinct
   end
 
   def assignable_users
-    User.where(id: [ user_id, *project_memberships.pluck(:user_id) ]).order(:email)
+    User.where(id: assignable_user_ids).order(:email)
   end
 
   def assignable_user?(user)
     return false unless user
 
-    user_id == user.id || project_memberships.exists?(user_id: user.id)
+    assignable_user_ids.include?(user.id)
+  end
+
+  def assignable_user_ids
+    @assignable_user_ids ||= [ user_id, *project_memberships.pluck(:user_id) ].uniq
   end
 
   def integration_label

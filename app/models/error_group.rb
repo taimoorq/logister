@@ -31,7 +31,7 @@ class ErrorGroup < ApplicationRecord
   scope :open,              -> { where(status: [ :unresolved ]) }
   scope :for_inbox,         -> { open }
   scope :introduced_today,  -> { open.where("first_seen_at >= ?", Date.current.beginning_of_day) }
-  scope :recent_first,      -> { order(last_seen_at: :desc) }
+  scope :recent_first,      -> { order(last_seen_at: :desc, id: :desc) }
   scope :by_project,        ->(project) { where(project: project) }
   scope :assigned_to,       ->(user) { where(assigned_user_id: user&.id) }
   scope :unassigned,        -> { where(assigned_user_id: nil) }

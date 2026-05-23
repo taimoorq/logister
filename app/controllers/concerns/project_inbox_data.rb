@@ -33,8 +33,17 @@ module ProjectInboxData
 
     return [] if group_ids.empty?
 
-    groups_by_id = project.error_groups.where(id: group_ids).includes(:latest_event, :assignee).index_by(&:id)
+    groups_by_id = project.error_groups.where(id: group_ids).includes(:assignee).index_by(&:id)
     group_ids.filter_map { |id| groups_by_id[id] }
+  end
+
+  def inbox_latest_events(groups)
+    latest_event_ids = groups.filter_map(&:latest_event_id)
+    return {} if latest_event_ids.empty?
+
+    IngestEvent.where(id: latest_event_ids)
+               .select(:id, :project_id, :uuid)
+               .index_by(&:id)
   end
 
   def inbox_group_trends(project, groups, days: 7)
@@ -74,18 +83,33 @@ module ProjectInboxData
     cache_key = [ "project", project.id, "inbox_counts", normalized_assignee, inbox_cache_version(project) ]
     safe_cache_fetch(cache_key, expires_in: 30.seconds) do
       groups = apply_inbox_assignee(project.error_groups, project, normalized_assignee, viewer: viewer)
+      status_counts = groups.group(:status).count
+
       {
-        unresolved:       groups.unresolved.count,
+        unresolved:       inbox_status_count(status_counts, "unresolved"),
         introduced_today: groups.introduced_today.count,
-        resolved:         groups.resolved.count,
-        ignored:          groups.ignored.count,
-        archived:         groups.archived.count,
-        all:              groups.count
+        resolved:         inbox_status_count(status_counts, "resolved"),
+        ignored:          inbox_status_count(status_counts, "ignored"),
+        archived:         inbox_status_count(status_counts, "archived"),
+        all:              status_counts.values.sum
       }
     end
   end
 
+  def project_has_activity_events?(project)
+    safe_cache_fetch(
+      [ "project", project.id, "has_activity_events", cache_time_bucket(30.seconds) ],
+      expires_in: 30.seconds
+    ) do
+      project.ingest_events.where.not(event_type: IngestEvent.event_types[:error]).exists?
+    end
+  end
+
   private
+
+  def inbox_status_count(counts, status)
+    counts[status].to_i + counts[status.to_sym].to_i + counts[ErrorGroup.statuses.fetch(status)].to_i
+  end
 
   def base_inbox_scope(project, filter)
     groups = project.error_groups

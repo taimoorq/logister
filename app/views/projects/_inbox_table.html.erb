@@ -1,5 +1,8 @@
 <turbo-frame id="project_inbox" target="error_detail">
   <% group_trends = local_assigns.fetch(:group_trends, {}) %>
+  <% latest_events = local_assigns[:latest_events] ||
+    IngestEvent.where(id: groups.filter_map(&:latest_event_id)).select(:id, :project_id, :uuid).index_by(&:id) %>
+  <% has_activity_events = local_assigns.fetch(:has_activity_events, false) %>
   <% assignee_param = local_assigns[:assignee].presence || "all" %>
   <div class="inbox-table-wrap">
     <% if groups.any? %>
@@ -7,7 +10,8 @@
         <table class="inbox-table inbox-table-compact" aria-label="Error groups">
           <tbody>
             <% groups.each do |group| %>
-              <% row_clickable = group.latest_event.present? %>
+              <% latest_event = latest_events[group.latest_event_id] %>
+              <% row_clickable = latest_event.present? %>
               <% first_seen_words = time_ago_in_words(group.first_seen_at) %>
               <% last_seen_words = time_ago_in_words(group.last_seen_at) %>
               <% trend_points = group_trends.fetch(group.id) { group.trend } %>
@@ -23,8 +27,8 @@
                   aria-label="<%= row_clickable ? "Open error details for #{group.title}" : nil %>"
                   style="view-transition-name: <%= dom_id(group) %>; view-transition-class: inbox-row;">
                 <td class="inbox-error-cell">
-                  <% if group.latest_event %>
-                    <%= link_to project_event_path(project, group.latest_event,
+                  <% if latest_event %>
+                    <%= link_to project_event_path(project, latest_event,
                                   filter: filter, q: query, assignee: assignee_param, group_uuid: group.uuid),
                                 class: "error-row-link",
                                 data: {
@@ -92,7 +96,7 @@
     <% else %>
       <div class="inbox-empty">
         <p class="muted">No errors matching this filter.</p>
-        <% if project.ingest_events.where.not(event_type: :error).exists? %>
+        <% if has_activity_events %>
           <p class="muted mt-2">
             This project has logs, metrics, transactions, or check-ins. Those live in
             <%= link_to "Activity", activity_project_path(project), class: "inline-link", data: { turbo_frame: "_top" } %>.

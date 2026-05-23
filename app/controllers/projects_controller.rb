@@ -43,7 +43,7 @@ class ProjectsController < ApplicationController
     @activity_events_last_24h = @event_type_counts_last_24h.except("error").values.sum
     @recent_error_groups = @project.error_groups
                                    .unresolved
-                                   .includes(:latest_event, :assignee)
+                                   .includes(:assignee)
                                    .recent_first
                                    .limit(5)
     @db_stats = dashboard_metrics[:db_stats]
@@ -110,6 +110,8 @@ class ProjectsController < ApplicationController
     @assignable_users = @project.assignable_users.to_a
     @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
     @groups = inbox_groups(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user)
+    @latest_events = inbox_latest_events(@groups)
+    @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
 
     # Turbo Frame request targeting the inbox list — return only the table partial.
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
@@ -117,7 +119,9 @@ class ProjectsController < ApplicationController
       return render partial: "projects/inbox_table", locals: {
         project:       @project,
         groups:        @groups,
+        latest_events: @latest_events,
         group_trends:  inbox_group_trends(@project, @groups),
+        has_activity_events: @has_activity_events,
         selected_uuid: @selected_uuid,
         filter:        @filter,
         query:         @query,

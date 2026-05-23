@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_22_234000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -119,6 +119,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_234000) do
     t.index ["ignored_at"], name: "index_error_groups_on_ignored_at"
     t.index ["last_reopened_at"], name: "index_error_groups_on_last_reopened_at"
     t.index ["latest_event_id"], name: "index_error_groups_on_latest_event_id"
+    t.index ["project_id", "assigned_user_id", "status", "last_seen_at", "id"], name: "idx_error_groups_project_assignee_seen_cursor", order: { last_seen_at: :desc, id: :desc }
     t.index ["project_id", "assigned_user_id", "status", "last_seen_at"], name: "idx_error_groups_project_assignee_status_last_seen", order: { last_seen_at: :desc }
     t.index ["project_id", "fingerprint"], name: "index_error_groups_on_project_id_and_fingerprint", unique: true
     t.index ["project_id", "first_seen_at"], name: "index_error_groups_on_project_id_and_first_seen_at"
@@ -163,6 +164,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_234000) do
     t.bigint "project_id", null: false
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index "project_id, ((context ->> 'release'::text)), occurred_at DESC, id DESC", name: "idx_ingest_events_activity_release_cursor", where: "((event_type <> 0) AND (COALESCE((context ->> 'release'::text), ''::text) <> ''::text))"
+    t.index "project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'production'::text), occurred_at DESC, id DESC", name: "idx_ingest_events_activity_env_cursor", where: "(event_type <> 0)"
     t.index "project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC", name: "idx_ingest_events_project_environment_occurred"
     t.index "project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC", name: "idx_ingest_events_project_release_occurred", where: "(COALESCE((context ->> 'release'::text), ''::text) <> ''::text)"
     t.index ["api_key_id"], name: "index_ingest_events_on_api_key_id"
@@ -173,6 +176,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_234000) do
     t.index ["project_id", "event_type", "occurred_at"], name: "idx_ingest_events_project_occurred_type", order: { occurred_at: :desc }
     t.index ["project_id", "event_type"], name: "index_ingest_events_on_project_id_and_event_type"
     t.index ["project_id", "message", "occurred_at"], name: "idx_ingest_events_project_metric_message_occurred", order: { occurred_at: :desc }, where: "(event_type = 1)"
+    t.index ["project_id", "occurred_at", "id"], name: "idx_ingest_events_project_activity_cursor", order: { occurred_at: :desc, id: :desc }, where: "(event_type <> 0)"
     t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_activity_occurred", order: { occurred_at: :desc }, where: "(event_type <> 0)"
     t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_db_query_occurred", order: { occurred_at: :desc }, where: "((event_type = 1) AND (message = 'db.query'::text))"
     t.index ["project_id", "occurred_at"], name: "idx_ingest_events_project_transactions_occurred", order: { occurred_at: :desc }, where: "(event_type = 2)"
@@ -286,6 +290,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_234000) do
     t.index ["api_key_id"], name: "index_trace_spans_on_api_key_id"
     t.index ["context"], name: "index_trace_spans_on_context", opclass: :jsonb_path_ops, using: :gin
     t.index ["created_at", "id"], name: "idx_trace_spans_retention_created_id"
+    t.index ["project_id", "duration_ms", "started_at"], name: "idx_trace_spans_project_root_duration", order: { duration_ms: :desc, started_at: :desc }, where: "(((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)))"
     t.index ["project_id", "kind", "started_at"], name: "index_trace_spans_on_project_id_and_kind_and_started_at", order: { started_at: :desc }
     t.index ["project_id", "started_at", "id"], name: "idx_trace_spans_project_retention"
     t.index ["project_id", "started_at"], name: "index_trace_spans_on_project_id_and_started_at", order: { started_at: :desc }

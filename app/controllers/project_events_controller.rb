@@ -12,12 +12,18 @@ class ProjectEventsController < ApplicationController
     @query         = params[:q].to_s.strip
     @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
     @groups        = inbox_groups(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user)
+    @latest_events = inbox_latest_events(@groups)
+    @group_trends  = inbox_group_trends(@project, @groups)
+    @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
     @selected_uuid = params[:group_uuid]
 
     if turbo_frame_request?
       render partial: "projects/inbox_table", locals: {
         project:       @project,
         groups:        @groups,
+        latest_events: @latest_events,
+        group_trends:  @group_trends,
+        has_activity_events: @has_activity_events,
         selected_uuid: @selected_uuid,
         filter:        @filter,
         query:         @query,

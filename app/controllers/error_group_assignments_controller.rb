@@ -51,7 +51,9 @@ class ErrorGroupAssignmentsController < ApplicationController
             locals: {
               project: @project,
               groups: groups,
+              latest_events: inbox_latest_events(groups),
               group_trends: inbox_group_trends(@project, groups),
+              has_activity_events: groups.empty? && project_has_activity_events?(@project),
               selected_uuid: selected_uuid,
               filter: filter,
               query: query,

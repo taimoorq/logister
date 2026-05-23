@@ -52,7 +52,17 @@ class ErrorGroupsController < ApplicationController
           # Re-render the inbox list with the group removed/updated
           turbo_stream.replace("project_inbox",
             partial: "projects/inbox_table",
-            locals: { project: @project, groups: @groups, selected_uuid: nil, filter: filter, query: query, assignee: assignee }
+            locals: {
+              project: @project,
+              groups: @groups,
+              latest_events: inbox_latest_events(@groups),
+              group_trends: inbox_group_trends(@project, @groups),
+              has_activity_events: @groups.empty? && project_has_activity_events?(@project),
+              selected_uuid: nil,
+              filter: filter,
+              query: query,
+              assignee: assignee
+            }
           ),
           # Update sidebar counts
           turbo_stream.replace("inbox_counts",

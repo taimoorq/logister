@@ -33,8 +33,9 @@ class DashboardController < ApplicationController
     @monitor_status_counts = summary[:monitor_status_counts]
     @unhealthy_monitors_count = @monitor_status_counts.fetch(:missed, 0) + @monitor_status_counts.fetch(:error, 0)
     @recent_context_events = ordered_records(IngestEvent.includes(:project).where(id: summary[:recent_context_event_ids]), summary[:recent_context_event_ids])
-    @recent_error_groups = ordered_records(ErrorGroup.includes(:project, :latest_event).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
-    @assigned_error_groups = ordered_records(ErrorGroup.includes(:project, :latest_event).where(id: summary[:assigned_error_group_ids]), summary[:assigned_error_group_ids])
+    @recent_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
+    @recent_error_group_latest_events = latest_events_for(@recent_error_groups)
+    @assigned_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:assigned_error_group_ids]), summary[:assigned_error_group_ids])
     @project_summaries = ranked_project_summaries(@projects, @project_stats).first(6)
     @dashboard_explorer = dashboard_explorer_config(@projects)
   end
@@ -56,6 +57,15 @@ class DashboardController < ApplicationController
   def ordered_records(relation, ids)
     records_by_id = relation.index_by(&:id)
     ids.filter_map { |id| records_by_id[id] }
+  end
+
+  def latest_events_for(groups)
+    latest_event_ids = groups.filter_map(&:latest_event_id)
+    return {} if latest_event_ids.empty?
+
+    IngestEvent.where(id: latest_event_ids)
+               .select(:id, :project_id, :uuid, :message)
+               .index_by(&:id)
   end
 
   def ranked_project_summaries(projects, project_stats)

@@ -122,7 +122,7 @@
 
       <div class="dashboard-attention-list">
         <% @recent_error_groups.each do |group| %>
-          <% latest_event = group.latest_event %>
+          <% latest_event = @recent_error_group_latest_events[group.latest_event_id] %>
           <article class="dashboard-attention-row"
                    data-dashboard-attention-target="item"
                    data-event-type="error"
