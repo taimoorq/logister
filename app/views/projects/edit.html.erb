@@ -4,7 +4,7 @@
 
 <%= render "header", tour_group: tour_group %>
 
-<section class="max-w-xl">
+<section class="max-w-3xl">
   <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8"
        <%= tag.attributes(data: product_tour_step_data(tour_group, :edit_project)) %>>
     <div class="mb-2 flex items-center justify-between gap-3">
@@ -15,10 +15,7 @@
 
     <%= form_with model: @project, url: project_path(@project), method: :patch do |f| %>
       <div class="space-y-4">
-        <div>
-          <%= f.label :integration_kind, "Integration", class: "form-label" %>
-          <%= f.select :integration_kind, Project.integration_options, {}, class: "form-input" %>
-        </div>
+        <%= render "integration_picker", f: f %>
 
         <div>
           <%= f.label :name, class: "form-label" %>

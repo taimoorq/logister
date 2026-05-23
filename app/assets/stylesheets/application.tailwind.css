@@ -190,6 +190,51 @@
   .form-input {
     @apply block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500;
   }
+  .integration-picker {
+    @apply min-w-0;
+  }
+  .integration-choice-grid {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2;
+  }
+  .integration-choice {
+    @apply block h-full cursor-pointer;
+  }
+  .integration-choice-input {
+    @apply sr-only;
+  }
+  .integration-choice-panel {
+    @apply flex h-full items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition;
+  }
+  .integration-choice:hover .integration-choice-panel {
+    @apply border-blue-300 bg-blue-50;
+  }
+  .integration-choice-input:focus-visible + .integration-choice-panel {
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+  }
+  .integration-choice-input:checked + .integration-choice-panel {
+    @apply border-blue-500 bg-blue-50 ring-2 ring-blue-200;
+  }
+  .integration-choice-copy {
+    @apply min-w-0 flex-1;
+  }
+  .integration-choice-heading {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .integration-choice-title {
+    @apply text-sm font-semibold text-slate-900;
+  }
+  .integration-choice-badge {
+    @apply rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-500;
+  }
+  .integration-choice-description {
+    @apply mt-1 block text-xs leading-5 text-slate-600;
+  }
+  .integration-choice-check {
+    @apply ml-auto inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-transparent;
+  }
+  .integration-choice-input:checked + .integration-choice-panel .integration-choice-check {
+    @apply border-blue-600 bg-blue-600 text-white;
+  }
   .auth-shell {
     @apply w-full max-w-5xl mx-auto;
   }
@@ -400,6 +445,9 @@
   }
   .project-type-icon-dotnet {
     @apply bg-violet-50 text-violet-800 ring-1 ring-violet-200;
+  }
+  .project-type-icon-http_api {
+    @apply bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200;
   }
   .project-card-chart {
     @apply bg-slate-50 px-4 py-4;

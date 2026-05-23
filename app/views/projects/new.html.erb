@@ -1,7 +1,7 @@
 <% tour_group = "project-new" %>
 
 <%= render layout: "shared/product_tour_frame",
-           locals: { tour_group: tour_group, tag_name: :section, html_options: { class: "max-w-xl mx-auto" } } do %>
+           locals: { tour_group: tour_group, tag_name: :section, html_options: { class: "max-w-3xl mx-auto" } } do %>
   <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8"
        <%= tag.attributes(data: product_tour_step_data(tour_group, :create_project)) %>>
     <div class="mb-2 flex items-center justify-between gap-3">
@@ -13,11 +13,7 @@
     <%= form_with model: @project,
                   data: product_tour_step_data(tour_group, :project_form) do |f| %>
       <div class="space-y-4">
-        <div>
-          <%= f.label :integration_kind, "Integration", class: "form-label" %>
-          <%= f.select :integration_kind, Project.integration_options, {}, class: "form-input" %>
-          <p class="text-slate-500 text-xs mt-1">Choose how this project will send telemetry into Logister.</p>
-        </div>
+        <%= render "integration_picker", f: f %>
 
         <div>
           <%= f.label :name, class: "form-label" %>

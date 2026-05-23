@@ -1,0 +1,36 @@
+<fieldset class="integration-picker">
+  <legend class="form-label">Integration</legend>
+  <p id="project-integration-picker-hint" class="text-slate-500 text-xs mb-3">
+    Choose how this project will send telemetry into Logister.
+  </p>
+
+  <div class="integration-choice-grid" aria-describedby="project-integration-picker-hint">
+    <% project_integration_picker_choices.each do |choice| %>
+      <% option_project = Project.new(integration_kind: choice.fetch(:value)) %>
+      <% description_id = "project_integration_kind_#{choice.fetch(:value)}_description" %>
+
+      <label class="integration-choice">
+        <%= f.radio_button :integration_kind,
+                           choice.fetch(:value),
+                           class: "integration-choice-input",
+                           required: true,
+                           aria: { describedby: description_id } %>
+        <span class="integration-choice-panel">
+          <%= project_integration_icon(option_project) %>
+          <span class="integration-choice-copy">
+            <span class="integration-choice-heading">
+              <span class="integration-choice-title"><%= choice.fetch(:label) %></span>
+              <span class="integration-choice-badge"><%= choice.fetch(:badge) %></span>
+            </span>
+            <span id="<%= description_id %>" class="integration-choice-description">
+              <%= choice.fetch(:description) %>
+            </span>
+          </span>
+          <span class="integration-choice-check" aria-hidden="true">
+            <%= app_icon(:check, css: "h-3 w-3") %>
+          </span>
+        </span>
+      </label>
+    <% end %>
+  </div>
+</fieldset>

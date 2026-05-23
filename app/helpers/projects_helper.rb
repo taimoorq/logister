@@ -1,4 +1,43 @@
 module ProjectsHelper
+  INTEGRATION_PICKER_DETAILS = {
+    "ruby" => {
+      label: "Ruby gem",
+      badge: "Gem",
+      description: "Rails apps, Ruby services, jobs, and custom Ruby telemetry."
+    },
+    "dotnet" => {
+      label: ".NET / ASP.NET Core",
+      badge: "NuGet",
+      description: "ASP.NET Core apps, .NET workers, C# services, and custom metrics with logister-dotnet."
+    },
+    "cfml" => {
+      label: "CFML",
+      badge: "CFML",
+      description: "ColdFusion and Lucee apps that send structured server errors."
+    },
+    "javascript" => {
+      label: "JavaScript / TypeScript",
+      badge: "npm",
+      description: "Node, TypeScript, Express, workers, console logs, and browser timing with logister-js."
+    },
+    "python" => {
+      label: "Python",
+      badge: "PyPI",
+      description: "FastAPI, Django, Flask, Celery, Python workers, and native logging with logister-python."
+    },
+    "http_api" => {
+      label: "Manual / HTTP API",
+      badge: "Manual",
+      description: "Unsupported runtimes, custom clients, scripts, workers, and direct HTTP reporting."
+    }
+  }.freeze
+
+  def project_integration_picker_choices
+    Project.integration_options.map do |_label, value|
+      INTEGRATION_PICKER_DETAILS.fetch(value).merge(value: value)
+    end
+  end
+
   def project_integration_docs_path(project)
     return docs_site_url(:cfml_integration) if project&.integration_cfml?
     return docs_site_url(:dotnet_integration) if project&.integration_dotnet?

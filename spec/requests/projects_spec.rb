@@ -1005,7 +1005,12 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Edit project")
-        expect(Nokogiri::HTML.parse(response.body).at_css("input[name='project[slug]']")).to be_nil
+        document = Nokogiri::HTML.parse(response.body)
+
+        expect(document.at_css("input[name='project[slug]']")).to be_nil
+        expect(document.at_css("select[name='project[integration_kind]']")).to be_nil
+        expect(document.css(".integration-choice-panel").size).to eq(Project.integration_options.size)
+        expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq(projects(:one).integration_kind)
       end
 
       it "returns 404 for project user cannot access" do
@@ -1076,7 +1081,19 @@ RSpec.describe "Projects", type: :request do
       get new_project_path
 
       expect(response).to have_http_status(:success)
-      expect(Nokogiri::HTML.parse(response.body).at_css("input[name='project[slug]']")).to be_nil
+      document = Nokogiri::HTML.parse(response.body)
+
+      expect(document.at_css("input[name='project[slug]']")).to be_nil
+      expect(document.at_css("select[name='project[integration_kind]']")).to be_nil
+      expect(document.css(".integration-choice-panel").map(&:text).join(" ")).to include(
+        "Ruby gem",
+        ".NET / ASP.NET Core",
+        "CFML",
+        "JavaScript / TypeScript",
+        "Python",
+        "Manual / HTTP API"
+      )
+      expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq("ruby")
     end
 
     it "creates project and redirects" do
