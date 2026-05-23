@@ -60,7 +60,7 @@ Canonical documentation lives on the public docs host:
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.1.1` or `docker.io/taimoorq/logister:v2.1.1`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.2.0` or `docker.io/taimoorq/logister:v2.2.0`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/

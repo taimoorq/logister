@@ -2,6 +2,23 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.2.0 - 2026-05-23
+
+### Added
+
+- Added Redis-backed rate limiting for public ingestion APIs, covering `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` with `429 Too Many Requests`, `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` responses.
+- Added deployment knobs for accepted public API requests, rate-limit window size, and authentication-failure throttling through `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`.
+- Added app-admin-only project-level public API rate-limit overrides so operators listed in `LOGISTER_ADMIN_EMAILS` can tune limits for a single project without granting that control to project owners or shared project members.
+
+### Changed
+
+- Preloaded projects during API token authentication so project-level rate-limit overrides do not add a second project lookup on accepted ingest and check-in requests.
+- Updated public self-hosting references for the `v2.2.0` release image tag.
+
+### Fixed
+
+- Routed the Rails app's Probo Cookie Banner API calls through a same-origin proxy to avoid browser CORS failures when the upstream banner service uses credentialed requests.
+
 ## v2.1.1 - 2026-05-23
 
 ### Changed
