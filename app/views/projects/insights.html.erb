@@ -217,7 +217,10 @@
             </div>
           </div>
         </div>
-        <div class="project-insights-chart project-insights-chart-main" data-project-insights-target="metricChart"></div>
+        <%= render "projects/telemetry_timeline_chart",
+                   classes: "project-insights-chart project-insights-chart-main",
+                   data: { "project-insights-target": "metricChart" },
+                   label: "Telemetry timeline for the selected insight scope" %>
       </article>
 
       <article class="project-insights-panel"
@@ -229,7 +232,10 @@
             <span>Activity grouped by health, logs, metrics, performance, and check-ins</span>
           </div>
         </div>
-        <div class="project-insights-chart" data-project-insights-target="eventChart"></div>
+        <%= render "projects/telemetry_timeline_chart",
+                   classes: "project-insights-chart",
+                   data: { "project-insights-target": "eventChart" },
+                   label: "Signal mix timeline for the selected insight scope" %>
       </article>
     </div>
 

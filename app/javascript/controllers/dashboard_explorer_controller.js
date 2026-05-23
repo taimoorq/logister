@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import * as echarts from "echarts"
-import { EVENT_COLORS } from "../charts/telemetry_timeline.js"
+import { EVENT_COLORS } from "charts/telemetry_timeline"
 
 const FALLBACK_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", "#0f766e", "#475569"]
 

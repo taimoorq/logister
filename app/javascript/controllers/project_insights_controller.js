@@ -1,7 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
-import { EVENT_COLORS, telemetryTimelineOption } from "../charts/telemetry_timeline.js"
+import { EVENT_COLORS, emptyChartOption, metricTimelineOption, telemetryTimelineOption } from "charts/telemetry_timeline"
 
-const SERIES_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", "#0f766e", "#475569", "#db2777"]
 const MAX_SELECTED_METRICS = 8
 const METRIC_CATEGORY_ORDER = ["health", "activity", "performance", "monitors", "metrics", "other"]
 const METRIC_CATEGORY_COPY = {
@@ -90,9 +89,11 @@ export default class extends Controller {
     this.keydownHandler = (event) => {
       if (event.key === "Escape") this.closeSeriesCatalog()
     }
+    this.beforeCacheHandler = () => this.beforeCache()
     window.addEventListener("resize", this.resizeHandler)
     document.addEventListener("click", this.documentClickHandler)
     document.addEventListener("keydown", this.keydownHandler)
+    document.addEventListener("turbo:before-cache", this.beforeCacheHandler)
   }
 
   disconnect() {
@@ -102,9 +103,25 @@ export default class extends Controller {
     window.removeEventListener("resize", this.resizeHandler)
     document.removeEventListener("click", this.documentClickHandler)
     document.removeEventListener("keydown", this.keydownHandler)
+    document.removeEventListener("turbo:before-cache", this.beforeCacheHandler)
+    this.disposeCharts()
+  }
+
+  beforeCache() {
+    this.abortController?.abort()
+    this.disposeCharts()
+    this.metricChartTarget.replaceChildren()
+    this.eventChartTarget.replaceChildren()
+  }
+
+  disposeCharts() {
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
     clearInterval(this.refreshTimer)
     cancelAnimationFrame(this.resizeFrame)
     Object.values(this.charts || {}).forEach((chart) => chart.dispose())
+    this.charts = {}
+    this.chartsReady = false
   }
 
   async loadCharts() {
@@ -315,8 +332,8 @@ export default class extends Controller {
       this.summaryCell("--", "Transactions", "Performance spans") +
       this.summaryCell("--", "Metrics", "Custom measurements") +
       this.summaryCell("--", "Check-ins", "Monitors and jobs")
-    this.charts.metrics.setOption({ graphic: emptyGraphic(true, "Unable to load metrics"), series: [] }, true)
-    this.charts.events.setOption({ graphic: emptyGraphic(true, "Unable to load activity"), series: [] }, true)
+    this.charts.metrics.setOption(emptyChartOption("Unable to load metrics"), true)
+    this.charts.events.setOption(emptyChartOption("Unable to load activity"), true)
   }
 
   renderFilterSelects(data) {
@@ -517,72 +534,13 @@ export default class extends Controller {
     const metricSeries = data.metric_series || []
     const timestamps = data.buckets || []
     const labels = timestamps.map((timestamp) => shortTimeLabel(timestamp, data.bucket))
-    const definitionsByName = new Map(metricSeries.map((series) => [series.label, series]))
-    const series = metricSeries.map((metric, index) => ({
-      name: metric.label,
-      type: "line",
-      yAxisIndex: metric.unit === "ms" ? 1 : 0,
-      smooth: true,
-      showSymbol: false,
-      symbolSize: 5,
-      lineStyle: { width: 2 },
-      emphasis: { focus: "series" },
-      color: SERIES_COLORS[index % SERIES_COLORS.length],
-      data: (metric.data || []).map((point) => Number(point.value) || 0)
-    }))
-    const hasData = series.some((line) => line.data.some((value) => value > 0))
 
-    this.charts.metrics.setOption({
-      aria: { enabled: true },
-      color: SERIES_COLORS,
-      graphic: emptyGraphic(!hasData, series.length > 0 ? "No values in this slice" : "Add a metric to chart"),
-      legend: {
-        top: 0,
-        type: "scroll",
-        icon: "roundRect",
-        textStyle: { color: "#475569", fontSize: 11 }
-      },
-      tooltip: {
-        trigger: "axis",
-        formatter: (params) => metricTooltipFormatter(params, definitionsByName)
-      },
-      dataZoom: [
-        { type: "inside", filterMode: "none", throttle: 50 },
-        {
-          type: "slider",
-          height: 18,
-          bottom: 8,
-          filterMode: "none",
-          borderColor: "#e2e8f0",
-          fillerColor: "rgba(37, 99, 235, 0.14)",
-          handleStyle: { color: "#2563eb" },
-          textStyle: { color: "#64748b" }
-        }
-      ],
-      xAxis: {
-        type: "category",
-        boundaryGap: false,
-        data: labels,
-        axisTick: { show: false },
-        axisLabel: { color: "#64748b", hideOverlap: true }
-      },
-      yAxis: [
-        {
-          type: "value",
-          name: "count/value",
-          axisLabel: { formatter: compactNumber, color: "#64748b" },
-          splitLine: { lineStyle: { color: "#e2e8f0" } }
-        },
-        {
-          type: "value",
-          name: "ms",
-          axisLabel: { formatter: compactNumber, color: "#64748b" },
-          splitLine: { show: false }
-        }
-      ],
-      grid: { left: 48, right: 54, top: 42, bottom: 58 },
-      series
-    }, true)
+    this.charts.metrics.setOption(metricTimelineOption({
+      labels,
+      metricSeries,
+      emptyText: "No values in this slice",
+      noSeriesText: "Add a metric to chart"
+    }), true)
   }
 
   renderEventChart(data) {
@@ -845,34 +803,6 @@ function populateSelect(target, options, selectedValue, emptyLabel) {
   target.value = selectedValue || ""
 }
 
-function emptyGraphic(show, text) {
-  if (!show) return []
-
-  return [{
-    type: "text",
-    left: "center",
-    top: "middle",
-    silent: true,
-    style: {
-      text,
-      fill: "#64748b",
-      fontSize: 12,
-      fontWeight: 600
-    }
-  }]
-}
-
-function metricTooltipFormatter(params, definitionsByName) {
-  if (!Array.isArray(params) || params.length === 0) return ""
-
-  const rows = params.filter((item) => Number(item.value) > 0).map((item) => {
-    const definition = definitionsByName.get(item.seriesName) || {}
-    return `${item.marker}${escapeHtml(item.seriesName)}: ${formatValue(item.value, definition.unit)}`
-  })
-
-  return `${escapeHtml(params[0].axisValueLabel || "")}<br>${rows.length > 0 ? rows.join("<br>") : "No values"}`
-}
-
 function transitionAttributes(prefix, value, transitionClass) {
   return `style="view-transition-name: ${transitionName(prefix, value)}; view-transition-class: ${transitionClass};"`
 }
@@ -891,10 +821,6 @@ function formatNumber(value) {
   if (value === "--") return value
 
   return new Intl.NumberFormat().format(Number(value) || 0)
-}
-
-function compactNumber(value) {
-  return new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(Number(value) || 0)
 }
 
 function formatValue(value, unit) {

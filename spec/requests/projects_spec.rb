@@ -147,7 +147,9 @@ RSpec.describe "Projects", type: :request do
         expect(document.text).to include("Logs 1", "Transactions 1", "DB queries", "1")
         timeline = document.at_css("[data-controller='project-telemetry-timeline']")
         expect(timeline).to be_present
-        expect(timeline.at_css(".project-telemetry-chart[role='img']")).to be_present
+        chart = timeline.at_css(".project-telemetry-chart[role='img']")
+        expect(chart).to be_present
+        expect(chart["style"]).to include("min-height: 20rem")
         expect(timeline.at_css("a[href='#{insights_project_path(project)}']").text).to eq("Insights")
         expect(document.text).to include("Telemetry timeline", "Last 24 hours by signal type")
         expect(document.text).to include("Recent errors", "Newest unresolved groups", "Grouped status error")

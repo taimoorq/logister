@@ -17,6 +17,9 @@ Rails.application.configure do
 
   # Configure public file server for tests with cache-control for performance.
   config.public_file_server.headers = { "cache-control" => "public, max-age=3600" }
+  # Keep system specs from serving a stale production precompile in public/assets.
+  config.assets.output_path = Rails.root.join("tmp/assets/test")
+  config.assets.manifest_path = Rails.root.join("tmp/assets/test/.manifest.json")
 
   # Show full error reports.
   config.consider_all_requests_local = true

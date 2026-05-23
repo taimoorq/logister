@@ -1,0 +1,12 @@
+<% classes = local_assigns.fetch(:classes) %>
+<% data = local_assigns.fetch(:data) %>
+<% label = local_assigns.fetch(:label) %>
+<% min_height = local_assigns[:min_height] %>
+
+<%= tag.div(
+  class: classes,
+  data: data,
+  style: min_height.present? ? "min-height: #{min_height};" : nil,
+  role: "img",
+  aria: { label: label }
+) %>

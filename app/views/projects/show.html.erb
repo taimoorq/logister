@@ -133,10 +133,11 @@
         <%= link_to "Insights", insights_project_path(@project), class: "dashboard-panel-link" %>
       </div>
 
-      <div class="project-telemetry-chart"
-           data-project-telemetry-timeline-target="chart"
-           role="img"
-           aria-label="Project telemetry timeline for the last 24 hours"></div>
+      <%= render "projects/telemetry_timeline_chart",
+                 classes: "project-telemetry-chart",
+                 data: { "project-telemetry-timeline-target": "chart" },
+                 min_height: "20rem",
+                 label: "Project telemetry timeline for the last 24 hours" %>
 
       <div class="project-telemetry-legend" aria-label="Telemetry totals">
         <% Dashboard::EVENT_TYPE_ORDER.each do |event_type| %>
