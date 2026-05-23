@@ -550,15 +550,22 @@ class ProjectInsights
       row = aggregate_row_for(
         scope,
         columns: [ :event_type, :occurred_at ],
-        select_sql: <<~SQL.squish
+        select_sql: <<~SQL.squish,
           COUNT(*) AS events,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("error")}) AS errors,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("log")}) AS logs,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("metric")}) AS metrics,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("transaction")}) AS transactions,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("check_in")}) AS check_ins,
+          COUNT(*) FILTER (WHERE event_type = ?) AS errors,
+          COUNT(*) FILTER (WHERE event_type = ?) AS logs,
+          COUNT(*) FILTER (WHERE event_type = ?) AS metrics,
+          COUNT(*) FILTER (WHERE event_type = ?) AS transactions,
+          COUNT(*) FILTER (WHERE event_type = ?) AS check_ins,
           MAX(occurred_at) AS latest_event_at
         SQL
+        binds: [
+          event_type_value("error"),
+          event_type_value("log"),
+          event_type_value("metric"),
+          event_type_value("transaction"),
+          event_type_value("check_in")
+        ]
       )
       total_events = row.fetch("events").to_i
       errors = row.fetch("errors").to_i
@@ -597,31 +604,54 @@ class ProjectInsights
 
     def standard_bucket_rows(scope, bucket)
       bucket_sql = bucket_sql_for(bucket)
-      sql = <<~SQL.squish
-        SELECT
-          #{bucket_sql} AS bucket_time,
-          COUNT(*) AS events_total,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("error")}) AS errors_count,
-          COUNT(*) FILTER (WHERE event_type <> #{IngestEvent.event_types.fetch("error")}) AS activity_count,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("log")}) AS logs_count,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("metric")}) AS metrics_count,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("check_in")}) AS check_ins_count,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("transaction")}) AS transactions_count,
-          AVG(duration_value) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("transaction")} AND duration_value IS NOT NULL) AS transactions_avg,
-          percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("transaction")} AND duration_value IS NOT NULL) AS transactions_p95,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("metric")} AND message = 'db.query') AS db_query_count,
-          AVG(duration_value) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("metric")} AND message = 'db.query' AND duration_value IS NOT NULL) AS db_query_avg,
-          percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("metric")} AND message = 'db.query' AND duration_value IS NOT NULL) AS db_query_p95
-        FROM (
+      sql = sanitized_sql_query(
+        <<~SQL.squish,
           SELECT
-            event_type,
-            message,
-            occurred_at,
-            #{duration_value_sql} AS duration_value
-          FROM (#{events_scope_sql(scope, :event_type, :message, :occurred_at, :context)}) scoped_events
-        ) bucketed_events
-        GROUP BY bucket_time
-      SQL
+            %{bucket_sql} AS bucket_time,
+            COUNT(*) AS events_total,
+            COUNT(*) FILTER (WHERE event_type = ?) AS errors_count,
+            COUNT(*) FILTER (WHERE event_type <> ?) AS activity_count,
+            COUNT(*) FILTER (WHERE event_type = ?) AS logs_count,
+            COUNT(*) FILTER (WHERE event_type = ?) AS metrics_count,
+            COUNT(*) FILTER (WHERE event_type = ?) AS check_ins_count,
+            COUNT(*) FILTER (WHERE event_type = ?) AS transactions_count,
+            AVG(duration_value) FILTER (WHERE event_type = ? AND duration_value IS NOT NULL) AS transactions_avg,
+            percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE event_type = ? AND duration_value IS NOT NULL) AS transactions_p95,
+            COUNT(*) FILTER (WHERE event_type = ? AND message = ?) AS db_query_count,
+            AVG(duration_value) FILTER (WHERE event_type = ? AND message = ? AND duration_value IS NOT NULL) AS db_query_avg,
+            percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE event_type = ? AND message = ? AND duration_value IS NOT NULL) AS db_query_p95
+          FROM (
+            SELECT
+              event_type,
+              message,
+              occurred_at,
+              %{duration_value_sql} AS duration_value
+            FROM (%{events_scope_sql}) scoped_events
+          ) bucketed_events
+          GROUP BY bucket_time
+        SQL
+        binds: [
+          event_type_value("error"),
+          event_type_value("error"),
+          event_type_value("log"),
+          event_type_value("metric"),
+          event_type_value("check_in"),
+          event_type_value("transaction"),
+          event_type_value("transaction"),
+          event_type_value("transaction"),
+          event_type_value("metric"),
+          db_query_message,
+          event_type_value("metric"),
+          db_query_message,
+          event_type_value("metric"),
+          db_query_message
+        ],
+        fragments: {
+          bucket_sql: bucket_sql,
+          duration_value_sql: duration_value_sql,
+          events_scope_sql: events_scope_sql(scope, :event_type, :message, :occurred_at, :context)
+        }
+      )
 
       connection.exec_query(sql).to_a
     end
@@ -636,23 +666,49 @@ class ProjectInsights
 
     def duration_value_sql
       raw_value = "COALESCE(context->>'duration_ms', context->>'durationMs')"
-      duration_event_condition = <<~SQL.squish
-        (
-          event_type = #{IngestEvent.event_types.fetch("transaction")}
-          OR (event_type = #{IngestEvent.event_types.fetch("metric")} AND message = 'db.query')
-        )
-      SQL
+      duration_event_condition = sanitize_sql_array([
+        <<~SQL.squish,
+          (
+            event_type = ?
+            OR (event_type = ? AND message = ?)
+          )
+        SQL
+        event_type_value("transaction"),
+        event_type_value("metric"),
+        db_query_message
+      ])
 
       "CASE WHEN #{duration_event_condition} AND #{raw_value} ~ #{connection.quote(NUMERIC_SQL_PATTERN)} THEN (#{raw_value})::double precision END"
     end
 
-    def aggregate_row_for(scope, columns:, select_sql:)
-      sql = <<~SQL.squish
-        SELECT #{select_sql}
-        FROM (#{events_scope_sql(scope, *columns)}) scoped_events
-      SQL
+    def aggregate_row_for(scope, columns:, select_sql:, binds: [])
+      sql = sanitized_sql_query(
+        <<~SQL.squish,
+          SELECT #{select_sql}
+          FROM (%{events_scope_sql}) scoped_events
+        SQL
+        binds: binds,
+        fragments: { events_scope_sql: events_scope_sql(scope, *columns) }
+      )
 
       connection.exec_query(sql).first || {}
+    end
+
+    def sanitized_sql_query(template, binds: [], fragments: {})
+      sql = sanitize_sql_array([ template, *binds ])
+      format(sql, **fragments.symbolize_keys)
+    end
+
+    def sanitize_sql_array(value)
+      ApplicationRecord.sanitize_sql_array(value)
+    end
+
+    def event_type_value(event_type)
+      IngestEvent.event_types.fetch(event_type)
+    end
+
+    def db_query_message
+      "db.query"
     end
 
     def events_scope_sql(scope, *columns)
@@ -722,19 +778,32 @@ class ProjectInsights
     end
 
     def standard_metric_availability_counts(scope)
-      sql = <<~SQL.squish
-        SELECT
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("transaction")} AND duration_value IS NOT NULL) AS transaction_duration_count,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("metric")} AND message = 'db.query') AS db_query_count,
-          COUNT(*) FILTER (WHERE event_type = #{IngestEvent.event_types.fetch("metric")} AND message = 'db.query' AND duration_value IS NOT NULL) AS db_query_duration_count
-        FROM (
+      sql = sanitized_sql_query(
+        <<~SQL.squish,
           SELECT
-            event_type,
-            message,
-            #{duration_value_sql} AS duration_value
-          FROM (#{events_scope_sql(scope, :event_type, :message, :context)}) scoped_events
-        ) availability_events
-      SQL
+            COUNT(*) FILTER (WHERE event_type = ? AND duration_value IS NOT NULL) AS transaction_duration_count,
+            COUNT(*) FILTER (WHERE event_type = ? AND message = ?) AS db_query_count,
+            COUNT(*) FILTER (WHERE event_type = ? AND message = ? AND duration_value IS NOT NULL) AS db_query_duration_count
+          FROM (
+            SELECT
+              event_type,
+              message,
+              %{duration_value_sql} AS duration_value
+            FROM (%{events_scope_sql}) scoped_events
+          ) availability_events
+        SQL
+        binds: [
+          event_type_value("transaction"),
+          event_type_value("metric"),
+          db_query_message,
+          event_type_value("metric"),
+          db_query_message
+        ],
+        fragments: {
+          duration_value_sql: duration_value_sql,
+          events_scope_sql: events_scope_sql(scope, :event_type, :message, :context)
+        }
+      )
       row = connection.exec_query(sql).first || {}
       transaction_duration_count = row.fetch("transaction_duration_count").to_i
       db_query_count = row.fetch("db_query_count").to_i
