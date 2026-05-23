@@ -313,7 +313,7 @@ class ProjectInsights
         event_type_catalog: event_type_catalog,
         event_timeline: event_timeline(standard_bucket_rows, buckets, bucket),
         event_types: event_type_breakdown(summary),
-        metric_catalog: metric_catalog_with_availability(catalog, scope, summary),
+        metric_catalog: metric_catalog_with_availability(catalog, scope, summary, standard_bucket_rows),
         selected_metrics: selected_metrics,
         metric_series: metric_series(scope, selected_metrics, catalog, buckets, bucket, standard_bucket_rows),
         environments: filter_options.fetch(:environments),
@@ -603,6 +603,15 @@ class ProjectInsights
     end
 
     def standard_bucket_rows(scope, bucket)
+      merge_standard_bucket_rows(
+        bucket,
+        event_bucket_rows(scope, bucket),
+        transaction_duration_bucket_rows(scope, bucket),
+        db_query_bucket_rows(scope, bucket)
+      )
+    end
+
+    def event_bucket_rows(scope, bucket)
       bucket_sql = bucket_sql_for(bucket)
       sql = sanitized_sql_query(
         <<~SQL.squish,
@@ -614,20 +623,8 @@ class ProjectInsights
             COUNT(*) FILTER (WHERE event_type = ?) AS logs_count,
             COUNT(*) FILTER (WHERE event_type = ?) AS metrics_count,
             COUNT(*) FILTER (WHERE event_type = ?) AS check_ins_count,
-            COUNT(*) FILTER (WHERE event_type = ?) AS transactions_count,
-            AVG(duration_value) FILTER (WHERE event_type = ? AND duration_value IS NOT NULL) AS transactions_avg,
-            percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE event_type = ? AND duration_value IS NOT NULL) AS transactions_p95,
-            COUNT(*) FILTER (WHERE event_type = ? AND message = ?) AS db_query_count,
-            AVG(duration_value) FILTER (WHERE event_type = ? AND message = ? AND duration_value IS NOT NULL) AS db_query_avg,
-            percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE event_type = ? AND message = ? AND duration_value IS NOT NULL) AS db_query_p95
-          FROM (
-            SELECT
-              event_type,
-              message,
-              occurred_at,
-              %{duration_value_sql} AS duration_value
-            FROM (%{events_scope_sql}) scoped_events
-          ) bucketed_events
+            COUNT(*) FILTER (WHERE event_type = ?) AS transactions_count
+          FROM (%{events_scope_sql}) scoped_events
           GROUP BY bucket_time
         SQL
         binds: [
@@ -636,24 +633,82 @@ class ProjectInsights
           event_type_value("log"),
           event_type_value("metric"),
           event_type_value("check_in"),
-          event_type_value("transaction"),
-          event_type_value("transaction"),
-          event_type_value("transaction"),
-          event_type_value("metric"),
-          db_query_message,
-          event_type_value("metric"),
-          db_query_message,
-          event_type_value("metric"),
-          db_query_message
+          event_type_value("transaction")
         ],
         fragments: {
           bucket_sql: bucket_sql,
-          duration_value_sql: duration_value_sql,
-          events_scope_sql: events_scope_sql(scope, :event_type, :message, :occurred_at, :context)
+          events_scope_sql: events_scope_sql(scope, :event_type, :occurred_at)
         }
       )
 
       connection.exec_query(sql).to_a
+    end
+
+    def transaction_duration_bucket_rows(scope, bucket)
+      bucket_sql = bucket_sql_for(bucket)
+      duration_scope = scope.where(event_type: event_type_value("transaction"))
+      sql = sanitized_sql_query(
+        <<~SQL.squish,
+          SELECT
+            %{bucket_sql} AS bucket_time,
+            COUNT(*) FILTER (WHERE duration_value IS NOT NULL) AS transactions_duration_count,
+            AVG(duration_value) FILTER (WHERE duration_value IS NOT NULL) AS transactions_avg,
+            percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE duration_value IS NOT NULL) AS transactions_p95
+          FROM (
+            SELECT
+              occurred_at,
+              %{duration_value_sql} AS duration_value
+            FROM (%{events_scope_sql}) scoped_events
+          ) transaction_events
+          GROUP BY bucket_time
+        SQL
+        fragments: {
+          bucket_sql: bucket_sql,
+          duration_value_sql: numeric_duration_value_sql,
+          events_scope_sql: events_scope_sql(duration_scope, :occurred_at, :context)
+        }
+      )
+
+      connection.exec_query(sql).to_a
+    end
+
+    def db_query_bucket_rows(scope, bucket)
+      bucket_sql = bucket_sql_for(bucket)
+      duration_scope = db_query_scope(scope)
+      sql = sanitized_sql_query(
+        <<~SQL.squish,
+          SELECT
+            %{bucket_sql} AS bucket_time,
+            COUNT(*) AS db_query_count,
+            COUNT(*) FILTER (WHERE duration_value IS NOT NULL) AS db_query_duration_count,
+            AVG(duration_value) FILTER (WHERE duration_value IS NOT NULL) AS db_query_avg,
+            percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_value) FILTER (WHERE duration_value IS NOT NULL) AS db_query_p95
+          FROM (
+            SELECT
+              occurred_at,
+              %{duration_value_sql} AS duration_value
+            FROM (%{events_scope_sql}) scoped_events
+          ) db_query_events
+          GROUP BY bucket_time
+        SQL
+        fragments: {
+          bucket_sql: bucket_sql,
+          duration_value_sql: numeric_duration_value_sql,
+          events_scope_sql: events_scope_sql(duration_scope, :occurred_at, :context)
+        }
+      )
+
+      connection.exec_query(sql).to_a
+    end
+
+    def merge_standard_bucket_rows(bucket, *row_sets)
+      row_sets.each_with_object({}) do |rows, merged_rows|
+        rows.each do |row|
+          timestamp = bucket_timestamp(row.fetch("bucket_time"), bucket)
+          merged_rows[timestamp] ||= { "bucket_time" => row.fetch("bucket_time") }
+          merged_rows[timestamp].merge!(row)
+        end
+      end.values
     end
 
     def standard_bucket_rows_by_timestamp(standard_bucket_rows, bucket)
@@ -665,7 +720,7 @@ class ProjectInsights
     end
 
     def duration_value_sql
-      raw_value = "COALESCE(context->>'duration_ms', context->>'durationMs')"
+      raw_value = duration_context_value_sql
       duration_event_condition = sanitize_sql_array([
         <<~SQL.squish,
           (
@@ -679,6 +734,16 @@ class ProjectInsights
       ])
 
       "CASE WHEN #{duration_event_condition} AND #{raw_value} ~ #{connection.quote(NUMERIC_SQL_PATTERN)} THEN (#{raw_value})::double precision END"
+    end
+
+    def numeric_duration_value_sql
+      raw_value = duration_context_value_sql
+
+      "CASE WHEN #{raw_value} ~ #{connection.quote(NUMERIC_SQL_PATTERN)} THEN (#{raw_value})::double precision END"
+    end
+
+    def duration_context_value_sql
+      "COALESCE(context->>'duration_ms', context->>'durationMs')"
     end
 
     def aggregate_row_for(scope, columns:, select_sql:, binds: [])
@@ -695,7 +760,7 @@ class ProjectInsights
     end
 
     def sanitized_sql_query(template, binds: [], fragments: {})
-      sql = sanitize_sql_array([ template, *binds ])
+      sql = binds.present? ? sanitize_sql_array([ template, *binds ]) : template
       format(sql, **fragments.symbolize_keys)
     end
 
@@ -752,8 +817,8 @@ class ProjectInsights
       end
     end
 
-    def metric_catalog_with_availability(catalog, scope, summary)
-      availability = metric_availability_counts(catalog, scope, summary)
+    def metric_catalog_with_availability(catalog, scope, summary, standard_bucket_rows)
+      availability = metric_availability_counts(catalog, scope, summary, standard_bucket_rows)
 
       catalog.map do |metric|
         matching_events = availability.fetch(metric.fetch(:key), 0)
@@ -762,7 +827,7 @@ class ProjectInsights
       end
     end
 
-    def metric_availability_counts(catalog, scope, summary)
+    def metric_availability_counts(catalog, scope, summary, standard_bucket_rows)
       base_counts = {
         "events.total" => summary.fetch(:events, 0),
         "errors.count" => summary.fetch(:errors, 0),
@@ -773,41 +838,14 @@ class ProjectInsights
       }
 
       base_counts
-        .merge(standard_metric_availability_counts(scope))
+        .merge(standard_metric_availability_counts(standard_bucket_rows))
         .merge(custom_metric_availability_counts(catalog, scope))
     end
 
-    def standard_metric_availability_counts(scope)
-      sql = sanitized_sql_query(
-        <<~SQL.squish,
-          SELECT
-            COUNT(*) FILTER (WHERE event_type = ? AND duration_value IS NOT NULL) AS transaction_duration_count,
-            COUNT(*) FILTER (WHERE event_type = ? AND message = ?) AS db_query_count,
-            COUNT(*) FILTER (WHERE event_type = ? AND message = ? AND duration_value IS NOT NULL) AS db_query_duration_count
-          FROM (
-            SELECT
-              event_type,
-              message,
-              %{duration_value_sql} AS duration_value
-            FROM (%{events_scope_sql}) scoped_events
-          ) availability_events
-        SQL
-        binds: [
-          event_type_value("transaction"),
-          event_type_value("metric"),
-          db_query_message,
-          event_type_value("metric"),
-          db_query_message
-        ],
-        fragments: {
-          duration_value_sql: duration_value_sql,
-          events_scope_sql: events_scope_sql(scope, :event_type, :message, :context)
-        }
-      )
-      row = connection.exec_query(sql).first || {}
-      transaction_duration_count = row.fetch("transaction_duration_count").to_i
-      db_query_count = row.fetch("db_query_count").to_i
-      db_query_duration_count = row.fetch("db_query_duration_count").to_i
+    def standard_metric_availability_counts(standard_bucket_rows)
+      transaction_duration_count = sum_standard_bucket_column(standard_bucket_rows, "transactions_duration_count")
+      db_query_count = sum_standard_bucket_column(standard_bucket_rows, "db_query_count")
+      db_query_duration_count = sum_standard_bucket_column(standard_bucket_rows, "db_query_duration_count")
 
       {
         "transactions.avg" => transaction_duration_count,
@@ -816,6 +854,10 @@ class ProjectInsights
         "db.query.avg" => db_query_duration_count,
         "db.query.p95" => db_query_duration_count
       }
+    end
+
+    def sum_standard_bucket_column(standard_bucket_rows, column)
+      standard_bucket_rows.sum { |row| row.fetch(column, 0).to_i }
     end
 
     def custom_metric_availability_counts(catalog, scope)
