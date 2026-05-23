@@ -8,6 +8,8 @@ class Project < ApplicationRecord
   has_many :project_memberships, dependent: :destroy
   has_many :project_notification_preferences, dependent: :destroy
   has_many :email_notification_deliveries, dependent: :destroy
+  has_one :retention_policy, class_name: "ProjectRetentionPolicy", dependent: :destroy
+  has_many :telemetry_archives, dependent: :destroy
   has_many :members, through: :project_memberships, source: :user
 
   before_validation :ensure_uuid

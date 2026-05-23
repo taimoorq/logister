@@ -8,15 +8,17 @@ module Logister
     class Error < StandardError; end
 
     RECORD_TYPES = {
-      "ingest_events" => IngestEvent,
-      "trace_spans" => TraceSpan
+      "ingest_events" => { model: IngestEvent, timestamp_column: :occurred_at },
+      "trace_spans" => { model: TraceSpan, timestamp_column: :started_at }
     }.freeze
     DEFAULT_BATCH_SIZE = 1_000
 
-    def initialize(record_type:, before:, after: nil, batch_size: DEFAULT_BATCH_SIZE, prefix: ENV.fetch("LOGISTER_ARCHIVE_PREFIX", "telemetry"), storage_service: nil, dry_run: false)
+    def initialize(record_type:, before:, after: nil, project: nil, event_types: nil, batch_size: DEFAULT_BATCH_SIZE, prefix: ENV.fetch("LOGISTER_ARCHIVE_PREFIX", "telemetry"), storage_service: nil, dry_run: false)
       @record_type = record_type.to_s
       @before = before
       @after = after
+      @project = project
+      @event_types = Array(event_types).compact_blank.map(&:to_s)
       @batch_size = batch_size.to_i.positive? ? batch_size.to_i : DEFAULT_BATCH_SIZE
       @prefix = prefix.to_s.delete_prefix("/").delete_suffix("/")
       @storage_service = storage_service || archive_storage_service
@@ -54,6 +56,7 @@ module Logister
 
       {
         record_type: @record_type,
+        project_id: @project&.id,
         before: @before.utc.iso8601,
         after: @after&.utc&.iso8601,
         batch_size: @batch_size,
@@ -66,15 +69,32 @@ module Logister
     private
 
     def relation
-      scope = model.where("created_at < ?", @before)
-      scope = scope.where("created_at >= ?", @after) if @after
+      column = model.arel_table[timestamp_column]
+      scope = model.where(column.lt(@before))
+      scope = scope.where(column.gteq(@after)) if @after
+      scope = scope.where(project_id: @project.id) if @project
+      scope = scope.where(event_type: normalized_event_types) if @record_type == "ingest_events" && @event_types.any?
       scope
     end
 
     def model
+      record_config.fetch(:model)
+    end
+
+    def timestamp_column
+      record_config.fetch(:timestamp_column)
+    end
+
+    def record_config
       RECORD_TYPES.fetch(@record_type) do
         raise Error, "Unsupported telemetry archive record type: #{@record_type.inspect}"
       end
+    end
+
+    def normalized_event_types
+      @event_types.map { |event_type| IngestEvent.event_types.fetch(event_type) }
+    rescue KeyError
+      raise Error, "Unsupported ingest event type for archive: #{@event_types.inspect}"
     end
 
     def archive_storage_service
@@ -107,12 +127,13 @@ module Logister
     end
 
     def object_key(records)
-      timestamp = records.first.created_at.utc
+      timestamp = records.first.public_send(timestamp_column).utc
       range = "#{records.first.id}-#{records.last.id}"
 
       [
         @prefix.presence,
         @record_type,
+        @project ? "project=#{@project.uuid}" : nil,
         "year=#{timestamp.year}",
         "month=#{timestamp.strftime('%m')}",
         "day=#{timestamp.strftime('%d')}",

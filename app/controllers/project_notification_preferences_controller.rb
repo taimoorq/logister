@@ -1,5 +1,6 @@
 class ProjectNotificationPreferencesController < ApplicationController
   include ProjectScope
+  include ProjectSettingsContext
 
   skip_before_action :verify_authenticity_token, only: :unsubscribe
   before_action :authenticate_user!, only: :update
@@ -11,10 +12,7 @@ class ProjectNotificationPreferencesController < ApplicationController
     if @notification_preference.update(notification_preference_params)
       redirect_to settings_project_path(@project, anchor: "notifications"), notice: "Email notification settings updated."
     else
-      @owner = @project.user
-      @project_memberships = @project.project_memberships.includes(:user).order(created_at: :asc)
-      @api_keys = @project.api_keys.order(created_at: :desc)
-      @assignment_summary = ProjectAssignmentSummary.new(@project)
+      load_project_settings_context
       render "projects/settings", status: :unprocessable_content
     end
   end

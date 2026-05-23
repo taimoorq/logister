@@ -64,6 +64,7 @@ Rails.application.routes.draw do
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
+    resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
 
     resources :error_groups, only: [], param: :uuid do

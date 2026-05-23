@@ -422,6 +422,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("API keys")
         expect(response.body).to include("Project access")
+        expect(response.body).to include("Data retention")
         expect(response.body).to include("Integration guide")
         expect(response.body).to include("Ruby gem")
         expect(response.body).to include("logister-ruby")

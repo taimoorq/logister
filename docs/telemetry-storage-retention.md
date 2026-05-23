@@ -45,15 +45,50 @@ bin/rails "logister:telemetry:archive[ingest_events,30]"
 bin/rails "logister:telemetry:archive[trace_spans,30]"
 ```
 
-Each archive object is compressed JSONL at:
+Global archive objects are compressed JSONL at:
 
 ```text
 telemetry/<record_type>/year=YYYY/month=MM/day=DD/<exported_at>-<id-range>.jsonl.gz
 ```
 
+Project retention archives include the project UUID in the key:
+
+```text
+telemetry/<record_type>/project=<project-uuid>/year=YYYY/month=MM/day=DD/<exported_at>-<id-range>.jsonl.gz
+```
+
 Run with `DRY_RUN=true` to estimate object counts and bytes without uploading.
 
-## Hot Pruning
+## Per-project Retention
+
+Project owners can configure retention from **Project settings -> Data retention**:
+
+1. Choose how long to keep activity events: logs, metrics, transactions, and check-ins.
+2. Choose how long to keep trace spans.
+3. Optionally choose how long to keep closed error groups. Leave this as forever to preserve resolved, ignored, and archived error history.
+4. Enable archive exports and **Archive before deleting** when old rows should be exported to the configured Active Storage archive service before cleanup.
+
+The production recurring job runs `ProjectRetentionSweepJob` daily and enqueues one `ProjectRetentionJob` per project. Cleanup is project-scoped and uses `occurred_at` for ingest events, `started_at` for spans, and `last_seen_at` for closed error groups.
+
+Run a safe dry run for every project:
+
+```sh
+bin/rails logister:telemetry:retention
+```
+
+Run a dry run for one project:
+
+```sh
+bin/rails "logister:telemetry:retention[PROJECT_UUID]"
+```
+
+Apply deletion only after reviewing the dry-run output:
+
+```sh
+DRY_RUN=false CONFIRM=retention bin/rails "logister:telemetry:retention[PROJECT_UUID]"
+```
+
+## Global Hot Pruning
 
 After verifying archives, prune non-error hot telemetry and spans with an explicit confirmation:
 
@@ -61,7 +96,7 @@ After verifying archives, prune non-error hot telemetry and spans with an explic
 CONFIRM=prune bin/rails "logister:telemetry:prune_hot[30]"
 ```
 
-This intentionally keeps error events and grouped error details in PostgreSQL while trimming high-volume logs, metrics, transactions, check-ins, and trace spans.
+This global task intentionally keeps error events and grouped error details in PostgreSQL while trimming high-volume logs, metrics, transactions, check-ins, and trace spans. Prefer per-project retention for normal operations because it records policy state and archive history per project.
 
 ## Redis Retry Cleanup
 

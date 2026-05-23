@@ -155,12 +155,16 @@ en:
           order: 5
           title: "Project access"
           tour: "Invite teammates and review membership roles and open assignment counts from this panel."
-        lifecycle:
+        retention:
           order: 6
+          title: "Data retention"
+          tour: "Set how long project activity, traces, and closed errors stay hot, and choose whether old data is archived before cleanup."
+        lifecycle:
+          order: 7
           title: "Project lifecycle"
           tour: "Archive keeps history while hiding the project from active views; delete permanently removes project data."
         integration_guide:
-          order: 7
+          order: 8
           title: "Integration guide"
           tour: "This guide shows the recommended setup path for the selected integration type."
       project-new:

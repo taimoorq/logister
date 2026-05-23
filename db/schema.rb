@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_234000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -127,6 +127,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
     t.index ["project_id", "regressed_in_release"], name: "index_error_groups_on_project_id_and_regressed_in_release"
     t.index ["project_id", "status", "assigned_user_id", "last_seen_at"], name: "idx_error_groups_project_status_assignee_last_seen", order: { last_seen_at: :desc }
     t.index ["project_id", "status", "first_seen_at"], name: "idx_error_groups_project_status_first_seen", order: { first_seen_at: :desc }
+    t.index ["project_id", "status", "last_seen_at", "id"], name: "idx_error_groups_project_retention"
     t.index ["project_id", "status", "last_seen_at"], name: "idx_error_groups_project_status_last_seen", order: { last_seen_at: :desc }
     t.index ["project_id", "status"], name: "index_error_groups_on_project_id_and_status"
     t.index ["project_id", "updated_at"], name: "idx_error_groups_project_updated_at", order: { updated_at: :desc }
@@ -168,6 +169,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
     t.index ["context"], name: "idx_ingest_events_context_path_ops", opclass: :jsonb_path_ops, using: :gin
     t.index ["created_at", "id"], name: "idx_ingest_events_retention_created_id"
     t.index ["error_group_id"], name: "index_ingest_events_on_error_group_id"
+    t.index ["project_id", "event_type", "occurred_at", "id"], name: "idx_ingest_events_project_type_retention"
     t.index ["project_id", "event_type", "occurred_at"], name: "idx_ingest_events_project_occurred_type", order: { occurred_at: :desc }
     t.index ["project_id", "event_type"], name: "index_ingest_events_on_project_id_and_event_type"
     t.index ["project_id", "message", "occurred_at"], name: "idx_ingest_events_project_metric_message_occurred", order: { occurred_at: :desc }, where: "(event_type = 1)"
@@ -212,6 +214,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
     t.index ["uuid"], name: "index_project_notification_preferences_on_uuid", unique: true
   end
 
+  create_table "project_retention_policies", force: :cascade do |t|
+    t.boolean "archive_before_delete", default: false, null: false
+    t.boolean "archive_enabled", default: false, null: false
+    t.datetime "created_at", null: false
+    t.integer "error_retention_days"
+    t.integer "hot_retention_days", default: 30, null: false
+    t.datetime "last_archive_run_at"
+    t.jsonb "last_retention_result", default: {}, null: false
+    t.datetime "last_retention_run_at"
+    t.bigint "project_id", null: false
+    t.integer "trace_retention_days", default: 30, null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id"], name: "index_project_retention_policies_on_project_id", unique: true
+  end
+
   create_table "projects", force: :cascade do |t|
     t.datetime "archived_at"
     t.datetime "created_at", null: false
@@ -229,6 +246,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
     t.index ["user_id", "slug"], name: "index_projects_on_user_id_and_slug", unique: true
     t.index ["user_id"], name: "index_projects_on_user_id"
     t.index ["uuid"], name: "index_projects_on_uuid", unique: true
+  end
+
+  create_table "telemetry_archives", force: :cascade do |t|
+    t.datetime "after_at"
+    t.datetime "before_at", null: false
+    t.bigint "bytes", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.boolean "dry_run", default: false, null: false
+    t.text "error_message"
+    t.jsonb "objects", default: [], null: false
+    t.bigint "project_id", null: false
+    t.string "record_type", null: false
+    t.integer "rows", default: 0, null: false
+    t.string "scope", null: false
+    t.string "status", default: "completed", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "created_at"], name: "idx_telemetry_archives_project_created_at", order: { created_at: :desc }
+    t.index ["project_id", "scope", "status", "before_at"], name: "idx_telemetry_archives_project_scope_status_before", order: { before_at: :desc }
+    t.index ["project_id"], name: "index_telemetry_archives_on_project_id"
   end
 
   create_table "trace_spans", force: :cascade do |t|
@@ -251,6 +287,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
     t.index ["context"], name: "index_trace_spans_on_context", opclass: :jsonb_path_ops, using: :gin
     t.index ["created_at", "id"], name: "idx_trace_spans_retention_created_id"
     t.index ["project_id", "kind", "started_at"], name: "index_trace_spans_on_project_id_and_kind_and_started_at", order: { started_at: :desc }
+    t.index ["project_id", "started_at", "id"], name: "idx_trace_spans_project_retention"
     t.index ["project_id", "started_at"], name: "index_trace_spans_on_project_id_and_started_at", order: { started_at: :desc }
     t.index ["project_id", "trace_id", "parent_span_id"], name: "idx_trace_spans_trace_parent"
     t.index ["project_id", "trace_id", "span_id"], name: "index_trace_spans_on_project_id_and_trace_id_and_span_id", unique: true
@@ -315,7 +352,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_231500) do
   add_foreign_key "project_memberships", "users"
   add_foreign_key "project_notification_preferences", "projects"
   add_foreign_key "project_notification_preferences", "users"
+  add_foreign_key "project_retention_policies", "projects"
   add_foreign_key "projects", "users"
+  add_foreign_key "telemetry_archives", "projects"
   add_foreign_key "trace_spans", "api_keys"
   add_foreign_key "trace_spans", "projects"
   add_foreign_key "user_notification_dismissals", "users"

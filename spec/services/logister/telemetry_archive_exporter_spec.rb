@@ -23,11 +23,12 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
 
   it "uploads compressed JSONL batches for telemetry records" do
     storage = FakeArchiveStorage.new
-    event = ingest_events(:one)
-    event.update!(created_at: 2.days.ago)
+    project = create(:project)
+    event = create(:ingest_event, project: project, occurred_at: 2.days.ago)
 
     result = described_class.new(
       record_type: "ingest_events",
+      project: project,
       before: 1.day.ago,
       batch_size: 100,
       prefix: "telemetry-test",
@@ -48,10 +49,12 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
 
   it "supports dry runs without uploading" do
     storage = FakeArchiveStorage.new
-    ingest_events(:one).update!(created_at: 2.days.ago)
+    project = create(:project)
+    create(:ingest_event, project: project, occurred_at: 2.days.ago)
 
     result = described_class.new(
       record_type: "ingest_events",
+      project: project,
       before: 1.day.ago,
       storage_service: storage,
       dry_run: true
@@ -63,8 +66,8 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
 
   it "honors an after boundary" do
     storage = FakeArchiveStorage.new
-    old_event = create(:ingest_event, created_at: 4.days.ago, updated_at: 4.days.ago)
-    kept_event = create(:ingest_event, created_at: 2.days.ago, updated_at: 2.days.ago)
+    old_event = create(:ingest_event, occurred_at: 4.days.ago, created_at: 4.days.ago, updated_at: 4.days.ago)
+    kept_event = create(:ingest_event, occurred_at: 2.days.ago, created_at: 2.days.ago, updated_at: 2.days.ago)
 
     result = described_class.new(
       record_type: "ingest_events",
@@ -83,7 +86,7 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
 
   it "archives trace spans" do
     storage = FakeArchiveStorage.new
-    span = create(:trace_span, created_at: 2.days.ago, updated_at: 2.days.ago)
+    span = create(:trace_span, started_at: 2.days.ago, created_at: 2.days.ago, updated_at: 2.days.ago)
 
     result = described_class.new(
       record_type: "trace_spans",
@@ -99,9 +102,33 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     expect(row.dig("attributes", "id")).to eq(span.id)
   end
 
+  it "filters archive rows by project and ingest event type" do
+    storage = FakeArchiveStorage.new
+    project = create(:project)
+    matching_event = create(:ingest_event, :log, project: project, occurred_at: 2.days.ago)
+    create(:ingest_event, project: project, occurred_at: 2.days.ago)
+    create(:ingest_event, :log, occurred_at: 2.days.ago)
+
+    result = described_class.new(
+      record_type: "ingest_events",
+      project: project,
+      event_types: [ "log" ],
+      before: 1.day.ago,
+      storage_service: storage
+    ).call
+
+    body = Zlib::GzipReader.new(StringIO.new(storage.uploads.first[:payload])).read
+    ids = body.lines.map { |line| JSON.parse(line).dig("attributes", "id") }
+
+    expect(result[:rows]).to eq(1)
+    expect(result[:project_id]).to eq(project.id)
+    expect(storage.uploads.first[:key]).to include("project=#{project.uuid}")
+    expect(ids).to contain_exactly(matching_event.id)
+  end
+
   it "omits an empty key prefix without producing a leading slash" do
     storage = FakeArchiveStorage.new
-    create(:ingest_event, created_at: 2.days.ago, updated_at: 2.days.ago)
+    create(:ingest_event, occurred_at: 2.days.ago, created_at: 2.days.ago, updated_at: 2.days.ago)
 
     described_class.new(
       record_type: "ingest_events",

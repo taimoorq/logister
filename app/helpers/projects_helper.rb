@@ -39,4 +39,21 @@ module ProjectsHelper
 
     suffixes.any? ? "#{label} (#{suffixes.join(", ")})" : label
   end
+
+  def retention_day_options(include_forever: false)
+    options = ProjectRetentionPolicy::RETENTION_DAY_OPTIONS.map { |days| [ pluralize(days, "day"), days ] }
+    include_forever ? [ [ "Keep error groups forever", "" ], *options ] : options
+  end
+
+  def retention_archive_scope_label(scope)
+    {
+      "hot_events" => "Activity events",
+      "trace_spans" => "Trace spans",
+      "error_events" => "Error events"
+    }.fetch(scope.to_s, scope.to_s.humanize)
+  end
+
+  def retention_timestamp(timestamp)
+    timestamp.present? ? l(timestamp, format: :long) : "Never"
+  end
 end
