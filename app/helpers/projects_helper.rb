@@ -4,6 +4,7 @@ module ProjectsHelper
     return docs_site_url(:dotnet_integration) if project&.integration_dotnet?
     return docs_site_url(:javascript_integration) if project&.integration_javascript?
     return docs_site_url(:python_integration) if project&.integration_python?
+    return docs_site_url(:http_api) if project&.integration_http_api?
 
     docs_site_url(:ruby_integration)
   end
@@ -13,6 +14,7 @@ module ProjectsHelper
     return ".NET integration docs" if project&.integration_dotnet?
     return "JavaScript integration docs" if project&.integration_javascript?
     return "Python integration docs" if project&.integration_python?
+    return "HTTP API docs" if project&.integration_http_api?
 
     "Ruby integration docs"
   end

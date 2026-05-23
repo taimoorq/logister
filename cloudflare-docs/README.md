@@ -9,6 +9,7 @@ This directory contains a standalone static version of the Logister documentatio
 - `assets/site.js` provides mobile navigation, collapsible sidebar sections, analytics loading, and copy-to-clipboard behavior for code blocks.
 - `functions/assets/analytics-config.js/index.js` serves runtime analytics and Probo Cookie Banner configuration from Cloudflare Pages secrets.
 - `assets/logister-logo.svg` is copied locally so the docs do not depend on the app asset pipeline.
+- `openapi.yaml` and `postman/logister-api.postman_collection.json` are copied from `docs/` by `bin/build-cloudflare-docs`.
 
 ## Suggested Cloudflare Pages setup
 
@@ -93,6 +94,7 @@ This static export mirrors the current public docs pages from the main Logister 
 - ClickHouse
 - S3-compatible telemetry archive storage through the deployment and self-hosting guides
 - HTTP API
+- API reference with Swagger UI, OpenAPI YAML, and a Postman collection
 - Ruby integration
 - .NET integration
 - Python integration

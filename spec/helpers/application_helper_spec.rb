@@ -17,6 +17,8 @@ RSpec.describe ApplicationHelper, type: :helper do
     it "returns the Cloudflare-hosted docs URL for the requested section" do
       expect(helper.docs_site_url).to eq("https://docs.logister.org/")
       expect(helper.docs_site_url(:http_api)).to eq("https://docs.logister.org/http-api/")
+      expect(helper.docs_site_url(:api_reference)).to eq("https://docs.logister.org/api-reference/")
+      expect(helper.docs_site_url(:metrics)).to eq("https://docs.logister.org/metrics/")
       expect(helper.docs_site_url(:product)).to eq("https://docs.logister.org/product/")
       expect(helper.docs_site_url(:cfml_integration)).to eq("https://docs.logister.org/integrations/cfml/")
       expect(helper.docs_site_url(:javascript_integration)).to eq("https://docs.logister.org/integrations/javascript/")
@@ -56,6 +58,15 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(fragment.at_css(".project-type-icon-dotnet")).to be_present
       expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-dotnet\z})
       expect(fragment.text.strip).to be_empty
+    end
+
+    it "renders the HTTP API integration icon" do
+      project = Project.new(integration_kind: "http_api")
+      fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(project))
+
+      expect(fragment.at_css(".project-type-icon-http_api")).to be_present
+      expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-external\z})
+      expect(fragment.at_css(".project-type-icon-http_api")["title"]).to eq("Manual / HTTP API")
     end
   end
 

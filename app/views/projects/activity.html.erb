@@ -155,6 +155,19 @@
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.checkIn()</code>
           from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-js</code>. For JavaScript and TypeScript services, the usual starting point is request errors plus operational logging: use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrumentConsole()</code> if you want standard console events to show up automatically, and include release, route, browser, and request context when you send events so issues can be grouped with more than a raw stack trace. You can also start with the
           <%= link_to "JavaScript integration docs", docs_site_url(:javascript_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
+        <% elsif @project.integration_http_api? %>
+          No custom events yet. POST
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">metric</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">log</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">transaction</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">span</code>, or
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">check_in</code>
+          payloads to the HTTP API from your custom client. Include stable <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">environment</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">release</code>,
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">trace_id</code>, and
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">request_id</code>
+          values when available. You can also start with the
+          <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% else %>
           No custom events yet. Use
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_metric</code>,

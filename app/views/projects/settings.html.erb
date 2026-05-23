@@ -487,6 +487,53 @@ const client = new LogisterClient({
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
+      <% elsif @project.integration_http_api? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Generate a project API key and store it in the sending app, script, or service.</li>
+              <li>POST JSON to <code>/api/v1/ingest_events</code> with <code>Authorization: Bearer &lt;token&gt;</code> or <code>X-Api-Key: &lt;token&gt;</code>.</li>
+              <li>Use <code>event_type</code> values such as <code>error</code>, <code>log</code>, <code>metric</code>, <code>transaction</code>, <code>span</code>, and <code>check_in</code>.</li>
+              <li>Send stable <code>environment</code>, <code>release</code>, <code>trace_id</code>, and <code>request_id</code> fields when you have them so Logister can filter and correlate events.</li>
+              <li>Use <code>/api/v1/check_ins</code> for cron jobs and scheduled tasks when you only need monitor heartbeats.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with cURL</h3>
+            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>curl -X POST https://your-logister-host.example/api/v1/ingest_events \
+  -H "Authorization: Bearer your-project-api-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": {
+      "event_type": "error",
+      "level": "error",
+      "message": "Unhandled exception in CheckoutService",
+      "fingerprint": "checkout-unhandled-exception",
+      "context": {
+        "environment": "production",
+        "release": "2026.05.23",
+        "service": "checkout-api"
+      }
+    }
+  }'</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">API tooling</h3>
+            <p class="text-sm text-slate-600">
+              Use the HTTP API guide for payload examples, the Swagger API reference for the OpenAPI contract, or import the Postman collection when you want ready-made requests for every supported event family.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            API contract:
+            <%= link_to "Swagger / OpenAPI reference", docs_site_url(:api_reference), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
       <% else %>
         <div class="space-y-4">
           <div>
@@ -543,6 +590,8 @@ end</code></pre>
           Use <code>Logister.AspNetCore</code> for ASP.NET Core middleware, or the base <code>Logister</code> client from workers and services.
         <% elsif @project.integration_javascript? %>
           Use the <code>logister-js</code> client directly, or add the Express middleware if your JavaScript app runs on Express.
+        <% elsif @project.integration_http_api? %>
+          Send JSON directly to the HTTP API from any runtime, script, worker, or custom client.
         <% else %>
           Send events through the Ruby gem integration.
         <% end %>

@@ -1037,13 +1037,13 @@ RSpec.describe "Projects", type: :request do
         project = projects(:one)
         original_slug = project.slug
 
-        patch project_path(project), params: { project: { name: "Renamed App", slug: "manual-change", description: "New desc", integration_kind: "cfml" } }
+        patch project_path(project), params: { project: { name: "Renamed App", slug: "manual-change", description: "New desc", integration_kind: "http_api" } }
 
         expect(response).to redirect_to(settings_project_path(project))
         expect(project.reload.name).to eq("Renamed App")
         expect(project.slug).to eq(original_slug)
         expect(project.description).to eq("New desc")
-        expect(project.integration_kind).to eq("cfml")
+        expect(project.integration_kind).to eq("http_api")
       end
 
       it "returns 404 for project user cannot access" do
@@ -1081,11 +1081,11 @@ RSpec.describe "Projects", type: :request do
 
     it "creates project and redirects" do
       expect {
-        post projects_path, params: { project: { name: "New App", slug: "manual-change", description: "Desc", integration_kind: "cfml" } }
+        post projects_path, params: { project: { name: "New App", slug: "manual-change", description: "Desc", integration_kind: "http_api" } }
       }.to change(Project, :count).by(1)
       expect(response).to redirect_to(project_path(Project.last))
       expect(Project.last.slug).to eq("new-app")
-      expect(Project.last.integration_kind).to eq("cfml")
+      expect(Project.last.integration_kind).to eq("http_api")
       follow_redirect!
       expect(response.body).to include("Project created")
     end

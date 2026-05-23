@@ -24,6 +24,9 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Error assignment and team triage use case: https://docs.logister.org/use-cases/error-assignment-team-triage/
 - Amazon SES error alert emails and digests use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - HTTP API: https://docs.logister.org/http-api/
+- API reference and Swagger UI: https://docs.logister.org/api-reference/
+- OpenAPI YAML: https://docs.logister.org/openapi.yaml
+- Postman collection: https://docs.logister.org/postman/logister-api.postman_collection.json
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Full AI context: https://docs.logister.org/llms-full.txt
 
@@ -83,3 +86,4 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - JavaScript SDK source: https://github.com/taimoorq/logister-js
 - JavaScript SDK package: https://www.npmjs.com/package/logister-js
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://docs.logister.org/integrations/cfml/
+- Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, and direct JSON reporters.

@@ -13,6 +13,14 @@
     <lastmod>2026-05-23</lastmod>
   </url>
   <url>
+    <loc>https://docs.logister.org/openapi.yaml</loc>
+    <lastmod>2026-05-23</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/postman/logister-api.postman_collection.json</loc>
+    <lastmod>2026-05-23</lastmod>
+  </url>
+  <url>
     <loc>https://docs.logister.org/getting-started/</loc>
     <lastmod>2026-05-23</lastmod>
   </url>
@@ -22,6 +30,10 @@
   </url>
   <url>
     <loc>https://docs.logister.org/metrics/</loc>
+    <lastmod>2026-05-23</lastmod>
+  </url>
+  <url>
+    <loc>https://docs.logister.org/api-reference/</loc>
     <lastmod>2026-05-23</lastmod>
   </url>
   <url>

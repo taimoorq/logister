@@ -15,6 +15,8 @@ module ApplicationHelper
     deployment: "/deployment/",
     clickhouse: "/clickhouse/",
     http_api: "/http-api/",
+    api_reference: "/api-reference/",
+    metrics: "/metrics/",
     ruby_integration: "/integrations/ruby/",
     cfml_integration: "/integrations/cfml/",
     javascript_integration: "/integrations/javascript/",
@@ -32,7 +34,8 @@ module ApplicationHelper
     "cfml" => :project_cfml,
     "javascript" => :project_javascript,
     "python" => :project_python,
-    "dotnet" => :project_dotnet
+    "dotnet" => :project_dotnet,
+    "http_api" => :external
   }.freeze
 
   def request_context_details(event)

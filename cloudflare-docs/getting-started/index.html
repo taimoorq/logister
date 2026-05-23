@@ -4,24 +4,24 @@
     <meta charset="utf-8">
     <title>Getting Started | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, or CFML integration path.">
+    <meta name="description" content="Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, CFML, or Manual / HTTP API integration path.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/getting-started/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Getting Started | Logister">
-    <meta property="og:description" content="Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, or CFML integration path.">
+    <meta property="og:description" content="Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, CFML, or Manual / HTTP API integration path.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://docs.logister.org/getting-started/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Getting Started | Logister">
-    <meta name="twitter:description" content="Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, or CFML integration path.">
+    <meta name="twitter:description" content="Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, CFML, or Manual / HTTP API integration path.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/getting-started/#article","headline":"Set up your first Logister project.","name":"Getting Started | Logister","url":"https://docs.logister.org/getting-started/","description":"Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, or CFML integration path.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Ruby integration"},{"@type":"Thing","name":".NET integration"},{"@type":"Thing","name":"Python integration"},{"@type":"Thing","name":"JavaScript integration"},{"@type":"Thing","name":"CFML integration"}],"audience":{"@type":"Audience","audienceType":"Developers"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Getting started","item":"https://docs.logister.org/getting-started/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/getting-started/#article","headline":"Set up your first Logister project.","name":"Getting Started | Logister","url":"https://docs.logister.org/getting-started/","description":"Set up your first Logister project, generate an API key, and choose the right Ruby, .NET, Python, JavaScript/TypeScript, CFML, or Manual / HTTP API integration path.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Ruby integration"},{"@type":"Thing","name":".NET integration"},{"@type":"Thing","name":"Python integration"},{"@type":"Thing","name":"JavaScript integration"},{"@type":"Thing","name":"CFML integration"},{"@type":"Thing","name":"HTTP API integration"}],"audience":{"@type":"Audience","audienceType":"Developers"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Getting started","item":"https://docs.logister.org/getting-started/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -101,7 +101,7 @@
                   <h2>Start here if you are setting up Logister for the first time.</h2>
                   <p class="lead">
                     This page covers the product-side setup flow after you have a self-hosted Logister instance running, or after you choose the secondary hosted app. Once you have a project and API token, move into the
-                    integration guide for Ruby, .NET, Python, CFML, or JavaScript depending on what your app runs.
+                    integration guide for Ruby, .NET, Python, CFML, JavaScript, or Manual / HTTP API depending on what your app runs.
                   </p>
                 </section>
                 <aside class="outline-card chapter-links">
@@ -114,6 +114,7 @@
                   <a href="/product/"><span>Product guide</span><span class="kbd">tour</span></a>
                   <a href="/metrics/"><span>Metrics reference</span><span class="kbd">fields</span></a>
                   <a href="/http-api/"><span>HTTP API</span><span class="kbd">ref</span></a>
+                  <a href="/api-reference/"><span>API reference</span><span class="kbd">Swagger</span></a>
                 </aside>
               </div>
             </section>
@@ -173,6 +174,10 @@
                     <td><code>JavaScript / TypeScript</code></td>
                     <td>JavaScript and TypeScript apps using <code>logister-js</code>, including optional Express middleware and console capture</td>
                   </tr>
+                  <tr>
+                    <td><code>Manual / HTTP API</code></td>
+                    <td>Unsupported runtimes, one-off scripts, workers, cron tasks, and custom clients that send direct JSON payloads with a project API token</td>
+                  </tr>
                 </tbody>
               </table>
             </section>
@@ -225,6 +230,12 @@
                   <p>Best if your app runs on Node or another JavaScript or TypeScript runtime and you want the <code>logister-js</code> client, with optional Express middleware and console capture.</p>
                   <p><a href="/integrations/javascript/">Read JavaScript integration docs</a> or <a href="https://www.npmjs.com/package/logister-js">open the npm package</a>.</p>
                 </article>
+                <article class="card">
+                  <p class="eyebrow">Manual / HTTP API</p>
+                  <h3>Send JSON directly</h3>
+                  <p>Best if your runtime does not have a first-party add-on yet, or you want cURL, Swagger, or Postman examples before writing a custom client.</p>
+                  <p><a href="/http-api/">Read HTTP API docs</a> or <a href="/api-reference/">open the API reference</a>.</p>
+                </article>
               </div>
             </section>
 
@@ -244,7 +255,7 @@ Check-in visible on the monitors page if you are instrumenting scheduled work</c
               </div>
               <div class="note tip">
                 <h4>Next step</h4>
-                <p>Once those items are done, move into the Ruby, .NET, Python, CFML, or JavaScript guide and send one test event first.</p>
+                <p>Once those items are done, move into the Ruby, .NET, Python, CFML, JavaScript, or Manual / HTTP API guide and send one test event first.</p>
               </div>
             </section>
 

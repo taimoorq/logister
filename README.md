@@ -71,6 +71,9 @@ Canonical setup and integration docs live on `docs.logister.org`, with self-host
 - Deployment config: https://docs.logister.org/deployment/
 - ClickHouse: https://docs.logister.org/clickhouse/
 - HTTP API: https://docs.logister.org/http-api/
+- API reference and Swagger UI: https://docs.logister.org/api-reference/
+- OpenAPI YAML: https://docs.logister.org/openapi.yaml
+- Postman collection: https://docs.logister.org/postman/logister-api.postman_collection.json
 
 ### Integrations
 
@@ -203,11 +206,13 @@ Use the guide that matches the app you want to connect:
 | Python | FastAPI, Django, Flask, Celery, Python services, and native Python logging capture | `logister-python` on PyPI: https://pypi.org/project/logister-python/ + https://docs.logister.org/integrations/python/ |
 | JavaScript / TypeScript | JavaScript and TypeScript services with optional Express middleware and console capture | `logister-js` on npm: https://www.npmjs.com/package/logister-js + https://docs.logister.org/integrations/javascript/ |
 | CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
-| Direct HTTP API | Custom clients and unsupported runtimes | https://docs.logister.org/http-api/ |
+| Manual / HTTP API | Custom clients, scripts, workers, and unsupported runtimes | https://docs.logister.org/http-api/ + https://docs.logister.org/api-reference/ |
 
 All first-party add-ons send the same core telemetry families into the main app so the inbox, activity, performance, Insights, and monitor views stay consistent across languages.
 
 The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint. Only app admins, not project owners or shared project members, can set project-level overrides.
+
+The machine-readable API contract lives in [docs/openapi.yaml](docs/openapi.yaml), and the ready-to-import Postman collection lives in [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json). The Cloudflare docs build copies both artifacts to the public docs host.
 
 | Capability | Ruby | .NET | Python | JavaScript / TypeScript | CFML / HTTP |
 |----------|----------|----------|----------|----------|----------|
@@ -337,6 +342,8 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
 | [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md) | Hotwire, Turbo, Stimulus, third-party JS, and asset pipeline conventions |
 | [docs/metrics-reference.md](docs/metrics-reference.md) | Telemetry families, Insights metrics, add-on support matrix, reporting fields, and collection boundaries |
+| [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI contract for the public ingest and check-in APIs |
+| [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json) | Postman collection with example requests for every supported event family |
 | [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
 | [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
 | [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |

@@ -1,0 +1,204 @@
+{
+  "info": {
+    "name": "Logister Public Ingestion API",
+    "description": "Postman collection for sending errors, logs, metrics, transactions, spans, and check-ins to Logister. Set `base_url` to your Logister host and `api_key` to a project API token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{api_key}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://logister.org",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "replace-with-project-api-token",
+      "type": "string"
+    },
+    {
+      "key": "release",
+      "value": "2026.05.23",
+      "type": "string"
+    },
+    {
+      "key": "environment",
+      "value": "production",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Ingest error event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/ingest_events",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ingest_events"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"error\",\n    \"level\": \"error\",\n    \"message\": \"Unhandled exception in CheckoutService\",\n    \"fingerprint\": \"checkout-unhandled-exception\",\n    \"occurred_at\": \"2026-05-23T15:30:00Z\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"checkout-api\",\n      \"request_id\": \"req_123\",\n      \"trace_id\": \"trace_123\",\n      \"exception\": {\n        \"class\": \"RuntimeError\",\n        \"message\": \"payment gateway timeout\"\n      }\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest log event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"log\",\n    \"level\": \"info\",\n    \"message\": \"Checkout started\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"checkout-api\",\n      \"request_id\": \"req_123\",\n      \"trace_id\": \"trace_123\",\n      \"route\": \"POST /checkout\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest custom metric",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"metric\",\n    \"level\": \"info\",\n    \"message\": \"queue.depth\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"worker\",\n      \"queue\": \"billing\",\n      \"value\": 42,\n      \"unit\": \"jobs\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest DB query metric",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"metric\",\n    \"level\": \"info\",\n    \"message\": \"db.query\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"checkout-api\",\n      \"duration_ms\": 38.7,\n      \"name\": \"OrdersController#index\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest transaction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"transaction\",\n    \"level\": \"info\",\n    \"message\": \"POST /checkout\",\n    \"transaction_name\": \"POST /checkout\",\n    \"duration_ms\": 245.7,\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"checkout-api\",\n      \"status\": 200,\n      \"route\": \"POST /checkout\",\n      \"request_id\": \"req_123\",\n      \"trace_id\": \"trace_123\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest root span",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"span\",\n    \"name\": \"POST /checkout\",\n    \"kind\": \"server\",\n    \"trace_id\": \"trace_123\",\n    \"span_id\": \"span_root\",\n    \"duration_ms\": 245.7,\n    \"started_at\": \"2026-05-23T15:30:00Z\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"checkout-api\",\n      \"route\": \"POST /checkout\",\n      \"request_id\": \"req_123\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest child DB span",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"span\",\n    \"name\": \"SELECT orders\",\n    \"kind\": \"db\",\n    \"trace_id\": \"trace_123\",\n    \"span_id\": \"span_db\",\n    \"parent_span_id\": \"span_root\",\n    \"duration_ms\": 40.2,\n    \"started_at\": \"2026-05-23T15:30:00Z\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"checkout-api\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest check-in event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"check_in\",\n    \"message\": \"nightly-reconcile\",\n    \"check_in_slug\": \"nightly-reconcile\",\n    \"check_in_status\": \"ok\",\n    \"expected_interval_seconds\": 900,\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"billing-worker\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Compact check-in endpoint",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/check_ins",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"check_in\": {\n    \"slug\": \"nightly-reconcile\",\n    \"status\": \"ok\",\n    \"expected_interval_seconds\": 900,\n    \"duration_ms\": 1820.5,\n    \"environment\": \"{{environment}}\",\n    \"release\": \"{{release}}\",\n    \"request_id\": \"job_123\"\n  }\n}"
+        }
+      }
+    }
+  ]
+}

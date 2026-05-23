@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>API Reference | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Swagger/OpenAPI reference and Postman collection for the Logister public ingestion API.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/api-reference/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="API Reference | Logister">
+    <meta property="og:description" content="Swagger/OpenAPI reference and Postman collection for the Logister public ingestion API.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/api-reference/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="API Reference | Logister">
+    <meta name="twitter:description" content="Swagger/OpenAPI reference and Postman collection for the Logister public ingestion API.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"APIReference","@id":"https://docs.logister.org/api-reference/#article","headline":"Swagger/OpenAPI reference for the Logister public ingestion API.","name":"API Reference | Logister","url":"https://docs.logister.org/api-reference/","description":"Swagger/OpenAPI reference and Postman collection for the Logister public ingestion API.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"OpenAPI"},{"@type":"Thing","name":"Swagger UI"},{"@type":"Thing","name":"Postman collection"},{"@type":"Thing","name":"HTTP event ingestion"}],"audience":{"@type":"Audience","audienceType":"Developers"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"API reference","item":"https://docs.logister.org/api-reference/"}]}]}</script>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+    <style>
+      .swagger-panel {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 1.25rem;
+        box-shadow: var(--shadow);
+        margin-top: 1rem;
+        overflow: hidden;
+      }
+
+      #swagger-ui {
+        padding: 0.5rem 0.75rem 1.5rem;
+      }
+
+      #swagger-ui .swagger-ui .info {
+        margin: 1.25rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">API reference</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / API reference</span><h1>Explore the Logister ingestion API with Swagger or Postman.</h1><p>The written HTTP guide explains how to think about events. This page exposes the machine-readable API contract for developers building custom clients, scripts, workers, and unsupported-runtime integrations.</p></section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/product/">Product guide</a><a href="/metrics/">Metrics reference</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a><a class="active" href="/api-reference/">API reference</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/cfml/">CFML integration</a><a href="/integrations/javascript/">JavaScript integration</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#files">Files</a><a href="#swagger">Swagger UI</a><a href="#next">Next steps</a></div>
+          </aside>
+
+          <article class="article">
+            <section id="files" class="section">
+              <p class="eyebrow">Files</p>
+              <h2>Download or import the API contract.</h2>
+              <table><thead><tr><th>Artifact</th><th>Use it for</th><th>Link</th></tr></thead><tbody><tr><td>OpenAPI YAML</td><td>Generate clients, inspect schemas, or import into Swagger-compatible tools.</td><td><a href="/openapi.yaml">Download <code>openapi.yaml</code></a></td></tr><tr><td>Postman collection</td><td>Send example requests for every supported event family after setting <code>base_url</code> and <code>api_key</code>.</td><td><a href="/postman/logister-api.postman_collection.json">Download Postman collection</a></td></tr><tr><td>Written HTTP guide</td><td>Read payload guidance, authentication, rate-limit behavior, and validation responses.</td><td><a href="/http-api/">Read HTTP API docs</a></td></tr><tr><td>Metrics reference</td><td>Choose what fields to collect and understand what Logister can report on.</td><td><a href="/metrics/">Read metrics reference</a></td></tr></tbody></table>
+            </section>
+
+            <section id="swagger" class="section">
+              <p class="eyebrow">Swagger UI</p>
+              <h2>Interactive API reference.</h2>
+              <p>Swagger UI loads the same <code>/openapi.yaml</code> file linked above. Use the authorize control with a project API token, then try requests against your configured server.</p>
+              <div class="swagger-panel">
+                <div id="swagger-ui"></div>
+              </div>
+            </section>
+
+            <section id="next" class="section">
+              <p class="eyebrow">Next steps</p>
+              <h2>Use Manual / HTTP API when creating a custom-client project.</h2>
+              <p>When creating a project in Logister for an unsupported runtime, choose <strong>Manual / HTTP API</strong>. The project settings page links back here and to the written HTTP guide so developers can start from cURL, Swagger, or Postman.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+      window.addEventListener("load", () => {
+        if (!window.SwaggerUIBundle) return;
+
+        window.SwaggerUIBundle({
+          url: "/openapi.yaml",
+          dom_id: "#swagger-ui",
+          deepLinking: true,
+          persistAuthorization: true,
+          presets: [window.SwaggerUIBundle.presets.apis],
+          layout: "BaseLayout"
+        });
+      });
+    </script>
+  </body>
+</html>

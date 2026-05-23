@@ -86,6 +86,24 @@ RSpec.describe "Home", type: :request do
     end
   end
 
+  describe "GET /docs/metrics" do
+    it "redirects to the external metrics reference docs page" do
+      get "/docs/metrics"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://docs.logister.org/metrics/")
+    end
+  end
+
+  describe "GET /docs/api-reference" do
+    it "redirects to the external API reference docs page" do
+      get "/docs/api-reference"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://docs.logister.org/api-reference/")
+    end
+  end
+
   describe "GET /docs/integrations/javascript" do
     it "redirects to the external JavaScript integration docs page" do
       get "/docs/integrations/javascript"

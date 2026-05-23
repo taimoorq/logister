@@ -28,6 +28,10 @@ FactoryBot.define do
       integration_kind { "cfml" }
     end
 
+    trait :http_api do
+      integration_kind { "http_api" }
+    end
+
     trait :archived do
       archived_at { Time.current }
     end

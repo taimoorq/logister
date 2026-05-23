@@ -1,0 +1,619 @@
+openapi: 3.1.0
+info:
+  title: Logister Public Ingestion API
+  version: 2.2.0
+  summary: Send application telemetry and scheduled-work check-ins to Logister.
+  description: |
+    Logister's public API accepts project-scoped telemetry over HTTP. Use the
+    first-party SDKs when they fit your runtime, or use this contract to build
+    a custom client, script, worker integration, or direct HTTP reporter.
+  contact:
+    name: Logister
+    url: https://docs.logister.org/
+  license:
+    name: MIT
+    url: https://github.com/taimoorq/logister/blob/main/LICENSE
+servers:
+  - url: https://logister.org
+    description: Hosted Logister app
+  - url: https://your-logister-host.example
+    description: Self-hosted Logister instance
+tags:
+  - name: Ingest events
+    description: Send errors, logs, metrics, transactions, spans, and check-ins.
+  - name: Check-ins
+    description: Send compact monitor heartbeats for scheduled work.
+security:
+  - bearerAuth: []
+  - apiKeyHeader: []
+paths:
+  /api/v1/ingest_events:
+    post:
+      operationId: createIngestEvent
+      tags:
+        - Ingest events
+      summary: Ingest one telemetry event or trace span.
+      description: |
+        Accepts an `event` envelope. Use this endpoint for errors, logs,
+        custom metrics, transactions, spans, and check-ins when you want the
+        full event shape. Uppercase `EVENT` envelopes are also accepted for
+        runtimes that serialize keys that way.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/EventEnvelope"
+                - $ref: "#/components/schemas/UppercaseEventEnvelope"
+            examples:
+              error:
+                summary: Error event
+                value:
+                  event:
+                    event_type: error
+                    level: error
+                    message: NoMethodError in CheckoutService
+                    fingerprint: checkout-nomethoderror
+                    occurred_at: "2026-05-23T15:30:00Z"
+                    context:
+                      environment: production
+                      release: "2026.05.23"
+                      service: checkout-api
+                      request_id: req_123
+                      trace_id: trace_123
+                      exception:
+                        class: NoMethodError
+                        message: undefined method `total`
+              metric:
+                summary: Custom metric with numeric value
+                value:
+                  event:
+                    event_type: metric
+                    message: queue.depth
+                    level: info
+                    context:
+                      environment: production
+                      value: 42
+                      unit: jobs
+                      queue: billing
+              dbQuery:
+                summary: Database query timing metric
+                value:
+                  event:
+                    event_type: metric
+                    message: db.query
+                    level: info
+                    context:
+                      environment: production
+                      duration_ms: 38.7
+                      name: OrdersController#index
+              transaction:
+                summary: Transaction timing
+                value:
+                  event:
+                    event_type: transaction
+                    message: POST /checkout
+                    transaction_name: POST /checkout
+                    duration_ms: 245.7
+                    context:
+                      environment: production
+                      release: "2026.05.23"
+                      status: 200
+                      route: POST /checkout
+              span:
+                summary: Root trace span
+                value:
+                  event:
+                    event_type: span
+                    name: GET /checkout
+                    kind: server
+                    trace_id: trace_123
+                    span_id: span_root
+                    duration_ms: 245.7
+                    started_at: "2026-05-23T15:30:00Z"
+                    context:
+                      environment: production
+                      route: GET /checkout
+                      service: checkout-api
+              checkIn:
+                summary: Check-in through the full ingest endpoint
+                value:
+                  event:
+                    event_type: check_in
+                    message: nightly-reconcile
+                    check_in_slug: nightly-reconcile
+                    check_in_status: ok
+                    expected_interval_seconds: 900
+                    context:
+                      environment: production
+                      release: "2026.05.23"
+      responses:
+        "201":
+          description: Event or span accepted.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/AcceptedEventResponse"
+                  - $ref: "#/components/schemas/AcceptedSpanResponse"
+              examples:
+                event:
+                  value:
+                    id: 018fe6a8-d40e-7c50-a283-e989feadbeef
+                    legacy_id: 123
+                    status: accepted
+                span:
+                  value:
+                    id: 018fe6a8-d40e-7c50-a283-e989feadbeef
+                    legacy_id: 456
+                    status: accepted
+                    type: span
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/v1/check_ins:
+    post:
+      operationId: createCheckIn
+      tags:
+        - Check-ins
+      summary: Ingest one scheduled-work check-in.
+      description: |
+        Accepts a compact `check_in` envelope for cron jobs, scheduled tasks,
+        workers, and heartbeat-style monitors. Uppercase `CHECK_IN` envelopes
+        are also accepted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/CheckInEnvelope"
+                - $ref: "#/components/schemas/UppercaseCheckInEnvelope"
+            examples:
+              ok:
+                summary: Successful scheduled job
+                value:
+                  check_in:
+                    slug: nightly-reconcile
+                    status: ok
+                    expected_interval_seconds: 900
+                    duration_ms: 1820.5
+                    environment: production
+                    release: "2026.05.23"
+              error:
+                summary: Failed scheduled job
+                value:
+                  check_in:
+                    slug: nightly-reconcile
+                    status: error
+                    expected_interval_seconds: 900
+                    environment: production
+                    request_id: job_123
+      responses:
+        "201":
+          description: Check-in accepted.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedCheckInResponse"
+              examples:
+                accepted:
+                  value:
+                    id: 018fe6a8-d40e-7c50-a283-e989feadbeef
+                    status: accepted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Project API token
+      description: "Send `Authorization: Bearer <project-api-token>`."
+    apiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: Alternative project API token header.
+  headers:
+    RetryAfter:
+      description: Seconds to wait before retrying after a rate limit.
+      schema:
+        type: integer
+        minimum: 1
+    XRateLimitLimit:
+      description: Request limit for the current fixed window.
+      schema:
+        type: integer
+    XRateLimitRemaining:
+      description: Requests remaining in the current fixed window.
+      schema:
+        type: integer
+        minimum: 0
+    XRateLimitReset:
+      description: Unix timestamp when the current fixed window resets.
+      schema:
+        type: integer
+  responses:
+    BadRequest:
+      description: Required envelope was missing or unusable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missingEnvelope:
+              value:
+                error: "param is missing or the value is empty: event"
+    Unauthorized:
+      description: API key was missing, invalid, revoked, inactive, or belongs to an archived project.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            unauthorized:
+              value:
+                error: Unauthorized
+    UnprocessableContent:
+      description: Envelope was present, but validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorResponse"
+          examples:
+            invalid:
+              value:
+                errors:
+                  - Message can't be blank
+    TooManyRequests:
+      description: The API token or authentication-failure source exceeded the public API rate limit.
+      headers:
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+        X-RateLimit-Limit:
+          $ref: "#/components/headers/XRateLimitLimit"
+        X-RateLimit-Remaining:
+          $ref: "#/components/headers/XRateLimitRemaining"
+        X-RateLimit-Reset:
+          $ref: "#/components/headers/XRateLimitReset"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RateLimitResponse"
+          examples:
+            rateLimited:
+              value:
+                error: Rate limit exceeded
+                limit: 1200
+                window_seconds: 60
+                retry_after: 42
+  schemas:
+    EventEnvelope:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          $ref: "#/components/schemas/IngestEvent"
+      additionalProperties: false
+    UppercaseEventEnvelope:
+      type: object
+      required:
+        - EVENT
+      properties:
+        EVENT:
+          $ref: "#/components/schemas/IngestEvent"
+      additionalProperties: false
+    IngestEvent:
+      type: object
+      required:
+        - event_type
+      properties:
+        event_type:
+          type: string
+          enum:
+            - error
+            - log
+            - metric
+            - transaction
+            - span
+            - check_in
+          description: Controls where the event appears in Logister.
+        level:
+          type: string
+          examples:
+            - info
+            - warn
+            - error
+            - fatal
+        message:
+          type: string
+          description: Primary event label. Required for non-span events.
+        name:
+          type: string
+          description: Span label when `event_type` is `span`.
+        fingerprint:
+          type: string
+          description: Stable grouping key for repeated errors or recurring operational signals.
+        occurred_at:
+          type: string
+          format: date-time
+          description: Event time. Defaults to receive time when omitted.
+        environment:
+          type: string
+        release:
+          type: string
+        trace_id:
+          type: string
+        traceId:
+          type: string
+        request_id:
+          type: string
+        requestId:
+          type: string
+        session_id:
+          type: string
+        sessionId:
+          type: string
+        user_id:
+          oneOf:
+            - type: string
+            - type: integer
+        userId:
+          oneOf:
+            - type: string
+            - type: integer
+        transaction_name:
+          type: string
+        transactionName:
+          type: string
+        duration_ms:
+          type: number
+          minimum: 0
+        durationMs:
+          type: number
+          minimum: 0
+        expected_interval_seconds:
+          type: integer
+          minimum: 1
+        check_in_slug:
+          type: string
+        monitor_slug:
+          type: string
+        check_in_status:
+          type: string
+        status:
+          oneOf:
+            - type: string
+            - type: integer
+        span_id:
+          type: string
+        spanId:
+          type: string
+        parent_span_id:
+          type: string
+        parentSpanId:
+          type: string
+        kind:
+          $ref: "#/components/schemas/SpanKind"
+        span_kind:
+          $ref: "#/components/schemas/SpanKind"
+        started_at:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        context:
+          $ref: "#/components/schemas/EventContext"
+      additionalProperties: true
+    EventContext:
+      type: object
+      description: Structured event metadata used for details, filtering, correlation, metrics, and analytics.
+      properties:
+        environment:
+          type: string
+        release:
+          type: string
+        service:
+          type: string
+        trace_id:
+          type: string
+        request_id:
+          type: string
+        session_id:
+          type: string
+        user_id:
+          oneOf:
+            - type: string
+            - type: integer
+        transaction_name:
+          type: string
+        duration_ms:
+          type: number
+          minimum: 0
+        value:
+          type: number
+          description: Numeric custom metric value used by `metric_value:<name>` Insights series.
+        unit:
+          type: string
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        exception:
+          type: object
+          additionalProperties: true
+        exception_class:
+          type: string
+        request:
+          type: object
+          additionalProperties: true
+        check_in_slug:
+          type: string
+        check_in_status:
+          type: string
+        expected_interval_seconds:
+          type: integer
+          minimum: 1
+      additionalProperties: true
+    SpanKind:
+      type: string
+      enum:
+        - app
+        - browser
+        - cache
+        - db
+        - http
+        - internal
+        - queue
+        - render
+        - resource
+        - server
+    CheckInEnvelope:
+      type: object
+      required:
+        - check_in
+      properties:
+        check_in:
+          $ref: "#/components/schemas/CheckIn"
+      additionalProperties: false
+    UppercaseCheckInEnvelope:
+      type: object
+      required:
+        - CHECK_IN
+      properties:
+        CHECK_IN:
+          $ref: "#/components/schemas/CheckIn"
+      additionalProperties: false
+    CheckIn:
+      type: object
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+          description: Monitor slug, such as `nightly-reconcile`.
+        status:
+          type: string
+          default: ok
+          description: "`ok` keeps the monitor healthy; `error` marks the latest run failed."
+        occurred_at:
+          type: string
+          format: date-time
+        environment:
+          type: string
+        release:
+          type: string
+        expected_interval_seconds:
+          type: integer
+          minimum: 1
+          default: 300
+        duration_ms:
+          type: number
+          minimum: 0
+        trace_id:
+          type: string
+        request_id:
+          type: string
+      additionalProperties: true
+    AcceptedEventResponse:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        legacy_id:
+          type: integer
+        status:
+          type: string
+          const: accepted
+    AcceptedSpanResponse:
+      allOf:
+        - $ref: "#/components/schemas/AcceptedEventResponse"
+        - type: object
+          properties:
+            type:
+              type: string
+              const: span
+    AcceptedCheckInResponse:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          const: accepted
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+    ValidationErrorResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+    RateLimitResponse:
+      type: object
+      required:
+        - error
+        - limit
+        - window_seconds
+        - retry_after
+      properties:
+        error:
+          type: string
+          const: Rate limit exceeded
+        limit:
+          type: integer
+        window_seconds:
+          type: integer
+        retry_after:
+          type: integer

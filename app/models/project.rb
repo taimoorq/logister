@@ -23,7 +23,14 @@ class Project < ApplicationRecord
   before_validation :ensure_uuid
   before_validation :normalize_slug
 
-  enum :integration_kind, { ruby: "ruby", cfml: "cfml", javascript: "javascript", python: "python", dotnet: "dotnet" }, default: :ruby, validate: true, prefix: :integration
+  enum :integration_kind, {
+    ruby: "ruby",
+    cfml: "cfml",
+    javascript: "javascript",
+    python: "python",
+    dotnet: "dotnet",
+    http_api: "http_api"
+  }, default: :ruby, validate: true, prefix: :integration
 
   scope :active, -> { where(archived_at: nil) }
   scope :archived, -> { where.not(archived_at: nil) }
@@ -103,7 +110,8 @@ class Project < ApplicationRecord
       "cfml" => "CFML",
       "javascript" => "JavaScript / TypeScript",
       "python" => "Python",
-      "dotnet" => ".NET / ASP.NET Core"
+      "dotnet" => ".NET / ASP.NET Core",
+      "http_api" => "Manual / HTTP API"
     }.fetch(integration_kind, integration_kind.to_s.humanize)
   end
 
@@ -125,7 +133,8 @@ class Project < ApplicationRecord
       [ ".NET / ASP.NET Core (logister-dotnet)", "dotnet" ],
       [ "CFML", "cfml" ],
       [ "JavaScript / TypeScript (logister-js)", "javascript" ],
-      [ "Python (logister-python)", "python" ]
+      [ "Python (logister-python)", "python" ],
+      [ "Manual / HTTP API (custom client)", "http_api" ]
     ]
   end
 
