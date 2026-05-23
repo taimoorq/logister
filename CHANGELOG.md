@@ -2,6 +2,15 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.1.1 - 2026-05-23
+
+### Changed
+
+- Optimized high-volume inbox and Events browsing with page-specific PostgreSQL indexes for activity cursors, environment and release filters, assigned error groups, and root span duration ordering.
+- Reduced inbox and dashboard page payloads by loading lightweight latest-event link data instead of full event context JSON for summary rows.
+- Consolidated inbox status counts, cached empty-inbox activity checks, memoized project assignable users, and trimmed Settings page queries so common project pages fetch only rendered columns.
+- Updated public self-hosting references for the `v2.1.1` release image tag.
+
 ## v2.1.0 - 2026-05-22
 
 ### Added
