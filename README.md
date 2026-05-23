@@ -140,7 +140,7 @@ This is the shortest production path. Use the public docs when you need provider
    | `LOGISTER_ADMIN_EMAILS` | Comma-separated operator emails |
    | `LOGISTER_UPDATE_CHECKS_ENABLED` | Optional, set `false` to disable daily GitHub release checks |
 
-   Public ingestion endpoints are rate limited by default. `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Self-hosters can tune those defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`.
+   Public ingestion endpoints are rate limited by default. `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Self-hosters can tune those defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can also set project-level overrides from project settings.
 
    Keep real values in your deploy provider, Docker secrets, Fly secrets, Kamal secrets, or another secret manager. Do not commit a filled-in `.env.production`.
 
@@ -205,7 +205,7 @@ Use the guide that matches the app you want to connect:
 
 All first-party add-ons send the same core telemetry families into the main app so the inbox, activity, performance, Insights, and monitor views stay consistent across languages.
 
-The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint.
+The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint. Only app admins, not project owners or shared project members, can set project-level overrides.
 
 | Capability | Ruby | .NET | Python | JavaScript / TypeScript | CFML / HTTP |
 |----------|----------|----------|----------|----------|----------|

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_23_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_23_210500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -239,6 +239,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_120000) do
     t.text "description"
     t.string "integration_kind", default: "ruby", null: false
     t.string "name", null: false
+    t.integer "public_api_auth_failure_rate_limit_requests_override"
+    t.integer "public_api_rate_limit_period_seconds_override"
+    t.integer "public_api_rate_limit_requests_override"
     t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false

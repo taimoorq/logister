@@ -1,4 +1,12 @@
 class Project < ApplicationRecord
+  DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS = 1_200
+  DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 60
+  DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS = 120
+  MIN_PUBLIC_API_RATE_LIMIT_REQUESTS = 1
+  MAX_PUBLIC_API_RATE_LIMIT_REQUESTS = 10_000_000
+  MIN_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 1
+  MAX_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 86_400
+
   belongs_to :user
   has_many :api_keys, dependent: :destroy
   has_many :ingest_events, dependent: :destroy
@@ -23,6 +31,21 @@ class Project < ApplicationRecord
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: { scope: :user_id }
   validates :uuid, presence: true, uniqueness: true
+  validates :public_api_rate_limit_requests_override,
+            :public_api_auth_failure_rate_limit_requests_override,
+            numericality: {
+              only_integer: true,
+              greater_than_or_equal_to: MIN_PUBLIC_API_RATE_LIMIT_REQUESTS,
+              less_than_or_equal_to: MAX_PUBLIC_API_RATE_LIMIT_REQUESTS
+            },
+            allow_nil: true
+  validates :public_api_rate_limit_period_seconds_override,
+            numericality: {
+              only_integer: true,
+              greater_than_or_equal_to: MIN_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS,
+              less_than_or_equal_to: MAX_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS
+            },
+            allow_nil: true
 
   def to_param
     uuid
@@ -84,6 +107,18 @@ class Project < ApplicationRecord
     }.fetch(integration_kind, integration_kind.to_s.humanize)
   end
 
+  def public_api_rate_limit_requests_effective(default)
+    public_api_rate_limit_requests_override || default
+  end
+
+  def public_api_rate_limit_period_seconds_effective(default)
+    public_api_rate_limit_period_seconds_override || default
+  end
+
+  def public_api_auth_failure_rate_limit_requests_effective(default)
+    public_api_auth_failure_rate_limit_requests_override || default
+  end
+
   def self.integration_options
     [
       [ "Ruby gem", "ruby" ],
@@ -92,6 +127,21 @@ class Project < ApplicationRecord
       [ "JavaScript / TypeScript (logister-js)", "javascript" ],
       [ "Python (logister-python)", "python" ]
     ]
+  end
+
+  def self.default_public_api_rate_limit_requests
+    positive_integer_logister_config(:public_api_rate_limit_requests, DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS)
+  end
+
+  def self.default_public_api_rate_limit_period_seconds
+    positive_integer_logister_config(:public_api_rate_limit_period_seconds, DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS)
+  end
+
+  def self.default_public_api_auth_failure_rate_limit_requests
+    positive_integer_logister_config(
+      :public_api_auth_failure_rate_limit_requests,
+      DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS
+    )
   end
 
   # Stats for project index: recent event volume, activity volume, open error groups,
@@ -165,6 +215,14 @@ class Project < ApplicationRecord
   end
 
   private
+
+  def self.positive_integer_logister_config(name, default)
+    value = Rails.application.config.x.logister.public_send(name)
+    value.to_i.positive? ? value.to_i : default
+  rescue NoMethodError
+    default
+  end
+  private_class_method :positive_integer_logister_config
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid

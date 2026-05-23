@@ -52,6 +52,11 @@ RSpec.describe ApiKey, type: :model do
       expect(key).to eq(api_keys(:one))
     end
 
+    it "preloads the project for valid tokens" do
+      key = ApiKey.authenticate("test-token-one")
+      expect(key.association(:project)).to be_loaded
+    end
+
     it "returns nil for invalid token" do
       expect(ApiKey.authenticate("wrong-token")).to be_nil
     end

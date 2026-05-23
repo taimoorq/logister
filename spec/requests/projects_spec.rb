@@ -428,6 +428,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
         expect(response.body).to include('target="_blank"')
+        expect(response.body).not_to include("Public API rate limits")
       end
 
       it "shows archived state in settings without allowing new API keys" do
@@ -511,6 +512,20 @@ RSpec.describe "Projects", type: :request do
       it "returns 404 for project user cannot access" do
         get settings_project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
+      end
+
+      it "allows app admins to view settings for projects they do not own" do
+        original = ENV["LOGISTER_ADMIN_EMAILS"]
+        ENV["LOGISTER_ADMIN_EMAILS"] = users(:one).email
+
+        get settings_project_path(projects(:two))
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(projects(:two).name)
+        expect(response.body).to include("Public API rate limits")
+        expect(response.body).to include(project_rate_limit_path(projects(:two)))
+      ensure
+        ENV["LOGISTER_ADMIN_EMAILS"] = original
       end
     end
 

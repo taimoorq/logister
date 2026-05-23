@@ -63,7 +63,7 @@
   <% if @owned_projects.any? %>
     <ul class="space-y-1.5">
       <% @owned_projects.each do |project| %>
-        <li><%= link_to project.name, project_path(project), class: "inline-link" %></li>
+        <li><%= link_to project.name, settings_project_path(project), class: "inline-link" %></li>
       <% end %>
     </ul>
   <% else %>
@@ -76,7 +76,7 @@
   <% if @shared_projects.any? %>
     <ul class="space-y-1.5">
       <% @shared_projects.each do |project| %>
-        <li><%= link_to project.name, project_path(project), class: "inline-link" %></li>
+        <li><%= link_to project.name, settings_project_path(project), class: "inline-link" %></li>
       <% end %>
     </ul>
   <% else %>

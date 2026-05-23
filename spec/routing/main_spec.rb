@@ -16,6 +16,13 @@ RSpec.describe "Routes", type: :routing do
     it "routes GET /cookies to home#cookies" do
       expect(get: "/cookies").to route_to(controller: "home", action: "cookies")
     end
+    it "routes Probo cookie banner proxy requests" do
+      expect(post: "/api/cookie-banner/v1/banner-1/report").to route_to(
+        controller: "cookie_banner_proxy",
+        action: "show",
+        proxy_path: "banner-1/report"
+      )
+    end
     it "routes GET /terms to home#terms" do
       expect(get: "/terms").to route_to(controller: "home", action: "terms")
     end
@@ -58,6 +65,14 @@ RSpec.describe "Routes", type: :routing do
         controller: "project_settings",
         action: "show",
         uuid: "abc"
+      )
+    end
+
+    it "routes PATCH /projects/:uuid/rate_limit to project_rate_limits#update" do
+      expect(patch: "/projects/abc/rate_limit").to route_to(
+        controller: "project_rate_limits",
+        action: "update",
+        project_uuid: "abc"
       )
     end
 

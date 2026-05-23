@@ -1,34 +1,34 @@
 module ClientSubmissionMonitoring
   extend ActiveSupport::Concern
 
-  DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS = 1_200
-  DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 60
-  DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS = 120
-
   private
 
   def authenticate_api_key!
     token = submitted_api_key_token
     @api_key = ApiKey.authenticate(token)
     if @api_key
+      project = @api_key.project
       return unless public_api_rate_limited?(
         identity: "api_key:#{@api_key.id}",
         kind: "accepted",
-        limit: public_api_rate_limit_requests
+        limit: public_api_rate_limit_requests(project),
+        period: public_api_rate_limit_period_seconds(project)
       )
 
       return render_public_api_rate_limited
     end
 
+    diagnostic_api_key = diagnostic_api_key_for(token)
+    diagnostic_project = diagnostic_api_key&.project
     if public_api_rate_limited?(
       identity: "ip:#{request.remote_ip.presence || 'unknown'}",
       kind: "auth_failure",
-      limit: public_api_auth_failure_rate_limit_requests
+      limit: public_api_auth_failure_rate_limit_requests(diagnostic_project),
+      period: public_api_rate_limit_period_seconds(diagnostic_project)
     )
       return render_public_api_rate_limited
     end
 
-    diagnostic_api_key = diagnostic_api_key_for(token)
     report_client_submission_failure(
       reason: auth_failure_reason(token, diagnostic_api_key),
       status: :unauthorized,
@@ -39,11 +39,13 @@ module ClientSubmissionMonitoring
     render json: { error: "Unauthorized" }, status: :unauthorized
   end
 
-  def public_api_rate_limited?(identity:, kind:, limit:)
+  def public_api_rate_limited?(identity:, kind:, limit:, period:)
     limit = limit.to_i
     return false unless limit.positive?
 
-    period = public_api_rate_limit_period_seconds
+    period = period.to_i
+    return false unless period.positive?
+
     window_started_at = Time.current.to_i / period * period
     reset_at = window_started_at + period
     count = public_api_rate_limit_count(kind, identity, window_started_at, period)
@@ -80,11 +82,11 @@ module ClientSubmissionMonitoring
 
   def render_public_api_rate_limited
     context = @public_api_rate_limit_context || {
-      limit: public_api_rate_limit_requests,
+      limit: public_api_rate_limit_requests(nil),
       remaining: 0,
-      reset_at: Time.current.to_i + public_api_rate_limit_period_seconds,
-      retry_after: public_api_rate_limit_period_seconds,
-      window_seconds: public_api_rate_limit_period_seconds
+      reset_at: Time.current.to_i + public_api_rate_limit_period_seconds(nil),
+      retry_after: public_api_rate_limit_period_seconds(nil),
+      window_seconds: public_api_rate_limit_period_seconds(nil)
     }
 
     response.set_header("Retry-After", context[:retry_after].to_s)
@@ -106,32 +108,25 @@ module ClientSubmissionMonitoring
     [ reset_at - Time.current.to_i, 1 ].max
   end
 
-  def public_api_rate_limit_requests
-    positive_integer_logister_config(
-      :public_api_rate_limit_requests,
-      DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS
-    )
+  def public_api_rate_limit_requests(project)
+    default = Project.default_public_api_rate_limit_requests
+    return default unless project
+
+    project.public_api_rate_limit_requests_effective(default)
   end
 
-  def public_api_auth_failure_rate_limit_requests
-    positive_integer_logister_config(
-      :public_api_auth_failure_rate_limit_requests,
-      DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS
-    )
+  def public_api_auth_failure_rate_limit_requests(project)
+    default = Project.default_public_api_auth_failure_rate_limit_requests
+    return default unless project
+
+    project.public_api_auth_failure_rate_limit_requests_effective(default)
   end
 
-  def public_api_rate_limit_period_seconds
-    positive_integer_logister_config(
-      :public_api_rate_limit_period_seconds,
-      DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS
-    )
-  end
+  def public_api_rate_limit_period_seconds(project)
+    default = Project.default_public_api_rate_limit_period_seconds
+    return default unless project
 
-  def positive_integer_logister_config(name, default)
-    value = Rails.application.config.x.logister.public_send(name)
-    value.to_i.positive? ? value.to_i : default
-  rescue NoMethodError
-    default
+    project.public_api_rate_limit_period_seconds_effective(default)
   end
 
   def report_client_submission_failure(

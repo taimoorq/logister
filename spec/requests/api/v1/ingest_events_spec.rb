@@ -119,6 +119,19 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       end
     end
 
+    it "uses the project-level accepted request override when present" do
+      api_keys(:one).project.update!(public_api_rate_limit_requests_override: 1)
+
+      with_public_api_rate_limits(requests: 10) do
+        post api_v1_ingest_events_path, params: valid_payload, as: :json, headers: auth_headers
+        expect(response).to have_http_status(:created)
+        expect(response.headers["X-RateLimit-Limit"]).to eq("1")
+
+        post api_v1_ingest_events_path, params: valid_payload, as: :json, headers: auth_headers
+        expect(response).to have_http_status(:too_many_requests)
+      end
+    end
+
     it "rate limits repeated authentication failures by source IP" do
       with_public_api_rate_limits(auth_failure_requests: 1) do
         post api_v1_ingest_events_path,

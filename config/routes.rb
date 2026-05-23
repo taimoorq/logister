@@ -40,6 +40,12 @@ Rails.application.routes.draw do
   resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
   get "account/security", to: redirect("/users/edit"), as: :account_security
 
+  match "api/cookie-banner/v1/*proxy_path",
+        to: "cookie_banner_proxy#show",
+        via: [ :get, :post ],
+        format: false,
+        as: :cookie_banner_proxy
+
   namespace :admin do
     resources :users, only: [ :index, :show, :destroy ], param: :uuid do
       member do
@@ -65,6 +71,7 @@ Rails.application.routes.draw do
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
+    resource :rate_limit, only: [ :update ], controller: "project_rate_limits", as: :rate_limit
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
 
     resources :error_groups, only: [], param: :uuid do

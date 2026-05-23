@@ -58,6 +58,47 @@ RSpec.describe Project, type: :model do
       expect(project.integration_kind).to eq("ruby")
       expect(project.integration_label).to eq("Ruby gem")
     end
+
+    it "allows blank project-level public API rate limit overrides" do
+      project = Project.new(user: users(:one), name: "Rate Limit Defaults")
+      expect(project).to be_valid
+    end
+
+    it "requires positive integer project-level public API rate limit overrides" do
+      project = Project.new(
+        user: users(:one),
+        name: "Bad Rate Limits",
+        public_api_rate_limit_requests_override: 0,
+        public_api_rate_limit_period_seconds_override: 0,
+        public_api_auth_failure_rate_limit_requests_override: 0
+      )
+
+      expect(project).not_to be_valid
+      expect(project.errors[:public_api_rate_limit_requests_override]).to be_present
+      expect(project.errors[:public_api_rate_limit_period_seconds_override]).to be_present
+      expect(project.errors[:public_api_auth_failure_rate_limit_requests_override]).to be_present
+    end
+  end
+
+  describe "public API rate limit overrides" do
+    it "falls back to global defaults when project overrides are blank" do
+      project = projects(:one)
+
+      expect(project.public_api_rate_limit_requests_effective(1200)).to eq(1200)
+      expect(project.public_api_rate_limit_period_seconds_effective(60)).to eq(60)
+      expect(project.public_api_auth_failure_rate_limit_requests_effective(120)).to eq(120)
+    end
+
+    it "returns project overrides when present" do
+      project = projects(:one)
+      project.public_api_rate_limit_requests_override = 500
+      project.public_api_rate_limit_period_seconds_override = 30
+      project.public_api_auth_failure_rate_limit_requests_override = 40
+
+      expect(project.public_api_rate_limit_requests_effective(1200)).to eq(500)
+      expect(project.public_api_rate_limit_period_seconds_effective(60)).to eq(30)
+      expect(project.public_api_auth_failure_rate_limit_requests_effective(120)).to eq(40)
+    end
   end
 
   describe ".accessible_to" do

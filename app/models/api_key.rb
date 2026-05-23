@@ -37,7 +37,7 @@ class ApiKey < ApplicationRecord
   def self.authenticate(token)
     return nil if token.blank?
 
-    active.joins(:project).merge(Project.active).find_by(token_digest: digest(token))
+    active.joins(:project).merge(Project.active).includes(:project).find_by(token_digest: digest(token))
   end
 
   def self.digest(token)

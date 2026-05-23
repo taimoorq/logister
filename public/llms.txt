@@ -70,7 +70,7 @@ Canonical documentation lives on the public docs host:
 - Captures and groups application errors into triageable error groups.
 - Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, and status.
 - Accepts `error`, `log`, `metric`, `transaction`, `span`, and `check_in` events.
-- Public ingestion APIs accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers.
+- Public ingestion APIs accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
 - Provides a cross-app dashboard with server-backed explorer charts, needs-attention summaries, active-project shortcuts, and assigned-to-me links.
 - Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review transaction and span-backed performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
