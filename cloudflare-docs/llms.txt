@@ -9,6 +9,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Getting started: https://docs.logister.org/getting-started/
 - Product guide: https://docs.logister.org/product/
 - Insights guide: https://docs.logister.org/product/#insights
+- Metrics reference: https://docs.logister.org/metrics/
 - Use cases and comparisons: https://docs.logister.org/use-cases/
 - Self-hosted error monitoring use case: https://docs.logister.org/use-cases/self-hosted-error-monitoring/
 - Sentry alternative comparison: https://docs.logister.org/use-cases/sentry-alternative/
@@ -68,6 +69,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - App source: https://github.com/taimoorq/logister
 - Secondary hosted/public app: https://logister.org/
 - Supported telemetry: Logister accepts errors, logs, metrics, transactions, spans, and check-ins. Span payloads feed request load waterfall charts when they include trace IDs, span IDs, parent span IDs, kind, duration, and route or service context.
+- Metrics reference: https://docs.logister.org/metrics/ lists supported telemetry families, built-in Insights metric keys, custom metric series, span timing segments, add-on support by runtime, accepted reporting fields, and data collection boundaries.
 - Public API limits: `/api/v1/ingest_events` and `/api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
 - Insights: project-level dashboard workspace that combines Inbox, Activity, and Performance signals with ECharts, time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, and recent matching events. Best results come from consistent `environment`, `release`, stable custom context attributes, and numeric custom metric values in `context.value`.
 - Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.

@@ -25,6 +25,21 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#cookie_banner_proxy_base_url" do
+    around do |example|
+      original_url_options = Rails.application.routes.default_url_options.dup
+      example.run
+    ensure
+      Rails.application.routes.default_url_options = original_url_options
+    end
+
+    it "returns an absolute same-origin Probo proxy URL" do
+      Rails.application.routes.default_url_options = { host: "logister.org", protocol: "https" }
+
+      expect(helper.cookie_banner_proxy_base_url).to eq("https://logister.org/api/cookie-banner/v1")
+    end
+  end
+
   describe "#app_icon" do
     it "renders icons from the local Streamline sprite" do
       fragment = Nokogiri::HTML.fragment(helper.app_icon(:search, css: "h-4 w-4 text-slate-400"))

@@ -60,6 +60,17 @@ Public ingestion endpoints `/api/v1/ingest_events` and `/api/v1/check_ins` accep
 - Best instrumentation practices: always send stable `environment` and `release` values when available; use stable top-level context keys such as `service`, `region`, `queue`, `route`, `tenant_tier`, or `feature_flag`; avoid raw IDs, emails, request bodies, and high-cardinality values as dashboard dimensions; keep custom metric names consistent; send numeric metric values in `context.value` when average value series should appear in the metric catalog.
 - Insights uses PostgreSQL indexes, bounded catalog sampling, and short Redis cache windows for the product UI. Optional ClickHouse remains useful for raw event/span analytics, high-volume custom reporting, and materialized rollups, but is not required for the Insights tab.
 
+## Metrics Reference
+
+- Metrics reference: https://docs.logister.org/metrics/
+- Logister collects errors, logs, metrics, transactions, spans, and check-ins. It stores raw events and spans first, then derives dashboard and Insights metrics from those signals.
+- Built-in Insights metric keys are `events.total`, `errors.count`, `activity.count`, `logs.count`, `check_ins.count`, `transactions.count`, `transactions.avg`, `transactions.p95`, `db.query.count`, `db.query.avg`, and `db.query.p95`.
+- Custom metric events use `event_type: "metric"` and the event message as the metric name. `metric:<name>` charts event count. `metric_value:<name>` charts average numeric `context.value`. The reserved `db.query` metric powers database query count, average duration, and P95 duration.
+- Span kinds accepted by the main app include `app`, `browser`, `cache`, `db`, `http`, `internal`, `queue`, `render`, `resource`, and `server`. Root `server` and `browser` spans power request load views.
+- Common reporting fields include `environment`, `release`, `service`, `trace_id`, `request_id`, `session_id`, `user_id`, `transaction_name`, `duration_ms`, `value`, `unit`, `tags`, request context, exception context, check-in slug/status, and expected check-in interval.
+- The metrics reference includes a matrix for the main app plus Ruby, .NET, Python, JavaScript, and CFML/HTTP support across errors, logs, custom metrics, DB query timing, transactions, spans, check-ins, environment/release, trace/request correlation, session/user context, and custom dimensions.
+- Good context includes route names, HTTP method, status code, deploy release, environment, service, job name, queue name, tenant tier, region, feature flag, sanitized request identifiers, trace/request/session/user IDs, and runtime timings. Avoid secrets, tokens, authorization headers, cookies, payment data, medical data, raw email bodies, and request or response bodies unless deliberately reviewed.
+
 ## Self-Hosted Stack
 
 - Rails web app served by Puma.
@@ -113,6 +124,7 @@ Public ingestion endpoints `/api/v1/ingest_events` and `/api/v1/check_ins` accep
 - Docs home: https://docs.logister.org/
 - Product guide: https://docs.logister.org/product/
 - Insights guide: https://docs.logister.org/product/#insights
+- Metrics reference: https://docs.logister.org/metrics/
 - Use cases: https://docs.logister.org/use-cases/
 - Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
 - Python error monitoring: https://docs.logister.org/use-cases/python-error-monitoring/

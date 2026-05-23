@@ -29,7 +29,7 @@
     <% probo_cookie_banner_id = ENV["PROBO_COOKIE_BANNER_ID"].to_s.strip.presence %>
     <% probo_cookie_banner_upstream_base_url = ENV["PROBO_COOKIE_BANNER_BASE_URL"].to_s.strip.presence %>
     <% probo_cookie_banner_proxy_enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch("PROBO_COOKIE_BANNER_PROXY_ENABLED", "true")) %>
-    <% probo_cookie_banner_base_url = probo_cookie_banner_proxy_enabled ? "/api/cookie-banner/v1" : probo_cookie_banner_upstream_base_url %>
+    <% probo_cookie_banner_base_url = probo_cookie_banner_proxy_enabled ? cookie_banner_proxy_base_url : probo_cookie_banner_upstream_base_url %>
     <% probo_cookie_banner_api_configured = probo_cookie_banner_proxy_enabled ? probo_cookie_banner_upstream_base_url.present? : probo_cookie_banner_base_url.present? %>
     <% probo_cookie_banner_position = ENV["PROBO_COOKIE_BANNER_POSITION"].to_s.strip.presence || "bottom-left" %>
     <% analytics_cookie_consent_category = ENV["LOGISTER_ANALYTICS_COOKIE_CATEGORY"].to_s.strip.presence || "analytics" %>

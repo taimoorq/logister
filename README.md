@@ -12,6 +12,7 @@ Use this repository when you want to run Logister yourself or fork it for your o
 - [Self-hosted runtime](#self-hosted-runtime)
 - [Self-host quickstart](#self-host-quickstart)
 - [Integrating apps with Logister](#integrating-apps-with-logister)
+- [Metrics reference](#metrics-reference)
 - [Running the app locally](#running-the-app-locally)
 - [Local development nuances](#local-development-nuances)
 - [License](#license)
@@ -52,6 +53,7 @@ Canonical setup and integration docs live on `docs.logister.org`, with self-host
 - Overview: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
 - Product guide: https://docs.logister.org/product/
+- Metrics reference: https://docs.logister.org/metrics/
 - Use cases and comparisons: https://docs.logister.org/use-cases/
 - Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
 - Python error monitoring: https://docs.logister.org/use-cases/python-error-monitoring/
@@ -216,6 +218,16 @@ The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateL
 | Spans | Manual spans and opt-in Rails request spans | Manual spans and opt-in ASP.NET Core request spans | Manual spans and opt-in FastAPI/Django/Flask request spans | Manual spans, Express request spans, and browser page/resource spans | Direct root and child span events |
 | Check-ins | Cron, scheduler, and worker check-ins | Worker and scheduled-task check-ins | Celery and manual check-ins | Job/script check-ins | Direct monitor check-ins |
 
+## Metrics reference
+
+Logister collects errors, logs, metrics, transactions, spans, and check-ins, then derives chartable Insights metrics from those signals. The full reference lives in [docs/metrics-reference.md](docs/metrics-reference.md) and covers:
+
+- the raw telemetry families and the fields Logister reads from each one
+- built-in Insights series such as `events.total`, `errors.count`, `transactions.p95`, `db.query.avg`, and `db.query.p95`
+- custom metric series using `metric:<name>` counts and `metric_value:<name>` averages from numeric `context.value`
+- span and transaction timing segments for app, database, render, HTTP, cache, queue, resource, and other work
+- filter dimensions such as environment, release, and safe custom context attributes
+
 ## Running the app locally
 
 Use this when you are working on the app itself. For a production deployment, use the self-host quickstart above instead.
@@ -324,6 +336,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
 | [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md) | Hotwire, Turbo, Stimulus, third-party JS, and asset pipeline conventions |
+| [docs/metrics-reference.md](docs/metrics-reference.md) | Telemetry families, Insights metrics, add-on support matrix, reporting fields, and collection boundaries |
 | [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
 | [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
 | [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |

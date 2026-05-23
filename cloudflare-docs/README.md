@@ -79,6 +79,7 @@ This static export mirrors the current public docs pages from the main Logister 
 - Overview
 - Getting started
 - Product guide
+- Metrics reference
 - Use cases and comparisons
 - Self-hosted error monitoring
 - Sentry, Bugsnag, and Bugzilla alternatives

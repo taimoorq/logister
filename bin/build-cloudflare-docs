@@ -20,6 +20,7 @@ preferred_paths = [
   "/llms-full.txt",
   "/getting-started/",
   "/product/",
+  "/metrics/",
   "/use-cases/",
   "/use-cases/self-hosted-error-monitoring/",
   "/use-cases/sentry-alternative/",

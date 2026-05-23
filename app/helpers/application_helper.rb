@@ -363,6 +363,10 @@ module ApplicationHelper
     DOCS_BASE_URL
   end
 
+  def cookie_banner_proxy_base_url
+    absolute_url_for("/api/cookie-banner/v1")
+  end
+
   # True when tailwindcss-rails has built app/assets/builds/tailwind.css.
   # Lets request specs pass without running bin/rails tailwindcss:build.
   def tailwind_built?
