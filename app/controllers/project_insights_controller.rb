@@ -35,19 +35,7 @@ class ProjectInsightsController < ApplicationController
       ],
       expires_in: INSIGHTS_SHELL_CACHE_TTL
     ) do
-      {
-        project_uuid: @project.uuid,
-        endpoint: insights_data_project_path(@project),
-        default_window: window,
-        refresh_seconds: 30,
-        windows: ProjectInsights.window_options,
-        event_types: ProjectInsights.event_type_catalog,
-        default_metrics: ProjectInsights.default_metric_keys,
-        metric_catalog: [],
-        environments: [],
-        releases: [],
-        attributes: []
-      }
+      ProjectInsights.shell_payload(@project, endpoint: insights_data_project_path(@project), window: window)
     end
   end
 

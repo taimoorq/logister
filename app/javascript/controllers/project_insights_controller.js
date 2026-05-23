@@ -76,7 +76,7 @@ export default class extends Controller {
     this.chartsReady = false
     this.seriesCatalogOpen = false
 
-    this.refreshSelectTarget.value = String(this.refreshSeconds)
+    if (this.hasRefreshSelectTarget) this.refreshSelectTarget.value = String(this.refreshSeconds)
     this.renderWindowButtons()
     this.renderLensButtons()
     this.renderAttributeControls()
@@ -110,8 +110,14 @@ export default class extends Controller {
   beforeCache() {
     this.abortController?.abort()
     this.disposeCharts()
-    this.metricChartTarget.replaceChildren()
-    this.eventChartTarget.replaceChildren()
+    if (this.hasMetricChartTarget) {
+      this.metricChartTarget.replaceChildren()
+      delete this.metricChartTarget.dataset.rendered
+    }
+    if (this.hasEventChartTarget) {
+      this.eventChartTarget.replaceChildren()
+      delete this.eventChartTarget.dataset.rendered
+    }
   }
 
   disposeCharts() {
@@ -145,8 +151,8 @@ export default class extends Controller {
 
     this.resizeObserver = new ResizeObserver(() => this.queueResize())
     this.resizeObserver.observe(this.element)
-    this.resizeObserver.observe(this.metricChartTarget)
-    this.resizeObserver.observe(this.eventChartTarget)
+    if (this.hasMetricChartTarget) this.resizeObserver.observe(this.metricChartTarget)
+    if (this.hasEventChartTarget) this.resizeObserver.observe(this.eventChartTarget)
   }
 
   selectWindow(event) {
@@ -256,8 +262,8 @@ export default class extends Controller {
   }
 
   initializeCharts(echarts) {
-    this.charts.metrics = echarts.init(this.metricChartTarget, null, { renderer: "canvas" })
-    this.charts.events = echarts.init(this.eventChartTarget, null, { renderer: "canvas" })
+    if (this.hasMetricChartTarget) this.charts.metrics = echarts.init(this.metricChartTarget, null, { renderer: "canvas" })
+    if (this.hasEventChartTarget) this.charts.events = echarts.init(this.eventChartTarget, null, { renderer: "canvas" })
   }
 
   fetchData() {
@@ -327,16 +333,20 @@ export default class extends Controller {
 
   renderError() {
     this.setStatus("Unable to load dashboard data")
-    this.summaryTarget.innerHTML = this.summaryCell("--", "Events", "All matching signals") +
-      this.summaryCell("--", "Errors", "Health signals") +
-      this.summaryCell("--", "Transactions", "Performance spans") +
-      this.summaryCell("--", "Metrics", "Custom measurements") +
-      this.summaryCell("--", "Check-ins", "Monitors and jobs")
-    this.charts.metrics.setOption(emptyChartOption("Unable to load metrics"), true)
-    this.charts.events.setOption(emptyChartOption("Unable to load activity"), true)
+    if (this.hasSummaryTarget) {
+      this.summaryTarget.innerHTML = this.summaryCell("--", "Events", "All matching signals") +
+        this.summaryCell("--", "Errors", "Health signals") +
+        this.summaryCell("--", "Transactions", "Performance spans") +
+        this.summaryCell("--", "Metrics", "Custom measurements") +
+        this.summaryCell("--", "Check-ins", "Monitors and jobs")
+    }
+    this.charts.metrics?.setOption(emptyChartOption("Unable to load metrics"), true)
+    this.charts.events?.setOption(emptyChartOption("Unable to load activity"), true)
   }
 
   renderFilterSelects(data) {
+    if (!this.hasEnvironmentSelectTarget || !this.hasReleaseSelectTarget) return
+
     populateSelect(this.environmentSelectTarget, data.environments || [], this.environment, "All environments")
     populateSelect(this.releaseSelectTarget, data.releases || [], this.release, "All releases")
   }
@@ -426,6 +436,8 @@ export default class extends Controller {
   }
 
   renderMetricCatalog() {
+    if (!this.hasMetricListTarget) return
+
     if (this.catalog.length === 0) {
       this.metricListTarget.innerHTML = '<p class="project-insights-empty">No metrics collected in this window.</p>'
       return
@@ -484,6 +496,8 @@ export default class extends Controller {
   }
 
   renderActiveMetrics() {
+    if (!this.hasActiveMetricsTarget) return
+
     if (this.selectedMetrics.length === 0) {
       this.activeMetricsTarget.innerHTML = '<p class="project-insights-empty">Add a metric to start charting.</p>'
       return
@@ -513,6 +527,8 @@ export default class extends Controller {
   }
 
   renderSummary(summary) {
+    if (!this.hasSummaryTarget) return
+
     this.summaryTarget.innerHTML = this.summaryCell(summary.events, "Events", "All matching signals") +
       this.summaryCell(summary.errors, "Errors", "Health signals") +
       this.summaryCell(summary.transactions, "Transactions", "Performance spans") +
@@ -531,6 +547,8 @@ export default class extends Controller {
   }
 
   renderMetricChart(data) {
+    if (!this.charts.metrics) return
+
     const metricSeries = data.metric_series || []
     const timestamps = data.buckets || []
     const labels = timestamps.map((timestamp) => shortTimeLabel(timestamp, data.bucket))
@@ -541,9 +559,12 @@ export default class extends Controller {
       emptyText: "No values in this slice",
       noSeriesText: "Add a metric to chart"
     }), true)
+    this.metricChartTarget.dataset.rendered = "true"
   }
 
   renderEventChart(data) {
+    if (!this.charts.events) return
+
     const rows = data.event_timeline || []
 
     this.charts.events.setOption(telemetryTimelineOption({
@@ -553,9 +574,12 @@ export default class extends Controller {
       emptyText: "No activity in this slice",
       includeDataZoom: true
     }), true)
+    this.eventChartTarget.dataset.rendered = "true"
   }
 
   renderRecentEvents(events) {
+    if (!this.hasRecentEventsTarget) return
+
     if (events.length === 0) {
       this.recentEventsTarget.innerHTML = '<p class="project-insights-empty">No matching events yet.</p>'
       return
@@ -644,6 +668,8 @@ export default class extends Controller {
   }
 
   storageKey() {
+    if (this.payload.storage_key) return this.payload.storage_key
+
     return `logister.project-insights.${this.payload.project_uuid || window.location.pathname}`
   }
 
@@ -658,6 +684,8 @@ export default class extends Controller {
   }
 
   setStatus(text) {
+    if (!this.hasStatusTarget) return
+
     this.statusTarget.textContent = text
   }
 

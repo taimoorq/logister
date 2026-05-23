@@ -180,48 +180,9 @@
 
   <div class="project-insights-layout">
     <div class="project-insights-main">
-      <article class="project-insights-panel project-insights-metric-panel"
-               <%= tag.attributes(data: product_tour_step_data(tour_group, :timeline)) %>
-               style="view-transition-name: insights-timeline; view-transition-class: project-insights-panel;">
-        <div class="project-insights-panel-header">
-          <div>
-            <h3>Telemetry timeline</h3>
-            <span>Counts, durations, and custom values in the current scope</span>
-          </div>
-          <div class="project-insights-panel-actions">
-            <div class="project-insights-active-list" data-project-insights-target="activeMetrics"></div>
-            <div class="project-insights-series-menu">
-              <button type="button"
-                      class="project-insights-series-toggle"
-                      data-project-insights-target="seriesToggle"
-                      data-action="project-insights#toggleSeriesCatalog"
-                      aria-label="Add chart series"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                      title="Add chart series">
-                <%= app_icon(:filter, css: "w-4 h-4") %>
-                <span class="sr-only">Add chart series</span>
-                <span class="project-insights-series-count" data-project-insights-target="seriesCount">0</span>
-              </button>
-              <div class="project-insights-series-popover"
-                   data-project-insights-target="seriesPopover"
-                   hidden>
-                <div class="project-insights-series-popover-header">
-                  <div>
-                    <h4>Add chart series</h4>
-                    <p>Metrics grouped by signal category</p>
-                  </div>
-                </div>
-                <div class="project-insights-metric-list" data-project-insights-target="metricList"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <%= render "projects/telemetry_timeline_chart",
-                   classes: "project-insights-chart project-insights-chart-main",
-                   data: { "project-insights-target": "metricChart" },
-                   label: "Telemetry timeline for the selected insight scope" %>
-      </article>
+      <%= render "projects/insights_metric_panel",
+                 article_data: product_tour_step_data(tour_group, :timeline),
+                 article_style: "view-transition-name: insights-timeline; view-transition-class: project-insights-panel;" %>
 
       <article class="project-insights-panel"
                <%= tag.attributes(data: product_tour_step_data(tour_group, :signal_mix)) %>

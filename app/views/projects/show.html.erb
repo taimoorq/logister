@@ -122,32 +122,14 @@
   <section class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]"
            aria-label="Recent project signals"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :recent_signals)) %>>
-    <article class="dashboard-panel project-telemetry-panel"
-             data-controller="project-telemetry-timeline"
-             data-project-telemetry-timeline-payload-value="<%= json_escape(@telemetry_timeline.to_json) %>">
-      <div class="dashboard-panel-header">
-        <div>
-          <h2>Telemetry timeline</h2>
-          <p>Last 24 hours by signal type</p>
-        </div>
-        <%= link_to "Insights", insights_project_path(@project), class: "dashboard-panel-link" %>
-      </div>
-
-      <%= render "projects/telemetry_timeline_chart",
-                 classes: "project-telemetry-chart",
-                 data: { "project-telemetry-timeline-target": "chart" },
-                 min_height: "20rem",
-                 label: "Project telemetry timeline for the last 24 hours" %>
-
-      <div class="project-telemetry-legend" aria-label="Telemetry totals">
-        <% Dashboard::EVENT_TYPE_ORDER.each do |event_type| %>
-          <span>
-            <span class="<%= dashboard_event_badge_class(event_type) %>"><%= dashboard_event_type_label(event_type) %></span>
-            <strong><%= number_with_delimiter(@event_type_counts_last_24h.fetch(event_type, 0)) %></strong>
-          </span>
-        <% end %>
-      </div>
-    </article>
+    <section class="project-insights project-overview-insights"
+             data-controller="project-insights"
+             data-project-insights-payload-value="<%= json_escape(@insights_payload.to_json) %>">
+      <%= render "projects/insights_metric_panel",
+                 title: "Telemetry timeline",
+                 subtitle: "Counts, durations, and custom values in the current scope",
+                 header_link: { label: "Insights", url: insights_project_path(@project) } %>
+    </section>
 
     <aside class="dashboard-panel">
       <div class="dashboard-panel-header">

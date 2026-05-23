@@ -33,7 +33,12 @@ class ProjectsController < ApplicationController
     @project_overview = project_overview(@project)
     dashboard_metrics = project_dashboard_metrics(@project)
     @event_type_counts_last_24h = dashboard_metrics[:event_type_counts_last_24h]
-    @telemetry_timeline = dashboard_metrics[:telemetry_timeline]
+    @insights_payload = ProjectInsights.shell_payload(
+      @project,
+      endpoint: insights_data_project_path(@project),
+      window: ProjectInsights::DEFAULT_WINDOW,
+      storage_key: "logister.project-overview-insights.#{@project.uuid}"
+    )
     @events_last_24h = @event_type_counts_last_24h.values.sum
     @activity_events_last_24h = @event_type_counts_last_24h.except("error").values.sum
     @recent_error_groups = @project.error_groups
@@ -237,56 +242,9 @@ class ProjectsController < ApplicationController
 
       {
         event_type_counts_last_24h: project_event_type_counts(project, since: since),
-        telemetry_timeline: project_telemetry_timeline(project, since: since),
         db_stats: IngestEvent.db_stats_from_events(db_query_events),
         transaction_stats: IngestEvent.transaction_stats(project, since: since)
       }
     end
-  end
-
-  def project_telemetry_timeline(project, since:)
-    bucket_start = since.beginning_of_hour
-    buckets = hourly_buckets(bucket_start, Time.current.beginning_of_hour)
-    bucket_node = Arel::Nodes::NamedFunction.new(
-      "date_trunc",
-      [ Arel::Nodes.build_quoted("hour"), IngestEvent.arel_table[:occurred_at] ]
-    )
-    counts = project.ingest_events
-                    .where("occurred_at >= ?", since)
-                    .group(bucket_node, :event_type)
-                    .count
-    values = counts.each_with_object({}) do |((bucket_time, event_type), count), memo|
-      memo[[ bucket_time.to_time.utc.iso8601, normalize_project_event_type(event_type) ]] = count.to_i
-    end
-
-    {
-      buckets: buckets.map { |bucket| bucket.utc.iso8601 },
-      event_types: Dashboard::EVENT_TYPE_ORDER.map do |event_type|
-        { key: event_type, label: helpers.dashboard_event_type_label(event_type) }
-      end,
-      rows: buckets.map do |bucket|
-        timestamp = bucket.utc.iso8601
-        Dashboard::EVENT_TYPE_ORDER.index_with { |event_type| values.fetch([ timestamp, event_type ], 0) }
-                                     .merge(timestamp: timestamp)
-      end
-    }
-  end
-
-  def hourly_buckets(first_bucket, last_bucket)
-    buckets = []
-    current = first_bucket
-
-    while current <= last_bucket
-      buckets << current
-      current += 1.hour
-    end
-
-    buckets
-  end
-
-  def normalize_project_event_type(value)
-    return value if value.is_a?(String) && IngestEvent.event_types.key?(value)
-
-    IngestEvent.event_types.key(value.to_i)
   end
 end

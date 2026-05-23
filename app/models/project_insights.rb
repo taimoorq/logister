@@ -214,6 +214,23 @@ class ProjectInsights
       DEFAULT_METRIC_KEYS
     end
 
+    def shell_payload(project, endpoint:, window: DEFAULT_WINDOW, refresh_seconds: 30, storage_key: nil)
+      {
+        project_uuid: project.uuid,
+        endpoint: endpoint,
+        default_window: normalize_window(window),
+        refresh_seconds: refresh_seconds,
+        storage_key: storage_key,
+        windows: window_options,
+        event_types: event_type_catalog,
+        default_metrics: default_metric_keys,
+        metric_catalog: [],
+        environments: [],
+        releases: [],
+        attributes: []
+      }.compact
+    end
+
     def normalize_window(value)
       key = value.to_s
       WINDOW_OPTIONS.key?(key) ? key : DEFAULT_WINDOW

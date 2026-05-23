@@ -1,0 +1,55 @@
+<% article_classes = [ "project-insights-panel project-insights-metric-panel", local_assigns[:article_class] ].compact_blank.join(" ") %>
+<% article_data = local_assigns[:article_data] %>
+<% article_style = local_assigns[:article_style] %>
+<% title = local_assigns.fetch(:title, "Telemetry timeline") %>
+<% subtitle = local_assigns.fetch(:subtitle, "Counts, durations, and custom values in the current scope") %>
+<% chart_classes = local_assigns.fetch(:chart_classes, "project-insights-chart project-insights-chart-main") %>
+<% chart_label = local_assigns.fetch(:chart_label, "Telemetry timeline for the selected insight scope") %>
+<% header_link = local_assigns[:header_link] %>
+<% article_options = { class: article_classes } %>
+<% article_options[:data] = article_data if article_data.present? %>
+<% article_options[:style] = article_style if article_style.present? %>
+
+<%= tag.article(**article_options) do %>
+  <div class="project-insights-panel-header">
+    <div>
+      <h3><%= title %></h3>
+      <span><%= subtitle %></span>
+    </div>
+    <div class="project-insights-panel-actions">
+      <div class="project-insights-active-list" data-project-insights-target="activeMetrics"></div>
+      <div class="project-insights-series-menu">
+        <button type="button"
+                class="project-insights-series-toggle"
+                data-project-insights-target="seriesToggle"
+                data-action="project-insights#toggleSeriesCatalog"
+                aria-label="Add chart series"
+                aria-haspopup="true"
+                aria-expanded="false"
+                title="Add chart series">
+          <%= app_icon(:filter, css: "w-4 h-4") %>
+          <span class="sr-only">Add chart series</span>
+          <span class="project-insights-series-count" data-project-insights-target="seriesCount">0</span>
+        </button>
+        <div class="project-insights-series-popover"
+             data-project-insights-target="seriesPopover"
+             hidden>
+          <div class="project-insights-series-popover-header">
+            <div>
+              <h4>Add chart series</h4>
+              <p>Metrics grouped by signal category</p>
+            </div>
+          </div>
+          <div class="project-insights-metric-list" data-project-insights-target="metricList"></div>
+        </div>
+      </div>
+      <% if header_link.present? %>
+        <%= link_to header_link.fetch(:label), header_link.fetch(:url), class: "dashboard-panel-link project-insights-header-link" %>
+      <% end %>
+    </div>
+  </div>
+  <%= render "projects/telemetry_timeline_chart",
+             classes: chart_classes,
+             data: { "project-insights-target": "metricChart" },
+             label: chart_label %>
+<% end %>

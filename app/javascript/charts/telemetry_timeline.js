@@ -86,19 +86,6 @@ export function metricTimelineOption({
   }
 }
 
-export function metricSeriesFromEventTimeline({ rows = [], eventTypes = [] } = {}) {
-  return eventTypes.map((eventType) => ({
-    key: eventType.key,
-    label: eventType.label,
-    unit: "count",
-    color: EVENT_COLORS[eventType.key] || eventType.color || "#2563eb",
-    data: rows.map((row) => ({
-      timestamp: row.timestamp,
-      value: Number(row[eventType.key]) || 0
-    }))
-  }))
-}
-
 export function emptyChartOption(text) {
   return {
     graphic: emptyGraphic(true, text),
