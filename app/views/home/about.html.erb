@@ -10,15 +10,11 @@
   "description" => "About Logister and its open source, self-hosted error monitoring and bug triage workflow for Ruby, .NET, Python, JavaScript, TypeScript, and CFML apps."
 }) %>
 <%
-  overview_desktop_path = "marketing/overview-desktop-optimized.webp"
-  projects_mobile_path = "marketing/projects-mobile-optimized.webp"
-  overview_mobile_path = "marketing/overview-mobile-optimized.webp"
-  inbox_desktop_path = "marketing/inbox-desktop-optimized.webp"
-
-  overview_desktop_exists = Rails.root.join("app/assets/images", overview_desktop_path).exist?
-  projects_mobile_exists = Rails.root.join("app/assets/images", projects_mobile_path).exist?
-  overview_mobile_exists = Rails.root.join("app/assets/images", overview_mobile_path).exist?
-  inbox_desktop_exists = Rails.root.join("app/assets/images", inbox_desktop_path).exist?
+  screenshot_exists = ->(path) { Rails.root.join("app/assets/images", path).exist? }
+  dashboard_path = "marketing/logister-dashboard.webp"
+  needs_attention_path = "marketing/logister-dashboard-2.webp"
+  inbox_path = "marketing/logister-inbox.webp"
+  insights_path = "marketing/logister-insights.webp"
 %>
 
 <div class="marketing-home about-page">
@@ -40,10 +36,10 @@
         </div>
       </div>
       <div class="shot-frame" data-controller="reveal" data-reveal-animation-class-value="reveal-scale" data-reveal-delay-value="120">
-        <% if overview_desktop_exists %>
-          <%= image_tag overview_desktop_path, alt: "Logister overview dashboard screenshot", class: "hero-shot" %>
+        <% if screenshot_exists.call(dashboard_path) %>
+          <%= image_tag dashboard_path, alt: "Logister overview dashboard showing cross-app event flow", class: "hero-shot", width: 3562, height: 2092 %>
         <% else %>
-          <div class="shot-placeholder">Add <code>app/assets/images/<%= overview_desktop_path %></code></div>
+          <div class="shot-placeholder">Add <code>app/assets/images/<%= dashboard_path %></code></div>
         <% end %>
       </div>
     </div>
@@ -67,36 +63,36 @@
   <section class="about-showcase" style="view-transition-name: public-showcase; view-transition-class: public-panel;">
     <div class="about-showcase-head" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="workflow-kicker">Product in action</p>
-      <h2>Designed for day-to-day triage flow on desktop and mobile.</h2>
+      <h2>Designed for day-to-day triage flow across dashboards, inboxes, and insights.</h2>
     </div>
     <div class="about-showcase-grid">
       <article class="about-shot-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
         <p class="feature-kicker">Project inbox</p>
         <div class="shot-frame">
-          <% if inbox_desktop_exists %>
-            <%= image_tag inbox_desktop_path, alt: "Logister inbox detail view screenshot", class: "hero-shot" %>
+          <% if screenshot_exists.call(inbox_path) %>
+            <%= image_tag inbox_path, alt: "Logister inbox detail view screenshot", class: "hero-shot", width: 3570, height: 2222 %>
           <% else %>
-            <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_desktop_path %></code></div>
+            <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_path %></code></div>
           <% end %>
         </div>
       </article>
       <article class="about-shot-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="90">
-        <p class="feature-kicker">Mobile overview</p>
+        <p class="feature-kicker">Project insights</p>
         <div class="shot-frame">
-          <% if overview_mobile_exists %>
-            <%= image_tag overview_mobile_path, alt: "Logister overview mobile screenshot", class: "hero-shot" %>
+          <% if screenshot_exists.call(insights_path) %>
+            <%= image_tag insights_path, alt: "Logister insights timeline screenshot", class: "hero-shot", width: 3574, height: 2222 %>
           <% else %>
-            <div class="shot-placeholder">Add <code>app/assets/images/<%= overview_mobile_path %></code></div>
+            <div class="shot-placeholder">Add <code>app/assets/images/<%= insights_path %></code></div>
           <% end %>
         </div>
       </article>
       <article class="about-shot-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="150">
-        <p class="feature-kicker">Mobile projects</p>
+        <p class="feature-kicker">Stability dashboard</p>
         <div class="shot-frame">
-          <% if projects_mobile_exists %>
-            <%= image_tag projects_mobile_path, alt: "Logister projects mobile screenshot", class: "hero-shot" %>
+          <% if screenshot_exists.call(needs_attention_path) %>
+            <%= image_tag needs_attention_path, alt: "Logister stability dashboard screenshot", class: "hero-shot", width: 3576, height: 2240 %>
           <% else %>
-            <div class="shot-placeholder">Add <code>app/assets/images/<%= projects_mobile_path %></code></div>
+            <div class="shot-placeholder">Add <code>app/assets/images/<%= needs_attention_path %></code></div>
           <% end %>
         </div>
       </article>

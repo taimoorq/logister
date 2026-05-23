@@ -2299,7 +2299,7 @@
 
   .shot-main {
     @apply mb-3;
-    aspect-ratio: 2572 / 1696;
+    aspect-ratio: 3562 / 2092;
   }
 
   .hero-shot {
@@ -2312,7 +2312,7 @@
   }
 
   .hero-mobile-shots .shot-frame {
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 16 / 10;
   }
 
   .shot-placeholder {
@@ -2340,11 +2340,11 @@
   }
 
   .about-hero .shot-frame {
-    aspect-ratio: 2572 / 1696;
+    aspect-ratio: 3562 / 2092;
   }
 
   .about-shot-card .shot-frame {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 10;
     max-height: 28rem;
   }
 
