@@ -6,6 +6,8 @@ class ProjectInsightsController < ApplicationController
   include ProjectScope
 
   INSIGHTS_SHELL_CACHE_TTL = 1.minute
+  INSIGHTS_CATALOG_CACHE_TTL = 1.minute
+  INSIGHTS_FILTER_OPTIONS_CACHE_TTL = 1.minute
   INSIGHTS_DATA_CACHE_TTL = 30.seconds
 
   before_action :authenticate_user!
@@ -40,12 +42,14 @@ class ProjectInsightsController < ApplicationController
   end
 
   def cached_insights_dashboard
+    window = ProjectInsights.normalize_window(params[:window])
+
     safe_cache_fetch(
       [
         "project",
         @project.id,
         "insights_data",
-        ProjectInsights.normalize_window(params[:window]),
+        window,
         cache_time_bucket(INSIGHTS_DATA_CACHE_TTL),
         Digest::SHA256.hexdigest(insights_cache_dimensions.to_json)
       ],
@@ -53,12 +57,44 @@ class ProjectInsightsController < ApplicationController
     ) do
       ProjectInsights.dashboard_for(
         @project,
-        window: params[:window],
+        window: window,
         metrics: params[:metrics],
         environment: params[:environment],
         release: params[:release],
-        attribute_filters: params[:attributes]
+        attribute_filters: params[:attributes],
+        catalog: cached_insights_catalog(window),
+        filter_options: cached_insights_filter_options(window)
       )
+    end
+  end
+
+  def cached_insights_catalog(window)
+    safe_cache_fetch(
+      [
+        "project",
+        @project.id,
+        "insights_catalog",
+        window,
+        cache_time_bucket(INSIGHTS_CATALOG_CACHE_TTL)
+      ],
+      expires_in: INSIGHTS_CATALOG_CACHE_TTL
+    ) do
+      ProjectInsights.catalog_for(@project, window: window)
+    end
+  end
+
+  def cached_insights_filter_options(window)
+    safe_cache_fetch(
+      [
+        "project",
+        @project.id,
+        "insights_filter_options",
+        window,
+        cache_time_bucket(INSIGHTS_FILTER_OPTIONS_CACHE_TTL)
+      ],
+      expires_in: INSIGHTS_FILTER_OPTIONS_CACHE_TTL
+    ) do
+      ProjectInsights.filter_options(@project, window: window)
     end
   end
 

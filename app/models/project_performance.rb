@@ -20,7 +20,10 @@ class ProjectPerformance
       clickhouse_payload = request_breakdown_from_clickhouse(project, since:, limit:)
       return clickhouse_payload if clickhouse_payload.present?
 
-      roots = project.trace_spans.recent_roots(since, limit).to_a
+      roots = project.trace_spans
+                     .recent_roots(since, limit)
+                     .select(:id, :uuid, :trace_id, :span_id, :name, :kind, :status, :duration_ms, :started_at, :ended_at, :context)
+                     .to_a
       return transaction_breakdown(project, since:, limit:) if roots.empty?
 
       trace_ids = roots.map(&:trace_id).uniq
@@ -28,11 +31,7 @@ class ProjectPerformance
       window_start = [ roots.map(&:started_at).compact.min || since, since ].min - SPAN_LOOKBACK_PADDING
       window_end = [ roots.filter_map(&:ended_at).max || Time.current, Time.current ].max + SPAN_LOOKBACK_PADDING
 
-      children_by_trace = project.trace_spans
-                                 .where(trace_id: trace_ids, started_at: window_start..window_end)
-                                 .where.not(id: root_ids)
-                                 .select(:id, :trace_id, :span_id, :parent_span_id, :name, :kind, :status, :duration_ms, :started_at, :ended_at, :context)
-                                 .group_by(&:trace_id)
+      children_by_trace = child_segments_by_trace(project, trace_ids:, root_ids:, window_start:, window_end:)
 
       rows = roots.map { |root| row_from_root_span(root, children_by_trace.fetch(root.trace_id, [])) }
 
@@ -131,11 +130,28 @@ class ProjectPerformance
       }
     end
 
-    def row_from_root_span(root, children)
+    def child_segments_by_trace(project, trace_ids:, root_ids:, window_start:, window_end:)
+      project.trace_spans
+             .where(trace_id: trace_ids, started_at: window_start..window_end)
+             .where.not(id: root_ids)
+             .group(:trace_id, :kind)
+             .pluck(:trace_id, :kind, Arel.sql("SUM(duration_ms)"), Arel.sql("COUNT(*)"))
+             .each_with_object(Hash.new { |hash, key| hash[key] = [] }) do |(trace_id, kind, duration_ms, child_count), grouped|
+        grouped[trace_id] << {
+          kind: kind,
+          duration_ms: duration_ms,
+          child_count: child_count
+        }
+      end
+    end
+
+    def row_from_root_span(root, child_rows)
       segment_ms = empty_segment_hash
-      children.each do |child|
-        key = segment_key(child.kind)
-        segment_ms[key] += child.duration_ms.to_f if CHILD_SEGMENT_KEYS.include?(key)
+      child_count = 0
+      child_rows.each do |row|
+        key = segment_key(row.fetch(:kind))
+        segment_ms[key] += numeric(row.fetch(:duration_ms)) if CHILD_SEGMENT_KEYS.include?(key)
+        child_count += row.fetch(:child_count).to_i
       end
 
       child_total = segment_ms.values.sum
@@ -153,7 +169,7 @@ class ProjectPerformance
         request_id: root.request_id,
         status: root.status,
         segments: rounded_segments(segment_ms),
-        child_count: children.size
+        child_count: child_count
       }
     end
 
