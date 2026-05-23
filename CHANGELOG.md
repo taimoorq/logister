@@ -11,6 +11,7 @@ All notable changes to Logister will be documented in this file.
 - Consolidated inbox status counts, cached empty-inbox activity checks, memoized project assignable users, and trimmed Settings page queries so common project pages fetch only rendered columns.
 - Expanded development seed data to cover .NET projects, custom metrics, root and child trace spans, retention settings, notification preferences, notification deliveries, and telemetry archive history.
 - Prevented development seeds from creating check-in monitors for non-check-in sample events.
+- Configured Bullet in development to surface N+1 queries, unused eager loading, and counter-cache suggestions in browser console, page footer, Rails logs, and `log/bullet.log`.
 - Updated public self-hosting references for the `v2.1.1` release image tag.
 
 ## v2.1.0 - 2026-05-22

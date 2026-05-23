@@ -69,6 +69,7 @@ group :development do
   gem "better_errors"
   gem "binding_of_caller"
   gem "railsforge"
+  gem "bullet"
 end
 
 group :test do
