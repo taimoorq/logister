@@ -11,6 +11,7 @@
   "devDependencies": {
     "@iconify-json/streamline-freehand": "^1.2.1",
     "@tailwindcss/typography": "^0.5.19",
+    "pagefind": "^1.5.2",
     "vite": "^6.4.2",
     "vite-plugin-ruby": "^5.1.3"
   },

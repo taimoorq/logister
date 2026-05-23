@@ -91,6 +91,50 @@ function createConsentScript(category) {
   return script;
 }
 
+function loadDocsSearch() {
+  const topbar = document.querySelector(".topbar-inner");
+  if (!topbar || document.querySelector("[data-logister-docs-search]")) return;
+
+  const search = document.createElement("div");
+  search.id = "docs-search";
+  search.className = "docs-search";
+  search.setAttribute("data-logister-docs-search", "true");
+  search.setAttribute("data-pagefind-ignore", "true");
+
+  const navToggle = topbar.querySelector("[data-nav-toggle]");
+  topbar.insertBefore(search, navToggle || topbar.querySelector("[data-nav-panel]"));
+
+  if (!document.querySelector('[data-logister-docs-search-style="pagefind"]')) {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = "/pagefind/pagefind-ui.css";
+    stylesheet.setAttribute("data-logister-docs-search-style", "pagefind");
+    document.head.appendChild(stylesheet);
+  }
+
+  const script = document.createElement("script");
+  script.src = "/pagefind/pagefind-ui.js";
+  script.defer = true;
+  script.setAttribute("data-logister-docs-search-script", "pagefind");
+  script.addEventListener("load", () => {
+    if (!window.PagefindUI) return;
+
+    new window.PagefindUI({
+      element: "#docs-search",
+      showImages: false,
+      showSubResults: true,
+      excerptLength: 24,
+      translations: {
+        placeholder: "Search docs"
+      }
+    });
+  });
+  script.addEventListener("error", () => {
+    search.remove();
+  });
+  document.head.appendChild(script);
+}
+
 function enhanceSidebarSections(sidebar) {
   const groups = Array.from(sidebar.querySelectorAll(".sidebar-group"));
   const hasActiveGroup = groups.some((group) => Boolean(group.querySelector("a.active")));
@@ -182,6 +226,7 @@ function writeSidebarState(key, isOpen) {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadDocsAnalytics();
+  loadDocsSearch();
 
   const navToggle = document.querySelector("[data-nav-toggle]");
   const navPanel = document.querySelector("[data-nav-panel]");

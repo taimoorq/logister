@@ -312,7 +312,7 @@ The shortest Cloudflare Pages workflow is:
 wrangler pages dev cloudflare-docs
 ```
 
-Update the static HTML under `cloudflare-docs/`, then deploy with the configured GitHub Actions workflow or a manual command like:
+Update the static HTML under `cloudflare-docs/`, run `npm ci` and `bin/build-cloudflare-docs` to regenerate metadata and the Pagefind search index, then deploy with the configured GitHub Actions workflow or a manual command like:
 
 ```bash
 wrangler pages deploy cloudflare-docs --project-name=<project>

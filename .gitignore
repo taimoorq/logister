@@ -62,3 +62,6 @@ node_modules
 /.wrangler/
 .dev.vars
 .dev.vars.*
+
+# Generated static docs search index.
+/cloudflare-docs/pagefind/

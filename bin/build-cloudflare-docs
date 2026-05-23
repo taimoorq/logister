@@ -26,6 +26,12 @@ if postman_source.file?
   FileUtils.cp(postman_source, postman_target)
 end
 
+pagefind_bin = repo_root.join("node_modules/.bin/pagefind")
+unless pagefind_bin.file?
+  warn "Pagefind is not installed. Run `npm ci` before `bin/build-cloudflare-docs`."
+  exit 1
+end
+
 preferred_paths = [
   "/",
   "/llms.txt",
@@ -130,5 +136,11 @@ robots = <<~ROBOTS
 ROBOTS
 
 docs_root.join("robots.txt").write(robots)
+
+FileUtils.rm_rf(docs_root.join("pagefind"))
+unless system(pagefind_bin.to_s, "--site", docs_root.to_s, "--quiet", "--force-language", "en")
+  warn "Pagefind index build failed."
+  exit 1
+end
 
 puts "Built Cloudflare docs metadata for #{docs_url}"
