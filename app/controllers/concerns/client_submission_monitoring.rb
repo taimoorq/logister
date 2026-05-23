@@ -1,12 +1,32 @@
 module ClientSubmissionMonitoring
   extend ActiveSupport::Concern
 
+  DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS = 1_200
+  DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 60
+  DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS = 120
+
   private
 
   def authenticate_api_key!
     token = submitted_api_key_token
     @api_key = ApiKey.authenticate(token)
-    return if @api_key
+    if @api_key
+      return unless public_api_rate_limited?(
+        identity: "api_key:#{@api_key.id}",
+        kind: "accepted",
+        limit: public_api_rate_limit_requests
+      )
+
+      return render_public_api_rate_limited
+    end
+
+    if public_api_rate_limited?(
+      identity: "ip:#{request.remote_ip.presence || 'unknown'}",
+      kind: "auth_failure",
+      limit: public_api_auth_failure_rate_limit_requests
+    )
+      return render_public_api_rate_limited
+    end
 
     diagnostic_api_key = diagnostic_api_key_for(token)
     report_client_submission_failure(
@@ -17,6 +37,101 @@ module ClientSubmissionMonitoring
     )
 
     render json: { error: "Unauthorized" }, status: :unauthorized
+  end
+
+  def public_api_rate_limited?(identity:, kind:, limit:)
+    limit = limit.to_i
+    return false unless limit.positive?
+
+    period = public_api_rate_limit_period_seconds
+    window_started_at = Time.current.to_i / period * period
+    reset_at = window_started_at + period
+    count = public_api_rate_limit_count(kind, identity, window_started_at, period)
+    return false unless count
+
+    set_public_api_rate_limit_headers(limit, count, reset_at)
+    @public_api_rate_limit_context = {
+      limit: limit,
+      remaining: [ limit - count, 0 ].max,
+      reset_at: reset_at,
+      retry_after: public_api_retry_after(reset_at),
+      window_seconds: period
+    }
+    count > limit
+  rescue StandardError => error
+    Rails.logger.warn("public API rate limiting skipped: #{error.class} #{error.message}")
+    false
+  end
+
+  def public_api_rate_limit_count(kind, identity, window_started_at, period)
+    cache_key = public_api_rate_limit_cache_key(kind, identity, window_started_at)
+    count = Rails.cache.increment(cache_key, 1, expires_in: period + 5)
+    return count if count
+
+    Rails.cache.write(cache_key, 1, expires_in: period + 5)
+    1
+  end
+
+  def public_api_rate_limit_cache_key(kind, identity, window_started_at)
+    endpoint = kind == "auth_failure" ? "all" : client_submission_endpoint_label
+    identity_digest = Digest::SHA256.hexdigest(identity.to_s)
+    "logister:public_api_rate_limit:v1:#{kind}:#{endpoint}:#{identity_digest}:#{window_started_at}"
+  end
+
+  def render_public_api_rate_limited
+    context = @public_api_rate_limit_context || {
+      limit: public_api_rate_limit_requests,
+      remaining: 0,
+      reset_at: Time.current.to_i + public_api_rate_limit_period_seconds,
+      retry_after: public_api_rate_limit_period_seconds,
+      window_seconds: public_api_rate_limit_period_seconds
+    }
+
+    response.set_header("Retry-After", context[:retry_after].to_s)
+    render json: {
+      error: "Rate limit exceeded",
+      limit: context[:limit],
+      window_seconds: context[:window_seconds],
+      retry_after: context[:retry_after]
+    }, status: :too_many_requests
+  end
+
+  def set_public_api_rate_limit_headers(limit, count, reset_at)
+    response.set_header("X-RateLimit-Limit", limit.to_s)
+    response.set_header("X-RateLimit-Remaining", [ limit - count, 0 ].max.to_s)
+    response.set_header("X-RateLimit-Reset", reset_at.to_s)
+  end
+
+  def public_api_retry_after(reset_at)
+    [ reset_at - Time.current.to_i, 1 ].max
+  end
+
+  def public_api_rate_limit_requests
+    positive_integer_logister_config(
+      :public_api_rate_limit_requests,
+      DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS
+    )
+  end
+
+  def public_api_auth_failure_rate_limit_requests
+    positive_integer_logister_config(
+      :public_api_auth_failure_rate_limit_requests,
+      DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS
+    )
+  end
+
+  def public_api_rate_limit_period_seconds
+    positive_integer_logister_config(
+      :public_api_rate_limit_period_seconds,
+      DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS
+    )
+  end
+
+  def positive_integer_logister_config(name, default)
+    value = Rails.application.config.x.logister.public_send(name)
+    value.to_i.positive? ? value.to_i : default
+  rescue NoMethodError
+    default
   end
 
   def report_client_submission_failure(

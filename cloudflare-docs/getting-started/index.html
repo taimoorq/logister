@@ -136,6 +136,9 @@
                 <li>Send events to <code>/api/v1/ingest_events</code> or check-ins to <code>/api/v1/check_ins</code>.</li>
                 <li>Review errors, performance data, activity, and monitors in the project pages.</li>
               </ol>
+              <p>
+                The public ingestion APIs accept 1,200 requests per minute per API token per endpoint by default. Clients that exceed the limit receive <code>429 Too Many Requests</code> with retry headers.
+              </p>
             </section>
 
             <section id="project-type" class="section">

@@ -94,6 +94,52 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(response).to have_http_status(:created)
     end
 
+    it "rate limits accepted submissions per API key and endpoint" do
+      with_public_api_rate_limits(requests: 1) do
+        expect {
+          post api_v1_ingest_events_path, params: valid_payload, as: :json, headers: auth_headers
+        }.to change(IngestEvent, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+        expect(response.headers["X-RateLimit-Limit"]).to eq("1")
+        expect(response.headers["X-RateLimit-Remaining"]).to eq("0")
+
+        expect {
+          post api_v1_ingest_events_path, params: valid_payload, as: :json, headers: auth_headers
+        }.not_to change(IngestEvent, :count)
+
+        expect(response).to have_http_status(:too_many_requests)
+        expect(response.parsed_body).to include(
+          "error" => "Rate limit exceeded",
+          "limit" => 1,
+          "window_seconds" => 60
+        )
+        expect(response.headers["Retry-After"]).to be_present
+        expect(response.headers["X-RateLimit-Remaining"]).to eq("0")
+      end
+    end
+
+    it "rate limits repeated authentication failures by source IP" do
+      with_public_api_rate_limits(auth_failure_requests: 1) do
+        post api_v1_ingest_events_path,
+             params: { event: { event_type: "error", message: "NoMethodError", occurred_at: Time.current.iso8601 } },
+             as: :json,
+             headers: { "Authorization" => "Bearer invalid-token" }
+
+        expect(response).to have_http_status(:unauthorized)
+
+        post api_v1_ingest_events_path,
+             params: { event: { event_type: "error", message: "NoMethodError", occurred_at: Time.current.iso8601 } },
+             as: :json,
+             headers: { "Authorization" => "Bearer invalid-token" }
+
+        expect(response).to have_http_status(:too_many_requests)
+        expect(response.parsed_body["error"]).to eq("Rate limit exceeded")
+        expect(response.headers["Retry-After"]).to be_present
+        expect(Logister).to have_received(:report_log).once
+      end
+    end
+
     it "accepts transaction events and normalizes top-level fields into context" do
       post api_v1_ingest_events_path,
            params: {

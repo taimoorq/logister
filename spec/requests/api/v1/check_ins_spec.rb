@@ -59,6 +59,43 @@ RSpec.describe "Api::V1::CheckIns", type: :request do
       expect(event.context["expected_interval_seconds"]).to eq(900)
     end
 
+    it "rate limits accepted check-ins per API key and endpoint" do
+      with_public_api_rate_limits(requests: 1) do
+        expect {
+          post api_v1_check_ins_path,
+               params: {
+                 check_in: {
+                   slug: "daily-billing-job",
+                   status: "ok",
+                   expected_interval_seconds: 600
+                 }
+               },
+               as: :json,
+               headers: auth_headers
+        }.to change(IngestEvent, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+        expect(response.headers["X-RateLimit-Limit"]).to eq("1")
+
+        expect {
+          post api_v1_check_ins_path,
+               params: {
+                 check_in: {
+                   slug: "daily-billing-job",
+                   status: "ok",
+                   expected_interval_seconds: 600
+                 }
+               },
+               as: :json,
+               headers: auth_headers
+        }.not_to change(IngestEvent, :count)
+
+        expect(response).to have_http_status(:too_many_requests)
+        expect(response.parsed_body["error"]).to eq("Rate limit exceeded")
+        expect(response.headers["Retry-After"]).to be_present
+      end
+    end
+
     it "reports unauthorized check-in submissions" do
       post api_v1_check_ins_path,
            params: { check_in: { slug: "daily-billing-job" } },

@@ -51,7 +51,7 @@ gem install logister-ruby</code></pre></div><p>Package links: <a href="https://r
   config.environment = Rails.env
   config.release = ENV["LOGISTER_RELEASE"]
   config.capture_request_spans = true
-end</code></pre></div><p>The endpoint should be your Logister instance base URL plus <code>/api/v1/ingest_events</code>.</p><div class="note warn"><h4>Important</h4><p>The API token is only shown once in project settings. Store it in your environment or secret manager before you navigate away.</p></div></section>
+end</code></pre></div><p>The endpoint should be your Logister instance base URL plus <code>/api/v1/ingest_events</code>. The ingest endpoint accepts 1,200 requests per minute per API token by default and returns <code>429 Too Many Requests</code> with retry headers when that limit is exceeded.</p><div class="note warn"><h4>Important</h4><p>The API token is only shown once in project settings. Store it in your environment or secret manager before you navigate away.</p></div></section>
             <section id="metrics" class="section"><p class="eyebrow">Metrics</p><h2>Enable DB timing metrics when needed.</h2><div class="code-block"><div class="code-head"><span class="code-language">ruby</span><button class="copy-button" data-copy-button data-copy-target="#ruby-metrics">Copy</button></div><pre><code id="ruby-metrics">Logister.configure do |config|
   config.capture_db_metrics = true
   config.db_metric_min_duration_ms = 10.0

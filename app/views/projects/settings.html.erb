@@ -462,6 +462,7 @@ end</code></pre>
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/ingest_events</code>
         with header
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Authorization: Bearer &lt;token&gt;</code>.
+        Accepted ingest requests are limited to 1,200 per minute per API token by default, with retry headers on <code>429</code> responses.
       </p>
       <p class="text-slate-600 text-sm mb-3">
         This project uses

@@ -44,6 +44,8 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 
 All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, and CFML direct HTTP payloads.
 
+Public ingestion endpoints `/api/v1/ingest_events` and `/api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint by default. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Rate-limited responses return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Self-hosters can tune the limits with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`.
+
 ## Operational Use Cases
 
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting: Logister publishes versioned release images for teams that want to pin app versions and run separate Rails web and Sidekiq worker containers. GHCR and Docker Hub are default public registries; Quay is an optional mirror when release credentials are configured.

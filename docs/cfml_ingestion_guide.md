@@ -12,5 +12,6 @@ Use the public docs for:
 - `Application.cfc.onError()` guidance
 - payload examples for `error`, `transaction`, `metric`, `log`, and `check_in`
 - current error-view recommendations for Lucee and Adobe ColdFusion projects
+- public API rate limits and `429` retry headers
 
 This repository file remains only as a lightweight GitHub pointer so the source tree still directs readers to the live documentation.
