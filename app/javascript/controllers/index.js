@@ -12,6 +12,7 @@ import PerformanceBreakdownController from "controllers/performance_breakdown_co
 import ProductTourController from "controllers/product_tour_controller"
 import ProjectInsightsController from "controllers/project_insights_controller"
 import ProjectSearchController from "controllers/project_search_controller"
+import ProjectTelemetryTimelineController from "controllers/project_telemetry_timeline_controller"
 import RevealController from "controllers/reveal_controller"
 import ScreenshotsSliderController from "controllers/screenshots_slider_controller"
 import TabsController from "controllers/tabs_controller"
@@ -29,6 +30,7 @@ application.register("performance-breakdown", PerformanceBreakdownController)
 application.register("product-tour", ProductTourController)
 application.register("project-insights", ProjectInsightsController)
 application.register("project-search", ProjectSearchController)
+application.register("project-telemetry-timeline", ProjectTelemetryTimelineController)
 application.register("reveal", RevealController)
 application.register("screenshots-slider", ScreenshotsSliderController)
 application.register("tabs", TabsController)

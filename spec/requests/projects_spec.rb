@@ -145,6 +145,20 @@ RSpec.describe "Projects", type: :request do
         expect(document.css("a[href='#{activity_project_path(project)}']").map(&:text).join(" ")).to include("View activity")
         expect(document.css("a[href='#{performance_project_path(project)}']").map(&:text).join(" ")).to include("View performance")
         expect(document.text).to include("Logs 1", "Transactions 1", "DB queries", "1")
+        timeline = document.at_css("[data-controller='project-telemetry-timeline']")
+        expect(timeline).to be_present
+        expect(timeline.at_css(".project-telemetry-chart[role='img']")).to be_present
+        expect(timeline.at_css("a[href='#{insights_project_path(project)}']").text).to eq("Insights")
+        expect(document.text).to include("Telemetry timeline", "Last 24 hours by signal type")
+        expect(document.text).to include("Recent errors", "Newest unresolved groups", "Grouped status error")
+        expect(document.css("a[href='#{inbox_project_path(project)}']").map(&:text).join(" ")).to include("Inbox")
+        expect(document.text).not_to include("Latest collection")
+        timeline_payload = JSON.parse(timeline["data-project-telemetry-timeline-payload-value"])
+        expect(timeline_payload.fetch("event_types").map { |event_type| event_type.fetch("key") }).to eq(Dashboard::EVENT_TYPE_ORDER)
+        expect(timeline_payload.fetch("rows").sum { |row| row.fetch("error") }).to be >= 1
+        expect(timeline_payload.fetch("rows").sum { |row| row.fetch("log") }).to eq(1)
+        expect(timeline_payload.fetch("rows").sum { |row| row.fetch("transaction") }).to eq(1)
+        expect(timeline_payload.fetch("rows").sum { |row| row.fetch("metric") }).to eq(1)
       end
 
       it "points activity-only .NET projects from the empty inbox to Activity" do

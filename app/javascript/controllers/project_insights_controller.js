@@ -1,14 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
+import { EVENT_COLORS, telemetryTimelineOption } from "../charts/telemetry_timeline.js"
 
 const SERIES_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", "#0f766e", "#475569", "#db2777"]
 const MAX_SELECTED_METRICS = 8
-const EVENT_COLORS = {
-  error: "#ef4444",
-  log: "#64748b",
-  metric: "#8b5cf6",
-  transaction: "#059669",
-  check_in: "#2563eb"
-}
 const METRIC_CATEGORY_ORDER = ["health", "activity", "performance", "monitors", "metrics", "other"]
 const METRIC_CATEGORY_COPY = {
   health: { label: "Health", description: "Errors and user-impacting failures" },
@@ -593,46 +587,14 @@ export default class extends Controller {
 
   renderEventChart(data) {
     const rows = data.event_timeline || []
-    const labels = rows.map((row) => shortTimeLabel(row.timestamp, data.bucket))
-    const series = this.eventTypes.map((eventType) => ({
-      name: eventType.label,
-      type: "bar",
-      stack: "events",
-      barMaxWidth: 18,
-      emphasis: { focus: "series" },
-      itemStyle: { color: EVENT_COLORS[eventType.key] || eventType.color },
-      data: rows.map((row) => Number(row[eventType.key]) || 0)
-    }))
-    const hasData = series.some((bar) => bar.data.some((value) => value > 0))
 
-    this.charts.events.setOption({
-      aria: { enabled: true },
-      graphic: emptyGraphic(!hasData, "No activity in this slice"),
-      grid: { left: 42, right: 16, top: 34, bottom: 34 },
-      legend: {
-        top: 0,
-        type: "scroll",
-        icon: "roundRect",
-        textStyle: { color: "#475569", fontSize: 11 }
-      },
-      tooltip: { trigger: "axis", formatter: eventTooltipFormatter },
-      dataZoom: [
-        { type: "inside", filterMode: "none", throttle: 50 }
-      ],
-      xAxis: {
-        type: "category",
-        data: labels,
-        axisTick: { show: false },
-        axisLabel: { color: "#64748b", hideOverlap: true }
-      },
-      yAxis: {
-        type: "value",
-        minInterval: 1,
-        axisLabel: { formatter: compactNumber, color: "#64748b" },
-        splitLine: { lineStyle: { color: "#e2e8f0" } }
-      },
-      series
-    }, true)
+    this.charts.events.setOption(telemetryTimelineOption({
+      rows,
+      eventTypes: this.eventTypes,
+      labelFormatter: (timestamp) => shortTimeLabel(timestamp, data.bucket),
+      emptyText: "No activity in this slice",
+      includeDataZoom: true
+    }), true)
   }
 
   renderRecentEvents(events) {
@@ -909,16 +871,6 @@ function metricTooltipFormatter(params, definitionsByName) {
   })
 
   return `${escapeHtml(params[0].axisValueLabel || "")}<br>${rows.length > 0 ? rows.join("<br>") : "No values"}`
-}
-
-function eventTooltipFormatter(params) {
-  if (!Array.isArray(params) || params.length === 0) return ""
-
-  const rows = params.filter((item) => Number(item.value) > 0).map((item) => (
-    `${item.marker}${escapeHtml(item.seriesName)}: ${formatNumber(item.value)}`
-  ))
-
-  return `${escapeHtml(params[0].axisValueLabel || "")}<br>${rows.length > 0 ? rows.join("<br>") : "No activity"}`
 }
 
 function transitionAttributes(prefix, value, transitionClass) {

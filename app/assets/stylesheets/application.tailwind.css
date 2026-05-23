@@ -657,6 +657,21 @@
   .performance-breakdown-chart {
     @apply h-[28rem] w-full min-w-0;
   }
+  .project-telemetry-panel {
+    @apply min-w-0;
+  }
+  .project-telemetry-chart {
+    @apply h-80 w-full min-w-0;
+  }
+  .project-telemetry-legend {
+    @apply mt-3 flex flex-wrap gap-2 border-t border-slate-200 pt-3;
+  }
+  .project-telemetry-legend > span {
+    @apply inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-500;
+  }
+  .project-telemetry-legend strong {
+    @apply font-semibold text-slate-900;
+  }
   .project-insights {
     @apply space-y-4;
   }

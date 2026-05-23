@@ -1,13 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import * as echarts from "echarts"
-
-const EVENT_COLORS = {
-  error: "#ef4444",
-  log: "#64748b",
-  metric: "#8b5cf6",
-  transaction: "#059669",
-  check_in: "#2563eb"
-}
+import { EVENT_COLORS } from "../charts/telemetry_timeline.js"
 
 const FALLBACK_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", "#0f766e", "#475569"]
 

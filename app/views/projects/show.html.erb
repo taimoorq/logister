@@ -6,7 +6,6 @@
 <% open_errors_count = @counts.fetch(:unresolved, 0) %>
 <% introduced_today_count = @counts.fetch(:introduced_today, 0) %>
 <% all_error_groups_count = @counts.fetch(:all, 0) %>
-<% latest_event_at = @project_overview.fetch(:latest_event_at, nil) %>
 <% activity_types = Dashboard::EVENT_TYPE_ORDER.reject { |event_type| event_type == "error" } %>
 <% active_activity_types = activity_types.select { |event_type| @event_type_counts_last_24h.fetch(event_type, 0).positive? } %>
 <% transaction_count = @transaction_stats.fetch(:count, 0).to_i %>
@@ -123,7 +122,33 @@
   <section class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]"
            aria-label="Recent project signals"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :recent_signals)) %>>
-    <article class="dashboard-panel">
+    <article class="dashboard-panel project-telemetry-panel"
+             data-controller="project-telemetry-timeline"
+             data-project-telemetry-timeline-payload-value="<%= json_escape(@telemetry_timeline.to_json) %>">
+      <div class="dashboard-panel-header">
+        <div>
+          <h2>Telemetry timeline</h2>
+          <p>Last 24 hours by signal type</p>
+        </div>
+        <%= link_to "Insights", insights_project_path(@project), class: "dashboard-panel-link" %>
+      </div>
+
+      <div class="project-telemetry-chart"
+           data-project-telemetry-timeline-target="chart"
+           role="img"
+           aria-label="Project telemetry timeline for the last 24 hours"></div>
+
+      <div class="project-telemetry-legend" aria-label="Telemetry totals">
+        <% Dashboard::EVENT_TYPE_ORDER.each do |event_type| %>
+          <span>
+            <span class="<%= dashboard_event_badge_class(event_type) %>"><%= dashboard_event_type_label(event_type) %></span>
+            <strong><%= number_with_delimiter(@event_type_counts_last_24h.fetch(event_type, 0)) %></strong>
+          </span>
+        <% end %>
+      </div>
+    </article>
+
+    <aside class="dashboard-panel">
       <div class="dashboard-panel-header">
         <div>
           <h2>Recent errors</h2>
@@ -132,8 +157,27 @@
         <%= link_to "Inbox", inbox_project_path(@project), class: "dashboard-panel-link" %>
       </div>
 
+      <div class="dashboard-title-metrics" aria-label="Project totals">
+        <span>
+          <strong><%= number_with_delimiter(@events_last_24h) %></strong>
+          <span>Events 24h</span>
+        </span>
+        <span>
+          <strong><%= number_with_delimiter(@event_type_counts_last_24h.fetch("error", 0)) %></strong>
+          <span>Error events</span>
+        </span>
+        <span>
+          <strong><%= number_with_delimiter(@project_overview.fetch(:monitors_count, 0)) %></strong>
+          <span>Monitors</span>
+        </span>
+        <span>
+          <strong><%= number_with_delimiter(@project_overview.fetch(:unhealthy_monitors_count, 0)) %></strong>
+          <span>Monitor issues</span>
+        </span>
+      </div>
+
       <% if @recent_error_groups.any? %>
-        <div class="dashboard-attention-list">
+        <div class="dashboard-attention-list mt-4">
           <% @recent_error_groups.each do |group| %>
             <article class="dashboard-attention-row">
               <div class="dashboard-attention-main">
@@ -159,61 +203,9 @@
           <% end %>
         </div>
       <% else %>
-        <div class="dashboard-empty-state">
+        <div class="dashboard-empty-state mt-4">
           <strong>No unresolved error groups</strong>
           <span>Errors will appear here as groups are opened or reopened.</span>
-        </div>
-      <% end %>
-    </article>
-
-    <aside class="dashboard-panel">
-      <div class="dashboard-panel-header">
-        <div>
-          <h2>Latest collection</h2>
-          <p><%= latest_event_at.present? ? "#{time_ago_in_words(latest_event_at)} ago" : "No events yet" %></p>
-        </div>
-      </div>
-
-      <div class="dashboard-title-metrics" aria-label="Project totals">
-        <span>
-          <strong><%= number_with_delimiter(@events_last_24h) %></strong>
-          <span>Events 24h</span>
-        </span>
-        <span>
-          <strong><%= number_with_delimiter(@event_type_counts_last_24h.fetch("error", 0)) %></strong>
-          <span>Error events</span>
-        </span>
-        <span>
-          <strong><%= number_with_delimiter(@project_overview.fetch(:monitors_count, 0)) %></strong>
-          <span>Monitors</span>
-        </span>
-        <span>
-          <strong><%= number_with_delimiter(@project_overview.fetch(:unhealthy_monitors_count, 0)) %></strong>
-          <span>Monitor issues</span>
-        </span>
-      </div>
-
-      <% if @recent_activity_events.any? %>
-        <div class="mt-4 flex flex-col divide-y divide-slate-200 border-t border-slate-200">
-          <% @recent_activity_events.each do |event| %>
-            <%= link_to project_event_path(@project, event), class: "flex min-w-0 items-start justify-between gap-3 py-3 text-slate-600 no-underline hover:text-slate-900" do %>
-              <span class="min-w-0">
-                <span class="<%= dashboard_event_badge_class(event.event_type) %>"><%= dashboard_event_type_label(event.event_type) %></span>
-                <strong class="mt-1 block truncate text-sm font-semibold text-slate-900"><%= event.message.to_s.lines.first.to_s.strip.presence || "(untitled event)" %></strong>
-              </span>
-              <span class="shrink-0 text-xs text-slate-500"><%= event.occurred_at.present? ? "#{time_ago_in_words(event.occurred_at)} ago" : "--" %></span>
-            <% end %>
-          <% end %>
-        </div>
-      <% elsif latest_event_at.present? %>
-        <div class="dashboard-empty-state mt-4">
-          <strong>Only error events so far</strong>
-          <span>Recent logs, metrics, transactions, and check-ins will show up here.</span>
-        </div>
-      <% else %>
-        <div class="dashboard-empty-state mt-4">
-          <strong>No events collected yet</strong>
-          <span>Events will populate the inbox, activity, and performance pages as they arrive.</span>
         </div>
       <% end %>
     </aside>
