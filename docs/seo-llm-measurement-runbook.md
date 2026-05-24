@@ -126,13 +126,13 @@ Suggested checks:
 
 ```bash
 gh repo view taimoorq/logister --json description,homepageUrl,repositoryTopics,url
-gh release view v2.1.1 --json tagName,isLatest,isDraft,isPrerelease,publishedAt,url
+gh release view v2.3.0 --json tagName,isLatest,isDraft,isPrerelease,publishedAt,url
 gh api /user/packages/container/logister --jq '{name, visibility, html_url}'
 gh api /user/packages/container/logister/versions --jq '.[] | {id, tags: .metadata.container.tags, updated_at}'
-docker pull ghcr.io/taimoorq/logister:v2.1.1
-docker pull docker.io/taimoorq/logister:v2.1.1
+docker pull ghcr.io/taimoorq/logister:v2.3.0
+docker pull docker.io/taimoorq/logister:v2.3.0
 # Optional, when the Quay.io mirror is configured:
-docker pull quay.io/taimoorq/logister:v2.1.1
+docker pull quay.io/taimoorq/logister:v2.3.0
 ```
 
 ## Package and SDK Checks

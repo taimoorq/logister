@@ -2,6 +2,25 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.3.0 - 2026-05-24
+
+### Added
+
+- Added a guided project creation integration picker with package-manager choices for Ruby, .NET, Python, JavaScript / TypeScript, CFML, and advanced Manual / HTTP API setup.
+- Added mobile-friendly scroll regions and responsive authenticated page adjustments so wide tables, charts, event tabs, project settings, admin views, and project pages remain browsable on phone-sized browsers.
+- Added public API and metrics documentation surfaces, including OpenAPI 3.1 YAML and a Postman collection in the repo and Cloudflare docs.
+
+### Changed
+
+- Rethemed public marketing and legal pages with the InvestPro-inspired public style while keeping authenticated app pages on their existing product UI.
+- Split Rails layouts into public, auth, and authenticated shells with shared partials and layout-specific importmap entrypoints so public and auth pages avoid loading tour assets, app-only controllers, and ECharts.
+- Updated page wizards and product tours so non-overview pages focus on page-specific functionality instead of repeating global header and navigation highlights.
+- Updated public self-hosting references for the `v2.3.0` release image tag.
+
+### Fixed
+
+- Fixed integration card copy and layout regressions, plus small-screen overflow in project event detail and analytics surfaces.
+
 ## v2.2.0 - 2026-05-23
 
 ### Added
