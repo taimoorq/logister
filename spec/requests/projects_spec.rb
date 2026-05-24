@@ -1010,7 +1010,16 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css("input[name='project[slug]']")).to be_nil
         expect(document.at_css("select[name='project[integration_kind]']")).to be_nil
         expect(document.css(".integration-choice-panel").size).to eq(Project.integration_options.size)
+        expect(document.css(".integration-choice-title").map(&:text)).to eq([
+          "Manual / HTTP API",
+          "Ruby gem",
+          ".NET / ASP.NET Core",
+          "JavaScript / TypeScript",
+          "Python",
+          "CFML"
+        ])
         expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq(projects(:one).integration_kind)
+        expect(response.body.index('name="project[description]"')).to be < response.body.index("integration-picker")
       end
 
       it "returns 404 for project user cannot access" do
@@ -1085,6 +1094,14 @@ RSpec.describe "Projects", type: :request do
 
       expect(document.at_css("input[name='project[slug]']")).to be_nil
       expect(document.at_css("select[name='project[integration_kind]']")).to be_nil
+      expect(document.css(".integration-choice-title").map(&:text)).to eq([
+        "Manual / HTTP API",
+        "Ruby gem",
+        ".NET / ASP.NET Core",
+        "JavaScript / TypeScript",
+        "Python",
+        "CFML"
+      ])
       expect(document.css(".integration-choice-panel").map(&:text).join(" ")).to include(
         "Ruby gem",
         ".NET / ASP.NET Core",
@@ -1094,17 +1111,21 @@ RSpec.describe "Projects", type: :request do
         "Manual / HTTP API"
       )
       expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq("ruby")
+      expect(response.body.index('name="project[description]"')).to be < response.body.index("integration-picker")
     end
 
     it "creates project and redirects" do
       expect {
         post projects_path, params: { project: { name: "New App", slug: "manual-change", description: "Desc", integration_kind: "http_api" } }
       }.to change(Project, :count).by(1)
-      expect(response).to redirect_to(project_path(Project.last))
+      expect(response).to redirect_to(settings_project_path(Project.last, anchor: "integration-guide"))
       expect(Project.last.slug).to eq("new-app")
       expect(Project.last.integration_kind).to eq("http_api")
       follow_redirect!
       expect(response.body).to include("Project created")
+      expect(response.body).to include("Recommended setup for")
+      expect(response.body).to include("Manual / HTTP API")
+      expect(response.body).to include("HTTP API docs")
     end
 
     it "renders new with errors when invalid" do

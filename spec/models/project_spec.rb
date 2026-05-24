@@ -171,15 +171,15 @@ RSpec.describe Project, type: :model do
   end
 
   describe ".integration_options" do
-    it "includes ruby, cfml, javascript, python, .NET, and HTTP API integrations" do
-      expect(described_class.integration_options).to include(
+    it "orders Manual / HTTP API first and CFML last" do
+      expect(described_class.integration_options).to eq([
+        [ "Manual / HTTP API (custom client)", "http_api" ],
         [ "Ruby gem", "ruby" ],
         [ ".NET / ASP.NET Core (logister-dotnet)", "dotnet" ],
-        [ "CFML", "cfml" ],
         [ "JavaScript / TypeScript (logister-js)", "javascript" ],
         [ "Python (logister-python)", "python" ],
-        [ "Manual / HTTP API (custom client)", "http_api" ]
-      )
+        [ "CFML", "cfml" ]
+      ])
     end
   end
 

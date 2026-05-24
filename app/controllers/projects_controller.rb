@@ -64,7 +64,8 @@ class ProjectsController < ApplicationController
   def create
     @project = current_user.projects.new(project_params)
     if @project.save
-      redirect_to project_path(@project), notice: "Project created. Add an API key to start ingesting events."
+      redirect_to settings_project_path(@project, anchor: "integration-guide"),
+                  notice: "Project created. Follow the #{@project.integration_label} setup guide to start ingesting events."
     else
       render :new, status: :unprocessable_content
     end

@@ -129,12 +129,12 @@ class Project < ApplicationRecord
 
   def self.integration_options
     [
+      [ "Manual / HTTP API (custom client)", "http_api" ],
       [ "Ruby gem", "ruby" ],
       [ ".NET / ASP.NET Core (logister-dotnet)", "dotnet" ],
-      [ "CFML", "cfml" ],
       [ "JavaScript / TypeScript (logister-js)", "javascript" ],
       [ "Python (logister-python)", "python" ],
-      [ "Manual / HTTP API (custom client)", "http_api" ]
+      [ "CFML", "cfml" ]
     ]
   end
 
