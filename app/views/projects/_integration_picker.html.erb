@@ -1,4 +1,6 @@
-<fieldset class="integration-picker">
+<% integration_picker_data = local_assigns[:tour_group].present? ? product_tour_step_data(tour_group, :integration_type) : {} %>
+
+<fieldset class="integration-picker" <%= tag.attributes(data: integration_picker_data) if integration_picker_data.any? %>>
   <legend class="form-label">Integration</legend>
   <p id="project-integration-picker-hint" class="text-slate-500 text-xs mb-3">
     Choose how this project will send telemetry into Logister.

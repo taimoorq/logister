@@ -8,8 +8,7 @@
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
 
-<section class="project-command-panel"
-         <%= tag.attributes(data: product_tour_step_data(tour_group, :command_center)) %>>
+<section class="project-command-panel">
   <div class="project-command-main">
     <div class="project-command-identity">
       <%= project_integration_icon(@project) %>
@@ -86,7 +85,7 @@
     </div>
   </div>
 
-  <%= render "nav", tour_group: tour_group %>
+  <%= render "nav" %>
 </section>
 
 <%= render "projects/archived_notice", project: @project %>

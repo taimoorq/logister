@@ -139,6 +139,12 @@ RSpec.describe "Projects", type: :request do
         expect(tour_root).to be_present
         expect(tour_root["data-action"]).to include("click->product-tour#startForNewUser:capture", "turbo:before-cache@document->product-tour#beforeCache")
         expect(document.at_css("nav[data-tg-group='project-overview']")).to be_present
+        expect(document.css("[data-tg-group='project-overview']").map { |node| node["data-tg-title"] }).to include(
+          "Project header",
+          "Project navigation",
+          "Project sections",
+          "Recent signals"
+        )
         expect(document.at_css(".tour-help-button[data-action='click->product-tour#start']")).to be_present
         expect(document.text).to include("Inbox", "Error groups", "Activity", "Events and logs", "Performance", "Transactions")
         expect(document.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved')}']").text).to include("1", "Open")
@@ -240,7 +246,12 @@ RSpec.describe "Projects", type: :request do
         filter_bar = document.at_css(".inbox-workbench > .inbox-workbench-filters .inbox-filter-bar")
 
         expect(document.at_css("[data-product-tour-group-value='project-errors']")).to be_present
-        expect(document.css("[data-tg-group='project-errors']").map { |node| node["data-tg-title"] }).to include("Error command center", "Inbox filters", "Error groups", "Error detail")
+        expect(document.css("[data-tg-group='project-errors']").map { |node| node["data-tg-title"] }).to eq([
+          "Inbox filters",
+          "Error groups",
+          "Error detail"
+        ])
+        expect(document.css("[data-tg-group='project-errors']").map { |node| node["data-tg-title"] }).not_to include("Error command center", "Project navigation")
         expect(filter_bar).to be_present
         expect(document.at_css(".inbox-workbench > .inbox-workbench-sidebar")).to be_nil
         expect(filter_bar.at_css("form.inbox-filter-search input[name='q']")["placeholder"]).to eq("Search errors...")
@@ -1109,6 +1120,15 @@ RSpec.describe "Projects", type: :request do
         "JavaScript / TypeScript",
         "Python",
         "Manual / HTTP API"
+      )
+      expect(document.css("[data-tg-group='project-new']").map { |node| node["data-tg-title"] }).to eq([
+        "Name the app",
+        "Choose integration type"
+      ])
+      expect(document.css("[data-tg-group='project-new']").map { |node| node["data-tg-tour"] }.join(" ")).to include(
+        "Enter a clear name",
+        "Manual / HTTP API",
+        "language-specific package manager integration"
       )
       expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq("ruby")
       expect(response.body.index('name="project[description]"')).to be < response.body.index("integration-picker")

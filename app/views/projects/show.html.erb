@@ -1,7 +1,7 @@
 <% tour_group = "project-overview" %>
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
-<%= render "projects/header", tour_group: tour_group %>
+<%= render "projects/header", tour_group: tour_group, highlight_header: true, highlight_navigation: true %>
 
 <% open_errors_count = @counts.fetch(:unresolved, 0) %>
 <% introduced_today_count = @counts.fetch(:introduced_today, 0) %>

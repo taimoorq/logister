@@ -2,18 +2,16 @@
 
 <%= render layout: "shared/product_tour_frame",
            locals: { tour_group: tour_group, tag_name: :section, html_options: { class: "max-w-3xl mx-auto" } } do %>
-  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8"
-       <%= tag.attributes(data: product_tour_step_data(tour_group, :create_project)) %>>
+  <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">
     <div class="mb-2 flex items-center justify-between gap-3">
       <h1 class="text-2xl font-bold text-slate-900 inline-flex items-center gap-2"><%= app_icon(:plus, css: "w-6 h-6") %><span>Create a project</span></h1>
       <%= tour_help_button %>
     </div>
     <p class="text-slate-600 text-sm mb-6">A project represents one monitored application and its integration setup.</p>
 
-    <%= form_with model: @project,
-                  data: product_tour_step_data(tour_group, :project_form) do |f| %>
+    <%= form_with model: @project do |f| %>
       <div class="space-y-4">
-        <div>
+        <div <%= tag.attributes(data: product_tour_step_data(tour_group, :app_name)) %>>
           <%= f.label :name, class: "form-label" %>
           <%= f.text_field :name, required: true, class: "form-input" %>
         </div>
@@ -23,7 +21,7 @@
           <%= f.text_area :description, rows: 4, class: "form-input" %>
         </div>
 
-        <%= render "integration_picker", f: f %>
+        <%= render "integration_picker", f: f, tour_group: tour_group %>
 
         <% if @project.errors.any? %>
           <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">

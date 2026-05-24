@@ -1,7 +1,9 @@
-<%# locals: (tour_group: nil, archived_notice_settings_link: true) %>
+<%# locals: (tour_group: nil, archived_notice_settings_link: true, highlight_header: false, highlight_navigation: false) %>
+<% highlight_header = local_assigns.fetch(:highlight_header, false) %>
+<% highlight_navigation = local_assigns.fetch(:highlight_navigation, false) %>
 
 <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4"
-        <%= tag.attributes(data: product_tour_step_data(tour_group, :project_header)) if tour_group.present? %>>
+        <%= tag.attributes(data: product_tour_step_data(tour_group, :project_header)) if tour_group.present? && highlight_header %>>
   <div>
     <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
     <p class="text-slate-500 text-sm">
@@ -27,7 +29,7 @@
   <% end %>
 </header>
 
-<%= render "projects/nav", tour_group: tour_group %>
+<%= render "projects/nav", tour_group: (highlight_navigation ? tour_group : nil) %>
 <%= render "projects/archived_notice",
            project: @project,
            show_settings_link: archived_notice_settings_link %>
