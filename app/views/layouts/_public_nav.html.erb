@@ -1,0 +1,56 @@
+<nav class="nav-shell public-nav-shell sticky top-0 z-30"
+     style="view-transition-name: app-nav; view-transition-class: app-shell;"
+     data-nav-state="closed"
+     data-controller="nav"
+     data-action="click@document->nav#closeOnClickOutside keydown@document->nav#closeOnEscape">
+  <div class="public-nav-inner">
+    <div class="flex justify-between items-center h-14 min-h-[3.5rem]">
+      <div class="flex items-center gap-3 min-w-0">
+        <%= link_to root_path, class: "flex items-center gap-2 no-underline font-semibold shrink-0 public-brand" do %>
+          <%= image_tag "logister-logo.svg", alt: "Logister", class: "public-brand-logo", width: 232, height: 48 %>
+        <% end %>
+      </div>
+
+      <button type="button"
+              class="public-mobile-toggle md:hidden"
+              data-nav-target="toggle"
+              data-action="click->nav#toggle"
+              aria-expanded="false"
+              aria-controls="nav-menu-panel"
+              aria-label="Toggle menu">
+        <%= app_icon(:menu, css: "nav-icon-open w-6 h-6") %>
+        <%= app_icon(:x, css: "nav-icon-close w-6 h-6") %>
+      </button>
+
+      <div id="nav-menu-panel"
+           class="nav-panel public-nav-panel hidden md:flex flex-col md:flex-row md:items-center gap-0 md:gap-1 lg:gap-2 absolute md:relative top-full left-0 right-0 md:top-0 md:bg-transparent md:border-0 md:shadow-none md:py-0 md:px-0"
+           data-nav-target="panel"
+           data-state="closed"
+           aria-hidden="true"
+           data-action="click->nav#closeOnNavLink">
+        <%= link_to root_path, class: "nav-link public-nav-link #{current_page?(root_path) ? 'is-active' : ''}" do %>
+          <%= app_icon(:dashboard, css: "w-4 h-4") %>
+          <span>Home</span>
+        <% end %>
+        <%= link_to about_path, class: "nav-link public-nav-link #{current_page?(about_path) ? 'is-active' : ''}" do %>
+          <%= app_icon(:info, css: "w-4 h-4") %>
+          <span>About</span>
+        <% end %>
+        <%= link_to docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "nav-link public-nav-link" do %>
+          <%= app_icon(:all, css: "w-4 h-4") %>
+          <span>Docs</span>
+        <% end %>
+        <div class="public-nav-actions">
+          <%= link_to new_user_session_path, class: "nav-link public-nav-secondary", data: { turbo: false } do %>
+            <%= app_icon(:account, css: "w-4 h-4") %>
+            <span>Sign in</span>
+          <% end %>
+          <%= link_to new_user_registration_path, class: "nav-link public-nav-cta", data: { turbo: false } do %>
+            <%= app_icon(:plus, css: "w-4 h-4") %>
+            <span>Sign up</span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

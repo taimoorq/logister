@@ -15,8 +15,16 @@ RSpec.describe "Users::Passwords", type: :request do
 
       document = Nokogiri::HTML.parse(response.body)
       form = document.at_css("form[action='#{user_password_path}']")
+      module_script = document.at_css("script[type='module']")
+      preload_hrefs = document.css("link[rel='modulepreload']").map { |node| node["href"].to_s }
 
       expect(document.at_css(".auth-shell")).to be_present
+      expect(document.at_css("body.auth-theme")).to be_present
+      expect(module_script&.text).to include('import "auth"')
+      expect(document.at_css("link[href*='css/tour.min']")).to be_nil
+      expect(document.at_css("script[src*='tour'][defer]")).to be_nil
+      expect(preload_hrefs.grep(/entrypoints\/(?:authenticated|public)\b/)).to be_empty
+      expect(preload_hrefs.grep(/echarts|controllers\/index/)).to be_empty
       expect(document.at_css(".auth-brand-panel").text).to include("Choose a new password")
       expect(document.at_css(".auth-form-title").text).to eq("Reset password")
       expect(form).to be_present

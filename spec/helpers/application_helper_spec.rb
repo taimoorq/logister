@@ -27,6 +27,35 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#layout_theme" do
+    before do
+      allow(helper).to receive(:user_signed_in?).and_return(false)
+      allow(helper).to receive(:devise_controller?).and_return(false)
+    end
+
+    it "uses the public theme for unauthenticated marketing pages" do
+      expect(helper.layout_theme).to eq(:public)
+      expect(helper.layout_body_class).to include("public-shell")
+      expect(helper.layout_main_class).to include("public-main")
+    end
+
+    it "uses the auth theme for Devise pages" do
+      allow(helper).to receive(:devise_controller?).and_return(true)
+
+      expect(helper.layout_theme).to eq(:auth)
+      expect(helper.layout_body_class).to include("auth-theme")
+      expect(helper.layout_main_class).to include("max-w-7xl")
+    end
+
+    it "uses the authenticated theme for signed-in app pages" do
+      allow(helper).to receive(:user_signed_in?).and_return(true)
+
+      expect(helper.layout_theme).to eq(:authenticated)
+      expect(helper.layout_body_class).to include("bg-slate-100")
+      expect(helper.layout_nav_shell_class).to include("var(--app-nav-bg)")
+    end
+  end
+
   describe "#cookie_banner_proxy_base_url" do
     around do |example|
       original_url_options = Rails.application.routes.default_url_options.dup

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "nokogiri"
 
 RSpec.describe "Home", type: :request do
   around do |example|
@@ -47,6 +48,21 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include('<meta property="og:url" content="https://logister.org/">')
         expect(response.body).to include("&quot;url&quot;:&quot;https://logister.org/&quot;")
         expect(response.body).not_to include("://://")
+      end
+
+      it "loads the public entrypoint without app-only assets" do
+        get root_path
+
+        document = Nokogiri::HTML.parse(response.body)
+        module_script = document.at_css("script[type='module']")
+        preload_hrefs = document.css("link[rel='modulepreload']").map { |node| node["href"].to_s }
+
+        expect(document.at_css("body.public-shell")).to be_present
+        expect(module_script&.text).to include('import "public"')
+        expect(document.at_css("link[href*='css/tour.min']")).to be_nil
+        expect(document.at_css("script[src*='tour'][defer]")).to be_nil
+        expect(preload_hrefs.grep(/entrypoints\/(?:authenticated|auth)\b/)).to be_empty
+        expect(preload_hrefs.grep(/echarts|controllers\/index/)).to be_empty
       end
     end
 

@@ -30,10 +30,12 @@
       </div>
       <p class="text-slate-500 text-sm"><%= @request_breakdown.fetch(:requests, []).size %> requests shown</p>
     </div>
-    <div class="performance-breakdown-chart" data-performance-breakdown-target="chart" role="img" aria-label="Stacked request load time breakdown"></div>
+    <%= responsive_chart_region do %>
+      <div class="performance-breakdown-chart" data-performance-breakdown-target="chart" role="img" aria-label="Stacked request load time breakdown"></div>
+    <% end %>
 
     <% if @request_breakdown.fetch(:requests, []).any? %>
-      <div class="overflow-x-auto mt-4">
+      <%= responsive_scroll_region(class: "mt-4") do %>
         <table class="min-w-full divide-y divide-slate-200">
           <thead class="bg-slate-50">
             <tr>
@@ -54,7 +56,7 @@
             <% end %>
           </tbody>
         </table>
-      </div>
+      <% end %>
     <% end %>
   </section>
 
@@ -198,7 +200,7 @@
     </div>
 
     <% if @transaction_rows.any? %>
-      <div class="overflow-x-auto mt-4">
+      <%= responsive_scroll_region(class: "mt-4") do %>
         <table class="min-w-full divide-y divide-slate-200" aria-label="Transaction events">
           <thead class="bg-slate-50">
             <tr>
@@ -229,7 +231,7 @@
             <% end %>
           </tbody>
         </table>
-      </div>
+      <% end %>
       <%= render "shared/cursor_pagination",
                  page: @transaction_page,
                  base_path: performance_project_path(@project),

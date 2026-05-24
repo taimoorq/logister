@@ -38,6 +38,189 @@ module ApplicationHelper
     "http_api" => :external
   }.freeze
 
+  def layout_theme
+    if respond_to?(:user_signed_in?) && user_signed_in?
+      :authenticated
+    elsif respond_to?(:devise_controller?) && devise_controller?
+      :auth
+    else
+      :public
+    end
+  end
+
+  def authenticated_layout_theme?
+    layout_theme == :authenticated
+  end
+
+  def auth_layout_theme?
+    layout_theme == :auth
+  end
+
+  def public_layout_theme?
+    layout_theme == :public
+  end
+
+  def layout_body_class
+    case layout_theme
+    when :authenticated
+      "min-h-screen flex flex-col bg-slate-100 text-slate-900 antialiased"
+    when :auth
+      "auth-theme min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased"
+    else
+      "public-shell min-h-screen flex flex-col antialiased"
+    end
+  end
+
+  def layout_nav_shell_class
+    class_names(
+      "nav-shell",
+      authenticated_layout_theme? ? "bg-[var(--app-nav-bg)] border-b border-[var(--app-nav-border)] sticky top-0 z-20" : "public-nav-shell sticky top-0 z-30"
+    )
+  end
+
+  def layout_nav_inner_class
+    authenticated_layout_theme? ? "w-full px-4 sm:px-6 lg:px-8" : "public-nav-inner"
+  end
+
+  def layout_brand_link_class
+    class_names(
+      "flex items-center gap-2 no-underline font-semibold shrink-0",
+      authenticated_layout_theme? ? "text-white hover:text-blue-100" : "public-brand"
+    )
+  end
+
+  def layout_brand_logo_class
+    authenticated_layout_theme? ? "h-6 w-auto" : "public-brand-logo"
+  end
+
+  def layout_mobile_toggle_class
+    authenticated_layout_theme? ?
+      "md:hidden flex items-center justify-center w-11 h-11 -mr-2 rounded-lg text-blue-100 hover:bg-blue-900/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-[var(--app-nav-bg)]" :
+      "public-mobile-toggle md:hidden"
+  end
+
+  def layout_nav_panel_class
+    class_names(
+      "nav-panel",
+      authenticated_layout_theme? ?
+        "hidden md:flex flex-col md:flex-row md:items-center gap-0 md:gap-1 absolute md:relative top-full left-0 right-0 md:top-0 bg-[var(--app-nav-bg)] md:bg-transparent border-b border-[var(--app-nav-border)] md:border-0 shadow-lg md:shadow-none py-3 md:py-0 px-4 md:px-0" :
+        "public-nav-panel hidden md:flex flex-col md:flex-row md:items-center gap-0 md:gap-1 lg:gap-2 absolute md:relative top-full left-0 right-0 md:top-0 md:bg-transparent md:border-0 md:shadow-none md:py-0 md:px-0"
+    )
+  end
+
+  def layout_main_class
+    case layout_theme
+    when :authenticated
+      "flex-1 w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5"
+    when :auth
+      "flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+    else
+      "public-main flex-1 w-full"
+    end
+  end
+
+  def layout_flash_class(type)
+    return "public-flash public-flash-#{type}" if public_layout_theme?
+
+    case type.to_sym
+    when :notice
+      "mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800"
+    else
+      "mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800"
+    end
+  end
+
+  def app_stylesheet_tags(theme = layout_theme)
+    tags = []
+    tags << stylesheet_link_tag("css/tour.min", media: "all", "data-turbo-track": "reload") if theme.to_sym == :authenticated
+    tags << stylesheet_link_tag("tailwind", media: "all", "data-turbo-track": "reload") if tailwind_built?
+
+    safe_join(tags)
+  end
+
+  def app_javascript_tags(theme = layout_theme)
+    tags = []
+    tags << javascript_include_tag("tour", defer: true, "data-turbo-track": "reload") if theme.to_sym == :authenticated
+    tags << javascript_importmap_tags(javascript_entrypoint_for(theme))
+
+    safe_join(tags)
+  end
+
+  def javascript_entrypoint_for(theme = layout_theme)
+    case theme.to_sym
+    when :public then "public"
+    when :auth then "auth"
+    else "authenticated"
+    end
+  end
+
+  def google_tag_id
+    ENV["GOOGLE_TAG_ID"].to_s.strip.presence
+  end
+
+  def cloudflare_web_analytics_token
+    ENV["CLOUDFLARE_WEB_ANALYTICS_TOKEN"].to_s.strip.presence
+  end
+
+  def analytics_enabled?
+    Rails.env.production? || ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_ANALYTICS_ENABLED", "false"))
+  end
+
+  def probo_cookie_banner_script_url
+    ENV["PROBO_COOKIE_BANNER_SCRIPT_URL"].to_s.strip.presence || "https://cdn.jsdelivr.net/npm/@probo/cookie-banner/dist/cookie-banner.iife.js"
+  end
+
+  def probo_cookie_banner_id
+    ENV["PROBO_COOKIE_BANNER_ID"].to_s.strip.presence
+  end
+
+  def probo_cookie_banner_upstream_base_url
+    ENV["PROBO_COOKIE_BANNER_BASE_URL"].to_s.strip.presence
+  end
+
+  def probo_cookie_banner_position
+    ENV["PROBO_COOKIE_BANNER_POSITION"].to_s.strip.presence || "bottom-left"
+  end
+
+  def probo_cookie_banner_proxy_enabled?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch("PROBO_COOKIE_BANNER_PROXY_ENABLED", "true"))
+  end
+
+  def probo_cookie_banner_base_url
+    probo_cookie_banner_proxy_enabled? ? cookie_banner_proxy_base_url : probo_cookie_banner_upstream_base_url
+  end
+
+  def probo_cookie_banner_api_configured?
+    probo_cookie_banner_proxy_enabled? ? probo_cookie_banner_upstream_base_url.present? : probo_cookie_banner_base_url.present?
+  end
+
+  def analytics_cookie_consent_category
+    ENV["LOGISTER_ANALYTICS_COOKIE_CATEGORY"].to_s.strip.presence || "analytics"
+  end
+
+  def cookie_consent_enabled?
+    !Rails.env.test? &&
+      ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_COOKIE_CONSENT_ENABLED", "true")) &&
+      probo_cookie_banner_id.present? &&
+      probo_cookie_banner_api_configured?
+  end
+
+  def responsive_scroll_region(**options, &block)
+    options[:class] = class_names("mobile-x-scroll", options[:class])
+
+    content_tag(:div, capture(&block), options)
+  end
+
+  def responsive_chart_region(**options, &block)
+    options[:class] = class_names("mobile-chart-scroll", options[:class])
+
+    content_tag(:div, capture(&block), options)
+  end
+
+  def responsive_scroll_classes(*classes)
+    class_names("mobile-x-scroll", classes)
+  end
+
   def request_context_details(event)
     ProjectEvents::RequestContextPresenter.new(event).details
   end
@@ -341,20 +524,6 @@ module ApplicationHelper
     content_tag(:span, class: "project-type-icon project-type-icon-#{kind}", title: project.integration_label, aria: { label: project.integration_label }) do
       app_icon(icon_name, css: "h-6 w-6")
     end
-  end
-
-  def app_stylesheet_tags
-    tags = [ stylesheet_link_tag("css/tour.min", media: "all", "data-turbo-track": "reload") ]
-    tags << stylesheet_link_tag("tailwind", media: "all", "data-turbo-track": "reload") if tailwind_built?
-
-    safe_join(tags)
-  end
-
-  def app_javascript_tags
-    safe_join([
-      javascript_include_tag("tour", defer: true, "data-turbo-track": "reload"),
-      javascript_importmap_tags
-    ])
   end
 
   def docs_site_url(section = :overview)

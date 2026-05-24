@@ -85,32 +85,34 @@
            <%= 'hidden' unless active_tab == 'occurrences' %>
            data-frame-tabs-target="panel">
     <% if occurrences.any? %>
-      <table class="occurrences-table">
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Message</th>
-            <th>Severity</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% occurrences.each do |occ| %>
-            <% occurrence_event = occ.ingest_event %>
+      <%= responsive_scroll_region do %>
+        <table class="occurrences-table">
+          <thead>
             <tr>
-              <td><%= local_time_tag(occurrence_event.occurred_at, format: :long) %></td>
-              <td><%= truncate(occurrence_event.message.to_s.lines.first, length: 80) %></td>
-              <td><%= render "shared/widgets/severity_badge", level: occurrence_event.level.presence || "error" %></td>
-              <td>
-                <%= link_to "View",
-                            project_event_path(project, occurrence_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
-                            class: "inline-link",
-                            data: link_data %>
-              </td>
+              <th>When</th>
+              <th>Message</th>
+              <th>Severity</th>
+              <th></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% occurrences.each do |occ| %>
+              <% occurrence_event = occ.ingest_event %>
+              <tr>
+                <td><%= local_time_tag(occurrence_event.occurred_at, format: :long) %></td>
+                <td><%= truncate(occurrence_event.message.to_s.lines.first, length: 80) %></td>
+                <td><%= render "shared/widgets/severity_badge", level: occurrence_event.level.presence || "error" %></td>
+                <td>
+                  <%= link_to "View",
+                              project_event_path(project, occurrence_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
+                              class: "inline-link",
+                              data: link_data %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
     <% else %>
       <p class="muted">No occurrences recorded yet.</p>
     <% end %>
@@ -123,31 +125,33 @@
            <%= 'hidden' unless active_tab == 'related_logs' %>
            data-frame-tabs-target="panel">
     <% if related_logs.any? %>
-      <table class="occurrences-table">
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Level</th>
-            <th>Message</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% related_logs.each do |log_event| %>
+      <%= responsive_scroll_region do %>
+        <table class="occurrences-table">
+          <thead>
             <tr>
-              <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
-              <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
-              <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
-              <td>
-                <%= link_to "View",
-                            project_event_path(project, log_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
-                            class: "inline-link",
-                            data: link_data %>
-              </td>
+              <th>When</th>
+              <th>Level</th>
+              <th>Message</th>
+              <th></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% related_logs.each do |log_event| %>
+              <tr>
+                <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
+                <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
+                <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
+                <td>
+                  <%= link_to "View",
+                              project_event_path(project, log_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
+                              class: "inline-link",
+                              data: link_data %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
     <% else %>
       <p class="muted">No logs found in the correlation window.</p>
     <% end %>

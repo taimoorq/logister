@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-  <%= render "layouts/head", theme: :authenticated %>
+  <%= render "layouts/head", theme: :auth %>
 
-  <body class="min-h-screen flex flex-col bg-slate-100 text-slate-900 antialiased"
-        data-controller="local-time"
-        data-action="turbo:load@document->local-time#formatAll turbo:frame-load@document->local-time#formatAll">
-    <%= render "layouts/authenticated_nav" %>
+  <body class="auth-theme min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased">
+    <%= render "layouts/public_nav" %>
 
-    <main class="flex-1 w-full px-3 sm:px-4 lg:px-6 py-4 sm:py-5"
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
           style="view-transition-name: app-main; view-transition-class: app-shell;">
       <% if notice %>
         <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800"><%= notice %></div>
@@ -19,6 +17,7 @@
       <%= yield %>
     </main>
 
+    <%= render "layouts/auth_footer" %>
     <%= render "layouts/cookie_consent" %>
   </body>
 </html>

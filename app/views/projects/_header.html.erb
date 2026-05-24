@@ -4,21 +4,21 @@
 
 <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4"
         <%= tag.attributes(data: product_tour_step_data(tour_group, :project_header)) if tour_group.present? && highlight_header %>>
-  <div>
-    <h1 class="text-2xl font-bold text-slate-900"><%= @project.name %></h1>
-    <p class="text-slate-500 text-sm">
+  <div class="min-w-0">
+    <h1 class="break-words text-2xl font-bold text-slate-900"><%= @project.name %></h1>
+    <p class="mt-1 flex flex-wrap items-center gap-1.5 text-slate-500 text-sm">
       <%= link_to "All projects", project_collection_path(@project), class: "sidebar-action-link" %>
       <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code>
-      <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200 ml-2 align-middle">
+      <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200 align-middle">
         <%= @project.integration_label %>
       </span>
       <% if @project.archived? %>
-        <span class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 border border-violet-200 ml-2 align-middle">
+        <span class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 border border-violet-200 align-middle">
           Archived
         </span>
       <% end %>
       <% if @project.owned_by?(current_user) %>
-        <%= link_to "Edit", edit_project_path(@project), class: "ml-2 text-sm text-blue-600 hover:underline" %>
+        <%= link_to "Edit", edit_project_path(@project), class: "text-sm text-blue-600 hover:underline" %>
       <% end %>
     </p>
   </div>

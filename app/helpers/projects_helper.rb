@@ -97,4 +97,8 @@ module ProjectsHelper
   def retention_timestamp(timestamp)
     timestamp.present? ? l(timestamp, format: :long) : "Never"
   end
+
+  def project_setup_code_block_class
+    responsive_scroll_classes("rounded-lg bg-slate-900 text-slate-100 p-4 text-sm font-mono")
+  end
 end

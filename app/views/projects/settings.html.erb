@@ -102,7 +102,7 @@
           </div>
 
           <h3 class="text-sm font-semibold text-slate-900 mt-6 mb-2">Existing keys</h3>
-          <div class="overflow-x-auto">
+          <%= responsive_scroll_region do %>
             <table class="min-w-full divide-y divide-slate-200">
               <thead class="bg-slate-50">
                 <tr>
@@ -122,7 +122,7 @@
                 <% end %>
               </tbody>
             </table>
-          </div>
+          <% end %>
         </turbo-frame>
       </article>
 
@@ -141,7 +141,7 @@
 
         <h3 class="text-sm font-semibold text-slate-900 mt-6 mb-2">Members</h3>
         <%= render "projects/assignment_summary", assignment_summary: @assignment_summary %>
-        <div class="overflow-x-auto">
+        <%= responsive_scroll_region do %>
           <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50">
               <tr>
@@ -167,7 +167,7 @@
               <% end %>
             </tbody>
           </table>
-        </div>
+        <% end %>
       </article>
 
       <%= render "projects/retention_policy",
@@ -311,7 +311,7 @@
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
-            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>application.logister.sendEvent(
+            <pre class="<%= project_setup_code_block_class %>"><code>application.logister.sendEvent(
   eventType = "error",
   level = "error",
   message = exception.message ?: "Unhandled CFML exception",
@@ -350,7 +350,7 @@
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
-            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>pip install 'logister-python[fastapi]'
+            <pre class="<%= project_setup_code_block_class %>"><code>pip install 'logister-python[fastapi]'
 
 from logister import LogisterClient, instrument_fastapi
 
@@ -396,7 +396,7 @@ instrument_fastapi(app, client, capture_spans=True)</code></pre>
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with ASP.NET Core</h3>
-            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>dotnet add package Logister.AspNetCore
+            <pre class="<%= project_setup_code_block_class %>"><code>dotnet add package Logister.AspNetCore
 
 using Logister.AspNetCore;
 
@@ -453,7 +453,7 @@ app.UseLogisterRequestTransactions();</code></pre>
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with Node or Express</h3>
-            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>npm install logister-js
+            <pre class="<%= project_setup_code_block_class %>"><code>npm install logister-js
 
 import { LogisterClient } from "logister-js";
 import { createLogisterMiddleware, createLogisterErrorHandler } from "logister-js/express";
@@ -503,7 +503,7 @@ const client = new LogisterClient({
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with cURL</h3>
-            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>curl -X POST https://your-logister-host.example/api/v1/ingest_events \
+            <pre class="<%= project_setup_code_block_class %>"><code>curl -X POST https://your-logister-host.example/api/v1/ingest_events \
   -H "Authorization: Bearer your-project-api-token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -548,7 +548,7 @@ const client = new LogisterClient({
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
-            <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>gem "logister-ruby", "~> 0.2.6"
+            <pre class="<%= project_setup_code_block_class %>"><code>gem "logister-ruby", "~> 0.2.6"
 
 Logister.configure do |config|
   config.api_key = "your-project-api-token"
@@ -604,7 +604,7 @@ end</code></pre>
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">kind</code>, and
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">duration_ms</code>.
       </p>
-      <pre class="rounded-lg bg-slate-900 text-slate-100 p-4 text-sm overflow-x-auto font-mono"><code>{
+      <pre class="<%= project_setup_code_block_class %>"><code>{
   "event": {
     "event_type": "error",
     "level": "error",

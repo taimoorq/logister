@@ -35,9 +35,13 @@ RSpec.describe "Dashboard", type: :request do
 
         document = Nokogiri::HTML.parse(response.body)
         importmap = document.at_css("script[type='importmap']").text
+        module_script = document.at_css("script[type='module']")
+        preload_hrefs = document.css("link[rel='modulepreload']").map { |node| node["href"].to_s }
 
         expect(document.at_css("link[href*='css/tour.min']")).to be_present
         expect(document.at_css("script[src*='tour'][defer]")).to be_present
+        expect(module_script&.text).to include('import "authenticated"')
+        expect(preload_hrefs.grep(/entrypoints\/(?:public|auth)\b/)).to be_empty
         expect(importmap).to include("echarts", "echarts.esm.min")
         tour_root = document.at_css(".dashboard-page[data-controller='product-tour'][data-product-tour-group-value='dashboard']")
         expect(tour_root).to be_present

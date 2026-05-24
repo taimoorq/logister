@@ -1,0 +1,41 @@
+<footer class="public-footer"
+        style="view-transition-name: app-footer; view-transition-class: app-shell;">
+  <div class="public-footer-inner">
+    <div class="public-footer-brand">
+      <%= image_tag "logister-logo.svg", alt: "Logister", class: "public-footer-logo", width: 232, height: 48 %>
+      <p class="public-footer-copy">Open source error monitoring and bug triage for teams that want self-hosted ownership with a hosted path when they need it.</p>
+    </div>
+    <div class="public-footer-links">
+      <div class="public-footer-column">
+        <p class="public-footer-heading">Product</p>
+        <%= link_to "Home", root_path, class: "public-footer-link #{current_page?(root_path) ? 'is-active' : ''}" %>
+        <%= link_to "About", about_path, class: "public-footer-link #{current_page?(about_path) ? 'is-active' : ''}" %>
+        <%= link_to "Docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "public-footer-link" %>
+      </div>
+      <div class="public-footer-column">
+        <p class="public-footer-heading">Integrations</p>
+        <%= link_to "Ruby", "https://github.com/taimoorq/logister-ruby", target: "_blank", rel: "noopener", class: "public-footer-link" %>
+        <%= link_to ".NET", "https://www.nuget.org/packages/Logister.AspNetCore", target: "_blank", rel: "noopener", class: "public-footer-link" %>
+        <%= link_to "Python", "https://pypi.org/project/logister-python/", target: "_blank", rel: "noopener", class: "public-footer-link" %>
+        <%= link_to "JavaScript", "https://www.npmjs.com/package/logister-js", target: "_blank", rel: "noopener", class: "public-footer-link" %>
+      </div>
+      <div class="public-footer-column">
+        <p class="public-footer-heading">Legal</p>
+        <%= link_to "Privacy", privacy_path, class: "public-footer-link #{current_page?(privacy_path) ? 'is-active' : ''}" %>
+        <%= link_to "Cookies", cookies_path, class: "public-footer-link #{current_page?(cookies_path) ? 'is-active' : ''}" %>
+        <%= link_to "Terms", terms_path, class: "public-footer-link #{current_page?(terms_path) ? 'is-active' : ''}" %>
+        <% if cookie_consent_enabled? %>
+          <probo-settings-link><a href="#" class="public-footer-link">Cookie preferences</a></probo-settings-link>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <div class="public-footer-bottom">
+    <p>© <%= Time.current.year %> Logister. All rights reserved.</p>
+    <div class="public-footer-badges">
+      <span>Open source</span>
+      <span>Self-host first</span>
+      <span>Multi-runtime</span>
+    </div>
+  </div>
+</footer>

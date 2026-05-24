@@ -27,7 +27,7 @@
 </div>
 
 <div class="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-  <div class="overflow-x-auto">
+  <%= responsive_scroll_region do %>
     <table class="inbox-table min-w-full">
       <thead>
         <tr>
@@ -67,5 +67,5 @@
         <% end %>
       </tbody>
     </table>
-  </div>
+  <% end %>
 </div>

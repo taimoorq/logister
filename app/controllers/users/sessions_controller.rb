@@ -1,5 +1,6 @@
 class Users::SessionsController < Devise::SessionsController
   include DeviseTurnstileGuard
+  layout "auth"
 
   prepend_before_action :validate_cloudflare_turnstile, only: :create
   rescue_from RailsCloudflareTurnstile::Forbidden, with: :turnstile_failed

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%= render "layouts/head", theme: :public %>
+
+  <body class="public-shell min-h-screen flex flex-col antialiased">
+    <%= render "layouts/public_nav" %>
+
+    <main class="public-main flex-1 w-full"
+          style="view-transition-name: app-main; view-transition-class: app-shell;">
+      <% if notice %>
+        <div class="public-flash public-flash-notice"><%= notice %></div>
+      <% end %>
+      <% if alert %>
+        <div class="public-flash public-flash-alert"><%= alert %></div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+
+    <%= render "layouts/public_footer" %>
+    <%= render "layouts/cookie_consent" %>
+  </body>
+</html>

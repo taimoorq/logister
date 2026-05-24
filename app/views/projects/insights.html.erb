@@ -193,10 +193,12 @@
             <span>Activity grouped by health, logs, metrics, performance, and check-ins</span>
           </div>
         </div>
-        <%= render "projects/telemetry_timeline_chart",
-                   classes: "project-insights-chart",
-                   data: { "project-insights-target": "eventChart" },
-                   label: "Signal mix timeline for the selected insight scope" %>
+        <%= responsive_chart_region do %>
+          <%= render "projects/telemetry_timeline_chart",
+                     classes: "project-insights-chart",
+                     data: { "project-insights-target": "eventChart" },
+                     label: "Signal mix timeline for the selected insight scope" %>
+        <% end %>
       </article>
     </div>
 

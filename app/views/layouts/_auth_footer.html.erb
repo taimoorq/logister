@@ -1,0 +1,15 @@
+<footer class="border-t border-slate-200 bg-white"
+        style="view-transition-name: app-footer; view-transition-class: app-shell;">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <p class="text-sm text-slate-500">© <%= Time.current.year %> Logister</p>
+    <div class="flex items-center gap-4 text-sm">
+      <%= link_to "Docs", docs_site_url, target: "_blank", rel: "noopener noreferrer", class: "text-slate-600 hover:text-slate-900 no-underline" %>
+      <%= link_to "Privacy", privacy_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(privacy_path) ? 'font-semibold text-slate-900' : ''}" %>
+      <%= link_to "Cookies", cookies_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(cookies_path) ? 'font-semibold text-slate-900' : ''}" %>
+      <%= link_to "Terms", terms_path, class: "text-slate-600 hover:text-slate-900 no-underline #{current_page?(terms_path) ? 'font-semibold text-slate-900' : ''}" %>
+      <% if cookie_consent_enabled? %>
+        <probo-settings-link><a href="#" class="text-slate-600 hover:text-slate-900 no-underline">Cookie preferences</a></probo-settings-link>
+      <% end %>
+    </div>
+  </div>
+</footer>

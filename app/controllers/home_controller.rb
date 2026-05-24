@@ -1,4 +1,6 @@
 class HomeController < ApplicationController
+  layout "public", except: %i[robots sitemap]
+
   def show
     redirect_to dashboard_path if user_signed_in?
   end
