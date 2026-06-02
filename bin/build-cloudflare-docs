@@ -63,8 +63,10 @@ preferred_paths = [
   "/integrations/ruby/",
   "/integrations/dotnet/",
   "/integrations/python/",
-  "/integrations/cfml/",
-  "/integrations/javascript/"
+  "/integrations/javascript/",
+  "/integrations/android/",
+  "/integrations/ios/",
+  "/integrations/cfml/"
 ]
 
 html_paths = Dir[docs_root.join("**/index.html")].map do |file|

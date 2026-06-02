@@ -22,7 +22,7 @@
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Open Source Error Monitoring Docs | Logister","description":"Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"GHCR and Docker Hub images"},{"@type":"Thing","name":"Error assignment and team triage"},{"@type":"Thing","name":"Amazon SES alert emails"},{"@type":"Thing","name":"Sentry alternative"},{"@type":"Thing","name":"Bugsnag alternative"},{"@type":"Thing","name":"Bugzilla alternative"},{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js","https://github.com/taimoorq/logister-android","https://github.com/taimoorq/logister-ios"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Open Source Error Monitoring Docs | Logister","description":"Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"GHCR and Docker Hub images"},{"@type":"Thing","name":"Error assignment and team triage"},{"@type":"Thing","name":"Amazon SES alert emails"},{"@type":"Thing","name":"Sentry alternative"},{"@type":"Thing","name":"Bugsnag alternative"},{"@type":"Thing","name":"Bugzilla alternative"},{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"Android app analytics"},{"@type":"Thing","name":"iOS app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -84,8 +84,10 @@
               <a href="/integrations/ruby/">Ruby integration</a>
               <a href="/integrations/dotnet/">.NET integration</a>
               <a href="/integrations/python/">Python integration</a>
-              <a href="/integrations/cfml/">CFML integration</a>
               <a href="/integrations/javascript/">JavaScript integration</a>
+              <a href="/integrations/android/">Android integration</a>
+              <a href="/integrations/ios/">iOS integration</a>
+              <a href="/integrations/cfml/">CFML integration</a>
             </div>
             <hr>
             <div class="sidebar-group">
@@ -110,7 +112,7 @@
               <p class="eyebrow">Overview</p>
               <h2>Choose the guide that matches your project type.</h2>
               <p>
-                Logister provides public documentation for running your own instance first, then connecting Ruby, .NET, Python, CFML, JavaScript, and custom HTTP clients to it. Start with self-hosting when you are planning infrastructure, or with the integration guide that matches how your application sends data today.
+                Logister provides public documentation for running your own instance first, then connecting Ruby, .NET, Python, JavaScript, Android, iOS, CFML, and custom HTTP clients to it. Start with self-hosting when you are planning infrastructure, or with the integration guide that matches how your application sends data today.
               </p>
               <blockquote>
                 Logister is self-hosted and self-hostable first. The public <code>logister.org</code> app is a secondary hosted option; the source, GHCR and Docker Hub images, optional Quay mirrors, release notes, and operations docs are here so teams can run it themselves.
@@ -153,6 +155,16 @@
                     <td><a href="/integrations/javascript/">JavaScript integration</a></td>
                     <td>JavaScript and TypeScript apps</td>
                     <td><code>logister-js</code> package with optional Express middleware and console capture</td>
+                  </tr>
+                  <tr>
+                    <td><a href="/integrations/android/">Android integration</a></td>
+                    <td>Kotlin and Java Android apps</td>
+                    <td><code>org.logister:logister-android</code> from Maven Central</td>
+                  </tr>
+                  <tr>
+                    <td><a href="/integrations/ios/">iOS integration</a></td>
+                    <td>Swift iOS apps</td>
+                    <td><code>Logister</code> from Swift Package Manager at <code>github.com/taimoorq/logister-ios</code></td>
                   </tr>
                   <tr>
                     <td><a href="/http-api/">Manual / HTTP API</a></td>
@@ -202,6 +214,16 @@
                     <td>JavaScript package</td>
                     <td><a href="https://github.com/taimoorq/logister-js">github.com/taimoorq/logister-js</a></td>
                     <td><a href="https://www.npmjs.com/package/logister-js">npm: logister-js</a></td>
+                  </tr>
+                  <tr>
+                    <td>Android SDK</td>
+                    <td><a href="https://github.com/taimoorq/logister-android">github.com/taimoorq/logister-android</a></td>
+                    <td><a href="https://central.sonatype.com/artifact/org.logister/logister-android">Maven Central: org.logister:logister-android</a></td>
+                  </tr>
+                  <tr>
+                    <td>iOS SDK</td>
+                    <td><a href="https://github.com/taimoorq/logister-ios">github.com/taimoorq/logister-ios</a></td>
+                    <td><a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0">Swift Package Manager: Logister via Git tag v0.1.0</a></td>
                   </tr>
                   <tr>
                     <td>CFML</td>
@@ -304,6 +326,18 @@
                   <p><a href="/integrations/javascript/">Read JavaScript docs</a> or <a href="https://www.npmjs.com/package/logister-js">open npm</a>.</p>
                 </article>
                 <article class="card">
+                  <p class="eyebrow">Android</p>
+                  <h3>Install the Maven package</h3>
+                  <p>Use the Android guide for Kotlin-first Android app telemetry with errors, logs, metrics, transactions, spans, check-ins, release context, and safe device metadata.</p>
+                  <p><a href="/integrations/android/">Read Android docs</a> or <a href="https://central.sonatype.com/artifact/org.logister/logister-android">open Maven Central</a>.</p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">iOS</p>
+                  <h3>Add the Swift package</h3>
+                  <p>Use the iOS guide for Swift app telemetry through Swift Package Manager, including errors, logs, metrics, transactions, spans, check-ins, release context, and safe device metadata.</p>
+                  <p><a href="/integrations/ios/">Read iOS docs</a> or <a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0">open the SwiftPM release</a>.</p>
+                </article>
+                <article class="card">
                   <p class="eyebrow">Manual / HTTP API</p>
                   <h3>Send direct API payloads</h3>
                   <p>Use the HTTP API path for unsupported runtimes, one-off scripts, workers, and custom clients that report errors, logs, metrics, transactions, spans, or check-ins directly.</p>
@@ -318,7 +352,7 @@
               <ol>
                 <li>Create a project and choose the right integration type.</li>
                 <li>Generate an API key and store it immediately.</li>
-                <li>Pick the Ruby, .NET, Python, CFML, JavaScript, or Manual / HTTP API guide based on your application stack.</li>
+                <li>Pick the Ruby, .NET, Python, JavaScript, Android, iOS, CFML, or Manual / HTTP API guide based on your application stack.</li>
                 <li>Use the HTTP API page, Swagger reference, or Postman collection when you need the exact request shape.</li>
                 <li>Send one known-good event before broadening instrumentation.</li>
               </ol>
@@ -381,8 +415,10 @@
               <a href="/integrations/ruby/">Ruby integration</a>
               <a href="/integrations/dotnet/">.NET integration</a>
               <a href="/integrations/python/">Python integration</a>
-              <a href="/integrations/cfml/">CFML integration</a>
               <a href="/integrations/javascript/">JavaScript integration</a>
+              <a href="/integrations/android/">Android integration</a>
+              <a href="/integrations/ios/">iOS integration</a>
+              <a href="/integrations/cfml/">CFML integration</a>
             </div>
           </div>
         </div>

@@ -34,6 +34,21 @@ The main app stores and displays the telemetry. The language add-ons are sender 
 | Session/user context | Event detail, related context, and attribute visibility | Session ID and user ID options | Session ID and user ID options | Session ID and user ID options | Session ID and user ID options | Direct fields or context |
 | Custom dimensions | Insights attribute filters for safe scalar context | Custom context and tags | Custom context and tags | Custom context and tags | Custom context and tags | Direct context and tags |
 
+## Mobile Add-on Support
+
+Android and iOS use the same ingest envelope as the server-side SDKs. Their
+package managers and platform context differ:
+
+| Platform | Package | Package manager | Current support |
+| --- | --- | --- | --- |
+| Android | `org.logister:logister-android` | Maven Central / Gradle | Kotlin-first helpers with Java interop for manual errors, logs, metrics, transactions, spans, and check-ins. |
+| iOS | `Logister` from `https://github.com/taimoorq/logister-ios.git` | Swift Package Manager | Async Swift client for manual errors, logs, metrics, transactions, spans, and check-ins. |
+
+Mobile SDKs should send `platform`, `service`, `release`, `environment`,
+`session_id`, and safe device/app metadata. Android should use the package name
+as `service`; iOS should use the bundle ID. See
+[mobile add-ons guide](mobile-add-ons.md) for install and usage examples.
+
 ## Developer Reporting Guide
 
 Use this section when you are building or reviewing an integration and want to know what Logister can collect, display, filter, or report on.

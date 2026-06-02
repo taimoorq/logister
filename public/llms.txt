@@ -9,6 +9,8 @@ It supports:
 - .NET and ASP.NET Core apps via the `logister-dotnet` SDK
 - Python apps via the `logister-python` package
 - JavaScript and TypeScript apps via the `logister-js` package
+- Android apps via the `org.logister:logister-android` Maven Central package
+- iOS apps via the `Logister` Swift Package Manager package
 - CFML apps running on Lucee or Adobe ColdFusion via direct HTTP ingestion
 
 Canonical documentation lives on the public docs host:
@@ -50,6 +52,8 @@ Canonical documentation lives on the public docs host:
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
+- Android integration: https://docs.logister.org/integrations/android/
+- iOS integration: https://docs.logister.org/integrations/ios/
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
 ## Self-hosting and release distribution
@@ -85,6 +89,8 @@ Canonical documentation lives on the public docs host:
 - Python developers instrumenting APIs, workers, schedulers, and Python logging.
 - .NET developers instrumenting ASP.NET Core apps and C# workers.
 - JavaScript and TypeScript developers integrating Node or Express apps.
+- Android developers integrating Kotlin or Java Android apps.
+- iOS developers integrating Swift apps with Swift Package Manager.
 - ColdFusion, Lucee, and CFML developers sending structured events to Logister.
 - Rails teams looking for self-hosted exception grouping, request context, and assignment.
 
@@ -98,6 +104,11 @@ Canonical documentation lives on the public docs host:
 - Python source: https://github.com/taimoorq/logister-python
 - npm: https://www.npmjs.com/package/logister-js
 - JavaScript source: https://github.com/taimoorq/logister-js
+- Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
+- Android source: https://github.com/taimoorq/logister-android
+- Android coordinates: `org.logister:logister-android:0.1.0`
+- Swift Package Manager source: https://github.com/taimoorq/logister-ios.git
+- iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 
 ## Self-host source
 - App source: https://github.com/taimoorq/logister

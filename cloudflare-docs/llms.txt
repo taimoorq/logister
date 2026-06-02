@@ -35,6 +35,8 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
+- Android integration: https://docs.logister.org/integrations/android/
+- iOS integration: https://docs.logister.org/integrations/ios/
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
 ## Operations
@@ -65,6 +67,8 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - .NET teams using `logister-dotnet` with ASP.NET Core and C# services
 - Python teams using `logister-python` with FastAPI, Django, Flask, Celery, and Python logging
 - JavaScript and TypeScript teams using `logister-js`
+- Android teams using `org.logister:logister-android` from Maven Central
+- iOS teams using the `Logister` Swift package from https://github.com/taimoorq/logister-ios.git
 - Lucee and Adobe ColdFusion teams sending structured CFML payloads over HTTP
 - Rails teams looking for self-hosted exception grouping, request context, and assignment
 
@@ -85,5 +89,10 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Python SDK package: https://pypi.org/project/logister-python/
 - JavaScript SDK source: https://github.com/taimoorq/logister-js
 - JavaScript SDK package: https://www.npmjs.com/package/logister-js
+- Android SDK source: https://github.com/taimoorq/logister-android
+- Android SDK package: https://central.sonatype.com/artifact/org.logister/logister-android
+- Android Maven coordinates: `org.logister:logister-android:0.1.0`
+- iOS SDK source and Swift Package Manager URL: https://github.com/taimoorq/logister-ios.git
+- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://docs.logister.org/integrations/cfml/
 - Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, and direct JSON reporters.

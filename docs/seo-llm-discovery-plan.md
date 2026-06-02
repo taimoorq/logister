@@ -18,7 +18,7 @@ Supporting phrases can vary naturally, but should consistently reinforce:
 - Team ownership, assignment, and status workflows
 - Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, optional ClickHouse
 - Versioned GHCR and Docker Hub images plus GitHub Releases
-- Runtime support for Ruby, .NET, Python, JavaScript/TypeScript, and CFML
+- Runtime support for Ruby, .NET, Python, JavaScript/TypeScript, Android, iOS, and CFML
 
 ## Completed Work Plan
 
@@ -32,6 +32,8 @@ Supporting phrases can vary naturally, but should consistently reinforce:
    - Python error monitoring
    - .NET / ASP.NET Core error monitoring
    - JavaScript / TypeScript error monitoring
+   - Android error monitoring
+   - iOS error monitoring
    - ColdFusion / CFML error monitoring
    - Docker registry self-hosting
    - Error assignment and team triage
@@ -61,7 +63,7 @@ Supporting phrases can vary naturally, but should consistently reinforce:
 
 - Standardize the core phrase.
 - Add the first intent pages for self-hosted error monitoring and major comparison searches.
-- Add runtime intent pages for Rails, Python, .NET / ASP.NET Core, JavaScript / TypeScript, and CFML error monitoring.
+- Add runtime intent pages for Rails, Python, .NET / ASP.NET Core, JavaScript / TypeScript, Android, iOS, and CFML error monitoring.
 - Add operational intent pages for Docker registry self-hosting, team error assignment, and Amazon SES alert emails or digest summaries.
 - Add `llms-full.txt` to the app and docs surfaces.
 - Wire new docs pages into the docs index, sitemap, robots, and tests.

@@ -622,12 +622,19 @@ const client = new LogisterClient({
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Build the Android package in <code>logister-android/</code> and publish it through the normal Gradle/Maven flow when it is ready.</li>
-              <li>Start with manual errors, logs, metrics, transactions, spans, and check-ins using the existing Logister ingest envelope.</li>
+              <li>Install <code>org.logister:logister-android</code> from Maven Central through Gradle.</li>
+              <li>Start with the Kotlin helpers for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
               <li>Add app metadata such as package name, version name, version code, build type, Android version, API level, device model, locale, and session ID.</li>
               <li>Keep crash and network instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
               <li>Use Google Play vitals imports later for aggregate crash rate, ANR rate, slow starts, slow rendering, and related platform metrics.</li>
             </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>dependencies {
+    implementation("org.logister:logister-android:0.1.0")
+}</code></pre>
           </div>
 
           <div>
@@ -653,14 +660,23 @@ const client = new LogisterClient({
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
             <p class="text-sm text-slate-600">
-              Android SDK source, Gradle build files, examples, tests, and release notes belong in <code>logister-android/</code>. The Rails app should only store project setup, API keys, platform import settings, and received telemetry.
+              Android SDK source, Gradle build files, examples, tests, and release notes live in <code>logister-android</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
             </p>
           </div>
 
           <p class="text-sm text-slate-600">
-            Until the package docs are published, use the
-            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
-            for the ingest payload contract.
+            Package repo:
+            <%= link_to "logister-android",
+                        "https://github.com/taimoorq/logister-android",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Maven Central:
+            <%= link_to "org.logister:logister-android",
+                        "https://central.sonatype.com/artifact/org.logister/logister-android",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% elsif @project.integration_ios? %>
@@ -668,12 +684,19 @@ const client = new LogisterClient({
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Build the iOS package in <code>logister-ios/</code> and publish it through Swift Package Manager first.</li>
-              <li>Start with manual errors, logs, metrics, transactions, spans, and check-ins using the existing Logister ingest envelope.</li>
+              <li>Add <code>logister-ios</code> from GitHub through Swift Package Manager.</li>
+              <li>Start with the async Swift client for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
               <li>Add app metadata such as bundle ID, app version, build number, iOS version, device model, locale, and session ID.</li>
               <li>Keep crash, URLSession timing, and automatic screen instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
               <li>Use App Store Connect imports later for aggregate downloads, engagement, usage, retention, and crash trend data.</li>
             </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>dependencies: [
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.0")
+]</code></pre>
           </div>
 
           <div>
@@ -699,14 +722,23 @@ const client = new LogisterClient({
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
             <p class="text-sm text-slate-600">
-              iOS SDK source, <code>Package.swift</code>, examples, tests, and release notes belong in <code>logister-ios/</code>. The Rails app should only store project setup, API keys, platform import settings, and received telemetry.
+              iOS SDK source, <code>Package.swift</code>, examples, tests, and release notes live in <code>logister-ios</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
             </p>
           </div>
 
           <p class="text-sm text-slate-600">
-            Until the package docs are published, use the
-            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
-            for the ingest payload contract.
+            Package repo:
+            <%= link_to "logister-ios",
+                        "https://github.com/taimoorq/logister-ios",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Release:
+            <%= link_to "v0.1.0",
+                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% elsif @project.integration_http_api? %>
@@ -815,9 +847,9 @@ end</code></pre>
         <% elsif @project.integration_cloudflare_pages? %>
           Use direct HTTP telemetry for deployment signals today; the planned Rails importer will pull Cloudflare Pages and Web Analytics metrics.
         <% elsif @project.integration_android? %>
-          Use direct HTTP telemetry today; the Android SDK will be built in <code>logister-android/</code>.
+          Install <code>org.logister:logister-android</code> and send mobile telemetry through the Android SDK.
         <% elsif @project.integration_ios? %>
-          Use direct HTTP telemetry today; the iOS SDK will be built in <code>logister-ios/</code>.
+          Add <code>logister-ios</code> with Swift Package Manager and send mobile telemetry through the iOS SDK.
         <% elsif @project.integration_http_api? %>
           Send JSON directly to the HTTP API from any runtime, script, worker, or custom client.
         <% else %>

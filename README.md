@@ -43,6 +43,8 @@ If you are trying to instrument an application, the language integrations live i
 - Python package for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
 - JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - .NET package for .NET 8+ apps, ASP.NET Core services, workers, and C# services: https://github.com/taimoorq/logister-dotnet, https://www.nuget.org/packages/Logister, and https://www.nuget.org/packages/Logister.AspNetCore
+- Android package for Kotlin and Java Android apps: https://github.com/taimoorq/logister-android and https://central.sonatype.com/artifact/org.logister/logister-android
+- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 
 ## Public docs
 
@@ -81,6 +83,8 @@ Canonical setup and integration docs live on `docs.logister.org`, with self-host
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
+- Android integration: https://docs.logister.org/integrations/android/
+- iOS integration: https://docs.logister.org/integrations/ios/
 - CFML integration: https://docs.logister.org/integrations/cfml/
 
 When changing setup, deployment, or integration guidance, update the public docs first and keep this README focused on repository orientation.
@@ -205,10 +209,19 @@ Use the guide that matches the app you want to connect:
 | .NET / ASP.NET Core | .NET 8+ apps, ASP.NET Core services, workers, and C# services | NuGet packages `Logister` and `Logister.AspNetCore`: https://www.nuget.org/packages/Logister + https://www.nuget.org/packages/Logister.AspNetCore + https://docs.logister.org/integrations/dotnet/ |
 | Python | FastAPI, Django, Flask, Celery, Python services, and native Python logging capture | `logister-python` on PyPI: https://pypi.org/project/logister-python/ + https://docs.logister.org/integrations/python/ |
 | JavaScript / TypeScript | JavaScript and TypeScript services with optional Express middleware and console capture | `logister-js` on npm: https://www.npmjs.com/package/logister-js + https://docs.logister.org/integrations/javascript/ |
+| Android | Kotlin and Java Android apps | `org.logister:logister-android` on Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android + https://docs.logister.org/integrations/android/ |
+| iOS | Swift iOS apps | `Logister` through Swift Package Manager: https://github.com/taimoorq/logister-ios.git + https://docs.logister.org/integrations/ios/ |
 | CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
 | Manual / HTTP API | Custom clients, scripts, workers, and unsupported runtimes | https://docs.logister.org/http-api/ + https://docs.logister.org/api-reference/ |
 
 All first-party add-ons send the same core telemetry families into the main app so the inbox, activity, performance, Insights, and monitor views stay consistent across languages.
+
+Mobile add-ons use the same ingest envelope with platform-specific setup:
+
+| Platform | Package manager | Package / URL | Docs |
+|----------|-------------|-------------|-------------|
+| Android | Maven Central / Gradle | `org.logister:logister-android:0.1.0` | https://docs.logister.org/integrations/android/ |
+| iOS | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` with product `Logister` | https://docs.logister.org/integrations/ios/ |
 
 The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint. Only app admins, not project owners or shared project members, can set project-level overrides.
 
@@ -342,6 +355,8 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
 | [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md) | Hotwire, Turbo, Stimulus, third-party JS, and asset pipeline conventions |
 | [docs/metrics-reference.md](docs/metrics-reference.md) | Telemetry families, Insights metrics, add-on support matrix, reporting fields, and collection boundaries |
+| [docs/mobile-add-ons.md](docs/mobile-add-ons.md) | Android and iOS package manager setup, SDK usage examples, release mechanics, and mobile telemetry boundaries |
+| [docs/cloudflare-mobile-integrations-plan.md](docs/cloudflare-mobile-integrations-plan.md) | Product plan for Cloudflare Pages metrics, Android telemetry, iOS telemetry, and project-type-aware dashboards |
 | [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI contract for the public ingest and check-in APIs |
 | [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json) | Postman collection with example requests for every supported event family |
 | [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
@@ -361,8 +376,12 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - .NET package: https://github.com/taimoorq/logister-dotnet
 - Python package: https://github.com/taimoorq/logister-python
 - JavaScript package: https://github.com/taimoorq/logister-js
+- Android package: https://github.com/taimoorq/logister-android
+- iOS package: https://github.com/taimoorq/logister-ios
 - RubyGems: https://rubygems.org/gems/logister-ruby
 - NuGet base package: https://www.nuget.org/packages/Logister
 - NuGet ASP.NET Core package: https://www.nuget.org/packages/Logister.AspNetCore
 - PyPI: https://pypi.org/project/logister-python/
 - npm: https://www.npmjs.com/package/logister-js
+- Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
+- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0

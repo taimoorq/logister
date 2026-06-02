@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>iOS Integration | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Set up iOS apps with Logister using Swift Package Manager and the public Logister Swift package.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/integrations/ios/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="iOS Integration | Logister">
+    <meta property="og:description" content="Set up iOS apps with Logister using Swift Package Manager and the public Logister Swift package.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/integrations/ios/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="iOS Integration | Logister">
+    <meta name="twitter:description" content="Set up iOS apps with Logister using Swift Package Manager and the public Logister Swift package.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ios"]},{"@type":"TechArticle","@id":"https://docs.logister.org/integrations/ios/#article","headline":"Integrate an iOS app with Logister.","name":"iOS Integration | Logister","url":"https://docs.logister.org/integrations/ios/","description":"Set up iOS apps with Logister using Swift Package Manager and the public Logister Swift package.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"iOS error monitoring"},{"@type":"Thing","name":"Swift app telemetry"},{"@type":"SoftwareSourceCode","name":"logister-ios","codeRepository":"https://github.com/taimoorq/logister-ios","programmingLanguage":"Swift"}],"audience":{"@type":"Audience","audienceType":"iOS and Swift developers"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"iOS integration","item":"https://docs.logister.org/integrations/ios/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">iOS integration</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister-ios">SDK repo</a><a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0">v0.1.0 release</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / iOS</span><h1>Integrate an iOS app with Logister.</h1><p>iOS apps use the public Swift Package Manager repository <code>https://github.com/taimoorq/logister-ios.git</code>. The package exposes a Swift async client named <code>Logister</code> for errors, logs, metrics, transactions, spans, and check-ins.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a href="/product/">Product guide</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a><a href="/api-reference/">API reference</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/javascript/">JavaScript integration</a><a href="/integrations/android/">Android integration</a><a class="active" href="/integrations/ios/">iOS integration</a><a href="/integrations/cfml/">CFML integration</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#install">Install</a><a href="#configure">Configure</a><a href="#events">Events</a><a href="#spans">Spans and check-ins</a><a href="#context">Mobile context</a><a href="#privacy">Privacy</a><a href="#verify">Verify</a><a href="#releases">Releases</a></div>
+          </aside>
+          <article class="article" data-pagefind-body>
+            <section id="before" class="section"><p class="eyebrow">Before you start</p><h2>Create the project with the <code>iOS</code> integration type.</h2><table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>iOS project in Logister</td><td>Locks the project type so collected iOS data is interpreted as mobile telemetry.</td></tr><tr><td>Project API token</td><td>Authenticates requests from your iOS app to Logister.</td></tr><tr><td>Logister instance base URL</td><td>Builds the <code>/api/v1/ingest_events</code> endpoint used by the SDK.</td></tr><tr><td>Xcode or Swift Package Manager</td><td>Resolves the public Git package and the <code>Logister</code> library product.</td></tr></tbody></table></section>
+            <section id="install" class="section"><p class="eyebrow">Install</p><h2>Add the package from GitHub with Swift Package Manager.</h2><p>The current public iOS package version is <code>0.1.0</code>. In Xcode, add the package URL <code>https://github.com/taimoorq/logister-ios.git</code>, choose the version rule your app prefers, and add the <code>Logister</code> product to your app target.</p><div class="code-block"><div class="code-head"><span class="code-language">swift</span><button class="copy-button" data-copy-button data-copy-target="#ios-package">Copy</button></div><pre><code id="ios-package">dependencies: [
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.0")
+]</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">swift</span><button class="copy-button" data-copy-button data-copy-target="#ios-product">Copy</button></div><pre><code id="ios-product">.product(name: "Logister", package: "logister-ios")</code></pre></div><ul><li><a href="https://github.com/taimoorq/logister-ios">Use the Swift Package repository</a> for source, Package.swift, tests, and release metadata.</li><li><a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0">Open the v0.1.0 GitHub Release</a> for the current tagged package release.</li><li>Swift Package Manager resolves versions from Git tags, so there is no separate iOS package registry account or package page.</li></ul></section>
+            <section id="configure" class="section"><p class="eyebrow">Configure</p><h2>Create one client with app and release defaults.</h2><p>Use the app bundle ID as <code>service</code>, include the app version/build in <code>release</code>, and attach safe default context that helps investigation.</p><div class="code-block"><div class="code-head"><span class="code-language">swift</span><button class="copy-button" data-copy-button data-copy-target="#ios-client">Copy</button></div><pre><code id="ios-client">import Foundation
+import Logister
+
+let client = LogisterClient(
+    apiKey: "your-project-api-token",
+    baseURL: URL(string: "https://your-logister-host.example")!,
+    environment: "production",
+    release: "1.4.0+42",
+    service: Bundle.main.bundleIdentifier,
+    defaultContext: [
+        "app_version": .string("1.4.0"),
+        "build_number": .string("42"),
+        "device_model": .string("iPhone")
+    ]
+)</code></pre></div><p>Keep real project API tokens out of source control. Prefer configuration, build-time secrets, or another runtime source that matches your app's security model.</p></section>
+            <section id="events" class="section"><p class="eyebrow">Events</p><h2>Send errors, logs, metrics, and transactions with async Swift.</h2><div class="code-block"><div class="code-head"><span class="code-language">swift</span><button class="copy-button" data-copy-button data-copy-target="#ios-events">Copy</button></div><pre><code id="ios-events">try await client.captureMessage(
+    "Checkout opened",
+    options: LogisterEventOptions(
+        sessionID: "session-123",
+        context: ["screen_name": .string("Checkout")]
+    )
+)
+
+try await client.captureMetric("cart.item_count", value: 3, unit: "count")
+
+try await client.captureTransaction(
+    "screen.load",
+    durationMs: 142.7,
+    options: LogisterEventOptions(context: ["screen_name": .string("Checkout")])
+)
+
+do {
+    try await runCheckout()
+} catch {
+    try await client.captureException(error)
+}</code></pre></div><p>Captured errors include structured exception context and call stack symbols. Metric values should use stable names and units, and transactions should describe app work such as screen loads, local processing, sync jobs, or API calls.</p></section>
+            <section id="spans" class="section"><p class="eyebrow">Spans and check-ins</p><h2>Use spans for waterfalls and check-ins for recurring iOS work.</h2><div class="code-block"><div class="code-head"><span class="code-language">swift</span><button class="copy-button" data-copy-button data-copy-target="#ios-spans">Copy</button></div><pre><code id="ios-spans">try await client.captureSpan(
+    LogisterSpan(
+        traceID: "trace-123",
+        spanID: "span-456",
+        parentSpanID: "span-root",
+        name: "GET /checkout",
+        kind: "http",
+        status: "ok",
+        durationMs: 42.5,
+        context: ["screen_name": .string("Checkout")]
+    )
+)
+
+try await client.checkIn(
+    "daily-sync",
+    status: "ok",
+    options: LogisterEventOptions(
+        durationMs: 812.4,
+        context: ["expected_interval_seconds": .number(86_400)]
+    )
+)</code></pre></div><p>Use shared trace IDs when a screen action triggers multiple spans. Check-ins are useful for recurring sync, cleanup, cache refresh, background fetch, or other scheduled app work where a missed run should be visible.</p></section>
+            <section id="context" class="section"><p class="eyebrow">Mobile context</p><h2>Send safe iOS metadata that helps debugging without collecting secrets.</h2><table><thead><tr><th>Field</th><th>Recommended value</th><th>Why it helps</th></tr></thead><tbody><tr><td><code>platform</code></td><td><code>ios</code></td><td>Separates iOS telemetry from server and Android data.</td></tr><tr><td><code>service</code></td><td>Bundle ID</td><td>Identifies the app sending events.</td></tr><tr><td><code>release</code></td><td>App version plus build number</td><td>Supports release filters and regression review.</td></tr><tr><td><code>environment</code></td><td><code>production</code>, <code>staging</code>, or release channel</td><td>Filters telemetry by deployment channel.</td></tr><tr><td><code>session_id</code></td><td>App-generated session identifier</td><td>Connects related mobile events without sending raw user data.</td></tr><tr><td><code>screen_name</code></td><td>Stable screen or route name</td><td>Makes activity, transactions, and spans easier to scan.</td></tr><tr><td><code>ios_version</code></td><td>Major/minor OS version</td><td>Helps spot OS-version-specific failures.</td></tr><tr><td><code>device_model</code></td><td>Sanitized device family/model</td><td>Helps debug device-specific issues.</td></tr></tbody></table></section>
+            <section id="privacy" class="section"><p class="eyebrow">Privacy defaults</p><h2>Keep iOS instrumentation explicit.</h2><p>The iOS add-on starts with manual capture methods. Automatic crash breadcrumbs, screen timing, URLSession timing, retry, and offline-queue instrumentation should stay opt-in so each app can decide what data is collected, retained, and sent over the network.</p><ul><li>Do not send API tokens, authorization headers, cookies, payment data, medical data, or raw request/response bodies.</li><li>Prefer stable, low-cardinality values such as screen names, feature names, build metadata, status codes, and safe session IDs.</li><li>Use the app's privacy review before sending device identifiers, user identifiers, query text, or raw URLs.</li></ul></section>
+            <section id="verify" class="section"><p class="eyebrow">Verification</p><h2>Confirm one event from the app before widening instrumentation.</h2><div class="output-block"><div class="output-head"><span class="output-label">Checklist</span></div><pre><code>Swift Package Manager resolves the Logister product
+client can send one captureMessage call
+Activity page shows the iOS log event
+Inbox shows a test exception when captureException is called
+Insights can filter by environment, release, service, or screen_name
+Performance shows transactions or spans after timing events arrive</code></pre></div></section>
+            <section id="releases" class="section"><p class="eyebrow">Package releases</p><h2>iOS SDK releases are versioned separately from the Rails app.</h2><p>Swift Package Manager distribution resolves from the public Git repository and semantic version tags. The iOS release workflow verifies the package and creates the matching GitHub Release, so app teams can update through Xcode or SwiftPM when a new tag is available.</p><ul><li>SDK source and SwiftPM URL: <a href="https://github.com/taimoorq/logister-ios">github.com/taimoorq/logister-ios</a></li><li>Current release: <a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0">v0.1.0</a></li><li>Package product: <code>Logister</code></li></ul></section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

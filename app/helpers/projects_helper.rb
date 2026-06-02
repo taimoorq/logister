@@ -60,8 +60,8 @@ module ProjectsHelper
     return docs_site_url(:python_integration) if project&.integration_python?
     return docs_site_url(:http_api) if project&.integration_http_api?
     return docs_site_url(:http_api) if project&.integration_cloudflare_pages?
-    return docs_site_url(:http_api) if project&.integration_android?
-    return docs_site_url(:http_api) if project&.integration_ios?
+    return "https://github.com/taimoorq/logister-android" if project&.integration_android?
+    return "https://github.com/taimoorq/logister-ios" if project&.integration_ios?
 
     docs_site_url(:ruby_integration)
   end
@@ -73,8 +73,8 @@ module ProjectsHelper
     return "Python integration docs" if project&.integration_python?
     return "HTTP API docs" if project&.integration_http_api?
     return "HTTP API docs" if project&.integration_cloudflare_pages?
-    return "HTTP API docs" if project&.integration_android?
-    return "HTTP API docs" if project&.integration_ios?
+    return "Android SDK docs" if project&.integration_android?
+    return "iOS SDK docs" if project&.integration_ios?
 
     "Ruby integration docs"
   end

@@ -8,7 +8,7 @@ This plan tracks the next Logister product expansion: Cloudflare Pages site metr
 | --- | --- | --- |
 | Rails hub | `logister/` | Stores projects, API keys, raw telemetry, imports, dashboards, Insights, settings, and docs. |
 | Android SDK | `logister-android/` | Android package add-on, published through the Android package ecosystem. Build all Android SDK work here. |
-| iOS SDK | `logister-ios/` | iOS package add-on, published through Swift Package Manager first. Build all iOS SDK work here. |
+| iOS SDK | `logister-ios/` | iOS package add-on, published through Swift Package Manager tags. Build all iOS SDK work here. |
 | Cloudflare Pages import | `logister/` | Pull-based importer and project settings live in the Rails app; no separate SDK repo is needed. |
 
 Cloudflare Pages does not need a separate `logister-cloudflare-pages` repo for the first milestone. The integration is a Rails-side pull importer that talks to Cloudflare APIs and writes normalized Logister events. There is no user-installed package to publish yet. If we later add a Pages Function, Worker, or deployment-hook helper that users install in a Cloudflare project, the appropriate package manager would be npm because Cloudflare Pages/Workers tooling is JavaScript and TypeScript centered.
@@ -54,7 +54,7 @@ Android should have two data paths:
 - Push telemetry from apps through `logister-android`.
 - Optional pull imports from Google Play Developer Reporting API for aggregate Android vitals.
 
-`logister-android` should be built in `logister-android/` and published as an Android library through the normal Gradle/Maven path. The Android SDK should use the existing Logister ingest envelope so the Rails app remains the system of record.
+`logister-android` is built in `logister-android/` and published as an Android library through Maven Central with coordinates `org.logister:logister-android`. The Android SDK uses the existing Logister ingest envelope so the Rails app remains the system of record.
 
 SDK targets:
 
@@ -77,6 +77,8 @@ Initial Rails work:
 
 References:
 
+- https://github.com/taimoorq/logister-android
+- https://central.sonatype.com/artifact/org.logister/logister-android
 - https://developer.android.com/build/publish-library/upload-library
 - https://developers.google.com/play/developer/reporting/reference/rest
 
@@ -87,7 +89,7 @@ iOS should have two data paths:
 - Push telemetry from apps through `logister-ios`.
 - Optional pull imports from App Store Connect Analytics Reports API for aggregate store and app analytics.
 
-`logister-ios` should be built in `logister-ios/` and published through Swift Package Manager first. CocoaPods can be added later only if there is real demand.
+`logister-ios` is built in `logister-ios/` and published through Swift Package Manager from the public GitHub repository and semantic version tags. CocoaPods can be added later only if there is real demand.
 
 SDK targets:
 
@@ -111,6 +113,7 @@ Initial Rails work:
 
 References:
 
+- https://github.com/taimoorq/logister-ios
 - https://docs.swift.org/swiftpm/documentation/packagemanagerdocs/introducingpackages/
 - https://developer.apple.com/help/app-store-connect-analytics/overview/analytics-reports-api
 
@@ -173,8 +176,8 @@ Current package-secret posture:
 - `logister-python`: PyPI trusted publishing; no PyPI token repository secret is needed.
 - `logister-ruby`: RubyGems trusted publishing; no RubyGems API key repository secret is needed.
 - `logister-dotnet`: NuGet publishing uses `NUGET_API_KEY`; verified with `gh secret list -R taimoorq/logister-dotnet`.
-- `logister-android`: Maven Central publishing uses the verified `org.logister` namespace and GitHub Actions secrets for Central Portal tokens plus the in-memory GPG signing key.
-- `logister-ios`: CI-only for now; Swift Package Manager distribution from a public repo does not need a package registry secret.
+- `logister-android`: Maven Central publishing uses the verified `org.logister` namespace and GitHub Actions secrets for Central Portal tokens plus the in-memory GPG signing key. The tag workflow uploads a signed deployment to Sonatype Central Portal; the maintainer publishes it in Central Portal before Maven Central sync. Version `0.1.0` is public at `org.logister:logister-android`.
+- `logister-ios`: Swift Package Manager distribution from a public repo does not need a package registry secret. The tag workflow verifies the package and creates the matching GitHub Release.
 
 When a release workflow does need a credential, set it through the GitHub CLI
 instead of source control:
@@ -191,6 +194,7 @@ The first milestone is complete when:
 - New projects can be created as Cloudflare Pages, Android, or iOS projects.
 - Setup and empty-state copy tells users where the telemetry will come from.
 - `logister-android/` and `logister-ios/` contain starter README docs that identify them as the canonical package repos.
+- `docs/mobile-add-ons.md` explains package manager install paths, release mechanics, and how to use mobile telemetry effectively.
 - No importer credentials or package publishing secrets are stored in source control.
 
 ## Progress
@@ -209,3 +213,5 @@ The first milestone is complete when:
 - Added public-repo hygiene for the Android and iOS SDK repos: MIT licenses, security policies, CI workflows, local secret scans, stricter ignores for signing/credential files, and generic README guidance.
 - Added a Kotlin facade and Kotlin tests for `logister-android` so Kotlin apps can configure the SDK with builder lambdas while Java apps can still use the same underlying client classes.
 - Added Maven Central publishing configuration and a tag-based Android release workflow for `org.logister:logister-android`, using GitHub Actions secrets for Central Portal credentials and GPG signing.
+- Made the Android and iOS repositories public, protected `main`, restricted PR creation to collaborators, enabled secret scanning/push protection, and restricted GitHub Actions permissions.
+- Published the iOS Swift Package tag `v0.1.0` and verified the Android `v0.1.0` release workflow publishes successfully to Maven Central after the Central Portal token was corrected.

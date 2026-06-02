@@ -86,7 +86,7 @@ This static export mirrors the current public docs pages from the main Logister 
 - Use cases and comparisons
 - Self-hosted error monitoring
 - Sentry, Bugsnag, and Bugzilla alternatives
-- Rails, Python, .NET, JavaScript, and CFML error monitoring use cases
+- Rails, Python, .NET, JavaScript, Android, iOS, and CFML error monitoring use cases
 - Docker registry self-hosting
 - Error assignment and team triage
 - Amazon SES alert emails and digests
@@ -102,6 +102,8 @@ This static export mirrors the current public docs pages from the main Logister 
 - .NET integration
 - Python integration
 - JavaScript integration
+- Android integration with Maven Central coordinates `org.logister:logister-android`
+- iOS integration with Swift Package Manager URL `https://github.com/taimoorq/logister-ios.git`
 - CFML integration
 - `llms.txt` and `llms-full.txt`
 

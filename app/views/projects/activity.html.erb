@@ -160,19 +160,17 @@
           Start with the
           <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_android? %>
-          No custom events yet. The Android SDK belongs in
-          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-android</code>;
-          until the package is ready, send Android app telemetry directly through the HTTP API with
+          No custom events yet. Install
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">org.logister:logister-android</code>
+          and send Android app telemetry with
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">platform: "android"</code>
-          context. Start with the
-          <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
+          context. Start with manual errors, logs, metrics, transactions, spans, and check-ins.
         <% elsif @project.integration_ios? %>
-          No custom events yet. The iOS SDK belongs in
-          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-ios</code>;
-          until the Swift package is ready, send iOS app telemetry directly through the HTTP API with
+          No custom events yet. Add
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">https://github.com/taimoorq/logister-ios.git</code>
+          through Swift Package Manager and send iOS app telemetry with
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">platform: "ios"</code>
-          context. Start with the
-          <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
+          context. Start with manual errors, logs, metrics, transactions, spans, and check-ins.
         <% elsif @project.integration_http_api? %>
           No custom events yet. POST
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">metric</code>,

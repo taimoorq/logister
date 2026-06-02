@@ -95,7 +95,7 @@ Track these public-page signals:
 - Search Console query growth for the target phrases in this plan.
 - GitHub stars, forks, release views, release downloads, issue activity, and discussions from new self-hosters.
 - GHCR and Docker Hub image pulls where package visibility and registry reporting make that available.
-- SDK package installs and package page traffic for RubyGems, PyPI, npm, and NuGet.
+- SDK package installs and package page traffic for RubyGems, PyPI, npm, NuGet, Maven Central, and Swift Package Manager release tags.
 
 Useful paths to compare after each release:
 
@@ -143,6 +143,8 @@ Keep language package surfaces aligned with the app and docs:
 - Python package: PyPI page at https://pypi.org/project/logister-python/, README, install snippet, supported framework notes.
 - JavaScript package: npm page at https://www.npmjs.com/package/logister-js, README, browser and Node notes.
 - .NET packages: NuGet pages at https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore, README, ASP.NET Core notes.
+- Android package: Maven Central page at https://central.sonatype.com/artifact/org.logister/logister-android, README, Gradle install snippet, Kotlin usage notes.
+- iOS package: Swift Package Manager repository at https://github.com/taimoorq/logister-ios.git and GitHub release at https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0, README, Xcode/Package.swift install snippet, Swift usage notes.
 
 For each package, verify the description says it reports errors or events to Logister and links back to the public docs.
 

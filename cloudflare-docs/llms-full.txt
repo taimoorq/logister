@@ -39,10 +39,12 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - .NET and ASP.NET Core apps use `logister-dotnet`: https://github.com/taimoorq/logister-dotnet with NuGet packages https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore.
 - Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
 - JavaScript and TypeScript apps use `logister-js`: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
+- Android apps use `logister-android`: https://github.com/taimoorq/logister-android with Maven Central coordinates `org.logister:logister-android:0.1.0` at https://central.sonatype.com/artifact/org.logister/logister-android
+- iOS apps use the `Logister` Swift package from https://github.com/taimoorq/logister-ios.git with release tags such as https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
 - Unsupported runtimes, scripts, workers, and custom clients can use the Manual / HTTP API project type and send JSON directly.
 
-All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, and CFML direct HTTP payloads.
+All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, Android app/release/device metadata, iOS app/release/device metadata, and CFML direct HTTP payloads.
 
 Public ingestion endpoints `/api/v1/ingest_events` and `/api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint by default. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Rate-limited responses return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Self-hosters can tune the global defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides from project settings; project owners and shared project members cannot.
 
@@ -70,7 +72,7 @@ API tooling lives at https://docs.logister.org/api-reference/. The public OpenAP
 - Custom metric events use `event_type: "metric"` and the event message as the metric name. `metric:<name>` charts event count. `metric_value:<name>` charts average numeric `context.value`. The reserved `db.query` metric powers database query count, average duration, and P95 duration.
 - Span kinds accepted by the main app include `app`, `browser`, `cache`, `db`, `http`, `internal`, `queue`, `render`, `resource`, and `server`. Root `server` and `browser` spans power request load views.
 - Common reporting fields include `environment`, `release`, `service`, `trace_id`, `request_id`, `session_id`, `user_id`, `transaction_name`, `duration_ms`, `value`, `unit`, `tags`, request context, exception context, check-in slug/status, and expected check-in interval.
-- The metrics reference includes a matrix for the main app plus Ruby, .NET, Python, JavaScript, and CFML/HTTP support across errors, logs, custom metrics, DB query timing, transactions, spans, check-ins, environment/release, trace/request correlation, session/user context, and custom dimensions.
+- The metrics reference includes a matrix for the main app plus Ruby, .NET, Python, JavaScript, Android, iOS, and CFML/HTTP support across errors, logs, custom metrics, DB query timing, transactions, spans, check-ins, environment/release, trace/request correlation, session/user context, and custom dimensions.
 - Good context includes route names, HTTP method, status code, deploy release, environment, service, job name, queue name, tenant tier, region, feature flag, sanitized request identifiers, trace/request/session/user IDs, and runtime timings. Avoid secrets, tokens, authorization headers, cookies, payment data, medical data, raw email bodies, and request or response bodies unless deliberately reviewed.
 
 ## Self-Hosted Stack
@@ -111,7 +113,7 @@ API tooling lives at https://docs.logister.org/api-reference/. The public OpenAP
 - 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM discovery plan: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-discovery-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
-- Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, package pages, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
+- Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, RubyGems, NuGet, PyPI, npm, Maven Central, Swift Package Manager tags, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
 
 ## License And Brand
 
@@ -151,5 +153,9 @@ API tooling lives at https://docs.logister.org/api-reference/. The public OpenAP
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
+- Android integration: https://docs.logister.org/integrations/android/
+- iOS integration: https://docs.logister.org/integrations/ios/
 - CFML integration: https://docs.logister.org/integrations/cfml/
+- Android Maven Central package: https://central.sonatype.com/artifact/org.logister/logister-android
+- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 - Short AI map: https://docs.logister.org/llms.txt

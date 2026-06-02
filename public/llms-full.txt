@@ -22,10 +22,12 @@ The primary Logister deployment model is self-hosting. The public hosted app at 
 - .NET and ASP.NET Core apps use `logister-dotnet`: https://github.com/taimoorq/logister-dotnet with NuGet packages https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore.
 - Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
 - JavaScript and TypeScript apps use `logister-js`: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
+- Android apps use `logister-android`: https://github.com/taimoorq/logister-android with Maven Central coordinates `org.logister:logister-android:0.1.0` at https://central.sonatype.com/artifact/org.logister/logister-android
+- iOS apps use the `Logister` Swift package from https://github.com/taimoorq/logister-ios.git with release tags such as https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
 - Unsupported runtimes can use the HTTP API directly.
 
-All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, and CFML direct HTTP payloads.
+All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, Android app/release/device metadata, iOS app/release/device metadata, and CFML direct HTTP payloads.
 
 Public ingestion endpoints `/api/v1/ingest_events` and `/api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint by default. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Rate-limited responses return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Self-hosters can tune the global defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides from project settings; project owners and shared project members cannot.
 
@@ -72,7 +74,7 @@ Public ingestion endpoints `/api/v1/ingest_events` and `/api/v1/check_ins` accep
 - 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM discovery plan: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-discovery-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
-- Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, RubyGems, NuGet, PyPI, npm package pages, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
+- Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, RubyGems, NuGet, PyPI, npm, Maven Central, Swift Package Manager tags, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
 
 ## License And Brand
 
@@ -93,6 +95,8 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - Python error monitoring: Logister fits Python teams using FastAPI, Django, Flask, Celery, workers, schedulers, and Python logging.
 - .NET error monitoring: Logister fits ASP.NET Core and C# teams that want request context, transactions, custom metrics, and check-ins in one triage app.
 - JavaScript error monitoring: Logister fits JavaScript and TypeScript teams using Node, Express, workers, console capture, and structured logs.
+- Android error monitoring: Logister fits Android teams using Kotlin or Java apps that want mobile errors, logs, metrics, transactions, spans, check-ins, release context, session context, and safe device metadata.
+- iOS error monitoring: Logister fits iOS teams using Swift apps that want mobile errors, logs, metrics, transactions, spans, check-ins, release context, session context, and safe device metadata.
 - CFML error monitoring: Logister fits Lucee and Adobe ColdFusion teams sending structured payloads over HTTP.
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting: Logister fits operators who want versioned Docker releases, separate web and worker containers, PostgreSQL, Redis, SMTP, optional S3-compatible archive storage, and optional ClickHouse.
 - Error assignment and team triage: Logister fits teams that want grouped production errors to become owned work with assignee filters and status workflows.
@@ -123,6 +127,10 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
+- Android integration: https://docs.logister.org/integrations/android/
+- iOS integration: https://docs.logister.org/integrations/ios/
 - CFML integration: https://docs.logister.org/integrations/cfml/
+- Android Maven Central package: https://central.sonatype.com/artifact/org.logister/logister-android
+- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 - Short AI map: https://logister.org/llms.txt
 - Docs AI map: https://docs.logister.org/llms.txt

@@ -68,6 +68,8 @@ Current client coverage after the 2026-05-22 parity pass:
 | .NET | `Logister` / `Logister.AspNetCore` v0.1.3 | Adds manual span capture plus opt-in ASP.NET Core request spans; check-ins include top-level release plus interval, trace ID, and request ID coverage. |
 | Python | `logister-python` v0.2.2 | Adds manual span capture plus opt-in FastAPI, Django, and Flask request spans; metrics accept unit, level, and fingerprint while preserving structured metric context. |
 | JavaScript | `logister-js` v0.2.3 | Adds manual spans, opt-in Express request spans, and browser page-load/resource spans; capture calls accept per-event routing fields. |
+| Android | `logister-android` v0.1.0 | Kotlin-first Android SDK with Java interop; supports manual errors, logs, metrics, transactions, spans, and check-ins with Android package/release/device context. |
+| iOS | `logister-ios` v0.1.0 | Swift Package Manager SDK; supports manual errors, logs, metrics, transactions, spans, and check-ins with bundle/release/device context. |
 
 ## Logister Self-Monitoring
 
