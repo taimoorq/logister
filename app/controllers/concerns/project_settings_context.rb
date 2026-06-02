@@ -13,6 +13,10 @@ module ProjectSettingsContext
                         .select(:id, :uuid, :project_id, :name, :last_used_at, :revoked_at, :created_at)
                         .order(created_at: :desc)
     @notification_preference ||= ProjectNotificationPreference.for(user: current_user, project: @project)
+    @cloudflare_integration_setting ||= ProjectIntegrationSetting.for(
+      project: @project,
+      provider: ProjectIntegrationSetting::PROVIDERS[:cloudflare_pages]
+    ) if @project.integration_cloudflare_pages?
     @assignment_summary = ProjectAssignmentSummary.new(@project)
     @retention_policy ||= ProjectRetentionPolicy.for(project: @project) if @project.owned_by?(current_user)
     @public_api_rate_limit_defaults = {

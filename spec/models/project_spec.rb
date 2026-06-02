@@ -59,6 +59,15 @@ RSpec.describe Project, type: :model do
       expect(project.integration_label).to eq("Ruby gem")
     end
 
+    it "does not allow integration_kind to change after creation" do
+      project = Project.create!(user: users(:one), name: "Locked Integration App", integration_kind: "android")
+
+      project.integration_kind = "ios"
+
+      expect(project).not_to be_valid
+      expect(project.errors[:integration_kind]).to include("cannot be changed after project creation")
+    end
+
     it "allows blank project-level public API rate limit overrides" do
       project = Project.new(user: users(:one), name: "Rate Limit Defaults")
       expect(project).to be_valid
@@ -174,6 +183,9 @@ RSpec.describe Project, type: :model do
     it "orders Manual / HTTP API first and CFML last" do
       expect(described_class.integration_options).to eq([
         [ "Manual / HTTP API (custom client)", "http_api" ],
+        [ "Cloudflare Pages", "cloudflare_pages" ],
+        [ "Android app (logister-android)", "android" ],
+        [ "iOS app (logister-ios)", "ios" ],
         [ "Ruby gem", "ruby" ],
         [ ".NET / ASP.NET Core (logister-dotnet)", "dotnet" ],
         [ "JavaScript / TypeScript (logister-js)", "javascript" ],

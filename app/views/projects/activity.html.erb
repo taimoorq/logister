@@ -155,6 +155,24 @@
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.checkIn()</code>
           from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-js</code>. For JavaScript and TypeScript services, the usual starting point is request errors plus operational logging: use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrumentConsole()</code> if you want standard console events to show up automatically, and include release, route, browser, and request context when you send events so issues can be grouped with more than a raw stack trace. You can also start with the
           <%= link_to "JavaScript integration docs", docs_site_url(:javascript_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
+        <% elsif @project.integration_cloudflare_pages? %>
+          No custom events yet. Send Cloudflare Pages deployment or traffic metrics directly through the HTTP API for now. When the Rails importer is added, this project will pull Web Analytics and deployment health from Cloudflare.
+          Start with the
+          <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
+        <% elsif @project.integration_android? %>
+          No custom events yet. The Android SDK belongs in
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-android</code>;
+          until the package is ready, send Android app telemetry directly through the HTTP API with
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">platform: "android"</code>
+          context. Start with the
+          <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
+        <% elsif @project.integration_ios? %>
+          No custom events yet. The iOS SDK belongs in
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-ios</code>;
+          until the Swift package is ready, send iOS app telemetry directly through the HTTP API with
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">platform: "ios"</code>
+          context. Start with the
+          <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_http_api? %>
           No custom events yet. POST
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">metric</code>,

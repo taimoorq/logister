@@ -11,7 +11,7 @@
       <h2 class="text-lg font-bold text-slate-900">Edit project</h2>
       <%= tour_help_button %>
     </div>
-    <p class="text-slate-600 text-sm mb-6">Update the project name, description, or integration type.</p>
+    <p class="text-slate-600 text-sm mb-6">Update the project name or description. Project type is locked after creation because collected telemetry is shaped for that integration.</p>
 
     <%= form_with model: @project, url: project_path(@project), method: :patch do |f| %>
       <div class="space-y-4">
@@ -25,7 +25,18 @@
           <%= f.text_area :description, rows: 4, class: "form-input" %>
         </div>
 
-        <%= render "integration_picker", f: f %>
+        <div>
+          <span class="form-label">Project type</span>
+          <div class="mt-2 flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <%= project_integration_icon(@project) %>
+            <div>
+              <strong class="block text-sm font-semibold text-slate-900"><%= @project.integration_label %></strong>
+              <p class="mt-1 text-sm text-slate-600">
+                Project type cannot be changed after telemetry starts flowing. Create a new project for a different add-on or data source.
+              </p>
+            </div>
+          </div>
+        </div>
 
         <% if @project.errors.any? %>
           <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">

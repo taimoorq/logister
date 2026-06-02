@@ -1020,17 +1020,10 @@ RSpec.describe "Projects", type: :request do
 
         expect(document.at_css("input[name='project[slug]']")).to be_nil
         expect(document.at_css("select[name='project[integration_kind]']")).to be_nil
-        expect(document.css(".integration-choice-panel").size).to eq(Project.integration_options.size)
-        expect(document.css(".integration-choice-title").map(&:text)).to eq([
-          "Manual / HTTP API",
-          "Ruby gem",
-          ".NET / ASP.NET Core",
-          "JavaScript / TypeScript",
-          "Python",
-          "CFML"
-        ])
-        expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq(projects(:one).integration_kind)
-        expect(response.body.index('name="project[description]"')).to be < response.body.index("integration-picker")
+        expect(document.at_css("input[name='project[integration_kind]']")).to be_nil
+        expect(document.css(".integration-choice-panel")).to be_empty
+        expect(response.body).to include("Project type cannot be changed after telemetry starts flowing")
+        expect(response.body).to include(projects(:one).integration_label)
       end
 
       it "returns 404 for project user cannot access" do
@@ -1068,7 +1061,7 @@ RSpec.describe "Projects", type: :request do
         expect(project.reload.name).to eq("Renamed App")
         expect(project.slug).to eq(original_slug)
         expect(project.description).to eq("New desc")
-        expect(project.integration_kind).to eq("http_api")
+        expect(project.integration_kind).to eq("ruby")
       end
 
       it "returns 404 for project user cannot access" do
@@ -1107,6 +1100,9 @@ RSpec.describe "Projects", type: :request do
       expect(document.at_css("select[name='project[integration_kind]']")).to be_nil
       expect(document.css(".integration-choice-title").map(&:text)).to eq([
         "Manual / HTTP API",
+        "Cloudflare Pages",
+        "Android app",
+        "iOS app",
         "Ruby gem",
         ".NET / ASP.NET Core",
         "JavaScript / TypeScript",
@@ -1119,6 +1115,9 @@ RSpec.describe "Projects", type: :request do
         "CFML",
         "JavaScript / TypeScript",
         "Python",
+        "Cloudflare Pages",
+        "Android app",
+        "iOS app",
         "Manual / HTTP API"
       )
       expect(document.css("[data-tg-group='project-new']").map { |node| node["data-tg-title"] }).to eq([

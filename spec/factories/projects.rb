@@ -20,6 +20,18 @@ FactoryBot.define do
       integration_kind { "dotnet" }
     end
 
+    trait :cloudflare_pages do
+      integration_kind { "cloudflare_pages" }
+    end
+
+    trait :android do
+      integration_kind { "android" }
+    end
+
+    trait :ios do
+      integration_kind { "ios" }
+    end
+
     trait :javascript do
       integration_kind { "javascript" }
     end

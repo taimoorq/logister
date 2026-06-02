@@ -62,7 +62,7 @@ class ProjectsController < ApplicationController
   end
 
   def create
-    @project = current_user.projects.new(project_params)
+    @project = current_user.projects.new(project_create_params)
     if @project.save
       redirect_to settings_project_path(@project, anchor: "integration-guide"),
                   notice: "Project created. Follow the #{@project.integration_label} setup guide to start ingesting events."
@@ -75,7 +75,7 @@ class ProjectsController < ApplicationController
   end
 
   def update
-    if @project.update(project_params)
+    if @project.update(project_update_params)
       redirect_to settings_project_path(@project), notice: "Project updated."
     else
       render :edit, status: :unprocessable_content
@@ -165,8 +165,12 @@ class ProjectsController < ApplicationController
     (request.query_parameters.keys & LEGACY_INBOX_PARAMS).any?
   end
 
-  def project_params
+  def project_create_params
     params.require(:project).permit(:name, :description, :integration_kind)
+  end
+
+  def project_update_params
+    params.require(:project).permit(:name, :description)
   end
 
   def filtered_projects(scope, filter)

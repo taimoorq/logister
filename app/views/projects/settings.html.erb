@@ -126,6 +126,89 @@
         </turbo-frame>
       </article>
 
+      <% if @project.integration_cloudflare_pages? %>
+        <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+                 id="platform-integration">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 mb-2">Cloudflare Pages connection</h2>
+              <p class="text-slate-600 text-sm">
+                Store the Pages project identifiers Logister will use when the Cloudflare importer pulls Web Analytics and deployment health.
+              </p>
+            </div>
+            <% if @cloudflare_integration_setting&.configured? %>
+              <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">Configured</span>
+            <% else %>
+              <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">Draft</span>
+            <% end %>
+          </div>
+
+          <%= form_with model: @cloudflare_integration_setting,
+                        url: project_integration_setting_path(@project),
+                        method: :patch,
+                        class: "mt-5 space-y-5" do |f| %>
+            <%= f.hidden_field :provider, value: ProjectIntegrationSetting::PROVIDERS[:cloudflare_pages] %>
+
+            <% if @cloudflare_integration_setting.errors.any? %>
+              <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                <%= @cloudflare_integration_setting.errors.full_messages.to_sentence %>
+              </div>
+            <% end %>
+
+            <label class="flex items-start gap-3">
+              <%= f.check_box :enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Enable Cloudflare imports</span>
+                <span class="block text-sm text-slate-600">Importer jobs will use this record once the Cloudflare fetcher is implemented.</span>
+              </span>
+            </label>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <%= f.label :account_id, "Cloudflare account ID", class: "form-label" %>
+                <%= f.text_field :account_id,
+                                 placeholder: "a1b2c3d4e5f6",
+                                 class: "form-input" %>
+              </div>
+              <div>
+                <%= f.label :external_project_name, "Pages project name", class: "form-label" %>
+                <%= f.text_field :external_project_name,
+                                 placeholder: "marketing-site",
+                                 class: "form-input" %>
+              </div>
+              <div>
+                <%= f.label :external_project_id, "Pages project ID", class: "form-label" %>
+                <%= f.text_field :external_project_id,
+                                 placeholder: "optional",
+                                 class: "form-input" %>
+              </div>
+              <div>
+                <%= f.label :credential_reference, "Credential reference", class: "form-label" %>
+                <%= f.text_field :credential_reference,
+                                 placeholder: "CLOUDFLARE_API_TOKEN",
+                                 class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Reference an environment secret or external secret key. Do not paste raw Cloudflare tokens here.</p>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h3 class="text-sm font-semibold text-slate-900 mb-2">Importer target</h3>
+              <p class="text-sm text-slate-600">
+                The first Cloudflare importer will record page-view and visitor metrics, top paths, deployment status, build duration, branch, and failed deployment logs into this project.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="text-xs text-slate-500">
+                Last imported:
+                <span class="font-semibold text-slate-700"><%= @cloudflare_integration_setting.last_imported_at.present? ? local_time_tag(@cloudflare_integration_setting.last_imported_at, format: :long) : "Never" %></span>
+              </p>
+              <%= f.submit "Save Cloudflare settings", class: "btn-primary" %>
+            </div>
+          <% end %>
+        </article>
+      <% end %>
+
       <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
                <%= tag.attributes(data: product_tour_step_data(tour_group, :access)) %>>
         <h2 class="text-base font-bold text-slate-900 mb-3">Project access</h2>
@@ -488,6 +571,144 @@ const client = new LogisterClient({
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
+      <% elsif @project.integration_cloudflare_pages? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Use this project for a single Cloudflare Pages site or a tightly related group of preview and production deployments.</li>
+              <li>Enable Cloudflare Web Analytics on the Pages project so traffic and visitor metrics are available from Cloudflare.</li>
+              <li>Track production and preview deployments with context such as branch, commit hash, deployment ID, domain, and Pages project name.</li>
+              <li>When the Rails importer is added, connect a Cloudflare API token from project settings instead of committing credentials to source control.</li>
+              <li>Until the importer exists, use direct HTTP metric and log events for deployment health, build duration, and site-specific counters.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Starter metric shape</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>{
+  "event": {
+    "event_type": "metric",
+    "message": "cloudflare.deployment_build_ms",
+    "context": {
+      "platform": "cloudflare_pages",
+      "service": "marketing-site",
+      "environment": "production",
+      "deployment_id": "abc123",
+      "branch": "main",
+      "commit_sha": "f00ba4",
+      "value": 42831,
+      "unit": "ms"
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Planned importer</h3>
+            <p class="text-sm text-slate-600">
+              The Cloudflare Pages importer will live in the Rails app and pull Web Analytics, Pages deployment status, build duration, branch, domain, and failure data into this project as normalized metric and log events.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Until the dedicated Cloudflare Pages docs are published, use the
+            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
+            for direct telemetry payloads.
+          </p>
+        </div>
+      <% elsif @project.integration_android? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Build the Android package in <code>logister-android/</code> and publish it through the normal Gradle/Maven flow when it is ready.</li>
+              <li>Start with manual errors, logs, metrics, transactions, spans, and check-ins using the existing Logister ingest envelope.</li>
+              <li>Add app metadata such as package name, version name, version code, build type, Android version, API level, device model, locale, and session ID.</li>
+              <li>Keep crash and network instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
+              <li>Use Google Play vitals imports later for aggregate crash rate, ANR rate, slow starts, slow rendering, and related platform metrics.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Starter metric shape</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>{
+  "event": {
+    "event_type": "transaction",
+    "message": "screen.load",
+    "duration_ms": 184.2,
+    "context": {
+      "platform": "android",
+      "service": "com.example.app",
+      "release": "1.4.0+42",
+      "screen_name": "Checkout",
+      "android_api_level": 35,
+      "device_model": "Pixel 8",
+      "session_id": "session-123"
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
+            <p class="text-sm text-slate-600">
+              Android SDK source, Gradle build files, examples, tests, and release notes belong in <code>logister-android/</code>. The Rails app should only store project setup, API keys, platform import settings, and received telemetry.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Until the package docs are published, use the
+            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
+            for the ingest payload contract.
+          </p>
+        </div>
+      <% elsif @project.integration_ios? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Build the iOS package in <code>logister-ios/</code> and publish it through Swift Package Manager first.</li>
+              <li>Start with manual errors, logs, metrics, transactions, spans, and check-ins using the existing Logister ingest envelope.</li>
+              <li>Add app metadata such as bundle ID, app version, build number, iOS version, device model, locale, and session ID.</li>
+              <li>Keep crash, URLSession timing, and automatic screen instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
+              <li>Use App Store Connect imports later for aggregate downloads, engagement, usage, retention, and crash trend data.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Starter metric shape</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>{
+  "event": {
+    "event_type": "transaction",
+    "message": "screen.load",
+    "duration_ms": 142.7,
+    "context": {
+      "platform": "ios",
+      "service": "com.example.app",
+      "release": "1.4.0+42",
+      "screen_name": "Checkout",
+      "ios_version": "18.5",
+      "device_model": "iPhone",
+      "session_id": "session-123"
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
+            <p class="text-sm text-slate-600">
+              iOS SDK source, <code>Package.swift</code>, examples, tests, and release notes belong in <code>logister-ios/</code>. The Rails app should only store project setup, API keys, platform import settings, and received telemetry.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Until the package docs are published, use the
+            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
+            for the ingest payload contract.
+          </p>
+        </div>
       <% elsif @project.integration_http_api? %>
         <div class="space-y-4">
           <div>
@@ -591,6 +812,12 @@ end</code></pre>
           Use <code>Logister.AspNetCore</code> for ASP.NET Core middleware, or the base <code>Logister</code> client from workers and services.
         <% elsif @project.integration_javascript? %>
           Use the <code>logister-js</code> client directly, or add the Express middleware if your JavaScript app runs on Express.
+        <% elsif @project.integration_cloudflare_pages? %>
+          Use direct HTTP telemetry for deployment signals today; the planned Rails importer will pull Cloudflare Pages and Web Analytics metrics.
+        <% elsif @project.integration_android? %>
+          Use direct HTTP telemetry today; the Android SDK will be built in <code>logister-android/</code>.
+        <% elsif @project.integration_ios? %>
+          Use direct HTTP telemetry today; the iOS SDK will be built in <code>logister-ios/</code>.
         <% elsif @project.integration_http_api? %>
           Send JSON directly to the HTTP API from any runtime, script, worker, or custom client.
         <% else %>

@@ -71,6 +71,7 @@ Rails.application.routes.draw do
     end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
+    resource :integration_setting, only: [ :update ], controller: "project_integration_settings", as: :integration_setting
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
     resource :rate_limit, only: [ :update ], controller: "project_rate_limits", as: :rate_limit

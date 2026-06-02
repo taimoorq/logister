@@ -97,6 +97,27 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-external\z})
       expect(fragment.at_css(".project-type-icon-http_api")["title"]).to eq("Manual / HTTP API")
     end
+
+    it "renders the Cloudflare Pages integration icon" do
+      project = Project.new(integration_kind: "cloudflare_pages")
+      fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(project))
+
+      expect(fragment.at_css(".project-type-icon-cloudflare_pages")).to be_present
+      expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-external\z})
+      expect(fragment.at_css(".project-type-icon-cloudflare_pages")["title"]).to eq("Cloudflare Pages")
+    end
+
+    it "renders the mobile app integration icons" do
+      android_fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(Project.new(integration_kind: "android")))
+      ios_fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(Project.new(integration_kind: "ios")))
+
+      expect(android_fragment.at_css(".project-type-icon-android")).to be_present
+      expect(android_fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-projects\z})
+      expect(android_fragment.at_css(".project-type-icon-android")["title"]).to eq("Android app")
+      expect(ios_fragment.at_css(".project-type-icon-ios")).to be_present
+      expect(ios_fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-projects\z})
+      expect(ios_fragment.at_css(".project-type-icon-ios")["title"]).to eq("iOS app")
+    end
   end
 
   describe "#parse_backtrace_frames" do

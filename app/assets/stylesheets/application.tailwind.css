@@ -472,6 +472,15 @@
   .project-type-icon-dotnet {
     @apply bg-violet-50 text-violet-800 ring-1 ring-violet-200;
   }
+  .project-type-icon-cloudflare_pages {
+    @apply bg-orange-50 text-orange-700 ring-1 ring-orange-200;
+  }
+  .project-type-icon-android {
+    @apply bg-lime-50 text-lime-800 ring-1 ring-lime-200;
+  }
+  .project-type-icon-ios {
+    @apply bg-zinc-50 text-zinc-800 ring-1 ring-zinc-200;
+  }
   .project-type-icon-http_api {
     @apply bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200;
   }

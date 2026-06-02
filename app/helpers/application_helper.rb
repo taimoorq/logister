@@ -35,6 +35,9 @@ module ApplicationHelper
     "javascript" => :project_javascript,
     "python" => :project_python,
     "dotnet" => :project_dotnet,
+    "cloudflare_pages" => :external,
+    "android" => :projects,
+    "ios" => :projects,
     "http_api" => :external
   }.freeze
 

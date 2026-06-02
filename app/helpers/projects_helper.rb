@@ -10,6 +10,21 @@ module ProjectsHelper
       badge: "NuGet",
       description: "ASP.NET Core apps, .NET workers, C# services, and custom metrics with logister-dotnet."
     },
+    "cloudflare_pages" => {
+      label: "Cloudflare Pages",
+      badge: "Importer",
+      description: "Pages deployments, Web Analytics, traffic rollups, build health, and domain-level site signals."
+    },
+    "android" => {
+      label: "Android app",
+      badge: "Gradle",
+      description: "Android app telemetry from logister-android, plus optional Google Play vitals imports."
+    },
+    "ios" => {
+      label: "iOS app",
+      badge: "SPM",
+      description: "iOS app telemetry from logister-ios, plus optional App Store Connect analytics imports."
+    },
     "cfml" => {
       label: "CFML",
       badge: "CFML",
@@ -44,6 +59,9 @@ module ProjectsHelper
     return docs_site_url(:javascript_integration) if project&.integration_javascript?
     return docs_site_url(:python_integration) if project&.integration_python?
     return docs_site_url(:http_api) if project&.integration_http_api?
+    return docs_site_url(:http_api) if project&.integration_cloudflare_pages?
+    return docs_site_url(:http_api) if project&.integration_android?
+    return docs_site_url(:http_api) if project&.integration_ios?
 
     docs_site_url(:ruby_integration)
   end
@@ -54,6 +72,9 @@ module ProjectsHelper
     return "JavaScript integration docs" if project&.integration_javascript?
     return "Python integration docs" if project&.integration_python?
     return "HTTP API docs" if project&.integration_http_api?
+    return "HTTP API docs" if project&.integration_cloudflare_pages?
+    return "HTTP API docs" if project&.integration_android?
+    return "HTTP API docs" if project&.integration_ios?
 
     "Ruby integration docs"
   end

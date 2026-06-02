@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_23_210500) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_01_223000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -164,7 +164,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_210500) do
     t.bigint "project_id", null: false
     t.datetime "updated_at", null: false
     t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index "project_id, ((context ->> 'deployment_id'::text)), occurred_at DESC", name: "idx_ingest_events_cf_pages_deployment_occurred", where: "(((context ->> 'platform'::text) = 'cloudflare_pages'::text) AND (COALESCE((context ->> 'deployment_id'::text), ''::text) <> ''::text))"
+    t.index "project_id, ((context ->> 'platform'::text)), occurred_at DESC", name: "idx_ingest_events_project_platform_occurred", where: "(COALESCE((context ->> 'platform'::text), ''::text) <> ''::text)"
     t.index "project_id, ((context ->> 'release'::text)), occurred_at DESC, id DESC", name: "idx_ingest_events_activity_release_cursor", where: "((event_type <> 0) AND (COALESCE((context ->> 'release'::text), ''::text) <> ''::text))"
+    t.index "project_id, ((context ->> 'service'::text)), occurred_at DESC", name: "idx_ingest_events_project_service_occurred", where: "(COALESCE((context ->> 'service'::text), ''::text) <> ''::text)"
     t.index "project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'production'::text), occurred_at DESC, id DESC", name: "idx_ingest_events_activity_env_cursor", where: "(event_type <> 0)"
     t.index "project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC", name: "idx_ingest_events_project_environment_occurred"
     t.index "project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC", name: "idx_ingest_events_project_release_occurred", where: "(COALESCE((context ->> 'release'::text), ''::text) <> ''::text)"
@@ -184,6 +187,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_210500) do
     t.index ["project_id", "updated_at"], name: "idx_ingest_events_project_updated_at", order: { updated_at: :desc }
     t.index ["project_id"], name: "index_ingest_events_on_project_id"
     t.index ["uuid"], name: "index_ingest_events_on_uuid", unique: true
+  end
+
+  create_table "project_integration_settings", force: :cascade do |t|
+    t.string "account_id"
+    t.datetime "created_at", null: false
+    t.string "credential_reference"
+    t.boolean "enabled", default: false, null: false
+    t.string "external_project_id"
+    t.string "external_project_name"
+    t.datetime "last_imported_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.bigint "project_id", null: false
+    t.string "provider", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "uuid", default: -> { "gen_random_uuid()" }, null: false
+    t.index ["enabled", "last_imported_at"], name: "idx_on_enabled_last_imported_at_ae810e9f88"
+    t.index ["project_id", "provider"], name: "index_project_integration_settings_on_project_id_and_provider", unique: true
+    t.index ["project_id"], name: "index_project_integration_settings_on_project_id"
+    t.index ["provider", "enabled", "last_imported_at"], name: "idx_project_integrations_provider_enabled_imported"
+    t.index ["provider", "enabled"], name: "index_project_integration_settings_on_provider_and_enabled"
+    t.index ["uuid"], name: "index_project_integration_settings_on_uuid", unique: true
   end
 
   create_table "project_memberships", force: :cascade do |t|
@@ -293,7 +317,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_210500) do
     t.index ["api_key_id"], name: "index_trace_spans_on_api_key_id"
     t.index ["context"], name: "index_trace_spans_on_context", opclass: :jsonb_path_ops, using: :gin
     t.index ["created_at", "id"], name: "idx_trace_spans_retention_created_id"
-    t.index ["project_id", "duration_ms", "started_at"], name: "idx_trace_spans_project_root_duration", order: { duration_ms: :desc, started_at: :desc }, where: "(((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)))"
+    t.index ["project_id", "duration_ms", "started_at"], name: "idx_trace_spans_project_root_duration", order: { duration_ms: :desc, started_at: :desc }, where: "(((kind)::text = ANY (ARRAY[('server'::character varying)::text, ('browser'::character varying)::text])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)))"
     t.index ["project_id", "kind", "started_at"], name: "index_trace_spans_on_project_id_and_kind_and_started_at", order: { started_at: :desc }
     t.index ["project_id", "started_at", "id"], name: "idx_trace_spans_project_retention"
     t.index ["project_id", "started_at"], name: "index_trace_spans_on_project_id_and_started_at", order: { started_at: :desc }
@@ -356,6 +380,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_210500) do
   add_foreign_key "ingest_events", "api_keys"
   add_foreign_key "ingest_events", "error_groups"
   add_foreign_key "ingest_events", "projects"
+  add_foreign_key "project_integration_settings", "projects"
   add_foreign_key "project_memberships", "projects"
   add_foreign_key "project_memberships", "users"
   add_foreign_key "project_notification_preferences", "projects"

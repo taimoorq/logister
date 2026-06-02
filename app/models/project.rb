@@ -15,6 +15,7 @@ class Project < ApplicationRecord
   has_many :check_in_monitors, dependent: :destroy
   has_many :project_memberships, dependent: :destroy
   has_many :project_notification_preferences, dependent: :destroy
+  has_many :integration_settings, class_name: "ProjectIntegrationSetting", dependent: :destroy
   has_many :email_notification_deliveries, dependent: :destroy
   has_one :retention_policy, class_name: "ProjectRetentionPolicy", dependent: :destroy
   has_many :telemetry_archives, dependent: :destroy
@@ -23,12 +24,17 @@ class Project < ApplicationRecord
   before_validation :ensure_uuid
   before_validation :normalize_slug
 
+  validate :integration_kind_cannot_change, on: :update
+
   enum :integration_kind, {
     ruby: "ruby",
     cfml: "cfml",
     javascript: "javascript",
     python: "python",
     dotnet: "dotnet",
+    cloudflare_pages: "cloudflare_pages",
+    android: "android",
+    ios: "ios",
     http_api: "http_api"
   }, default: :ruby, validate: true, prefix: :integration
 
@@ -111,6 +117,9 @@ class Project < ApplicationRecord
       "javascript" => "JavaScript / TypeScript",
       "python" => "Python",
       "dotnet" => ".NET / ASP.NET Core",
+      "cloudflare_pages" => "Cloudflare Pages",
+      "android" => "Android app",
+      "ios" => "iOS app",
       "http_api" => "Manual / HTTP API"
     }.fetch(integration_kind, integration_kind.to_s.humanize)
   end
@@ -130,6 +139,9 @@ class Project < ApplicationRecord
   def self.integration_options
     [
       [ "Manual / HTTP API (custom client)", "http_api" ],
+      [ "Cloudflare Pages", "cloudflare_pages" ],
+      [ "Android app (logister-android)", "android" ],
+      [ "iOS app (logister-ios)", "ios" ],
       [ "Ruby gem", "ruby" ],
       [ ".NET / ASP.NET Core (logister-dotnet)", "dotnet" ],
       [ "JavaScript / TypeScript (logister-js)", "javascript" ],
@@ -240,5 +252,11 @@ class Project < ApplicationRecord
   def normalize_slug
     base = slug.presence || name
     self.slug = base.to_s.parameterize
+  end
+
+  def integration_kind_cannot_change
+    return unless will_save_change_to_integration_kind?
+
+    errors.add(:integration_kind, "cannot be changed after project creation")
   end
 end
