@@ -404,7 +404,7 @@ RSpec.describe IngestEvent, type: :model do
         occurred_at_key: :occurred_at
       )
 
-      expect(relation.to_sql).to include("(id, occurred_at) IN")
+      expect(relation.to_sql).to include("\"ingest_events\".\"occurred_at\"")
       expect(relation).to contain_exactly(event)
     end
 

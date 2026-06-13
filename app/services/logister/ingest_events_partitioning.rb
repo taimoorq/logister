@@ -4,6 +4,18 @@ module Logister
   class IngestEventsPartitioning
     class CutoverError < StandardError; end
 
+    class SourceIngestEvent < ApplicationRecord
+      self.table_name = "ingest_events"
+      self.primary_key = :id
+    end
+    private_constant :SourceIngestEvent
+
+    class PartitionedIngestEvent < ApplicationRecord
+      self.table_name = "ingest_events_partitioned"
+      self.primary_key = :id
+    end
+    private_constant :PartitionedIngestEvent
+
     DEFAULT_BATCH_SIZE = 10_000
     DEFAULT_FUTURE_PARTITION_MONTHS = 12
     SOURCE_TABLE = "public.ingest_events"
@@ -318,6 +330,13 @@ module Logister
     end
 
     def month_counts(source_table:, shadow_table:)
+      return month_counts_source_to_shadow if source_table == SOURCE_TABLE && shadow_table == SHADOW_TABLE
+      return month_counts_backup_to_source if source_table == BACKUP_TABLE && shadow_table == SOURCE_TABLE
+
+      raise ArgumentError, "Unsupported partition validation pair: #{source_table.inspect}, #{shadow_table.inspect}"
+    end
+
+    def month_counts_source_to_shadow
       connection.select_all(<<~SQL.squish).to_a
         WITH source_counts AS (
           SELECT date_trunc('month', occurred_at) AS month,
@@ -325,7 +344,7 @@ module Logister
                  MIN(id)::bigint AS min_id,
                  MAX(id)::bigint AS max_id,
                  SUM(id)::numeric AS id_sum
-          FROM #{source_table}
+          FROM public.ingest_events
           GROUP BY 1
         ),
         shadow_counts AS (
@@ -334,7 +353,43 @@ module Logister
                  MIN(id)::bigint AS min_id,
                  MAX(id)::bigint AS max_id,
                  SUM(id)::numeric AS id_sum
-          FROM #{shadow_table}
+          FROM public.ingest_events_partitioned
+          GROUP BY 1
+        )
+        SELECT to_char(COALESCE(source_counts.month, shadow_counts.month), 'YYYY-MM') AS month,
+               COALESCE(source_counts.event_count, 0)::bigint AS source_events,
+               COALESCE(shadow_counts.event_count, 0)::bigint AS shadow_events,
+               source_counts.min_id AS source_min_id,
+               shadow_counts.min_id AS shadow_min_id,
+               source_counts.max_id AS source_max_id,
+               shadow_counts.max_id AS shadow_max_id,
+               COALESCE(source_counts.id_sum, 0)::numeric::text AS source_id_sum,
+               COALESCE(shadow_counts.id_sum, 0)::numeric::text AS shadow_id_sum
+        FROM source_counts
+        FULL OUTER JOIN shadow_counts
+          ON shadow_counts.month = source_counts.month
+        ORDER BY COALESCE(source_counts.month, shadow_counts.month)
+      SQL
+    end
+
+    def month_counts_backup_to_source
+      connection.select_all(<<~SQL.squish).to_a
+        WITH source_counts AS (
+          SELECT date_trunc('month', occurred_at) AS month,
+                 COUNT(*)::bigint AS event_count,
+                 MIN(id)::bigint AS min_id,
+                 MAX(id)::bigint AS max_id,
+                 SUM(id)::numeric AS id_sum
+          FROM public.ingest_events_unpartitioned_backup
+          GROUP BY 1
+        ),
+        shadow_counts AS (
+          SELECT date_trunc('month', occurred_at) AS month,
+                 COUNT(*)::bigint AS event_count,
+                 MIN(id)::bigint AS min_id,
+                 MAX(id)::bigint AS max_id,
+                 SUM(id)::numeric AS id_sum
+          FROM public.ingest_events
           GROUP BY 1
         )
         SELECT to_char(COALESCE(source_counts.month, shadow_counts.month), 'YYYY-MM') AS month,
@@ -478,41 +533,26 @@ module Logister
 
     def candidate_batch(from:, to:, cursor:, limit:)
       # Use the source primary key. The old table has no global (occurred_at, id) index.
-      connection.select_all(<<~SQL.squish).to_a
-        SELECT id, occurred_at
-        FROM #{SOURCE_TABLE}
-        WHERE #{candidate_predicate(from: from, to: to, cursor: cursor)}
-        ORDER BY id ASC
-        LIMIT #{Integer(limit)}
-      SQL
-    end
+      event_table = SourceIngestEvent.arel_table
+      relation = SourceIngestEvent.unscoped.order(id: :asc).limit(Integer(limit))
+      relation = relation.where(event_table[:occurred_at].gteq(from)) if from
+      relation = relation.where(event_table[:occurred_at].lt(to)) if to
+      relation = relation.where(event_table[:id].gt(Integer(cursor))) if cursor
 
-    def candidate_predicate(from:, to:, cursor:)
-      clauses = [ "1=1" ]
-      clauses << "occurred_at >= #{connection.quote(from)}" if from
-      clauses << "occurred_at < #{connection.quote(to)}" if to
-      clauses << "id > #{Integer(cursor)}" if cursor
-      clauses.join(" AND ")
+      relation.pluck(:id, :occurred_at).map do |id, occurred_at|
+        { "id" => id, "occurred_at" => occurred_at }
+      end
     end
 
     def upsert_batch(batch)
       ids = batch.map { |row| Integer(row.fetch("id")) }
-      result = connection.execute(<<~SQL.squish)
-        INSERT INTO #{SHADOW_TABLE} (#{COLUMNS.join(", ")})
-        SELECT #{COLUMNS.join(", ")}
-        FROM #{SOURCE_TABLE}
-        WHERE id IN (#{ids.join(", ")})
-        ON CONFLICT (id, occurred_at) DO UPDATE
-        SET #{upsert_assignments}
-      SQL
+      rows = SourceIngestEvent.unscoped.where(id: ids).pluck(*COLUMNS).map do |values|
+        COLUMNS.zip(values).to_h
+      end
+      return 0 if rows.empty?
 
-      result.cmd_tuples
-    end
-
-    def upsert_assignments
-      UPDATE_COLUMNS.map do |column|
-        "#{column} = EXCLUDED.#{column}"
-      end.join(", ")
+      PartitionedIngestEvent.upsert_all(rows, unique_by: :ingest_events_partitioned_id_occurred_at_key)
+      rows.size
     end
 
     def parse_time(value)

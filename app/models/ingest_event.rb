@@ -47,10 +47,11 @@ class IngestEvent < ApplicationRecord
     relation = none
 
     if references_with_timestamps.any?
-      tuples_sql = references_with_timestamps.map do |id, occurred_at|
-        sanitize_sql_array([ "(?, ?)", id, occurred_at ])
-      end.join(", ")
-      relation = relation.or(where("(id, occurred_at) IN (#{tuples_sql})"))
+      event_table = arel_table
+      timestamp_conditions = references_with_timestamps.map do |id, occurred_at|
+        event_table[:id].eq(id).and(event_table[:occurred_at].eq(occurred_at))
+      end
+      relation = relation.or(where(timestamp_conditions.reduce { |left, right| left.or(right) }))
     end
 
     if references_without_timestamps.any?
