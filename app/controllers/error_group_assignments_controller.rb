@@ -76,8 +76,9 @@ class ErrorGroupAssignmentsController < ApplicationController
   end
 
   def detail_stream(selected_uuid, filter:, query:, assignee:)
-    if selected_uuid.present? && @group.latest_event.present?
-      detail_data = build_project_event_detail(@project, @group.latest_event, group: @group)
+    latest_event = @group.latest_event_record
+    if selected_uuid.present? && latest_event.present?
+      detail_data = build_project_event_detail(@project, latest_event, group: @group)
       return turbo_stream.replace(
         "error_detail",
         partial: "project_events/event_detail",

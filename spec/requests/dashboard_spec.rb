@@ -253,7 +253,9 @@ RSpec.describe "Dashboard", type: :request do
           expect(response).to have_http_status(:success)
 
           document = Nokogiri::HTML.parse(response.body)
-          event_link = document.at_css("a[href='#{project_event_path(project, matching_event)}']")
+          event_link = document.at_css(
+            "a[href='#{project_event_path(project, matching_event, event_occurred_at: matching_event.occurred_at.utc.iso8601(6))}']"
+          )
 
           expect(document.text).to include("Matching events", "checkout worker lagged", project.name, "Logs", "production", "2026.05.10")
           expect(document.text).not_to include("private service event", "Hidden Events App")

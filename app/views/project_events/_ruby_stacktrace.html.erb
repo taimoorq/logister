@@ -16,11 +16,11 @@
     <aside class="better-errors-frames">
       <div class="better-errors-frame-scope">
         <%= link_to "Application Frames",
-                    project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "application", frame: 0),
+                    partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "application", frame: 0),
                     class: "frame-scope-pill #{'is-active' if frame_scope == 'application'}",
                     data: { turbo_frame: "error_detail" } %>
         <%= link_to "All Frames",
-                    project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "all", frame: 0),
+                    partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "all", frame: 0),
                     class: "frame-scope-pill #{'is-active' if frame_scope == 'all'}",
                     data: { turbo_frame: "error_detail" } %>
       </div>
@@ -30,7 +30,7 @@
           <% visible_frames.each_with_index do |frame_data, index| %>
             <% frame_label = frame_data[:method_name].presence || "unknown" %>
             <li class="frame-item <%= "is-active" if index == selected_frame_index %>">
-              <%= link_to project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: frame_scope, frame: index),
+              <%= link_to partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: frame_scope, frame: index),
                           class: "frame-link",
                           data: { turbo_frame: "error_detail" } do %>
                 <span class="frame-method"><%= frame_label %></span>

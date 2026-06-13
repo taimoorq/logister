@@ -17,7 +17,7 @@ class Api::V1::IngestEventsController < ApplicationController
     if event.save
       ErrorGroupingService.call(event)
       CheckInMonitor.record!(project: @api_key.project, event: event) if event.check_in?
-      ClickhouseIngestJob.perform_later(event.id, request_context)
+      ClickhouseIngestJob.perform_later(event.id, request_context, event.occurred_at)
 
       @api_key.touch_last_used!
       render json: { id: event.uuid, legacy_id: event.id, status: "accepted" }, status: :created

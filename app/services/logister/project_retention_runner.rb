@@ -158,9 +158,12 @@ module Logister
 
       deleted = 0
       scope.in_batches(of: @batch_size) do |batch|
-        ids = batch.pluck(:id)
+        references = batch.pluck(:id, :occurred_at).map do |id, occurred_at|
+          { id: id, occurred_at: occurred_at }
+        end
+        ids = references.pluck(:id)
         clear_event_references(ids)
-        deleted += IngestEvent.where(id: ids).delete_all
+        deleted += IngestEvent.for_partition_references(references, id_key: :id, occurred_at_key: :occurred_at).delete_all
       end
       deleted
     end
@@ -181,33 +184,40 @@ module Logister
 
       deleted = 0
       scope.find_each(batch_size: @batch_size) do |group|
-        event_ids = (
-          group.error_occurrences.pluck(:ingest_event_id) +
-          IngestEvent.where(error_group_id: group.id).pluck(:id)
+        event_references = (
+          group.error_occurrences.pluck(:ingest_event_id, :ingest_event_occurred_at) +
+          IngestEvent.where(error_group_id: group.id).pluck(:id, :occurred_at)
         ).uniq
         IngestEvent.where(error_group_id: group.id).update_all(error_group_id: nil, updated_at: @now)
         group.destroy!
-        delete_events_by_ids(event_ids)
+        delete_events_by_references(event_references)
         deleted += 1
       end
       deleted
     end
 
-    def delete_events_by_ids(ids)
-      event_ids = Array(ids).compact
+    def delete_events_by_references(references)
+      event_references = Array(references).filter_map do |id, occurred_at|
+        next if id.blank?
+
+        { id: id, occurred_at: occurred_at }
+      end
+      event_ids = event_references.pluck(:id)
       return 0 if event_ids.empty?
 
       clear_event_references(event_ids)
       ErrorOccurrence.where(ingest_event_id: event_ids).delete_all
-      IngestEvent.where(project_id: @project.id, id: event_ids).delete_all
+      IngestEvent.for_partition_references(event_references, id_key: :id, occurred_at_key: :occurred_at)
+                 .where(project_id: @project.id)
+                 .delete_all
     end
 
     def clear_event_references(ids)
       event_ids = Array(ids).compact
       return if event_ids.empty?
 
-      CheckInMonitor.where(last_event_id: event_ids).update_all(last_event_id: nil, updated_at: @now)
-      ErrorGroup.where(latest_event_id: event_ids).update_all(latest_event_id: nil, updated_at: @now)
+      CheckInMonitor.where(last_event_id: event_ids).update_all(last_event_id: nil, last_event_occurred_at: nil, updated_at: @now)
+      ErrorGroup.where(latest_event_id: event_ids).update_all(latest_event_id: nil, latest_event_occurred_at: nil, updated_at: @now)
     end
 
     def mark_policy_run!(result)

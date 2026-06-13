@@ -8,6 +8,7 @@ class ErrorGroup < ApplicationRecord
   has_many   :email_notification_deliveries, dependent: :nullify
 
   before_validation :ensure_uuid
+  before_validation :sync_latest_event_occurred_at
 
   # ── Status lifecycle ──────────────────────────────────────────────────────
   # unresolved → resolved  (mark_resolved!)
@@ -35,7 +36,7 @@ class ErrorGroup < ApplicationRecord
   scope :by_project,        ->(project) { where(project: project) }
   scope :assigned_to,       ->(user) { where(assigned_user_id: user&.id) }
   scope :unassigned,        -> { where(assigned_user_id: nil) }
-  scope :with_occurrences,  -> { includes(:latest_event, :error_occurrences) }
+  scope :with_occurrences,  -> { includes(:error_occurrences) }
 
   # 7-day trend — array of daily occurrence counts oldest→newest
   def trend(days: 7)
@@ -56,7 +57,7 @@ class ErrorGroup < ApplicationRecord
     update!(
       status: :resolved,
       resolved_at: Time.current,
-      resolved_in_release: IngestEvent.release(latest_event)
+      resolved_in_release: IngestEvent.release(latest_event_record)
     )
   end
 
@@ -105,6 +106,7 @@ class ErrorGroup < ApplicationRecord
       reopen! if was_closed
       update!(
         latest_event_id:  event.id,
+        latest_event_occurred_at: event.occurred_at,
         last_seen_at:     event.occurred_at,
         first_seen_at:    [ first_seen_at, event.occurred_at ].compact.min,
         occurrence_count: occurrence_count + 1,
@@ -123,10 +125,45 @@ class ErrorGroup < ApplicationRecord
     uuid
   end
 
+  def latest_event_record
+    return if latest_event_id.blank?
+    if defined?(@latest_event_record) &&
+        @latest_event_record&.id == latest_event_id &&
+        partition_timestamp_matches?(@latest_event_record, latest_event_occurred_at)
+      return @latest_event_record
+    end
+
+    loaded_event = association(:latest_event).loaded? ? latest_event : nil
+    return loaded_event if loaded_event && partition_timestamp_matches?(loaded_event, latest_event_occurred_at)
+
+    @latest_event_record = IngestEvent.for_partition_references(
+      [ self ],
+      id_key: :latest_event_id,
+      occurred_at_key: :latest_event_occurred_at
+    ).first
+  end
+
   private
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid
+  end
+
+  def sync_latest_event_occurred_at
+    return if latest_event_id.blank?
+    return if latest_event_occurred_at.present? && !will_save_change_to_latest_event_id?
+
+    event =
+      if association(:latest_event).loaded? && !will_save_change_to_latest_event_id?
+        latest_event
+      else
+        IngestEvent.select(:id, :occurred_at).find_by(id: latest_event_id)
+      end
+    self.latest_event_occurred_at = event.occurred_at if event
+  end
+
+  def partition_timestamp_matches?(event, timestamp)
+    timestamp.blank? || event.occurred_at.to_f == timestamp.to_f
   end
 
   def assignee_has_project_access

@@ -4,7 +4,7 @@ class ProjectErrorMailer < ApplicationMailer
     @user = delivery.user
     @project = delivery.project
     @group = delivery.error_group
-    @event = @group.latest_event
+    @event = @group.latest_event_record
     @preference = ProjectNotificationPreference.for(user: @user, project: @project)
     @group_url = project_url(@project, group_uuid: @group.uuid)
     @settings_url = settings_project_url(@project, anchor: "notifications")

@@ -220,6 +220,16 @@ module ApplicationHelper
     content_tag(:div, capture(&block), options)
   end
 
+  def event_partition_params(event)
+    return {} if event.blank? || !event.has_attribute?(:occurred_at) || event.occurred_at.blank?
+
+    { event_occurred_at: event.occurred_at.utc.iso8601(6) }
+  end
+
+  def partitioned_project_event_path(project, event, options = {})
+    project_event_path(project, event, event_partition_params(event).merge(options))
+  end
+
   def responsive_scroll_classes(*classes)
     class_names("mobile-x-scroll", classes)
   end

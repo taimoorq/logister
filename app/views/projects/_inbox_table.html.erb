@@ -1,7 +1,7 @@
 <turbo-frame id="project_inbox" target="error_detail">
   <% group_trends = local_assigns.fetch(:group_trends, {}) %>
   <% latest_events = local_assigns[:latest_events] ||
-    IngestEvent.where(id: groups.filter_map(&:latest_event_id)).select(:id, :project_id, :uuid).index_by(&:id) %>
+    IngestEvent.for_partition_references(groups, id_key: :latest_event_id, occurred_at_key: :latest_event_occurred_at).select(:id, :project_id, :uuid, :occurred_at).index_by(&:id) %>
   <% has_activity_events = local_assigns.fetch(:has_activity_events, false) %>
   <% assignee_param = local_assigns[:assignee].presence || "all" %>
   <div class="inbox-table-wrap">
@@ -28,7 +28,7 @@
                   style="view-transition-name: <%= dom_id(group) %>; view-transition-class: inbox-row;">
                 <td class="inbox-error-cell">
                   <% if latest_event %>
-                    <%= link_to project_event_path(project, latest_event,
+                    <%= link_to partitioned_project_event_path(project, latest_event,
                                   filter: filter, q: query, assignee: assignee_param, group_uuid: group.uuid),
                                 class: "error-row-link",
                                 data: {

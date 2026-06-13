@@ -27,6 +27,9 @@ module Logister
     # Tailwind CSS build output (must be in application.rb so Propshaft sees it at boot)
     config.assets.paths << Rails.root.join("app/assets/builds")
 
+    # PostgreSQL partitioning and advanced indexes are represented more reliably in structure.sql.
+    config.active_record.schema_format = :sql
+
     # Generate RSpec specs instead of Minitest tests
     config.generators do |g|
       g.test_framework :rspec

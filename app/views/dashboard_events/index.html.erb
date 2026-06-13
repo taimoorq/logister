@@ -52,7 +52,7 @@
           <% event_url = if event.error_group.present?
                            inbox_project_path(event_project, group_uuid: event.error_group.uuid, event_uuid: event.uuid)
                          else
-                           project_event_path(event_project, event)
+                           partitioned_project_event_path(event_project, event)
                          end %>
 
           <article class="dashboard-events-row">
