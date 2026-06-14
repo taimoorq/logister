@@ -2,6 +2,23 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.4.0 - 2026-06-14
+
+### Added
+
+- Added PostgreSQL range partitioning for `ingest_events`, including shadow-table setup, monthly partitions, mirror triggers, batched backfill, cutover preflight checks, validation tasks, and post-cutover constraint validation.
+- Added future partition maintenance so operators can create upcoming monthly partitions before new telemetry arrives.
+
+### Changed
+
+- Updated dashboard, project, inbox, event-detail, retention, and ClickHouse handoff paths to carry partition-aware event references and keep UI queries bounded by the new partition structure.
+- Optimized recent dashboard and project summary loading to favor recent indexed scopes instead of all-time event scans.
+- Updated public self-hosting references for the `v2.4.0` release image tag.
+
+### Fixed
+
+- Removed Brakeman-flagged dynamic SQL from the partitioning migration helpers while preserving backfill and validation behavior.
+
 ## v2.3.0 - 2026-05-24
 
 ### Added
