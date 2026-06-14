@@ -57,6 +57,7 @@ class ErrorGroupingService
         first_seen_at:   @event.occurred_at,
         last_seen_at:    @event.occurred_at,
         latest_event_id: @event.id,
+        latest_event_occurred_at: @event.occurred_at,
         occurrence_count: 1
       )
       group.save!
@@ -76,6 +77,7 @@ class ErrorGroupingService
       ingest_event: @event
     ) do |occ|
       occ.occurred_at = @event.occurred_at
+      occ.ingest_event_occurred_at = @event.occurred_at
     end
   end
 end

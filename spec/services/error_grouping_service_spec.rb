@@ -38,9 +38,12 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(group.subtitle).to eq("NoMethodError")
       expect(group).to be_unresolved
       expect(group.occurrence_count).to eq(1)
+      expect(group.latest_event_id).to eq(event.id)
+      expect(group.latest_event_occurred_at).to be_within(1.second).of(event.occurred_at)
 
       expect(event.reload.error_group_id).to eq(group.id)
-      expect(ErrorOccurrence.exists?(error_group: group, ingest_event: event)).to be true
+      occurrence = ErrorOccurrence.find_by!(error_group: group, ingest_event: event)
+      expect(occurrence.ingest_event_occurred_at).to be_within(1.second).of(event.occurred_at)
     end
 
     it "groups second event with same fingerprint into same ErrorGroup" do
@@ -64,6 +67,8 @@ RSpec.describe ErrorGroupingService, type: :model do
       group2 = described_class.call(event2)
       expect(group2.id).to eq(group1.id)
       expect(group2.reload.occurrence_count).to eq(2)
+      expect(group2.latest_event_id).to eq(event2.id)
+      expect(group2.latest_event_occurred_at).to be_within(1.second).of(event2.occurred_at)
       expect(ErrorOccurrence.where(error_group: group2).count).to eq(2)
     end
 

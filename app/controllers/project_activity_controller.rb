@@ -49,7 +49,7 @@ class ProjectActivityController < ApplicationController
   def normalized_activity_filters
     {
       event_type: params[:event_type].presence_in(ACTIVITY_EVENT_TYPES) || "all",
-      period: params[:period].presence_in(ACTIVITY_PERIODS.keys) || "all",
+      period: params[:period].presence_in(ACTIVITY_PERIODS.keys) || "24h",
       q: params[:q].to_s.strip,
       environment: params[:environment].to_s.strip,
       release: params[:release].to_s.strip,
@@ -86,7 +86,7 @@ class ProjectActivityController < ApplicationController
 
   def activity_filters_active?(filters)
     filters[:event_type] != "all" ||
-      filters[:period] != "all" ||
+      filters[:period] != "24h" ||
       filters[:q].present? ||
       filters[:environment].present? ||
       filters[:release].present?

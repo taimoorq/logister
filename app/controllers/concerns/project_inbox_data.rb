@@ -38,11 +38,12 @@ module ProjectInboxData
   end
 
   def inbox_latest_events(groups)
-    latest_event_ids = groups.filter_map(&:latest_event_id)
-    return {} if latest_event_ids.empty?
-
-    IngestEvent.where(id: latest_event_ids)
-               .select(:id, :project_id, :uuid)
+    IngestEvent.for_partition_references(
+               groups,
+               id_key: :latest_event_id,
+               occurred_at_key: :latest_event_occurred_at
+               )
+               .select(:id, :project_id, :uuid, :occurred_at)
                .index_by(&:id)
   end
 

@@ -33,7 +33,7 @@ RSpec.describe ErrorOccurrence, type: :model do
   end
 
   describe "callbacks" do
-    it "syncs occurred_at from ingest_event when blank" do
+    it "syncs timestamps from ingest_event when blank" do
       group = create(:error_group, project: project)
       event = create(:ingest_event,
         project: project,
@@ -44,6 +44,7 @@ RSpec.describe ErrorOccurrence, type: :model do
       occ = described_class.create!(error_group: group, ingest_event: event)
 
       expect(occ.occurred_at).to be_within(1.second).of(event.occurred_at)
+      expect(occ.ingest_event_occurred_at).to be_within(1.second).of(event.occurred_at)
     end
   end
 
@@ -62,6 +63,7 @@ RSpec.describe ErrorOccurrence, type: :model do
       expect(occurrence.error_group.project).to eq(project)
       expect(occurrence.ingest_event.project).to eq(project)
       expect(occurrence.ingest_event.error_group).to eq(occurrence.error_group)
+      expect(occurrence.ingest_event_occurred_at).to be_within(1.second).of(occurrence.ingest_event.occurred_at)
     end
   end
 end

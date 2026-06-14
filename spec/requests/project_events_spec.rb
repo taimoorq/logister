@@ -23,6 +23,15 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include(ingest_events(:one).message)
       end
 
+      it "uses the event timestamp hint when present" do
+        event = ingest_events(:one)
+
+        get project_event_path(projects(:one), event, event_occurred_at: event.occurred_at.utc.iso8601(6))
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include(event.message)
+      end
+
       it "shows archived project state on standalone event pages" do
         project = create(:project, user: users(:one), name: "Archived Event App")
         api_key = create(:api_key, project: project, user: users(:one))

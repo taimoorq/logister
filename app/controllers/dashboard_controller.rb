@@ -32,7 +32,11 @@ class DashboardController < ApplicationController
     @monitors_count = summary[:monitors_count]
     @monitor_status_counts = summary[:monitor_status_counts]
     @unhealthy_monitors_count = @monitor_status_counts.fetch(:missed, 0) + @monitor_status_counts.fetch(:error, 0)
-    @recent_context_events = ordered_records(IngestEvent.includes(:project).where(id: summary[:recent_context_event_ids]), summary[:recent_context_event_ids])
+    recent_context_event_refs = summary[:recent_context_event_refs] || summary[:recent_context_event_ids].map { |id| { id: id } }
+    @recent_context_events = ordered_records(
+      IngestEvent.for_partition_references(recent_context_event_refs, id_key: :id, occurred_at_key: :occurred_at).includes(:project),
+      recent_context_event_refs.pluck(:id)
+    )
     @recent_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
     @recent_error_group_latest_events = latest_events_for(@recent_error_groups)
     @assigned_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:assigned_error_group_ids]), summary[:assigned_error_group_ids])
@@ -60,11 +64,12 @@ class DashboardController < ApplicationController
   end
 
   def latest_events_for(groups)
-    latest_event_ids = groups.filter_map(&:latest_event_id)
-    return {} if latest_event_ids.empty?
-
-    IngestEvent.where(id: latest_event_ids)
-               .select(:id, :project_id, :uuid, :message)
+    IngestEvent.for_partition_references(
+               groups,
+               id_key: :latest_event_id,
+               occurred_at_key: :latest_event_occurred_at
+               )
+               .select(:id, :project_id, :uuid, :message, :occurred_at)
                .index_by(&:id)
   end
 

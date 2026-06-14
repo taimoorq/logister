@@ -149,7 +149,7 @@ class ProjectsController < ApplicationController
       @selected_event = nil
     end
 
-    detail_event = @selected_event || @selected_group&.latest_event
+    detail_event = @selected_event || @selected_group&.latest_event_record
     if detail_event.present?
       detail_data = build_project_event_detail(@project, detail_event, group: @selected_group)
       @detail_event = detail_data[:event]
@@ -225,7 +225,7 @@ class ProjectsController < ApplicationController
       {
         events_last_24h: events_last_24h.count,
         activity_events_last_24h: events_last_24h.where.not(event_type: IngestEvent.event_types[:error]).count,
-        latest_event_at: Project.latest_event_at_by_project([ project.id ])[project.id],
+        latest_event_at: events_last_24h.maximum(:occurred_at),
         monitors_count: monitors.size,
         monitor_status_counts: monitor_status_counts,
         unhealthy_monitors_count: monitor_status_counts.fetch(:missed, 0) + monitor_status_counts.fetch(:error, 0)

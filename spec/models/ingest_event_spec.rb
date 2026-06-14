@@ -56,6 +56,38 @@ RSpec.describe IngestEvent, type: :model do
     end
   end
 
+  describe "partition shadow mirror trigger" do
+    it "mirrors inserts, updates, and deletes into ingest_events_partitioned" do
+      event = create(:ingest_event, :log, message: "Initial mirror event")
+
+      expect(shadow_row_for(event)).to include("message" => "Initial mirror event")
+
+      old_occurred_at = event.occurred_at
+      event.update!(message: "Updated mirror event", occurred_at: old_occurred_at + 1.second)
+      event.reload
+
+      expect(shadow_row(event.id, old_occurred_at)).to be_nil
+      expect(shadow_row_for(event)).to include("message" => "Updated mirror event")
+
+      event.destroy!
+
+      expect(shadow_row(event.id, event.occurred_at)).to be_nil
+    end
+
+    def shadow_row_for(event)
+      shadow_row(event.id, event.occurred_at)
+    end
+
+    def shadow_row(id, occurred_at)
+      ActiveRecord::Base.connection.select_one(<<~SQL.squish)
+        SELECT id, message
+        FROM public.ingest_events_partitioned
+        WHERE id = #{Integer(id)}
+          AND occurred_at = #{ActiveRecord::Base.connection.quote(occurred_at)}
+      SQL
+    end
+  end
+
   describe "#to_param" do
     it "returns uuid" do
       expect(ingest_events(:one).to_param).to eq(ingest_events(:one).uuid)
@@ -354,6 +386,38 @@ RSpec.describe IngestEvent, type: :model do
       )
 
       expect(described_class.related_logs(project: projects(:one), event: event)).to eq([])
+    end
+  end
+
+  describe ".for_partition_references" do
+    it "loads events by id and occurred_at partition references" do
+      event = create(:ingest_event, occurred_at: 2.hours.ago)
+      other_event = create(:ingest_event, occurred_at: 1.hour.ago)
+      references = [
+        { id: event.id, occurred_at: event.occurred_at },
+        { id: other_event.id, occurred_at: 1.day.ago }
+      ]
+
+      relation = described_class.for_partition_references(
+        references,
+        id_key: :id,
+        occurred_at_key: :occurred_at
+      )
+
+      expect(relation.to_sql).to include("\"ingest_events\".\"occurred_at\"")
+      expect(relation).to contain_exactly(event)
+    end
+
+    it "falls back to id-only lookups when a legacy reference has no timestamp" do
+      event = create(:ingest_event)
+
+      relation = described_class.for_partition_references(
+        [ { id: event.id, occurred_at: nil } ],
+        id_key: :id,
+        occurred_at_key: :occurred_at
+      )
+
+      expect(relation).to contain_exactly(event)
     end
   end
 end

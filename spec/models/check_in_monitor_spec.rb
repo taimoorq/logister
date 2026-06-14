@@ -17,6 +17,7 @@ RSpec.describe CheckInMonitor, type: :model do
       expect(monitor).to be_persisted
       expect(monitor.last_event).to be_check_in
       expect(monitor.last_event.project).to eq(projects(:one))
+      expect(monitor.last_event_occurred_at).to be_within(1.second).of(monitor.last_event.occurred_at)
     end
   end
 

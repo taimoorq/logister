@@ -1,4 +1,6 @@
 class IngestEvent < ApplicationRecord
+  self.primary_key = :id
+
   include IngestEventContext
   include IngestEventDetailing
   include IngestEventReporting
@@ -31,6 +33,50 @@ class IngestEvent < ApplicationRecord
     transactions.where("occurred_at >= ?", since).order(occurred_at: :desc).limit(limit)
   }
   scope :released, -> { where("COALESCE(context->>'release', '') <> ''") }
+
+  def self.for_partition_references(records, id_key:, occurred_at_key:)
+    references = Array(records).filter_map do |record|
+      id = partition_reference_value(record, id_key)
+      next if id.blank?
+
+      [ id, partition_reference_value(record, occurred_at_key) ]
+    end
+    return none if references.empty?
+
+    references_with_timestamps, references_without_timestamps = references.partition { |_id, occurred_at| occurred_at.present? }
+    relation = none
+
+    if references_with_timestamps.any?
+      event_table = arel_table
+      timestamp_conditions = references_with_timestamps.map do |id, occurred_at|
+        event_table[:id].eq(id).and(event_table[:occurred_at].eq(occurred_at))
+      end
+      relation = relation.or(where(timestamp_conditions.reduce { |left, right| left.or(right) }))
+    end
+
+    if references_without_timestamps.any?
+      relation = relation.or(where(id: references_without_timestamps.map(&:first)))
+    end
+
+    relation
+  end
+
+  def self.for_partition_reference(id:, occurred_at:)
+    for_partition_references(
+      [ { id: id, occurred_at: occurred_at } ],
+      id_key: :id,
+      occurred_at_key: :occurred_at
+    )
+  end
+
+  def self.partition_reference_value(record, key)
+    if record.respond_to?(key)
+      record.public_send(key)
+    elsif record.respond_to?(:[])
+      record[key] || record[key.to_s]
+    end
+  end
+  private_class_method :partition_reference_value
 
   private
 

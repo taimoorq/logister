@@ -20,7 +20,13 @@ class Dashboard
     assigned_error_group_counts = viewer.present? ? assigned_error_groups_scope.group(:project_id).count : {}
     unassigned_error_group_counts = error_groups_scope.unresolved.unassigned.group(:project_id).count
     activity_event_counts = events_last_24h_scope.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count
-    latest_event_at_by_project = Project.latest_event_at_by_project(project_ids)
+    latest_event_at_by_project = events_last_24h_scope.group(:project_id).maximum(:occurred_at)
+    recent_context_event_refs = events_last_24h_scope
+      .where.not(event_type: IngestEvent.event_types[:error])
+      .order(occurred_at: :desc)
+      .limit(12)
+      .pluck(:id, :occurred_at)
+      .map { |id, occurred_at| { id: id, occurred_at: occurred_at } }
     monitors = CheckInMonitor.where(project_id: project_ids)
                              .select(:id, :last_status, :last_check_in_at, :expected_interval_seconds)
                              .to_a
@@ -41,7 +47,8 @@ class Dashboard
       projects_with_open_errors_count: open_error_group_counts.size,
       monitors_count: monitors.size,
       monitor_status_counts: monitor_status_counts(monitors),
-      recent_context_event_ids: events_last_24h_scope.where.not(event_type: IngestEvent.event_types[:error]).order(occurred_at: :desc).limit(12).pluck(:id),
+      recent_context_event_refs: recent_context_event_refs,
+      recent_context_event_ids: recent_context_event_refs.pluck(:id),
       recent_error_group_ids: error_groups_scope.unresolved.order(last_seen_at: :desc).limit(6).pluck(:id),
       project_stats: project_stats(project_ids,
                                    open_error_group_counts: open_error_group_counts,
@@ -119,6 +126,7 @@ class Dashboard
       projects_with_open_errors_count: 0,
       monitors_count: 0,
       monitor_status_counts: { ok: 0, missed: 0, error: 0 },
+      recent_context_event_refs: [],
       recent_context_event_ids: [],
       recent_error_group_ids: [],
       project_stats: {}

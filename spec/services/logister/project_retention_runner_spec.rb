@@ -65,6 +65,7 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(IngestEvent.exists?(old_error.id)).to be true
     expect(TraceSpan.exists?(old_span.id)).to be false
     expect(monitor.reload.last_event).to be_nil
+    expect(monitor.last_event_occurred_at).to be_nil
     expect(policy.reload.last_retention_run_at.to_i).to eq(now.to_i)
   end
 

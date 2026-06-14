@@ -90,6 +90,21 @@ class ProjectEventsController < ApplicationController
   end
 
   def set_event
-    @event = @project.ingest_events.find_by!(uuid: params[:uuid])
+    @event = project_event_lookup_scope.find_by!(uuid: params[:uuid])
+  end
+
+  def project_event_lookup_scope
+    occurred_at = event_occurred_at_param
+    return @project.ingest_events if occurred_at.blank?
+
+    @project.ingest_events.where(occurred_at: occurred_at)
+  end
+
+  def event_occurred_at_param
+    return if params[:event_occurred_at].blank?
+
+    Time.zone.iso8601(params[:event_occurred_at].to_s)
+  rescue ArgumentError, TypeError
+    nil
   end
 end

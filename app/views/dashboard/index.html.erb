@@ -157,7 +157,7 @@
               <div class="dashboard-attention-actions">
                 <%= link_to "Open issue", inbox_project_path(group.project, group_uuid: group.uuid), class: "dashboard-attention-action" %>
                 <% if latest_event.present? %>
-                  <%= link_to "Latest event", project_event_path(group.project, latest_event), class: "dashboard-attention-action" %>
+                  <%= link_to "Latest event", partitioned_project_event_path(group.project, latest_event), class: "dashboard-attention-action" %>
                 <% end %>
                 <%= link_to "Activity", activity_project_path(group.project), class: "dashboard-attention-action" %>
               </div>
@@ -172,7 +172,7 @@
                    style="view-transition-name: <%= dom_id(event, :dashboard) %>; view-transition-class: dashboard-error-card;">
             <div class="dashboard-attention-main">
               <div class="dashboard-attention-title-row">
-                <%= link_to event.message.to_s.lines.first.to_s.strip.presence || "(untitled event)", project_event_path(event.project, event), class: "dashboard-attention-title" %>
+                <%= link_to event.message.to_s.lines.first.to_s.strip.presence || "(untitled event)", partitioned_project_event_path(event.project, event), class: "dashboard-attention-title" %>
                 <span class="<%= dashboard_event_badge_class(event.event_type) %>"><%= dashboard_event_type_label(event.event_type) %></span>
               </div>
               <span class="dashboard-attention-meta"><%= event.project.name %> · <%= event.level.presence || event.event_type %></span>
@@ -194,7 +194,7 @@
                 </span>
               </div>
               <div class="dashboard-attention-actions">
-                <%= link_to "Open event", project_event_path(event.project, event), class: "dashboard-attention-action" %>
+                <%= link_to "Open event", partitioned_project_event_path(event.project, event), class: "dashboard-attention-action" %>
                 <%= link_to "Project", project_path(event.project), class: "dashboard-attention-action" %>
               </div>
             </div>

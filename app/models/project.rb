@@ -190,7 +190,7 @@ class Project < ApplicationRecord
       stats[pid][:activity_events] = count
     end
 
-    latest_event_at_by_project(project_ids).each do |pid, occurred_at|
+    recent_events.group(:project_id).maximum(:occurred_at).each do |pid, occurred_at|
       stats[pid][:latest_event_at] = occurred_at
     end
 

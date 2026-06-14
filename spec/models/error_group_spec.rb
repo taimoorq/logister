@@ -152,6 +152,7 @@ RSpec.describe ErrorGroup, type: :model do
       expect(group.error_occurrences.count).to eq(1)
       expect(group.occurrence_count).to eq(1)
       expect(group.latest_event.project).to eq(project)
+      expect(group.latest_event_occurred_at).to be_within(1.second).of(group.latest_event.occurred_at)
     end
   end
 end

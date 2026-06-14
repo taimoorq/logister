@@ -73,7 +73,7 @@ class ErrorDigestSummary
         .first(limit)
         .map(&:first)
 
-      groups_by_id = project.error_groups.where(id: ids).includes(:latest_event).index_by(&:id)
+      groups_by_id = project.error_groups.where(id: ids).index_by(&:id)
       ids.filter_map { |id| groups_by_id[id] }
     end
   end
