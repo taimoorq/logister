@@ -126,9 +126,9 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v2.4.0
+   docker pull ghcr.io/taimoorq/logister:v2.4.1
    # or
-   docker pull docker.io/taimoorq/logister:v2.4.0
+   docker pull docker.io/taimoorq/logister:v2.4.1
    ```
 
 3. Create production config from the sample.
@@ -150,6 +150,8 @@ This is the shortest production path. Use the public docs when you need provider
    | `LOGISTER_UPDATE_CHECKS_ENABLED` | Optional, set `false` to disable daily GitHub release checks |
 
    Public ingestion endpoints are rate limited by default. `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Self-hosters can tune those defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can also set project-level overrides from project settings.
+
+   Public auth forms are also rate limited by default. Devise sign-in, sign-up, password reset, and confirmation resend submissions use Rails cache-backed IP and hashed-email limits and return `429 Too Many Requests` with `Retry-After` when exceeded. See [Authentication Rate Limiting](docs/auth-rate-limiting.md) for the current limits and implementation rules.
 
    Keep real values in your deploy provider, Docker secrets, Fly secrets, Kamal secrets, or another secret manager. Do not commit a filled-in `.env.production`.
 
@@ -286,10 +288,10 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v2.4.0`
+- `ghcr.io/taimoorq/logister:v2.4.1`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v2.4.0`
+- `docker.io/taimoorq/logister:v2.4.1`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 

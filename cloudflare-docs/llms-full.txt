@@ -104,7 +104,7 @@ API tooling lives at https://docs.logister.org/api-reference/. The public OpenAP
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
-- Current versioned images: `ghcr.io/taimoorq/logister:v2.4.0` or `docker.io/taimoorq/logister:v2.4.0`
+- Current versioned images: `ghcr.io/taimoorq/logister:v2.4.1` or `docker.io/taimoorq/logister:v2.4.1`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
 

@@ -2,6 +2,17 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.4.1 - 2026-06-16
+
+### Added
+
+- Added Rails cache-backed rate limiting for Devise sign-in, sign-up, password reset, and confirmation resend submissions, using source IP and hashed normalized email identities.
+- Added an authentication rate-limiting runbook and agent guidance so future Devise throttles keep the same cache, callback ordering, identity hashing, failure behavior, and request-spec coverage.
+
+### Changed
+
+- Updated public self-hosting references for the `v2.4.1` release image tag.
+
 ## v2.4.0 - 2026-06-14
 
 ### Added

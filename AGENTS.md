@@ -107,6 +107,15 @@ Used when one action should update several DOM regions:
   5. Next steps or troubleshooting
 - **Keep docs hosting concerns separate from Rails concerns.** Analytics, docs robots, docs sitemap, and docs metadata for the configured docs host belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
 
+### Authentication hardening
+
+- **Devise create actions must stay rate limited.** Public auth submissions for sessions, registrations, password resets, and confirmation resends should use `DeviseRateLimitGuard` from `app/controllers/concerns/`, not ad hoc controller code.
+- **Use the existing Rails cache backend.** Auth throttles should count through `Rails.cache`; production already stores cache data in Redis. Do not add Rack::Attack or another middleware unless there is a clear need for app-wide throttling outside controller actions.
+- **Run auth throttles before Devise and Turnstile.** Devise controllers install their own `prepend_before_action` callbacks and Turnstile can redirect before the action. New auth throttles should be prepended so abusive requests are counted before Devise or bot verification halts the request.
+- **Use layered identities.** Protect high-volume actions by source IP and protect email-driven actions by normalized email. Email identities must be hashed before they are used in cache keys; never store raw email addresses in rate-limit keys.
+- **Prefer safe failure behavior.** If the cache is unavailable, log a warning and fail open rather than blocking all sign-ins. When a limit is exceeded, return `429 Too Many Requests` with a `Retry-After` header and emit the standard `rate_limit.action_controller` notification.
+- **Document and test limit changes together.** When limits or identities change, update [docs/auth-rate-limiting.md](docs/auth-rate-limiting.md) and request specs under `spec/requests/users/`.
+
 ### SEO and crawl surfaces
 
 - **Treat the app host and docs host as separate hosts.** The official hosts are `logister.org` and `docs.logister.org`, but forks can configure their own with `LOGISTER_PUBLIC_URL` and `LOGISTER_DOCS_URL`. Each host should own its own canonical URLs, robots policy, and sitemap.
