@@ -4,6 +4,10 @@ require "rails_helper"
 require "nokogiri"
 
 RSpec.describe "Home", type: :request do
+  let(:current_release_tag) do
+    Rails.root.join("CHANGELOG.md").read.match(/^##\s+(v[0-9][^\s]*)\s+-/)[1]
+  end
+
   around do |example|
     original_url_options = Rails.application.routes.default_url_options.dup
     example.run
@@ -182,9 +186,9 @@ RSpec.describe "Home", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
       expect(response.body).to include("GHCR image package")
-      expect(response.body).to include("ghcr.io/taimoorq/logister:v2.4.0")
+      expect(response.body).to include("ghcr.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("Docker Hub image package")
-      expect(response.body).to include("docker.io/taimoorq/logister:v2.4.0")
+      expect(response.body).to include("docker.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("Optional Quay image mirror")
       expect(response.body).to include("https://docs.logister.org/use-cases/")
       expect(response.body).to include("https://docs.logister.org/use-cases/rails-error-monitoring/")
@@ -218,8 +222,8 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("Docker, GHCR, Docker Hub, and optional Quay self-hosting")
       expect(response.body).to include("Error assignment and team triage")
       expect(response.body).to include("Amazon SES error alert emails")
-      expect(response.body).to include("ghcr.io/taimoorq/logister:v2.4.0")
-      expect(response.body).to include("docker.io/taimoorq/logister:v2.4.0")
+      expect(response.body).to include("ghcr.io/taimoorq/logister:#{current_release_tag}")
+      expect(response.body).to include("docker.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("quay.io/taimoorq/logister")
       expect(response.body).to include("TRADEMARKS.md")
     end
