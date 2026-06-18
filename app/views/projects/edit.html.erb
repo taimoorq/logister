@@ -48,7 +48,7 @@
           <%= f.button class: "btn-primary inline-flex items-center gap-2" do %>
             <%= app_icon(:check) %><span>Update project</span>
           <% end %>
-          <%= link_to "Cancel", settings_project_path(@project), class: "btn-ghost" %>
+          <%= link_to "Cancel", settings_project_path(@project, section: "general"), class: "btn-ghost" %>
         </div>
       </div>
     <% end %>

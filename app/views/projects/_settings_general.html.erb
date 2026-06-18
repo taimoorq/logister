@@ -1,0 +1,39 @@
+<article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h2 class="text-base font-bold text-slate-900 mb-2">Project identity</h2>
+      <p class="text-sm text-slate-600">Name, ownership, and project type.</p>
+    </div>
+    <% if @project.owned_by?(current_user) %>
+      <%= link_to edit_project_path(@project), class: "btn-ghost inline-flex items-center gap-2" do %>
+        <%= app_icon(:pencil) %><span>Edit project</span>
+      <% end %>
+    <% end %>
+  </div>
+
+  <dl class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <dt class="text-xs font-semibold uppercase text-slate-500">Name</dt>
+      <dd class="mt-1 text-sm font-semibold text-slate-900"><%= @project.name %></dd>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <dt class="text-xs font-semibold uppercase text-slate-500">Slug</dt>
+      <dd class="mt-1 text-sm font-mono text-slate-900"><%= @project.slug %></dd>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <dt class="text-xs font-semibold uppercase text-slate-500">Project type</dt>
+      <dd class="mt-1 text-sm font-semibold text-slate-900"><%= @project.integration_label %></dd>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <dt class="text-xs font-semibold uppercase text-slate-500">Owner</dt>
+      <dd class="mt-1 text-sm font-semibold text-slate-900"><%= @owner.email %></dd>
+    </div>
+  </dl>
+
+  <% if @project.description.present? %>
+    <div class="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+      <h3 class="text-sm font-semibold text-slate-900">Description</h3>
+      <p class="mt-1 text-sm text-slate-600"><%= @project.description %></p>
+    </div>
+  <% end %>
+</article>

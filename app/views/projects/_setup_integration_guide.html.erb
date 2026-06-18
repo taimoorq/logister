@@ -1,0 +1,481 @@
+    <article id="integration-guide"
+             class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 scroll-mt-24 lg:col-span-2"
+             <%= tag.attributes(data: product_tour_step_data(tour_group, :integration_guide)) %>>
+      <h2 class="text-base font-bold text-slate-900 mb-2">Integration guide</h2>
+      <p class="text-slate-600 text-sm mb-4">
+        Recommended setup for
+        <strong class="text-slate-900"><%= @project.integration_label %></strong>
+        projects.
+      </p>
+
+      <details class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <summary class="cursor-pointer text-sm font-semibold text-slate-900">Detailed <%= @project.integration_label %> setup guide</summary>
+        <div class="mt-4">
+      <% if @project.integration_cfml? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Use a small `LogisterClient.cfc` wrapper around `cfhttp`.</li>
+              <li>Capture uncaught exceptions in `Application.cfc.onError()`.</li>
+              <li>Send request timings as `transaction` events and query timings as `metric` events.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>application.logister.sendEvent(
+  eventType = "error",
+  level = "error",
+  message = exception.message ?: "Unhandled CFML exception",
+  context = {
+    exception = {
+      type = exception.type ?: "Exception",
+      detail = exception.detail ?: "",
+      tagContext = exception.tagContext ?: []
+    }
+  }
+);</code></pre>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Full setup guide:
+            <%= link_to "CFML integration docs",
+                        docs_site_url(:cfml_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% elsif @project.integration_python? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install <code>logister-python</code> in the Python service or worker you want to monitor.</li>
+              <li>Use <code>instrument_fastapi</code> for FastAPI apps, <code>LogisterMiddleware</code> for Django apps, <code>instrument_flask</code> for Flask apps, and <code>instrument_celery</code> for Celery workers.</li>
+              <li>Pass <code>capture_spans=True</code> to FastAPI, Django, or Flask instrumentation when you want request load waterfall charts.</li>
+              <li>Attach <code>instrument_logging(client, logger=...)</code> if you want standard Python <code>logging</code> records and <code>logger.exception(...)</code> events to flow into Logister automatically.</li>
+              <li>Use the shared client for the parts Python teams usually customize after that: business metrics, job heartbeats, and service-specific logs or transactions.</li>
+              <li>Set <code>LOGISTER_RELEASE</code>, <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
+              <li>Call <code>record_deployment()</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
+              <li>Set <code>LOGISTER_CAPTURE_LOCALS=true</code> only when you want frame locals in Python error details.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>pip install 'logister-python[fastapi]'
+
+from logister import LogisterClient, instrument_fastapi
+
+client = LogisterClient.from_env(default_context={"service": "api"})
+instrument_fastapi(app, client, capture_spans=True)</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Also supported</h3>
+            <p class="text-sm text-slate-600">
+              Django apps can use <code>LogisterMiddleware</code>, Flask apps can use <code>instrument_flask(app, client)</code>, Celery workers can use <code>instrument_celery()</code> with optional monitor slugs for check-ins, and any Python app can forward built-in logging records with <code>instrument_logging()</code>. Python events now include structured frames, chained exceptions, runtime metadata, and logger metadata when events come through the logging integration.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "Python integration docs",
+                        docs_site_url(:python_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package page:
+            <%= link_to "PyPI",
+                        "https://pypi.org/project/logister-python/",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% elsif @project.integration_dotnet? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install <code>Logister.AspNetCore</code> in the ASP.NET Core app you want to monitor.</li>
+              <li>Use <code>AddLogister(builder.Configuration)</code> to register the client and <code>UseLogisterExceptionReporting()</code> to capture uncaught request exceptions.</li>
+              <li>Turn on <code>UseLogisterRequestTransactions()</code> when you want ASP.NET Core request timings in the performance view.</li>
+              <li>Set <code>CaptureRequestSpans = true</code> when you want request load waterfall charts.</li>
+              <li>Use the shared <code>LogisterClient</code> for business metrics, spans, check-ins, worker errors, and service-specific logs.</li>
+              <li>Set <code>LOGISTER_RELEASE</code>, <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
+              <li>Call <code>RecordDeploymentAsync()</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with ASP.NET Core</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>dotnet add package Logister.AspNetCore
+
+using Logister.AspNetCore;
+
+builder.Services.AddLogister(builder.Configuration, options =>
+{
+  options.CaptureRequestSpans = true;
+  options.Client.Repository = builder.Configuration["LOGISTER_REPOSITORY"];
+  options.Client.CommitSha = builder.Configuration["LOGISTER_COMMIT_SHA"];
+  options.Client.Branch = builder.Configuration["LOGISTER_BRANCH"];
+});
+
+app.UseLogisterExceptionReporting();
+app.UseLogisterRequestTransactions();</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Custom metrics</h3>
+            <p class="text-sm text-slate-600">
+              Inject <code>LogisterClient</code> anywhere in the app and call <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, <code>CaptureSpanAsync()</code>, <code>CaptureMessageAsync()</code>, <code>CheckInAsync()</code>, or <code>RecordDeploymentAsync()</code> for the app-specific signals you choose.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to ".NET integration docs",
+                        docs_site_url(:dotnet_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package pages:
+            <%= link_to "Logister",
+                        "https://www.nuget.org/packages/Logister",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
+            and
+            <%= link_to "Logister.AspNetCore",
+                        "https://www.nuget.org/packages/Logister.AspNetCore",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% elsif @project.integration_javascript? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install <code>logister-js</code> in the JavaScript or TypeScript service you want to monitor.</li>
+              <li>Use the base client for Node workers and scripts, or add <code>createLogisterMiddleware()</code> and <code>createLogisterErrorHandler()</code> if the app runs on Express.</li>
+              <li>Set <code>captureRequestSpans: true</code> for Express request load waterfall charts, or call <code>capturePageLoad()</code> from <code>logister-js/browser</code> for browser navigation and resource timing.</li>
+              <li>Attach <code>instrumentConsole(client)</code> if you want standard <code>console</code> output and <code>console.error(error)</code> calls to flow into Logister automatically.</li>
+              <li>Set <code>LOGISTER_RELEASE</code>, <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
+              <li>Call <code>recordDeployment()</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
+              <li>Include route, browser, component, or request metadata so JavaScript teams can tell whether an issue came from a request path, a worker, or bundled client-side code.</li>
+              <li>If your frontend stack produces bundles, keep source maps available in your release pipeline so minified frames can be traced back to real source.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with Node or Express</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>npm install logister-js
+
+import { LogisterClient } from "logister-js";
+import { createLogisterMiddleware, createLogisterErrorHandler } from "logister-js/express";
+
+const client = new LogisterClient({
+  apiKey: process.env.LOGISTER_API_KEY,
+  baseUrl: "https://your-logister-host.example",
+  environment: process.env.LOGISTER_ENVIRONMENT,
+  release: process.env.LOGISTER_RELEASE,
+  repository: process.env.LOGISTER_REPOSITORY,
+  commitSha: process.env.LOGISTER_COMMIT_SHA,
+  branch: process.env.LOGISTER_BRANCH
+});</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">What good JavaScript events should include</h3>
+            <p class="text-sm text-slate-600">
+              The most useful JavaScript reports include the route or screen, release, browser or runtime details, chained causes when errors wrap other errors, and enough stack context to tell whether the problem came from app code, an HTTP edge, or bundled output that still needs source maps.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "JavaScript integration docs",
+                        docs_site_url(:javascript_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package page:
+            <%= link_to "npm",
+                        "https://www.npmjs.com/package/logister-js",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% elsif @project.integration_cloudflare_pages? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Use this project for a single Cloudflare Pages site or a tightly related group of preview and production deployments.</li>
+              <li>Enable Cloudflare Web Analytics on the Pages project so traffic and visitor metrics are available from Cloudflare.</li>
+              <li>Track production and preview deployments with context such as branch, commit hash, deployment ID, domain, and Pages project name.</li>
+              <li>When the Rails importer is added, connect a Cloudflare API token from project settings instead of committing credentials to source control.</li>
+              <li>Until the importer exists, use direct HTTP metric and log events for deployment health, build duration, and site-specific counters.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Starter metric shape</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>{
+  "event": {
+    "event_type": "metric",
+    "message": "cloudflare.deployment_build_ms",
+    "context": {
+      "platform": "cloudflare_pages",
+      "service": "marketing-site",
+      "environment": "production",
+      "deployment_id": "abc123",
+      "branch": "main",
+      "commit_sha": "f00ba4",
+      "value": 42831,
+      "unit": "ms"
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Planned importer</h3>
+            <p class="text-sm text-slate-600">
+              The Cloudflare Pages importer will live in the Rails app and pull Web Analytics, Pages deployment status, build duration, branch, domain, and failure data into this project as normalized metric and log events.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Until the dedicated Cloudflare Pages docs are published, use the
+            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
+            for direct telemetry payloads.
+          </p>
+        </div>
+      <% elsif @project.integration_android? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install <code>org.logister:logister-android</code> from Maven Central through Gradle.</li>
+              <li>Start with the Kotlin helpers for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
+              <li>Add app metadata such as package name, version name, version code, build type, Android version, API level, device model, locale, and session ID.</li>
+              <li>Add <code>repository</code>, <code>commit_sha</code>, and <code>branch</code> when the project is connected to the GitHub App.</li>
+              <li>Keep crash and network instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
+              <li>Use Google Play vitals imports later for aggregate crash rate, ANR rate, slow starts, slow rendering, and related platform metrics.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>dependencies {
+    implementation("org.logister:logister-android:0.1.1")
+}</code></pre>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Starter metric shape</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>{
+  "event": {
+    "event_type": "transaction",
+    "message": "screen.load",
+    "duration_ms": 184.2,
+    "context": {
+      "platform": "android",
+      "service": "com.example.app",
+      "release": "1.4.0+42",
+      "screen_name": "Checkout",
+      "android_api_level": 35,
+      "device_model": "Pixel 8",
+      "session_id": "session-123",
+      "repository": "acme/android-app",
+      "commit_sha": "9f4c2a1",
+      "branch": "main"
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
+            <p class="text-sm text-slate-600">
+              Android SDK source, Gradle build files, examples, tests, and release notes live in <code>logister-android</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Package repo:
+            <%= link_to "logister-android",
+                        "https://github.com/taimoorq/logister-android",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Maven Central:
+            <%= link_to "org.logister:logister-android",
+                        "https://central.sonatype.com/artifact/org.logister/logister-android",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% elsif @project.integration_ios? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Add <code>logister-ios</code> from GitHub through Swift Package Manager.</li>
+              <li>Start with the async Swift client for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
+              <li>Add app metadata such as bundle ID, app version, build number, iOS version, device model, locale, and session ID.</li>
+              <li>Add <code>repository</code>, <code>commit_sha</code>, and <code>branch</code> when the project is connected to the GitHub App.</li>
+              <li>Keep crash, URLSession timing, and automatic screen instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
+              <li>Use App Store Connect imports later for aggregate downloads, engagement, usage, retention, and crash trend data.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>dependencies: [
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.1")
+]</code></pre>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Starter metric shape</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>{
+  "event": {
+    "event_type": "transaction",
+    "message": "screen.load",
+    "duration_ms": 142.7,
+    "context": {
+      "platform": "ios",
+      "service": "com.example.app",
+      "release": "1.4.0+42",
+      "screen_name": "Checkout",
+      "ios_version": "18.5",
+      "device_model": "iPhone",
+      "session_id": "session-123",
+      "repository": "acme/ios-app",
+      "commit_sha": "9f4c2a1",
+      "branch": "main"
+    }
+  }
+}</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
+            <p class="text-sm text-slate-600">
+              iOS SDK source, <code>Package.swift</code>, examples, tests, and release notes live in <code>logister-ios</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Package repo:
+            <%= link_to "logister-ios",
+                        "https://github.com/taimoorq/logister-ios",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Release:
+            <%= link_to "v0.1.1",
+                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% elsif @project.integration_http_api? %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Generate a project API key and store it in the sending app, script, or service.</li>
+              <li>POST JSON to <code>/api/v1/ingest_events</code> with <code>Authorization: Bearer &lt;token&gt;</code> or <code>X-Api-Key: &lt;token&gt;</code>.</li>
+              <li>Use <code>event_type</code> values such as <code>error</code>, <code>log</code>, <code>metric</code>, <code>transaction</code>, <code>span</code>, and <code>check_in</code>.</li>
+              <li>Send stable <code>environment</code>, <code>release</code>, <code>trace_id</code>, and <code>request_id</code> fields when you have them so Logister can filter and correlate events.</li>
+              <li>Use <code>/api/v1/check_ins</code> for cron jobs and scheduled tasks when you only need monitor heartbeats.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with cURL</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>curl -X POST https://your-logister-host.example/api/v1/ingest_events \
+  -H "Authorization: Bearer your-project-api-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": {
+      "event_type": "error",
+      "level": "error",
+      "message": "Unhandled exception in CheckoutService",
+      "fingerprint": "checkout-unhandled-exception",
+      "context": {
+        "environment": "production",
+        "release": "2026.05.23",
+        "service": "checkout-api"
+      }
+    }
+  }'</code></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">API tooling</h3>
+            <p class="text-sm text-slate-600">
+              Use the HTTP API guide for payload examples, the Swagger API reference for the OpenAPI contract, or import the Postman collection when you want ready-made requests for every supported event family.
+            </p>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            API contract:
+            <%= link_to "Swagger / OpenAPI reference", docs_site_url(:api_reference), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% else %>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+              <li>Install the <code>logister-ruby</code> gem in the Rails app you want to monitor.</li>
+              <li>Configure the project API token and ingest endpoint in the initializer.</li>
+              <li>Enable database metrics and <code>capture_request_spans</code> if you want request load waterfall charts in the performance view.</li>
+              <li>Set <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
+              <li>Call <code>Logister.record_deployment</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
+            <pre class="<%= project_setup_code_block_class %>"><code>gem "logister-ruby", "~> 0.2.8"
+
+Logister.configure do |config|
+  config.api_key = "your-project-api-token"
+  config.endpoint = "https://your-logister-host.example/api/v1/ingest_events"
+  config.repository = ENV["LOGISTER_REPOSITORY"]
+  config.commit_sha = ENV["LOGISTER_COMMIT_SHA"]
+  config.branch = ENV["LOGISTER_BRANCH"]
+  config.capture_request_spans = true
+end</code></pre>
+          </div>
+
+          <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "Ruby integration docs", docs_site_url(:ruby_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+            Package page:
+            <%= link_to "RubyGems",
+                        "https://rubygems.org/gems/logister-ruby",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
+          </p>
+        </div>
+      <% end %>
+        </div>
+      </details>
+    </article>

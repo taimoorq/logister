@@ -18,13 +18,13 @@ class ApiKeysController < ApplicationController
         end
         format.html do
           flash[:new_api_key_token] = api_key.plain_token
-          redirect_to settings_project_path(@project), notice: "API key created. Copy it now; it will not be shown again."
+          redirect_to setup_project_path(@project, anchor: "api-keys"), notice: "API key created. Copy it now; it will not be shown again."
         end
       end
     else
       respond_to do |format|
         format.turbo_stream { render turbo_stream: turbo_stream.replace("api_key_new_token", partial: "api_keys/error_message", locals: { message: api_key.errors.full_messages.to_sentence }), status: :unprocessable_content }
-        format.html { redirect_to settings_project_path(@project), alert: api_key.errors.full_messages.to_sentence }
+        format.html { redirect_to setup_project_path(@project, anchor: "api-keys"), alert: api_key.errors.full_messages.to_sentence }
       end
     end
   end
@@ -36,7 +36,7 @@ class ApiKeysController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream { render turbo_stream: turbo_stream.remove(api_key) }
-      format.html { redirect_to settings_project_path(@project), notice: "API key revoked." }
+      format.html { redirect_to setup_project_path(@project, anchor: "api-keys"), notice: "API key revoked." }
     end
   end
 

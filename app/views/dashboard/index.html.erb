@@ -159,7 +159,7 @@
                 <% if latest_event.present? %>
                   <%= link_to "Latest event", partitioned_project_event_path(group.project, latest_event), class: "dashboard-attention-action" %>
                 <% end %>
-                <%= link_to "Activity", activity_project_path(group.project), class: "dashboard-attention-action" %>
+                <%= link_to "Events", activity_project_path(group.project), class: "dashboard-attention-action" %>
               </div>
             </div>
           </article>
@@ -313,7 +313,7 @@
                 <% end %>
                 <%= link_to activity_project_path(project) do %>
                   <strong><%= stats.fetch(:activity_events, 0).to_i %></strong>
-                  <span>Activity</span>
+                  <span>Events</span>
                 <% end %>
                 <span>
                   <strong><%= stats[:latest_event_at].present? ? "#{time_ago_in_words(stats[:latest_event_at])} ago" : "--" %></strong>

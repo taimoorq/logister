@@ -14,8 +14,9 @@ class ProjectRateLimitsController < ApplicationController
 
   def update
     if @project.update(rate_limit_params)
-      redirect_to settings_project_path(@project, anchor: "rate-limits"), notice: "Project rate limits updated."
+      redirect_to settings_project_path(@project, section: "admin"), notice: "Project rate limits updated."
     else
+      @settings_section = "admin"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content
     end

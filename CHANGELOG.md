@@ -2,6 +2,20 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.6.0 - 2026-06-18
+
+### Added
+
+- Added a dedicated project Setup page with a setup checklist, API key management, ingest endpoint guidance, and condensed integration instructions.
+- Added goal-oriented project navigation with deliberate Streamline icons for Home, Inbox, Events, Performance, Insights, Deployments, Monitors, Setup, and Settings.
+
+### Changed
+
+- Reorganized project Settings into concise General, Notifications, Team, Integrations, Data, Admin, and Danger sections instead of one dense settings surface.
+- Reworked project redirects and product tours so creation, API keys, integrations, team management, retention, and admin changes return users to the most relevant Setup or Settings section.
+- Renamed user-facing Activity navigation and dashboard copy to Events for logs, metrics, transactions, spans, and check-ins.
+- Updated public self-hosting references for the `v2.6.0` release image tag.
+
 ## v2.5.0 - 2026-06-18
 
 ### Added

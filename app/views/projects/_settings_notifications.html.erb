@@ -1,0 +1,56 @@
+    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
+             id="notifications"
+             <%= tag.attributes(data: product_tour_step_data(tour_group, :email_notifications)) %>>
+      <h2 class="text-base font-bold text-slate-900 mb-2">Email notifications</h2>
+      <p class="text-slate-600 text-sm mb-4">
+        Choose how Logister emails you about errors in this project.
+      </p>
+
+      <%= form_with model: @notification_preference,
+                    url: project_notification_preference_path(@project),
+                    method: :patch,
+                    data: { turbo: false } do |f| %>
+        <div class="space-y-4">
+          <label class="flex items-start gap-3">
+            <%= f.check_box :first_occurrence_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+            <span>
+              <span class="block text-sm font-semibold text-slate-900">First occurrence alerts</span>
+              <span class="block text-sm text-slate-600">Email me when a new error type first appears.</span>
+            </span>
+          </label>
+
+          <div>
+            <%= f.label :digest_frequency, "Digest frequency", class: "form-label" %>
+            <%= f.select :digest_frequency,
+                         options_for_select([ [ "No digest", "none" ], [ "Daily", "daily" ], [ "Weekly", "weekly" ] ], @notification_preference.digest_frequency),
+                         {},
+                         class: "form-input" %>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <%= f.label :digest_send_hour, "Send hour", class: "form-label" %>
+              <%= f.select :digest_send_hour,
+                           options_for_select((0..23).map { |hour| [ "#{hour.to_s.rjust(2, "0")}:00", hour ] }, @notification_preference.digest_send_hour),
+                           {},
+                           class: "form-input" %>
+            </div>
+            <div>
+              <%= f.label :time_zone, "Time zone", class: "form-label" %>
+              <%= f.time_zone_select :time_zone,
+                                     nil,
+                                     {},
+                                     class: "form-input" %>
+            </div>
+          </div>
+
+          <% if @notification_preference.errors.any? %>
+            <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+              <%= @notification_preference.errors.full_messages.to_sentence %>
+            </div>
+          <% end %>
+
+          <%= f.submit "Save email settings", class: "btn-primary" %>
+        </div>
+      <% end %>
+    </article>

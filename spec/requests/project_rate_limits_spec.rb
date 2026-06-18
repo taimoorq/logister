@@ -24,7 +24,7 @@ RSpec.describe "Project rate limits", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "rate-limits"))
+      expect(response).to redirect_to(settings_project_path(project, section: "admin"))
       expect(project.reload.public_api_rate_limit_requests_override).to eq(2400)
       expect(project.public_api_rate_limit_period_seconds_override).to eq(120)
       expect(project.public_api_auth_failure_rate_limit_requests_override).to eq(240)
@@ -48,7 +48,7 @@ RSpec.describe "Project rate limits", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "rate-limits"))
+      expect(response).to redirect_to(settings_project_path(project, section: "admin"))
       expect(project.reload.public_api_rate_limit_requests_override).to be_nil
       expect(project.public_api_rate_limit_period_seconds_override).to be_nil
       expect(project.public_api_auth_failure_rate_limit_requests_override).to be_nil

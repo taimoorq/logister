@@ -80,8 +80,8 @@ RSpec.describe "Mobile project review layouts", type: :system do
     expect_page_to_fit_phone_viewport
   end
 
-  it "keeps setup code blocks readable on project settings" do
-    visit settings_project_path(projects(:system_inbox))
+  it "keeps setup code blocks readable on project setup" do
+    visit setup_project_path(projects(:system_inbox))
 
     expect(page).to have_css("pre.mobile-x-scroll")
 

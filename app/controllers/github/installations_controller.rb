@@ -11,11 +11,11 @@ module Github
     def sync
       result = InstallationSync.resync(installation: @installation)
 
-      redirect_to settings_project_path(@project, anchor: "source-repositories"),
+      redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
                   notice: "GitHub repositories synced. Found #{result.repositories.size} repositories."
     rescue InstallationSync::Error, InstallationRepositoriesClient::Error, InstallationToken::Error => error
       Rails.logger.warn("GitHub installation sync failed: #{error.class} #{error.message}")
-      redirect_to settings_project_path(@project, anchor: "source-repositories"),
+      redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
                   alert: "GitHub repositories could not be synced."
     end
 

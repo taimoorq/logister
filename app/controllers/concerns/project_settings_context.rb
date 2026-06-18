@@ -4,6 +4,7 @@ module ProjectSettingsContext
   private
 
   def load_project_settings_context
+    ensure_project_settings_navigation
     @owner = @project.user
     @project_memberships = @project.project_memberships
                                   .select(:id, :uuid, :project_id, :user_id, :role, :created_at)
@@ -50,5 +51,17 @@ module ProjectSettingsContext
                                          .select(:id, :project_id, :scope, :before_at, :rows, :status, :created_at)
                                          .recent_first
                                          .limit(5)
+  end
+
+  def ensure_project_settings_navigation
+    return unless defined?(ProjectSettingsController::SETTINGS_SECTIONS)
+
+    sections = %w[general notifications]
+    sections += %w[team integrations data danger] if @project.owned_by?(current_user)
+    sections << "admin" if respond_to?(:admin_user?) && admin_user?
+    @settings_sections ||= ProjectSettingsController::SETTINGS_SECTIONS.slice(*sections)
+
+    requested = @settings_section.presence || params[:section].to_s
+    @settings_section = @settings_sections.key?(requested) ? requested : "general"
   end
 end

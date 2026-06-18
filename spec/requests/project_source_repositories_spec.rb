@@ -20,7 +20,7 @@ RSpec.describe "Project source repositories", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "source-repositories"))
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
       repository = project.source_repositories.find_by!(full_name: "acme/storefront")
       expect(repository).to be_enabled
       expect(repository.default_branch).to eq("main")
@@ -67,7 +67,7 @@ RSpec.describe "Project source repositories", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "source-repositories"))
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
       repository = project.source_repositories.find_by!(full_name: "acme/private-api")
       expect(repository.github_repository).to eq(github_repository)
       expect(repository.github_installation).to eq(installation)
@@ -129,7 +129,7 @@ RSpec.describe "Project source repositories", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "source-repositories"))
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
       repository.reload
       expect(repository.default_branch).to eq("production")
       expect(repository.runtime_root).to eq("/srv/app")
@@ -145,7 +145,7 @@ RSpec.describe "Project source repositories", type: :request do
       create(:github_repository, github_installation: installation, full_name: "acme/private-api")
       sign_in users(:one)
 
-      get settings_project_path(project)
+      get settings_project_path(project, section: "integrations")
 
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Source repositories")

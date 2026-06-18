@@ -7,7 +7,7 @@
     <div>
       <h2 class="text-base font-bold text-slate-900 mb-2">Data retention</h2>
       <p class="text-slate-600 text-sm">
-        Keep the most useful diagnostic data hot, then prune older activity safely by project.
+        Keep the most useful diagnostic data hot, then prune older events safely by project.
       </p>
     </div>
     <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
@@ -27,7 +27,7 @@
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div>
-        <%= f.label :hot_retention_days, "Activity retention", class: "form-label" %>
+        <%= f.label :hot_retention_days, "Event retention", class: "form-label" %>
         <%= f.select :hot_retention_days,
                      options_for_select(retention_day_options, retention_policy.hot_retention_days),
                      {},

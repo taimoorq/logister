@@ -1,0 +1,65 @@
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+               id="rate-limits">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 mb-2">Public API rate limits</h2>
+            <p class="text-slate-600 text-sm">
+              App-admin override for this project. Blank fields use the global defaults.
+            </p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            Global default:
+            <span class="font-semibold text-slate-900"><%= number_with_delimiter(@public_api_rate_limit_defaults[:requests]) %>/minute</span>
+          </div>
+        </div>
+
+        <%= form_with model: @project,
+                      url: project_rate_limit_path(@project),
+                      method: :patch,
+                      class: "mt-5 space-y-5" do |f| %>
+          <% if @project.errors.any? %>
+            <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+              <%= @project.errors.full_messages.to_sentence %>
+            </div>
+          <% end %>
+
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <%= f.label :public_api_rate_limit_requests_override, "Accepted requests", class: "form-label" %>
+              <%= f.number_field :public_api_rate_limit_requests_override,
+                                 min: Project::MIN_PUBLIC_API_RATE_LIMIT_REQUESTS,
+                                 max: Project::MAX_PUBLIC_API_RATE_LIMIT_REQUESTS,
+                                 placeholder: @public_api_rate_limit_defaults[:requests],
+                                 class: "form-input" %>
+              <p class="mt-1 text-xs text-slate-500">Per API token and endpoint.</p>
+            </div>
+
+            <div>
+              <%= f.label :public_api_rate_limit_period_seconds_override, "Window seconds", class: "form-label" %>
+              <%= f.number_field :public_api_rate_limit_period_seconds_override,
+                                 min: Project::MIN_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS,
+                                 max: Project::MAX_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS,
+                                 placeholder: @public_api_rate_limit_defaults[:period_seconds],
+                                 class: "form-input" %>
+              <p class="mt-1 text-xs text-slate-500">Fixed-window duration.</p>
+            </div>
+
+            <div>
+              <%= f.label :public_api_auth_failure_rate_limit_requests_override, "Auth failures", class: "form-label" %>
+              <%= f.number_field :public_api_auth_failure_rate_limit_requests_override,
+                                 min: Project::MIN_PUBLIC_API_RATE_LIMIT_REQUESTS,
+                                 max: Project::MAX_PUBLIC_API_RATE_LIMIT_REQUESTS,
+                                 placeholder: @public_api_rate_limit_defaults[:auth_failure_requests],
+                                 class: "form-input" %>
+              <p class="mt-1 text-xs text-slate-500">Per source IP when the token maps to this project.</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-xs text-slate-500">
+              Global limits still apply to missing or unknown tokens.
+            </p>
+            <%= f.submit "Save rate limits", class: "btn-primary" %>
+          </div>
+        <% end %>
+      </article>

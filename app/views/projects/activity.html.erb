@@ -8,7 +8,7 @@
   <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :events)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-      <h2 class="text-lg font-bold text-slate-900">Custom events</h2>
+      <h2 class="text-lg font-bold text-slate-900">Events</h2>
       <p class="text-slate-500 text-sm">
         Metrics, logs, transactions, and check-ins sent from your
         <%= @project.integration_label %> integration.
@@ -70,7 +70,7 @@
 
     <% if @activity_events.any? %>
       <%= responsive_scroll_region do %>
-        <table class="min-w-full divide-y divide-slate-200" aria-label="Custom events">
+        <table class="min-w-full divide-y divide-slate-200" aria-label="Events">
           <thead class="bg-slate-50">
             <tr>
               <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Type</th>
@@ -124,13 +124,13 @@
     <% else %>
       <p class="text-slate-600 text-sm">
         <% if @activity_filters_active %>
-          No custom events match these filters.
+          No events match these filters.
         <% elsif @project.integration_cfml? %>
-          No custom events yet. Follow the
+          No events yet. Follow the
           <%= link_to "CFML integration docs", docs_site_url(:cfml_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
           to send metrics, logs, transactions, and check-ins from your Lucee or ColdFusion app.
         <% elsif @project.integration_python? %>
-          No custom events yet. Use
+          No events yet. Use
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.capture_metric()</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.capture_message()</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.capture_transaction()</code>, or
@@ -138,7 +138,7 @@
           from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-python</code>. For Python services, the usual starting point is framework hooks plus worker instrumentation: pair that with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_fastapi()</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_flask()</code>, or <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LogisterMiddleware</code> so request-level errors arrive with framework context, and use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrument_logging()</code> if you want standard Python log records to show up automatically. Set <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LOGISTER_CAPTURE_LOCALS=true</code> if you want frame locals visible in Python error details. You can also start with the
           <%= link_to "Python integration docs", docs_site_url(:python_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_dotnet? %>
-          No custom events yet. Inject
+          No events yet. Inject
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">LogisterClient</code>
           and call
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">CaptureMetricAsync()</code>,
@@ -148,7 +148,7 @@
           from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-dotnet</code>. For ASP.NET Core apps, start with <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">AddLogister()</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">UseLogisterExceptionReporting()</code>, and optional request transactions. You can also start with the
           <%= link_to ".NET integration docs", docs_site_url(:dotnet_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_javascript? %>
-          No custom events yet. Use
+          No events yet. Use
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureMetric()</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureMessage()</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">client.captureTransaction()</code>, or
@@ -156,23 +156,23 @@
           from <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">logister-js</code>. For JavaScript and TypeScript services, the usual starting point is request errors plus operational logging: use <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">instrumentConsole()</code> if you want standard console events to show up automatically, and include release, route, browser, and request context when you send events so issues can be grouped with more than a raw stack trace. You can also start with the
           <%= link_to "JavaScript integration docs", docs_site_url(:javascript_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_cloudflare_pages? %>
-          No custom events yet. Send Cloudflare Pages deployment or traffic metrics directly through the HTTP API for now. When the Rails importer is added, this project will pull Web Analytics and deployment health from Cloudflare.
+          No events yet. Send Cloudflare Pages deployment or traffic metrics directly through the HTTP API for now. When the Rails importer is added, this project will pull Web Analytics and deployment health from Cloudflare.
           Start with the
           <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% elsif @project.integration_android? %>
-          No custom events yet. Install
+          No events yet. Install
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">org.logister:logister-android</code>
           and send Android app telemetry with
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">platform: "android"</code>
           context. Start with manual errors, logs, metrics, transactions, spans, and check-ins.
         <% elsif @project.integration_ios? %>
-          No custom events yet. Add
+          No events yet. Add
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">https://github.com/taimoorq/logister-ios.git</code>
           through Swift Package Manager and send iOS app telemetry with
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">platform: "ios"</code>
           context. Start with manual errors, logs, metrics, transactions, spans, and check-ins.
         <% elsif @project.integration_http_api? %>
-          No custom events yet. POST
+          No events yet. POST
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">metric</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">log</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">transaction</code>,
@@ -185,7 +185,7 @@
           values when available. You can also start with the
           <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>.
         <% else %>
-          No custom events yet. Use
+          No events yet. Use
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_metric</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_log</code>,
           <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Logister.report_transaction</code>, or

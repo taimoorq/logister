@@ -10,8 +10,9 @@ class ProjectNotificationPreferencesController < ApplicationController
     @notification_preference = ProjectNotificationPreference.for(user: current_user, project: @project)
 
     if @notification_preference.update(notification_preference_params)
-      redirect_to settings_project_path(@project, anchor: "notifications"), notice: "Email notification settings updated."
+      redirect_to settings_project_path(@project, section: "notifications"), notice: "Email notification settings updated."
     else
+      @settings_section = "notifications"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content
     end

@@ -64,7 +64,7 @@ class ProjectsController < ApplicationController
   def create
     @project = current_user.projects.new(project_create_params)
     if @project.save
-      redirect_to settings_project_path(@project, anchor: "integration-guide"),
+      redirect_to setup_project_path(@project),
                   notice: "Project created. Follow the #{@project.integration_label} setup guide to start ingesting events."
     else
       render :new, status: :unprocessable_content
@@ -76,7 +76,7 @@ class ProjectsController < ApplicationController
 
   def update
     if @project.update(project_update_params)
-      redirect_to settings_project_path(@project), notice: "Project updated."
+      redirect_to settings_project_path(@project, section: "general"), notice: "Project updated."
     else
       render :edit, status: :unprocessable_content
     end

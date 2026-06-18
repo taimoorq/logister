@@ -13,10 +13,11 @@ class ProjectIntegrationSettingsController < ApplicationController
     @integration_setting.assign_attributes(integration_setting_params)
 
     if @integration_setting.save
-      redirect_to settings_project_path(@project, anchor: "platform-integration"),
+      redirect_to settings_project_path(@project, section: "integrations", anchor: "platform-integration"),
                   notice: "#{@integration_setting.provider.humanize} settings updated."
     else
       @cloudflare_integration_setting = @integration_setting if @integration_setting.provider_cloudflare_pages?
+      @settings_section = "integrations"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content
     end

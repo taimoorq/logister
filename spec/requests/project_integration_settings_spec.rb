@@ -20,7 +20,7 @@ RSpec.describe "Project integration settings", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "platform-integration"))
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "platform-integration"))
       setting = ProjectIntegrationSetting.find_by!(project: project, provider: "cloudflare_pages")
       expect(setting).to be_enabled
       expect(setting.account_id).to eq("account-123")
@@ -73,7 +73,7 @@ RSpec.describe "Project integration settings", type: :request do
       project = create(:project, :cloudflare_pages, user: users(:one))
       sign_in users(:one)
 
-      get settings_project_path(project)
+      get settings_project_path(project, section: "integrations")
 
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Cloudflare Pages connection")

@@ -11,7 +11,7 @@ en:
         project_navigation:
           order: 2
           title: "Project navigation"
-          tour: "Use the project sections to move between the overview, insights, Activity tools like Inbox, Events, and Monitors, and settings."
+          tour: "Use the project sections as user paths: start at Home, triage in Inbox, inspect Events and Performance, explore Insights, review Deployments and Monitors, then use Setup or Settings when you need configuration."
       dashboard:
         overview:
           order: 1
@@ -63,16 +63,16 @@ en:
         summary:
           order: 3
           title: "Fleet summary"
-          tour: "This strip summarizes how many apps are visible, how many open errors exist, recent activity volume, and quiet projects."
+          tour: "This strip summarizes how many apps are visible, how many open errors exist, recent event volume, and quiet projects."
         cards:
           order: 4
           title: "Project cards"
-          tour: "Each card opens a project and summarizes recent activity, open errors, total error groups, and event volume."
+          tour: "Each card opens a project and summarizes recent events, open errors, total error groups, and event volume."
       project-overview:
         sections:
           order: 3
           title: "Project sections"
-          tour: "These cards summarize the main workflows: triaging errors, reviewing activity, and inspecting performance."
+          tour: "These cards summarize the main workflows: triaging errors, reviewing events, and inspecting performance."
         recent_signals:
           order: 4
           title: "Recent signals"
@@ -131,8 +131,21 @@ en:
       project-activity:
         events:
           order: 1
-          title: "Activity events"
+          title: "Events"
           tour: "This page lists logs, metrics, transactions, and check-ins with filters for type, period, environment, release, and search text."
+      project-setup:
+        checklist:
+          order: 1
+          title: "Setup progress"
+          tour: "This checklist shows whether the project has a token, incoming events, source context, and deployment data."
+        api_keys:
+          order: 2
+          title: "API keys"
+          tour: "Project API keys authenticate events sent by your app. New tokens are shown once after generation."
+        integration_guide:
+          order: 3
+          title: "Integration guide"
+          tour: "The setup guide keeps the shortest path visible first and leaves detailed integration notes behind a disclosure."
       project-monitors:
         status:
           order: 1
@@ -143,26 +156,18 @@ en:
           order: 1
           title: "Email notifications"
           tour: "Notification settings control first-occurrence alerts and digest timing for this project."
-        api_keys:
-          order: 2
-          title: "API keys"
-          tour: "Project API keys authenticate events sent by your app. New tokens are shown once after generation."
         access:
-          order: 3
+          order: 2
           title: "Project access"
           tour: "Invite teammates and review membership roles and open assignment counts from this panel."
         retention:
-          order: 4
+          order: 3
           title: "Data retention"
-          tour: "Set how long project activity, traces, and closed errors stay hot, and choose whether old data is archived before cleanup."
+          tour: "Set how long project events, traces, and closed errors stay hot, and choose whether old data is archived before cleanup."
         lifecycle:
-          order: 5
+          order: 4
           title: "Project lifecycle"
           tour: "Archive keeps history while hiding the project from active views; delete permanently removes project data."
-        integration_guide:
-          order: 6
-          title: "Integration guide"
-          tour: "This guide shows the recommended setup path for the selected integration type."
       project-new:
         app_name:
           order: 1

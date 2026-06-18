@@ -9,8 +9,9 @@ class ProjectRetentionPoliciesController < ApplicationController
     @retention_policy = ProjectRetentionPolicy.for(project: @project)
 
     if @retention_policy.update(retention_policy_params)
-      redirect_to settings_project_path(@project, anchor: "retention"), notice: "Data retention policy updated."
+      redirect_to settings_project_path(@project, section: "data"), notice: "Data retention policy updated."
     else
+      @settings_section = "data"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content
     end

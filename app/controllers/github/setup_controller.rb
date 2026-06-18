@@ -22,7 +22,7 @@ module Github
       project = current_user.projects.find_by(uuid: params[:state].to_s)
       return projects_path unless project
 
-      settings_project_path(project, anchor: "source-repositories")
+      settings_project_path(project, section: "integrations", anchor: "source-repositories")
     end
   end
 end

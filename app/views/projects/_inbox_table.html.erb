@@ -99,7 +99,7 @@
         <% if has_activity_events %>
           <p class="muted mt-2">
             This project has logs, metrics, transactions, or check-ins. Those live in
-            <%= link_to "Activity", activity_project_path(project), class: "inline-link", data: { turbo_frame: "_top" } %>.
+            <%= link_to "Events", activity_project_path(project), class: "inline-link", data: { turbo_frame: "_top" } %>.
           </p>
         <% end %>
         <% if query.present? %>

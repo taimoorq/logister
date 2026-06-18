@@ -19,7 +19,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Ruby gem")
         expect(response.body).to include("Active apps")
-        expect(response.body).to include("Activity 7d")
+        expect(response.body).to include("Events 7d")
         expect(response.body).to include("Active", "Archived", "All")
         expect(response.body).to include(">Docs<")
         expect(response.body).to include("documentation section")
@@ -56,7 +56,7 @@ RSpec.describe "Projects", type: :request do
         expect(all_errors_link).to be_present
         expect(all_errors_link.text).to include("All error groups", "0", "No errors yet")
         expect(activity_link).to be_present
-        expect(activity_link.text).to include("Activity 7d", "2", "View activity")
+        expect(activity_link.text).to include("Events 7d", "2", "View events")
         expect(card.at_css(".project-card-line-chart")).to be_present
         expect(card.text).to include("No open errors")
       end
@@ -146,9 +146,9 @@ RSpec.describe "Projects", type: :request do
           "Recent signals"
         )
         expect(document.at_css(".tour-help-button[data-action='click->product-tour#start']")).to be_present
-        expect(document.text).to include("Inbox", "Error groups", "Activity", "Events and logs", "Performance", "Transactions")
+        expect(document.text).to include("Inbox", "Error groups", "Events", "Events and logs", "Performance", "Transactions")
         expect(document.at_css("a[href='#{inbox_project_path(project, filter: 'unresolved')}']").text).to include("1", "Open")
-        expect(document.css("a[href='#{activity_project_path(project)}']").map(&:text).join(" ")).to include("View activity")
+        expect(document.css("a[href='#{activity_project_path(project)}']").map(&:text).join(" ")).to include("View events")
         expect(document.css("a[href='#{performance_project_path(project)}']").map(&:text).join(" ")).to include("View performance")
         expect(document.text).to include("Logs 1", "Transactions 1", "DB queries", "1")
         timeline = document.at_css("[data-controller='project-insights']")
@@ -168,7 +168,7 @@ RSpec.describe "Projects", type: :request do
         expect(timeline_payload.fetch("storage_key")).to eq("logister.project-overview-insights.#{project.uuid}")
       end
 
-      it "points activity-only .NET projects from the empty inbox to Activity" do
+      it "points activity-only .NET projects from the empty inbox to Events" do
         project = create(:project, :dotnet, user: users(:one), name: "quria-work")
         api_key = create(:api_key, project: project, user: users(:one))
         create(:ingest_event, :transaction, project: project, api_key: api_key)
@@ -182,7 +182,7 @@ RSpec.describe "Projects", type: :request do
 
         expect(inbox.text).to include("No errors matching this filter")
         expect(inbox.text).to include("Those live in")
-        expect(inbox.at_css("a[href='#{activity_project_path(project)}']").text).to eq("Activity")
+        expect(inbox.at_css("a[href='#{activity_project_path(project)}']").text).to eq("Events")
       end
 
       it "returns 404 for project user cannot access" do
@@ -427,25 +427,21 @@ RSpec.describe "Projects", type: :request do
     context "when signed in as owner" do
       before { sign_in users(:one) }
 
-      it "returns success and shows settings (API keys, project access)" do
+      it "returns success and shows focused project settings" do
         get settings_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
-        expect(response.body).to include("API keys")
-        expect(response.body).to include("Project access")
-        expect(response.body).to include("Data retention")
-        expect(response.body).to include("Integration guide")
-        expect(response.body).to include("Ruby gem")
-        expect(response.body).to include("logister-ruby")
-        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
-        expect(response.body).to include('target="_blank"')
+        expect(response.body).to include("Project identity")
+        expect(response.body).to include("General", "Notifications", "Team", "Integrations", "Data", "Danger")
+        expect(response.body).not_to include("API keys")
+        expect(response.body).not_to include("Integration guide")
         expect(response.body).not_to include("Public API rate limits")
       end
 
-      it "shows archived state in settings without allowing new API keys" do
+      it "shows archived state on setup without allowing new API keys" do
         project = create(:project, :archived, user: users(:one), name: "Archived Settings App")
 
-        get settings_project_path(project)
+        get setup_project_path(project)
 
         expect(response).to have_http_status(:success)
 
@@ -454,7 +450,7 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css(".project-archived-notice").text).to include("Archived project")
         expect(document.text).to include("API tokens are disabled while this project is archived")
         expect(document.at_css("input[name='api_key[name]']")).to be_nil
-        expect(document.at_css("form[action='#{restore_project_path(project)}']")).to be_present
+        expect(document.at_css("a[href='#{settings_project_path(project, section: 'danger')}']")).to be_present
         expect(document.at_css(".sidebar-action-link")["href"]).to eq(projects_path(filter: "archived"))
       end
 
@@ -466,7 +462,7 @@ RSpec.describe "Projects", type: :request do
         create(:error_group, project: project, assignee: member, assigned_by: users(:one))
         create(:error_group, project: project)
 
-        get settings_project_path(project)
+        get settings_project_path(project, section: "team")
 
         expect(response).to have_http_status(:success)
 
@@ -481,7 +477,7 @@ RSpec.describe "Projects", type: :request do
       it "shows JavaScript-specific integration guidance for logister-js projects" do
         project = create(:project, user: users(:one), integration_kind: "javascript", name: "Node App")
 
-        get settings_project_path(project)
+        get setup_project_path(project)
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("JavaScript / TypeScript")
@@ -496,7 +492,7 @@ RSpec.describe "Projects", type: :request do
       it "shows Python-specific integration guidance for logister-python projects" do
         project = create(:project, user: users(:one), integration_kind: "python", name: "Python App")
 
-        get settings_project_path(project)
+        get setup_project_path(project)
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Python")
@@ -509,7 +505,7 @@ RSpec.describe "Projects", type: :request do
       it "shows .NET-specific integration guidance for logister-dotnet projects" do
         project = create(:project, user: users(:one), integration_kind: "dotnet", name: "QuriaTime")
 
-        get settings_project_path(project)
+        get setup_project_path(project)
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include(".NET / ASP.NET Core")
@@ -521,7 +517,7 @@ RSpec.describe "Projects", type: :request do
       end
 
       it "returns 404 for project user cannot access" do
-        get settings_project_path(projects(:two))
+        get settings_project_path(projects(:two), section: "admin")
         expect(response).to have_http_status(:not_found)
       end
 
@@ -529,7 +525,7 @@ RSpec.describe "Projects", type: :request do
         original = ENV["LOGISTER_ADMIN_EMAILS"]
         ENV["LOGISTER_ADMIN_EMAILS"] = users(:one).email
 
-        get settings_project_path(projects(:two))
+        get settings_project_path(projects(:two), section: "admin")
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:two).name)
@@ -547,10 +543,11 @@ RSpec.describe "Projects", type: :request do
         get settings_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include("Project identity")
       end
 
       it "shows CFML-specific integration guidance for CFML projects" do
-        get settings_project_path(projects(:two))
+        get setup_project_path(projects(:two))
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Integration guide")
         expect(response.body).to include("CFML integration docs")
@@ -579,21 +576,19 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
-      it "groups insights and performance under the project insights menu" do
+      it "shows insights and performance as top-level project paths" do
         project = projects(:one)
 
         get performance_project_path(project)
 
         document = Nokogiri::HTML.parse(response.body)
         nav = document.at_css("nav[aria-label='Project sections']")
-        insights_menu = nav.at_css(".project-nav-insights")
-        insights_links = insights_menu.css("a")
-        active_link = insights_menu.at_css("a[aria-current='page']")
+        links = nav.css("> a")
+        active_link = nav.at_css("a[aria-current='page']")
 
-        expect(insights_menu.at_css("summary").text).to include("Insights")
-        expect(insights_links.map { |link| link["href"] }).to include(insights_project_path(project), performance_project_path(project))
-        expect(insights_links.map(&:text).join(" ")).to include("Telemetry insights", "Charts, signal mix, and metric series")
-        expect(insights_links.map(&:text).join(" ")).to include("Performance", "Transactions, spans, and database load")
+        expect(links.map { |link| link["href"] }).to include(insights_project_path(project), performance_project_path(project))
+        expect(links.map { |link| link.text.strip }).to include("Insights", "Performance")
+        expect(nav.at_css(".project-nav-insights")).to be_nil
         expect(active_link["href"]).to eq(performance_project_path(project))
       end
 
@@ -724,25 +719,29 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
-      it "groups inbox, events, and monitors under the activity menu" do
+      it "shows project user paths as top-level navigation" do
         project = projects(:one)
 
         get monitors_project_path(project)
 
         document = Nokogiri::HTML.parse(response.body)
         nav = document.at_css("nav[aria-label='Project sections']")
-        top_links = nav.css("> a")
-        activity_menu = nav.at_css(".project-nav-activity")
-        activity_links = activity_menu.css("a")
-        active_link = activity_menu.at_css("a[aria-current='page']")
+        links = nav.css("> a")
+        active_link = nav.at_css("a[aria-current='page']")
 
-        expect(top_links.map { |link| link.text.strip }).to include("Overview", "Settings")
-        expect(top_links.map { |link| link.text.strip }).not_to include("Inbox", "Errors", "Monitors")
-        expect(activity_menu.at_css("summary").text).to include("Activity")
-        expect(activity_links.map { |link| link["href"] }).to include(inbox_project_path(project), activity_project_path(project), monitors_project_path(project))
-        expect(activity_links.map(&:text).join(" ")).to include("Inbox", "Errors and user-impacting failures")
-        expect(activity_links.map(&:text).join(" ")).to include("Events", "Events, logs, and recent telemetry")
-        expect(activity_links.map(&:text).join(" ")).to include("Monitors", "Check-ins and background job heartbeats")
+        expect(links.map { |link| link.text.strip }).to eq(%w[Home Inbox Events Performance Insights Deployments Monitors Setup Settings])
+        expect(links.map { |link| link["href"] }).to include(
+          project_path(project),
+          inbox_project_path(project),
+          activity_project_path(project),
+          performance_project_path(project),
+          insights_project_path(project),
+          deployments_project_path(project),
+          monitors_project_path(project),
+          setup_project_path(project),
+          settings_project_path(project)
+        )
+        expect(nav.at_css(".project-nav-activity")).to be_nil
         expect(active_link["href"]).to eq(monitors_project_path(project))
       end
 
@@ -797,7 +796,7 @@ RSpec.describe "Projects", type: :request do
         get activity_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
-        expect(response.body).to include("Custom events")
+        expect(response.body).to include("Events")
         expect(response.body).to include("Ruby integration docs")
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
@@ -829,7 +828,7 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
 
         document = Nokogiri::HTML.parse(response.body)
-        rows = document.css("table[aria-label='Custom events'] tbody tr")
+        rows = document.css("table[aria-label='Events'] tbody tr")
         older_link = document.css("nav[aria-label='Pagination'] a").find { |link| link.text.strip == "Older" }
 
         expect(rows.size).to eq(1)
@@ -841,7 +840,7 @@ RSpec.describe "Projects", type: :request do
         get older_link["href"]
 
         document = Nokogiri::HTML.parse(response.body)
-        rows = document.css("table[aria-label='Custom events'] tbody tr")
+        rows = document.css("table[aria-label='Events'] tbody tr")
 
         expect(rows.size).to eq(1)
         expect(rows.first.text).to include("paged log older")
@@ -990,7 +989,7 @@ RSpec.describe "Projects", type: :request do
         get activity_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
-        expect(response.body).to include("Custom events")
+        expect(response.body).to include("Events")
       end
 
       it "shows CFML integration docs on CFML activity pages" do
@@ -1057,7 +1056,7 @@ RSpec.describe "Projects", type: :request do
 
         patch project_path(project), params: { project: { name: "Renamed App", slug: "manual-change", description: "New desc", integration_kind: "http_api" } }
 
-        expect(response).to redirect_to(settings_project_path(project))
+        expect(response).to redirect_to(settings_project_path(project, section: "general"))
         expect(project.reload.name).to eq("Renamed App")
         expect(project.slug).to eq(original_slug)
         expect(project.description).to eq("New desc")
@@ -1137,12 +1136,12 @@ RSpec.describe "Projects", type: :request do
       expect {
         post projects_path, params: { project: { name: "New App", slug: "manual-change", description: "Desc", integration_kind: "http_api" } }
       }.to change(Project, :count).by(1)
-      expect(response).to redirect_to(settings_project_path(Project.last, anchor: "integration-guide"))
+      expect(response).to redirect_to(setup_project_path(Project.last))
       expect(Project.last.slug).to eq("new-app")
       expect(Project.last.integration_kind).to eq("http_api")
       follow_redirect!
       expect(response.body).to include("Project created")
-      expect(response.body).to include("Recommended setup for")
+      expect(response.body).to include("Connect this project", "Recommended setup for")
       expect(response.body).to include("Manual / HTTP API")
       expect(response.body).to include("HTTP API docs")
     end

@@ -1,0 +1,21 @@
+<nav class="mobile-x-scroll flex w-full max-w-full flex-nowrap gap-2 pb-1" aria-label="Project settings sections">
+  <% section_icons = {
+    "general" => :settings,
+    "notifications" => :notifications,
+    "team" => :team,
+    "integrations" => :integrations,
+    "data" => :data,
+    "admin" => :admin,
+    "danger" => :danger
+  } %>
+
+  <% @settings_sections.each do |key, label| %>
+    <% active = key == @settings_section %>
+    <%= link_to settings_project_path(@project, section: key),
+                class: "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold no-underline #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}",
+                aria: { current: ("page" if active) } do %>
+      <%= app_icon(section_icons.fetch(key, :settings), css: "h-3.5 w-3.5 shrink-0") %>
+      <span><%= label %></span>
+    <% end %>
+  <% end %>
+</nav>

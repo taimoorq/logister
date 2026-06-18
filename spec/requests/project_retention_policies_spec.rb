@@ -18,7 +18,7 @@ RSpec.describe "Project retention policies", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "retention"))
+      expect(response).to redirect_to(settings_project_path(project, section: "data"))
       policy = ProjectRetentionPolicy.find_by!(project: project)
       expect(policy.hot_retention_days).to eq(60)
       expect(policy.trace_retention_days).to eq(90)

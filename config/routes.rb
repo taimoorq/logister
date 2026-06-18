@@ -65,6 +65,7 @@ Rails.application.routes.draw do
       get :inbox
       patch :archive
       patch :restore
+      get :setup, to: "project_setup#show"
       get :settings, to: "project_settings#show"
       get "insights/data", to: "project_insights#data", as: :insights_data
       get :insights, to: "project_insights#show"

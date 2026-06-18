@@ -19,7 +19,7 @@ RSpec.describe "GitHub installations", type: :request do
       post project_github_installation_sync_path(project, installation)
 
       expect(Github::InstallationSync).to have_received(:resync).with(installation: installation)
-      expect(response).to redirect_to(settings_project_path(project, anchor: "source-repositories"))
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
       expect(flash[:notice]).to include("Found 1 repositories")
     end
 
@@ -43,7 +43,7 @@ RSpec.describe "GitHub installations", type: :request do
 
       post project_github_installation_sync_path(project, installation)
 
-      expect(response).to redirect_to(settings_project_path(project, anchor: "source-repositories"))
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
       expect(flash[:alert]).to eq("GitHub repositories could not be synced.")
     end
   end

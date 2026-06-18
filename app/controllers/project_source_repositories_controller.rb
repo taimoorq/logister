@@ -10,9 +10,10 @@ class ProjectSourceRepositoriesController < ApplicationController
     @source_repository_form = @project.source_repositories.new(source_repository_params)
 
     if @source_repository_form.save
-      redirect_to settings_project_path(@project, anchor: "source-repositories"),
+      redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
                   notice: "Source repository connected."
     else
+      @settings_section = "integrations"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content
     end
@@ -20,10 +21,11 @@ class ProjectSourceRepositoriesController < ApplicationController
 
   def update
     if @source_repository.update(source_repository_params)
-      redirect_to settings_project_path(@project, anchor: "source-repositories"),
+      redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
                   notice: "Source repository updated."
     else
       @source_repository_form = @project.source_repositories.new(provider: ProjectSourceRepository::PROVIDERS[:github])
+      @settings_section = "integrations"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content
     end
@@ -31,7 +33,7 @@ class ProjectSourceRepositoriesController < ApplicationController
 
   def destroy
     @source_repository.destroy
-    redirect_to settings_project_path(@project, anchor: "source-repositories"),
+    redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
                 notice: "Source repository removed."
   end
 

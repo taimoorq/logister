@@ -16,7 +16,7 @@ RSpec.describe "Project notification preferences", type: :request do
         }
       }
 
-      expect(response).to redirect_to(settings_project_path(projects(:one), anchor: "notifications"))
+      expect(response).to redirect_to(settings_project_path(projects(:one), section: "notifications"))
       preference = ProjectNotificationPreference.find_by!(project: projects(:one), user: users(:one))
       expect(preference.first_occurrence_enabled).to be false
       expect(preference.digest_frequency).to eq("weekly")

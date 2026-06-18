@@ -14,7 +14,7 @@
     </div>
 
     <% if show_settings_link && project.owned_by?(current_user) %>
-      <%= link_to "Restore in settings", settings_project_path(project), class: "project-archived-notice-link" %>
+      <%= link_to "Restore in settings", settings_project_path(project, section: "danger"), class: "project-archived-notice-link" %>
     <% end %>
   </div>
 <% end %>

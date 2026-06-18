@@ -1,0 +1,56 @@
+<% tour_group = "project-setup" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+
+<%= render "projects/header", tour_group: tour_group %>
+
+<% setup_steps = [
+  [ "API key", :key, @setup_active_api_key_count.positive?, @project.owned_by?(current_user) ? "Create a token for the app." : "Ask the owner for a token." ],
+  [ "First event", :events, @setup_has_events, "Send one error, log, metric, or transaction." ],
+  [ "Source repo", :source_code, @setup_has_source_repository, "Connect GitHub for source-aware frames." ],
+  [ "Deployments", :deployments, @setup_has_deployments, "Record deploys from CI/CD." ]
+] %>
+
+<section class="space-y-6">
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :checklist)) %>>
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="dashboard-kicker">Setup</p>
+        <h2 class="text-lg font-bold text-slate-900">Connect this project</h2>
+        <p class="mt-1 text-sm text-slate-600">Start with a token, send one event, then add source and release context when the basics are flowing.</p>
+      </div>
+      <%= link_to project_integration_docs_label(@project),
+                  project_integration_docs_path(@project),
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  class: "btn-ghost inline-flex items-center gap-2" %>
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
+      <% setup_steps.each do |label, icon, complete, detail| %>
+        <div class="rounded-lg border <%= complete ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50' %> p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-2">
+              <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600">
+                <%= app_icon(icon, css: "h-3.5 w-3.5") %>
+              </span>
+              <strong class="text-sm font-semibold text-slate-900"><%= label %></strong>
+            </div>
+            <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full <%= complete ? 'bg-emerald-600 text-white' : 'bg-white text-slate-500 border border-slate-300' %>">
+              <%= app_icon(complete ? :check : :pending, css: "h-3.5 w-3.5") %>
+            </span>
+          </div>
+          <p class="mt-2 text-xs text-slate-600"><%= complete ? "Done" : detail %></p>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <%= render "projects/setup_api_keys", tour_group: tour_group %>
+    <%= render "projects/setup_ingest_endpoint", tour_group: tour_group %>
+    <%= render "projects/setup_integration_guide", tour_group: tour_group %>
+  </section>
+</section>
+<% end %>

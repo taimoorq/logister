@@ -19,7 +19,7 @@ RSpec.describe "Api keys", type: :request do
           post project_api_keys_path(project), params: { api_key: { name: "CI key" } }
         }.to change(ApiKey, :count).by(1)
 
-        expect(response).to redirect_to(settings_project_path(project))
+        expect(response).to redirect_to(setup_project_path(project, anchor: "api-keys"))
         follow_redirect!
         expect(response.body).to include("API key created")
         expect(response.body).to include("New API token:")
@@ -31,7 +31,7 @@ RSpec.describe "Api keys", type: :request do
 
         generated_token = flash[:new_api_key_token]
         expect(generated_token).to be_present
-        expect(response).to redirect_to(settings_project_path(project))
+        expect(response).to redirect_to(setup_project_path(project, anchor: "api-keys"))
 
         follow_redirect!
         expect(response.body).to include("New API token:")
@@ -53,7 +53,7 @@ RSpec.describe "Api keys", type: :request do
           post project_api_keys_path(archived_project), params: { api_key: { name: "Archived key" } }
         }.not_to change(ApiKey, :count)
 
-        expect(response).to redirect_to(settings_project_path(archived_project))
+        expect(response).to redirect_to(setup_project_path(archived_project, anchor: "api-keys"))
         expect(flash[:alert]).to include("Project is archived")
       end
     end
@@ -82,7 +82,7 @@ RSpec.describe "Api keys", type: :request do
       it "revokes api key and redirects" do
         key = api_keys(:one)
         delete project_api_key_path(project, key)
-        expect(response).to redirect_to(settings_project_path(project))
+        expect(response).to redirect_to(setup_project_path(project, anchor: "api-keys"))
         expect(key.reload.revoked_at).to be_present
         follow_redirect!
         expect(response.body).to include("API key revoked")

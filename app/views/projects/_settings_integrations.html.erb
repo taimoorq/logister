@@ -1,0 +1,308 @@
+<% if @project.integration_cloudflare_pages? %>
+        <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+                 id="platform-integration">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 mb-2">Cloudflare Pages connection</h2>
+              <p class="text-slate-600 text-sm">
+                Store the Pages project identifiers Logister will use when the Cloudflare importer pulls Web Analytics and deployment health.
+              </p>
+            </div>
+            <% if @cloudflare_integration_setting&.configured? %>
+              <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">Configured</span>
+            <% else %>
+              <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">Draft</span>
+            <% end %>
+          </div>
+
+          <%= form_with model: @cloudflare_integration_setting,
+                        url: project_integration_setting_path(@project),
+                        method: :patch,
+                        class: "mt-5 space-y-5" do |f| %>
+            <%= f.hidden_field :provider, value: ProjectIntegrationSetting::PROVIDERS[:cloudflare_pages] %>
+
+            <% if @cloudflare_integration_setting.errors.any? %>
+              <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                <%= @cloudflare_integration_setting.errors.full_messages.to_sentence %>
+              </div>
+            <% end %>
+
+            <label class="flex items-start gap-3">
+              <%= f.check_box :enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Enable Cloudflare imports</span>
+                <span class="block text-sm text-slate-600">Importer jobs will use this record once the Cloudflare fetcher is implemented.</span>
+              </span>
+            </label>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <%= f.label :account_id, "Cloudflare account ID", class: "form-label" %>
+                <%= f.text_field :account_id,
+                                 placeholder: "a1b2c3d4e5f6",
+                                 class: "form-input" %>
+              </div>
+              <div>
+                <%= f.label :external_project_name, "Pages project name", class: "form-label" %>
+                <%= f.text_field :external_project_name,
+                                 placeholder: "marketing-site",
+                                 class: "form-input" %>
+              </div>
+              <div>
+                <%= f.label :external_project_id, "Pages project ID", class: "form-label" %>
+                <%= f.text_field :external_project_id,
+                                 placeholder: "optional",
+                                 class: "form-input" %>
+              </div>
+              <div>
+                <%= f.label :credential_reference, "Credential reference", class: "form-label" %>
+                <%= f.text_field :credential_reference,
+                                 placeholder: "CLOUDFLARE_API_TOKEN",
+                                 class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Reference an environment secret or external secret key. Do not paste raw Cloudflare tokens here.</p>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h3 class="text-sm font-semibold text-slate-900 mb-2">Importer target</h3>
+              <p class="text-sm text-slate-600">
+                The first Cloudflare importer will record page-view and visitor metrics, top paths, deployment status, build duration, branch, and failed deployment logs into this project.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="text-xs text-slate-500">
+                Last imported:
+                <span class="font-semibold text-slate-700"><%= @cloudflare_integration_setting.last_imported_at.present? ? local_time_tag(@cloudflare_integration_setting.last_imported_at, format: :long) : "Never" %></span>
+              </p>
+              <%= f.submit "Save Cloudflare settings", class: "btn-primary" %>
+            </div>
+          <% end %>
+        </article>
+<% end %>
+
+      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+               id="source-repositories">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 mb-2">Source repositories</h2>
+            <p class="text-slate-600 text-sm">
+              Connect the GitHub repos Logister should use when resolving stack frames to source files.
+            </p>
+          </div>
+          <% if @github_app_configured %>
+            <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">GitHub App ready</span>
+          <% else %>
+            <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">GitHub App not configured</span>
+          <% end %>
+        </div>
+
+        <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-900">GitHub App access</h3>
+              <p class="mt-1 text-sm text-slate-600">
+                Install the App on private repositories, then pick synced repos below.
+                <%= link_to "Read setup docs", docs_site_url(:github_app), class: "font-semibold text-blue-700 hover:text-blue-900", target: "_blank", rel: "noopener" %>.
+              </p>
+            </div>
+            <% if @github_app_install_url.present? %>
+              <%= link_to @github_app_install_url,
+                          class: "btn-secondary inline-flex items-center gap-2",
+                          target: "_blank",
+                          rel: "noopener" do %>
+                <%= app_icon(:external, css: "w-4 h-4") %><span>Install GitHub App</span>
+              <% end %>
+            <% elsif @github_app_configured %>
+              <span class="text-xs font-semibold text-slate-600">
+                Set <code>LOGISTER_GITHUB_APP_SLUG</code> or <code>LOGISTER_GITHUB_APP_INSTALL_URL</code>.
+              </span>
+            <% end %>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+            <% @github_app_diagnostics.checks.each do |check| %>
+              <div class="rounded-lg border <%= check.ok? ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50" %> px-3 py-2">
+                <span class="block text-xs font-semibold uppercase <%= check.ok? ? "text-emerald-700" : "text-amber-700" %>"><%= check.label %></span>
+                <span class="mt-1 block text-sm font-semibold <%= check.ok? ? "text-emerald-900" : "text-amber-900" %>"><%= check.ok? ? "Configured" : "Missing" %></span>
+                <span class="mt-1 block text-xs <%= check.ok? ? "text-emerald-700" : "text-amber-800" %>"><%= check.message %></span>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div>
+              <span class="form-label">GitHub setup callback</span>
+              <code class="mt-1 block break-all rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"><%= @github_app_diagnostics.setup_url %></code>
+            </div>
+            <div>
+              <span class="form-label">Webhook URL</span>
+              <code class="mt-1 block break-all rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"><%= @github_app_diagnostics.webhook_url %></code>
+            </div>
+          </div>
+
+          <% if @github_installations.any? %>
+            <div class="mt-4 space-y-2">
+              <h4 class="text-sm font-semibold text-slate-900">Installations</h4>
+              <% @github_installations.each do |installation| %>
+                <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-sm font-semibold text-slate-900"><%= installation.account_login %></span>
+                      <% if installation.available? %>
+                        <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">Active</span>
+                      <% else %>
+                        <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">Unavailable</span>
+                      <% end %>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">
+                      <%= pluralize(installation.active_repository_count, "active repository") %>
+                      · Last synced:
+                      <span class="font-semibold text-slate-700"><%= installation.last_repository_synced_at.present? ? local_time_tag(installation.last_repository_synced_at, format: :long) : "Never" %></span>
+                    </p>
+                  </div>
+                  <%= button_to "Sync repositories",
+                                project_github_installation_sync_path(@project, installation),
+                                method: :post,
+                                class: "btn-secondary",
+                                disabled: !installation.available? %>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="mt-4 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-600">
+              No GitHub App installations have been synced for your account yet.
+            </p>
+          <% end %>
+        </div>
+
+        <%= form_with model: [ @project, @source_repository_form ],
+                      url: project_source_repositories_path(@project),
+                      class: "mt-5 space-y-5" do |f| %>
+          <%= f.hidden_field :provider, value: ProjectSourceRepository::PROVIDERS[:github] %>
+
+          <% if @source_repository_form.errors.any? %>
+            <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+              <%= @source_repository_form.errors.full_messages.to_sentence %>
+            </div>
+          <% end %>
+
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <% if @available_github_repositories.any? %>
+              <div class="md:col-span-2">
+                <%= f.label :github_repository_id, "Synced repository", class: "form-label" %>
+                <%= f.collection_select :github_repository_id,
+                                        @available_github_repositories,
+                                        :id,
+                                        :full_name,
+                                        { include_blank: "Manual entry" },
+                                        class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Synced repositories use the GitHub App installation token.</p>
+              </div>
+            <% end %>
+            <div class="md:col-span-2">
+              <%= f.label :full_name, "GitHub repository", class: "form-label" %>
+              <%= f.text_field :full_name,
+                               placeholder: @available_github_repositories.any? ? "optional for synced repos" : "owner/repository",
+                               class: "form-input" %>
+            </div>
+            <div>
+              <%= f.label :default_branch, "Default branch", class: "form-label" %>
+              <%= f.text_field :default_branch,
+                               placeholder: "main",
+                               class: "form-input" %>
+            </div>
+            <label class="flex items-center gap-2 pt-6">
+              <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span class="text-sm font-semibold text-slate-900">Enabled</span>
+            </label>
+            <div class="md:col-span-2">
+              <%= f.label :runtime_root, "Runtime path prefix", class: "form-label" %>
+              <%= f.text_field :runtime_root,
+                               placeholder: "/app or /workspace/service",
+                               class: "form-input" %>
+              <p class="mt-1 text-xs text-slate-500">Prefix seen in stack frames before the repo-relative path.</p>
+            </div>
+            <div class="md:col-span-2">
+              <%= f.label :source_root, "Repository source root", class: "form-label" %>
+              <%= f.text_field :source_root,
+                               placeholder: "packages/api or src",
+                               class: "form-input" %>
+              <p class="mt-1 text-xs text-slate-500">Optional folder to prepend inside the repository.</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-xs text-slate-500">
+              Self-hosters configure <code>LOGISTER_GITHUB_APP_ID</code>,
+              <code>LOGISTER_GITHUB_APP_PRIVATE_KEY</code>, and <code>LOGISTER_GITHUB_WEBHOOK_SECRET</code>.
+            </p>
+            <%= f.submit "Add source repository", class: "btn-primary" %>
+          </div>
+        <% end %>
+
+        <div class="mt-6 space-y-3">
+          <% if @source_repositories.any? %>
+            <% @source_repositories.each do |source_repository| %>
+              <% github_repository = source_repository.github_repository %>
+              <% installation = source_repository.effective_github_installation %>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h3 class="text-sm font-semibold text-slate-900"><%= source_repository.full_name %></h3>
+                      <% if github_repository.present? %>
+                        <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-800">Synced</span>
+                      <% end %>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">
+                      <% if source_repository.configured? %>
+                        Installed GitHub App can read this repo via <%= installation.account_login %>.
+                      <% else %>
+                        Waiting for a matching GitHub App installation.
+                      <% end %>
+                    </p>
+                  </div>
+                  <%= button_to "Remove",
+                                project_source_repository_path(@project, source_repository),
+                                method: :delete,
+                                class: "btn-secondary text-red-700 hover:text-red-700",
+                                form: { data: { turbo_confirm: "Remove #{source_repository.full_name} from this project?" } } %>
+                </div>
+
+                <%= form_with model: [ @project, source_repository ],
+                              url: project_source_repository_path(@project, source_repository),
+                              method: :patch,
+                              class: "mt-4 grid grid-cols-1 gap-4 md:grid-cols-4" do |f| %>
+                  <%= f.hidden_field :provider, value: source_repository.provider %>
+                  <%= f.hidden_field :github_repository_id, value: source_repository.github_repository_id %>
+                  <%= f.hidden_field :full_name, value: source_repository.full_name %>
+                  <div>
+                    <%= f.label :default_branch, "Default branch", class: "form-label" %>
+                    <%= f.text_field :default_branch, placeholder: "main", class: "form-input" %>
+                  </div>
+                  <div>
+                    <%= f.label :runtime_root, "Runtime prefix", class: "form-label" %>
+                    <%= f.text_field :runtime_root, placeholder: "/app", class: "form-input" %>
+                  </div>
+                  <div>
+                    <%= f.label :source_root, "Source root", class: "form-label" %>
+                    <%= f.text_field :source_root, placeholder: "src", class: "form-input" %>
+                  </div>
+                  <div class="flex items-end justify-between gap-3">
+                    <label class="flex items-center gap-2 pb-2">
+                      <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                      <span class="text-sm font-semibold text-slate-900">Enabled</span>
+                    </label>
+                    <%= f.submit "Save", class: "btn-secondary" %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              No source repositories are connected yet.
+            </p>
+          <% end %>
+        </div>
+      </article>

@@ -22,7 +22,7 @@ RSpec.describe "GitHub setup callback", type: :request do
         installation_id: "123",
         installed_by: users(:one)
       )
-      expect(response).to redirect_to(settings_project_path(project, anchor: "source-repositories"))
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
       expect(flash[:notice]).to include("Synced 1 repositories")
     end
 
