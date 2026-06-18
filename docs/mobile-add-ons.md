@@ -27,7 +27,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.1.0")
+    implementation("org.logister:logister-android:0.1.1")
 }
 ```
 
@@ -46,6 +46,9 @@ val client = logisterClient(
 ) {
     environment("production")
     release("${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}")
+    repository("acme/android-app")
+    commitSha(BuildConfig.GIT_SHA)
+    branch(BuildConfig.GIT_BRANCH)
     packageName(BuildConfig.APPLICATION_ID)
     appVersion(BuildConfig.VERSION_NAME)
     buildNumber(BuildConfig.VERSION_CODE.toString())
@@ -99,6 +102,8 @@ Android telemetry should include:
 - `platform: "android"`
 - package name as `service`
 - release as version name plus version code
+- `repository`, `commit_sha`, and `branch` when the app build is tied to a
+  GitHub repository
 - build type and app version
 - Android API level, OS version, device model, locale, and session ID when safe
 
@@ -112,7 +117,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.0")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.1")
 ]
 ```
 
@@ -133,6 +138,9 @@ let client = LogisterClient(
     baseURL: URL(string: "https://your-logister-host.example")!,
     environment: "production",
     release: "1.4.0+42",
+    repository: "acme/ios-app",
+    commitSHA: "4f8c2d1",
+    branch: "main",
     service: Bundle.main.bundleIdentifier,
     defaultContext: [
         "app_version": .string("1.4.0"),
@@ -190,6 +198,8 @@ iOS telemetry should include:
 - `platform: "ios"`
 - bundle ID as `service`
 - release as app version plus build number
+- `repository`, `commit_sha`, and `branch` when the app build is tied to a
+  GitHub repository
 - iOS version, device model, locale, and session ID when safe
 
 The first SDK milestone is manual capture. Automatic crash breadcrumbs,
@@ -214,6 +224,12 @@ Use low-cardinality context fields for dashboards and filtering. Good examples
 are `screen_name`, `feature`, `build_type`, `device_model`, `region`, `plan`,
 `service`, `environment`, and `release`.
 
+When the Logister project is connected to the GitHub App, mobile SDKs can send
+`repository`, `commit_sha`, and `branch` on events so source-aware error detail
+can resolve frames to the right code. CI/CD should also POST release-to-commit
+deployment records to `/api/v1/deployments` after each app distribution step,
+because the deployment endpoint is the strongest signal for release history.
+
 Avoid sending passwords, tokens, cookies, authorization headers, payment data,
 request bodies, raw local variables, or other sensitive user data.
 
@@ -222,20 +238,20 @@ request bodies, raw local variables, or other sensitive user data.
 Android releases are tag-driven:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 The Android GitHub Actions release workflow builds, tests, signs, and uploads
-the artifact to Sonatype Central Portal. The maintainer then reviews the
-deployment in Central Portal and publishes it for Maven Central sync. Version
-`0.1.0` is public at `org.logister:logister-android`.
+the artifact to Sonatype Central Portal with automatic Maven Central release.
+The workflow also creates the matching GitHub Release after the package version
+matches the tag. Version `0.1.1` is public at `org.logister:logister-android`.
 
 iOS releases are also tag-driven:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 Swift Package Manager resolves packages from the public Git repository and tag.
@@ -248,12 +264,12 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.1.0/logister-android-0.1.0.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.1.1/logister-android-0.1.1.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.1.0 --repo taimoorq/logister-ios
+gh release view v0.1.1 --repo taimoorq/logister-ios
 ```

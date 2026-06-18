@@ -60,16 +60,16 @@ Each check-in capture path should support:
 - request ID
 - context
 
-Current client coverage after the 2026-05-22 parity pass:
+Current client coverage after the 2026-06-18 source-context pass:
 
 | Client | Release | Notes |
 | --- | --- | --- |
-| Ruby | `logister-ruby` v0.2.6 | Adds manual span capture plus opt-in Rails request spans; metrics accept value/unit; check-ins accept environment, release, occurred-at, trace ID, and request ID options. |
-| .NET | `Logister` / `Logister.AspNetCore` v0.1.3 | Adds manual span capture plus opt-in ASP.NET Core request spans; check-ins include top-level release plus interval, trace ID, and request ID coverage. |
-| Python | `logister-python` v0.2.2 | Adds manual span capture plus opt-in FastAPI, Django, and Flask request spans; metrics accept unit, level, and fingerprint while preserving structured metric context. |
-| JavaScript | `logister-js` v0.2.3 | Adds manual spans, opt-in Express request spans, and browser page-load/resource spans; capture calls accept per-event routing fields. |
-| Android | `logister-android` v0.1.0 | Kotlin-first Android SDK with Java interop; supports manual errors, logs, metrics, transactions, spans, and check-ins with Android package/release/device context. |
-| iOS | `logister-ios` v0.1.0 | Swift Package Manager SDK; supports manual errors, logs, metrics, transactions, spans, and check-ins with bundle/release/device context. |
+| Ruby | `logister-ruby` v0.2.8 | Supports errors, logs, metrics, transactions, spans, check-ins, source context, and `Logister.record_deployment`. |
+| .NET | `Logister` / `Logister.AspNetCore` v0.1.5 | Supports errors, logs, metrics, transactions, spans, check-ins, source context, and `RecordDeploymentAsync`. |
+| Python | `logister-python` v0.2.4 | Supports errors, logs, metrics, transactions, spans, check-ins, source context, GitHub Actions env fallback, and `record_deployment`. |
+| JavaScript | `logister-js` v0.2.5 | Supports errors, logs, metrics, transactions, spans, check-ins, source context, browser context defaults, and `recordDeployment`. |
+| Android | `logister-android` v0.1.1 | Kotlin-first Android SDK with Java interop; supports manual errors, logs, metrics, transactions, spans, check-ins, and source context. |
+| iOS | `logister-ios` v0.1.1 | Swift Package Manager SDK; supports manual errors, logs, metrics, transactions, spans, check-ins, and source context. |
 
 ## Logister Self-Monitoring
 

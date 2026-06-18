@@ -176,7 +176,7 @@ Current package-secret posture:
 - `logister-python`: PyPI trusted publishing; no PyPI token repository secret is needed.
 - `logister-ruby`: RubyGems trusted publishing; no RubyGems API key repository secret is needed.
 - `logister-dotnet`: NuGet publishing uses `NUGET_API_KEY`; verified with `gh secret list -R taimoorq/logister-dotnet`.
-- `logister-android`: Maven Central publishing uses the verified `org.logister` namespace and GitHub Actions secrets for Central Portal tokens plus the in-memory GPG signing key. The tag workflow uploads a signed deployment to Sonatype Central Portal; the maintainer publishes it in Central Portal before Maven Central sync. Version `0.1.0` is public at `org.logister:logister-android`.
+- `logister-android`: Maven Central publishing uses the verified `org.logister` namespace and GitHub Actions secrets for Central Portal tokens plus the in-memory GPG signing key. The tag workflow uploads a signed deployment to Sonatype Central Portal with automatic release to Maven Central sync. Version `0.1.1` is public at `org.logister:logister-android`.
 - `logister-ios`: Swift Package Manager distribution from a public repo does not need a package registry secret. The tag workflow verifies the package and creates the matching GitHub Release.
 
 When a release workflow does need a credential, set it through the GitHub CLI
@@ -214,4 +214,4 @@ The first milestone is complete when:
 - Added a Kotlin facade and Kotlin tests for `logister-android` so Kotlin apps can configure the SDK with builder lambdas while Java apps can still use the same underlying client classes.
 - Added Maven Central publishing configuration and a tag-based Android release workflow for `org.logister:logister-android`, using GitHub Actions secrets for Central Portal credentials and GPG signing.
 - Made the Android and iOS repositories public, protected `main`, restricted PR creation to collaborators, enabled secret scanning/push protection, and restricted GitHub Actions permissions.
-- Published the iOS Swift Package tag `v0.1.0` and verified the Android `v0.1.0` release workflow publishes successfully to Maven Central after the Central Portal token was corrected.
+- Published the iOS Swift Package tag `v0.1.1` and verified the Android `v0.1.1` release workflow publishes successfully to Maven Central after the Central Portal token was corrected.

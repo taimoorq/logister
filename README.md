@@ -44,7 +44,7 @@ If you are trying to instrument an application, the language integrations live i
 - JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - .NET package for .NET 8+ apps, ASP.NET Core services, workers, and C# services: https://github.com/taimoorq/logister-dotnet, https://www.nuget.org/packages/Logister, and https://www.nuget.org/packages/Logister.AspNetCore
 - Android package for Kotlin and Java Android apps: https://github.com/taimoorq/logister-android and https://central.sonatype.com/artifact/org.logister/logister-android
-- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
+- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1
 
 ## Public docs
 
@@ -216,13 +216,13 @@ Use the guide that matches the app you want to connect:
 | CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
 | Manual / HTTP API | Custom clients, scripts, workers, and unsupported runtimes | https://docs.logister.org/http-api/ + https://docs.logister.org/api-reference/ |
 
-All first-party add-ons send the same core telemetry families into the main app so the inbox, activity, performance, Insights, and monitor views stay consistent across languages.
+All first-party add-ons send the same core telemetry families into the main app so the inbox, activity, performance, Insights, and monitor views stay consistent across languages. Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 
 Mobile add-ons use the same ingest envelope with platform-specific setup:
 
 | Platform | Package manager | Package / URL | Docs |
 |----------|-------------|-------------|-------------|
-| Android | Maven Central / Gradle | `org.logister:logister-android:0.1.0` | https://docs.logister.org/integrations/android/ |
+| Android | Maven Central / Gradle | `org.logister:logister-android:0.1.1` | https://docs.logister.org/integrations/android/ |
 | iOS | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` with product `Logister` | https://docs.logister.org/integrations/ios/ |
 
 The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint. Only app admins, not project owners or shared project members, can set project-level overrides.
@@ -386,4 +386,4 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - PyPI: https://pypi.org/project/logister-python/
 - npm: https://www.npmjs.com/package/logister-js
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
-- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
+- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1

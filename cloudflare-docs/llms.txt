@@ -96,9 +96,10 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - JavaScript SDK package: https://www.npmjs.com/package/logister-js
 - Android SDK source: https://github.com/taimoorq/logister-android
 - Android SDK package: https://central.sonatype.com/artifact/org.logister/logister-android
-- Android Maven coordinates: `org.logister:logister-android:0.1.0`
+- Android Maven coordinates: `org.logister:logister-android:0.1.1`
 - iOS SDK source and Swift Package Manager URL: https://github.com/taimoorq/logister-ios.git
-- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
+- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://docs.logister.org/integrations/cfml/
 - Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, direct JSON reporters, and CI/CD deployment records. Send `repository`, `commit_sha`, `branch`, `release`, and `environment` on events; POST `/api/v1/deployments` when CI knows the exact deployed commit.
+- Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 - The GitHub App source integration uses App installation access instead of personal access tokens. Self-hosters create their own GitHub App, configure `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`, then install and sync repositories from project settings.

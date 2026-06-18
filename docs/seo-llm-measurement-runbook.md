@@ -144,7 +144,7 @@ Keep language package surfaces aligned with the app and docs:
 - JavaScript package: npm page at https://www.npmjs.com/package/logister-js, README, browser and Node notes.
 - .NET packages: NuGet pages at https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore, README, ASP.NET Core notes.
 - Android package: Maven Central page at https://central.sonatype.com/artifact/org.logister/logister-android, README, Gradle install snippet, Kotlin usage notes.
-- iOS package: Swift Package Manager repository at https://github.com/taimoorq/logister-ios.git and GitHub release at https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0, README, Xcode/Package.swift install snippet, Swift usage notes.
+- iOS package: Swift Package Manager repository at https://github.com/taimoorq/logister-ios.git and GitHub release at https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1, README, Xcode/Package.swift install snippet, Swift usage notes.
 
 For each package, verify the description says it reports errors or events to Logister and links back to the public docs.
 
