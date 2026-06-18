@@ -15,6 +15,7 @@ class Api::V1::IngestEventsController < ApplicationController
     event.occurred_at ||= Time.current
 
     if event.save
+      ProjectDeploymentIndexer.from_event(event)
       ErrorGroupingService.call(event)
       CheckInMonitor.record!(project: @api_key.project, event: event) if event.check_in?
       ClickhouseIngestJob.perform_later(event.id, request_context, event.occurred_at)
@@ -185,6 +186,9 @@ class Api::V1::IngestEventsController < ApplicationController
     merge_context_value!(context, "request_id", raw_event[:request_id] || raw_event[:requestId])
     merge_context_value!(context, "session_id", raw_event[:session_id] || raw_event[:sessionId])
     merge_context_value!(context, "user_id", raw_event[:user_id] || raw_event[:userId])
+    merge_context_value!(context, "commit_sha", raw_event[:commit_sha] || raw_event[:commitSha] || raw_event[:sha])
+    merge_context_value!(context, "repository", raw_event[:repository] || raw_event[:repo] || raw_event[:github_repository] || raw_event[:githubRepository])
+    merge_context_value!(context, "branch", raw_event[:branch])
     merge_context_value!(context, "transaction_name", raw_event[:transaction_name] || raw_event[:transactionName])
     merge_context_value!(context, "duration_ms", raw_event[:duration_ms] || raw_event[:durationMs])
     merge_context_value!(context, "expected_interval_seconds", raw_event[:expected_interval_seconds])

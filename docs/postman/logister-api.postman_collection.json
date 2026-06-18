@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Logister Public Ingestion API",
-    "description": "Postman collection for sending errors, logs, metrics, transactions, spans, and check-ins to Logister. Set `base_url` to your Logister host and `api_key` to a project API token.",
+    "description": "Postman collection for sending errors, logs, metrics, transactions, spans, check-ins, and deployments to Logister. Set `base_url` to your Logister host and `api_key` to a project API token.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -34,6 +34,21 @@
       "key": "environment",
       "value": "production",
       "type": "string"
+    },
+    {
+      "key": "repository",
+      "value": "acme/checkout",
+      "type": "string"
+    },
+    {
+      "key": "commit_sha",
+      "value": "4f8c2d1a9b7e6c5d4a3b2c1d0e9f8a7b6c5d4e3f",
+      "type": "string"
+    },
+    {
+      "key": "branch",
+      "value": "main",
+      "type": "string"
     }
   ],
   "item": [
@@ -60,7 +75,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"event\": {\n    \"event_type\": \"error\",\n    \"level\": \"error\",\n    \"message\": \"Unhandled exception in CheckoutService\",\n    \"fingerprint\": \"checkout-unhandled-exception\",\n    \"occurred_at\": \"2026-05-23T15:30:00Z\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"checkout-api\",\n      \"request_id\": \"req_123\",\n      \"trace_id\": \"trace_123\",\n      \"exception\": {\n        \"class\": \"RuntimeError\",\n        \"message\": \"payment gateway timeout\"\n      }\n    }\n  }\n}"
+          "raw": "{\n  \"event\": {\n    \"event_type\": \"error\",\n    \"level\": \"error\",\n    \"message\": \"Unhandled exception in CheckoutService\",\n    \"fingerprint\": \"checkout-unhandled-exception\",\n    \"occurred_at\": \"2026-05-23T15:30:00Z\",\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"repository\": \"{{repository}}\",\n      \"commit_sha\": \"{{commit_sha}}\",\n      \"branch\": \"{{branch}}\",\n      \"service\": \"checkout-api\",\n      \"request_id\": \"req_123\",\n      \"trace_id\": \"trace_123\",\n      \"exception\": {\n        \"class\": \"RuntimeError\",\n        \"message\": \"payment gateway timeout\"\n      }\n    }\n  }\n}"
         }
       }
     },
@@ -180,6 +195,23 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"event\": {\n    \"event_type\": \"check_in\",\n    \"message\": \"nightly-reconcile\",\n    \"check_in_slug\": \"nightly-reconcile\",\n    \"check_in_status\": \"ok\",\n    \"expected_interval_seconds\": 900,\n    \"context\": {\n      \"environment\": \"{{environment}}\",\n      \"release\": \"{{release}}\",\n      \"service\": \"billing-worker\"\n    }\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Record deployment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/deployments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deployment\": {\n    \"release\": \"{{release}}\",\n    \"environment\": \"{{environment}}\",\n    \"repository\": \"{{repository}}\",\n    \"commit_sha\": \"{{commit_sha}}\",\n    \"branch\": \"{{branch}}\",\n    \"deployed_at\": \"2026-05-23T15:20:00Z\",\n    \"pull_request_number\": 42,\n    \"release_tag\": \"v2026.05.23\",\n    \"workflow_run_url\": \"https://github.com/acme/checkout/actions/runs/123\"\n  }\n}"
         }
       }
     },

@@ -99,6 +99,8 @@ Used when one action should update several DOM regions:
 - **Rails should link out to the external docs host.** Use the shared docs URL helpers in `ApplicationHelper` / `ProjectsHelper` instead of hardcoding internal `/docs` paths in new app UI.
 - **Legacy Rails docs URLs should redirect permanently.** Keep `/docs...` routes as `301` redirects so old links preserve SEO equity and do not serve duplicate content from the app.
 - **The static docs are a product surface, not a markdown dump.** Update `cloudflare-docs/` pages directly when changing setup, deployment, API, or integration guidance.
+- **Write docs like a practical self-hosted operator manual.** Keep the Bugsink-inspired style we settled on: task-first, concise, self-hosting-aware, and useful to someone configuring a real instance. Prefer exact settings, UI paths, commands, required permissions, verification steps, and symptom-driven troubleshooting over broad product copy.
+- **Use the docs style guide as the AI instruction for new docs work.** Before adding or rewriting public docs, read [docs/documentation-style-guide.md](docs/documentation-style-guide.md) and follow its page shape, tone, and maintenance checklist.
 - **Docs content should follow a consistent guide shape.** The preferred flow is:
   1. Short overview
   2. Prerequisites or before-you-start context

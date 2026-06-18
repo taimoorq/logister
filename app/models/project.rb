@@ -16,6 +16,8 @@ class Project < ApplicationRecord
   has_many :project_memberships, dependent: :destroy
   has_many :project_notification_preferences, dependent: :destroy
   has_many :integration_settings, class_name: "ProjectIntegrationSetting", dependent: :destroy
+  has_many :source_repositories, class_name: "ProjectSourceRepository", dependent: :destroy
+  has_many :deployments, class_name: "ProjectDeployment", dependent: :destroy
   has_many :email_notification_deliveries, dependent: :destroy
   has_one :retention_policy, class_name: "ProjectRetentionPolicy", dependent: :destroy
   has_many :telemetry_archives, dependent: :destroy

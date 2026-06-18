@@ -2,19 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Open Source Error Monitoring Docs | Logister</title>
+    <title>Logister Documentation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/">
     <meta property="og:site_name" content="Logister">
-    <meta property="og:title" content="Open Source Error Monitoring Docs | Logister">
+    <meta property="og:title" content="Logister Documentation">
     <meta property="og:description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://docs.logister.org/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Open Source Error Monitoring Docs | Logister">
+    <meta name="twitter:title" content="Logister Documentation">
     <meta name="twitter:description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
@@ -22,7 +22,7 @@
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js","https://github.com/taimoorq/logister-android","https://github.com/taimoorq/logister-ios"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Open Source Error Monitoring Docs | Logister","description":"Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"GHCR and Docker Hub images"},{"@type":"Thing","name":"Error assignment and team triage"},{"@type":"Thing","name":"Amazon SES alert emails"},{"@type":"Thing","name":"Sentry alternative"},{"@type":"Thing","name":"Bugsnag alternative"},{"@type":"Thing","name":"Bugzilla alternative"},{"@type":"Thing","name":"Ruby app analytics"},{"@type":"Thing","name":".NET app analytics"},{"@type":"Thing","name":"Python app analytics"},{"@type":"Thing","name":"JavaScript and TypeScript app analytics"},{"@type":"Thing","name":"Android app analytics"},{"@type":"Thing","name":"iOS app analytics"},{"@type":"Thing","name":"CFML and ColdFusion monitoring"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js","https://github.com/taimoorq/logister-android","https://github.com/taimoorq/logister-ios"]},{"@type":"WebSite","@id":"https://docs.logister.org/#website","name":"Logister Documentation","url":"https://docs.logister.org/","publisher":{"@id":"https://docs.logister.org/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://docs.logister.org/#webpage","url":"https://docs.logister.org/","name":"Logister Documentation","description":"Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.","isPartOf":{"@id":"https://docs.logister.org/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Error assignment"},{"@type":"Thing","name":"Application telemetry"},{"@type":"Thing","name":"HTTP API"},{"@type":"Thing","name":"Troubleshooting"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"}]}]}</script>
     <link rel="stylesheet" href="/assets/site.css">
     <script defer src="/assets/analytics-config.js"></script>
     <script defer src="/assets/site.js"></script>
@@ -50,328 +50,263 @@
       <main class="page">
         <section class="hero">
           <span class="hero-kicker">Documentation</span>
-          <h1>Open source error monitoring docs for Logister</h1>
+          <h1>Logister documentation</h1>
           <p>
-            Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. Run it yourself to collect errors, logs, metrics, transactions, spans, and check-ins in infrastructure you control; the hosted app at <code>logister.org</code> is secondary for teams that want a managed convenience path.
+            Use these docs as the operator and developer manual for Logister. Start by understanding what Logister is, install it, configure the pieces your instance needs, then connect applications and troubleshoot ingestion.
           </p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="/self-hosting/">Self-hosting</a>
-            <a class="btn btn-secondary" href="/getting-started/">Getting started</a>
-            <a class="btn btn-secondary" href="/product/">Product guide</a>
+            <a class="btn btn-primary" href="/self-hosting/">Install Logister</a>
+            <a class="btn btn-secondary" href="/getting-started/">Send your first event</a>
+            <a class="btn btn-secondary" href="/troubleshooting/">Troubleshooting</a>
           </div>
         </section>
 
         <div class="docs-layout">
           <aside class="sidebar">
             <div class="sidebar-group">
-              <p class="sidebar-label">Start here</p>
+              <p class="sidebar-label">Documentation</p>
               <a class="active" href="/">Overview</a>
-              <a href="/getting-started/">Getting started</a>
-              <a href="/product/">Product guide</a>
+              <a href="/product/">What Logister does</a>
               <a href="/metrics/">Metrics reference</a>
-              <a href="/self-hosting/">Self-hosting</a>
               <a href="/use-cases/">Use cases</a>
             </div>
             <div class="sidebar-group">
-              <p class="sidebar-label">Operations</p>
+              <p class="sidebar-label">Installation</p>
+              <a href="/self-hosting/">Self-hosting</a>
               <a href="/local-development/">Local development</a>
+              <a href="/self-hosting/#docker">Docker option</a>
               <a href="/deployment/">Deployment config</a>
+              <a href="/github-app/">GitHub App</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Configuration</p>
+              <a href="/deployment/#env-reference">Environment reference</a>
+              <a href="/github-app/">GitHub App</a>
               <a href="/clickhouse/">ClickHouse</a>
-              <a href="/http-api/">HTTP API</a>
+              <a href="/deployment/#email">Email and SMTP</a>
+              <a href="/self-hosting/#infrastructure">Infrastructure plan</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Usage</p>
+              <a href="/getting-started/">Getting started</a>
+              <a href="/product/#triage">Triage errors</a>
+              <a href="/product/#insights">Project Insights</a>
+              <a href="/product/#monitors">Check-in monitors</a>
+              <a href="/product/#notifications">Notifications</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">Integrations</p>
-              <a href="/integrations/ruby/">Ruby integration</a>
-              <a href="/integrations/dotnet/">.NET integration</a>
-              <a href="/integrations/python/">Python integration</a>
-              <a href="/integrations/javascript/">JavaScript integration</a>
-              <a href="/integrations/android/">Android integration</a>
-              <a href="/integrations/ios/">iOS integration</a>
-              <a href="/integrations/cfml/">CFML integration</a>
+              <a href="/integrations/ruby/">Ruby</a>
+              <a href="/integrations/dotnet/">.NET</a>
+              <a href="/integrations/python/">Python</a>
+              <a href="/integrations/javascript/">JavaScript</a>
+              <a href="/integrations/android/">Android</a>
+              <a href="/integrations/ios/">iOS</a>
+              <a href="/integrations/cfml/">CFML</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">API and help</p>
+              <a href="/http-api/">HTTP API</a>
+              <a href="/api-reference/">API reference</a>
+              <a href="/troubleshooting/">Troubleshooting</a>
             </div>
             <hr>
             <div class="sidebar-group">
               <p class="sidebar-label">On this page</p>
-              <a href="#overview">Overview</a>
-              <a href="#repos">Public repos</a>
-              <a href="#use-cases">Use cases</a>
-              <a href="#product">What Logister helps with</a>
-              <a href="#guides">Guides</a>
-              <a href="#next">Getting started next</a>
-              <a href="#growth">Growing the docs</a>
-              <a href="#credits">Credits</a>
-            </div>
-            <div class="sidebar-card">
-              <h4>Project-aware setup</h4>
-              <p>Projects can be labeled by runtime so the in-app triage views, setup guidance, and docs entry points stay language-specific.</p>
+              <a href="#why">Why Logister?</a>
+              <a href="#installation">Installation</a>
+              <a href="#configuration">Configuration</a>
+              <a href="#usage">Usage</a>
+              <a href="#integrations">Integrations</a>
+              <a href="#api">API reference</a>
+              <a href="#troubleshooting">Troubleshooting</a>
             </div>
           </aside>
 
           <article class="article" data-pagefind-body>
-            <section id="overview" class="section">
-              <p class="eyebrow">Overview</p>
-              <h2>Choose the guide that matches your project type.</h2>
+            <section class="article-header">
+              <div class="outline-grid">
+                <section class="outline-card">
+                  <p class="eyebrow">How to use the docs</p>
+                  <h2>Pick the section that matches the work in front of you.</h2>
+                  <p class="lead">
+                    Logister docs are organized around the lifecycle of a self-hosted install: understand the product, install the app, configure the instance, use the product, connect runtimes, and debug problems.
+                  </p>
+                </section>
+                <aside class="outline-card chapter-links">
+                  <h3>Shortest paths</h3>
+                  <a href="/self-hosting/"><span>Install Logister</span><span class="kbd">ops</span></a>
+                  <a href="/getting-started/"><span>Create a project</span><span class="kbd">setup</span></a>
+                  <a href="/http-api/"><span>Send JSON directly</span><span class="kbd">api</span></a>
+                  <a href="/troubleshooting/"><span>Debug ingestion</span><span class="kbd">help</span></a>
+                </aside>
+              </div>
+            </section>
+
+            <section id="why" class="section doc-index-section">
+              <p class="eyebrow">Why Logister?</p>
+              <h2>Understand what Logister is before choosing an install path.</h2>
               <p>
-                Logister provides public documentation for running your own instance first, then connecting Ruby, .NET, Python, JavaScript, Android, iOS, CFML, and custom HTTP clients to it. Start with self-hosting when you are planning infrastructure, or with the integration guide that matches how your application sends data today.
+                Logister is an open source, self-hosted error monitoring and bug triage app. It is built for teams that want grouped production errors, ownership, event context, and operational control without handing monitoring data to a third-party service by default.
               </p>
-              <blockquote>
-                Logister is self-hosted and self-hostable first. The public <code>logister.org</code> app is a secondary hosted option; the source, GHCR and Docker Hub images, optional Quay mirrors, release notes, and operations docs are here so teams can run it themselves.
-              </blockquote>
+              <div class="doc-link-list">
+                <a class="doc-link" href="/product/">
+                  <strong>What Logister does</strong>
+                  <span>The user-focused tour of projects, dashboard, inbox, Insights, event details, monitors, notifications, sharing, and self-hosted operations.</span>
+                </a>
+                <a class="doc-link" href="/use-cases/self-hosted-error-monitoring/">
+                  <strong>Self-hosted error monitoring</strong>
+                  <span>Why teams run Logister on their own infrastructure and what the app needs around it.</span>
+                </a>
+                <a class="doc-link" href="/use-cases/">
+                  <strong>Use cases and comparisons</strong>
+                  <span>Fit checks for Sentry, Bugsnag, Bugzilla, Docker registry deployment, team triage, and SES-backed alerting.</span>
+                </a>
+              </div>
+            </section>
+
+            <section id="installation" class="section doc-index-section">
+              <p class="eyebrow">Installation</p>
+              <h2>Get a Logister instance running first.</h2>
+              <p>
+                A production install starts with the Rails web app, PostgreSQL, Redis, and a Sidekiq worker. Docker images are published for operators who want to pin a released version and run web and worker containers separately.
+              </p>
+              <div class="doc-link-list">
+                <a class="doc-link" href="/self-hosting/">
+                  <strong>Self-hosting</strong>
+                  <span>Production quickstart, infrastructure plan, Docker option, local quickstart, deployment shapes, and verification steps.</span>
+                </a>
+                <a class="doc-link" href="/local-development/">
+                  <strong>Local development</strong>
+                  <span>Run the app from source with local services while developing Logister or testing a fork.</span>
+                </a>
+                <a class="doc-link" href="/use-cases/docker-ghcr-self-hosting/">
+                  <strong>Docker registries</strong>
+                  <span>Use GHCR, Docker Hub, and optional Quay mirrors when you deploy released containers.</span>
+                </a>
+              </div>
+            </section>
+
+            <section id="configuration" class="section doc-index-section">
+              <p class="eyebrow">Configuration</p>
+              <h2>Add the settings your instance actually needs.</h2>
+              <p>
+                Keep the first install boring: app, database, Redis, worker, HTTPS, backups, and admin access. Add email, ClickHouse, S3-compatible archive storage, Turnstile, and analytics only when those features matter for your operating model.
+              </p>
+              <div class="doc-link-list">
+                <a class="doc-link" href="/deployment/">
+                  <strong>Deployment config</strong>
+                  <span>Environment variables for Rails, PostgreSQL, Redis, Sidekiq, SMTP, SES, S3-compatible storage, Turnstile, analytics, and docs hosting.</span>
+                </a>
+                <a class="doc-link" href="/github-app/">
+                  <strong>GitHub App</strong>
+                  <span>Private repository source excerpts, CODEOWNERS hints, repository sync, deployment links, and optional issue creation.</span>
+                </a>
+                <a class="doc-link" href="/clickhouse/">
+                  <strong>ClickHouse</strong>
+                  <span>Optional analytics storage, schema checks, worker writes, and readiness verification.</span>
+                </a>
+                <a class="doc-link" href="/metrics/">
+                  <strong>Metrics reference</strong>
+                  <span>Telemetry families, Insights metric keys, span timing fields, custom metric naming, and useful context dimensions.</span>
+                </a>
+              </div>
+            </section>
+
+            <section id="usage" class="section doc-index-section">
+              <p class="eyebrow">Usage</p>
+              <h2>Set up projects, send events, and use the product surfaces.</h2>
               <table>
                 <thead>
                   <tr>
-                    <th>Guide</th>
-                    <th>Best for</th>
-                    <th>Main setup path</th>
+                    <th>Concept</th>
+                    <th>What it means in Logister</th>
+                    <th>Where to read</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td><a href="/self-hosting/">Operations guides</a></td>
-                    <td>Teams self-hosting Logister</td>
-                    <td>Local development, deployment, S3-compatible archive storage, ClickHouse, and HTTP reference</td>
+                    <td>Project</td>
+                    <td>One monitored app or service with its own settings, API keys, events, monitors, and team access.</td>
+                    <td><a href="/getting-started/#project">Getting started</a></td>
                   </tr>
                   <tr>
-                    <td><a href="/integrations/ruby/">Ruby integration</a></td>
-                    <td>Ruby apps and Rails services</td>
-                    <td><code>logister-ruby</code> gem</td>
+                    <td>API key</td>
+                    <td>A project-scoped token shown once, used by SDKs or direct HTTP clients to send events.</td>
+                    <td><a href="/getting-started/#api-key">Generate an API key</a></td>
                   </tr>
                   <tr>
-                    <td><a href="/integrations/dotnet/">.NET integration</a></td>
-                    <td>ASP.NET Core apps and C# services</td>
-                    <td><code>logister-dotnet</code> SDK with ASP.NET Core middleware</td>
+                    <td>Error group</td>
+                    <td>A grouped issue made from repeated error events so the inbox stays focused on problems, not every occurrence.</td>
+                    <td><a href="/product/#triage">Triage errors</a></td>
                   </tr>
                   <tr>
-                    <td><a href="/integrations/python/">Python integration</a></td>
-                    <td>FastAPI, Django, Flask, Celery, and general Python apps</td>
-                    <td><code>logister-python</code> package with framework helpers and Python logging support</td>
+                    <td>Occurrence</td>
+                    <td>One event inside an error group, with request, release, environment, stacktrace, and related context when the integration sends it.</td>
+                    <td><a href="/product/#investigate">Investigate faster</a></td>
                   </tr>
                   <tr>
-                    <td><a href="/integrations/cfml/">CFML integration</a></td>
-                    <td>Lucee and Adobe ColdFusion sites</td>
-                    <td><code>cfhttp</code> plus structured event payloads</td>
+                    <td>Insights</td>
+                    <td>A project dashboard for event mix, metrics, spans, recent events, environment filters, release filters, and custom dimensions.</td>
+                    <td><a href="/product/#insights">Project Insights</a></td>
                   </tr>
                   <tr>
-                    <td><a href="/integrations/javascript/">JavaScript integration</a></td>
-                    <td>JavaScript and TypeScript apps</td>
-                    <td><code>logister-js</code> package with optional Express middleware and console capture</td>
-                  </tr>
-                  <tr>
-                    <td><a href="/integrations/android/">Android integration</a></td>
-                    <td>Kotlin and Java Android apps</td>
-                    <td><code>org.logister:logister-android</code> from Maven Central</td>
-                  </tr>
-                  <tr>
-                    <td><a href="/integrations/ios/">iOS integration</a></td>
-                    <td>Swift iOS apps</td>
-                    <td><code>Logister</code> from Swift Package Manager at <code>github.com/taimoorq/logister-ios</code></td>
-                  </tr>
-                  <tr>
-                    <td><a href="/http-api/">Manual / HTTP API</a></td>
-                    <td>Unsupported runtimes, scripts, workers, and custom clients</td>
-                    <td>cURL, OpenAPI, Postman, or any HTTP client that can send project-token JSON payloads</td>
+                    <td>Check-in</td>
+                    <td>A heartbeat from scheduled work such as cron jobs, task runners, recurring workers, and maintenance tasks.</td>
+                    <td><a href="/product/#monitors">Watch scheduled work</a></td>
                   </tr>
                 </tbody>
               </table>
             </section>
 
-            <section id="repos" class="section">
-              <p class="eyebrow">Public repos and packages</p>
-              <h2>Use the open source repo that matches the part you are running or integrating.</h2>
+            <section id="integrations" class="section doc-index-section">
+              <p class="eyebrow">Integrations</p>
+              <h2>Connect the runtime that sends your data.</h2>
+              <div class="doc-link-list compact">
+                <a class="doc-link" href="/integrations/ruby/"><strong>Ruby</strong><span>Rails exceptions, manual events, logs, metrics, transactions, spans, check-ins, and DB timing.</span></a>
+                <a class="doc-link" href="/integrations/dotnet/"><strong>.NET</strong><span>ASP.NET Core middleware, C# services, request exceptions, spans, metrics, logs, and check-ins.</span></a>
+                <a class="doc-link" href="/integrations/python/"><strong>Python</strong><span>FastAPI, Django, Flask, Celery, shared clients, logging, metrics, spans, and check-ins.</span></a>
+                <a class="doc-link" href="/integrations/javascript/"><strong>JavaScript</strong><span>Node, TypeScript, Express middleware, browser timing, console capture, metrics, spans, and check-ins.</span></a>
+                <a class="doc-link" href="/integrations/android/"><strong>Android</strong><span>Kotlin and Java Android app telemetry with release and safe device metadata.</span></a>
+                <a class="doc-link" href="/integrations/ios/"><strong>iOS</strong><span>Swift Package Manager setup and async app telemetry methods.</span></a>
+                <a class="doc-link" href="/integrations/cfml/"><strong>CFML</strong><span>Lucee and Adobe ColdFusion direct HTTP payloads.</span></a>
+              </div>
+            </section>
+
+            <section id="api" class="section doc-index-section">
+              <p class="eyebrow">API reference</p>
+              <h2>Use direct HTTP when no SDK is the right fit.</h2>
               <p>
-                The main Logister app and language clients are separate public repositories so SDKs can version and publish independently from the self-hosted Rails app.
+                The ingestion API accepts project-token JSON payloads for errors, logs, metrics, transactions, spans, and check-ins. Use the written HTTP guide for semantics, Swagger for schema inspection, and Postman for request testing.
               </p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Repository</th>
-                    <th>Package or registry</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Main app</td>
-                    <td><a href="https://github.com/taimoorq/logister">github.com/taimoorq/logister</a></td>
-                    <td><a href="https://github.com/taimoorq/logister/pkgs/container/logister">GHCR</a>, <a href="https://hub.docker.com/r/taimoorq/logister">Docker Hub</a>, and optional Quay mirrors when configured</td>
-                  </tr>
-                  <tr>
-                    <td>Ruby gem</td>
-                    <td><a href="https://github.com/taimoorq/logister-ruby">github.com/taimoorq/logister-ruby</a></td>
-                    <td><a href="https://rubygems.org/gems/logister-ruby">RubyGems: logister-ruby</a></td>
-                  </tr>
-                  <tr>
-                    <td>.NET SDK</td>
-                    <td><a href="https://github.com/taimoorq/logister-dotnet">github.com/taimoorq/logister-dotnet</a></td>
-                    <td><a href="https://www.nuget.org/packages/Logister">NuGet: Logister</a> and <a href="https://www.nuget.org/packages/Logister.AspNetCore">Logister.AspNetCore</a></td>
-                  </tr>
-                  <tr>
-                    <td>Python package</td>
-                    <td><a href="https://github.com/taimoorq/logister-python">github.com/taimoorq/logister-python</a></td>
-                    <td><a href="https://pypi.org/project/logister-python/">PyPI: logister-python</a></td>
-                  </tr>
-                  <tr>
-                    <td>JavaScript package</td>
-                    <td><a href="https://github.com/taimoorq/logister-js">github.com/taimoorq/logister-js</a></td>
-                    <td><a href="https://www.npmjs.com/package/logister-js">npm: logister-js</a></td>
-                  </tr>
-                  <tr>
-                    <td>Android SDK</td>
-                    <td><a href="https://github.com/taimoorq/logister-android">github.com/taimoorq/logister-android</a></td>
-                    <td><a href="https://central.sonatype.com/artifact/org.logister/logister-android">Maven Central: org.logister:logister-android</a></td>
-                  </tr>
-                  <tr>
-                    <td>iOS SDK</td>
-                    <td><a href="https://github.com/taimoorq/logister-ios">github.com/taimoorq/logister-ios</a></td>
-                    <td><a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0">Swift Package Manager: Logister via Git tag v0.1.0</a></td>
-                  </tr>
-                  <tr>
-                    <td>CFML</td>
-                    <td><a href="/integrations/cfml/">Direct HTTP integration guide</a></td>
-                    <td>No separate add-on repo is required; CFML apps send structured JSON with <code>cfhttp</code>.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </section>
-
-            <section id="use-cases" class="section">
-              <p class="eyebrow">Use cases</p>
-              <h2>Start from the problem or comparison your team is evaluating.</h2>
-              <div class="card-grid">
-                <article class="card"><p class="eyebrow">Self-hosting</p><h3>Self-hosted error monitoring</h3><p>Run Logister yourself with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3 archive storage, optional ClickHouse, and registry images.</p><p><a href="/use-cases/self-hosted-error-monitoring/">Read the use case</a></p></article>
-                <article class="card"><p class="eyebrow">Comparison</p><h3>Sentry alternative</h3><p>Evaluate Logister when you want forkable source, owned infrastructure, grouped errors, assignment, and release context.</p><p><a href="/use-cases/sentry-alternative/">Compare the fit</a></p></article>
-                <article class="card"><p class="eyebrow">Comparison</p><h3>Bugsnag alternative</h3><p>Evaluate Logister when first-occurrence alerts, digest emails, and team-owned triage should live in your own stack.</p><p><a href="/use-cases/bugsnag-alternative/">Compare the fit</a></p></article>
-                <article class="card"><p class="eyebrow">Comparison</p><h3>Bugzilla alternative</h3><p>Use production error context as the start of bug ownership, not a separate manual ticket-writing step.</p><p><a href="/use-cases/bugzilla-alternative/">Compare the fit</a></p></article>
-                <article class="card"><p class="eyebrow">Operations</p><h3>Docker registry self-hosting</h3><p>Run versioned Docker images with separate Rails web and Sidekiq worker containers in your own infrastructure.</p><p><a href="/use-cases/docker-ghcr-self-hosting/">Read the Docker use case</a></p></article>
-                <article class="card"><p class="eyebrow">Workflow</p><h3>Error assignment and team triage</h3><p>Assign grouped production errors to teammates, filter by assignee, and keep ownership close to the event context.</p><p><a href="/use-cases/error-assignment-team-triage/">Read the triage use case</a></p></article>
-                <article class="card"><p class="eyebrow">Notifications</p><h3>Amazon SES alert emails</h3><p>Send first-occurrence alerts and daily or weekly digest emails through Rails SMTP settings backed by SES.</p><p><a href="/use-cases/amazon-ses-error-alerts/">Read the SES use case</a></p></article>
+              <div class="doc-link-list">
+                <a class="doc-link" href="/http-api/">
+                  <strong>HTTP API</strong>
+                  <span>Authentication, rate limits, envelopes, event fields, check-ins, responses, and validation errors.</span>
+                </a>
+                <a class="doc-link" href="/api-reference/">
+                  <strong>Swagger and API artifacts</strong>
+                  <span>OpenAPI YAML, Swagger UI, and the Postman collection for direct client work.</span>
+                </a>
               </div>
             </section>
 
-            <section id="product" class="section">
-              <p class="eyebrow">What Logister helps with</p>
-              <h2>Use Logister to move from raw events to decisions.</h2>
-              <div class="card-grid">
-                <article class="card"><p class="eyebrow">Overview</p><h3>See cross-app signals before drilling in</h3><p>The dashboard surfaces event mix, needs-attention summaries, and active project signals across the apps you monitor.</p></article>
-                <article class="card"><p class="eyebrow">Insights</p><h3>Build live project views from collected signals</h3><p>The project Insights tab combines Inbox, Activity, and Performance data with metric selection, time windows, environment and release filters, custom attribute filters, and span-backed request load charts.</p></article>
-                <article class="card"><p class="eyebrow">Triage</p><h3>See which errors still need attention</h3><p>Grouped issues, status filters, search, and occurrence history help your team decide what to fix, ignore, archive, or reopen.</p></article>
-                <article class="card"><p class="eyebrow">Investigate</p><h3>Open one event and get the surrounding context</h3><p>Runtime-aware details, request context, release metadata, and related logs keep the investigation close to the problem.</p></article>
-                <article class="card"><p class="eyebrow">Operate</p><h3>Watch performance, retention, and project lifecycle</h3><p>Transaction metrics, release health, check-in monitors, archive exports, hot telemetry pruning, archived projects, and notification preferences help teams operate the instance cleanly.</p></article>
-              </div>
-              <p><a href="/product/">Read the product guide</a> for the user-focused tour of what teams can do in Logister.</p>
-            </section>
-
-            <section id="guides" class="section">
-              <p class="eyebrow">Guides</p>
-              <h2>Everything you need to get from zero to a working event feed.</h2>
-              <div class="card-grid">
-                <article class="card">
-                  <p class="eyebrow">Start here</p>
-                  <h3>Set up your first project</h3>
-                  <p>Create a project, choose the right integration type, generate an API key, and send your first event.</p>
-                  <p><a href="/getting-started/">Read getting started</a></p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">Product guide</p>
-                  <h3>See what your team can do in Logister</h3>
-                  <p>Use this guide to understand the dashboard, Insights, inbox, event details, performance views, monitors, notifications, project lifecycle, sharing, and self-hosted operations.</p>
-                  <p><a href="/product/">Read the product guide</a></p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">Metrics reference</p>
-                  <h3>Choose what developers can collect</h3>
-                  <p>Use this guide for telemetry families, Insights series, add-on support, event fields, span fields, filter dimensions, and data collection boundaries.</p>
-                  <p><a href="/metrics/">Read the metrics reference</a></p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">API reference</p>
-                  <h3>Import the contract or collection</h3>
-                  <p>Use the Swagger page, OpenAPI YAML, or Postman collection when you are building a custom client or testing every supported event family.</p>
-                  <p><a href="/api-reference/">Open API reference</a></p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">Operations</p>
-                  <h3>Self-host Logister</h3>
-                  <p>Use the operations docs for local boot, deployment configuration, S3-compatible archive storage, ClickHouse, and HTTP payload reference.</p>
-                  <p><a href="/self-hosting/">Read self-hosting docs</a></p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">Ruby</p>
-                  <h3>Install the Ruby package</h3>
-                  <p>Use the Ruby integration guide for Rails exceptions, manual errors, logs, metrics, transactions, spans, check-ins, DB timing, and self-monitoring through <code>logister-ruby</code>.</p>
-                  <p><a href="/integrations/ruby/">Read Ruby docs</a> or <a href="https://rubygems.org/gems/logister-ruby">open RubyGems</a>.</p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">.NET</p>
-                  <h3>Install the .NET SDK</h3>
-                  <p>Use the .NET integration guide for ASP.NET Core request exceptions, transactions, spans, C# service metrics, logs, and check-ins.</p>
-                  <p><a href="/integrations/dotnet/">Read .NET docs</a> or <a href="https://www.nuget.org/packages/Logister.AspNetCore">open NuGet</a>.</p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">Python</p>
-                  <h3>Install the package</h3>
-                  <p>Use the Python integration guide for FastAPI, Django, Flask, Celery, shared-client Python apps, native logging capture, metrics, spans, and check-ins.</p>
-                  <p><a href="/integrations/python/">Read Python docs</a> or <a href="https://pypi.org/project/logister-python/">open PyPI</a>.</p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">CFML</p>
-                  <h3>Send direct payloads</h3>
-                  <p>Use the CFML guide for Lucee or Adobe ColdFusion apps that send errors, logs, metrics, transactions, spans, and check-ins over HTTP.</p>
-                  <p><a href="/integrations/cfml/">Read CFML docs</a></p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">JavaScript</p>
-                  <h3>Install the npm package</h3>
-                  <p>Use the JavaScript guide for JavaScript and TypeScript apps using <code>logister-js</code>, with optional Express middleware, browser timing, console capture, metrics, spans, and check-ins.</p>
-                  <p><a href="/integrations/javascript/">Read JavaScript docs</a> or <a href="https://www.npmjs.com/package/logister-js">open npm</a>.</p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">Android</p>
-                  <h3>Install the Maven package</h3>
-                  <p>Use the Android guide for Kotlin-first Android app telemetry with errors, logs, metrics, transactions, spans, check-ins, release context, and safe device metadata.</p>
-                  <p><a href="/integrations/android/">Read Android docs</a> or <a href="https://central.sonatype.com/artifact/org.logister/logister-android">open Maven Central</a>.</p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">iOS</p>
-                  <h3>Add the Swift package</h3>
-                  <p>Use the iOS guide for Swift app telemetry through Swift Package Manager, including errors, logs, metrics, transactions, spans, check-ins, release context, and safe device metadata.</p>
-                  <p><a href="/integrations/ios/">Read iOS docs</a> or <a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0">open the SwiftPM release</a>.</p>
-                </article>
-                <article class="card">
-                  <p class="eyebrow">Manual / HTTP API</p>
-                  <h3>Send direct API payloads</h3>
-                  <p>Use the HTTP API path for unsupported runtimes, one-off scripts, workers, and custom clients that report errors, logs, metrics, transactions, spans, or check-ins directly.</p>
-                  <p><a href="/http-api/">Read HTTP API docs</a> or <a href="/api-reference/">open Swagger</a>.</p>
-                </article>
-              </div>
-            </section>
-
-            <section id="next" class="section">
-              <p class="eyebrow">Getting started next</p>
-              <h2>Follow the shortest path to your first event.</h2>
-              <ol>
-                <li>Create a project and choose the right integration type.</li>
-                <li>Generate an API key and store it immediately.</li>
-                <li>Pick the Ruby, .NET, Python, JavaScript, Android, iOS, CFML, or Manual / HTTP API guide based on your application stack.</li>
-                <li>Use the HTTP API page, Swagger reference, or Postman collection when you need the exact request shape.</li>
-                <li>Send one known-good event before broadening instrumentation.</li>
-              </ol>
-            </section>
-
-            <section id="growth" class="section">
-              <p class="eyebrow">Growing the docs</p>
-              <h2>This is the base for a standalone documentation site.</h2>
+            <section id="troubleshooting" class="section doc-index-section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>When something is missing, start with the narrowest failing path.</h2>
               <p>
-                This static export is designed so the docs can live separately from either a self-hosted Logister instance or the secondary hosted app. It keeps the same information
-                architecture as the product docs while removing the app runtime dependency, and includes a machine-readable
-                <code>/llms.txt</code> index for AI tools that need the public docs map.
-                The fuller <code>/llms-full.txt</code> file gives agents a denser product, operations, release, and comparison context.
+                Most setup issues fall into a few buckets: the app is not healthy, the token is wrong, the event envelope is invalid, the worker is not running, email is not configured, or an optional service such as ClickHouse has not been enabled completely.
               </p>
-              <ul>
-                <li>Integration guides stay public and easy to share.</li>
-                <li>Operations docs no longer need to live in the README.</li>
-                <li>Future product docs can be added as plain HTML in this directory.</li>
-              </ul>
+              <div class="doc-link-list">
+                <a class="doc-link" href="/troubleshooting/">
+                  <strong>Troubleshooting guide</strong>
+                  <span>Practical checks for empty inboxes, rejected events, rate limits, Sidekiq, email, ClickHouse, archive exports, and support context.</span>
+                </a>
+                <a class="doc-link" href="/http-api/#responses">
+                  <strong>API response table</strong>
+                  <span>Map <code>400</code>, <code>401</code>, <code>422</code>, and <code>429</code> responses to likely fixes.</span>
+                </a>
+              </div>
             </section>
 
             <section id="credits" class="section">
@@ -391,34 +326,33 @@
         <div class="footer-inner">
           <div class="footer-copy">
             <strong>Logister documentation</strong>
-            <p>Reference material for integrating errors, logs, metrics, transactions, spans, and check-ins into Logister.</p>
+            <p>Reference material for installing, configuring, using, integrating, and troubleshooting Logister.</p>
           </div>
           <div class="footer-links">
             <div class="footer-column">
-              <h4>Start here</h4>
+              <h4>Documentation</h4>
               <a href="/">Overview</a>
-              <a href="/getting-started/">Getting started</a>
-              <a href="/product/">Product guide</a>
+              <a href="/product/">What Logister does</a>
               <a href="/metrics/">Metrics reference</a>
-              <a href="/self-hosting/">Self-hosting</a>
               <a href="/use-cases/">Use cases</a>
             </div>
             <div class="footer-column">
-              <h4>Operations</h4>
+              <h4>Installation</h4>
+              <a href="/self-hosting/">Self-hosting</a>
               <a href="/local-development/">Local development</a>
               <a href="/deployment/">Deployment config</a>
-              <a href="/clickhouse/">ClickHouse</a>
-              <a href="/http-api/">HTTP API</a>
+              <a href="/github-app/">GitHub App</a>
+              <a href="/troubleshooting/">Troubleshooting</a>
             </div>
             <div class="footer-column">
               <h4>Integrations</h4>
-              <a href="/integrations/ruby/">Ruby integration</a>
-              <a href="/integrations/dotnet/">.NET integration</a>
-              <a href="/integrations/python/">Python integration</a>
-              <a href="/integrations/javascript/">JavaScript integration</a>
-              <a href="/integrations/android/">Android integration</a>
-              <a href="/integrations/ios/">iOS integration</a>
-              <a href="/integrations/cfml/">CFML integration</a>
+              <a href="/integrations/ruby/">Ruby</a>
+              <a href="/integrations/dotnet/">.NET</a>
+              <a href="/integrations/python/">Python</a>
+              <a href="/integrations/javascript/">JavaScript</a>
+              <a href="/integrations/android/">Android</a>
+              <a href="/integrations/ios/">iOS</a>
+              <a href="/integrations/cfml/">CFML</a>
             </div>
           </div>
         </div>

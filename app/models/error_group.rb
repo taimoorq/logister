@@ -6,6 +6,7 @@ class ErrorGroup < ApplicationRecord
   has_many   :error_occurrences, dependent: :destroy
   has_many   :ingest_events, through: :error_occurrences
   has_many   :email_notification_deliveries, dependent: :nullify
+  has_many   :external_links, class_name: "ErrorGroupExternalLink", dependent: :destroy
 
   before_validation :ensure_uuid
   before_validation :sync_latest_event_occurred_at

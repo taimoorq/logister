@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   get "docs/self-hosting", to: redirect("#{docs_base_url}/self-hosting/", status: 301)
   get "docs/local-development", to: redirect("#{docs_base_url}/local-development/", status: 301)
   get "docs/deployment", to: redirect("#{docs_base_url}/deployment/", status: 301)
+  get "docs/github-app", to: redirect("#{docs_base_url}/github-app/", status: 301)
   get "docs/clickhouse", to: redirect("#{docs_base_url}/clickhouse/", status: 301)
   get "docs/http-api", to: redirect("#{docs_base_url}/http-api/", status: 301)
   get "docs/api-reference", to: redirect("#{docs_base_url}/api-reference/", status: 301)
@@ -39,6 +40,8 @@ Rails.application.routes.draw do
   get "dashboard/events", to: "dashboard_events#index", as: :dashboard_events
   post "notifications/dismiss", to: "notifications#dismiss", as: :dismiss_notification
   get "health/clickhouse", to: "health#clickhouse"
+  get "github/setup", to: "github/setup#show", as: :github_setup
+  post "github/webhooks", to: "github/webhooks#create", as: :github_webhooks
   resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
   get "account/security", to: redirect("/users/edit"), as: :account_security
 
@@ -67,10 +70,13 @@ Rails.application.routes.draw do
       get :insights, to: "project_insights#show"
       get :performance, to: "project_performance#show"
       get :monitors, to: "project_monitors#show"
+      get :deployments, to: "project_deployments#index"
       get :activity, to: "project_activity#show"
     end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :destroy ], param: :uuid
+    resources :source_repositories, only: [ :create, :update, :destroy ], controller: "project_source_repositories", param: :uuid
+    post "github/installations/:uuid/sync", to: "github/installations#sync", as: :github_installation_sync
     resource :integration_setting, only: [ :update ], controller: "project_integration_settings", as: :integration_setting
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
@@ -79,6 +85,8 @@ Rails.application.routes.draw do
 
     resources :error_groups, only: [], param: :uuid do
       resource :assignment, only: [ :update, :destroy ], controller: "error_group_assignments"
+      resources :external_links, only: [ :create, :destroy ], controller: "error_group_external_links", param: :uuid
+      resource :github_issue, only: :create, controller: "github/issues"
 
       member do
         patch :resolve
@@ -93,6 +101,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :ingest_events, only: :create
       resources :check_ins, only: :create
+      resources :deployments, only: :create
     end
   end
 

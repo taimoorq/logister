@@ -13,6 +13,7 @@ module ApplicationHelper
     self_hosting: "/self-hosting/",
     local_development: "/local-development/",
     deployment: "/deployment/",
+    github_app: "/github-app/",
     clickhouse: "/clickhouse/",
     http_api: "/http-api/",
     api_reference: "/api-reference/",
@@ -461,6 +462,21 @@ module ApplicationHelper
     nil
   end
 
+  def source_excerpt_for_event_frame(project, event, frame, radius: 4)
+    source_resolution_for_event_frame(project, event, frame, radius: radius).excerpt ||
+      source_excerpt_for_frame(frame, radius: radius)
+  end
+
+  def source_resolution_for_event_frame(project, event, frame, radius: 4)
+    @source_resolution_cache ||= {}
+    @source_resolution_cache[[ project.id, event.id, frame_cache_key(frame), radius ]] ||=
+      SourceFrameResolver.resolve(project: project, event: event, frame: frame, radius: radius)
+  end
+
+  def source_lookup_diagnostics_for_event_frame(project, event, frame, radius: 4)
+    source_resolution_for_event_frame(project, event, frame, radius: radius).diagnostics
+  end
+
   def seo_title
     page_title = content_for(:title).to_s.strip
     return "Logister" if page_title.blank?
@@ -530,6 +546,30 @@ module ApplicationHelper
     end
   end
 
+  def github_new_issue_url_for_error_group(project, group, event:, source_excerpt: nil)
+    return if group.blank?
+
+    Github::IssueDeepLink.call(
+      project: project,
+      group: group,
+      event: event,
+      source_excerpt: source_excerpt,
+      logister_url: inbox_project_url(project, group_uuid: group.uuid)
+    )
+  end
+
+  def github_issue_creatable_repositories(project)
+    project.source_repositories.github.enabled
+           .includes(:github_installation, github_repository: :github_installation)
+           .select(&:github_issue_creation_available?)
+  end
+
+  def deployment_context_for_error_group(project, group, event)
+    return if group.blank?
+
+    ProjectDeploymentContext.call(project: project, group: group, event: event)
+  end
+
   def project_integration_icon(project)
     kind = project.integration_kind.to_s
     icon_name = PROJECT_INTEGRATION_ICON_NAMES.fetch(kind, :projects)
@@ -559,6 +599,17 @@ module ApplicationHelper
   end
 
   private
+
+  def frame_cache_key(frame)
+    return frame unless frame.is_a?(Hash)
+
+    [
+      frame[:file] || frame["file"],
+      frame[:absolute_path] || frame["absolute_path"],
+      frame[:line_number] || frame["line_number"],
+      frame[:column_number] || frame["column_number"]
+    ]
+  end
 
   def absolute_url_for(path)
     return path if path.start_with?("http://", "https://")

@@ -4,6 +4,8 @@ Canonical product and integration documentation for Logister lives on this docs 
 
 The public hosted app at logister.org is a secondary option. The primary goal is helping teams run Logister themselves.
 
+The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, API reference, and Troubleshooting.
+
 ## Start here
 - Docs home: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
@@ -25,9 +27,11 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - Amazon SES error alert emails and digests use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - HTTP API: https://docs.logister.org/http-api/
 - API reference and Swagger UI: https://docs.logister.org/api-reference/
+- Troubleshooting: https://docs.logister.org/troubleshooting/
 - OpenAPI YAML: https://docs.logister.org/openapi.yaml
 - Postman collection: https://docs.logister.org/postman/logister-api.postman_collection.json
 - Self-hosting: https://docs.logister.org/self-hosting/
+- GitHub App source integration: https://docs.logister.org/github-app/
 - Full AI context: https://docs.logister.org/llms-full.txt
 
 ## Integrations
@@ -42,6 +46,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 ## Operations
 - Local development: https://docs.logister.org/local-development/
 - Deployment config and `.env.sample` reference: https://docs.logister.org/deployment/
+- GitHub App setup for private repository source excerpts, repository sync, CODEOWNERS hints, deployment links, and optional issue creation: https://docs.logister.org/github-app/
 - Docker self-hosting option and registry images: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 
@@ -53,7 +58,7 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.4.1` or `docker.io/taimoorq/logister:v2.4.1`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.5.0` or `docker.io/taimoorq/logister:v2.5.0`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, and optional ClickHouse
 - Production setup order: provision PostgreSQL and Redis, set required secrets from `.env.sample`, run `./bin/release`, start one web process and one Sidekiq worker, verify `/up`, sign-in, project creation, API key generation, and a test inbox event, then enable optional services.
@@ -75,9 +80,9 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 ## Product and packages
 - App source: https://github.com/taimoorq/logister
 - Secondary hosted/public app: https://logister.org/
-- Supported telemetry: Logister accepts errors, logs, metrics, transactions, spans, and check-ins. Span payloads feed request load waterfall charts when they include trace IDs, span IDs, parent span IDs, kind, duration, and route or service context.
+- Supported telemetry: Logister accepts errors, logs, metrics, transactions, spans, check-ins, and deployment records. Span payloads feed request load waterfall charts when they include trace IDs, span IDs, parent span IDs, kind, duration, and route or service context.
 - Metrics reference: https://docs.logister.org/metrics/ lists supported telemetry families, built-in Insights metric keys, custom metric series, span timing segments, add-on support by runtime, accepted reporting fields, and data collection boundaries.
-- Public API limits: `/api/v1/ingest_events` and `/api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
+- Public API limits: `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments` accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
 - Insights: project-level dashboard workspace that combines Inbox, Activity, and Performance signals with ECharts, time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, and recent matching events. Best results come from consistent `environment`, `release`, stable custom context attributes, and numeric custom metric values in `context.value`.
 - Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
@@ -95,4 +100,5 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 - iOS SDK source and Swift Package Manager URL: https://github.com/taimoorq/logister-ios.git
 - iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.0
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://docs.logister.org/integrations/cfml/
-- Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, and direct JSON reporters.
+- Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, direct JSON reporters, and CI/CD deployment records. Send `repository`, `commit_sha`, `branch`, `release`, and `environment` on events; POST `/api/v1/deployments` when CI knows the exact deployed commit.
+- The GitHub App source integration uses App installation access instead of personal access tokens. Self-hosters create their own GitHub App, configure `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`, then install and sync repositories from project settings.

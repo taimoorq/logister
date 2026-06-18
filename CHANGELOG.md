@@ -2,6 +2,27 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.5.0 - 2026-06-18
+
+### Added
+
+- Added GitHub App source repository integration so projects can connect private GitHub repositories, sync accessible repos, and resolve stack frames to source excerpts with GitHub permalinks.
+- Added CODEOWNERS-aware source hints and assignment actions when resolved source files match project members.
+- Added GitHub issue and pull request links on error groups, including optional GitHub issue creation when the App installation has `issues:write`.
+- Added deployment tracking with `POST /api/v1/deployments`, a project Deployments page, and release-to-commit lookup so source excerpts can use the exact deployed commit.
+- Added GitHub App setup documentation, OpenAPI/Postman coverage for deployment indexing, and optional `LOGISTER_GITHUB_*` environment settings for self-hosted installs.
+
+### Changed
+
+- Error detail pages now show deployment context, linked GitHub issues/PRs, source lookup diagnostics, and GitHub-backed source excerpts when repository access is configured.
+- Ingested events can carry repository, branch, and commit SHA metadata, and Logister can opportunistically index deployment records from telemetry that includes release and commit data.
+- Updated public self-hosting references for the `v2.5.0` release image tag.
+
+### Upgrade Notes
+
+- Run the Rails database migrations before starting the new version; this release adds tables for GitHub App installations, synced repositories, source repository mappings, external links, and deployments.
+- GitHub source integration is optional. Self-hosted operators who want private source excerpts or GitHub issue creation should configure their own GitHub App with the new `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and install URL/slug settings.
+
 ## v2.4.1 - 2026-06-16
 
 ### Added

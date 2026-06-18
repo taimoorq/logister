@@ -1,0 +1,62 @@
+<%# locals: (source_excerpt:, project:, event:, group:, filter_param: "unresolved", query_param: "", assignee_param: "all", active_tab: "stacktrace", frame_scope: "application", selected_frame_index: 0) %>
+<% codeowners = source_excerpt[:codeowners] %>
+<% owners = codeowners&.owners || [] %>
+<% matched_users = codeowners&.matched_users || [] %>
+
+<div class="better-errors-code-header">
+  <span><%= source_excerpt[:path] %></span>
+  <% if source_excerpt[:source_url].present? %>
+    <%= link_to "Open in GitHub", source_excerpt[:source_url], target: "_blank", rel: "noopener", class: "inline-link" %>
+  <% end %>
+</div>
+
+<% if owners.any? %>
+  <div class="source-owner-hint">
+    <div class="source-owner-main">
+      <span class="source-owner-label">Code owners</span>
+      <span class="source-owner-list">
+        <% owners.each do |owner| %>
+          <code class="source-owner-chip"><%= owner %></code>
+        <% end %>
+      </span>
+      <% if codeowners&.codeowners_path.present? && codeowners&.line_number.present? %>
+        <span class="source-owner-meta">
+          <%= codeowners.codeowners_path %>:<%= codeowners.line_number %>
+        </span>
+      <% end %>
+    </div>
+
+    <% if group.present? && matched_users.any? %>
+      <div class="source-owner-actions">
+        <% matched_users.each do |user| %>
+          <% next if group.assignee == user %>
+          <%= button_to "Assign #{user.name.presence || user.email}",
+                        project_error_group_assignment_path(
+                          project,
+                          group,
+                          filter: filter_param.presence || "unresolved",
+                          q: query_param.to_s,
+                          assignee: assignee_param.presence || "all",
+                          tab: active_tab.presence || "stacktrace",
+                          frame_scope: frame_scope.presence || "application",
+                          frame: selected_frame_index.to_i
+                        ),
+                        method: :patch,
+                        params: { assigned_user_id: user.uuid },
+                        class: "source-owner-action",
+                        form_class: "source-owner-action-form",
+                        data: { turbo_stream: true } %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
+  <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy source excerpt">
+    <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+    <span data-copy-target="buttonLabel">Copy</span>
+  </button>
+  <pre class="better-errors-source" data-copy-target="source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
+<% end %></code></pre>
+</div>

@@ -1,0 +1,24 @@
+<% diagnostics = source_lookup.diagnostics || {} %>
+
+<div class="source-lookup-status">
+  <div>
+    <strong>Source lookup unavailable</strong>
+    <p><%= diagnostics[:message] %></p>
+  </div>
+  <% if diagnostics[:repository].present? || diagnostics[:source_path].present? || diagnostics[:ref].present? %>
+    <dl>
+      <% if diagnostics[:repository].present? %>
+        <dt>Repository</dt>
+        <dd><code><%= diagnostics[:repository] %></code></dd>
+      <% end %>
+      <% if diagnostics[:source_path].present? %>
+        <dt>Path</dt>
+        <dd><code><%= diagnostics[:source_path] %></code></dd>
+      <% end %>
+      <% if diagnostics[:ref].present? %>
+        <dt>Ref</dt>
+        <dd><code><%= diagnostics[:ref] %></code></dd>
+      <% end %>
+    </dl>
+  <% end %>
+</div>

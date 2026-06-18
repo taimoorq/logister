@@ -4,6 +4,8 @@ Logister is an open source, self-hosted error monitoring and bug triage app for 
 
 The primary goal is helping teams run Logister themselves. The public hosted app at logister.org is a secondary option.
 
+The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, API reference, and Troubleshooting.
+
 It supports:
 - Ruby and Rails apps via the `logister-ruby` gem
 - .NET and ASP.NET Core apps via the `logister-dotnet` SDK
@@ -44,10 +46,12 @@ Canonical documentation lives on the public docs host:
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Local development: https://docs.logister.org/local-development/
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
+- GitHub App source integration: https://docs.logister.org/github-app/
 - Full AI context: https://logister.org/llms-full.txt
 - Docker self-hosting option and registry images: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 - HTTP API: https://docs.logister.org/http-api/
+- Troubleshooting: https://docs.logister.org/troubleshooting/
 - Ruby integration: https://docs.logister.org/integrations/ruby/
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
@@ -64,17 +68,19 @@ Canonical documentation lives on the public docs host:
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.4.1` or `docker.io/taimoorq/logister:v2.4.1`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.5.0` or `docker.io/taimoorq/logister:v2.5.0`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
+- GitHub App source integration: https://docs.logister.org/github-app/
 - Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Product summary
 - Captures and groups application errors into triageable error groups.
-- Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, and status.
-- Accepts `error`, `log`, `metric`, `transaction`, `span`, and `check_in` events.
-- Public ingestion APIs accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
+- Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, environment, and source/deployment context when integrations provide it.
+- Supports optional GitHub App source integration for private repository source excerpts, CODEOWNERS hints, repository sync, deployment links, and GitHub issue creation when Issues write permission is granted.
+- Accepts `error`, `log`, `metric`, `transaction`, `span`, and `check_in` events, plus deployment records through `/api/v1/deployments`.
+- Public ingestion APIs accept 1,200 requests per minute per API token per endpoint by default for `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments`; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
 - Provides a cross-app dashboard with server-backed explorer charts, needs-attention summaries, active-project shortcuts, and assigned-to-me links.
 - Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review transaction and span-backed performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.

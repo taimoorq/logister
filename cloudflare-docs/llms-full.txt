@@ -4,11 +4,14 @@ Logister is an open source, self-hosted error monitoring and bug triage app for 
 
 Canonical product and integration documentation lives on https://docs.logister.org/. The app source lives at https://github.com/taimoorq/logister. The public hosted app at https://logister.org/ is secondary to the self-hosting model.
 
+The docs are organized as a practical self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, API reference, and Troubleshooting. Feature explanations should define the concept, explain why it exists, show how users interact with it, name common failure modes, and point to the next guide.
+
 ## What Logister Does
 
 - Captures application errors, logs, metrics, transactions, spans, and check-ins.
 - Groups repeated errors into triageable error groups.
-- Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, and environment when integrations provide them.
+- Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, environment, and source/deployment context when integrations provide them.
+- Supports optional GitHub App source integration for private repository source excerpts, CODEOWNERS hints, synced repository lists, deployment links, and GitHub issue creation when Issues write permission is granted.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
 - Provides a project Insights tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event mix, metric series, and recent matching events.
@@ -46,9 +49,15 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 
 All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, Android app/release/device metadata, iOS app/release/device metadata, and CFML direct HTTP payloads.
 
-Public ingestion endpoints `/api/v1/ingest_events` and `/api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint by default. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Rate-limited responses return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Self-hosters can tune the global defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides from project settings; project owners and shared project members cannot.
+Public ingestion endpoints `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments` accept 1,200 requests per minute per API token per endpoint by default. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Rate-limited responses return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Self-hosters can tune the global defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides from project settings; project owners and shared project members cannot.
+
+Source-linked debugging works best when SDKs and custom clients send `repository`, `commit_sha`, `branch`, `release`, and `environment` on error events. CI/CD can also POST a `deployment` envelope to `/api/v1/deployments` with `release`, `repository`, `commit_sha`, optional `branch`, `deployed_at`, `pull_request_number`, `release_tag`, and GitHub URLs so Logister can show source excerpts, PR/release links, and "this started after deploy X" context.
+
+GitHub App setup docs live at https://docs.logister.org/github-app/. Self-hosters create their own GitHub App instead of storing personal access tokens. Required variables are `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`; GitHub Enterprise Server installs can also set `LOGISTER_GITHUB_API_URL` and `LOGISTER_GITHUB_WEB_URL`.
 
 API tooling lives at https://docs.logister.org/api-reference/. The public OpenAPI contract is available at https://docs.logister.org/openapi.yaml, and the Postman collection is available at https://docs.logister.org/postman/logister-api.postman_collection.json.
+
+Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers quick baseline checks, empty inboxes, rejected events, API status codes, Sidekiq worker issues, SMTP delivery, optional ClickHouse readiness, S3-compatible archive exports, and what support context to collect without sharing secrets.
 
 ## Operational Use Cases
 
@@ -84,6 +93,7 @@ API tooling lives at https://docs.logister.org/api-reference/. The public OpenAP
 - SMTP/Amazon SES for auth mail, project alerts, and digest emails.
 - Optional S3-compatible archive storage through Active Storage for compressed JSONL archive exports.
 - Optional ClickHouse for higher-volume event/span analytics, raw tables, and one-minute rollups.
+- Optional GitHub App source integration for private repository access without personal tokens.
 - Optional Cloudflare Turnstile for auth bot protection.
 - Optional Cloudflare Pages for static docs hosting.
 - Recommended setup order: provision PostgreSQL and Redis; set `RAILS_ENV`, `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `LOGISTER_PUBLIC_URL`, and `LOGISTER_ADMIN_EMAILS`; run `./bin/release`; start one Rails web process and one Sidekiq worker; verify `/up`, sign-in, project creation, API key generation, and one test inbox event; then enable optional services.
@@ -104,7 +114,7 @@ API tooling lives at https://docs.logister.org/api-reference/. The public OpenAP
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
-- Current versioned images: `ghcr.io/taimoorq/logister:v2.4.1` or `docker.io/taimoorq/logister:v2.4.1`
+- Current versioned images: `ghcr.io/taimoorq/logister:v2.5.0` or `docker.io/taimoorq/logister:v2.5.0`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
 
@@ -141,11 +151,13 @@ API tooling lives at https://docs.logister.org/api-reference/. The public OpenAP
 - Getting started: https://docs.logister.org/getting-started/
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Deployment config: https://docs.logister.org/deployment/
+- GitHub App source integration: https://docs.logister.org/github-app/
 - Docker self-hosting: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 - 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
 - HTTP API: https://docs.logister.org/http-api/
+- Troubleshooting: https://docs.logister.org/troubleshooting/
 - API reference and Swagger UI: https://docs.logister.org/api-reference/
 - OpenAPI YAML: https://docs.logister.org/openapi.yaml
 - Postman collection: https://docs.logister.org/postman/logister-api.postman_collection.json

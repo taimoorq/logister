@@ -59,6 +59,127 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include('aria-current="page"')
         expect(response.body).to include('aria-selected="true"')
       end
+
+      it "shows CODEOWNERS hints and assignment actions for resolved GitHub source" do
+        event = ingest_events(:system_primary_error)
+        project = projects(:system_inbox)
+        codeowners = Github::CodeownersResolver::Result.new(
+          owners: [ "one@example.com", "@acme/backend" ],
+          matched_users: [ users(:one) ],
+          codeowners_path: "CODEOWNERS",
+          line_number: 2
+        )
+        source_result = SourceFrameResolver::Result.new(
+          excerpt: {
+            path: "acme/storefront:app/services/orders/charge.rb",
+            highlight_line: 12,
+            lines: [
+              { number: 11, code: "def call" },
+              { number: 12, code: "raise RuntimeError" }
+            ],
+            source_url: "https://github.com/acme/storefront/blob/main/app/services/orders/charge.rb#L12",
+            codeowners: codeowners
+          },
+          diagnostics: { status: :resolved }
+        )
+        allow(SourceFrameResolver).to receive(:resolve).and_return(source_result)
+
+        get project_event_path(project, event), headers: { "Turbo-Frame" => "error_detail" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Code owners")
+        expect(response.body).to include("one@example.com")
+        expect(response.body).to include("@acme/backend")
+        expect(response.body).to include("Assign one@example.com")
+      end
+
+      it "shows source lookup diagnostics when GitHub source cannot be resolved" do
+        source_result = SourceFrameResolver::Result.new(
+          excerpt: nil,
+          diagnostics: {
+            status: :no_repositories,
+            message: "No GitHub source repository mapping is enabled for this project."
+          }
+        )
+        allow(SourceFrameResolver).to receive(:resolve).and_return(source_result)
+
+        get project_event_path(projects(:system_inbox), ingest_events(:system_primary_error))
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Source lookup unavailable")
+        expect(response.body).to include("No GitHub source repository mapping is enabled")
+      end
+
+      it "shows attached GitHub links and a draft issue action for source-connected groups" do
+        event = ingest_events(:system_primary_error)
+        project = projects(:system_inbox)
+        group = error_groups(:system_primary_group)
+        create(:project_source_repository, project: project, full_name: "acme/storefront", runtime_root: "/app")
+        create(
+          :error_group_external_link,
+          project: project,
+          error_group: group,
+          created_by: users(:one),
+          url: "https://github.com/acme/storefront/issues/42"
+        )
+
+        get project_event_path(project, event), headers: { "Turbo-Frame" => "error_detail" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("GitHub links")
+        expect(response.body).to include("acme/storefront issue #42")
+        expect(response.body).to include("Draft issue")
+        expect(response.body).to include("https://github.com/acme/storefront/issues/new")
+      end
+
+      it "shows GitHub issue creation when the app has Issues write permission" do
+        event = ingest_events(:system_primary_error)
+        project = projects(:system_inbox)
+        installation = create(:github_installation, permissions: { "contents" => "read", "metadata" => "read", "issues" => "write" })
+        create(:project_source_repository, project: project, github_installation: installation, full_name: "acme/storefront", runtime_root: "/app")
+
+        get project_event_path(project, event), headers: { "Turbo-Frame" => "error_detail" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Create issue")
+        expect(response.body).to include(project_error_group_github_issue_path(project, error_groups(:system_primary_group)))
+      end
+
+      it "shows deployment context for errors that started after a recorded deployment" do
+        event = ingest_events(:system_primary_error)
+        project = projects(:system_inbox)
+        group = error_groups(:system_primary_group)
+        repository = create(:project_source_repository, project: project, full_name: "acme/storefront")
+        previous = create(
+          :project_deployment,
+          project: project,
+          project_source_repository: repository,
+          repository_full_name: "acme/storefront",
+          release: "2026.06.17",
+          commit_sha: "abc1234",
+          deployed_at: 2.hours.ago
+        )
+        deployment = create(
+          :project_deployment,
+          project: project,
+          project_source_repository: repository,
+          repository_full_name: "acme/storefront",
+          release: "2026.06.18",
+          commit_sha: "def5678",
+          deployed_at: 30.minutes.ago,
+          metadata: { "pull_request_number" => "42" }
+        )
+        group.update!(first_seen_at: 10.minutes.ago, stage: "production")
+
+        get project_event_path(project, event), headers: { "Turbo-Frame" => "error_detail" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Deployment context")
+        expect(response.body).to include("This started after deploy")
+        expect(response.body).to include(deployment.release)
+        expect(response.body).to include("https://github.com/acme/storefront/compare/#{previous.commit_sha}...#{deployment.commit_sha}")
+        expect(response.body).to include("PR #42")
+      end
     end
 
     context "when shared member" do

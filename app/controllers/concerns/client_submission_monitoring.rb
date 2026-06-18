@@ -283,13 +283,18 @@ module ClientSubmissionMonitoring
     case client_submission_endpoint_label
     when "check_in"
       %w[check_in CHECK_IN]
+    when "deployment"
+      %w[deployment DEPLOYMENT]
     else
       %w[event EVENT]
     end
   end
 
   def client_submission_endpoint_label
-    controller_path.end_with?("check_ins") ? "check_in" : "ingest"
+    return "check_in" if controller_path.end_with?("check_ins")
+    return "deployment" if controller_path.end_with?("deployments")
+
+    "ingest"
   end
 
   def envelope_value(envelope, key)

@@ -27,7 +27,7 @@ RSpec.describe "Api::V1::CheckIns", type: :request do
       }.to change(IngestEvent, :count).by(1)
 
       expect(response).to have_http_status(:created)
-      event = IngestEvent.order(:id).last
+      event = IngestEvent.find_by!(uuid: response.parsed_body["id"])
       expect(event).to be_check_in
       expect(event.context["check_in_slug"]).to eq("daily-billing-job")
       expect(event.context["expected_interval_seconds"]).to eq(600)
@@ -53,7 +53,7 @@ RSpec.describe "Api::V1::CheckIns", type: :request do
       }.to change(IngestEvent, :count).by(1)
 
       expect(response).to have_http_status(:created)
-      event = IngestEvent.order(:id).last
+      event = IngestEvent.find_by!(uuid: response.parsed_body["id"])
       expect(event).to be_check_in
       expect(event.context["check_in_slug"]).to eq("hourly-import")
       expect(event.context["expected_interval_seconds"]).to eq(900)

@@ -438,6 +438,43 @@ code, pre {
   background: #f1f5f9;
 }
 
+.doc-link-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.doc-link-list.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.doc-link {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: var(--text);
+}
+.doc-link:hover {
+  border-color: var(--border-strong);
+  background: #fbfdff;
+  color: var(--text);
+}
+.doc-link strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+.doc-link span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.doc-link code {
+  color: var(--text);
+  background: #eef2f7;
+  padding: 0.12rem 0.32rem;
+  border-radius: 0.35rem;
+}
+
 .eyebrow {
   margin: 0;
   font-size: 0.76rem;
@@ -691,7 +728,8 @@ code, pre {
     display: block;
   }
   .outline-grid,
-  .card-grid {
+  .card-grid,
+  .doc-link-list.compact {
     grid-template-columns: 1fr;
   }
   .article {

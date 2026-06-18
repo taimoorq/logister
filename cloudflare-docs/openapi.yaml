@@ -23,6 +23,8 @@ tags:
     description: Send errors, logs, metrics, transactions, spans, and check-ins.
   - name: Check-ins
     description: Send compact monitor heartbeats for scheduled work.
+  - name: Deployments
+    description: Record release-to-commit mappings for source-linked debugging.
 security:
   - bearerAuth: []
   - apiKeyHeader: []
@@ -59,6 +61,8 @@ paths:
                     context:
                       environment: production
                       release: "2026.05.23"
+                      repository: acme/checkout
+                      commit_sha: 4f8c2d1
                       service: checkout-api
                       request_id: req_123
                       trace_id: trace_123
@@ -156,6 +160,78 @@ paths:
                     legacy_id: 456
                     status: accepted
                     type: span
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/v1/deployments:
+    post:
+      operationId: createDeployment
+      tags:
+        - Deployments
+      summary: Record one project deployment.
+      description: |
+        Accepts a `deployment` envelope that maps a release, environment, and
+        GitHub repository to the exact commit SHA that was deployed. Logister
+        uses these records to resolve source excerpts for private repositories,
+        show deployment context on error details, and link errors to PR,
+        release, and compare metadata when provided. Uppercase `DEPLOYMENT`
+        envelopes are also accepted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/DeploymentEnvelope"
+                - $ref: "#/components/schemas/UppercaseDeploymentEnvelope"
+            examples:
+              ciDeploy:
+                summary: Deployment from CI
+                value:
+                  deployment:
+                    release: "2026.06.18"
+                    environment: production
+                    repository: acme/checkout
+                    commit_sha: 4f8c2d1a9b7e6c5d4a3b2c1d0e9f8a7b6c5d4e3f
+                    branch: main
+                    deployed_at: "2026-06-18T15:20:00Z"
+              githubActions:
+                summary: Deployment with GitHub PR and release metadata
+                value:
+                  deployment:
+                    release: "2026.06.18"
+                    environment: production
+                    repository: acme/checkout
+                    commit_sha: 4f8c2d1a9b7e6c5d4a3b2c1d0e9f8a7b6c5d4e3f
+                    branch: main
+                    pull_request_number: 42
+                    release_tag: v2026.06.18
+                    workflow_run_url: https://github.com/acme/checkout/actions/runs/123
+      responses:
+        "201":
+          description: Deployment accepted.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedDeploymentResponse"
+              examples:
+                accepted:
+                  value:
+                    id: 018fe6a8-d40e-7c50-a283-e989feadbeef
+                    legacy_id: 789
+                    status: accepted
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -370,6 +446,26 @@ components:
           type: string
         release:
           type: string
+        commit_sha:
+          type: string
+          description: Git commit SHA for the code that produced the event.
+        commitSha:
+          type: string
+          description: Camel-case alias for `commit_sha`.
+        repository:
+          type: string
+          description: GitHub repository full name, such as `acme/checkout`.
+        repo:
+          type: string
+          description: Alias for `repository`.
+        github_repository:
+          type: string
+          description: Alias for `repository`.
+        githubRepository:
+          type: string
+          description: Camel-case alias for `github_repository`.
+        branch:
+          type: string
         trace_id:
           type: string
         traceId:
@@ -447,6 +543,14 @@ components:
         environment:
           type: string
         release:
+          type: string
+        commit_sha:
+          type: string
+          description: Git commit SHA used for source lookup and deployment indexing.
+        repository:
+          type: string
+          description: GitHub repository full name, such as `acme/checkout`.
+        branch:
           type: string
         service:
           type: string
@@ -550,6 +654,98 @@ components:
         request_id:
           type: string
       additionalProperties: true
+    DeploymentEnvelope:
+      type: object
+      required:
+        - deployment
+      properties:
+        deployment:
+          $ref: "#/components/schemas/Deployment"
+      additionalProperties: false
+    UppercaseDeploymentEnvelope:
+      type: object
+      required:
+        - DEPLOYMENT
+      properties:
+        DEPLOYMENT:
+          $ref: "#/components/schemas/Deployment"
+      additionalProperties: false
+    Deployment:
+      type: object
+      required:
+        - release
+        - repository
+        - commit_sha
+      properties:
+        release:
+          type: string
+          description: Release identifier used by events, such as an app version or deploy version.
+        environment:
+          type: string
+          default: production
+        repository:
+          type: string
+          description: GitHub repository full name, such as `acme/checkout`.
+        repo:
+          type: string
+          description: Alias for `repository`.
+        github_repository:
+          type: string
+          description: Alias for `repository`.
+        githubRepository:
+          type: string
+          description: Camel-case alias for `github_repository`.
+        commit_sha:
+          type: string
+          pattern: "^[0-9a-fA-F]{7,40}$"
+        commitSha:
+          type: string
+          pattern: "^[0-9a-fA-F]{7,40}$"
+        branch:
+          type: string
+        deployed_at:
+          type: string
+          format: date-time
+        deployedAt:
+          type: string
+          format: date-time
+        pull_request_number:
+          oneOf:
+            - type: string
+            - type: integer
+        pullRequestNumber:
+          oneOf:
+            - type: string
+            - type: integer
+        pull_request_url:
+          type: string
+          format: uri
+        pullRequestUrl:
+          type: string
+          format: uri
+        release_tag:
+          type: string
+        releaseTag:
+          type: string
+        release_url:
+          type: string
+          format: uri
+        releaseUrl:
+          type: string
+          format: uri
+        compare_url:
+          type: string
+          format: uri
+        workflow_run_url:
+          type: string
+          format: uri
+        deployment_url:
+          type: string
+          format: uri
+        github:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
     AcceptedEventResponse:
       type: object
       required:
@@ -581,6 +777,20 @@ components:
         id:
           type: string
           format: uuid
+        status:
+          type: string
+          const: accepted
+    AcceptedDeploymentResponse:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        legacy_id:
+          type: integer
         status:
           type: string
           const: accepted

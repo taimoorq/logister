@@ -245,6 +245,47 @@ ALTER SEQUENCE public.email_notification_deliveries_id_seq OWNED BY public.email
 
 
 --
+-- Name: error_group_external_links; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.error_group_external_links (
+    id bigint NOT NULL,
+    uuid character varying NOT NULL,
+    project_id bigint NOT NULL,
+    error_group_id bigint NOT NULL,
+    created_by_id bigint,
+    provider character varying DEFAULT 'github'::character varying NOT NULL,
+    link_type character varying DEFAULT 'issue'::character varying NOT NULL,
+    url character varying NOT NULL,
+    title character varying,
+    repository_full_name character varying,
+    external_id character varying,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: error_group_external_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.error_group_external_links_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: error_group_external_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.error_group_external_links_id_seq OWNED BY public.error_group_external_links.id;
+
+
+--
 -- Name: error_groups; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -333,6 +374,89 @@ CREATE SEQUENCE public.error_occurrences_id_seq
 --
 
 ALTER SEQUENCE public.error_occurrences_id_seq OWNED BY public.error_occurrences.id;
+
+
+--
+-- Name: github_installations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.github_installations (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    installation_id bigint NOT NULL,
+    account_login character varying NOT NULL,
+    account_type character varying,
+    repository_selection character varying,
+    active boolean DEFAULT true NOT NULL,
+    suspended_at timestamp(6) without time zone,
+    installed_by_id bigint,
+    permissions jsonb DEFAULT '{}'::jsonb NOT NULL,
+    events jsonb DEFAULT '[]'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: github_installations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.github_installations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: github_installations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.github_installations_id_seq OWNED BY public.github_installations.id;
+
+
+--
+-- Name: github_repositories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.github_repositories (
+    id bigint NOT NULL,
+    github_installation_id bigint NOT NULL,
+    external_id bigint NOT NULL,
+    full_name character varying NOT NULL,
+    owner_name character varying NOT NULL,
+    repo_name character varying NOT NULL,
+    default_branch character varying,
+    html_url character varying,
+    private boolean DEFAULT true NOT NULL,
+    archived boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    permissions jsonb DEFAULT '{}'::jsonb NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    last_synced_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: github_repositories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.github_repositories_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: github_repositories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.github_repositories_id_seq OWNED BY public.github_repositories.id;
 
 
 --
@@ -776,6 +900,49 @@ CREATE TABLE public.ingest_events_partitioned_default (
 
 
 --
+-- Name: project_deployments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_deployments (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    project_id bigint NOT NULL,
+    project_source_repository_id bigint,
+    github_repository_id bigint,
+    provider character varying DEFAULT 'github'::character varying NOT NULL,
+    repository_full_name character varying NOT NULL,
+    environment character varying DEFAULT 'production'::character varying NOT NULL,
+    release character varying NOT NULL,
+    commit_sha character varying NOT NULL,
+    branch character varying,
+    deployed_at timestamp(6) without time zone,
+    source character varying DEFAULT 'api'::character varying NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: project_deployments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_deployments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_deployments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_deployments_id_seq OWNED BY public.project_deployments.id;
+
+
+--
 -- Name: project_integration_settings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -924,6 +1091,51 @@ CREATE SEQUENCE public.project_retention_policies_id_seq
 --
 
 ALTER SEQUENCE public.project_retention_policies_id_seq OWNED BY public.project_retention_policies.id;
+
+
+--
+-- Name: project_source_repositories; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_source_repositories (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    github_installation_id bigint,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    provider character varying DEFAULT 'github'::character varying NOT NULL,
+    external_id bigint,
+    full_name character varying NOT NULL,
+    owner_name character varying NOT NULL,
+    repo_name character varying NOT NULL,
+    default_branch character varying,
+    runtime_root character varying,
+    source_root character varying,
+    enabled boolean DEFAULT true NOT NULL,
+    last_synced_at timestamp(6) without time zone,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    github_repository_id bigint
+);
+
+
+--
+-- Name: project_source_repositories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_source_repositories_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_source_repositories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_source_repositories_id_seq OWNED BY public.project_source_repositories.id;
 
 
 --
@@ -1282,6 +1494,13 @@ ALTER TABLE ONLY public.email_notification_deliveries ALTER COLUMN id SET DEFAUL
 
 
 --
+-- Name: error_group_external_links id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_group_external_links ALTER COLUMN id SET DEFAULT nextval('public.error_group_external_links_id_seq'::regclass);
+
+
+--
 -- Name: error_groups id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1296,10 +1515,31 @@ ALTER TABLE ONLY public.error_occurrences ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: github_installations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_installations ALTER COLUMN id SET DEFAULT nextval('public.github_installations_id_seq'::regclass);
+
+
+--
+-- Name: github_repositories id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_repositories ALTER COLUMN id SET DEFAULT nextval('public.github_repositories_id_seq'::regclass);
+
+
+--
 -- Name: ingest_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.ingest_events ALTER COLUMN id SET DEFAULT nextval('public.ingest_events_id_seq'::regclass);
+
+
+--
+-- Name: project_deployments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_deployments ALTER COLUMN id SET DEFAULT nextval('public.project_deployments_id_seq'::regclass);
 
 
 --
@@ -1328,6 +1568,13 @@ ALTER TABLE ONLY public.project_notification_preferences ALTER COLUMN id SET DEF
 --
 
 ALTER TABLE ONLY public.project_retention_policies ALTER COLUMN id SET DEFAULT nextval('public.project_retention_policies_id_seq'::regclass);
+
+
+--
+-- Name: project_source_repositories id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_source_repositories ALTER COLUMN id SET DEFAULT nextval('public.project_source_repositories_id_seq'::regclass);
 
 
 --
@@ -1398,6 +1645,14 @@ ALTER TABLE ONLY public.email_notification_deliveries
 
 
 --
+-- Name: error_group_external_links error_group_external_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_group_external_links
+    ADD CONSTRAINT error_group_external_links_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: error_groups error_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1411,6 +1666,22 @@ ALTER TABLE ONLY public.error_groups
 
 ALTER TABLE ONLY public.error_occurrences
     ADD CONSTRAINT error_occurrences_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: github_installations github_installations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_installations
+    ADD CONSTRAINT github_installations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: github_repositories github_repositories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_repositories
+    ADD CONSTRAINT github_repositories_pkey PRIMARY KEY (id);
 
 
 --
@@ -1574,6 +1845,14 @@ ALTER TABLE ONLY public.ingest_events
 
 
 --
+-- Name: project_deployments project_deployments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_deployments
+    ADD CONSTRAINT project_deployments_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_integration_settings project_integration_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1603,6 +1882,14 @@ ALTER TABLE ONLY public.project_notification_preferences
 
 ALTER TABLE ONLY public.project_retention_policies
     ADD CONSTRAINT project_retention_policies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_source_repositories project_source_repositories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_source_repositories
+    ADD CONSTRAINT project_source_repositories_pkey PRIMARY KEY (id);
 
 
 --
@@ -2046,6 +2333,27 @@ CREATE INDEX idx_on_enabled_last_imported_at_ae810e9f88 ON public.project_integr
 
 
 --
+-- Name: idx_on_project_id_provider_full_name_6dea472798; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_on_project_id_provider_full_name_6dea472798 ON public.project_source_repositories USING btree (project_id, provider, full_name);
+
+
+--
+-- Name: idx_on_project_id_provider_link_type_d4cae99367; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_on_project_id_provider_link_type_d4cae99367 ON public.error_group_external_links USING btree (project_id, provider, link_type);
+
+
+--
+-- Name: idx_on_project_id_release_environment_84f39b9a75; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_on_project_id_release_environment_84f39b9a75 ON public.project_deployments USING btree (project_id, release, environment);
+
+
+--
 -- Name: idx_project_integrations_provider_enabled_imported; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2249,6 +2557,41 @@ CREATE UNIQUE INDEX index_email_notification_deliveries_on_uuid ON public.email_
 
 
 --
+-- Name: index_error_group_external_links_on_created_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_group_external_links_on_created_by_id ON public.error_group_external_links USING btree (created_by_id);
+
+
+--
+-- Name: index_error_group_external_links_on_error_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_group_external_links_on_error_group_id ON public.error_group_external_links USING btree (error_group_id);
+
+
+--
+-- Name: index_error_group_external_links_on_error_group_id_and_url; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_error_group_external_links_on_error_group_id_and_url ON public.error_group_external_links USING btree (error_group_id, url);
+
+
+--
+-- Name: index_error_group_external_links_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_group_external_links_on_project_id ON public.error_group_external_links USING btree (project_id);
+
+
+--
+-- Name: index_error_group_external_links_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_error_group_external_links_on_uuid ON public.error_group_external_links USING btree (uuid);
+
+
+--
 -- Name: index_error_groups_on_archived_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2389,6 +2732,62 @@ CREATE UNIQUE INDEX index_error_occurrences_on_uuid ON public.error_occurrences 
 
 
 --
+-- Name: index_github_installations_on_account_login; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_github_installations_on_account_login ON public.github_installations USING btree (account_login);
+
+
+--
+-- Name: index_github_installations_on_installation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_github_installations_on_installation_id ON public.github_installations USING btree (installation_id);
+
+
+--
+-- Name: index_github_installations_on_installed_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_github_installations_on_installed_by_id ON public.github_installations USING btree (installed_by_id);
+
+
+--
+-- Name: index_github_installations_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_github_installations_on_uuid ON public.github_installations USING btree (uuid);
+
+
+--
+-- Name: index_github_repositories_on_external_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_github_repositories_on_external_id ON public.github_repositories USING btree (external_id);
+
+
+--
+-- Name: index_github_repositories_on_full_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_github_repositories_on_full_name ON public.github_repositories USING btree (full_name);
+
+
+--
+-- Name: index_github_repositories_on_github_installation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_github_repositories_on_github_installation_id ON public.github_repositories USING btree (github_installation_id);
+
+
+--
+-- Name: index_github_repositories_on_github_installation_id_and_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_github_repositories_on_github_installation_id_and_active ON public.github_repositories USING btree (github_installation_id, active);
+
+
+--
 -- Name: index_ingest_events_on_api_key_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2473,6 +2872,48 @@ CREATE INDEX index_ingest_events_part_uuid ON ONLY public.ingest_events_partitio
 
 
 --
+-- Name: index_project_deployments_on_github_repository_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_deployments_on_github_repository_id ON public.project_deployments USING btree (github_repository_id);
+
+
+--
+-- Name: index_project_deployments_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_deployments_on_project_id ON public.project_deployments USING btree (project_id);
+
+
+--
+-- Name: index_project_deployments_on_project_id_and_commit_sha; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_deployments_on_project_id_and_commit_sha ON public.project_deployments USING btree (project_id, commit_sha);
+
+
+--
+-- Name: index_project_deployments_on_project_repo_env_release; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_deployments_on_project_repo_env_release ON public.project_deployments USING btree (project_id, repository_full_name, environment, release);
+
+
+--
+-- Name: index_project_deployments_on_project_source_repository_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_deployments_on_project_source_repository_id ON public.project_deployments USING btree (project_source_repository_id);
+
+
+--
+-- Name: index_project_deployments_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_deployments_on_uuid ON public.project_deployments USING btree (uuid);
+
+
+--
 -- Name: index_project_integration_settings_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2554,6 +2995,48 @@ CREATE UNIQUE INDEX index_project_notification_preferences_on_uuid ON public.pro
 --
 
 CREATE UNIQUE INDEX index_project_retention_policies_on_project_id ON public.project_retention_policies USING btree (project_id);
+
+
+--
+-- Name: index_project_source_repositories_on_github_installation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_source_repositories_on_github_installation_id ON public.project_source_repositories USING btree (github_installation_id);
+
+
+--
+-- Name: index_project_source_repositories_on_github_repository_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_source_repositories_on_github_repository_id ON public.project_source_repositories USING btree (github_repository_id);
+
+
+--
+-- Name: index_project_source_repositories_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_source_repositories_on_project_id ON public.project_source_repositories USING btree (project_id);
+
+
+--
+-- Name: index_project_source_repositories_on_project_id_and_enabled; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_source_repositories_on_project_id_and_enabled ON public.project_source_repositories USING btree (project_id, enabled);
+
+
+--
+-- Name: index_project_source_repositories_on_provider_and_external_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_source_repositories_on_provider_and_external_id ON public.project_source_repositories USING btree (provider, external_id) WHERE (external_id IS NOT NULL);
+
+
+--
+-- Name: index_project_source_repositories_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_source_repositories_on_uuid ON public.project_source_repositories USING btree (uuid);
 
 
 --
@@ -8671,6 +9154,14 @@ ALTER TABLE public.ingest_events_partitioned
 
 
 --
+-- Name: project_source_repositories fk_rails_050fdd9552; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_source_repositories
+    ADD CONSTRAINT fk_rails_050fdd9552 FOREIGN KEY (github_installation_id) REFERENCES public.github_installations(id);
+
+
+--
 -- Name: api_keys fk_rails_05cc5a9e37; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8700,6 +9191,14 @@ ALTER TABLE ONLY public.error_groups
 
 ALTER TABLE ONLY public.project_memberships
     ADD CONSTRAINT fk_rails_18b611e244 FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
+-- Name: project_deployments fk_rails_1f89aeb07e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_deployments
+    ADD CONSTRAINT fk_rails_1f89aeb07e FOREIGN KEY (project_id) REFERENCES public.projects(id);
 
 
 --
@@ -8743,11 +9242,43 @@ ALTER TABLE ONLY public.api_keys
 
 
 --
+-- Name: project_source_repositories fk_rails_3e5e3e3141; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_source_repositories
+    ADD CONSTRAINT fk_rails_3e5e3e3141 FOREIGN KEY (github_repository_id) REFERENCES public.github_repositories(id);
+
+
+--
 -- Name: trace_spans fk_rails_401b288d25; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.trace_spans
     ADD CONSTRAINT fk_rails_401b288d25 FOREIGN KEY (api_key_id) REFERENCES public.api_keys(id);
+
+
+--
+-- Name: github_repositories fk_rails_4b5b7ee569; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_repositories
+    ADD CONSTRAINT fk_rails_4b5b7ee569 FOREIGN KEY (github_installation_id) REFERENCES public.github_installations(id);
+
+
+--
+-- Name: github_installations fk_rails_4d0e25c6f8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.github_installations
+    ADD CONSTRAINT fk_rails_4d0e25c6f8 FOREIGN KEY (installed_by_id) REFERENCES public.users(id);
+
+
+--
+-- Name: project_deployments fk_rails_5cf5091a89; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_deployments
+    ADD CONSTRAINT fk_rails_5cf5091a89 FOREIGN KEY (project_source_repository_id) REFERENCES public.project_source_repositories(id);
 
 
 --
@@ -8764,6 +9295,14 @@ ALTER TABLE ONLY public.ingest_events
 
 ALTER TABLE ONLY public.email_notification_deliveries
     ADD CONSTRAINT fk_rails_73897ec334 FOREIGN KEY (error_group_id) REFERENCES public.error_groups(id);
+
+
+--
+-- Name: error_group_external_links fk_rails_7624c0ac28; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_group_external_links
+    ADD CONSTRAINT fk_rails_7624c0ac28 FOREIGN KEY (project_id) REFERENCES public.projects(id);
 
 
 --
@@ -8791,6 +9330,14 @@ ALTER TABLE ONLY public.project_memberships
 
 
 --
+-- Name: error_group_external_links fk_rails_8e4514ec2a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_group_external_links
+    ADD CONSTRAINT fk_rails_8e4514ec2a FOREIGN KEY (error_group_id) REFERENCES public.error_groups(id);
+
+
+--
 -- Name: trace_spans fk_rails_901bab7c48; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8807,6 +9354,14 @@ ALTER TABLE ONLY public.error_groups
 
 
 --
+-- Name: error_group_external_links fk_rails_a3a36eaa76; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.error_group_external_links
+    ADD CONSTRAINT fk_rails_a3a36eaa76 FOREIGN KEY (created_by_id) REFERENCES public.users(id);
+
+
+--
 -- Name: ingest_events fk_rails_ada86cb38d; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8820,6 +9375,14 @@ ALTER TABLE ONLY public.ingest_events
 
 ALTER TABLE ONLY public.error_occurrences
     ADD CONSTRAINT fk_rails_b004382b7c FOREIGN KEY (ingest_event_id) REFERENCES public.ingest_events(id);
+
+
+--
+-- Name: project_deployments fk_rails_b1f64fa257; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_deployments
+    ADD CONSTRAINT fk_rails_b1f64fa257 FOREIGN KEY (github_repository_id) REFERENCES public.github_repositories(id);
 
 
 --
@@ -8871,6 +9434,14 @@ ALTER TABLE ONLY public.telemetry_archives
 
 
 --
+-- Name: project_source_repositories fk_rails_dd26daa789; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_source_repositories
+    ADD CONSTRAINT fk_rails_dd26daa789 FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
 -- Name: check_in_monitors fk_rails_f305160af5; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8893,6 +9464,12 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260618152000'),
+('20260618150000'),
+('20260618143000'),
+('20260618142000'),
+('20260618141000'),
+('20260618140000'),
 ('20260613133000'),
 ('20260613124500'),
 ('20260613123000'),

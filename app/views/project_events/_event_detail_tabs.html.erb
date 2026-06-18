@@ -1,4 +1,4 @@
-<%# locals: (project:, event:, group:, occurrences:, related_logs:, stacktrace_tab_label:, stacktrace_partial:, exception_data:, request_details:, frame_scope:, visible_frames:, selected_frame_index:, selected_frame:, source_excerpt:, backtrace:, local_variables:, instance_variables:, filter_param: "unresolved", query_param: "", assignee_param: "all", active_tab: "stacktrace", turbo_frame_id: nil, wrapper_classes: "detail-tabs-wrap", tour_group: nil) %>
+<%# locals: (project:, event:, group:, occurrences:, related_logs:, stacktrace_tab_label:, stacktrace_partial:, exception_data:, request_details:, frame_scope:, visible_frames:, selected_frame_index:, selected_frame:, source_excerpt:, source_lookup: nil, backtrace:, local_variables:, instance_variables:, filter_param: "unresolved", query_param: "", assignee_param: "all", active_tab: "stacktrace", turbo_frame_id: nil, wrapper_classes: "detail-tabs-wrap", tour_group: nil) %>
 <% filter_param = filter_param.presence || "unresolved" %>
 <% query_param = query_param.to_s %>
 <% assignee_param = assignee_param.presence || "all" %>
@@ -59,6 +59,10 @@
            aria-hidden="<%= active_tab == 'stacktrace' ? 'false' : 'true' %>"
            <%= 'hidden' unless active_tab == 'stacktrace' %>
            data-frame-tabs-target="panel">
+    <% if source_excerpt.blank? && local_assigns[:source_lookup]&.diagnostics&.dig(:message).present? %>
+      <%= render "project_events/source_lookup_status", source_lookup: local_assigns[:source_lookup] %>
+    <% end %>
+
     <%= render stacktrace_partial,
                project: project,
                event: event,
@@ -69,6 +73,7 @@
                query_param: query_param,
                assignee_param: assignee_param,
                source_excerpt: source_excerpt,
+               source_lookup: local_assigns[:source_lookup],
                frame_scope: frame_scope,
                visible_frames: visible_frames,
                selected_frame_index: selected_frame_index,

@@ -1,0 +1,137 @@
+<% tour_group = "project-deployments" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+
+<%= render "projects/header", tour_group: tour_group %>
+
+<section class="space-y-6">
+  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900">Deployments</h2>
+        <p class="mt-1 text-sm text-slate-500">
+          <%= number_with_delimiter(@deployments_total) %>
+          <%= "deployment".pluralize(@deployments_total) %>
+          <%= "matched" if @deployment_filters_active %>
+        </p>
+      </div>
+      <%= link_to "HTTP API", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "btn-ghost btn-sm" %>
+    </div>
+
+    <%= form_with url: deployments_project_path(@project), method: :get, local: true, class: "mb-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-end" do %>
+      <div>
+        <%= label_tag :repository, "Repository", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= select_tag :repository,
+                       options_for_select([["All repositories", ""]] + @deployment_repositories.map { |repository| [repository, repository] }, @deployment_filters[:repository]),
+                       class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div>
+        <%= label_tag :environment, "Environment", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= select_tag :environment,
+                       options_for_select([["All environments", ""]] + @deployment_environments.map { |environment| [environment, environment] }, @deployment_filters[:environment]),
+                       class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div>
+        <%= label_tag :source, "Source", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= select_tag :source,
+                       options_for_select([["All sources", ""]] + @deployment_sources.map { |source| [source.titleize, source] }, @deployment_filters[:source]),
+                       class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div>
+        <%= label_tag :q, "Search", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= text_field_tag :q,
+                           @deployment_filters[:q],
+                           placeholder: "release, branch, or SHA",
+                           class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+      </div>
+      <div class="flex gap-2">
+        <%= submit_tag "Apply", class: "inline-flex items-center justify-center rounded-md border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700" %>
+        <% if @deployment_filters_active %>
+          <%= link_to "Reset", deployments_project_path(@project), class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @deployments.any? %>
+      <%= responsive_scroll_region do %>
+        <table class="min-w-full divide-y divide-slate-200" aria-label="Deployments">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Release</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Repository</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Environment</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Commit</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">GitHub</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Deployed</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 bg-white">
+            <% @deployments.each do |deployment| %>
+              <% previous_deployment = @previous_deployments_by_id[deployment.id] %>
+              <tr>
+                <td class="px-3 py-2 text-sm text-slate-900">
+                  <% if deployment.release_url.present? %>
+                    <%= link_to deployment.release, deployment.release_url, target: "_blank", rel: "noopener noreferrer", class: "font-semibold text-blue-600 no-underline hover:underline" %>
+                  <% else %>
+                    <code class="text-xs"><%= deployment.release %></code>
+                  <% end %>
+                  <div class="mt-1 text-xs text-slate-500"><%= deployment.source %></div>
+                </td>
+                <td class="px-3 py-2 text-sm text-slate-700">
+                  <%= deployment.repository_full_name %>
+                  <% if deployment.branch.present? %>
+                    <div class="mt-1 text-xs text-slate-500"><%= deployment.branch %></div>
+                  <% end %>
+                </td>
+                <td class="px-3 py-2 text-sm">
+                  <span class="stage-tag"><%= deployment.environment %></span>
+                </td>
+                <td class="px-3 py-2 text-sm text-slate-700">
+                  <% if deployment.github_commit_url.present? %>
+                    <%= link_to deployment.short_commit_sha, deployment.github_commit_url, target: "_blank", rel: "noopener noreferrer", class: "font-mono text-blue-600 no-underline hover:underline" %>
+                  <% else %>
+                    <code class="text-xs"><%= deployment.short_commit_sha %></code>
+                  <% end %>
+                </td>
+                <td class="px-3 py-2 text-sm">
+                  <div class="flex flex-wrap gap-2">
+                    <% if deployment.pull_request_url.present? %>
+                      <%= link_to deployment.pull_request_label || "Pull request", deployment.pull_request_url, target: "_blank", rel: "noopener noreferrer", class: "inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+                    <% end %>
+                    <% if deployment.release_url.present? %>
+                      <%= link_to "Release", deployment.release_url, target: "_blank", rel: "noopener noreferrer", class: "inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+                    <% end %>
+                    <% if deployment.compare_url(previous_deployment).present? %>
+                      <%= link_to "Compare", deployment.compare_url(previous_deployment), target: "_blank", rel: "noopener noreferrer", class: "inline-flex items-center rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+                    <% end %>
+                    <% if deployment.pull_request_url.blank? && deployment.release_url.blank? && deployment.compare_url(previous_deployment).blank? %>
+                      <span class="text-xs text-slate-400">No linked metadata</span>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="px-3 py-2 text-sm text-slate-700">
+                  <%= deployment.deployed_at ? local_time_tag(deployment.deployed_at, format: :long) : local_time_tag(deployment.created_at, format: :long) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+      <% if @deployments_total > @deployments.size %>
+        <p class="mt-3 text-xs text-slate-500">
+          Showing the newest <%= @deployments.size %> matching deployments.
+        </p>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-slate-600">
+        <% if @deployment_filters_active %>
+          No deployments match these filters.
+        <% else %>
+          No deployments have been recorded yet. CI/CD can send them to <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/deployments</code>.
+        <% end %>
+      </p>
+    <% end %>
+  </section>
+</section>
+
+<% end %>

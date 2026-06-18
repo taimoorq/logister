@@ -1,7 +1,7 @@
 <% javascript_summary = javascript_exception_summary(exception_data, event.message) %>
 <% javascript_frames = javascript_exception_frames(exception_data) %>
 <% selected_frame = javascript_frames.first %>
-<% source_excerpt = source_excerpt_for_frame(selected_frame) %>
+<% source_excerpt = local_assigns.key?(:source_excerpt) ? local_assigns[:source_excerpt] : source_excerpt_for_event_frame(project, event, selected_frame) %>
 <% stacktrace_text = javascript_exception_stack(exception_data).presence || event.message %>
 <% runtime_details = javascript_runtime_details(event) %>
 <% breadcrumbs = if event.context.is_a?(Hash)
@@ -56,15 +56,17 @@
 
       <section class="better-errors-code card">
         <% if source_excerpt.present? %>
-          <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
-          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= source_excerpt[:lines].map { |line| line[:code] }.join("\n") %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy source excerpt">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="better-errors-source" data-copy-target="source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
-<% end %></code></pre>
-          </div>
+          <%= render "project_events/source_excerpt",
+                     source_excerpt: source_excerpt,
+                     project: project,
+                     event: event,
+                     group: group,
+                     filter_param: filter_param,
+                     query_param: query_param,
+                     assignee_param: assignee_param,
+                     active_tab: "stacktrace",
+                     frame_scope: frame_scope,
+                     selected_frame_index: selected_frame_index %>
         <% elsif selected_frame.present? %>
           <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
           <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:raw] %>">

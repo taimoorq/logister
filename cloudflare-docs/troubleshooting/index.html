@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Troubleshooting | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/troubleshooting/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Troubleshooting | Logister">
+    <meta property="og:description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/troubleshooting/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Troubleshooting | Logister">
+    <meta name="twitter:description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/troubleshooting/#article","headline":"Troubleshoot Logister.","name":"Troubleshooting | Logister","url":"https://docs.logister.org/troubleshooting/","description":"Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error monitoring"},{"@type":"Thing","name":"Event ingestion troubleshooting"},{"@type":"Thing","name":"Sidekiq troubleshooting"},{"@type":"Thing","name":"ClickHouse readiness"},{"@type":"Thing","name":"SMTP delivery"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Troubleshooting","item":"https://docs.logister.org/troubleshooting/"}]}]}</script>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/">
+            <img src="/assets/logister-logo.svg" alt="Logister">
+            <span class="brand-copy">
+              <span class="brand-kicker">Documentation</span>
+              <span class="brand-title">Troubleshooting</span>
+            </span>
+          </a>
+          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
+          <nav class="topnav" data-nav-panel>
+            <a href="/">Docs home</a>
+            <a href="https://logister.org/">Hosted app</a>
+            <a href="https://github.com/taimoorq/logister">GitHub</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero">
+          <span class="hero-kicker">Documentation / Troubleshooting</span>
+          <h1>Troubleshoot Logister.</h1>
+          <p>
+            Start with the smallest failing path: app health, token authentication, payload shape, background jobs, email, or optional analytics storage. Most issues become obvious once you test one layer at a time.
+          </p>
+        </section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group">
+              <p class="sidebar-label">Documentation</p>
+              <a href="/">Overview</a>
+              <a href="/product/">What Logister does</a>
+              <a href="/metrics/">Metrics reference</a>
+              <a href="/use-cases/">Use cases</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Installation</p>
+              <a href="/self-hosting/">Self-hosting</a>
+              <a href="/local-development/">Local development</a>
+              <a href="/self-hosting/#docker">Docker option</a>
+              <a href="/deployment/">Deployment config</a>
+              <a href="/github-app/">GitHub App</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">API and help</p>
+              <a href="/http-api/">HTTP API</a>
+              <a href="/api-reference/">API reference</a>
+              <a class="active" href="/troubleshooting/">Troubleshooting</a>
+            </div>
+            <hr>
+            <div class="sidebar-group">
+              <p class="sidebar-label">On this page</p>
+              <a href="#quick-checks">Quick checks</a>
+              <a href="#empty-inbox">Empty inbox</a>
+              <a href="#rejected-events">Rejected events</a>
+              <a href="#background-jobs">Background jobs</a>
+              <a href="#email">Email</a>
+              <a href="#clickhouse">ClickHouse</a>
+              <a href="#archives">Archive exports</a>
+              <a href="#support-context">Support context</a>
+            </div>
+          </aside>
+
+          <article class="article" data-pagefind-body>
+            <section class="article-header">
+              <div class="outline-grid">
+                <section class="outline-card">
+                  <p class="eyebrow">Guide overview</p>
+                  <h2>Debug the layer that can explain the symptom.</h2>
+                  <p class="lead">
+                    Logister has a small production baseline: Rails web, PostgreSQL, Redis, and Sidekiq. Optional services such as ClickHouse, SMTP, Turnstile, analytics, and S3-compatible archive storage should be checked only after the baseline is healthy.
+                  </p>
+                </section>
+                <aside class="outline-card chapter-links">
+                  <h3>Useful references</h3>
+                  <a href="/http-api/#responses"><span>API responses</span><span class="kbd">codes</span></a>
+                  <a href="/deployment/"><span>Deployment config</span><span class="kbd">env</span></a>
+                  <a href="/clickhouse/"><span>ClickHouse</span><span class="kbd">health</span></a>
+                  <a href="/self-hosting/#verify"><span>Deploy verification</span><span class="kbd">ops</span></a>
+                </aside>
+              </div>
+            </section>
+
+            <section id="quick-checks" class="section">
+              <p class="eyebrow">Quick checks</p>
+              <h2>Confirm the baseline before chasing optional services.</h2>
+              <ol>
+                <li>Open <code>/up</code>. If it fails, fix the web process, database connection, or deploy health first.</li>
+                <li>Confirm the app has <code>RAILS_ENV</code>, <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>LOGISTER_PUBLIC_URL</code>, and <code>LOGISTER_ADMIN_EMAILS</code>.</li>
+                <li>Confirm one web process and one Sidekiq worker process are running from the same release image or source revision.</li>
+                <li>Create a project, generate a fresh API key, and keep the token available for one direct test request.</li>
+                <li>Look at Rails and worker logs for request IDs, validation errors, authentication failures, and job errors around the same timestamp.</li>
+              </ol>
+              <div class="note tip"><h4>Start from a fresh token</h4><p>If a project was archived and restored, old active tokens were revoked during archive. Generate a new API key before testing ingestion again.</p></div>
+            </section>
+
+            <section id="empty-inbox" class="section">
+              <p class="eyebrow">Empty inbox</p>
+              <h2>First decide whether the event is being accepted.</h2>
+              <p>
+                An empty inbox can mean the app never received the event, the token was rejected, the payload failed validation, the event type was not <code>error</code>, or the event landed in Activity, Insights, Performance, or Monitors instead of the error inbox.
+              </p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#test-error-event">Copy</button>
+                </div>
+                <pre><code id="test-error-event">curl -i "$LOGISTER_ENDPOINT/api/v1/ingest_events" \
+  -H "Authorization: Bearer $LOGISTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": {
+      "event_type": "error",
+      "level": "error",
+      "message": "Troubleshooting test error",
+      "fingerprint": "docs-troubleshooting-test",
+      "environment": "production",
+      "context": {
+        "service": "manual-test"
+      }
+    }
+  }'</code></pre>
+              </div>
+              <p>
+                A successful write returns <code>201 Created</code> with an accepted status and an id. If it is accepted but the inbox still looks empty, check the project you sent to, the selected status filter, search terms, environment or release filters, archived project views, and whether the event was grouped into an existing issue.
+              </p>
+            </section>
+
+            <section id="rejected-events" class="section">
+              <p class="eyebrow">Rejected events</p>
+              <h2>Use the status code to narrow the fix.</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Likely cause</th>
+                    <th>What to check</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>400</code></td>
+                    <td>The JSON body is missing the required <code>event</code>, <code>EVENT</code>, <code>check_in</code>, or <code>CHECK_IN</code> envelope.</td>
+                    <td>Compare the request with the <a href="/http-api/">HTTP API guide</a>. Some runtimes uppercase struct keys, which Logister accepts.</td>
+                  </tr>
+                  <tr>
+                    <td><code>401</code></td>
+                    <td>The token is missing, invalid, revoked, inactive, or belongs to an archived project.</td>
+                    <td>Use <code>Authorization: Bearer &lt;token&gt;</code> or <code>X-Api-Key: &lt;token&gt;</code>, generate a fresh project token, and confirm the project is active.</td>
+                  </tr>
+                  <tr>
+                    <td><code>422</code></td>
+                    <td>The envelope exists, but required event or span fields did not validate.</td>
+                    <td>Read the returned <code>errors</code> array. For spans, confirm <code>trace_id</code>, <code>span_id</code>, name/message, and duration fields.</td>
+                  </tr>
+                  <tr>
+                    <td><code>429</code></td>
+                    <td>The API token or authentication-failure source exceeded a public API rate limit.</td>
+                    <td>Honor <code>Retry-After</code>. Admins listed in <code>LOGISTER_ADMIN_EMAILS</code> can tune project overrides or global rate-limit environment variables.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>
+                If self-observability is configured with <code>LOGISTER_API_KEY</code> and <code>LOGISTER_ENDPOINT</code>, rejected client submissions are also reported through the Ruby gem as sanitized warning logs.
+              </p>
+            </section>
+
+            <section id="background-jobs" class="section">
+              <p class="eyebrow">Background jobs</p>
+              <h2>Run Sidekiq whenever the app needs async work.</h2>
+              <p>
+                Sidekiq delivers email, writes optional ClickHouse copies, schedules digests, records first-occurrence alerts, and runs operator-triggered archive or prune tasks. The web app can accept events while some async work is delayed, so always check the worker when the UI accepts data but follow-up behavior is missing.
+              </p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#sidekiq-start">Copy</button>
+                </div>
+                <pre><code id="sidekiq-start">bundle exec sidekiq -C config/sidekiq.yml</code></pre>
+              </div>
+              <ul>
+                <li>Confirm <code>REDIS_URL</code> is identical for web and worker processes.</li>
+                <li>Confirm the worker has the same secrets and optional service variables as the web process.</li>
+                <li>Look for retrying jobs when ClickHouse, SMTP, or archive storage credentials are wrong.</li>
+              </ul>
+            </section>
+
+            <section id="email" class="section">
+              <p class="eyebrow">Email</p>
+              <h2>Check SMTP, sender identity, and worker delivery.</h2>
+              <p>
+                Logister sends confirmation mail, password reset mail, first-occurrence error alerts, and daily or weekly digests through Action Mailer. In production-like environments, configure SMTP and keep Sidekiq running.
+              </p>
+              <table>
+                <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
+                <tbody>
+                  <tr><td>No auth mail</td><td>Confirm SMTP host, port, username, password, TLS/SSL mode, sender address, and provider-side domain verification.</td></tr>
+                  <tr><td>No project alerts</td><td>Confirm project notification preferences, first-occurrence settings, worker health, and that the event created a new error group.</td></tr>
+                  <tr><td>No digests</td><td>Confirm recurring jobs are scheduled, Sidekiq is running, and the selected daily or weekly cadence has elapsed.</td></tr>
+                </tbody>
+              </table>
+              <p><a href="/deployment/#email">Read the deployment email settings</a> for the environment variables used by SMTP and Amazon SES.</p>
+            </section>
+
+            <section id="clickhouse" class="section">
+              <p class="eyebrow">ClickHouse</p>
+              <h2>Only debug ClickHouse after PostgreSQL ingestion works.</h2>
+              <p>
+                ClickHouse is optional. The product UI still uses PostgreSQL as the primary system of record. If events are accepted but ClickHouse-backed analytics are missing, first verify that ClickHouse is enabled, reachable, schema-ready, and that the worker is processing ClickHouse jobs.
+              </p>
+              <div class="output-block">
+                <div class="output-head"><span class="output-label">Readiness endpoint</span></div>
+                <pre><code>GET /health/clickhouse</code></pre>
+              </div>
+              <ul>
+                <li>If ClickHouse is disabled, the endpoint should not be treated as a production failure.</li>
+                <li>If the endpoint reports missing tables, load the schema from <code>docs/clickhouse_schema.sql</code>.</li>
+                <li>If writes are failing, check worker logs and the ClickHouse connection variables in the deployment guide.</li>
+              </ul>
+            </section>
+
+            <section id="archives" class="section">
+              <p class="eyebrow">Archive exports</p>
+              <h2>Archive storage is separate from normal event ingestion.</h2>
+              <p>
+                S3-compatible archive storage is optional and used when operators export compressed JSONL before pruning older hot telemetry. Normal app events are stored in PostgreSQL even when archive storage is not configured.
+              </p>
+              <ul>
+                <li>Set <code>ACTIVE_STORAGE_SERVICE=amazon</code> and the AWS or S3-compatible variables from the deployment guide.</li>
+                <li>Confirm the bucket exists and credentials can write objects.</li>
+                <li>Run archive tasks from the same release with access to the same database and storage variables.</li>
+                <li>Do not run prune tasks until you have verified the archive output you need.</li>
+              </ul>
+            </section>
+
+            <section id="support-context" class="section">
+              <p class="eyebrow">Support context</p>
+              <h2>Collect a small, useful bundle before asking for help.</h2>
+              <ul>
+                <li>Logister version, image tag, or git SHA.</li>
+                <li>Deployment shape: source, Docker, Compose, Fly, Kamal, or another platform.</li>
+                <li>Whether PostgreSQL, Redis, Sidekiq, SMTP, ClickHouse, Turnstile, analytics, and archive storage are enabled.</li>
+                <li>The failing endpoint, status code, response body, and relevant response headers.</li>
+                <li>Sanitized Rails and worker log lines around the same timestamp.</li>
+                <li>Never share raw API tokens, credentials, cookies, authorization headers, or private event payloads.</li>
+              </ul>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

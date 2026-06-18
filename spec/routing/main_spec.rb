@@ -48,6 +48,13 @@ RSpec.describe "Routes", type: :routing do
         action: "create"
       )
     end
+
+    it "routes POST /api/v1/deployments to api/v1/deployments#create" do
+      expect(post: "/api/v1/deployments").to route_to(
+        controller: "api/v1/deployments",
+        action: "create"
+      )
+    end
   end
 
   describe "health" do
@@ -55,6 +62,59 @@ RSpec.describe "Routes", type: :routing do
       expect(get: "/health/clickhouse").to route_to(
         controller: "health",
         action: "clickhouse"
+      )
+    end
+  end
+
+  describe "github" do
+    it "routes GET /github/setup to github/setup#show" do
+      expect(get: "/github/setup").to route_to(
+        controller: "github/setup",
+        action: "show"
+      )
+    end
+
+    it "routes POST /github/webhooks to github/webhooks#create" do
+      expect(post: "/github/webhooks").to route_to(
+        controller: "github/webhooks",
+        action: "create"
+      )
+    end
+
+    it "routes POST /projects/:uuid/github/installations/:uuid/sync to github/installations#sync" do
+      expect(post: "/projects/project-1/github/installations/install-1/sync").to route_to(
+        controller: "github/installations",
+        action: "sync",
+        project_uuid: "project-1",
+        uuid: "install-1"
+      )
+    end
+
+    it "routes error group GitHub link attachments" do
+      expect(post: "/projects/project-1/error_groups/group-1/external_links").to route_to(
+        controller: "error_group_external_links",
+        action: "create",
+        project_uuid: "project-1",
+        error_group_uuid: "group-1"
+      )
+    end
+
+    it "routes error group GitHub link removal" do
+      expect(delete: "/projects/project-1/error_groups/group-1/external_links/link-1").to route_to(
+        controller: "error_group_external_links",
+        action: "destroy",
+        project_uuid: "project-1",
+        error_group_uuid: "group-1",
+        uuid: "link-1"
+      )
+    end
+
+    it "routes GitHub issue creation for error groups" do
+      expect(post: "/projects/project-1/error_groups/group-1/github_issue").to route_to(
+        controller: "github/issues",
+        action: "create",
+        project_uuid: "project-1",
+        error_group_uuid: "group-1"
       )
     end
   end
@@ -96,6 +156,14 @@ RSpec.describe "Routes", type: :routing do
       expect(get: "/projects/abc/monitors").to route_to(
         controller: "project_monitors",
         action: "show",
+        uuid: "abc"
+      )
+    end
+
+    it "routes GET /projects/:uuid/deployments to project_deployments#index" do
+      expect(get: "/projects/abc/deployments").to route_to(
+        controller: "project_deployments",
+        action: "index",
         uuid: "abc"
       )
     end

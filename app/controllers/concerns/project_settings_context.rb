@@ -17,6 +17,28 @@ module ProjectSettingsContext
       project: @project,
       provider: ProjectIntegrationSetting::PROVIDERS[:cloudflare_pages]
     ) if @project.integration_cloudflare_pages?
+    @source_repositories = @project.source_repositories
+                                   .includes(:github_installation, github_repository: :github_installation)
+                                   .order(:provider, :full_name)
+    @source_repository_form ||= @project.source_repositories.new(
+      provider: ProjectSourceRepository::PROVIDERS[:github],
+      enabled: true
+    )
+    @github_app_configured = Logister::GithubAppConfig.configured?
+    @github_app_install_url = Logister::GithubAppConfig.install_url(state: @project.uuid) if @project.owned_by?(current_user)
+    @github_setup_url = github_setup_url
+    @github_webhook_url = github_webhooks_url
+    @github_app_diagnostics = Github::ConfigurationDiagnostics.call(
+      setup_url: @github_setup_url,
+      webhook_url: @github_webhook_url,
+      install_url: @github_app_install_url
+    )
+    @github_installations = GithubInstallation.visible_to(current_user)
+                                             .includes(:github_repositories)
+                                             .order(updated_at: :desc)
+    @available_github_repositories = GithubRepository.visible_to(current_user)
+                                                     .includes(:github_installation)
+                                                     .order(:full_name)
     @assignment_summary = ProjectAssignmentSummary.new(@project)
     @retention_policy ||= ProjectRetentionPolicy.for(project: @project) if @project.owned_by?(current_user)
     @public_api_rate_limit_defaults = {

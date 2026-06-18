@@ -12,6 +12,6 @@ module ProjectScope
   end
 
   def project_uuid_param
-    params[:uuid] || params[:project_uuid] || params[:project_id]
+    params[:project_uuid] || params[:project_id] || params[:uuid]
   end
 end

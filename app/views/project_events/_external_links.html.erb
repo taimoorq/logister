@@ -1,0 +1,103 @@
+<% external_link_errors = local_assigns.fetch(:external_link_errors, []) %>
+<% github_links = group.external_links.github.recent_first %>
+<% draft_issue_url = github_new_issue_url_for_error_group(project, group, event: event, source_excerpt: source_excerpt) %>
+<% creatable_repositories = github_issue_creatable_repositories(project) %>
+<% source_url = source_excerpt.is_a?(Hash) ? source_excerpt[:source_url].presence : nil %>
+
+<section class="external-links-panel">
+  <div class="external-links-header">
+    <h3>GitHub links</h3>
+    <div class="external-link-actions">
+      <% if creatable_repositories.any? %>
+        <%= form_with url: project_error_group_github_issue_path(project, group),
+                      class: "external-link-create-form" do %>
+          <%= hidden_field_tag :filter, filter_param %>
+          <%= hidden_field_tag :q, query_param %>
+          <%= hidden_field_tag :assignee, assignee_param %>
+          <%= hidden_field_tag :tab, active_tab %>
+          <%= hidden_field_tag :frame_scope, frame_scope %>
+          <%= hidden_field_tag :frame, selected_frame_index %>
+          <%= hidden_field_tag :source_url, source_url if source_url.present? %>
+          <% if creatable_repositories.many? %>
+            <%= select_tag :repository_uuid,
+                           options_from_collection_for_select(creatable_repositories, :uuid, :full_name),
+                           class: "external-link-repository-select",
+                           aria: { label: "GitHub repository" } %>
+          <% else %>
+            <%= hidden_field_tag :repository_uuid, creatable_repositories.first.uuid %>
+          <% end %>
+          <%= button_tag type: :submit, class: "external-link-create-action" do %>
+            <%= app_icon(:external, css: "w-4 h-4") %><span>Create issue</span>
+          <% end %>
+        <% end %>
+      <% end %>
+      <% if draft_issue_url.present? %>
+        <%= link_to draft_issue_url,
+                    target: "_blank",
+                    rel: "noopener",
+                    class: "external-link-draft-action" do %>
+          <%= app_icon(:external, css: "w-4 h-4") %><span>Draft issue</span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if github_links.any? %>
+    <ul class="external-links-list">
+      <% github_links.each do |external_link| %>
+        <li class="external-link-row">
+          <div class="external-link-main">
+            <span class="external-link-badge"><%= external_link.link_type_pull_request? ? "PR" : "Issue" %></span>
+            <%= link_to external_link.display_label,
+                        external_link.url,
+                        target: "_blank",
+                        rel: "noopener",
+                        class: "external-link-anchor" %>
+            <% if external_link.created_by.present? %>
+              <span class="external-link-meta">attached by <%= external_link.created_by.email %></span>
+            <% end %>
+          </div>
+          <%= button_to "Remove",
+                        project_error_group_external_link_path(project, group, external_link),
+                        method: :delete,
+                        params: {
+                          filter: filter_param,
+                          q: query_param,
+                          assignee: assignee_param,
+                          tab: active_tab,
+                          frame_scope: frame_scope,
+                          frame: selected_frame_index
+                        },
+                        class: "external-link-remove",
+                        form_class: "external-link-remove-form",
+                        data: { turbo_stream: true } %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="external-links-empty">No GitHub issues or pull requests are linked yet.</p>
+  <% end %>
+
+  <%= form_with model: ErrorGroupExternalLink.new,
+                url: project_error_group_external_links_path(project, group),
+                class: "external-link-form" do |f| %>
+    <%= hidden_field_tag :filter, filter_param %>
+    <%= hidden_field_tag :q, query_param %>
+    <%= hidden_field_tag :assignee, assignee_param %>
+    <%= hidden_field_tag :tab, active_tab %>
+    <%= hidden_field_tag :frame_scope, frame_scope %>
+    <%= hidden_field_tag :frame, selected_frame_index %>
+
+    <div class="external-link-input-wrap">
+      <%= f.label :url, "Attach issue or PR", class: "external-link-label" %>
+      <%= f.url_field :url,
+                      placeholder: "https://github.com/owner/repository/issues/123",
+                      class: "external-link-input" %>
+    </div>
+    <%= f.submit "Attach", class: "external-link-submit" %>
+  <% end %>
+
+  <% if external_link_errors.any? %>
+    <p class="external-link-errors"><%= external_link_errors.to_sentence %></p>
+  <% end %>
+</section>

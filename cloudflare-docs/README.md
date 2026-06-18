@@ -97,6 +97,7 @@ This static export mirrors the current public docs pages from the main Logister 
 - S3-compatible telemetry archive storage through the deployment and self-hosting guides
 - HTTP API
 - API reference with Swagger UI, OpenAPI YAML, and a Postman collection
+- Troubleshooting for ingestion, workers, email, ClickHouse, archives, and support context
 - Pagefind text search across article content
 - Ruby integration
 - .NET integration
@@ -111,6 +112,7 @@ This static export mirrors the current public docs pages from the main Logister 
 
 When you add or change docs pages in this folder:
 
+- follow the practical manual structure in `docs/documentation-style-guide.md`
 - update any repeated sidebar or footer integration links if navigation changed
 - keep sidebar groups as `<div class="sidebar-group"><p class="sidebar-label">...</p>...</div>`; `assets/site.js` turns those groups into accessible collapsible sections at runtime
 - run `bin/build-cloudflare-docs` when you add a new public page so `sitemap.xml` and `robots.txt` stay aligned

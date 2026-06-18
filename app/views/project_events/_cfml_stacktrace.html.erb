@@ -48,9 +48,17 @@
     <div class="better-errors-main">
       <section class="better-errors-code card">
         <% if source_excerpt.present? %>
-          <div class="better-errors-code-header"><%= source_excerpt[:path] %></div>
-          <pre class="better-errors-source"><code><% source_excerpt[:lines].each do |line| %><span class="code-line <%= "is-highlight" if line[:number] == source_excerpt[:highlight_line] %>"><span class="code-line-no"><%= line[:number] %></span><span class="code-line-src"><%= line[:code] %></span></span>
-<% end %></code></pre>
+          <%= render "project_events/source_excerpt",
+                     source_excerpt: source_excerpt,
+                     project: project,
+                     event: event,
+                     group: group,
+                     filter_param: filter_param,
+                     query_param: query_param,
+                     assignee_param: assignee_param,
+                     active_tab: "stacktrace",
+                     frame_scope: frame_scope,
+                     selected_frame_index: selected_frame_index %>
         <% elsif selected_cfml_frame.present? && selected_cfml_frame[:code_context].present? %>
           <div class="better-errors-code-header"><%= selected_cfml_frame[:file] %></div>
           <pre class="stacktrace"><code><%= selected_cfml_frame[:code_context] %></code></pre>

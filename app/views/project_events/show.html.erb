@@ -12,7 +12,9 @@
 <% selected_frame_index = params[:frame].to_i %>
 <% selected_frame_index = 0 if selected_frame_index.negative? || selected_frame_index >= visible_frames.size %>
 <% selected_frame = visible_frames[selected_frame_index] %>
-<% source_excerpt = source_excerpt_for_frame(selected_frame) %>
+<% source_lookup = source_resolution_for_event_frame(@project, @event, selected_frame) %>
+<% source_excerpt = source_excerpt_for_event_frame(@project, @event, selected_frame) %>
+<% deployment_context = @group ? deployment_context_for_error_group(@project, @group, @event) : nil %>
 <% local_variables = event_local_variables(exception_data) %>
 <% instance_variables = event_instance_variables(exception_data) %>
 <% tour_group = "event-detail" %>
@@ -156,6 +158,9 @@
       <%= tour_help_button %>
     </header>
 
+    <%= render "project_events/deployment_context",
+               deployment_context: deployment_context %>
+
     <%= render "project_events/event_detail_tabs",
                project: @project,
                event: @event,
@@ -174,6 +179,7 @@
                selected_frame_index: selected_frame_index,
                selected_frame: selected_frame,
                source_excerpt: source_excerpt,
+               source_lookup: source_lookup,
                backtrace: backtrace,
                local_variables: local_variables,
                instance_variables: instance_variables,

@@ -46,7 +46,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(body["status"]).to eq("accepted")
       expect(body["id"]).to be_present
 
-      created = IngestEvent.order(:id).last
+      created = IngestEvent.find_by!(uuid: body["id"])
       expect(created.project_id).to eq(api_keys(:one).project_id)
       expect(created.api_key_id).to eq(api_keys(:one).id)
       expect(created.event_type).to eq("error")
@@ -172,13 +172,44 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
            headers: auth_headers
 
       expect(response).to have_http_status(:created)
-      created = IngestEvent.order(:id).last
+      created = IngestEvent.find_by!(uuid: response.parsed_body["id"])
       expect(created).to be_transaction
       expect(created.context["duration_ms"]).to eq(185.2)
       expect(created.context["transaction_name"]).to eq("POST /checkout")
       expect(created.context["trace_id"]).to eq("trace-123")
       expect(created.context["request_id"]).to eq("req-123")
       expect(created.context["release"]).to eq("2026.03.02")
+    end
+
+    it "indexes deployment commits from normal event telemetry" do
+      project = api_keys(:one).project
+      create(:project_source_repository, project: project, full_name: "acme/storefront")
+
+      expect {
+        post api_v1_ingest_events_path,
+             params: {
+               event: {
+                 event_type: "error",
+                 level: "error",
+                 message: "NoMethodError",
+                 release: "2026.06.18",
+                 environment: "production",
+                 repository: "acme/storefront",
+                 commit_sha: "ABC1234",
+                 branch: "main"
+               }
+             },
+             as: :json,
+             headers: auth_headers
+      }.to change(ProjectDeployment, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      deployment = ProjectDeployment.find_by!(project: project, release: "2026.06.18")
+      expect(deployment.project_id).to eq(project.id)
+      expect(deployment.repository_full_name).to eq("acme/storefront")
+      expect(deployment.release).to eq("2026.06.18")
+      expect(deployment.commit_sha).to eq("abc1234")
+      expect(deployment.source).to eq("telemetry")
     end
 
     it "accepts span events into the trace span store" do
@@ -211,7 +242,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(response).to have_http_status(:created)
       expect(response.parsed_body["type"]).to eq("span")
 
-      span = TraceSpan.order(:id).last
+      span = TraceSpan.find_by!(uuid: response.parsed_body["id"])
       expect(span.project_id).to eq(api_keys(:one).project_id)
       expect(span.trace_id).to eq("trace-123")
       expect(span.span_id).to eq("span-root")
@@ -247,7 +278,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
 
       expect(response).to have_http_status(:created)
 
-      created = IngestEvent.order(:id).last
+      created = IngestEvent.find_by!(uuid: response.parsed_body["id"])
       expect(created).to be_transaction
       expect(created.message).to eq("HEAD /index.cfm")
       expect(created.context["environment"]).to eq("production")
