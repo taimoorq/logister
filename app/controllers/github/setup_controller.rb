@@ -9,10 +9,10 @@ module Github
 
       result = InstallationSync.from_setup(installation_id: params[:installation_id], installed_by: current_user)
       project = setup_project
-      connection = auto_connect_source_repository(project, result.repositories)
+      link_installation_to_project(project, result.installation) if project
 
       redirect_to setup_redirect_path(project),
-                  notice: setup_notice(result, connection)
+                  notice: setup_notice(result, project)
     rescue InstallationSync::Error, AppClient::Error, AppJwt::NotConfigured,
            InstallationRepositoriesClient::Error, InstallationToken::Error => error
       Rails.logger.warn("GitHub setup failed: #{error.class} #{error.message}")
@@ -22,7 +22,7 @@ module Github
     private
 
     def setup_project
-      @setup_project ||= current_user.projects.find_by(uuid: params[:state].to_s)
+      @setup_project ||= current_user.manageable_projects.find_by(uuid: params[:state].to_s)
     end
 
     def setup_redirect_path(project)
@@ -31,17 +31,17 @@ module Github
       settings_project_path(project, section: "integrations", anchor: "source-repositories")
     end
 
-    def auto_connect_source_repository(project, repositories)
-      return unless project
-
-      ProjectSourceRepositoryAutoConnector.call(project: project, github_repositories: repositories)
+    def link_installation_to_project(project, installation)
+      project.project_github_installations.find_or_create_by!(github_installation: installation) do |link|
+        link.linked_by = current_user
+      end
     end
 
-    def setup_notice(result, connection)
+    def setup_notice(result, project)
       notice = "GitHub App connected. Synced #{result.repositories.size} repositories."
-      return notice unless connection&.connected?
+      return notice unless project
 
-      "#{notice} Connected #{connection.source_repository.full_name} as this project's source repository."
+      "#{notice} Select repositories below to connect them to this project."
     end
   end
 end

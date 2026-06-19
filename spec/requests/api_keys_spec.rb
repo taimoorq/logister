@@ -58,10 +58,26 @@ RSpec.describe "Api keys", type: :request do
       end
     end
 
-    context "when signed in as shared member" do
+    context "when signed in as project admin" do
+      before do
+        project_memberships(:one).update!(role: :admin)
+        sign_in users(:two)
+      end
+
+      it "creates api key and redirects with notice" do
+        expect {
+          post project_api_keys_path(project), params: { api_key: { name: "Admin key" } }
+        }.to change(ApiKey, :count).by(1)
+
+        expect(response).to redirect_to(setup_project_path(project, anchor: "api-keys"))
+        expect(ApiKey.last.user_id).to eq(users(:two).id)
+      end
+    end
+
+    context "when signed in as viewer" do
       before { sign_in users(:two) }
 
-      it "returns 404 (only owner can create keys)" do
+      it "returns 404" do
         expect {
           post project_api_keys_path(project), params: { api_key: { name: "Nope" } }
         }.not_to change(ApiKey, :count)
@@ -89,10 +105,24 @@ RSpec.describe "Api keys", type: :request do
       end
     end
 
-    context "when signed in as shared member" do
+    context "when signed in as project admin" do
+      before do
+        project_memberships(:one).update!(role: :admin)
+        sign_in users(:two)
+      end
+
+      it "revokes api key and redirects" do
+        key = api_keys(:one)
+        delete project_api_key_path(project, key)
+        expect(response).to redirect_to(setup_project_path(project, anchor: "api-keys"))
+        expect(key.reload.revoked_at).to be_present
+      end
+    end
+
+    context "when signed in as viewer" do
       before { sign_in users(:two) }
 
-      it "returns 404 (only owner can revoke)" do
+      it "returns 404" do
         key = api_keys(:one)
         expect {
           delete project_api_key_path(project, key)

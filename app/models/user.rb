@@ -32,6 +32,10 @@ class User < ApplicationRecord
     Project.accessible_to(self)
   end
 
+  def manageable_projects
+    Project.manageable_by(self)
+  end
+
   def active_projects
     accessible_projects.active
   end

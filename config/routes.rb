@@ -79,9 +79,10 @@ Rails.application.routes.draw do
       get :activity, to: "project_activity#show"
     end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
-    resources :project_memberships, only: [ :create, :destroy ], param: :uuid
+    resources :project_memberships, only: [ :create, :update, :destroy ], param: :uuid
     resources :source_repositories, only: [ :create, :update, :destroy ], controller: "project_source_repositories", param: :uuid
     post "github/installations/:uuid/sync", to: "github/installations#sync", as: :github_installation_sync
+    resources :github_installation_links, only: [ :create, :destroy ], controller: "github/project_installations", param: :uuid
     resource :integration_setting, only: [ :update ], controller: "project_integration_settings", as: :integration_setting
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy

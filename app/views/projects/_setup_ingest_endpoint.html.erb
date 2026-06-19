@@ -1,4 +1,4 @@
-    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 <%= 'lg:col-span-2' unless @project.owned_by?(current_user) %>">
+    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 <%= 'lg:col-span-2' unless @project.managed_by?(current_user) %>">
       <h2 class="text-base font-bold text-slate-900 mb-2">Ingest endpoint</h2>
       <p class="text-slate-600 text-sm mb-3">
         POST to

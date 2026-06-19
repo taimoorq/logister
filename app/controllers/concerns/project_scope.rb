@@ -11,6 +11,10 @@ module ProjectScope
     @project = current_user.projects.find_by!(uuid: project_uuid_param)
   end
 
+  def set_managed_project
+    @project = current_user.manageable_projects.find_by!(uuid: project_uuid_param)
+  end
+
   def project_uuid_param
     params[:project_uuid] || params[:project_id] || params[:uuid]
   end

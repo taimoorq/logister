@@ -17,6 +17,8 @@ class Project < ApplicationRecord
   has_many :project_notification_preferences, dependent: :destroy
   has_many :integration_settings, class_name: "ProjectIntegrationSetting", dependent: :destroy
   has_many :source_repositories, class_name: "ProjectSourceRepository", dependent: :destroy
+  has_many :project_github_installations, dependent: :destroy
+  has_many :github_installations, through: :project_github_installations
   has_many :deployments, class_name: "ProjectDeployment", dependent: :destroy
   has_many :email_notification_deliveries, dependent: :destroy
   has_one :retention_policy, class_name: "ProjectRetentionPolicy", dependent: :destroy
@@ -73,8 +75,21 @@ class Project < ApplicationRecord
     where(user_id: user.id).or(where(id: shared_project_ids))
   end
 
+  def self.manageable_by(user)
+    return none unless user
+
+    admin_project_ids = ProjectMembership.admin.where(user_id: user.id).select(:project_id)
+    where(user_id: user.id).or(where(id: admin_project_ids))
+  end
+
   def owned_by?(viewer)
-    user_id == viewer.id
+    viewer.present? && user_id == viewer.id
+  end
+
+  def managed_by?(viewer)
+    return false unless viewer
+
+    owned_by?(viewer) || project_memberships.admin.exists?(user_id: viewer.id)
   end
 
   def archived?

@@ -16,6 +16,16 @@ class GithubRepository < ApplicationRecord
   scope :visible_to, lambda { |user|
     user ? active.joins(:github_installation).where(github_installations: { installed_by_id: user.id }) : none
   }
+  scope :available_for_project, lambda { |project|
+    if project
+      active
+        .joins(github_installation: :project_github_installations)
+        .merge(GithubInstallation.active)
+        .where(project_github_installations: { project_id: project.id })
+    else
+      none
+    end
+  }
 
   def available?
     active? && !archived? && github_installation&.available?

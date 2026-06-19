@@ -5,7 +5,7 @@
 <%= render "projects/header", tour_group: tour_group %>
 
 <% setup_steps = [
-  [ "API key", :key, @setup_active_api_key_count.positive?, @project.owned_by?(current_user) ? "Create a token for the app." : "Ask the owner for a token." ],
+  [ "API key", :key, @setup_active_api_key_count.positive?, @project.managed_by?(current_user) ? "Create a token for the app." : "Ask an admin for a token." ],
   [ "First event", :events, @setup_has_events, "Send one error, log, metric, or transaction." ],
   [ "Source repo", :source_code, @setup_has_source_repository, "Connect GitHub for source-aware frames." ],
   [ "Deployments", :deployments, @setup_has_deployments, "Record deploys from CI/CD." ]

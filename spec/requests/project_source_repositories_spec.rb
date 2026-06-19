@@ -44,6 +44,8 @@ RSpec.describe "Project source repositories", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Source repositories")
       expect(CGI.unescapeHTML(response.body)).to include("Source root cannot include path traversal")
+      document = Nokogiri::HTML.parse(response.body)
+      expect(document.at_css("details[open] summary").text).to include("Advanced manual repository entry")
     end
 
     it "adds a source repository from a synced GitHub repository" do
@@ -56,6 +58,7 @@ RSpec.describe "Project source repositories", type: :request do
         default_branch: "trunk",
         external_id: 555
       )
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
       sign_in users(:one)
 
       post project_source_repositories_path(project), params: {
@@ -75,11 +78,49 @@ RSpec.describe "Project source repositories", type: :request do
       expect(repository.external_id).to eq(555)
     end
 
-    it "does not attach synced repositories from another user's installation" do
+    it "upgrades an existing manual mapping when connecting the same synced repository" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one))
+      github_repository = create(
+        :github_repository,
+        github_installation: installation,
+        full_name: "acme/private-api",
+        default_branch: "trunk",
+        external_id: 555
+      )
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
+      manual_mapping = create(
+        :project_source_repository,
+        project: project,
+        github_installation: nil,
+        github_repository: nil,
+        full_name: "acme/private-api",
+        default_branch: "main"
+      )
+      sign_in users(:one)
+
+      expect {
+        post project_source_repositories_path(project), params: {
+          project_source_repository: {
+            provider: "github",
+            github_repository_id: github_repository.id,
+            enabled: "1"
+          }
+        }
+      }.not_to change(ProjectSourceRepository, :count)
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
+      manual_mapping.reload
+      expect(manual_mapping.github_repository).to eq(github_repository)
+      expect(manual_mapping.github_installation).to eq(installation)
+      expect(manual_mapping.default_branch).to eq("main")
+    end
+
+    it "does not attach synced repositories from unlinked installations" do
       project = create(:project, user: users(:one))
       github_repository = create(
         :github_repository,
-        github_installation: create(:github_installation, installed_by: users(:two))
+        github_installation: create(:github_installation, installed_by: users(:one))
       )
       sign_in users(:one)
 
@@ -95,7 +136,27 @@ RSpec.describe "Project source repositories", type: :request do
       expect(project.source_repositories).to be_empty
     end
 
-    it "does not allow shared members to update source repositories" do
+    it "allows project admins to connect linked repositories" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one))
+      github_repository = create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
+      create(:project_membership, project: project, user: users(:two), role: :admin)
+      sign_in users(:two)
+
+      post project_source_repositories_path(project), params: {
+        project_source_repository: {
+          provider: "github",
+          github_repository_id: github_repository.id,
+          enabled: "1"
+        }
+      }
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
+      expect(project.source_repositories.find_by!(full_name: "acme/private-api").github_repository).to eq(github_repository)
+    end
+
+    it "does not allow viewers to update source repositories" do
       project = create(:project, user: users(:one))
       create(:project_membership, project: project, user: users(:two))
       sign_in users(:two)
@@ -142,6 +203,7 @@ RSpec.describe "Project source repositories", type: :request do
     it "shows source repository settings for project owners" do
       project = create(:project, user: users(:one))
       installation = create(:github_installation, installed_by: users(:one), account_login: "acme")
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
       create(:github_repository, github_installation: installation, full_name: "acme/private-api")
       sign_in users(:one)
 
@@ -155,6 +217,69 @@ RSpec.describe "Project source repositories", type: :request do
       expect(response.body).to include("LOGISTER_GITHUB_APP_ID")
       expect(response.body).to include("acme")
       expect(response.body).to include("Sync repositories")
+      expect(response.body).to include("Connect")
+    end
+
+    it "does not offer connect actions for repositories already connected to the project" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one), account_login: "acme")
+      github_repository = create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
+      create(
+        :project_source_repository,
+        project: project,
+        github_installation: installation,
+        github_repository: github_repository,
+        full_name: "acme/private-api"
+      )
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      create_form_buttons = document.css("form[action='#{project_source_repositories_path(project)}'] button").map { |button| button.text.strip }
+      expect(response.body).to include("Every available repository is already connected to this project.")
+      expect(create_form_buttons).not_to include("Connect")
+    end
+
+    it "does not show repositories from unlinked installations in the picker" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one), account_login: "acme")
+      create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Link to project")
+      expect(response.body).not_to include("acme/private-api")
+    end
+
+    it "disables sync for linked unavailable installations" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one), account_login: "acme", active: false)
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      sync_form = document.at_css("form[action='#{project_github_installation_sync_path(project, installation)}']")
+      expect(response.body).to include("Unavailable")
+      expect(sync_form.at_css("button")["disabled"]).to eq("disabled")
+    end
+
+    it "disables linking for unavailable existing installations" do
+      project = create(:project, user: users(:one))
+      create(:github_installation, installed_by: users(:one), account_login: "acme", active: false)
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      link_form = document.at_css("form[action='#{project_github_installation_links_path(project)}']")
+      expect(response.body).to include("Available installations")
+      expect(link_form.at_css("button")["disabled"]).to eq("disabled")
     end
   end
 end

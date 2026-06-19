@@ -8,7 +8,7 @@ RSpec.describe "GitHub setup callback", type: :request do
       project = create(:project, user: users(:one), slug: "newsfeedreader", name: "News Feed Reader")
       installation = create(:github_installation, installed_by: users(:one))
       create(:github_repository, github_installation: installation, full_name: "taimoorq/logister")
-      repository = create(:github_repository, github_installation: installation, full_name: "taimoorq/newsfeedreader")
+      create(:github_repository, github_installation: installation, full_name: "taimoorq/newsfeedreader")
       result = Github::InstallationSync::Result.new(
         status: :synced,
         installation: installation,
@@ -17,16 +17,36 @@ RSpec.describe "GitHub setup callback", type: :request do
       allow(Github::InstallationSync).to receive(:from_setup).and_return(result)
       sign_in users(:one)
 
-      get github_setup_path, params: { installation_id: "123", state: project.uuid }
-
+      expect {
+        get github_setup_path, params: { installation_id: "123", state: project.uuid }
+      }.not_to change(ProjectSourceRepository, :count)
       expect(Github::InstallationSync).to have_received(:from_setup).with(
         installation_id: "123",
         installed_by: users(:one)
       )
       expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
       expect(flash[:notice]).to include("Synced 2 repositories")
-      expect(flash[:notice]).to include("Connected taimoorq/newsfeedreader")
-      expect(project.source_repositories.find_by!(full_name: "taimoorq/newsfeedreader").github_repository).to eq(repository)
+      expect(flash[:notice]).to include("Select repositories below")
+      expect(project.github_installations).to include(installation)
+      expect(project.source_repositories).to be_empty
+    end
+
+    it "links the installation when the setup state belongs to a project admin" do
+      project = create(:project, user: users(:one))
+      create(:project_membership, project: project, user: users(:two), role: :admin)
+      installation = create(:github_installation, installed_by: users(:two))
+      result = Github::InstallationSync::Result.new(
+        status: :synced,
+        installation: installation,
+        repositories: []
+      )
+      allow(Github::InstallationSync).to receive(:from_setup).and_return(result)
+      sign_in users(:two)
+
+      get github_setup_path, params: { installation_id: "123", state: project.uuid }
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
+      expect(project.github_installations).to include(installation)
     end
 
     it "requires an authenticated user" do

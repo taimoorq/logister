@@ -35,6 +35,21 @@ RSpec.describe "Project memberships", type: :request do
         expect(project.members).to include(user_three)
       end
 
+      it "creates admin memberships when requested" do
+        user_three = User.create!(
+          email: "admin@example.com",
+          password: "password123",
+          password_confirmation: "password123",
+          confirmed_at: Time.current
+        )
+
+        post project_project_memberships_path(project),
+             params: { project_membership: { email: "admin@example.com", role: "admin" } }
+
+        expect(response).to redirect_to(settings_project_path(project, section: "team"))
+        expect(project.project_memberships.find_by!(user: user_three)).to be_admin
+      end
+
       it "redirects with alert when user not found" do
         post project_project_memberships_path(project),
              params: { project_membership: { email: "nobody@example.com" } }
@@ -52,13 +67,65 @@ RSpec.describe "Project memberships", type: :request do
       end
     end
 
-    context "when signed in as shared member" do
+    context "when signed in as project admin" do
+      before do
+        project_memberships(:one).update!(role: :admin)
+        sign_in users(:two)
+      end
+
+      it "creates membership and redirects when user exists" do
+        user_three = User.create!(
+          email: "admin-invited@example.com",
+          password: "password123",
+          password_confirmation: "password123",
+          confirmed_at: Time.current
+        )
+
+        post project_project_memberships_path(project),
+             params: { project_membership: { email: "admin-invited@example.com", role: "viewer" } }
+
+        expect(response).to redirect_to(settings_project_path(project, section: "team"))
+        expect(project.members).to include(user_three)
+      end
+    end
+
+    context "when signed in as viewer" do
       before { sign_in users(:two) }
 
-      it "returns 404 (only owner can share)" do
+      it "returns 404" do
         post project_project_memberships_path(project),
              params: { project_membership: { email: "other@example.com" } }
         expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+
+  describe "PATCH /projects/:project_uuid/project_memberships/:uuid" do
+    context "when signed in as owner" do
+      before { sign_in users(:one) }
+
+      it "updates a member role" do
+        membership = project_memberships(:one)
+
+        patch project_project_membership_path(project, membership),
+              params: { project_membership: { role: "admin" } }
+
+        expect(response).to redirect_to(settings_project_path(project, section: "team"))
+        expect(membership.reload).to be_admin
+      end
+    end
+
+    context "when signed in as viewer" do
+      before { sign_in users(:two) }
+
+      it "returns 404" do
+        membership = project_memberships(:one)
+
+        patch project_project_membership_path(project, membership),
+              params: { project_membership: { role: "admin" } }
+
+        expect(response).to have_http_status(:not_found)
+        expect(membership.reload).to be_viewer
       end
     end
   end
@@ -95,10 +162,27 @@ RSpec.describe "Project memberships", type: :request do
       end
     end
 
-    context "when signed in as shared member" do
+    context "when signed in as project admin" do
+      before do
+        project_memberships(:one).update!(role: :admin)
+        sign_in users(:two)
+      end
+
+      it "removes membership and redirects" do
+        member = create(:user)
+        membership = create(:project_membership, project: project, user: member)
+
+        expect {
+          delete project_project_membership_path(project, membership)
+        }.to change(ProjectMembership, :count).by(-1)
+        expect(response).to redirect_to(settings_project_path(project, section: "team"))
+      end
+    end
+
+    context "when signed in as viewer" do
       before { sign_in users(:two) }
 
-      it "returns 404 (only owner can remove)" do
+      it "returns 404" do
         membership = project_memberships(:one)
         expect {
           delete project_project_membership_path(project, membership)

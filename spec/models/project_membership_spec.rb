@@ -27,6 +27,31 @@ RSpec.describe ProjectMembership, type: :model do
       membership = project_memberships(:one)
       expect(membership).to be_viewer
     end
+
+    it "supports project admins" do
+      membership = build(:project_membership, role: :admin)
+
+      expect(membership).to be_admin
+    end
+  end
+
+  describe ".role_options" do
+    it "returns labeled role options for forms" do
+      expect(described_class.role_options).to eq([
+        [ "Viewer", "viewer" ],
+        [ "Admin", "admin" ]
+      ])
+    end
+  end
+
+  describe ".normalize_role" do
+    it "keeps valid roles" do
+      expect(described_class.normalize_role("admin")).to eq("admin")
+    end
+
+    it "defaults invalid roles to viewer" do
+      expect(described_class.normalize_role("owner")).to eq("viewer")
+    end
   end
 
   describe "#to_param" do

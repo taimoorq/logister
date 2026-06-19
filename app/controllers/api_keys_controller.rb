@@ -1,4 +1,6 @@
 class ApiKeysController < ApplicationController
+  include ProjectScope
+
   before_action :authenticate_user!
   before_action :set_project
 
@@ -43,8 +45,7 @@ class ApiKeysController < ApplicationController
   private
 
   def set_project
-    project_identifier = params[:project_uuid] || params[:project_id]
-    @project = current_user.projects.find_by!(uuid: project_identifier)
+    @project = current_user.manageable_projects.find_by!(uuid: project_uuid_param)
   end
 
   def api_key_params

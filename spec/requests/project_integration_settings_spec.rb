@@ -48,9 +48,28 @@ RSpec.describe "Project integration settings", type: :request do
       expect(CGI.unescapeHTML(response.body)).to include("Account can't be blank")
     end
 
-    it "does not allow shared members to update platform settings" do
+    it "allows project admins to update platform settings" do
       project = create(:project, :cloudflare_pages, user: users(:one))
-      create(:project_membership, project: project, user: users(:two))
+      create(:project_membership, project: project, user: users(:two), role: :admin)
+      sign_in users(:two)
+
+      patch project_integration_setting_path(project), params: {
+        project_integration_setting: {
+          provider: "cloudflare_pages",
+          enabled: "1",
+          account_id: "account-123",
+          external_project_name: "marketing-site",
+          credential_reference: "CLOUDFLARE_API_TOKEN"
+        }
+      }
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "platform-integration"))
+      expect(ProjectIntegrationSetting.find_by!(project: project)).to be_enabled
+    end
+
+    it "does not allow viewers to update platform settings" do
+      project = create(:project, :cloudflare_pages, user: users(:one))
+      create(:project_membership, project: project, user: users(:two), role: :viewer)
       sign_in users(:two)
 
       patch project_integration_setting_path(project), params: {
@@ -78,6 +97,17 @@ RSpec.describe "Project integration settings", type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Cloudflare Pages connection")
       expect(response.body).to include("CLOUDFLARE_API_TOKEN")
+    end
+
+    it "shows the Cloudflare Pages connection form for project admins" do
+      project = create(:project, :cloudflare_pages, user: users(:one))
+      create(:project_membership, project: project, user: users(:two), role: :admin)
+      sign_in users(:two)
+
+      get settings_project_path(project, section: "integrations")
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Cloudflare Pages connection")
     end
   end
 end

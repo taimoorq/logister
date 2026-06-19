@@ -38,6 +38,12 @@ RSpec.describe Project, type: :model do
       expect(a.options[:through]).to eq(:project_memberships)
       expect(a.options[:source]).to eq(:user)
     end
+
+    it "has many GitHub installations through project links" do
+      a = described_class.reflect_on_association(:github_installations)
+      expect(a.macro).to eq(:has_many)
+      expect(a.options[:through]).to eq(:project_github_installations)
+    end
   end
 
   describe "validations" do
@@ -127,6 +133,22 @@ RSpec.describe Project, type: :model do
     end
   end
 
+  describe ".manageable_by" do
+    it "includes projects owned by the user" do
+      expect(Project.manageable_by(users(:one))).to include(projects(:one))
+    end
+
+    it "includes projects where the user is an admin" do
+      project_memberships(:one).update!(role: :admin)
+
+      expect(Project.manageable_by(users(:two))).to include(projects(:one))
+    end
+
+    it "excludes projects where the user is only a viewer" do
+      expect(Project.manageable_by(users(:two))).not_to include(projects(:one))
+    end
+  end
+
   describe "#owned_by?" do
     it "returns true for the owner" do
       expect(projects(:one).owned_by?(users(:one))).to be true
@@ -134,6 +156,22 @@ RSpec.describe Project, type: :model do
 
     it "returns false for a member" do
       expect(projects(:one).owned_by?(users(:two))).to be false
+    end
+  end
+
+  describe "#managed_by?" do
+    it "returns true for owners" do
+      expect(projects(:one).managed_by?(users(:one))).to be true
+    end
+
+    it "returns true for project admins" do
+      project_memberships(:one).update!(role: :admin)
+
+      expect(projects(:one).managed_by?(users(:two))).to be true
+    end
+
+    it "returns false for viewers" do
+      expect(projects(:one).managed_by?(users(:two))).to be false
     end
   end
 

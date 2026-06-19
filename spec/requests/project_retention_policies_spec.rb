@@ -45,7 +45,21 @@ RSpec.describe "Project retention policies", type: :request do
       expect(response.body).to include("requires retention exports to be enabled")
     end
 
-    it "does not allow shared members to update retention settings" do
+    it "allows project admins to update retention settings" do
+      project_memberships(:one).update!(role: :admin)
+      sign_in users(:two)
+
+      patch project_retention_policy_path(projects(:one)), params: {
+        project_retention_policy: {
+          hot_retention_days: "7",
+          trace_retention_days: "7"
+        }
+      }
+
+      expect(response).to redirect_to(settings_project_path(projects(:one), section: "data"))
+    end
+
+    it "does not allow viewers to update retention settings" do
       sign_in users(:two)
 
       patch project_retention_policy_path(projects(:one)), params: {

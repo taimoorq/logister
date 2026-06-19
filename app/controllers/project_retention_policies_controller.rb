@@ -3,7 +3,7 @@ class ProjectRetentionPoliciesController < ApplicationController
   include ProjectSettingsContext
 
   before_action :authenticate_user!
-  before_action :set_owned_project
+  before_action :set_managed_project
 
   def update
     @retention_policy = ProjectRetentionPolicy.for(project: @project)

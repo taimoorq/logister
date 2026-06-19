@@ -1,8 +1,13 @@
 class ProjectMembership < ApplicationRecord
+  ROLE_LABELS = {
+    "viewer" => "Viewer",
+    "admin" => "Admin"
+  }.freeze
+
   belongs_to :project
   belongs_to :user
 
-  enum :role, { viewer: 0 }, default: :viewer, validate: true
+  enum :role, { viewer: 0, admin: 1 }, default: :viewer, validate: true
 
   before_validation :ensure_uuid
   after_destroy :clear_assigned_error_groups
@@ -12,6 +17,14 @@ class ProjectMembership < ApplicationRecord
 
   def to_param
     uuid
+  end
+
+  def self.role_options
+    roles.keys.map { |role| [ ROLE_LABELS.fetch(role), role ] }
+  end
+
+  def self.normalize_role(value)
+    value.to_s.presence_in(roles.keys) || "viewer"
   end
 
   private

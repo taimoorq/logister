@@ -943,6 +943,40 @@ ALTER SEQUENCE public.project_deployments_id_seq OWNED BY public.project_deploym
 
 
 --
+-- Name: project_github_installations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_github_installations (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    project_id bigint NOT NULL,
+    github_installation_id bigint NOT NULL,
+    linked_by_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: project_github_installations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_github_installations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_github_installations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_github_installations_id_seq OWNED BY public.project_github_installations.id;
+
+
+--
 -- Name: project_integration_settings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1543,6 +1577,13 @@ ALTER TABLE ONLY public.project_deployments ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: project_github_installations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_installations ALTER COLUMN id SET DEFAULT nextval('public.project_github_installations_id_seq'::regclass);
+
+
+--
 -- Name: project_integration_settings id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1853,6 +1894,14 @@ ALTER TABLE ONLY public.project_deployments
 
 
 --
+-- Name: project_github_installations project_github_installations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_installations
+    ADD CONSTRAINT project_github_installations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_integration_settings project_integration_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2088,255 +2137,10 @@ CREATE INDEX idx_error_occurrences_event_partition_ref ON public.error_occurrenc
 
 
 --
--- Name: idx_ingest_events_activity_env_cursor; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_activity_env_cursor ON public.ingest_events USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'production'::text), occurred_at DESC, id DESC) WHERE (event_type <> 0);
-
-
---
--- Name: idx_ingest_events_activity_release_cursor; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_activity_release_cursor ON public.ingest_events USING btree (project_id, ((context ->> 'release'::text)), occurred_at DESC, id DESC) WHERE ((event_type <> 0) AND (COALESCE((context ->> 'release'::text), ''::text) <> ''::text));
-
-
---
--- Name: idx_ingest_events_cf_pages_deployment_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_cf_pages_deployment_occurred ON public.ingest_events USING btree (project_id, ((context ->> 'deployment_id'::text)), occurred_at DESC) WHERE (((context ->> 'platform'::text) = 'cloudflare_pages'::text) AND (COALESCE((context ->> 'deployment_id'::text), ''::text) <> ''::text));
-
-
---
--- Name: idx_ingest_events_context_path_ops; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_context_path_ops ON public.ingest_events USING gin (context jsonb_path_ops);
-
-
---
--- Name: idx_ingest_events_release_health_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_release_health_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
-
-
---
--- Name: idx_ingest_events_part_activity_cursor; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_activity_cursor ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC, id DESC) WHERE (event_type <> 0);
-
-
---
--- Name: idx_ingest_events_part_activity_env_cursor; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_activity_env_cursor ON ONLY public.ingest_events_partitioned USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'production'::text), occurred_at DESC, id DESC) WHERE (event_type <> 0);
-
-
---
--- Name: idx_ingest_events_part_activity_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_activity_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC) WHERE (event_type <> 0);
-
-
---
--- Name: idx_ingest_events_part_activity_release_cursor; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_activity_release_cursor ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'release'::text)), occurred_at DESC, id DESC) WHERE ((event_type <> 0) AND (COALESCE((context ->> 'release'::text), ''::text) <> ''::text));
-
-
---
--- Name: idx_ingest_events_part_cf_pages_deployment; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_cf_pages_deployment ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'deployment_id'::text)), occurred_at DESC) WHERE (((context ->> 'platform'::text) = 'cloudflare_pages'::text) AND (COALESCE((context ->> 'deployment_id'::text), ''::text) <> ''::text));
-
-
---
--- Name: idx_ingest_events_part_context_path_ops; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_context_path_ops ON ONLY public.ingest_events_partitioned USING gin (context jsonb_path_ops);
-
-
---
--- Name: idx_ingest_events_part_db_query_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_db_query_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC) WHERE ((event_type = 1) AND (message = 'db.query'::text));
-
-
---
--- Name: idx_ingest_events_part_environment_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_environment_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC);
-
-
---
--- Name: idx_ingest_events_part_metric_message; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_metric_message ON ONLY public.ingest_events_partitioned USING btree (project_id, message, occurred_at DESC) WHERE (event_type = 1);
-
-
---
--- Name: idx_ingest_events_part_occurred_type; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_occurred_type ON ONLY public.ingest_events_partitioned USING btree (project_id, event_type, occurred_at DESC);
-
-
---
--- Name: idx_ingest_events_part_platform_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_platform_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'platform'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'platform'::text), ''::text) <> ''::text);
-
-
---
--- Name: idx_ingest_events_part_release_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_release_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
-
-
---
 -- Name: idx_ingest_events_part_release_health_occurred; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_ingest_events_part_release_health_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
-
-
---
--- Name: idx_ingest_events_part_retention_created; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_retention_created ON ONLY public.ingest_events_partitioned USING btree (created_at, id);
-
-
---
--- Name: idx_ingest_events_part_service_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_service_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'service'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'service'::text), ''::text) <> ''::text);
-
-
---
--- Name: idx_ingest_events_part_transactions; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_transactions ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC) WHERE (event_type = 2);
-
-
---
--- Name: idx_ingest_events_part_type_retention; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_type_retention ON ONLY public.ingest_events_partitioned USING btree (project_id, event_type, occurred_at, id);
-
-
---
--- Name: idx_ingest_events_part_updated_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_part_updated_at ON ONLY public.ingest_events_partitioned USING btree (project_id, updated_at DESC);
-
-
---
--- Name: idx_ingest_events_project_activity_cursor; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_activity_cursor ON public.ingest_events USING btree (project_id, occurred_at DESC, id DESC) WHERE (event_type <> 0);
-
-
---
--- Name: idx_ingest_events_project_activity_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_activity_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC) WHERE (event_type <> 0);
-
-
---
--- Name: idx_ingest_events_project_db_query_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_db_query_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC) WHERE ((event_type = 1) AND (message = 'db.query'::text));
-
-
---
--- Name: idx_ingest_events_project_environment_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_environment_occurred ON public.ingest_events USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC);
-
-
---
--- Name: idx_ingest_events_project_metric_message_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_metric_message_occurred ON public.ingest_events USING btree (project_id, message, occurred_at DESC) WHERE (event_type = 1);
-
-
---
--- Name: idx_ingest_events_project_occurred_type; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_occurred_type ON public.ingest_events USING btree (project_id, event_type, occurred_at DESC);
-
-
---
--- Name: idx_ingest_events_project_platform_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_platform_occurred ON public.ingest_events USING btree (project_id, ((context ->> 'platform'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'platform'::text), ''::text) <> ''::text);
-
-
---
--- Name: idx_ingest_events_project_release_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_release_occurred ON public.ingest_events USING btree (project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
-
-
---
--- Name: idx_ingest_events_project_service_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_service_occurred ON public.ingest_events USING btree (project_id, ((context ->> 'service'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'service'::text), ''::text) <> ''::text);
-
-
---
--- Name: idx_ingest_events_project_transactions_occurred; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_transactions_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC) WHERE (event_type = 2);
-
-
---
--- Name: idx_ingest_events_project_type_retention; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_type_retention ON public.ingest_events USING btree (project_id, event_type, occurred_at, id);
-
-
---
--- Name: idx_ingest_events_project_updated_at; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_project_updated_at ON public.ingest_events USING btree (project_id, updated_at DESC);
-
-
---
--- Name: idx_ingest_events_retention_created_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_ingest_events_retention_created_id ON public.ingest_events USING btree (created_at, id);
 
 
 --
@@ -2466,6 +2270,251 @@ CREATE INDEX idx_iep_release_health_default ON public.ingest_events_partitioned_
 
 
 --
+-- Name: idx_ingest_events_activity_env_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_activity_env_cursor ON public.ingest_events USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'production'::text), occurred_at DESC, id DESC) WHERE (event_type <> 0);
+
+
+--
+-- Name: idx_ingest_events_activity_release_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_activity_release_cursor ON public.ingest_events USING btree (project_id, ((context ->> 'release'::text)), occurred_at DESC, id DESC) WHERE ((event_type <> 0) AND (COALESCE((context ->> 'release'::text), ''::text) <> ''::text));
+
+
+--
+-- Name: idx_ingest_events_cf_pages_deployment_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_cf_pages_deployment_occurred ON public.ingest_events USING btree (project_id, ((context ->> 'deployment_id'::text)), occurred_at DESC) WHERE (((context ->> 'platform'::text) = 'cloudflare_pages'::text) AND (COALESCE((context ->> 'deployment_id'::text), ''::text) <> ''::text));
+
+
+--
+-- Name: idx_ingest_events_context_path_ops; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_context_path_ops ON public.ingest_events USING gin (context jsonb_path_ops);
+
+
+--
+-- Name: idx_ingest_events_part_activity_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_activity_cursor ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC, id DESC) WHERE (event_type <> 0);
+
+
+--
+-- Name: idx_ingest_events_part_activity_env_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_activity_env_cursor ON ONLY public.ingest_events_partitioned USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'production'::text), occurred_at DESC, id DESC) WHERE (event_type <> 0);
+
+
+--
+-- Name: idx_ingest_events_part_activity_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_activity_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC) WHERE (event_type <> 0);
+
+
+--
+-- Name: idx_ingest_events_part_activity_release_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_activity_release_cursor ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'release'::text)), occurred_at DESC, id DESC) WHERE ((event_type <> 0) AND (COALESCE((context ->> 'release'::text), ''::text) <> ''::text));
+
+
+--
+-- Name: idx_ingest_events_part_cf_pages_deployment; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_cf_pages_deployment ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'deployment_id'::text)), occurred_at DESC) WHERE (((context ->> 'platform'::text) = 'cloudflare_pages'::text) AND (COALESCE((context ->> 'deployment_id'::text), ''::text) <> ''::text));
+
+
+--
+-- Name: idx_ingest_events_part_context_path_ops; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_context_path_ops ON ONLY public.ingest_events_partitioned USING gin (context jsonb_path_ops);
+
+
+--
+-- Name: idx_ingest_events_part_db_query_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_db_query_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC) WHERE ((event_type = 1) AND (message = 'db.query'::text));
+
+
+--
+-- Name: idx_ingest_events_part_environment_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_environment_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC);
+
+
+--
+-- Name: idx_ingest_events_part_metric_message; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_metric_message ON ONLY public.ingest_events_partitioned USING btree (project_id, message, occurred_at DESC) WHERE (event_type = 1);
+
+
+--
+-- Name: idx_ingest_events_part_occurred_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_occurred_type ON ONLY public.ingest_events_partitioned USING btree (project_id, event_type, occurred_at DESC);
+
+
+--
+-- Name: idx_ingest_events_part_platform_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_platform_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'platform'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'platform'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_part_release_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_release_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_part_retention_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_retention_created ON ONLY public.ingest_events_partitioned USING btree (created_at, id);
+
+
+--
+-- Name: idx_ingest_events_part_service_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_service_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, ((context ->> 'service'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'service'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_part_transactions; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_transactions ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC) WHERE (event_type = 2);
+
+
+--
+-- Name: idx_ingest_events_part_type_retention; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_type_retention ON ONLY public.ingest_events_partitioned USING btree (project_id, event_type, occurred_at, id);
+
+
+--
+-- Name: idx_ingest_events_part_updated_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_updated_at ON ONLY public.ingest_events_partitioned USING btree (project_id, updated_at DESC);
+
+
+--
+-- Name: idx_ingest_events_project_activity_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_activity_cursor ON public.ingest_events USING btree (project_id, occurred_at DESC, id DESC) WHERE (event_type <> 0);
+
+
+--
+-- Name: idx_ingest_events_project_activity_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_activity_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC) WHERE (event_type <> 0);
+
+
+--
+-- Name: idx_ingest_events_project_db_query_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_db_query_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC) WHERE ((event_type = 1) AND (message = 'db.query'::text));
+
+
+--
+-- Name: idx_ingest_events_project_environment_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_environment_occurred ON public.ingest_events USING btree (project_id, COALESCE(NULLIF((context ->> 'environment'::text), ''::text), 'unknown'::text), occurred_at DESC);
+
+
+--
+-- Name: idx_ingest_events_project_metric_message_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_metric_message_occurred ON public.ingest_events USING btree (project_id, message, occurred_at DESC) WHERE (event_type = 1);
+
+
+--
+-- Name: idx_ingest_events_project_occurred_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_occurred_type ON public.ingest_events USING btree (project_id, event_type, occurred_at DESC);
+
+
+--
+-- Name: idx_ingest_events_project_platform_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_platform_occurred ON public.ingest_events USING btree (project_id, ((context ->> 'platform'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'platform'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_project_release_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_release_occurred ON public.ingest_events USING btree (project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_project_service_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_service_occurred ON public.ingest_events USING btree (project_id, ((context ->> 'service'::text)), occurred_at DESC) WHERE (COALESCE((context ->> 'service'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_project_transactions_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_transactions_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC) WHERE (event_type = 2);
+
+
+--
+-- Name: idx_ingest_events_project_type_retention; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_type_retention ON public.ingest_events USING btree (project_id, event_type, occurred_at, id);
+
+
+--
+-- Name: idx_ingest_events_project_updated_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_updated_at ON public.ingest_events USING btree (project_id, updated_at DESC);
+
+
+--
+-- Name: idx_ingest_events_release_health_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_release_health_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_retention_created_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_retention_created_id ON public.ingest_events USING btree (created_at, id);
+
+
+--
 -- Name: idx_on_enabled_last_imported_at_ae810e9f88; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2491,6 +2540,13 @@ CREATE INDEX idx_on_project_id_provider_link_type_d4cae99367 ON public.error_gro
 --
 
 CREATE INDEX idx_on_project_id_release_environment_84f39b9a75 ON public.project_deployments USING btree (project_id, release, environment);
+
+
+--
+-- Name: idx_project_github_installations_project_installation; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_project_github_installations_project_installation ON public.project_github_installations USING btree (project_id, github_installation_id);
 
 
 --
@@ -3051,6 +3107,34 @@ CREATE INDEX index_project_deployments_on_project_source_repository_id ON public
 --
 
 CREATE UNIQUE INDEX index_project_deployments_on_uuid ON public.project_deployments USING btree (uuid);
+
+
+--
+-- Name: index_project_github_installations_on_github_installation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_github_installations_on_github_installation_id ON public.project_github_installations USING btree (github_installation_id);
+
+
+--
+-- Name: index_project_github_installations_on_linked_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_github_installations_on_linked_by_id ON public.project_github_installations USING btree (linked_by_id);
+
+
+--
+-- Name: index_project_github_installations_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_github_installations_on_project_id ON public.project_github_installations USING btree (project_id);
+
+
+--
+-- Name: index_project_github_installations_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_github_installations_on_uuid ON public.project_github_installations USING btree (uuid);
 
 
 --
@@ -6239,6 +6323,132 @@ CREATE INDEX ingest_events_partitioned_default_uuid_idx ON public.ingest_events_
 
 
 --
+-- Name: idx_iep_release_health_2026_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_02;
+
+
+--
+-- Name: idx_iep_release_health_2026_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_03;
+
+
+--
+-- Name: idx_iep_release_health_2026_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_04;
+
+
+--
+-- Name: idx_iep_release_health_2026_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_05;
+
+
+--
+-- Name: idx_iep_release_health_2026_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_06;
+
+
+--
+-- Name: idx_iep_release_health_2026_07; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_07;
+
+
+--
+-- Name: idx_iep_release_health_2026_08; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_08;
+
+
+--
+-- Name: idx_iep_release_health_2026_09; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_09;
+
+
+--
+-- Name: idx_iep_release_health_2026_10; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_10;
+
+
+--
+-- Name: idx_iep_release_health_2026_11; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_11;
+
+
+--
+-- Name: idx_iep_release_health_2026_12; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_12;
+
+
+--
+-- Name: idx_iep_release_health_2027_01; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_01;
+
+
+--
+-- Name: idx_iep_release_health_2027_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_02;
+
+
+--
+-- Name: idx_iep_release_health_2027_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_03;
+
+
+--
+-- Name: idx_iep_release_health_2027_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_04;
+
+
+--
+-- Name: idx_iep_release_health_2027_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_05;
+
+
+--
+-- Name: idx_iep_release_health_2027_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_06;
+
+
+--
+-- Name: idx_iep_release_health_default; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_default;
+
+
+--
 -- Name: ingest_events_partitioned_2026_02_api_key_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -9144,132 +9354,6 @@ ALTER INDEX public.idx_ingest_events_part_release_occurred ATTACH PARTITION publ
 
 
 --
--- Name: idx_iep_release_health_2026_02; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_02;
-
-
---
--- Name: idx_iep_release_health_2026_03; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_03;
-
-
---
--- Name: idx_iep_release_health_2026_04; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_04;
-
-
---
--- Name: idx_iep_release_health_2026_05; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_05;
-
-
---
--- Name: idx_iep_release_health_2026_06; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_06;
-
-
---
--- Name: idx_iep_release_health_2026_07; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_07;
-
-
---
--- Name: idx_iep_release_health_2026_08; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_08;
-
-
---
--- Name: idx_iep_release_health_2026_09; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_09;
-
-
---
--- Name: idx_iep_release_health_2026_10; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_10;
-
-
---
--- Name: idx_iep_release_health_2026_11; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_11;
-
-
---
--- Name: idx_iep_release_health_2026_12; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_12;
-
-
---
--- Name: idx_iep_release_health_2027_01; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_01;
-
-
---
--- Name: idx_iep_release_health_2027_02; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_02;
-
-
---
--- Name: idx_iep_release_health_2027_03; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_03;
-
-
---
--- Name: idx_iep_release_health_2027_04; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_04;
-
-
---
--- Name: idx_iep_release_health_2027_05; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_05;
-
-
---
--- Name: idx_iep_release_health_2027_06; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_06;
-
-
---
--- Name: idx_iep_release_health_default; Type: INDEX ATTACH; Schema: public; Owner: -
---
-
-ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_default;
-
-
---
 -- Name: ingest_events_partitioned_defa_project_id_expr_occurred_at_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -9556,6 +9640,14 @@ ALTER TABLE ONLY public.ingest_events
 
 
 --
+-- Name: project_github_installations fk_rails_65890f22d9; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_installations
+    ADD CONSTRAINT fk_rails_65890f22d9 FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
 -- Name: email_notification_deliveries fk_rails_73897ec334; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9628,6 +9720,14 @@ ALTER TABLE ONLY public.error_group_external_links
 
 
 --
+-- Name: project_github_installations fk_rails_a87135db59; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_installations
+    ADD CONSTRAINT fk_rails_a87135db59 FOREIGN KEY (github_installation_id) REFERENCES public.github_installations(id);
+
+
+--
 -- Name: ingest_events fk_rails_ada86cb38d; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9673,6 +9773,14 @@ ALTER TABLE ONLY public.project_integration_settings
 
 ALTER TABLE ONLY public.project_notification_preferences
     ADD CONSTRAINT fk_rails_c997cb59bb FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: project_github_installations fk_rails_ce98bc6cb1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_github_installations
+    ADD CONSTRAINT fk_rails_ce98bc6cb1 FOREIGN KEY (linked_by_id) REFERENCES public.users(id);
 
 
 --
@@ -9731,6 +9839,7 @@ SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260618170000'),
+('20260618161000'),
 ('20260618152000'),
 ('20260618150000'),
 ('20260618143000'),

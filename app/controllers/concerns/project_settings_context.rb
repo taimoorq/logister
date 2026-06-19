@@ -26,7 +26,8 @@ module ProjectSettingsContext
       enabled: true
     )
     @github_app_configured = Logister::GithubAppConfig.configured?
-    @github_app_install_url = Logister::GithubAppConfig.install_url(state: @project.uuid) if @project.owned_by?(current_user)
+    @project_manager = @project.managed_by?(current_user)
+    @github_app_install_url = Logister::GithubAppConfig.install_url(state: @project.uuid) if @project_manager
     @github_setup_url = github_setup_url
     @github_webhook_url = github_webhooks_url
     @github_app_diagnostics = Github::ConfigurationDiagnostics.call(
@@ -34,14 +35,18 @@ module ProjectSettingsContext
       webhook_url: @github_webhook_url,
       install_url: @github_app_install_url
     )
-    @github_installations = GithubInstallation.visible_to(current_user)
-                                             .includes(:github_repositories)
-                                             .order(updated_at: :desc)
-    @available_github_repositories = GithubRepository.visible_to(current_user)
-                                                     .includes(:github_installation)
-                                                     .order(:full_name)
+    @github_integration_state = ProjectGithubIntegrationState.new(
+      project: @project,
+      user: current_user,
+      source_repositories: @source_repositories
+    )
+    @project_github_installations = @github_integration_state.project_installations
+    @linked_github_installations = @github_integration_state.linked_installations
+    @linkable_github_installations = @github_integration_state.linkable_installations
+    @available_github_repositories = @github_integration_state.available_repositories
+    @connectable_github_repositories = @github_integration_state.connectable_repositories
     @assignment_summary = ProjectAssignmentSummary.new(@project)
-    @retention_policy ||= ProjectRetentionPolicy.for(project: @project) if @project.owned_by?(current_user)
+    @retention_policy ||= ProjectRetentionPolicy.for(project: @project) if @project_manager
     @public_api_rate_limit_defaults = {
       requests: Project.default_public_api_rate_limit_requests,
       period_seconds: Project.default_public_api_rate_limit_period_seconds,
@@ -56,12 +61,13 @@ module ProjectSettingsContext
   def ensure_project_settings_navigation
     return unless defined?(ProjectSettingsController::SETTINGS_SECTIONS)
 
-    sections = %w[general notifications]
-    sections += %w[team integrations data danger] if @project.owned_by?(current_user)
-    sections << "admin" if respond_to?(:admin_user?) && admin_user?
-    @settings_sections ||= ProjectSettingsController::SETTINGS_SECTIONS.slice(*sections)
-
-    requested = @settings_section.presence || params[:section].to_s
-    @settings_section = @settings_sections.key?(requested) ? requested : "general"
+    navigation = ProjectSettingsNavigation.new(
+      project: @project,
+      user: current_user,
+      app_admin: respond_to?(:admin_user?, true) && admin_user?,
+      requested_section: @settings_section.presence || params[:section]
+    )
+    @settings_sections ||= navigation.sections
+    @settings_section = navigation.selected_section
   end
 end

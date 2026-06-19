@@ -32,6 +32,14 @@ RSpec.describe GithubInstallation, type: :model do
     expect(described_class.visible_to(users(:one))).to contain_exactly(visible_installation)
   end
 
+  it "links to projects through project GitHub installations" do
+    installation = create(:github_installation)
+    project = create(:project)
+    create(:project_github_installation, project: project, github_installation: installation)
+
+    expect(installation.projects).to contain_exactly(project)
+  end
+
   it "summarizes active repositories and last sync time" do
     installation = create(:github_installation)
     synced_at = 5.minutes.ago

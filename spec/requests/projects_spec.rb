@@ -544,6 +544,21 @@ RSpec.describe "Projects", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Project identity")
+        expect(response.body).not_to include("Team")
+        expect(response.body).not_to include("Integrations")
+        expect(response.body).not_to include("Data")
+        expect(response.body).not_to include("Danger")
+      end
+
+      it "shows management settings to project admins except danger" do
+        project_memberships(:one).update!(role: :admin)
+
+        get settings_project_path(projects(:one), section: "integrations")
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Team", "Integrations", "Data")
+        expect(response.body).to include("Source repositories")
+        expect(response.body).not_to include("Danger")
       end
 
       it "shows CFML-specific integration guidance for CFML projects" do

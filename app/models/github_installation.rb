@@ -4,6 +4,8 @@ class GithubInstallation < ApplicationRecord
   belongs_to :installed_by, class_name: "User", optional: true
   has_many :source_repositories, class_name: "ProjectSourceRepository", dependent: :nullify
   has_many :github_repositories, dependent: :destroy
+  has_many :project_github_installations, dependent: :destroy
+  has_many :projects, through: :project_github_installations
 
   before_validation :ensure_uuid
   before_validation :normalize_fields
@@ -14,6 +16,7 @@ class GithubInstallation < ApplicationRecord
 
   scope :active, -> { where(active: true, suspended_at: nil) }
   scope :visible_to, ->(user) { user ? where(installed_by: user) : none }
+  scope :linkable_by, ->(user) { visible_to(user) }
 
   def to_param
     uuid

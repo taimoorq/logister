@@ -94,4 +94,20 @@ RSpec.describe User, type: :model do
       expect(user.archived_projects).to include(archived_project)
     end
   end
+
+  describe "#manageable_projects" do
+    it "returns owned projects" do
+      expect(users(:one).manageable_projects).to include(projects(:one))
+    end
+
+    it "returns projects where the user is an admin" do
+      project_memberships(:one).update!(role: :admin)
+
+      expect(users(:two).manageable_projects).to include(projects(:one))
+    end
+
+    it "does not return projects where the user is a viewer" do
+      expect(users(:two).manageable_projects).not_to include(projects(:one))
+    end
+  end
 end

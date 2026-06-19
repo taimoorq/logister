@@ -20,6 +20,16 @@ RSpec.describe GithubRepository, type: :model do
     expect(described_class.visible_to(users(:one))).to contain_exactly(visible_repository)
   end
 
+  it "is available for projects with a linked installation" do
+    project = create(:project)
+    installation = create(:github_installation)
+    repository = create(:github_repository, github_installation: installation)
+    create(:github_repository, github_installation: create(:github_installation))
+    create(:project_github_installation, project: project, github_installation: installation)
+
+    expect(described_class.available_for_project(project)).to contain_exactly(repository)
+  end
+
   it "is unavailable when archived" do
     repository = build(:github_repository, archived: true)
 

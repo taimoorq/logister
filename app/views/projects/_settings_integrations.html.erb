@@ -141,10 +141,11 @@
             </div>
           </div>
 
-          <% if @github_installations.any? %>
+          <% if @project_github_installations.any? %>
             <div class="mt-4 space-y-2">
-              <h4 class="text-sm font-semibold text-slate-900">Installations</h4>
-              <% @github_installations.each do |installation| %>
+              <h4 class="text-sm font-semibold text-slate-900">Linked installations</h4>
+              <% @project_github_installations.each do |project_installation| %>
+                <% installation = project_installation.github_installation %>
                 <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div class="flex flex-wrap items-center gap-2">
@@ -161,87 +162,155 @@
                       <span class="font-semibold text-slate-700"><%= installation.last_repository_synced_at.present? ? local_time_tag(installation.last_repository_synced_at, format: :long) : "Never" %></span>
                     </p>
                   </div>
-                  <%= button_to "Sync repositories",
-                                project_github_installation_sync_path(@project, installation),
-                                method: :post,
-                                class: "btn-secondary",
-                                disabled: !installation.available? %>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <%= button_to "Sync repositories",
+                                  project_github_installation_sync_path(@project, installation),
+                                  method: :post,
+                                  class: "btn-secondary",
+                                  disabled: !installation.available? %>
+                    <%= button_to "Unlink",
+                                  project_github_installation_link_path(@project, project_installation),
+                                  method: :delete,
+                                  class: "btn-secondary text-red-700 hover:text-red-700",
+                                  form: { data: { turbo_confirm: "Unlink #{installation.account_login} from this project?" } } %>
+                  </div>
                 </div>
               <% end %>
             </div>
           <% else %>
             <p class="mt-4 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-600">
-              No GitHub App installations have been synced for your account yet.
+              No GitHub App installations are linked to this project yet.
+            </p>
+          <% end %>
+
+          <% if @linkable_github_installations.any? %>
+            <div class="mt-4 space-y-2">
+              <h4 class="text-sm font-semibold text-slate-900">Available installations</h4>
+              <% @linkable_github_installations.each do |installation| %>
+                <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-sm font-semibold text-slate-900"><%= installation.account_login %></span>
+                      <span class="text-xs text-slate-500">Installed by <%= installation.installed_by&.email || "unknown user" %></span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">
+                      <%= pluralize(installation.active_repository_count, "active repository") %>
+                      · Last synced:
+                      <span class="font-semibold text-slate-700"><%= installation.last_repository_synced_at.present? ? local_time_tag(installation.last_repository_synced_at, format: :long) : "Never" %></span>
+                    </p>
+                  </div>
+                  <%= button_to "Link to project",
+                                project_github_installation_links_path(@project),
+                                method: :post,
+                                params: { github_installation: { uuid: installation.uuid } },
+                                class: "btn-secondary",
+                                disabled: !installation.available? %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="mt-5 space-y-3">
+          <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h3 class="text-sm font-semibold text-slate-900">Available repositories</h3>
+            <span class="text-xs text-slate-500"><%= pluralize(@available_github_repositories.size, "repository") %> from linked installations</span>
+          </div>
+          <% if @connectable_github_repositories.any? %>
+            <% @connectable_github_repositories.each do |repository| %>
+              <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sm font-semibold text-slate-900"><%= repository.full_name %></span>
+                    <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-800"><%= repository.github_installation.account_login %></span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">
+                    Default branch <span class="font-semibold text-slate-700"><%= repository.default_branch || "unknown" %></span>
+                  </p>
+                </div>
+                <%= button_to "Connect",
+                              project_source_repositories_path(@project),
+                              method: :post,
+                              params: {
+                                project_source_repository: {
+                                  provider: ProjectSourceRepository::PROVIDERS[:github],
+                                  github_repository_id: repository.id,
+                                  enabled: "1"
+                                }
+                              },
+                              class: "btn-primary" %>
+              </div>
+            <% end %>
+          <% elsif @available_github_repositories.any? %>
+            <p class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Every available repository is already connected to this project.
+            </p>
+          <% else %>
+            <p class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Link a GitHub App installation and sync repositories before connecting source repositories.
             </p>
           <% end %>
         </div>
 
-        <%= form_with model: [ @project, @source_repository_form ],
-                      url: project_source_repositories_path(@project),
-                      class: "mt-5 space-y-5" do |f| %>
-          <%= f.hidden_field :provider, value: ProjectSourceRepository::PROVIDERS[:github] %>
+        <details class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4" <%= "open" if @source_repository_form.errors.any? %>>
+          <summary class="cursor-pointer text-sm font-semibold text-slate-900">Advanced manual repository entry</summary>
 
-          <% if @source_repository_form.errors.any? %>
-            <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
-              <%= @source_repository_form.errors.full_messages.to_sentence %>
-            </div>
-          <% end %>
+          <%= form_with model: [ @project, @source_repository_form ],
+                        url: project_source_repositories_path(@project),
+                        class: "mt-5 space-y-5" do |f| %>
+            <%= f.hidden_field :provider, value: ProjectSourceRepository::PROVIDERS[:github] %>
 
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <% if @available_github_repositories.any? %>
-              <div class="md:col-span-2">
-                <%= f.label :github_repository_id, "Synced repository", class: "form-label" %>
-                <%= f.collection_select :github_repository_id,
-                                        @available_github_repositories,
-                                        :id,
-                                        :full_name,
-                                        { include_blank: "Manual entry" },
-                                        class: "form-input" %>
-                <p class="mt-1 text-xs text-slate-500">Synced repositories use the GitHub App installation token.</p>
+            <% if @source_repository_form.errors.any? %>
+              <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                <%= @source_repository_form.errors.full_messages.to_sentence %>
               </div>
             <% end %>
-            <div class="md:col-span-2">
-              <%= f.label :full_name, "GitHub repository", class: "form-label" %>
-              <%= f.text_field :full_name,
-                               placeholder: @available_github_repositories.any? ? "optional for synced repos" : "owner/repository",
-                               class: "form-input" %>
-            </div>
-            <div>
-              <%= f.label :default_branch, "Default branch", class: "form-label" %>
-              <%= f.text_field :default_branch,
-                               placeholder: "main",
-                               class: "form-input" %>
-            </div>
-            <label class="flex items-center gap-2 pt-6">
-              <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
-              <span class="text-sm font-semibold text-slate-900">Enabled</span>
-            </label>
-            <div class="md:col-span-2">
-              <%= f.label :runtime_root, "Runtime path prefix", class: "form-label" %>
-              <%= f.text_field :runtime_root,
-                               placeholder: "/app or /workspace/service",
-                               class: "form-input" %>
-              <p class="mt-1 text-xs text-slate-500">Prefix seen in stack frames before the repo-relative path.</p>
-            </div>
-            <div class="md:col-span-2">
-              <%= f.label :source_root, "Repository source root", class: "form-label" %>
-              <%= f.text_field :source_root,
-                               placeholder: "packages/api or src",
-                               class: "form-input" %>
-              <p class="mt-1 text-xs text-slate-500">Optional folder to prepend inside the repository.</p>
-            </div>
-          </div>
 
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="text-xs text-slate-500">
-              Self-hosters configure <code>LOGISTER_GITHUB_APP_ID</code>,
-              <code>LOGISTER_GITHUB_APP_PRIVATE_KEY</code>, and <code>LOGISTER_GITHUB_WEBHOOK_SECRET</code>.
-            </p>
-            <%= f.submit "Add source repository", class: "btn-primary" %>
-          </div>
-        <% end %>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <div class="md:col-span-2">
+                <%= f.label :full_name, "GitHub repository", class: "form-label" %>
+                <%= f.text_field :full_name,
+                                 placeholder: "owner/repository",
+                                 class: "form-input" %>
+              </div>
+              <div>
+                <%= f.label :default_branch, "Default branch", class: "form-label" %>
+                <%= f.text_field :default_branch,
+                                 placeholder: "main",
+                                 class: "form-input" %>
+              </div>
+              <label class="flex items-center gap-2 pt-6">
+                <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <span class="text-sm font-semibold text-slate-900">Enabled</span>
+              </label>
+              <div class="md:col-span-2">
+                <%= f.label :runtime_root, "Runtime path prefix", class: "form-label" %>
+                <%= f.text_field :runtime_root,
+                                 placeholder: "/app or /workspace/service",
+                                 class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Prefix seen in stack frames before the repo-relative path.</p>
+              </div>
+              <div class="md:col-span-2">
+                <%= f.label :source_root, "Repository source root", class: "form-label" %>
+                <%= f.text_field :source_root,
+                                 placeholder: "packages/api or src",
+                                 class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Optional folder to prepend inside the repository.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="text-xs text-slate-500">
+                Self-hosters configure <code>LOGISTER_GITHUB_APP_ID</code>,
+                <code>LOGISTER_GITHUB_APP_PRIVATE_KEY</code>, and <code>LOGISTER_GITHUB_WEBHOOK_SECRET</code>.
+              </p>
+              <%= f.submit "Add manual repository", class: "btn-primary" %>
+            </div>
+          <% end %>
+        </details>
 
         <div class="mt-6 space-y-3">
+          <h3 class="text-sm font-semibold text-slate-900">Connected repositories</h3>
           <% if @source_repositories.any? %>
             <% @source_repositories.each do |source_repository| %>
               <% github_repository = source_repository.github_repository %>

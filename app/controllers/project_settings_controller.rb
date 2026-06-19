@@ -2,15 +2,7 @@ class ProjectSettingsController < ApplicationController
   include ProjectScope
   include ProjectSettingsContext
 
-  SETTINGS_SECTIONS = {
-    "general" => "General",
-    "notifications" => "Notifications",
-    "team" => "Team",
-    "integrations" => "Integrations",
-    "data" => "Data",
-    "danger" => "Danger",
-    "admin" => "Admin"
-  }.freeze
+  SETTINGS_SECTIONS = ProjectSettingsNavigation::SECTIONS
 
   before_action :authenticate_user!
   before_action :set_settings_project
@@ -33,17 +25,19 @@ class ProjectSettingsController < ApplicationController
   end
 
   def settings_sections_for_current_user
-    sections = %w[general notifications]
-    sections += %w[team integrations data danger] if @project.owned_by?(current_user)
-    sections << "admin" if admin_user?
-
-    SETTINGS_SECTIONS.slice(*sections)
+    settings_navigation.sections
   end
 
   def normalized_settings_section
-    requested = params[:section].to_s
-    return requested if @settings_sections.key?(requested)
+    settings_navigation.selected_section
+  end
 
-    "general"
+  def settings_navigation
+    @settings_navigation ||= ProjectSettingsNavigation.new(
+      project: @project,
+      user: current_user,
+      app_admin: admin_user?,
+      requested_section: params[:section]
+    )
   end
 end
