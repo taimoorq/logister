@@ -95,6 +95,7 @@ Rails.application.routes.draw do
       resource :github_issue, only: :create, controller: "github/issues"
 
       member do
+        get :export
         patch :resolve
         patch :ignore
         patch :archive

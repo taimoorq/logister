@@ -139,6 +139,7 @@ RSpec.describe "Projects", type: :request do
         expect(tour_root).to be_present
         expect(tour_root["data-action"]).to include("click->product-tour#startForNewUser:capture", "turbo:before-cache@document->product-tour#beforeCache")
         expect(document.at_css("nav[data-tg-group='project-overview']")).to be_present
+        expect(document.at_css(".project-command-actions nav[aria-label='Project sections']")).to be_present
         expect(document.css("[data-tg-group='project-overview']").map { |node| node["data-tg-title"] }).to include(
           "Project header",
           "Project navigation",
@@ -220,6 +221,15 @@ RSpec.describe "Projects", type: :request do
         expect(detail_frame).to be_present
         expect(detail_frame.text).to include("Latest grouped error")
         expect(detail_frame.text).to include("Related logs")
+        expect(detail_frame.text).to include("Export JSON", "Include latest 50 occurrences")
+        export_form = detail_frame.at_css("form[action='#{export_project_error_group_path(project, error_group)}'][data-turbo='false']")
+        expect(export_form).to be_present
+        expect(export_form["data-controller"]).to eq("error-export")
+        expect(export_form["data-action"]).to include("submit->error-export#download")
+        expect(export_form["data-error-export-filename"]).to eq("logister-error-#{error_group.uuid}.json")
+        expect(export_form["target"]).to eq("_top")
+        expect(export_form.at_css("input[type='checkbox'][name='include_occurrences'][value='1']")).to be_present
+        expect(export_form.at_css("button[data-error-export-target='button']")).to be_present
       end
 
       it "marks the active filter and selected inbox row with accessible state attributes" do
@@ -252,6 +262,11 @@ RSpec.describe "Projects", type: :request do
           "Error detail"
         ])
         expect(document.css("[data-tg-group='project-errors']").map { |node| node["data-tg-title"] }).not_to include("Error command center", "Project navigation")
+        expect(document.at_css(".project-command-actions nav[aria-label='Project sections']")).to be_present
+        expect(document.at_css(".project-signals-menu")).to be_nil
+        expect(document.at_css(".project-command-actions .projects-secondary-button")).to be_nil
+        expect(document.at_css(".projects-overview-strip[aria-label='Project status']")).to be_present
+        expect(document.at_css(".projects-overview-strip").text).to include("Open errors", "Introduced today", "Events 24h")
         expect(filter_bar).to be_present
         expect(document.at_css(".inbox-workbench > .inbox-workbench-sidebar")).to be_nil
         expect(filter_bar.at_css("form.inbox-filter-search input[name='q']")["placeholder"]).to eq("Search errors...")
@@ -600,7 +615,7 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css("turbo-frame#performance_transactions")["src"]).to eq(performance_transactions_project_path(project))
       end
 
-      it "shows insights and performance as top-level project paths" do
+      it "keeps insights top-level and tucks performance into the secondary project menu" do
         project = projects(:one)
 
         get performance_project_path(project)
@@ -608,10 +623,17 @@ RSpec.describe "Projects", type: :request do
         document = Nokogiri::HTML.parse(response.body)
         nav = document.at_css("nav[aria-label='Project sections']")
         links = nav.css("> a")
+        secondary_menu = nav.at_css(".project-nav-menu")
+        secondary_links = secondary_menu.css("a")
         active_link = nav.at_css("a[aria-current='page']")
 
-        expect(links.map { |link| link["href"] }).to include(insights_project_path(project), performance_project_path(project))
-        expect(links.map { |link| link.text.strip }).to include("Insights", "Performance")
+        expect(links.map { |link| link["href"] }).to include(insights_project_path(project))
+        expect(links.map { |link| link["href"] }).not_to include(performance_project_path(project))
+        expect(links.map { |link| link.text.strip }).to include("Insights")
+        expect(links.map { |link| link.text.strip }).not_to include("Performance")
+        expect(secondary_menu["open"]).not_to be_nil
+        expect(secondary_links.map { |link| link.text.strip }).to eq(%w[Events Performance Monitors])
+        expect(secondary_links.map { |link| link["href"] }).to include(performance_project_path(project))
         expect(nav.at_css(".project-nav-insights")).to be_nil
         expect(active_link["href"]).to eq(performance_project_path(project))
       end
@@ -743,7 +765,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
       end
 
-      it "shows project user paths as top-level navigation" do
+      it "shows primary project paths directly and secondary paths in a menu" do
         project = projects(:one)
 
         get monitors_project_path(project)
@@ -751,19 +773,30 @@ RSpec.describe "Projects", type: :request do
         document = Nokogiri::HTML.parse(response.body)
         nav = document.at_css("nav[aria-label='Project sections']")
         links = nav.css("> a")
+        secondary_menu = nav.at_css(".project-nav-menu")
+        secondary_links = secondary_menu.css("a")
         active_link = nav.at_css("a[aria-current='page']")
 
-        expect(links.map { |link| link.text.strip }).to eq(%w[Home Inbox Events Performance Insights Deployments Monitors Setup Settings])
+        expect(links.map { |link| link.text.strip }).to eq(%w[Home Inbox Insights Deployments Setup Settings])
         expect(links.map { |link| link["href"] }).to include(
           project_path(project),
           inbox_project_path(project),
-          activity_project_path(project),
-          performance_project_path(project),
           insights_project_path(project),
           deployments_project_path(project),
-          monitors_project_path(project),
           setup_project_path(project),
           settings_project_path(project)
+        )
+        expect(links.map { |link| link["href"] }).not_to include(
+          activity_project_path(project),
+          performance_project_path(project),
+          monitors_project_path(project)
+        )
+        expect(secondary_menu["open"]).not_to be_nil
+        expect(secondary_links.map { |link| link.text.strip }).to eq(%w[Events Performance Monitors])
+        expect(secondary_links.map { |link| link["href"] }).to include(
+          activity_project_path(project),
+          performance_project_path(project),
+          monitors_project_path(project)
         )
         expect(nav.at_css(".project-nav-activity")).to be_nil
         expect(active_link["href"]).to eq(monitors_project_path(project))

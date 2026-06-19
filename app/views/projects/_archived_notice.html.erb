@@ -13,8 +13,11 @@
       </div>
     </div>
 
-    <% if show_settings_link && project.owned_by?(current_user) %>
-      <%= link_to "Restore in settings", settings_project_path(project, section: "danger"), class: "project-archived-notice-link" %>
-    <% end %>
+    <div class="project-archived-notice-actions">
+      <%= link_to "Archived projects", project_collection_path(project), class: "project-archived-notice-link sidebar-action-link" %>
+      <% if show_settings_link && project.owned_by?(current_user) %>
+        <%= link_to "Restore in settings", settings_project_path(project, section: "danger"), class: "project-archived-notice-link" %>
+      <% end %>
+    </div>
   </div>
 <% end %>

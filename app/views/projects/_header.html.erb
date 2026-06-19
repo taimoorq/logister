@@ -1,35 +1,45 @@
 <%# locals: (tour_group: nil, archived_notice_settings_link: true, highlight_header: false, highlight_navigation: false) %>
 <% highlight_header = local_assigns.fetch(:highlight_header, false) %>
 <% highlight_navigation = local_assigns.fetch(:highlight_navigation, false) %>
+<% section_label = [
+  [ project_path(@project), "Project home" ],
+  [ inbox_project_path(@project), "Project inbox" ],
+  [ insights_project_path(@project), "Project insights" ],
+  [ deployments_project_path(@project), "Project deployments" ],
+  [ setup_project_path(@project), "Project setup" ],
+  [ settings_project_path(@project), "Project settings" ],
+  [ edit_project_path(@project), "Project settings" ],
+  [ activity_project_path(@project), "Project events" ],
+  [ performance_project_path(@project), "Project performance" ],
+  [ monitors_project_path(@project), "Project monitors" ]
+].find { |path, _label| request.path == path }&.second || "Project" %>
 
-<header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4"
+<header class="project-command-panel"
         <%= tag.attributes(data: product_tour_step_data(tour_group, :project_header)) if tour_group.present? && highlight_header %>>
-  <div class="min-w-0">
-    <h1 class="break-words text-2xl font-bold text-slate-900"><%= @project.name %></h1>
-    <p class="mt-1 flex flex-wrap items-center gap-1.5 text-slate-500 text-sm">
-      <%= link_to "All projects", project_collection_path(@project), class: "sidebar-action-link" %>
-      <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700"><%= @project.slug %></code>
-      <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200 align-middle">
-        <%= @project.integration_label %>
-      </span>
-      <% if @project.archived? %>
-        <span class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-800 border border-violet-200 align-middle">
-          Archived
-        </span>
-      <% end %>
-      <% if @project.owned_by?(current_user) %>
-        <%= link_to "Edit", edit_project_path(@project), class: "text-sm text-blue-600 hover:underline" %>
-      <% end %>
-    </p>
-  </div>
-  <% if tour_group.present? %>
-    <div class="flex items-center gap-2">
-      <%= tour_help_button %>
+  <div class="project-command-main">
+    <div class="project-command-identity">
+      <%= project_integration_icon(@project) %>
+      <div class="min-w-0">
+        <p class="dashboard-kicker"><%= section_label %></p>
+        <h1><%= @project.name %></h1>
+        <p>
+          <code><%= @project.slug %></code>
+          <span><%= @project.integration_label %></span>
+          <span><%= @project.owned_by?(current_user) ? "Owner" : "Shared" %></span>
+          <% if @project.archived? %>
+            <span>Archived</span>
+          <% end %>
+        </p>
+      </div>
     </div>
-  <% end %>
+
+    <div class="project-command-actions">
+      <%= render "projects/nav", tour_group: (highlight_navigation ? tour_group : nil) %>
+      <%= tour_help_button if tour_group.present? %>
+    </div>
+  </div>
 </header>
 
-<%= render "projects/nav", tour_group: (highlight_navigation ? tour_group : nil) %>
 <%= render "projects/archived_notice",
            project: @project,
            show_settings_link: archived_notice_settings_link %>

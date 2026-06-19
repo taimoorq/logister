@@ -2,6 +2,25 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.6.1 - 2026-06-19
+
+### Added
+
+- Added project-scoped GitHub App installation links so project owners and admins can explicitly link available installations and choose repositories per project.
+- Added project admin permissions for integration, team, API key, notification, and data settings without granting destructive project ownership controls.
+- Added JSON export for error groups, with summarized occurrence counts by default and an option to include the latest 50 occurrences for AI-assisted diagnosis.
+
+### Changed
+
+- Reworked the project Integrations page around connected repositories, linked installations, available repository selection, and advanced manual repository mappings.
+- Updated project navigation so core project pages share a consistent header, with lower-traffic Events, Performance, and Monitors pages grouped under More.
+- Updated public self-hosting references for the `v2.6.1` release image tag.
+
+### Fixed
+
+- Prevented GitHub repositories from being auto-connected by project names, sole synced repos, or telemetry guesses; source lookup now waits for an explicit project mapping.
+- Fixed Turbo/Stimulus handling for error JSON exports so downloads do not navigate the error detail frame.
+
 ## v2.6.0 - 2026-06-18
 
 ### Added

@@ -1,0 +1,44 @@
+<%# locals: (project:, counts:, overview:) %>
+<% open_errors_count = counts.fetch(:unresolved, 0) %>
+<% introduced_today_count = counts.fetch(:introduced_today, 0) %>
+<% events_last_24h = overview.fetch(:events_last_24h, 0) %>
+<% unhealthy_monitors_count = overview.fetch(:unhealthy_monitors_count, 0) %>
+<% monitors_count = overview.fetch(:monitors_count, 0) %>
+<% monitors_label = monitors_count.positive? ? "#{pluralize(monitors_count, "monitor")} tracked" : "No monitors" %>
+
+<section class="projects-overview-strip" aria-label="Project status">
+  <%= link_to inbox_project_path(project, filter: "unresolved"),
+              class: "project-overview-cell #{dashboard_metric_state_class(open_errors_count)}" do %>
+    <span class="project-overview-icon"><%= app_icon(:warning, css: "w-4 h-4") %></span>
+    <span>
+      <strong><%= number_with_delimiter(open_errors_count) %></strong>
+      <span>Open errors</span>
+    </span>
+  <% end %>
+
+  <%= link_to inbox_project_path(project, filter: "introduced_today"),
+              class: "project-overview-cell #{dashboard_metric_state_class(introduced_today_count)}" do %>
+    <span class="project-overview-icon"><%= app_icon(:calendar, css: "w-4 h-4") %></span>
+    <span>
+      <strong><%= number_with_delimiter(introduced_today_count) %></strong>
+      <span>Introduced today</span>
+    </span>
+  <% end %>
+
+  <%= link_to activity_project_path(project), class: "project-overview-cell" do %>
+    <span class="project-overview-icon"><%= app_icon(:chart, css: "w-4 h-4") %></span>
+    <span>
+      <strong><%= number_with_delimiter(events_last_24h) %></strong>
+      <span>Events 24h</span>
+    </span>
+  <% end %>
+
+  <%= link_to monitors_project_path(project),
+              class: "project-overview-cell #{dashboard_metric_state_class(unhealthy_monitors_count)}" do %>
+    <span class="project-overview-icon"><%= app_icon(:check, css: "w-4 h-4") %></span>
+    <span>
+      <strong><%= number_with_delimiter(unhealthy_monitors_count) %></strong>
+      <span><%= monitors_label %></span>
+    </span>
+  <% end %>
+</section>

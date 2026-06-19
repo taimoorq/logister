@@ -47,6 +47,28 @@
 
       <% if group %>
         <div class="detail-actionbar-actions">
+          <%= form_with url: export_project_error_group_path(project, group),
+                        method: :get,
+                        local: true,
+                        data: {
+                          controller: "error-export",
+                          action: "submit->error-export#download",
+                          turbo: false,
+                          error_export_filename: "logister-error-#{group.uuid}.json"
+                        },
+                        html: { target: "_top" },
+                        class: "detail-export-form" do %>
+            <label class="detail-export-checkbox">
+              <%= check_box_tag :include_occurrences, "1", false %>
+              <span>Include latest 50 occurrences</span>
+            </label>
+            <%= button_tag "Export JSON",
+                           type: :submit,
+                           name: nil,
+                           class: "btn btn-ghost",
+                           data: { error_export_target: "button" } %>
+          <% end %>
+
           <% if group.unresolved? %>
             <%= button_to "Mark as fixed",
                           resolve_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),

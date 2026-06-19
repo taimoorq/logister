@@ -1,28 +1,50 @@
 <%# locals: (tour_group: nil) %>
 
-<nav class="mobile-x-scroll mb-4 flex w-full max-w-full flex-nowrap gap-2 pb-1 text-sm"
+<nav class="project-section-nav"
      aria-label="Project sections"
      <%= tag.attributes(data: product_tour_step_data(tour_group, :project_navigation)) if tour_group.present? %>>
-  <% sections = [
-    [ "Home", :home, project_path(@project), "At-a-glance status and next steps" ],
-    [ "Inbox", :inbox, inbox_project_path(@project), "Errors that need triage" ],
-    [ "Events", :events, activity_project_path(@project), "Logs, metrics, transactions, and check-ins" ],
-    [ "Performance", :performance, performance_project_path(@project), "Slow or failing requests and jobs" ],
-    [ "Insights", :insights, insights_project_path(@project), "Trends and deeper telemetry exploration" ],
-    [ "Deployments", :deployments, deployments_project_path(@project), "Releases, commits, and deploy metadata" ],
-    [ "Monitors", :monitors, monitors_project_path(@project), "Scheduled jobs and heartbeat status" ],
-    [ "Setup", :setup, setup_project_path(@project), "Connect data and verify instrumentation" ],
-    [ "Settings", :settings, settings_project_path(@project), "Project management and preferences" ]
+  <% primary_sections = [
+    [ "Home", :home, [ project_path(@project) ], project_path(@project), "At-a-glance status and next steps" ],
+    [ "Inbox", :inbox, [ inbox_project_path(@project) ], inbox_project_path(@project), "Errors that need triage" ],
+    [ "Insights", :insights, [ insights_project_path(@project) ], insights_project_path(@project), "Trends and deeper telemetry exploration" ],
+    [ "Deployments", :deployments, [ deployments_project_path(@project) ], deployments_project_path(@project), "Releases, commits, and deploy metadata" ],
+    [ "Setup", :setup, [ setup_project_path(@project) ], setup_project_path(@project), "Connect data and verify instrumentation" ],
+    [ "Settings", :settings, [ settings_project_path(@project), edit_project_path(@project) ], settings_project_path(@project), "Project management and preferences" ]
   ] %>
+  <% secondary_sections = [
+    [ "Events", :events, [ activity_project_path(@project) ], activity_project_path(@project), "Logs, metrics, transactions, and check-ins" ],
+    [ "Performance", :performance, [ performance_project_path(@project) ], performance_project_path(@project), "Slow or failing requests and jobs" ],
+    [ "Monitors", :monitors, [ monitors_project_path(@project) ], monitors_project_path(@project), "Scheduled jobs and heartbeat status" ]
+  ] %>
+  <% secondary_active = secondary_sections.any? { |_label, _icon, active_paths, _path, _description| active_paths.include?(request.path) } %>
 
-  <% sections.each do |label, icon, path, description| %>
-    <% active = request.path == path %>
+  <% primary_sections.each do |label, icon, active_paths, path, description| %>
+    <% active = active_paths.include?(request.path) %>
     <%= link_to path,
                 title: description,
-                class: "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold no-underline #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}",
+                class: "project-section-nav-link #{active ? 'is-active' : ''}",
                 aria: { current: ("page" if active) } do %>
       <%= app_icon(icon, css: "h-3.5 w-3.5 shrink-0") %>
       <span><%= label %></span>
     <% end %>
   <% end %>
+
+  <details class="project-nav-menu relative shrink-0" <%= "open" if secondary_active %>>
+    <summary class="project-nav-menu-summary project-section-nav-link <%= 'is-active' if secondary_active %>">
+      <span>More</span>
+      <%= app_icon(:chevron_down, css: "h-3.5 w-3.5 shrink-0") %>
+    </summary>
+    <div class="project-nav-menu-panel absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+      <% secondary_sections.each do |label, icon, active_paths, path, description| %>
+        <% active = active_paths.include?(request.path) %>
+        <%= link_to path,
+                    title: description,
+                    class: "flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold no-underline #{active ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}",
+                    aria: { current: ("page" if active) } do %>
+          <%= app_icon(icon, css: "h-3.5 w-3.5 shrink-0") %>
+          <span><%= label %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </details>
 </nav>

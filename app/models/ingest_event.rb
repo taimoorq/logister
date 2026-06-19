@@ -1,4 +1,6 @@
 class IngestEvent < ApplicationRecord
+  PARTITION_REFERENCE_BATCH_SIZE = 200
+
   self.primary_key = :id
 
   include IngestEventContext
@@ -35,12 +37,64 @@ class IngestEvent < ApplicationRecord
   scope :released, -> { where("COALESCE(context->>'release', '') <> ''") }
 
   def self.for_partition_references(records, id_key:, occurred_at_key:)
-    references = Array(records).filter_map do |record|
+    partition_reference_relation(
+      partition_references(records, id_key: id_key, occurred_at_key: occurred_at_key)
+    )
+  end
+
+  def self.partition_reference_records(
+    records,
+    id_key:,
+    occurred_at_key:,
+    batch_size: PARTITION_REFERENCE_BATCH_SIZE,
+    includes: nil
+  )
+    references = partition_references(records, id_key: id_key, occurred_at_key: occurred_at_key)
+    return [] if references.empty?
+
+    slice_size = [ batch_size.to_i, 1 ].max
+    references.each_slice(slice_size).flat_map do |reference_batch|
+      relation = partition_reference_relation(reference_batch)
+      relation = relation.includes(*Array(includes)) if includes.present?
+      relation.to_a
+    end
+  end
+
+  def self.partition_reference_index(
+    records,
+    id_key:,
+    occurred_at_key:,
+    batch_size: PARTITION_REFERENCE_BATCH_SIZE,
+    includes: nil
+  )
+    partition_reference_records(
+      records,
+      id_key: id_key,
+      occurred_at_key: occurred_at_key,
+      batch_size: batch_size,
+      includes: includes
+    ).index_by(&:id)
+  end
+
+  def self.for_partition_reference(id:, occurred_at:)
+    for_partition_references(
+      [ { id: id, occurred_at: occurred_at } ],
+      id_key: :id,
+      occurred_at_key: :occurred_at
+    )
+  end
+
+  def self.partition_references(records, id_key:, occurred_at_key:)
+    Array(records).filter_map do |record|
       id = partition_reference_value(record, id_key)
       next if id.blank?
 
       [ id, partition_reference_value(record, occurred_at_key) ]
-    end
+    end.uniq
+  end
+  private_class_method :partition_references
+
+  def self.partition_reference_relation(references)
     return none if references.empty?
 
     references_with_timestamps, references_without_timestamps = references.partition { |_id, occurred_at| occurred_at.present? }
@@ -60,14 +114,7 @@ class IngestEvent < ApplicationRecord
 
     relation
   end
-
-  def self.for_partition_reference(id:, occurred_at:)
-    for_partition_references(
-      [ { id: id, occurred_at: occurred_at } ],
-      id_key: :id,
-      occurred_at_key: :occurred_at
-    )
-  end
+  private_class_method :partition_reference_relation
 
   def self.partition_reference_value(record, key)
     if record.respond_to?(key)

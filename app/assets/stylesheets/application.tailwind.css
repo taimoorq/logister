@@ -1314,11 +1314,14 @@
   .project-archived-notice-copy {
     @apply mt-0.5 text-violet-800;
   }
+  .project-archived-notice-actions {
+    @apply flex shrink-0 flex-wrap gap-2;
+  }
   .project-archived-notice-link {
     @apply inline-flex shrink-0 items-center justify-center rounded-md border border-violet-200 bg-white px-3 py-2 text-sm font-semibold text-violet-800 no-underline hover:bg-violet-100;
   }
   .project-command-main {
-    @apply flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between;
+    @apply flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between;
   }
   .project-command-identity {
     @apply flex min-w-0 items-center gap-3;
@@ -1330,7 +1333,7 @@
     @apply h-5 w-5;
   }
   .project-command-identity h1 {
-    @apply truncate text-xl font-semibold text-slate-900;
+    @apply break-words text-xl font-semibold text-slate-900;
   }
   .project-command-identity p:not(.dashboard-kicker) {
     @apply mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500;
@@ -1340,22 +1343,20 @@
     @apply rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-semibold text-slate-600;
   }
   .project-command-actions {
-    @apply flex flex-col gap-2 sm:flex-row sm:items-center;
+    @apply flex min-w-0 flex-col items-stretch gap-2 lg:flex-row lg:items-start lg:justify-end;
   }
-  .project-signals-menu {
-    @apply relative;
+  .project-command-actions .tour-help-button {
+    @apply shrink-0 self-start;
   }
-  .project-signals-menu summary {
-    @apply inline-flex h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 no-underline shadow-sm hover:bg-slate-50;
+  .project-section-nav {
+    @apply flex min-w-0 w-full flex-wrap gap-2 text-sm lg:w-auto lg:justify-end;
   }
-  .project-signals-menu summary::-webkit-details-marker {
-    display: none;
+  .project-section-nav-link {
+    @apply inline-flex h-10 shrink-0 cursor-pointer list-none items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 no-underline hover:border-slate-300 hover:bg-slate-50;
   }
-  .project-signals-menu[open] summary {
+  .project-section-nav-link.is-active,
+  .project-section-nav-link[aria-current="page"] {
     @apply border-blue-200 bg-blue-50 text-blue-700;
-  }
-  .project-signals-menu .project-overview-strip {
-    @apply absolute right-0 z-30 mt-2 w-[min(38rem,calc(100vw-2rem))] shadow-lg;
   }
   .project-overview-strip {
     @apply grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;
@@ -1405,9 +1406,6 @@
   }
   .project-overview-cell.dashboard-metric-state-attention .project-overview-icon {
     @apply text-red-700 ring-red-200;
-  }
-  .project-command-panel nav {
-    @apply mb-0 mt-3 border-t border-slate-100 pt-3;
   }
   .inbox-workbench {
     @apply grid grid-cols-1 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] gap-4 items-start;
@@ -1668,6 +1666,15 @@
   }
   .detail-actionbar-actions {
     @apply flex flex-wrap gap-2 shrink-0;
+  }
+  .detail-export-form {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .detail-export-checkbox {
+    @apply inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600;
+  }
+  .detail-export-checkbox input[type="checkbox"] {
+    @apply h-4 w-4 rounded border-slate-300 text-blue-600;
   }
   .detail-context-disclosure {
     @apply mt-3 rounded-lg border border-slate-200 bg-slate-50;
@@ -2230,10 +2237,14 @@
       text-overflow: clip;
     }
 
-    .project-command-actions > *,
+    .project-command-actions > :not(.tour-help-button),
     .project-command-actions .projects-secondary-button,
-    .project-signals-menu summary {
+    .project-section-nav {
       @apply w-full justify-center;
+    }
+
+    .project-command-actions .tour-help-button {
+      @apply self-start;
     }
 
     .inbox-toolbar-form {
@@ -2242,10 +2253,6 @@
 
     .inbox-filter-menu-list {
       @apply left-0 right-auto w-full min-w-0;
-    }
-
-    .project-signals-menu .project-overview-strip {
-      @apply left-0 right-auto w-[calc(100vw-2rem)];
     }
 
     .inbox-filter-search,
@@ -2322,6 +2329,14 @@
 
     .detail-actionbar-actions {
       @apply w-full;
+    }
+
+    .detail-export-form {
+      @apply w-full;
+    }
+
+    .detail-export-checkbox {
+      @apply flex-1 justify-center;
     }
 
     .detail-actionbar-actions .btn {

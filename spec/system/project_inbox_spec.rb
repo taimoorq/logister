@@ -80,4 +80,68 @@ RSpec.describe "Project inbox", type: :system do
       expect(page).to have_content("Related log for the primary inbox error")
     end
   end
+
+  it "renders the JSON export form as a top-level non-Turbo download request" do
+    sign_in_user
+
+    visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
+
+    within("turbo-frame#error_detail") do
+      form = find("form.detail-export-form")
+
+      expect(form["method"]).to eq("get")
+      expect(form["target"]).to eq("_top")
+      expect(form["data-turbo"]).to eq("false")
+      expect(form["data-controller"]).to eq("error-export")
+      expect(form["data-action"]).to include("submit->error-export#download")
+      expect(form["action"]).to include(export_project_error_group_path(projects(:system_inbox), error_groups(:system_primary_group)))
+      expect(page).to have_field("include_occurrences", type: "checkbox")
+      expect(page).to have_content("Include latest 50 occurrences")
+    end
+  end
+
+  it "downloads the JSON export through Stimulus without navigating the Turbo frame" do
+    sign_in_user
+
+    project = projects(:system_inbox)
+    group = error_groups(:system_primary_group)
+    visit inbox_project_path(project, group_uuid: group.uuid)
+    original_url = page.current_url
+
+    page.execute_script(<<~JS)
+      window.__logisterExportDownload = {};
+      window.fetch = async (url, options) => {
+        window.__logisterExportDownload.url = url.toString();
+        window.__logisterExportDownload.accept = options.headers.Accept;
+        return new Response(JSON.stringify({ export: true }), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Disposition": "attachment; filename=\\"spec-export.json\\""
+          }
+        });
+      };
+
+      const originalAnchorClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function() {
+        if (this.download) {
+          window.__logisterExportDownload.filename = this.download;
+          window.__logisterExportDownload.href = this.href;
+          return;
+        }
+
+        return originalAnchorClick.call(this);
+      };
+    JS
+
+    within("turbo-frame#error_detail") do
+      click_button "Export JSON"
+    end
+
+    expect(page.current_url).to eq(original_url)
+    expect(page).to have_css("turbo-frame#error_detail", text: "Primary inbox error")
+    expect(page.evaluate_script("window.__logisterExportDownload.url")).to include(export_project_error_group_path(project, group))
+    expect(page.evaluate_script("window.__logisterExportDownload.accept")).to eq("application/json")
+    expect(page.evaluate_script("window.__logisterExportDownload.filename")).to eq("spec-export.json")
+  end
 end

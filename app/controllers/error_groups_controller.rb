@@ -5,6 +5,25 @@ class ErrorGroupsController < ApplicationController
   before_action :set_project
   before_action :set_group
 
+  # GET /projects/:project_uuid/error_groups/:uuid/export
+  def export
+    include_occurrences = ActiveModel::Type::Boolean.new.cast(params[:include_occurrences]) || false
+    preview = ActiveModel::Type::Boolean.new.cast(params[:preview]) || false
+    payload = ErrorGroupJsonExporter.call(
+      project: @project,
+      group: @group,
+      include_occurrences: include_occurrences,
+      logister_url: inbox_project_url(@project, group_uuid: @group.uuid)
+    )
+
+    send_data(
+      JSON.pretty_generate(payload),
+      filename: "logister-error-#{@group.uuid}.json",
+      type: "application/json; charset=utf-8",
+      disposition: preview ? "inline" : "attachment"
+    )
+  end
+
   # PATCH /projects/:project_uuid/error_groups/:uuid/resolve
   def resolve
     @group.mark_resolved!

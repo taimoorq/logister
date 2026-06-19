@@ -420,4 +420,23 @@ RSpec.describe IngestEvent, type: :model do
       expect(relation).to contain_exactly(event)
     end
   end
+
+  describe ".partition_reference_index" do
+    it "loads partition references in batches and keeps timestamp matching" do
+      events = 5.times.map { |index| create(:ingest_event, occurred_at: index.hours.ago) }
+      wrong_timestamp_event = create(:ingest_event, occurred_at: 1.day.ago)
+      references = events.map { |event| { id: event.id, occurred_at: event.occurred_at } }
+      references << { id: wrong_timestamp_event.id, occurred_at: 1.hour.ago }
+
+      records_by_id = described_class.partition_reference_index(
+        references,
+        id_key: :id,
+        occurred_at_key: :occurred_at,
+        batch_size: 2
+      )
+
+      expect(records_by_id.keys).to contain_exactly(*events.map(&:id))
+      expect(records_by_id.values).to match_array(events)
+    end
+  end
 end

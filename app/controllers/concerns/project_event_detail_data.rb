@@ -20,11 +20,11 @@ module ProjectEventDetailData
   end
 
   def partitioned_occurrences(occurrences)
-    events_by_id = IngestEvent.for_partition_references(
+    events_by_id = IngestEvent.partition_reference_index(
       occurrences,
       id_key: :ingest_event_id,
       occurred_at_key: :ingest_event_occurred_at
-    ).index_by(&:id)
+    )
 
     occurrences.each do |occurrence|
       occurrence.ingest_event_record = events_by_id[occurrence.ingest_event_id]
