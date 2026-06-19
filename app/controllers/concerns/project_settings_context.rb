@@ -38,7 +38,8 @@ module ProjectSettingsContext
     @github_integration_state = ProjectGithubIntegrationState.new(
       project: @project,
       user: current_user,
-      source_repositories: @source_repositories
+      source_repositories: @source_repositories,
+      app_diagnostics: @github_app_diagnostics
     )
     @project_github_installations = @github_integration_state.project_installations
     @linked_github_installations = @github_integration_state.linked_installations

@@ -3,6 +3,10 @@
 require "rails_helper"
 
 RSpec.describe ProjectGithubIntegrationState, type: :model do
+  def diagnostics(ready:)
+    instance_double(Github::ConfigurationDiagnostics::Result, ready?: ready)
+  end
+
   it "shows linked installations and hides them from linkable installations" do
     project = create(:project, user: users(:one))
     linked_installation = create(:github_installation, installed_by: users(:one), account_login: "linked")
@@ -43,5 +47,51 @@ RSpec.describe ProjectGithubIntegrationState, type: :model do
 
     expect(state.available_repositories).to contain_exactly(connected_repository, connectable_repository)
     expect(state.connectable_repositories).to contain_exactly(connectable_repository)
+  end
+
+  it "reports a healthy app connection when configuration is ready and a linked installation is active" do
+    project = create(:project, user: users(:one))
+    installation = create(:github_installation, installed_by: users(:one))
+    create(:project_github_installation, project: project, github_installation: installation)
+
+    state = described_class.new(project: project, user: users(:one), app_diagnostics: diagnostics(ready: true))
+
+    expect(state).to be_app_connection_healthy
+    expect(state).not_to be_app_connection_needs_attention
+    expect(state).not_to be_app_access_details_open
+    expect(state.app_connection_label).to eq("GitHub connection healthy")
+    expect(state.app_connection_message).to eq("Linked installations can sync repositories for this project.")
+  end
+
+  it "opens app access details when GitHub app configuration is incomplete" do
+    project = create(:project, user: users(:one))
+    installation = create(:github_installation, installed_by: users(:one))
+    create(:project_github_installation, project: project, github_installation: installation)
+
+    state = described_class.new(project: project, user: users(:one), app_diagnostics: diagnostics(ready: false))
+
+    expect(state).not_to be_app_connection_healthy
+    expect(state).to be_app_access_details_open
+    expect(state.app_connection_label).to eq("GitHub connection needs setup")
+    expect(state.app_connection_message).to eq("GitHub App configuration is incomplete.")
+  end
+
+  it "opens app access details when no active installation is linked" do
+    project = create(:project, user: users(:one))
+    create(:project_github_installation, project: project, github_installation: create(:github_installation, active: false))
+
+    state = described_class.new(project: project, user: users(:one), app_diagnostics: diagnostics(ready: true))
+
+    expect(state).to be_app_access_details_open
+    expect(state.app_connection_message).to eq("Linked GitHub App installations are unavailable.")
+  end
+
+  it "opens app access details when no installation is linked to the project" do
+    project = create(:project, user: users(:one))
+
+    state = described_class.new(project: project, user: users(:one), app_diagnostics: diagnostics(ready: true))
+
+    expect(state).to be_app_access_details_open
+    expect(state.app_connection_message).to eq("No GitHub App installation is linked to this project.")
   end
 end

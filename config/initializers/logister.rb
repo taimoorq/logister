@@ -1,6 +1,8 @@
 require Rails.root.join("app/services/logister/rails_request_performance_reporter")
+require Rails.root.join("app/services/logister/source_context")
 
 boolean = ActiveModel::Type::Boolean.new
+source_context = Logister::SourceContext.current
 float_env = lambda do |name, default|
   Float(ENV.fetch(name, default))
 rescue ArgumentError, TypeError
@@ -15,9 +17,15 @@ end
 Logister.configure do |config|
   config.api_key = ENV["LOGISTER_API_KEY"]
   config.endpoint = ENV.fetch("LOGISTER_ENDPOINT", "https://logister.org/api/v1/ingest_events")
-  config.environment = Rails.env
-  config.service = Rails.application.class.module_parent_name.underscore
-  config.release = ENV["LOGISTER_RELEASE"]
+  config.environment = source_context.environment
+  config.service = source_context.service
+  config.release = source_context.release
+  config.repository = source_context.repository if config.respond_to?(:repository=)
+  config.commit_sha = source_context.commit_sha if config.respond_to?(:commit_sha=)
+  config.branch = source_context.branch if config.respond_to?(:branch=)
+  if config.respond_to?(:deployment_endpoint=) && ENV["LOGISTER_DEPLOYMENT_ENDPOINT"].present?
+    config.deployment_endpoint = ENV["LOGISTER_DEPLOYMENT_ENDPOINT"]
+  end
 
   config.enabled = true
   config.timeout_seconds = 2
@@ -42,7 +50,7 @@ Logister.configure do |config|
   config.sql_breadcrumb_min_duration_ms = float_env.call("LOGISTER_SQL_BREADCRUMB_MIN_DURATION_MS", 25.0)
 
   config.before_notify = lambda do |payload|
-    payload
+    Logister::SourceContext.enrich_payload(payload, source_context: source_context)
   end
 end
 

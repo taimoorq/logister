@@ -557,7 +557,7 @@ RSpec.describe "Projects", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Team", "Integrations", "Data")
-        expect(response.body).to include("Source repositories")
+        expect(response.body).to include("GitHub repositories")
         expect(response.body).not_to include("Danger")
       end
 

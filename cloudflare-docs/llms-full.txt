@@ -96,6 +96,7 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 - Optional GitHub App source integration for private repository access without personal tokens.
 - Optional Cloudflare Turnstile for auth bot protection.
 - Optional Cloudflare Pages for static docs hosting.
+- Optional Logister self-observability through `logister-ruby`; configure `LOGISTER_API_KEY`, `LOGISTER_ENDPOINT`, source fields such as `LOGISTER_REPOSITORY`, `LOGISTER_COMMIT_SHA`, and `LOGISTER_BRANCH`, then run `bin/rails logister:sample_telemetry` to emit a sample error, log, metric, transaction, span set, check-in, and deployment record.
 - Recommended setup order: provision PostgreSQL and Redis; set `RAILS_ENV`, `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `LOGISTER_PUBLIC_URL`, and `LOGISTER_ADMIN_EMAILS`; run `./bin/release`; start one Rails web process and one Sidekiq worker; verify `/up`, sign-in, project creation, API key generation, and one test inbox event; then enable optional services.
 
 ## Storage And Retention

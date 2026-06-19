@@ -4,6 +4,22 @@ require "rails_helper"
 require "cgi"
 
 RSpec.describe "Project source repositories", type: :request do
+  def stub_github_app_configured
+    allow(Logister::GithubAppConfig).to receive(:configured?).and_return(true)
+    allow(Logister::GithubAppConfig).to receive(:app_id).and_return("123")
+    allow(Logister::GithubAppConfig).to receive(:private_key_pem).and_return("private-key")
+    allow(Logister::GithubAppConfig).to receive(:webhook_secret).and_return("secret")
+    allow(Logister::GithubAppConfig).to receive(:install_url).and_return("https://github.com/apps/logister/installations/new")
+  end
+
+  def stub_github_app_unconfigured
+    allow(Logister::GithubAppConfig).to receive(:configured?).and_return(false)
+    allow(Logister::GithubAppConfig).to receive(:app_id).and_return(nil)
+    allow(Logister::GithubAppConfig).to receive(:private_key_pem).and_return(nil)
+    allow(Logister::GithubAppConfig).to receive(:webhook_secret).and_return(nil)
+    allow(Logister::GithubAppConfig).to receive(:install_url).and_return(nil)
+  end
+
   describe "POST /projects/:uuid/source_repositories" do
     it "adds a source repository to an owned project" do
       project = create(:project, user: users(:one))
@@ -42,10 +58,12 @@ RSpec.describe "Project source repositories", type: :request do
       }
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("Source repositories")
+      expect(response.body).to include("GitHub repositories")
       expect(CGI.unescapeHTML(response.body)).to include("Source root cannot include path traversal")
       document = Nokogiri::HTML.parse(response.body)
-      expect(document.at_css("details[open] summary").text).to include("Advanced manual repository entry")
+      add_repository_details = document.at_css("details#available-source-repositories[open]")
+      expect(add_repository_details.at_css("summary").text).to include("Show available repositories")
+      expect(add_repository_details.text).to include("Manual repository")
     end
 
     it "adds a source repository from a synced GitHub repository" do
@@ -210,11 +228,10 @@ RSpec.describe "Project source repositories", type: :request do
       get settings_project_path(project, section: "integrations")
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include("Source repositories")
+      expect(response.body).to include("GitHub repositories")
       expect(response.body).to include("acme/private-api")
-      expect(response.body).to include("GitHub setup callback")
-      expect(response.body).to include("Webhook URL")
-      expect(response.body).to include("LOGISTER_GITHUB_APP_ID")
+      expect(response.body).to include("GitHub App access")
+      expect(response.body).to include("Show available repositories")
       expect(response.body).to include("acme")
       expect(response.body).to include("Sync repositories")
       expect(response.body).to include("Connect")
@@ -234,6 +251,54 @@ RSpec.describe "Project source repositories", type: :request do
       expect(response.body).to include("Linked installations")
       expect(response.body).to include("acme/private-api")
       expect(response.body).to include("Connect")
+    end
+
+    it "collapses healthy GitHub App access behind the status summary" do
+      stub_github_app_configured
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one), account_login: "acme")
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      app_access = document.at_css("details#github-app-access")
+      expect(app_access["open"]).to be_nil
+      expect(app_access.at_css("summary").text).to include("GitHub connection healthy")
+      expect(app_access.at_css("summary").text).to include("1 linked installation")
+    end
+
+    it "opens GitHub App access details when configuration is unhealthy" do
+      stub_github_app_unconfigured
+      project = create(:project, user: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      app_access = document.at_css("details#github-app-access")
+      expect(app_access["open"]).not_to be_nil
+      expect(app_access.text).to include("GitHub connection needs setup")
+      expect(app_access.text).to include("LOGISTER_GITHUB_APP_ID")
+      expect(app_access.text).to include("GitHub setup callback")
+      expect(app_access.text).to include("Webhook URL")
+    end
+
+    it "shows the manual repository option after synced repository choices" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one), account_login: "acme")
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
+      create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      add_repository_details = document.at_css("details#available-source-repositories")
+      synced_index = add_repository_details.text.index("acme/private-api")
+      manual_index = add_repository_details.text.index("Manual repository")
+      expect(synced_index).to be < manual_index
     end
 
     it "does not offer connect actions for repositories already connected to the project" do
