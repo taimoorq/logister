@@ -5,16 +5,12 @@ require "rails_helper"
 RSpec.describe "Project inbox", type: :system do
   include ActionView::RecordIdentifier
 
-  def sign_in_via_browser(email:, password:)
-    visit new_user_session_path
-    fill_in "Email", with: email
-    fill_in "Password", with: password
-    click_button "Sign in"
-    expect(page).to have_current_path(dashboard_path)
+  def sign_in_user
+    sign_in users(:one)
   end
 
   it "updates the detail pane through Turbo when opening a different inbox row" do
-    sign_in_via_browser(email: users(:one).email, password: "password123")
+    sign_in_user
 
     visit inbox_project_path(projects(:system_inbox))
     expect(page).to have_current_path(inbox_project_path(projects(:system_inbox)))
@@ -36,7 +32,7 @@ RSpec.describe "Project inbox", type: :system do
   end
 
   it "renders the inbox filters and error rows in the compact layout" do
-    sign_in_via_browser(email: users(:one).email, password: "password123")
+    sign_in_user
 
     visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
 
@@ -71,7 +67,7 @@ RSpec.describe "Project inbox", type: :system do
   end
 
   it "switches detail tabs within the Turbo frame" do
-    sign_in_via_browser(email: users(:one).email, password: "password123")
+    sign_in_user
 
     visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
     expect(page).to have_current_path(inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid))
