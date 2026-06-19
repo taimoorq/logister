@@ -76,8 +76,15 @@ RSpec.describe "Project inbox", type: :system do
     within("turbo-frame#error_detail") do
       expect(page).to have_content("Primary inbox error")
       click_link "Related logs (1)"
+    end
+
+    expect(page).to have_css(
+      "turbo-frame#error_detail #tab-related-logs:not([hidden])",
+      text: "Related log for the primary inbox error"
+    )
+
+    within("turbo-frame#error_detail") do
       expect(page).to have_css(".detail-tab[aria-current='page']", text: "Related logs (1)")
-      expect(page).to have_content("Related log for the primary inbox error")
     end
   end
 

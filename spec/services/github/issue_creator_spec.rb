@@ -11,6 +11,7 @@ RSpec.describe Github::IssueCreator do
       api_version: "2022-11-28"
     )
   end
+  let(:stateless_installation_token) { github_stateless_installation_token }
 
   it "creates an issue with an installation token scoped to issues:write" do
     project = create(:project, name: "Checkout API")
@@ -18,7 +19,7 @@ RSpec.describe Github::IssueCreator do
     repository = create(:project_source_repository, project: project, github_installation: installation, full_name: "acme/checkout")
     group = create(:error_group, project: project, title: "RuntimeError in Checkout", fingerprint: "checkout-runtime")
     token_provider = class_double(Github::InstallationToken)
-    token = instance_double(Github::InstallationToken, token: "installation-token")
+    token = instance_double(Github::InstallationToken, token: stateless_installation_token)
     response = Net::HTTPCreated.new("1.1", "201", "Created")
     response.instance_variable_set(:@body, {
       html_url: "https://github.com/acme/checkout/issues/42",
@@ -56,7 +57,8 @@ RSpec.describe Github::IssueCreator do
 
     expect(result.html_url).to eq("https://github.com/acme/checkout/issues/42")
     expect(result.number).to eq(42)
-    expect(requests.first["Authorization"]).to eq("Bearer installation-token")
+    expect(stateless_installation_token.length).to be >= 520
+    expect(requests.first["Authorization"]).to eq("Bearer #{stateless_installation_token}")
     expect(requests.first["X-GitHub-Api-Version"]).to eq("2022-11-28")
     expect(JSON.parse(requests.first.body)).to include(
       "title" => "[Checkout API] RuntimeError in Checkout",

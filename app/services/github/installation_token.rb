@@ -8,6 +8,7 @@ module Github
   class InstallationToken
     class Error < StandardError; end
     class NotConfigured < Error; end
+    STATELESS_S2S_TOKEN_HEADER = "X-GitHub-Stateless-S2S-Token"
 
     def initialize(installation:, repository_ids: nil, permissions: nil, config: Logister::GithubAppConfig, jwt_provider: AppJwt.new(config: config))
       @installation = installation
@@ -45,6 +46,7 @@ module Github
       request["Accept"] = "application/vnd.github+json"
       request["Authorization"] = "Bearer #{jwt_provider.token}"
       request["X-GitHub-Api-Version"] = config.api_version
+      request[STATELESS_S2S_TOKEN_HEADER] = stateless_s2s_token_override if stateless_s2s_token_override.present?
       request.body = request_body.to_json
 
       response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 5) do |http|
@@ -67,6 +69,12 @@ module Github
         body[:repository_ids] = repository_ids if repository_ids.present?
         body[:permissions] = permissions if permissions.present?
       end
+    end
+
+    def stateless_s2s_token_override
+      return unless config.respond_to?(:stateless_s2s_token_override)
+
+      config.stateless_s2s_token_override
     end
   end
 end

@@ -7,6 +7,7 @@ module Logister
     DEFAULT_API_URL = "https://api.github.com"
     DEFAULT_API_VERSION = "2026-03-10"
     DEFAULT_WEB_URL = "https://github.com"
+    STATELESS_S2S_TOKEN_VALUES = %w[enabled disabled].freeze
 
     class << self
       def configured?
@@ -57,6 +58,11 @@ module Logister
 
       def web_url
         ENV.fetch("LOGISTER_GITHUB_WEB_URL", DEFAULT_WEB_URL).to_s.delete_suffix("/")
+      end
+
+      def stateless_s2s_token_override
+        value = ENV["LOGISTER_GITHUB_STATELESS_S2S_TOKEN"].to_s.strip.downcase
+        STATELESS_S2S_TOKEN_VALUES.include?(value) ? value : nil
       end
     end
   end
