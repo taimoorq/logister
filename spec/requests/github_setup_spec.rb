@@ -5,13 +5,14 @@ require "rails_helper"
 RSpec.describe "GitHub setup callback", type: :request do
   describe "GET /github/setup" do
     it "syncs the installation and returns to project source settings" do
-      project = create(:project, user: users(:one))
+      project = create(:project, user: users(:one), slug: "newsfeedreader", name: "News Feed Reader")
       installation = create(:github_installation, installed_by: users(:one))
-      repository = create(:github_repository, github_installation: installation)
+      create(:github_repository, github_installation: installation, full_name: "taimoorq/logister")
+      repository = create(:github_repository, github_installation: installation, full_name: "taimoorq/newsfeedreader")
       result = Github::InstallationSync::Result.new(
         status: :synced,
         installation: installation,
-        repositories: [ repository ]
+        repositories: installation.github_repositories.to_a
       )
       allow(Github::InstallationSync).to receive(:from_setup).and_return(result)
       sign_in users(:one)
@@ -23,7 +24,9 @@ RSpec.describe "GitHub setup callback", type: :request do
         installed_by: users(:one)
       )
       expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "source-repositories"))
-      expect(flash[:notice]).to include("Synced 1 repositories")
+      expect(flash[:notice]).to include("Synced 2 repositories")
+      expect(flash[:notice]).to include("Connected taimoorq/newsfeedreader")
+      expect(project.source_repositories.find_by!(full_name: "taimoorq/newsfeedreader").github_repository).to eq(repository)
     end
 
     it "requires an authenticated user" do

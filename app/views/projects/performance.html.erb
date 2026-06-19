@@ -19,229 +19,45 @@
     </div>
   </section>
 
-  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
-           data-controller="performance-breakdown"
-           data-performance-breakdown-payload-value="<%= json_escape(@request_breakdown.to_json) %>"
-           <%= tag.attributes(data: product_tour_step_data(tour_group, :request_breakdown)) %>>
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-      <div>
-        <h2 class="text-lg font-bold text-slate-900">Request load breakdown (24h)</h2>
-        <p class="text-sm text-slate-600 mt-1">Slowest recent request or page-load roots, split by app, database, render, HTTP, cache, queue, resource, and remaining time.</p>
-      </div>
-      <p class="text-slate-500 text-sm"><%= @request_breakdown.fetch(:requests, []).size %> requests shown</p>
-    </div>
-    <%= responsive_chart_region do %>
-      <div class="performance-breakdown-chart" data-performance-breakdown-target="chart" role="img" aria-label="Stacked request load time breakdown"></div>
-    <% end %>
-
-    <% if @request_breakdown.fetch(:requests, []).any? %>
-      <%= responsive_scroll_region(class: "mt-4") do %>
-        <table class="min-w-full divide-y divide-slate-200">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Request</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Duration</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Source</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Trace</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 bg-white">
-            <% @request_breakdown.fetch(:requests, []).first(10).each do |request| %>
-              <tr>
-                <td class="px-3 py-2 text-sm text-slate-900"><%= request[:label] %></td>
-                <td class="px-3 py-2 text-sm text-slate-700"><%= request[:duration_ms] %> ms</td>
-                <td class="px-3 py-2 text-sm text-slate-700"><%= request[:source].to_s.humanize %></td>
-                <td class="px-3 py-2 text-xs text-slate-500 font-mono"><%= request[:trace_id].presence || request[:request_id].presence || "--" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% end %>
-    <% end %>
-  </section>
-
-  <% if @db_stats[:count] > 0 %>
+  <%= turbo_frame_tag "performance_request_breakdown",
+                      src: performance_request_breakdown_project_path(@project),
+                      loading: :lazy do %>
     <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h2 class="text-lg font-bold text-slate-900">Database load (24h)</h2>
-        <p class="text-slate-500 text-sm"><%= @db_stats[:count] %> queries captured</p>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Request load breakdown (24h)</h2>
+          <p class="text-sm text-slate-600 mt-1">Loading request timings...</p>
+        </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-          <p class="kicker mb-1">Avg query time</p>
-          <p class="text-xl font-bold text-slate-900"><%= @db_stats[:avg_ms] %> ms</p>
-        </article>
-        <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-          <p class="kicker mb-1">P95 query time</p>
-          <p class="text-xl font-bold text-slate-900"><%= @db_stats[:p95_ms] %> ms</p>
-        </article>
-      </div>
+      <div class="performance-breakdown-chart rounded-lg border border-slate-200 bg-slate-50"></div>
     </section>
   <% end %>
 
-  <% if @release_cards.any? %>
+  <%= turbo_frame_tag "performance_database_load",
+                      src: performance_database_load_project_path(@project),
+                      loading: :lazy %>
+
+  <%= turbo_frame_tag "performance_release_health",
+                      src: performance_release_health_project_path(@project),
+                      loading: :lazy %>
+
+  <%= turbo_frame_tag "performance_transactions",
+                      src: performance_transactions_project_path(@project, @transaction_frame_params),
+                      loading: :lazy do %>
     <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h2 class="text-lg font-bold text-slate-900">Release health</h2>
-        <p class="text-slate-500 text-sm">Introduced/regressed issue tracking</p>
+        <h2 class="text-lg font-bold text-slate-900">Transactions (24h)</h2>
+        <p class="text-slate-500 text-sm">Loading transactions...</p>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <% @release_cards.each do |card| %>
+        <% 5.times do %>
           <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-            <p class="kicker mb-1"><%= card[:release] %></p>
-            <p class="text-slate-600 text-sm mb-2">Last seen <%= local_time_tag(card[:last_seen_at]) %></p>
-            <div class="text-sm text-slate-700 space-y-1">
-              <p><strong><%= card[:total_events] %></strong> total events</p>
-              <p><strong><%= card[:error_events] %></strong> error events</p>
-              <p><strong><%= card[:introduced_issues] %></strong> introduced issues</p>
-              <p><strong><%= card[:regressed_issues] %></strong> regressed issues</p>
-            </div>
+            <p class="kicker mb-1">Loading</p>
+            <p class="text-xl font-bold text-slate-400">--</p>
           </article>
         <% end %>
       </div>
     </section>
   <% end %>
-
-  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
-           <%= tag.attributes(data: product_tour_step_data(tour_group, :transactions)) %>>
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-      <h2 class="text-lg font-bold text-slate-900">Transactions (24h)</h2>
-      <p class="text-slate-500 text-sm"><%= @transaction_stats[:count] %> transactions captured</p>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-        <p class="kicker mb-1">P50 latency</p>
-        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:p50_ms] %> ms</p>
-      </article>
-      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-        <p class="kicker mb-1">P95 latency</p>
-        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:p95_ms] %> ms</p>
-      </article>
-      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-        <p class="kicker mb-1">Throughput / min</p>
-        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:throughput_per_minute] %></p>
-      </article>
-      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-        <p class="kicker mb-1">Error rate</p>
-        <p class="text-xl font-bold text-slate-900"><%= (@transaction_stats[:error_rate] * 100.0).round(1) %>%</p>
-      </article>
-      <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
-        <p class="kicker mb-1">Apdex</p>
-        <p class="text-xl font-bold text-slate-900"><%= @transaction_stats[:apdex] %></p>
-      </article>
-    </div>
-
-    <div class="mt-6 border-t border-slate-200 pt-5">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h3 class="text-base font-bold text-slate-900">Transaction events</h3>
-        <p class="text-slate-500 text-sm">Newest first</p>
-      </div>
-
-      <%= form_with url: performance_project_path(@project), method: :get, local: true, class: "mb-4 grid grid-cols-1 md:grid-cols-7 gap-3 items-end" do %>
-        <div>
-          <%= label_tag :period, "Period", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
-          <%= select_tag :period,
-                         options_for_select(@transaction_period_options, @transaction_filters[:period]),
-                         class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
-        </div>
-        <div>
-          <%= label_tag :status, "Status", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
-          <%= select_tag :status,
-                         options_for_select(@transaction_status_options, @transaction_filters[:status]),
-                         class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
-        </div>
-        <div>
-          <%= label_tag :min_duration_ms, "Min ms", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
-          <%= number_field_tag :min_duration_ms,
-                               @transaction_filters[:min_duration_ms],
-                               min: 0,
-                               step: "0.1",
-                               placeholder: "250",
-                               class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
-        </div>
-        <div>
-          <%= label_tag :environment, "Environment", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
-          <%= text_field_tag :environment,
-                             @transaction_filters[:environment],
-                             placeholder: "production",
-                             class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
-        </div>
-        <div>
-          <%= label_tag :release, "Release", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
-          <%= text_field_tag :release,
-                             @transaction_filters[:release],
-                             placeholder: "2026.05.22",
-                             class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
-        </div>
-        <div>
-          <%= label_tag :q, "Search", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
-          <%= text_field_tag :q,
-                             @transaction_filters[:q],
-                             placeholder: "route or job",
-                             class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
-        </div>
-        <div class="flex gap-2">
-          <%= hidden_field_tag :per_page, @transaction_filters[:per_page] %>
-          <%= submit_tag "Apply", class: "inline-flex items-center justify-center rounded-md border border-blue-600 bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700" %>
-          <% if @transaction_filters_active %>
-            <%= link_to "Reset", performance_project_path(@project), class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
-          <% end %>
-        </div>
-      <% end %>
-
-      <div class="mb-4 flex flex-wrap items-center gap-2">
-        <span class="text-xs font-semibold text-slate-500 uppercase">Rows</span>
-        <% @per_page_options.each do |per_page| %>
-          <%= link_to per_page,
-                      performance_project_path(@project, @transaction_filters.merge(per_page: per_page).compact_blank),
-                      class: "inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-xs font-semibold no-underline #{@transaction_filters[:per_page] == per_page ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'}" %>
-        <% end %>
-      </div>
-    </div>
-
-    <% if @transaction_rows.any? %>
-      <%= responsive_scroll_region(class: "mt-4") do %>
-        <table class="min-w-full divide-y divide-slate-200" aria-label="Transaction events">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">When</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Transaction</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Duration</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Related errors</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 bg-white">
-            <% @transaction_rows.each do |tx| %>
-              <tr>
-                <td class="px-3 py-2 text-sm text-slate-700"><%= local_time_tag(tx[:event].occurred_at, format: :long) %></td>
-                <td class="px-3 py-2 text-sm text-slate-900"><%= tx[:transaction_name] %></td>
-                <td class="px-3 py-2 text-sm text-slate-700"><%= tx[:duration_ms] %> ms</td>
-                <td class="px-3 py-2 text-sm text-slate-700"><%= tx[:status] %></td>
-                <td class="px-3 py-2 text-sm text-slate-700"><%= tx[:related_error_count] %></td>
-                <td class="px-3 py-2 text-sm whitespace-nowrap">
-                  <%= link_to "View event", partitioned_project_event_path(@project, tx[:event]), class: "text-blue-600 hover:underline" %>
-                  <% if tx[:related_error_event] %>
-                    <span class="text-slate-300 mx-1">/</span>
-                    <%= link_to "Open error", partitioned_project_event_path(@project, tx[:related_error_event]), class: "text-blue-600 hover:underline" %>
-                  <% end %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% end %>
-      <%= render "shared/cursor_pagination",
-                 page: @transaction_page,
-                 base_path: performance_project_path(@project),
-                 params: @transaction_filters,
-                 page_label: "transactions" %>
-    <% else %>
-      <p class="mt-4 text-slate-600 text-sm">
-        <%= @transaction_filters_active ? "No transaction events match these filters." : "No transaction events captured in this period." %>
-      </p>
-    <% end %>
-  </section>
 </section>
 <% end %>

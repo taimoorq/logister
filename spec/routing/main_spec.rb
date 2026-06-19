@@ -152,6 +152,29 @@ RSpec.describe "Routes", type: :routing do
       )
     end
 
+    it "routes project performance frame endpoints" do
+      expect(get: "/projects/abc/performance/request-breakdown").to route_to(
+        controller: "project_performance",
+        action: "request_breakdown",
+        uuid: "abc"
+      )
+      expect(get: "/projects/abc/performance/database-load").to route_to(
+        controller: "project_performance",
+        action: "database_load",
+        uuid: "abc"
+      )
+      expect(get: "/projects/abc/performance/release-health").to route_to(
+        controller: "project_performance",
+        action: "release_health",
+        uuid: "abc"
+      )
+      expect(get: "/projects/abc/performance/transactions").to route_to(
+        controller: "project_performance",
+        action: "transactions",
+        uuid: "abc"
+      )
+    end
+
     it "routes GET /projects/:uuid/monitors to project_monitors#show" do
       expect(get: "/projects/abc/monitors").to route_to(
         controller: "project_monitors",

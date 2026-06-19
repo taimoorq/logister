@@ -1,0 +1,20 @@
+<%= turbo_frame_tag "performance_database_load" do %>
+  <% if @db_stats[:count] > 0 %>
+    <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h2 class="text-lg font-bold text-slate-900">Database load (24h)</h2>
+        <p class="text-slate-500 text-sm"><%= @db_stats[:count] %> queries captured</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+          <p class="kicker mb-1">Avg query time</p>
+          <p class="text-xl font-bold text-slate-900"><%= @db_stats[:avg_ms] %> ms</p>
+        </article>
+        <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+          <p class="kicker mb-1">P95 query time</p>
+          <p class="text-xl font-bold text-slate-900"><%= @db_stats[:p95_ms] %> ms</p>
+        </article>
+      </div>
+    </section>
+  <% end %>
+<% end %>

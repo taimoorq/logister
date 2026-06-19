@@ -2116,6 +2116,13 @@ CREATE INDEX idx_ingest_events_context_path_ops ON public.ingest_events USING gi
 
 
 --
+-- Name: idx_ingest_events_release_health_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_release_health_occurred ON public.ingest_events USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
 -- Name: idx_ingest_events_part_activity_cursor; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2197,6 +2204,13 @@ CREATE INDEX idx_ingest_events_part_platform_occurred ON ONLY public.ingest_even
 --
 
 CREATE INDEX idx_ingest_events_part_release_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, NULLIF((context ->> 'release'::text), ''::text), occurred_at DESC) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_ingest_events_part_release_health_occurred; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_part_release_health_occurred ON ONLY public.ingest_events_partitioned USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
 
 
 --
@@ -2323,6 +2337,132 @@ CREATE INDEX idx_ingest_events_project_updated_at ON public.ingest_events USING 
 --
 
 CREATE INDEX idx_ingest_events_retention_created_id ON public.ingest_events USING btree (created_at, id);
+
+
+--
+-- Name: idx_iep_release_health_2026_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_02 ON public.ingest_events_partitioned_2026_02 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_03 ON public.ingest_events_partitioned_2026_03 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_04 ON public.ingest_events_partitioned_2026_04 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_05 ON public.ingest_events_partitioned_2026_05 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_06 ON public.ingest_events_partitioned_2026_06 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_07; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_07 ON public.ingest_events_partitioned_2026_07 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_08; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_08 ON public.ingest_events_partitioned_2026_08 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_09; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_09 ON public.ingest_events_partitioned_2026_09 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_10; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_10 ON public.ingest_events_partitioned_2026_10 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_11; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_11 ON public.ingest_events_partitioned_2026_11 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2026_12; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2026_12 ON public.ingest_events_partitioned_2026_12 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2027_01; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2027_01 ON public.ingest_events_partitioned_2027_01 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2027_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2027_02 ON public.ingest_events_partitioned_2027_02 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2027_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2027_03 ON public.ingest_events_partitioned_2027_03 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2027_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2027_04 ON public.ingest_events_partitioned_2027_04 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2027_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2027_05 ON public.ingest_events_partitioned_2027_05 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_2027_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_2027_06 ON public.ingest_events_partitioned_2027_06 USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
+
+
+--
+-- Name: idx_iep_release_health_default; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_iep_release_health_default ON public.ingest_events_partitioned_default USING btree (project_id, occurred_at DESC, ((context ->> 'release'::text))) WHERE (COALESCE((context ->> 'release'::text), ''::text) <> ''::text);
 
 
 --
@@ -9004,6 +9144,132 @@ ALTER INDEX public.idx_ingest_events_part_release_occurred ATTACH PARTITION publ
 
 
 --
+-- Name: idx_iep_release_health_2026_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_02;
+
+
+--
+-- Name: idx_iep_release_health_2026_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_03;
+
+
+--
+-- Name: idx_iep_release_health_2026_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_04;
+
+
+--
+-- Name: idx_iep_release_health_2026_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_05;
+
+
+--
+-- Name: idx_iep_release_health_2026_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_06;
+
+
+--
+-- Name: idx_iep_release_health_2026_07; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_07;
+
+
+--
+-- Name: idx_iep_release_health_2026_08; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_08;
+
+
+--
+-- Name: idx_iep_release_health_2026_09; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_09;
+
+
+--
+-- Name: idx_iep_release_health_2026_10; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_10;
+
+
+--
+-- Name: idx_iep_release_health_2026_11; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_11;
+
+
+--
+-- Name: idx_iep_release_health_2026_12; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2026_12;
+
+
+--
+-- Name: idx_iep_release_health_2027_01; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_01;
+
+
+--
+-- Name: idx_iep_release_health_2027_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_02;
+
+
+--
+-- Name: idx_iep_release_health_2027_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_03;
+
+
+--
+-- Name: idx_iep_release_health_2027_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_04;
+
+
+--
+-- Name: idx_iep_release_health_2027_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_05;
+
+
+--
+-- Name: idx_iep_release_health_2027_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_2027_06;
+
+
+--
+-- Name: idx_iep_release_health_default; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_part_release_health_occurred ATTACH PARTITION public.idx_iep_release_health_default;
+
+
+--
 -- Name: ingest_events_partitioned_defa_project_id_expr_occurred_at_idx1; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -9464,6 +9730,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260618170000'),
 ('20260618152000'),
 ('20260618150000'),
 ('20260618143000'),
@@ -9510,4 +9777,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260215025030'),
 ('20260215025029'),
 ('20260215025023');
-

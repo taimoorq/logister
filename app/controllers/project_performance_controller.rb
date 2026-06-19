@@ -31,12 +31,32 @@ class ProjectPerformanceController < ApplicationController
   before_action :set_accessible_project
 
   def show
+    @transaction_frame_params = transaction_frame_params
+
+    render "projects/performance"
+  end
+
+  def request_breakdown
+    @request_breakdown = ProjectPerformance.request_breakdown(@project, since: 24.hours.ago)
+
+    render partial: "projects/performance_request_breakdown", locals: { tour_group: "project-performance" }
+  end
+
+  def database_load
     @db_query_events = @project.ingest_events.recent_db_queries(24.hours.ago).to_a
     @db_stats = IngestEvent.db_stats_from_events(@db_query_events)
-    @slow_db_queries = @db_query_events.sort_by { |event| -IngestEvent.duration_ms(event) }.first(20)
+
+    render partial: "projects/performance_database_load"
+  end
+
+  def release_health
     @release_cards = IngestEvent.released_error_groups(@project, lookback: 45.days, limit: 6)
+
+    render partial: "projects/performance_release_health"
+  end
+
+  def transactions
     @transaction_stats = IngestEvent.transaction_stats(@project, since: 24.hours.ago)
-    @request_breakdown = ProjectPerformance.request_breakdown(@project, since: 24.hours.ago)
     @transaction_filters = normalized_transaction_filters
     @transaction_period_options = transaction_period_options
     @transaction_status_options = transaction_status_options
@@ -50,10 +70,14 @@ class ProjectPerformanceController < ApplicationController
     )
     @transaction_rows = transaction_table_rows(@transaction_page.records)
 
-    render "projects/performance"
+    render partial: "projects/performance_transactions", locals: { tour_group: "project-performance" }
   end
 
   private
+
+  def transaction_frame_params
+    params.permit(:period, :status, :q, :min_duration_ms, :environment, :release, :per_page, :before, :after).to_h.compact_blank
+  end
 
   def filtered_transactions
     filters = @transaction_filters

@@ -1,0 +1,24 @@
+<%= turbo_frame_tag "performance_release_health" do %>
+  <% if @release_cards.any? %>
+    <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h2 class="text-lg font-bold text-slate-900">Release health</h2>
+        <p class="text-slate-500 text-sm">Introduced/regressed issue tracking</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% @release_cards.each do |card| %>
+          <article class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+            <p class="kicker mb-1"><%= card[:release] %></p>
+            <p class="text-slate-600 text-sm mb-2">Last seen <%= local_time_tag(card[:last_seen_at]) %></p>
+            <div class="text-sm text-slate-700 space-y-1">
+              <p><strong><%= card[:total_events] %></strong> total events</p>
+              <p><strong><%= card[:error_events] %></strong> error events</p>
+              <p><strong><%= card[:introduced_issues] %></strong> introduced issues</p>
+              <p><strong><%= card[:regressed_issues] %></strong> regressed issues</p>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+<% end %>

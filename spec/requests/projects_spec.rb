@@ -568,12 +568,21 @@ RSpec.describe "Projects", type: :request do
       before { sign_in users(:one) }
 
       it "returns success and shows performance page" do
-        get performance_project_path(projects(:one))
+        project = projects(:one)
+
+        get performance_project_path(project)
+
         expect(response).to have_http_status(:success)
-        expect(response.body).to include(projects(:one).name)
+        expect(response.body).to include(project.name)
         expect(response.body).to include("Instrumentation help")
         expect(response.body).to include("Ruby integration docs")
         expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+
+        document = Nokogiri::HTML.parse(response.body)
+        expect(document.at_css("turbo-frame#performance_request_breakdown")["src"]).to eq(performance_request_breakdown_project_path(project))
+        expect(document.at_css("turbo-frame#performance_database_load")["src"]).to eq(performance_database_load_project_path(project))
+        expect(document.at_css("turbo-frame#performance_release_health")["src"]).to eq(performance_release_health_project_path(project))
+        expect(document.at_css("turbo-frame#performance_transactions")["src"]).to eq(performance_transactions_project_path(project))
       end
 
       it "shows insights and performance as top-level project paths" do
@@ -627,7 +636,7 @@ RSpec.describe "Projects", type: :request do
                occurred_at: 30.seconds.ago,
                context: { "transaction_name" => "POST /checkout" })
 
-        get performance_project_path(project, period: "all", status: "errored", min_duration_ms: "500", q: "checkout", per_page: 1)
+        get performance_transactions_project_path(project, period: "all", status: "errored", min_duration_ms: "500", q: "checkout", per_page: 1)
 
         expect(response).to have_http_status(:success)
 
@@ -677,7 +686,7 @@ RSpec.describe "Projects", type: :request do
           },
           occurred_at: Time.current
         )
-        get performance_project_path(projects(:one))
+        get performance_database_load_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Database load (24h)")
         expect(response.body).to include("1 queries captured")

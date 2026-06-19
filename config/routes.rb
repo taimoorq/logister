@@ -70,6 +70,10 @@ Rails.application.routes.draw do
       get "insights/data", to: "project_insights#data", as: :insights_data
       get :insights, to: "project_insights#show"
       get :performance, to: "project_performance#show"
+      get "performance/request-breakdown", to: "project_performance#request_breakdown", as: :performance_request_breakdown
+      get "performance/database-load", to: "project_performance#database_load", as: :performance_database_load
+      get "performance/release-health", to: "project_performance#release_health", as: :performance_release_health
+      get "performance/transactions", to: "project_performance#transactions", as: :performance_transactions
       get :monitors, to: "project_monitors#show"
       get :deployments, to: "project_deployments#index"
       get :activity, to: "project_activity#show"
