@@ -83,6 +83,22 @@ RSpec.describe "GitHub installations", type: :request do
       expect(project.github_installations.reload).to include(installation)
     end
 
+    it "exposes active synced repositories after an existing installation is linked" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one), account_login: "acme")
+      create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+      sign_in users(:one)
+
+      post project_github_installation_links_path(project), params: {
+        github_installation: { uuid: installation.uuid }
+      }
+      follow_redirect!
+
+      expect(response.body).to include("Linked installations")
+      expect(response.body).to include("acme/private-api")
+      expect(response.body).to include("Connect")
+    end
+
     it "allows one installation to be linked to multiple projects" do
       first_project = create(:project, user: users(:one))
       second_project = create(:project, user: users(:one))

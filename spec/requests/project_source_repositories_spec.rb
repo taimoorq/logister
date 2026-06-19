@@ -220,6 +220,22 @@ RSpec.describe "Project source repositories", type: :request do
       expect(response.body).to include("Connect")
     end
 
+    it "shows linked installation repositories to project admins who did not install the app" do
+      project = create(:project, user: users(:one))
+      installation = create(:github_installation, installed_by: users(:one), account_login: "acme")
+      create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+      create(:project_github_installation, project: project, github_installation: installation, linked_by: users(:one))
+      create(:project_membership, project: project, user: users(:two), role: :admin)
+      sign_in users(:two)
+
+      get settings_project_path(project, section: "integrations")
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Linked installations")
+      expect(response.body).to include("acme/private-api")
+      expect(response.body).to include("Connect")
+    end
+
     it "does not offer connect actions for repositories already connected to the project" do
       project = create(:project, user: users(:one))
       installation = create(:github_installation, installed_by: users(:one), account_login: "acme")

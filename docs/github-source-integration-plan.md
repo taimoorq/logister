@@ -1,5 +1,7 @@
 # GitHub Source Integration Plan
 
+This is the historical phased roadmap for GitHub source lookup. The current project-scoped implementation plan and acceptance checklist live in [Project-Scoped GitHub Integration Plan](project-scoped-github-integration-plan.md).
+
 ## Goal
 
 Let each Logister project connect to one or more GitHub repositories so error stack frames can resolve to the real source file, a nearby code excerpt, and a GitHub permalink. Projects without source repositories keep the current stacktrace view.

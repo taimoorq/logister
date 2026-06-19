@@ -46,7 +46,7 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 ## Operations
 - Local development: https://docs.logister.org/local-development/
 - Deployment config and `.env.sample` reference: https://docs.logister.org/deployment/
-- GitHub App setup for private repository source excerpts, repository sync, CODEOWNERS hints, deployment links, and optional issue creation: https://docs.logister.org/github-app/
+- GitHub App setup for project-scoped source repository connections, private repository source excerpts, repository sync, CODEOWNERS hints, deployment links, and optional issue creation: https://docs.logister.org/github-app/
 - Docker self-hosting option and registry images: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
 
@@ -102,4 +102,4 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://docs.logister.org/integrations/cfml/
 - Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, direct JSON reporters, and CI/CD deployment records. Send `repository`, `commit_sha`, `branch`, `release`, and `environment` on events; POST `/api/v1/deployments` when CI knows the exact deployed commit.
 - Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
-- The GitHub App source integration uses App installation access instead of personal access tokens. Self-hosters create their own GitHub App, configure `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`, then install and sync repositories from project settings.
+- The GitHub App source integration uses App installation access instead of personal access tokens. Self-hosters create their own GitHub App, configure `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`, then project owners or project admins install or link an installation, sync repositories, and explicitly connect the repositories each project should use.

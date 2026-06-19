@@ -81,4 +81,40 @@ RSpec.describe ProjectSourceRepositoryConnector do
     expect(result).to be_rejected
     expect(result.source_repository.errors[:github_repository]).to include(described_class::ERROR_MESSAGE)
   end
+
+  it "keeps source mappings independent when one installation is linked to multiple projects" do
+    owner = create(:user)
+    installation = create(:github_installation, installed_by: owner)
+    github_repository = create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+    first_project = create(:project, user: owner)
+    second_project = create(:project, user: owner)
+    create(:project_github_installation, project: first_project, github_installation: installation)
+    create(:project_github_installation, project: second_project, github_installation: installation)
+
+    first_result = described_class.new(
+      project: first_project,
+      attributes: {
+        provider: "github",
+        github_repository_id: github_repository.id,
+        runtime_root: "/first",
+        enabled: true
+      }
+    ).build
+
+    second_result = described_class.new(
+      project: second_project,
+      attributes: {
+        provider: "github",
+        github_repository_id: github_repository.id,
+        runtime_root: "/second",
+        enabled: true
+      }
+    ).build
+
+    expect(first_result.source_repository).not_to eq(second_result.source_repository)
+    expect(first_result.source_repository.project).to eq(first_project)
+    expect(second_result.source_repository.project).to eq(second_project)
+    expect(first_result.source_repository.runtime_root).to eq("/first")
+    expect(second_result.source_repository.runtime_root).to eq("/second")
+  end
 end

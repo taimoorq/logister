@@ -5,7 +5,7 @@ class ProjectMembershipsController < ApplicationController
   before_action :set_project
 
   def create
-    user = User.find_by(email: membership_params[:email].to_s.downcase)
+    user = User.find_by(email: membership_email.to_s.downcase)
 
     if user.blank?
       return respond_with_membership_error("User not found.")
@@ -79,11 +79,19 @@ class ProjectMembershipsController < ApplicationController
   end
 
   def membership_params
-    params.require(:project_membership).permit(:email, :role)
+    params.require(:project_membership).permit(:email)
+  end
+
+  def membership_payload
+    params.require(:project_membership)
+  end
+
+  def membership_email
+    membership_params[:email]
   end
 
   def membership_role
-    ProjectMembership.normalize_role(membership_params[:role])
+    ProjectMembership.normalize_role(membership_payload[:role])
   end
 
   def redirect_with_alert(message)

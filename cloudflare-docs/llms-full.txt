@@ -11,7 +11,7 @@ The docs are organized as a practical self-hosted product manual: Documentation,
 - Captures application errors, logs, metrics, transactions, spans, and check-ins.
 - Groups repeated errors into triageable error groups.
 - Stores stacktrace, request method, request URL/path, request context, occurrence history, assignment, status, release, environment, and source/deployment context when integrations provide them.
-- Supports optional GitHub App source integration for private repository source excerpts, CODEOWNERS hints, synced repository lists, deployment links, and GitHub issue creation when Issues write permission is granted.
+- Supports optional project-scoped GitHub App source integration for private repository source excerpts, CODEOWNERS hints, explicit repository connections, deployment links, and GitHub issue creation when Issues write permission is granted.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
 - Provides a project Insights tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event mix, metric series, and recent matching events.
@@ -53,7 +53,7 @@ Public ingestion endpoints `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/a
 
 Source-linked debugging works best when SDKs and custom clients send `repository`, `commit_sha`, `branch`, `release`, and `environment` on error events. CI/CD can also POST a `deployment` envelope to `/api/v1/deployments` with `release`, `repository`, `commit_sha`, optional `branch`, `deployed_at`, `pull_request_number`, `release_tag`, and GitHub URLs so Logister can show source excerpts, PR/release links, and "this started after deploy X" context.
 
-GitHub App setup docs live at https://docs.logister.org/github-app/. Self-hosters create their own GitHub App instead of storing personal access tokens. Required variables are `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`; GitHub Enterprise Server installs can also set `LOGISTER_GITHUB_API_URL` and `LOGISTER_GITHUB_WEB_URL`.
+GitHub App setup docs live at https://docs.logister.org/github-app/. Self-hosters create their own GitHub App instead of storing personal access tokens. Required variables are `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`; GitHub Enterprise Server installs can also set `LOGISTER_GITHUB_API_URL` and `LOGISTER_GITHUB_WEB_URL`. Project owners and project admins install or link GitHub App installations from project settings, sync repository metadata, and explicitly connect the repositories each project should use. Syncing or telemetry alone does not create source mappings.
 
 API tooling lives at https://docs.logister.org/api-reference/. The public OpenAPI contract is available at https://docs.logister.org/openapi.yaml, and the Postman collection is available at https://docs.logister.org/postman/logister-api.postman_collection.json.
 

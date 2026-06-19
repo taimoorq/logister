@@ -233,4 +233,53 @@ RSpec.describe SourceFrameResolver do
       message: "No GitHub source repository mapping is enabled for this project."
     )
   end
+
+  it "does not resolve synced repositories until one is explicitly connected" do
+    project = create(:project)
+    installation = create(:github_installation)
+    github_repository = create(:github_repository, github_installation: installation, full_name: "acme/storefront")
+    create(:project_github_installation, project: project, github_installation: installation)
+    event = create(:ingest_event, project: project, context: {
+      "repository" => "acme/storefront",
+      "commit_sha" => "abc1234"
+    })
+    frame = { file: "/srv/app/app/models/order.rb", line_number: 2 }
+
+    unresolved = described_class.resolve(
+      project: project,
+      event: event,
+      frame: frame,
+      fetcher: FakeGithubFetcher.new(nil)
+    )
+
+    connector_result = ProjectSourceRepositoryConnector.new(
+      project: project,
+      attributes: {
+        provider: "github",
+        github_repository_id: github_repository.id,
+        runtime_root: "/srv/app",
+        enabled: true
+      }
+    ).build
+    connector_result.source_repository.save!
+    fetcher = FakeGithubFetcher.new(
+      FetchResult.new(
+        content: "one\ntwo\nthree\n",
+        sha: "file-sha",
+        html_url: "https://github.com/acme/storefront/blob/abc1234/app/models/order.rb"
+      )
+    )
+
+    resolved = described_class.resolve(
+      project: project,
+      event: event,
+      frame: frame,
+      fetcher: fetcher
+    )
+
+    expect(unresolved.diagnostics[:status]).to eq(:no_repositories)
+    expect(resolved.diagnostics[:status]).to eq(:resolved)
+    expect(resolved.excerpt[:repository]).to eq("acme/storefront")
+    expect(fetcher.requests.first).to include(path: "app/models/order.rb", ref: "abc1234")
+  end
 end
