@@ -265,8 +265,7 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css(".project-command-actions nav[aria-label='Project sections']")).to be_present
         expect(document.at_css(".project-signals-menu")).to be_nil
         expect(document.at_css(".project-command-actions .projects-secondary-button")).to be_nil
-        expect(document.at_css(".projects-overview-strip[aria-label='Project status']")).to be_present
-        expect(document.at_css(".projects-overview-strip").text).to include("Open errors", "Introduced today", "Events 24h")
+        expect(document.at_css(".projects-overview-strip[aria-label='Project status']")).to be_nil
         expect(filter_bar).to be_present
         expect(document.at_css(".inbox-workbench > .inbox-workbench-sidebar")).to be_nil
         expect(filter_bar.at_css("form.inbox-filter-search input[name='q']")["placeholder"]).to eq("Search errors...")

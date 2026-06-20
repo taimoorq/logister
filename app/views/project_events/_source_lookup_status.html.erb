@@ -1,4 +1,5 @@
 <% diagnostics = source_lookup.diagnostics || {} %>
+<% attempts = Array(diagnostics[:attempts]).first(4) %>
 
 <div class="source-lookup-status">
   <div>
@@ -20,5 +21,26 @@
         <dd><code><%= diagnostics[:ref] %></code></dd>
       <% end %>
     </dl>
+  <% end %>
+  <% if attempts.any? %>
+    <div class="source-lookup-attempts">
+      <span>Attempted source lookups</span>
+      <ul>
+        <% attempts.each do |attempt| %>
+          <li>
+            <code><%= attempt[:repository] || attempt["repository"] %></code>
+            <% if (path = attempt[:path] || attempt["path"]).present? %>
+              <code><%= path %></code>
+            <% end %>
+            <% if (ref = attempt[:ref] || attempt["ref"]).present? %>
+              <code><%= ref %></code>
+            <% end %>
+            <% if (reason = attempt[:reason] || attempt["reason"]).present? %>
+              <span><%= reason.to_s.humanize.downcase %></span>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
   <% end %>
 </div>

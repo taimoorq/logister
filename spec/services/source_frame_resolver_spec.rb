@@ -216,6 +216,43 @@ RSpec.describe SourceFrameResolver do
     expect(fetcher.requests.map { |request| request[:ref] }).not_to include("2026.06.18")
   end
 
+  it "tries event branch context before release and repository fallback refs" do
+    project = create(:project)
+    installation = create(:github_installation)
+    create(
+      :project_source_repository,
+      project: project,
+      github_installation: installation,
+      full_name: "acme/storefront",
+      default_branch: "main"
+    )
+    event = create(:ingest_event, project: project, context: {
+      "release" => "2026.06.18",
+      "branch" => "refs/heads/production",
+      "repository" => "acme/storefront"
+    })
+    fetcher = RefAwareGithubFetcher.new(
+      "production" => FetchResult.new(
+        content: "one\ntwo\nthree\n",
+        sha: "file-sha",
+        html_url: "https://github.com/acme/storefront/blob/production/app/models/order.rb"
+      )
+    )
+    codeowners_resolver = instance_double(Github::CodeownersResolver, call: nil)
+
+    result = described_class.call(
+      project: project,
+      event: event,
+      frame: { file: "/app/app/models/order.rb", line_number: 2 },
+      radius: 1,
+      fetcher: fetcher,
+      codeowners_resolver: codeowners_resolver
+    )
+
+    expect(result[:ref]).to eq("production")
+    expect(fetcher.requests.map { |request| request[:ref] }).to eq([ "production" ])
+  end
+
   it "returns diagnostics when no source repositories are enabled" do
     project = create(:project)
     event = create(:ingest_event, project: project)

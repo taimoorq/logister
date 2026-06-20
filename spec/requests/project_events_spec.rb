@@ -97,8 +97,11 @@ RSpec.describe "Project events", type: :request do
         source_result = SourceFrameResolver::Result.new(
           excerpt: nil,
           diagnostics: {
-            status: :no_repositories,
-            message: "No GitHub source repository mapping is enabled for this project."
+            status: :not_found,
+            message: "GitHub source file was not found for the configured repository mappings and refs.",
+            attempts: [
+              { repository: "acme/storefront", path: "app/models/order.rb", ref: "main", reason: "not_found" }
+            ]
           }
         )
         allow(SourceFrameResolver).to receive(:resolve).and_return(source_result)
@@ -107,7 +110,9 @@ RSpec.describe "Project events", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Source lookup unavailable")
-        expect(response.body).to include("No GitHub source repository mapping is enabled")
+        expect(response.body).to include("GitHub source file was not found")
+        expect(response.body).to include("Attempted source lookups")
+        expect(response.body).to include("acme/storefront", "app/models/order.rb", "main")
       end
 
       it "shows attached GitHub links and a draft issue action for source-connected groups" do

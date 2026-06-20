@@ -3,6 +3,14 @@
 class SourceFrameResolver
   DEFAULT_RADIUS = 4
   SHA_PATTERN = /\A[0-9a-f]{7,40}\z/i
+  BRANCH_CONTEXT_PATHS = [
+    [ "branch" ],
+    [ "git", "branch" ],
+    [ "github", "branch" ],
+    [ "deployment", "branch" ],
+    [ "ref" ],
+    [ "github", "ref" ]
+  ].freeze
   Result = Data.define(:excerpt, :diagnostics)
 
   def self.call(project:, event:, frame:, radius: DEFAULT_RADIUS, fetcher: Github::ContentsClient.new, codeowners_resolver: nil)
@@ -176,6 +184,7 @@ class SourceFrameResolver
     [
       commit_sha_hint,
       indexed_deployment_commit_sha(repository),
+      branch_hint,
       release_hint,
       repository.default_branch,
       "main"
@@ -253,6 +262,10 @@ class SourceFrameResolver
     event ? IngestEvent.release(event) : nil
   end
 
+  def branch_hint
+    normalize_ref_hint(first_context_value(*BRANCH_CONTEXT_PATHS))
+  end
+
   def indexed_deployment_commit_sha(repository)
     ProjectDeployment.resolve_commit(
       project: project,
@@ -277,6 +290,13 @@ class SourceFrameResolver
       [ "git", "repository" ],
       [ "deployment", "repository" ]
     ).to_s.strip.presence
+  end
+
+  def normalize_ref_hint(value)
+    ref = value.to_s.strip
+    ref = ref.delete_prefix("refs/heads/")
+    ref = ref.delete_prefix("origin/")
+    ref.presence
   end
 
   def first_context_value(*paths)

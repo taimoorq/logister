@@ -1904,6 +1904,21 @@
   .source-lookup-status dd {
     @apply mt-0.5 break-all text-xs text-amber-900;
   }
+  .source-lookup-attempts {
+    @apply mt-3 border-t border-amber-200 pt-3;
+  }
+  .source-lookup-attempts > span {
+    @apply text-xs font-semibold uppercase text-amber-700;
+  }
+  .source-lookup-attempts ul {
+    @apply mt-2 flex flex-col gap-1.5;
+  }
+  .source-lookup-attempts li {
+    @apply flex flex-wrap items-center gap-1.5 text-xs text-amber-800;
+  }
+  .source-lookup-attempts code {
+    @apply rounded bg-white/70 px-1.5 py-0.5 text-amber-950;
+  }
   .source-owner-hint {
     @apply flex flex-col gap-2 border-x border-slate-700 bg-slate-800 px-4 py-3 text-xs text-slate-200 sm:flex-row sm:items-center sm:justify-between;
   }
