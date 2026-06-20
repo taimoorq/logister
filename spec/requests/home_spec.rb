@@ -221,7 +221,7 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("Rails error monitoring")
       expect(response.body).to include("Docker, GHCR, Docker Hub, and optional Quay self-hosting")
       expect(response.body).to include("Error assignment and team triage")
-      expect(response.body).to include("Amazon SES error alert emails")
+      expect(response.body).to include("Amazon SES project notifications")
       expect(response.body).to include("ghcr.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("docker.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("quay.io/taimoorq/logister")

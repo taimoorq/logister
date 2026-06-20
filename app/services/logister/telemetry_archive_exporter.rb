@@ -39,12 +39,7 @@ module Logister
         checksum = Digest::MD5.base64digest(payload)
         exported_rows += records.size
 
-        @storage_service.upload(
-          key,
-          StringIO.new(payload),
-          checksum: checksum,
-          content_type: "application/jsonl+gzip"
-        ) unless @dry_run
+        upload_payload(key, payload, checksum) unless @dry_run
 
         objects << {
           key: key,
@@ -104,6 +99,17 @@ module Logister
       ActiveStorage::Blob.services.fetch(service_name.to_sym)
     rescue KeyError
       raise Error, "Unknown telemetry archive storage service: #{service_name.inspect}"
+    end
+
+    def upload_payload(key, payload, checksum)
+      @storage_service.upload(
+        key,
+        StringIO.new(payload),
+        checksum: checksum,
+        content_type: "application/jsonl+gzip"
+      )
+    rescue StandardError => e
+      raise Error, "Telemetry archive upload failed for #{key}: #{e.class}: #{e.message}"
     end
 
     def gzip_records(records)

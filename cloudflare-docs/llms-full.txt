@@ -14,9 +14,9 @@ The docs are organized as a practical self-hosted product manual: Documentation,
 - Supports optional project-scoped GitHub App source integration for private repository source excerpts, CODEOWNERS hints, explicit repository connections, deployment links, and GitHub issue creation when Issues write permission is granted.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
-- Provides a project Insights tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event mix, metric series, and recent matching events.
-- Sends first-occurrence error emails and daily or weekly digest summaries through SMTP, commonly Amazon SES.
-- Supports optional S3-compatible archive exports for older hot telemetry before pruning high-volume non-error rows from PostgreSQL.
+- Provides a project Insights tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event type breakdowns, metric series, and recent matching events.
+- Sends purpose-based project notifications through SMTP, commonly Amazon SES: new or reopened error groups, milestones, single-error volume, project spikes, latency alerts, monitor alerts, workflow routing, digests, release summaries, usage warnings, and retention/archive failures.
+- Supports configurable hot-data retention and optional S3-compatible archive exports for older telemetry before pruning high-volume non-error rows from PostgreSQL.
 - Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.
 
 ## Use Cases And Comparisons
@@ -32,7 +32,7 @@ The docs are organized as a practical self-hosted product manual: Documentation,
 - ColdFusion / CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
-- Amazon SES error alert emails and digests: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
+- Amazon SES project notifications: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 
 Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or their maintainers.
 
@@ -53,7 +53,7 @@ Public ingestion endpoints `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/a
 
 Source-linked debugging works best when SDKs and custom clients send `repository`, `commit_sha`, `branch`, `release`, and `environment` on error events. CI/CD can also POST a `deployment` envelope to `/api/v1/deployments` with `release`, `repository`, `commit_sha`, optional `branch`, `deployed_at`, `pull_request_number`, `release_tag`, and GitHub URLs so Logister can show source excerpts, PR/release links, and "this started after deploy X" context.
 
-GitHub App setup docs live at https://docs.logister.org/github-app/. Self-hosters create their own GitHub App instead of storing personal access tokens. Required variables are `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`; GitHub Enterprise Server installs can also set `LOGISTER_GITHUB_API_URL` and `LOGISTER_GITHUB_WEB_URL`. Project owners and project admins install or link GitHub App installations from project settings, sync repository metadata, and explicitly connect the repositories each project should use. Syncing or telemetry alone does not create source mappings.
+GitHub App setup docs live at https://docs.logister.org/github-app/. Self-hosters create their own GitHub App instead of storing personal access tokens. Required variables are `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`; GitHub Enterprise Server installs can also set `LOGISTER_GITHUB_API_URL` and `LOGISTER_GITHUB_WEB_URL`. Project owners and project admins install or link GitHub App installations from project settings, sync repository metadata, and explicitly connect the repositories each project should use. Syncing or telemetry alone does not create source mappings. Source lookup diagnostics live at https://docs.logister.org/github-app/source-lookup/ and explain repository/path/ref failures such as runtime path prefixes that create doubled paths.
 
 API tooling lives at https://docs.logister.org/api-reference/. The public OpenAPI contract is available at https://docs.logister.org/openapi.yaml, and the Postman collection is available at https://docs.logister.org/postman/logister-api.postman_collection.json.
 
@@ -63,7 +63,7 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting: Logister publishes versioned release images for teams that want to pin app versions and run separate Rails web and Sidekiq worker containers. GHCR and Docker Hub are default public registries; Quay is an optional mirror when release credentials are configured.
 - Error assignment and team triage: Logister stores ownership on grouped errors so teammates can filter inboxes by assignee, claim unassigned work, and move production issues through fixed, ignored, archived, or reopened states.
-- Amazon SES error alert emails and digests: Logister sends first-occurrence alerts and daily or weekly project digest emails through standard Rails SMTP settings, commonly backed by SES in self-hosted deployments.
+- Amazon SES project notifications: Logister sends purpose-specific project notifications through standard Rails SMTP settings, commonly backed by SES in self-hosted deployments.
 
 ## Insights
 
@@ -89,13 +89,14 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 - Rails web app served by Puma.
 - PostgreSQL for accounts, projects, API keys, events, grouped errors, monitors, notification preferences, and sharing.
 - Redis for caching and Sidekiq.
-- Sidekiq worker for async jobs, Action Mailer delivery, first-occurrence alerts, digest scheduling, optional ClickHouse writes, and operator-run archive/prune tasks.
-- SMTP/Amazon SES for auth mail, project alerts, and digest emails.
+- Sidekiq worker for async jobs, Action Mailer delivery, project notifications, digest scheduling, optional ClickHouse writes, and operator-run archive/prune tasks.
+- SMTP/Amazon SES for auth mail, project alerts, digests, monitor alerts, and operational notices.
 - Optional S3-compatible archive storage through Active Storage for compressed JSONL archive exports.
 - Optional ClickHouse for higher-volume event/span analytics, raw tables, and one-minute rollups.
 - Optional GitHub App source integration for private repository access without personal tokens.
 - Optional Cloudflare Turnstile for auth bot protection.
 - Optional Cloudflare Pages for static docs hosting.
+- Optional Cloudflare Pages project integration for manual HTTP telemetry today and importer settings ahead of automatic account fetching.
 - Optional Logister self-observability through `logister-ruby`; configure `LOGISTER_API_KEY`, `LOGISTER_ENDPOINT`, source fields such as `LOGISTER_REPOSITORY`, `LOGISTER_COMMIT_SHA`, and `LOGISTER_BRANCH`, then run `bin/rails logister:sample_telemetry` to emit a sample error, log, metric, transaction, span set, check-in, and deployment record.
 - Recommended setup order: provision PostgreSQL and Redis; set `RAILS_ENV`, `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `LOGISTER_PUBLIC_URL`, and `LOGISTER_ADMIN_EMAILS`; run `./bin/release`; start one Rails web process and one Sidekiq worker; verify `/up`, sign-in, project creation, API key generation, and one test inbox event; then enable optional services.
 
@@ -106,6 +107,7 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 - ClickHouse readiness requires the event table, span table, one-minute rollup tables, and materialized views from `docs/clickhouse_schema.sql`.
 - `/health/clickhouse` reports ready only when ClickHouse is enabled, reachable, and schema-ready; it reports missing tables when it can determine them.
 - ClickHouse write failures are reported through `logister-ruby` as throttled logs and count metrics when Logister self-observability is configured.
+- Data retention docs are split by task: overview, policy choices, archive storage, and archive/prune jobs at https://docs.logister.org/product/data-retention/.
 - S3-compatible archive storage is optional and uses Active Storage with `ACTIVE_STORAGE_SERVICE=amazon` plus AWS/S3 variables.
 - Archive tasks export `ingest_events` and `trace_spans` as compressed JSONL before `logister:telemetry:prune_hot` removes older non-error hot telemetry.
 
@@ -115,15 +117,14 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
-- Current versioned images: `ghcr.io/taimoorq/logister:v2.6.1` or `docker.io/taimoorq/logister:v2.6.1`
+- Current versioned images: `ghcr.io/taimoorq/logister:v2.7.0` or `docker.io/taimoorq/logister:v2.7.0`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
 
 ## Maintainer And Discovery Context
 
-- 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
-- SEO and LLM discovery plan: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-discovery-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
+- Documentation style guide: https://github.com/taimoorq/logister/blob/main/docs/documentation-style-guide.md
 - Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, RubyGems, NuGet, PyPI, npm, Maven Central, Swift Package Manager tags, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
 
 ## License And Brand
@@ -139,6 +140,17 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 - Docs home: https://docs.logister.org/
 - Product guide: https://docs.logister.org/product/
 - Insights guide: https://docs.logister.org/product/#insights
+- Email notifications: https://docs.logister.org/product/notifications/
+- Notification setup: https://docs.logister.org/product/notifications/setup/
+- Error triage notifications: https://docs.logister.org/product/notifications/error-triage/
+- Project health notifications: https://docs.logister.org/product/notifications/project-health/
+- Workflow routing notifications: https://docs.logister.org/product/notifications/workflow-routing/
+- Digest and delivery controls: https://docs.logister.org/product/notifications/digests-delivery/
+- Operational notifications: https://docs.logister.org/product/notifications/operations/
+- Data retention: https://docs.logister.org/product/data-retention/
+- Retention policy: https://docs.logister.org/product/data-retention/policy/
+- Archive storage: https://docs.logister.org/product/data-retention/archive-storage/
+- Archive and prune jobs: https://docs.logister.org/product/data-retention/jobs/
 - Metrics reference: https://docs.logister.org/metrics/
 - Use cases: https://docs.logister.org/use-cases/
 - Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
@@ -148,15 +160,16 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 - CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
-- Amazon SES error alerts: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
+- Amazon SES project notifications: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - Getting started: https://docs.logister.org/getting-started/
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Deployment config: https://docs.logister.org/deployment/
 - GitHub App source integration: https://docs.logister.org/github-app/
+- GitHub source lookup diagnostics: https://docs.logister.org/github-app/source-lookup/
 - Docker self-hosting: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
-- 1.1 release plan: https://github.com/taimoorq/logister/blob/main/docs/1.1-release-plan.md
 - SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
+- Documentation style guide: https://github.com/taimoorq/logister/blob/main/docs/documentation-style-guide.md
 - HTTP API: https://docs.logister.org/http-api/
 - Troubleshooting: https://docs.logister.org/troubleshooting/
 - API reference and Swagger UI: https://docs.logister.org/api-reference/
@@ -166,6 +179,9 @@ Troubleshooting lives at https://docs.logister.org/troubleshooting/. It covers q
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
+- Cloudflare Pages integration: https://docs.logister.org/integrations/cloudflare-pages/
+- Cloudflare Pages manual telemetry: https://docs.logister.org/integrations/cloudflare-pages/manual-telemetry/
+- Cloudflare Pages importer settings: https://docs.logister.org/integrations/cloudflare-pages/importer-settings/
 - Android integration: https://docs.logister.org/integrations/android/
 - iOS integration: https://docs.logister.org/integrations/ios/
 - CFML integration: https://docs.logister.org/integrations/cfml/

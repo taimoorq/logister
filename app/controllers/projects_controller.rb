@@ -1,7 +1,6 @@
 class ProjectsController < ApplicationController
   PROJECT_FILTERS = %w[active archived all].freeze
   PROJECT_DASHBOARD_CACHE_TTL = 30.seconds
-  PROJECT_OVERVIEW_CACHE_TTL = 30.seconds
   PROJECT_STATS_CACHE_TTL = 45.seconds
   LEGACY_INBOX_PARAMS = %w[filter q assignee group_uuid event_uuid tab frame_scope frame].freeze
 
@@ -30,22 +29,13 @@ class ProjectsController < ApplicationController
     end
 
     @counts = inbox_counts(@project, viewer: current_user)
-    @project_overview = project_overview(@project)
     dashboard_metrics = project_dashboard_metrics(@project)
-    @event_type_counts_last_24h = dashboard_metrics[:event_type_counts_last_24h]
     @insights_payload = ProjectInsights.shell_payload(
       @project,
       endpoint: insights_data_project_path(@project),
       window: ProjectInsights::DEFAULT_WINDOW,
       storage_key: "logister.project-overview-insights.#{@project.uuid}"
     )
-    @events_last_24h = @event_type_counts_last_24h.values.sum
-    @activity_events_last_24h = @event_type_counts_last_24h.except("error").values.sum
-    @recent_error_groups = @project.error_groups
-                                   .unresolved
-                                   .includes(:assignee)
-                                   .recent_first
-                                   .limit(5)
     @db_stats = dashboard_metrics[:db_stats]
     @transaction_stats = dashboard_metrics[:transaction_stats]
     @request_span_count_last_24h = @project.trace_spans
@@ -133,7 +123,6 @@ class ProjectsController < ApplicationController
     # Full page load — build everything the workbench needs for the inbox.
     @counts  = inbox_counts(@project, assignee: @assignee_filter, viewer: current_user)
     @group_trends = inbox_group_trends(@project, @groups)
-    @project_overview = project_overview(@project)
     @selected_group = if params[:group_uuid].present?
       @project.error_groups.find_by(uuid: params[:group_uuid])
     else
@@ -207,40 +196,6 @@ class ProjectsController < ApplicationController
     }
   end
 
-  def project_overview(project)
-    safe_cache_fetch(
-      [ "project", project.id, "overview", cache_time_bucket(PROJECT_OVERVIEW_CACHE_TTL) ],
-      expires_in: PROJECT_OVERVIEW_CACHE_TTL
-    ) do
-      events = project.ingest_events
-      events_last_24h = events.where("occurred_at >= ?", 24.hours.ago)
-      monitors = project.check_in_monitors
-                        .select(:id, :last_status, :last_check_in_at, :expected_interval_seconds)
-                        .to_a
-      monitor_status_counts = monitors.each_with_object({ ok: 0, missed: 0, error: 0 }) do |monitor, counts|
-        status = monitor.status.to_sym
-        counts[status] = counts.fetch(status, 0) + 1
-      end
-
-      {
-        events_last_24h: events_last_24h.count,
-        activity_events_last_24h: events_last_24h.where.not(event_type: IngestEvent.event_types[:error]).count,
-        latest_event_at: events_last_24h.maximum(:occurred_at),
-        monitors_count: monitors.size,
-        monitor_status_counts: monitor_status_counts,
-        unhealthy_monitors_count: monitor_status_counts.fetch(:missed, 0) + monitor_status_counts.fetch(:error, 0)
-      }
-    end
-  end
-
-  def project_event_type_counts(project, since:)
-    counts = project.ingest_events.where("occurred_at >= ?", since).group(:event_type).count
-
-    Dashboard::EVENT_TYPE_ORDER.index_with do |event_type|
-      counts[event_type].to_i + counts[IngestEvent.event_types[event_type]].to_i
-    end
-  end
-
   def project_dashboard_metrics(project)
     safe_cache_fetch(
       [ "project", project.id, "dashboard_metrics", cache_time_bucket(PROJECT_DASHBOARD_CACHE_TTL) ],
@@ -250,7 +205,6 @@ class ProjectsController < ApplicationController
       db_query_events = project.ingest_events.recent_db_queries(since).select(:id, :context).to_a
 
       {
-        event_type_counts_last_24h: project_event_type_counts(project, since: since),
         db_stats: IngestEvent.db_stats_from_events(db_query_events),
         transaction_stats: IngestEvent.transaction_stats(project, since: since)
       }

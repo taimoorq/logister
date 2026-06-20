@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloudflare Pages Integration | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Use Cloudflare Pages projects in Logister with direct HTTP telemetry today and importer settings for future Cloudflare API imports.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/integrations/cloudflare-pages/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Cloudflare Pages Integration | Logister">
+    <meta property="og:description" content="Use Cloudflare Pages projects in Logister with direct HTTP telemetry today and importer settings for future Cloudflare API imports.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/integrations/cloudflare-pages/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cloudflare Pages Integration | Logister">
+    <meta name="twitter:description" content="Use Cloudflare Pages projects in Logister with direct HTTP telemetry today and importer settings for future Cloudflare API imports.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Cloudflare Pages</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / Integrations / Cloudflare Pages</span><h1>Use a Logister project for a Cloudflare Pages site.</h1><p>Create a Cloudflare Pages project when the monitored surface is a Pages site. Today, send deployment and traffic signals through the HTTP API. Store importer settings only when you want to prepare for the future Cloudflare fetcher.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby</a><a href="/integrations/dotnet/">.NET</a><a href="/integrations/python/">Python</a><a href="/integrations/javascript/">JavaScript</a><a class="active" href="/integrations/cloudflare-pages/">Cloudflare Pages</a><a href="/integrations/android/">Android</a><a href="/integrations/ios/">iOS</a><a href="/integrations/cfml/">CFML</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Cloudflare Pages</p><a href="/integrations/cloudflare-pages/manual-telemetry/">Manual telemetry</a><a href="/integrations/cloudflare-pages/importer-settings/">Importer settings</a></div>
+          </aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Current status</p>
+              <h2>Manual telemetry works now; automatic importing is not live yet.</h2>
+              <table><thead><tr><th>Available now</th><th>Not automatic yet</th></tr></thead><tbody><tr><td>Create a Cloudflare Pages project type.</td><td>Pull Cloudflare Web Analytics from the Cloudflare API.</td></tr><tr><td>Send metrics, logs, check-ins, and deployment records through the HTTP API.</td><td>Import top paths, visitors, deployment status, build duration, branch, and failed deployment logs automatically.</td></tr><tr><td>Store account ID, Pages project name, optional project ID, and credential reference.</td><td>Store raw Cloudflare API tokens in the Logister settings form.</td></tr></tbody></table>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Where to go</p>
+              <h2>Pick one task.</h2>
+              <div class="card-grid">
+                <article class="card"><p class="eyebrow">Today</p><h3>Send manual telemetry</h3><p>Use the HTTP API from CI, a script, a Worker, or a Pages Function.</p><p><a href="/integrations/cloudflare-pages/manual-telemetry/">Read manual telemetry</a></p></article>
+                <article class="card"><p class="eyebrow">Prepare</p><h3>Save importer settings</h3><p>Store Cloudflare identifiers and a credential reference for the future Rails importer.</p><p><a href="/integrations/cloudflare-pages/importer-settings/">Read importer settings</a></p></article>
+              </div>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

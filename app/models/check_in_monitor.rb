@@ -53,6 +53,7 @@ class CheckInMonitor < ApplicationRecord
       slug: payload[:slug],
       environment: payload[:environment]
     )
+    previous_status = monitor.persisted? ? monitor.status(at: event.occurred_at) : nil
 
     monitor.expected_interval_seconds = payload[:expected_interval_seconds]
     monitor.last_check_in_at = event.occurred_at
@@ -62,6 +63,7 @@ class CheckInMonitor < ApplicationRecord
     monitor.last_event_occurred_at = event.occurred_at
     monitor.consecutive_missed_count = payload[:status] == "error" ? monitor.consecutive_missed_count : 0
     monitor.save!
+    notify_status_transition!(monitor, previous_status: previous_status, current_status: monitor.status(at: event.occurred_at), event: event)
     monitor
   end
 
@@ -101,5 +103,30 @@ class CheckInMonitor < ApplicationRecord
 
   def grace_period
     [ (expected_interval_seconds * 0.5).to_i.seconds, 30.seconds ].max
+  end
+
+  def self.notify_status_transition!(monitor, previous_status:, current_status:, event:)
+    if current_status == "error" && previous_status != "error"
+      ProjectMonitorNotificationJob.perform_later(
+        monitor.id,
+        "monitor_missed",
+        {
+          "event_id" => event.id,
+          "event_uuid" => event.uuid,
+          "detected_at" => event.occurred_at.utc.iso8601,
+          "bucket" => event.occurred_at.utc.strftime("%Y%m%d%H")
+        }
+      )
+    elsif current_status == "ok" && previous_status.in?(%w[error missed])
+      ProjectMonitorNotificationJob.perform_later(
+        monitor.id,
+        "monitor_recovered",
+        {
+          "event_id" => event.id,
+          "event_uuid" => event.uuid,
+          "recovered_at" => event.occurred_at.utc.iso8601
+        }
+      )
+    end
   end
 end

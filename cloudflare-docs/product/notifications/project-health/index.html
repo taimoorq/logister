@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Project Health Notifications | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Configure Logister project health emails for project-wide error spikes, p95 latency thresholds, and missed or recovered check-in monitors.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/notifications/project-health/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Project Health Notifications | Logister">
+    <meta property="og:description" content="Configure Logister project health emails for project-wide error spikes, p95 latency thresholds, and missed or recovered check-in monitors.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/notifications/project-health/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Project health</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/notifications/">Notifications</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Notifications / Project health</span><h1>Email me when the project itself looks unhealthy.</h1><p>Use <code>Project &gt; Settings &gt; Notifications &gt; Project health alerts</code> for project-wide volume, latency, and monitor problems.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Notifications</p><a href="/product/notifications/">Overview</a><a href="/product/notifications/setup/">Setup requirements</a><a href="/product/notifications/error-triage/">Error triage</a><a class="active" href="/product/notifications/project-health/">Project health</a><a href="/product/notifications/workflow-routing/">Workflow routing</a><a href="/product/notifications/digests-delivery/">Digests and delivery</a><a href="/product/notifications/operations/">Operational notices</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Settings</p>
+              <h2>These settings look across the project.</h2>
+              <table><thead><tr><th>Setting</th><th>Use it for</th><th>Default</th></tr></thead><tbody><tr><td>Project-wide error spike</td><td>Total project error events crossed the configured count inside the configured window.</td><td>Off, 100 events in 15 minutes</td></tr><tr><td>Project p95 latency</td><td>Project p95 transaction duration over the last 15 minutes crossed the configured millisecond limit.</td><td>Off, 1,000 ms</td></tr><tr><td>Check-in monitors</td><td>A check-in monitor was missed or later recovered.</td><td>On</td></tr></tbody></table>
+              <p>Project-wide error spike is not the same as the single-error volume threshold. This setting counts all project error events in the window.</p>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Verify</p>
+              <h2>Health alerts depend on sweeps.</h2>
+              <p>Keep the worker and scheduled sweeps running. To test, temporarily lower the threshold, generate matching events, then watch the worker enqueue a project health notification.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Workflow Routing Notifications | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Configure Logister assignment and status-change emails with workflow mode, environment, severity, and status filters.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/notifications/workflow-routing/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Workflow Routing Notifications | Logister">
+    <meta property="og:description" content="Configure Logister assignment and status-change emails with workflow mode, environment, severity, and status filters.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/notifications/workflow-routing/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Workflow routing</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/notifications/">Notifications</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Notifications / Workflow routing</span><h1>Email me for assigned work and matching workflow changes.</h1><p>Use <code>Project &gt; Settings &gt; Notifications &gt; Team workflow routing</code> when the question is who should hear about assignment and status changes.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Notifications</p><a href="/product/notifications/">Overview</a><a href="/product/notifications/setup/">Setup requirements</a><a href="/product/notifications/error-triage/">Error triage</a><a href="/product/notifications/project-health/">Project health</a><a class="active" href="/product/notifications/workflow-routing/">Workflow routing</a><a href="/product/notifications/digests-delivery/">Digests and delivery</a><a href="/product/notifications/operations/">Operational notices</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Settings</p>
+              <h2>Routing is about matching the right work.</h2>
+              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Off</td><td>No assignment or status-change emails.</td></tr><tr><td>Only errors assigned to me</td><td>Assignment mail when the user becomes owner, and status-change mail for their assigned groups.</td></tr><tr><td>All matching workflow changes</td><td>Any matching assignment or status change in the project.</td></tr><tr><td>Environment match</td><td><code>all</code> or one exact environment such as <code>production</code>.</td></tr><tr><td>Severity match</td><td><code>all</code> or one exact severity such as <code>error</code>.</td></tr><tr><td>Status match</td><td><code>Unresolved</code>, <code>Closed</code>, or <code>All</code>.</td></tr></tbody></table>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Verify</p>
+              <h2>Test with a real assignment.</h2>
+              <ol><li>Make sure the recipient has project access.</li><li>Assign an error group to the recipient.</li><li>Change the group status as another user if you are testing assigned-to-me status mail.</li></ol>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -6,7 +6,7 @@ RSpec.describe "Project dashboard", type: :system do
   it "renders the shared telemetry timeline card on the overview dashboard" do
     sign_in users(:one)
     visit dashboard_path
-    page.execute_script("window.localStorage.setItem('tg_tours_complete', JSON.stringify(['dashboard', 'project-overview']))")
+    page.execute_script("window.localStorage.setItem('tg_tours_complete', 'dashboard,project-overview')")
 
     visit project_path(projects(:system_inbox))
 

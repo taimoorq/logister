@@ -1,5 +1,21 @@
 class EmailNotificationDelivery < ApplicationRecord
-  KINDS = %w[first_occurrence daily_digest weekly_digest].freeze
+  KINDS = %w[
+    first_occurrence
+    regression
+    frequent_error
+    error_milestone
+    assignment
+    status_change
+    monitor_missed
+    monitor_recovered
+    project_spike
+    performance_threshold
+    release_summary
+    usage_alert
+    retention_failure
+    daily_digest
+    weekly_digest
+  ].freeze
   STATUSES = %w[pending sending sent skipped failed].freeze
 
   belongs_to :project
@@ -22,6 +38,16 @@ class EmailNotificationDelivery < ApplicationRecord
   def self.digest_key(preference:, period_start:, frequency:)
     start_key = period_start.in_time_zone("UTC").strftime("%Y%m%d%H%M%S")
     "digest:#{frequency}:user:#{preference.user_id}:project:#{preference.project_id}:#{start_key}"
+  end
+
+  def self.notification_key(kind:, user:, project:, subject:, bucket: nil)
+    [
+      kind,
+      "user:#{user.id}",
+      "project:#{project.id}",
+      "subject:#{subject}",
+      bucket.present? ? "bucket:#{bucket}" : nil
+    ].compact.join(":")
   end
 
   def sent?

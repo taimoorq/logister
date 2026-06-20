@@ -11,6 +11,7 @@ class TelemetryArchive < ApplicationRecord
   validates :rows, :bytes, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   scope :completed, -> { where(status: "completed") }
+  scope :failed, -> { where(status: "failed") }
   scope :recent_first, -> { order(created_at: :desc) }
 
   def archive_objects

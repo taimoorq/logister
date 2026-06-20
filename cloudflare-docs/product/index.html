@@ -36,6 +36,7 @@
         <div class="docs-layout">
           <aside class="sidebar">
             <div class="sidebar-group"><p class="sidebar-label">Start here</p><a href="/">Overview</a><a href="/getting-started/">Getting started</a><a class="active" href="/product/">Product guide</a><a href="/metrics/">Metrics reference</a><a href="/self-hosting/">Self-hosting</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Product areas</p><a href="/product/notifications/">Notifications</a><a href="/product/data-retention/">Data retention</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Operations</p><a href="/local-development/">Local development</a><a href="/deployment/">Deployment config</a><a href="/github-app/">GitHub App</a><a href="/clickhouse/">ClickHouse</a><a href="/http-api/">HTTP API</a><a href="/api-reference/">API reference</a><a href="/troubleshooting/">Troubleshooting</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby integration</a><a href="/integrations/dotnet/">.NET integration</a><a href="/integrations/python/">Python integration</a><a href="/integrations/javascript/">JavaScript integration</a><a href="/integrations/android/">Android integration</a><a href="/integrations/ios/">iOS integration</a><a href="/integrations/cfml/">CFML integration</a></div>
             <hr>
@@ -53,15 +54,15 @@
             <section id="connect" class="section">
               <p class="eyebrow">Connect services</p>
               <h2>Start each app with a project, an API key, and the right integration guide.</h2>
-              <p>A Logister project represents one app or service your team wants to observe on your own Logister instance. When you create a project, choose the integration type that matches how that service reports data: Ruby, .NET / ASP.NET Core, Python, JavaScript / TypeScript, CFML, or Manual / HTTP API. The project settings page then gives you the right setup guidance and the API key tools your service needs.</p>
+              <p>A Logister project represents one app or service your team wants to observe on your own Logister instance. When you create a project, choose the integration type that matches how that service reports data: Ruby, .NET / ASP.NET Core, Python, JavaScript / TypeScript, Cloudflare Pages, Android, iOS, CFML, or Manual / HTTP API. The project settings page then gives you the right setup guidance and the API key tools your service needs.</p>
               <table><thead><tr><th>You want to...</th><th>Use Logister to...</th></tr></thead><tbody><tr><td>Connect a new service</td><td>Create a project, select the app's runtime, generate an API key, and follow the matching integration guide.</td></tr><tr><td>Keep secrets controlled</td><td>Generate project-scoped API keys that are shown once, then store the token in your environment or secret manager.</td></tr><tr><td>Rotate credentials</td><td>Create a replacement API key, deploy it to the service, then revoke the older key from project settings.</td></tr><tr><td>Retire a service without losing history</td><td>Archive the project so its data stays available from archived views while its API keys stop accepting new events.</td></tr><tr><td>Use a custom or unsupported runtime</td><td>Send events directly with the HTTP API while keeping the same Logister inbox, activity, performance, and monitor views.</td></tr></tbody></table>
             </section>
 
             <section id="dashboard" class="section">
               <p class="eyebrow">Dashboard overview</p>
               <h2>Use the dashboard for cross-app signal before opening a project.</h2>
-              <p>The dashboard summarizes active projects across the account so users can see what changed before drilling into a specific app. It highlights event mix, errors needing attention, assigned-to-me work, active project signals, and project-level links without turning the overview into a duplicate of the project list.</p>
-              <ul><li>The explorer charts are backed by server-side data endpoints, so changing chart selections fetches the scoped summary instead of pushing all project data into the page at once.</li><li>The needs-attention panel follows the selected event type where possible, so chart exploration and triage stay connected.</li><li>My assignments links take a user back to their owned error groups across active apps.</li><li>Archived projects are kept out of the active dashboard and top navigation by default, which keeps retired apps from hiding current issues.</li></ul>
+              <p>The dashboard now starts with an Overview tab for current work and a Projects tab for project-level scanning. Overview gives the Explorer the primary space on the left, with My assignments and Needs attention stacked on the right so users can move from cross-app signal to owned work quickly.</p>
+              <ul><li>The Explorer combines the main timeline with event types and apps by volume, backed by server-side endpoints.</li><li>Needs attention is intentionally narrower than the Explorer and scrolls internally when there are many items.</li><li>My assignments stays at the top of the right column so users can return to owned error groups across active apps.</li><li>The Projects tab holds Projects at a glance and Project Signals, keeping the Overview focused on investigation.</li></ul>
             </section>
 
             <section id="insights" class="section">
@@ -122,8 +123,8 @@
             <section id="notifications" class="section">
               <p class="eyebrow">Email notifications</p>
               <h2>Send useful alerts without turning every occurrence into mail.</h2>
-              <p>Project notification preferences let users receive a first-occurrence email when a new error group appears and digest summaries on a daily or weekly cadence. The emails are branded as Logister mail and include project, environment, release, occurrence, and triage links so recipients have enough context to act and mail providers see consistent, relevant content.</p>
-              <p>Self-hosted installs use the same background worker path as other asynchronous work. Configure SMTP, commonly through Amazon SES, and keep Sidekiq running so first-occurrence alerts and scheduled digests can be delivered outside the web request.</p>
+              <p>Notification settings are split by purpose so users do not have to understand every option at once. Start at <code>Project &gt; Settings &gt; Notifications</code>, choose the path that matches the reason for email, then tune that path only.</p>
+              <div class="card-grid"><article class="card"><p class="eyebrow">Notifications</p><h3>Choose a notification path</h3><p>Error triage, project health, workflow routing, digests, delivery controls, and operational notices each have their own short guide.</p><p><a href="/product/notifications/">Read notification docs</a></p></article><article class="card"><p class="eyebrow">Delivery</p><h3>Check the worker and SMTP path</h3><p>Self-hosted installs need SMTP and a running Sidekiq worker before project emails can be trusted.</p><p><a href="/product/notifications/setup/">Read setup requirements</a></p></article></div>
             </section>
 
             <section id="collaborate" class="section">
@@ -137,6 +138,7 @@
               <p class="eyebrow">Run it yourself</p>
               <h2>Self-host Logister with clear operational checkpoints.</h2>
               <p>Logister is designed to be self-hosted as a Rails app with PostgreSQL, Redis, and background jobs. ClickHouse is optional and can be added when you want a dedicated analytics store; S3-compatible object storage is optional when you want compressed archive exports before pruning older hot telemetry. The operations docs cover local boot, deployment variables, GHCR and Docker Hub images, optional Quay mirrors, release versions, health checks, email, Turnstile, consent-gated analytics, ClickHouse setup, and archive storage.</p>
+              <p>For project-level cleanup behavior, read the <a href="/product/data-retention/">data retention guide</a>. It keeps the overview separate from policy fields, archive storage, and job verification.</p>
               <div class="output-block"><div class="output-head"><span class="output-label">Useful health checks</span></div><pre><code>GET /up
 GET /health/clickhouse</code></pre></div>
             </section>

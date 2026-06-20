@@ -14,6 +14,7 @@ It supports:
 - Android apps via the `org.logister:logister-android` Maven Central package
 - iOS apps via the `Logister` Swift Package Manager package
 - CFML apps running on Lucee or Adobe ColdFusion via direct HTTP ingestion
+- Cloudflare Pages sites via direct HTTP telemetry today and project importer settings ahead of automatic fetching
 
 Canonical documentation lives on the public docs host:
 - Product docs: https://docs.logister.org/
@@ -30,6 +31,8 @@ Canonical documentation lives on the public docs host:
 - Docs home: https://docs.logister.org/
 - Getting started: https://docs.logister.org/getting-started/
 - Product guide: https://docs.logister.org/product/
+- Email notifications: https://docs.logister.org/product/notifications/
+- Data retention: https://docs.logister.org/product/data-retention/
 - Use cases and comparisons: https://docs.logister.org/use-cases/
 - Self-hosted error monitoring use case: https://docs.logister.org/use-cases/self-hosted-error-monitoring/
 - Sentry alternative comparison: https://docs.logister.org/use-cases/sentry-alternative/
@@ -42,11 +45,12 @@ Canonical documentation lives on the public docs host:
 - ColdFusion / CFML error monitoring use case: https://docs.logister.org/use-cases/cfml-error-monitoring/
 - Docker, GHCR, Docker Hub, and optional Quay self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
 - Error assignment and team triage use case: https://docs.logister.org/use-cases/error-assignment-team-triage/
-- Amazon SES error alert emails and digests use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
+- Amazon SES project notifications use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
 - Self-hosting: https://docs.logister.org/self-hosting/
 - Local development: https://docs.logister.org/local-development/
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
 - GitHub App source integration: https://docs.logister.org/github-app/
+- GitHub source lookup diagnostics: https://docs.logister.org/github-app/source-lookup/
 - Full AI context: https://logister.org/llms-full.txt
 - Docker self-hosting option and registry images: https://docs.logister.org/self-hosting/#docker
 - ClickHouse: https://docs.logister.org/clickhouse/
@@ -56,6 +60,7 @@ Canonical documentation lives on the public docs host:
 - .NET integration: https://docs.logister.org/integrations/dotnet/
 - Python integration: https://docs.logister.org/integrations/python/
 - JavaScript integration: https://docs.logister.org/integrations/javascript/
+- Cloudflare Pages integration: https://docs.logister.org/integrations/cloudflare-pages/
 - Android integration: https://docs.logister.org/integrations/android/
 - iOS integration: https://docs.logister.org/integrations/ios/
 - CFML integration: https://docs.logister.org/integrations/cfml/
@@ -68,11 +73,13 @@ Canonical documentation lives on the public docs host:
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.6.1` or `docker.io/taimoorq/logister:v2.6.1`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.7.0` or `docker.io/taimoorq/logister:v2.7.0`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
 - GitHub App source integration: https://docs.logister.org/github-app/
+- Notification paths: https://docs.logister.org/product/notifications/
+- Data retention: https://docs.logister.org/product/data-retention/
 - Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Product summary
@@ -82,11 +89,11 @@ Canonical documentation lives on the public docs host:
 - Accepts `error`, `log`, `metric`, `transaction`, `span`, and `check_in` events, plus deployment records through `/api/v1/deployments`.
 - Public ingestion APIs accept 1,200 requests per minute per API token per endpoint by default for `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments`; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
 - Provides a cross-app dashboard with server-backed explorer charts, needs-attention summaries, active-project shortcuts, and assigned-to-me links.
-- Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review transaction and span-backed performance, watch scheduled work, receive project error emails and digests, share project visibility, archive projects without losing history, and operate the self-hosted app.
+- Helps teams triage grouped errors, assign owners, filter inboxes by assignee, inspect event context, connect related logs, review transaction and span-backed performance, watch scheduled work, receive purpose-specific project notifications, share project visibility, archive projects without losing history, and operate the self-hosted app.
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
 - Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
 - Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, optional ClickHouse, GHCR and Docker Hub release images, and optional Quay mirrors.
-- Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.
+- Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; project retention settings can keep hot telemetry bounded; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.
 
 ## Primary audience
 - Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.
@@ -115,6 +122,7 @@ Canonical documentation lives on the public docs host:
 - Android coordinates: `org.logister:logister-android:0.1.1`
 - Swift Package Manager source: https://github.com/taimoorq/logister-ios.git
 - iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1
+- Cloudflare Pages integration docs: https://docs.logister.org/integrations/cloudflare-pages/
 - Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 
 ## Self-host source

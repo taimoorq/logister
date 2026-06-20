@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Retention Jobs and Verification | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/data-retention/jobs/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Retention Jobs and Verification | Logister">
+    <meta property="og:description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/data-retention/jobs/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention jobs</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Data retention / Jobs</span><h1>Verify retention before pruning real data.</h1><p>Retention runs through background jobs. Use dry runs and recent archive rows before trusting archive-before-delete on important projects.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/product/data-retention/">Overview</a><a href="/product/data-retention/policy/">Policy settings</a><a href="/product/data-retention/archive-storage/">Archive storage</a><a class="active" href="/product/data-retention/jobs/">Jobs and verification</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Commands</p>
+              <h2>Use manual commands for verification and maintenance windows.</h2>
+              <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#retention-commands">Copy</button></div><pre><code id="retention-commands">DRY_RUN=true bin/rails "logister:telemetry:retention"
+bin/rails "logister:telemetry:archive[ingest_events,30]"
+bin/rails "logister:telemetry:archive[trace_spans,30]"
+CONFIRM=prune bin/rails "logister:telemetry:prune_hot[30]"</code></pre></div>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Verify</p>
+              <h2>Check the UI and the bucket.</h2>
+              <ol><li>Run a dry retention pass and confirm candidate counts.</li><li>Run retention on a low-risk project.</li><li>Open <code>Project &gt; Settings &gt; Data</code> and review Recent archive runs.</li><li>Confirm the <code>.jsonl.gz</code> objects exist in object storage.</li><li>Download one object, decompress it, and confirm each line parses as JSON.</li></ol>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Failures</p>
+              <h2>Retention failures should be visible.</h2>
+              <p>Failed archive runs are recorded with an error message and can send retention failure notifications. If archive-before-delete is enabled, fix storage first, then rerun retention.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

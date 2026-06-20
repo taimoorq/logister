@@ -92,7 +92,8 @@
               <a href="/product/#triage">Triage errors</a>
               <a href="/product/#insights">Project Insights</a>
               <a href="/product/#monitors">Check-in monitors</a>
-              <a href="/product/#notifications">Notifications</a>
+              <a href="/product/notifications/">Notifications</a>
+              <a href="/product/data-retention/">Data retention</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">Integrations</p>
@@ -100,6 +101,7 @@
               <a href="/integrations/dotnet/">.NET</a>
               <a href="/integrations/python/">Python</a>
               <a href="/integrations/javascript/">JavaScript</a>
+              <a href="/integrations/cloudflare-pages/">Cloudflare Pages</a>
               <a href="/integrations/android/">Android</a>
               <a href="/integrations/ios/">iOS</a>
               <a href="/integrations/cfml/">CFML</a>
@@ -210,6 +212,14 @@
                   <strong>Metrics reference</strong>
                   <span>Telemetry families, Insights metric keys, span timing fields, custom metric naming, and useful context dimensions.</span>
                 </a>
+                <a class="doc-link" href="/product/notifications/">
+                  <strong>Email notifications</strong>
+                  <span>Choose the alert path for error triage, project health, workflow routing, digests, delivery controls, and operational notices.</span>
+                </a>
+                <a class="doc-link" href="/product/data-retention/">
+                  <strong>Data retention</strong>
+                  <span>Choose retention windows, configure archive storage, and verify retention jobs without one overloaded page.</span>
+                </a>
               </div>
             </section>
 
@@ -247,13 +257,23 @@
                   </tr>
                   <tr>
                     <td>Insights</td>
-                    <td>A project dashboard for event mix, metrics, spans, recent events, environment filters, release filters, and custom dimensions.</td>
+                    <td>A project dashboard for event types, metrics, spans, recent events, environment filters, release filters, and custom dimensions.</td>
                     <td><a href="/product/#insights">Project Insights</a></td>
                   </tr>
                   <tr>
                     <td>Check-in</td>
                     <td>A heartbeat from scheduled work such as cron jobs, task runners, recurring workers, and maintenance tasks.</td>
                     <td><a href="/product/#monitors">Watch scheduled work</a></td>
+                  </tr>
+                  <tr>
+                    <td>Notification path</td>
+                    <td>A purpose-specific notification settings screen such as error triage, project health, workflow routing, or digests.</td>
+                    <td><a href="/product/notifications/">Email notifications</a></td>
+                  </tr>
+                  <tr>
+                    <td>Retention policy</td>
+                    <td>A project-level cleanup policy for old hot telemetry, optional archive exports, and closed error group retention.</td>
+                    <td><a href="/product/data-retention/">Data retention</a></td>
                   </tr>
                 </tbody>
               </table>

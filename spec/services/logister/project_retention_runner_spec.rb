@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe Logister::ProjectRetentionRunner, type: :model do
+  include ActiveJob::TestHelper
+
   class FakeRetentionArchiveStorage
     attr_reader :uploads
 
@@ -20,6 +22,12 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     end
   end
 
+  class FailingRetentionArchiveStorage
+    def upload(*)
+      raise RuntimeError, "storage unavailable"
+    end
+  end
+
   let(:now) { Time.zone.parse("2026-05-22 12:00:00") }
   let(:project) { create(:project) }
   let(:policy) do
@@ -31,6 +39,8 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
       error_retention_days: 30
     )
   end
+
+  before { clear_enqueued_jobs }
 
   it "reports candidates without deleting data during a dry run" do
     old_log = create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
@@ -110,5 +120,22 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(project.telemetry_archives.completed.pluck(:scope)).to include("hot_events", "trace_spans", "error_events")
     expect(storage.uploads.map { |upload| upload.fetch(:key) }).to all(include("project=#{project.uuid}"))
     expect(policy.reload.last_archive_run_at.to_i).to eq(now.to_i)
+  end
+
+  it "records and notifies retention archive failures" do
+    policy.update!(archive_enabled: true, archive_before_delete: true)
+    create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
+
+    expect {
+      described_class.new(project: project, policy: policy, storage_service: FailingRetentionArchiveStorage.new, now: now).call
+    }.to raise_error(Logister::TelemetryArchiveExporter::Error, /storage unavailable/)
+
+    archive = project.telemetry_archives.failed.sole
+    expect(archive.scope).to eq("hot_events")
+    expect(archive.error_message).to include("storage unavailable")
+    expect(ProjectRetentionNotificationJob).to have_been_enqueued.with(
+      project.id,
+      hash_including("scope" => "hot_events", "error_message" => include("storage unavailable"))
+    )
   end
 end

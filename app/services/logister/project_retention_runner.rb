@@ -116,6 +116,7 @@ module Logister
       end
     rescue TelemetryArchiveExporter::Error => e
       record_archive_failure!(scope, record_type, before, after, e) unless @dry_run
+      notify_archive_failure(scope, record_type, before, after, e) unless @dry_run
       raise
     end
 
@@ -150,6 +151,20 @@ module Logister
         objects: [],
         dry_run: false,
         error_message: "#{error.class}: #{error.message}"
+      )
+    end
+
+    def notify_archive_failure(scope, record_type, before, after, error)
+      ProjectRetentionNotificationJob.perform_later(
+        @project.id,
+        {
+          "scope" => scope.to_s,
+          "record_type" => record_type,
+          "before_at" => before&.utc&.iso8601,
+          "after_at" => after&.utc&.iso8601,
+          "error_class" => error.class.name,
+          "error_message" => error.message
+        }
       )
     end
 

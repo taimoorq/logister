@@ -1,0 +1,17 @@
+<%= @notification_label %> in <%= @project.name %>
+
+Logister noticed activity that matches your email notification settings.
+
+Error: <%= @group.title %>
+<% if @group.subtitle.present? %>Class: <%= @group.subtitle %>
+<% end %>Environment: <%= @group.stage %>
+Severity: <%= @group.severity %>
+Occurrences: <%= number_with_delimiter(@group.occurrence_count) %>
+<% if @metadata["milestone"].present? %>Milestone: <%= number_with_delimiter(@metadata["milestone"]) %>
+<% end %><% if @metadata["release"].present? %>Release: <%= @metadata["release"] %>
+<% end %>
+Open error:
+<%= @group_url %>
+
+Manage project email settings:
+<%= @settings_url %>

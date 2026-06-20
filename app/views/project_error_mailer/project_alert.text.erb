@@ -1,0 +1,14 @@
+<%= @notification_label %> for <%= @project.name %>
+
+Logister noticed a project-level condition that matches your email notification settings.
+
+<% if @metadata.any? %>
+<% @metadata.each do |key, value| %>
+<%= key.to_s.humanize %>: <%= value %>
+<% end %>
+<% end %>
+Open project:
+<%= @project_url %>
+
+Manage project email settings:
+<%= @settings_url %>

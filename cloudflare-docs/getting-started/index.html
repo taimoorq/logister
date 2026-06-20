@@ -114,6 +114,7 @@
                   <a href="/integrations/dotnet/"><span>.NET integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/python/"><span>Python integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/javascript/"><span>JavaScript integration</span><span class="kbd">guide</span></a>
+                  <a href="/integrations/cloudflare-pages/"><span>Cloudflare Pages</span><span class="kbd">guide</span></a>
                   <a href="/integrations/android/"><span>Android integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/ios/"><span>iOS integration</span><span class="kbd">guide</span></a>
                   <a href="/integrations/cfml/"><span>CFML integration</span><span class="kbd">guide</span></a>
@@ -181,6 +182,10 @@
                     <td>JavaScript and TypeScript apps using <code>logister-js</code>, including optional Express middleware and console capture</td>
                   </tr>
                   <tr>
+                    <td><code>Cloudflare Pages</code></td>
+                    <td>Pages sites sending deployment, traffic, or build telemetry through the HTTP API today, with importer settings available for the planned Rails-side Cloudflare fetcher</td>
+                  </tr>
+                  <tr>
                     <td><code>Manual / HTTP API</code></td>
                     <td>Unsupported runtimes, one-off scripts, workers, cron tasks, and custom clients that send direct JSON payloads with a project API token</td>
                   </tr>
@@ -229,6 +234,12 @@
                   <h3>Use the npm package</h3>
                   <p>Best if your app runs on Node or another JavaScript or TypeScript runtime and you want the <code>logister-js</code> client, with optional Express middleware and console capture.</p>
                   <p><a href="/integrations/javascript/">Read JavaScript integration docs</a> or <a href="https://www.npmjs.com/package/logister-js">open the npm package</a>.</p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">Cloudflare Pages</p>
+                  <h3>Use direct HTTP telemetry today</h3>
+                  <p>Best if the project represents a Pages site and you want deployment, build, or traffic signals in Logister.</p>
+                  <p><a href="/integrations/cloudflare-pages/">Read Cloudflare Pages docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">Android</p>
@@ -281,7 +292,7 @@ Check-in visible on the monitors page if you are instrumenting scheduled work</c
               <p class="eyebrow">Insights</p>
               <h2>Open the project Insights tab after your first events arrive.</h2>
               <p>
-                Insights is the fastest way to confirm what Logister is collecting for a project. Open the project, choose the Insights tab, start with the <code>24h</code> window, and check whether the summary, event mix, metric catalog, and recent stream match the data you expected to send.
+                Insights is the fastest way to confirm what Logister is collecting for a project. Open the project, choose the Insights tab, start with the <code>24h</code> window, and check whether the summary, event type breakdown, metric catalog, and recent stream match the data you expected to send.
               </p>
               <ul>
                 <li>If the page only shows errors, add logs, metrics, transactions, spans, or check-ins from your integration so the dashboard has more signals to combine.</li>

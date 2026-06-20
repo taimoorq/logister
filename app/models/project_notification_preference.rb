@@ -1,5 +1,10 @@
 class ProjectNotificationPreference < ApplicationRecord
   DIGEST_FREQUENCIES = %w[none daily weekly].freeze
+  WORKFLOW_MODES = %w[off assigned_to_me all_project].freeze
+  FILTER_ALL = "all"
+  STATUS_FILTERS = %w[all unresolved closed].freeze
+  MIN_THRESHOLD = 1
+  MAX_THRESHOLD = 1_000_000
 
   belongs_to :project
   belongs_to :user
@@ -10,7 +15,19 @@ class ProjectNotificationPreference < ApplicationRecord
   validates :uuid, presence: true, uniqueness: true
   validates :user_id, uniqueness: { scope: :project_id }
   validates :digest_frequency, inclusion: { in: DIGEST_FREQUENCIES }
+  validates :workflow_mode, inclusion: { in: WORKFLOW_MODES }
+  validates :status_filter, inclusion: { in: STATUS_FILTERS }
   validates :digest_send_hour, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 23 }
+  validates :frequent_error_threshold_count,
+            :frequent_error_window_minutes,
+            :project_spike_threshold_count,
+            :project_spike_window_minutes,
+            :performance_p95_threshold_ms,
+            numericality: { only_integer: true, greater_than_or_equal_to: MIN_THRESHOLD, less_than_or_equal_to: MAX_THRESHOLD }
+  validates :immediate_email_limit_per_hour, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 1_000 }
+  validates :quiet_hours_start,
+            :quiet_hours_end,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 23 }
   validates :time_zone, presence: true
   validate :time_zone_is_known
 
@@ -25,6 +42,63 @@ class ProjectNotificationPreference < ApplicationRecord
 
   def digest_enabled?
     digest_frequency.in?(%w[daily weekly])
+  end
+
+  def immediate_email_enabled_for?(kind, error_group: nil, metadata: {}, now: Time.current)
+    return false if quiet_hours_active?(now)
+
+    case kind.to_s
+    when "first_occurrence"
+      first_occurrence_enabled? && error_group_matches_filters?(error_group)
+    when "regression"
+      regression_enabled? && error_group_matches_filters?(error_group)
+    when "frequent_error"
+      frequent_error_enabled? && error_group_matches_filters?(error_group)
+    when "error_milestone"
+      milestone_alerts_enabled? && error_group_matches_filters?(error_group)
+    when "assignment", "status_change"
+      workflow_email_enabled?(kind, error_group: error_group, metadata: metadata)
+    when "monitor_missed", "monitor_recovered"
+      monitor_alerts_enabled?
+    when "project_spike"
+      project_spike_enabled?
+    when "performance_threshold"
+      performance_alerts_enabled?
+    when "release_summary"
+      release_notifications_enabled?
+    when "usage_alert"
+      usage_notifications_enabled?
+    when "retention_failure"
+      retention_notifications_enabled?
+    else
+      false
+    end
+  end
+
+  def immediate_rate_limit_available?(kind, now: Time.current)
+    limit = immediate_email_limit_per_hour.to_i
+    return false if limit.zero?
+
+    EmailNotificationDelivery
+      .where(user: user, project: project, notification_kind: kind.to_s, status: %w[sending sent])
+      .where("created_at >= ?", now - 1.hour)
+      .count < limit
+  end
+
+  def quiet_hours_active?(now = Time.current)
+    return false unless quiet_hours_enabled?
+
+    zone = ActiveSupport::TimeZone[time_zone] || Time.zone
+    hour = now.in_time_zone(zone).hour
+    start_hour = quiet_hours_start.to_i
+    end_hour = quiet_hours_end.to_i
+    return false if start_hour == end_hour
+
+    if start_hour < end_hour
+      hour >= start_hour && hour < end_hour
+    else
+      hour >= start_hour || hour < end_hour
+    end
   end
 
   def due_digest_window(now = Time.current)
@@ -53,6 +127,16 @@ class ProjectNotificationPreference < ApplicationRecord
   def unsubscribe_from_project_email!
     update!(
       first_occurrence_enabled: false,
+      regression_enabled: false,
+      frequent_error_enabled: false,
+      milestone_alerts_enabled: false,
+      workflow_mode: "off",
+      monitor_alerts_enabled: false,
+      project_spike_enabled: false,
+      performance_alerts_enabled: false,
+      release_notifications_enabled: false,
+      usage_notifications_enabled: false,
+      retention_notifications_enabled: false,
       digest_frequency: "none"
     )
   end
@@ -65,7 +149,19 @@ class ProjectNotificationPreference < ApplicationRecord
 
   def normalize_values
     self.digest_frequency = digest_frequency.to_s.presence_in(DIGEST_FREQUENCIES) || "none"
+    self.workflow_mode = workflow_mode.to_s.presence_in(WORKFLOW_MODES) || "assigned_to_me"
     self.digest_send_hour = digest_send_hour.to_i
+    self.frequent_error_threshold_count = frequent_error_threshold_count.to_i
+    self.frequent_error_window_minutes = frequent_error_window_minutes.to_i
+    self.project_spike_threshold_count = project_spike_threshold_count.to_i
+    self.project_spike_window_minutes = project_spike_window_minutes.to_i
+    self.performance_p95_threshold_ms = performance_p95_threshold_ms.to_i
+    self.immediate_email_limit_per_hour = immediate_email_limit_per_hour.to_i
+    self.quiet_hours_start = quiet_hours_start.to_i
+    self.quiet_hours_end = quiet_hours_end.to_i
+    self.environment_filter = normalized_filter(environment_filter)
+    self.severity_filter = normalized_filter(severity_filter)
+    self.status_filter = status_filter.to_s.presence_in(STATUS_FILTERS) || "unresolved"
     self.time_zone = time_zone.to_s.presence || "UTC"
   end
 
@@ -73,5 +169,56 @@ class ProjectNotificationPreference < ApplicationRecord
     return if ActiveSupport::TimeZone[time_zone]
 
     errors.add(:time_zone, "is not supported")
+  end
+
+  def error_group_matches_filters?(group)
+    return true unless group
+
+    return false unless environment_matches?(group.stage)
+    return false unless severity_matches?(group.severity)
+
+    status_matches?(group.status)
+  end
+
+  def workflow_email_enabled?(kind, error_group:, metadata:)
+    return false if workflow_mode == "off"
+    return false unless error_group_matches_filters?(error_group)
+    return true if workflow_mode == "all_project"
+
+    case kind.to_s
+    when "assignment"
+      metadata_user_id(metadata, "assigned_user_id") == user_id
+    when "status_change"
+      error_group&.assigned_user_id == user_id && metadata_user_id(metadata, "actor_user_id") != user_id
+    else
+      false
+    end
+  end
+
+  def environment_matches?(environment)
+    environment_filter == FILTER_ALL || environment_filter == environment.to_s
+  end
+
+  def severity_matches?(severity)
+    severity_filter == FILTER_ALL || severity_filter == severity.to_s
+  end
+
+  def status_matches?(status)
+    case status_filter
+    when "all"
+      true
+    when "closed"
+      status.to_s != "unresolved"
+    else
+      status.to_s == status_filter
+    end
+  end
+
+  def metadata_user_id(metadata, key)
+    Integer(metadata[key] || metadata[key.to_sym], exception: false)
+  end
+
+  def normalized_filter(value)
+    value.to_s.strip.presence || FILTER_ALL
   end
 end

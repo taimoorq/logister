@@ -17,6 +17,7 @@ class ProjectDeployment < ApplicationRecord
 
   before_validation :apply_repository
   before_validation :normalize_fields
+  after_create_commit :enqueue_release_notification
 
   validates :uuid, presence: true, uniqueness: true
   validates :provider, inclusion: { in: PROVIDERS.values }
@@ -155,5 +156,9 @@ class ProjectDeployment < ApplicationRecord
     return if repository_full_name.blank? || release_tag.blank?
 
     "#{Logister::GithubAppConfig.web_url}/#{repository_full_name}/releases/tag/#{ERB::Util.url_encode(release_tag)}"
+  end
+
+  def enqueue_release_notification
+    ProjectReleaseNotificationJob.perform_later(id)
   end
 end

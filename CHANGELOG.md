@@ -2,6 +2,35 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.7.0 - 2026-06-20
+
+### Added
+
+- Added purpose-based project email notifications for reopened errors, frequent error thresholds, error milestones, assignment and status workflow changes, missed and recovered monitors, project-wide spikes, p95 performance thresholds, release summaries, usage warnings, and retention/archive failures.
+- Added a shared project notification dispatcher with per-kind delivery records, dedupe keys, hourly caps, quiet hours, environment/severity/status filters, and SES-compatible notification headers.
+- Added monitor, project health, release, workflow, usage, and retention notification jobs, including retention failure emails when archive exports or cleanup need attention.
+- Added focused public docs for notification paths, data retention and archive jobs, GitHub source lookup diagnostics, and Cloudflare Pages telemetry/importer settings.
+- Added durable docs-authoring guidance for hub pages, focused subpages, and removing completed planning artifacts after shipped behavior is represented in product docs.
+
+### Changed
+
+- Reworked project notification settings into purpose-specific paths so users choose the reason they want email before tuning individual controls.
+- Reordered the main dashboard into Overview and Projects tabs, with the Explorer and Needs Attention areas prioritized side by side and project signal summaries moved to the Projects tab.
+- Simplified Project Home by removing redundant summary cards and restoring the error-groups view where recent errors had overloaded the page.
+- Updated public self-hosting references for the `v2.7.0` release image tag.
+- Removed completed planning documents that had become stale after the shipped behavior moved into the app, changelog, docs, tests, and agent guidance.
+
+### Fixed
+
+- Improved GitHub source lookup troubleshooting by documenting attempted repository, path, ref, and runtime-prefix failures such as doubled `app/app` paths.
+- Wrapped telemetry archive upload errors with object-key context and surfaced archive failures through retention notification jobs.
+- Removed duplicate dashboard/event mix and environment visualizations that repeated other dashboard signals.
+
+### Upgrade Notes
+
+- Run the Rails database migrations before starting the new version; this release expands `project_notification_preferences` with notification path, threshold, filter, quiet-hours, and delivery-limit settings.
+- Keep at least one worker process running and SMTP configured before enabling project notification paths that send email.
+
 ## v2.6.1 - 2026-06-19
 
 ### Added

@@ -3,8 +3,12 @@
 require "rails_helper"
 
 RSpec.describe ErrorGroupingService, type: :model do
+  include ActiveJob::TestHelper
+
   let(:project) { projects(:one) }
   let(:api_key) { api_keys(:one) }
+
+  before { clear_enqueued_jobs }
 
   describe ".call" do
     it "returns nil for metric events" do
@@ -44,6 +48,7 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(event.reload.error_group_id).to eq(group.id)
       occurrence = ErrorOccurrence.find_by!(error_group: group, ingest_event: event)
       expect(occurrence.ingest_event_occurred_at).to be_within(1.second).of(event.occurred_at)
+      expect(ProjectErrorFirstOccurrenceAlertJob).to have_been_enqueued.with(group.id)
     end
 
     it "groups second event with same fingerprint into same ErrorGroup" do
@@ -70,6 +75,40 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(group2.latest_event_id).to eq(event2.id)
       expect(group2.latest_event_occurred_at).to be_within(1.second).of(event2.occurred_at)
       expect(ErrorOccurrence.where(error_group: group2).count).to eq(2)
+      expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group2.id, "frequent_error", hash_including("event_id" => event2.id))
+    end
+
+    it "enqueues a regression alert when a closed group receives a new occurrence" do
+      group = create(:error_group, :resolved, project: project, fingerprint: "resolved-fp", occurrence_count: 1)
+      event = IngestEvent.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "Resolved came back",
+        fingerprint: "resolved-fp",
+        occurred_at: Time.current
+      )
+
+      described_class.call(event)
+
+      expect(group.reload).to be_unresolved
+      expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group.id, "regression", hash_including("reopen_count" => 1))
+    end
+
+    it "enqueues milestone alerts at notable occurrence counts" do
+      group = create(:error_group, project: project, fingerprint: "milestone-fp", occurrence_count: 9)
+      event = IngestEvent.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "Milestone reached",
+        fingerprint: "milestone-fp",
+        occurred_at: Time.current
+      )
+
+      described_class.call(event)
+
+      expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group.id, "error_milestone", hash_including("milestone" => 10))
     end
 
     it "derives fingerprint from first line of message when fingerprint blank" do

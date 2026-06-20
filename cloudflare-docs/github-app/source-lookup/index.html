@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>GitHub Source Lookup Diagnostics | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Read Logister GitHub source lookup diagnostics and fix repository mapping, runtime path prefix, source root, branch, ref, and sync problems.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/github-app/source-lookup/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="GitHub Source Lookup Diagnostics | Logister">
+    <meta property="og:description" content="Read Logister GitHub source lookup diagnostics and fix repository mapping, runtime path prefix, source root, branch, ref, and sync problems.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/github-app/source-lookup/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Source lookup</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/github-app/">GitHub App</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">GitHub App / Source lookup</span><h1>Use attempted lookups to fix source mapping.</h1><p>A connected repository is necessary, but source lookup also needs the reported stack path to map to a real file at a real Git ref.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">GitHub App</p><a href="/github-app/">Setup</a><a class="active" href="/github-app/source-lookup/">Source lookup diagnostics</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Read the diagnostic</p>
+              <h2>The attempted lookup shows repository, path, ref, and reason.</h2>
+              <div class="output-block"><div class="output-head"><span class="output-label">Example</span></div><pre><code>taimoorq/newsfeedreader  app/app/controllers/feeds_controller.rb  main  not found</code></pre></div>
+              <p>In that example, the doubled <code>app/app</code> path usually means the runtime path prefix or repository source root is adding <code>app</code> twice.</p>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Fix order</p>
+              <h2>Check the mapping before changing code.</h2>
+              <ol><li>Open <code>Project &gt; Settings &gt; Integrations &gt; Source repositories</code>.</li><li>Confirm the repository is connected, not only synced.</li><li>Click <code>Sync repositories</code> if GitHub App access, repository selection, or permissions changed.</li><li>Set Runtime path prefix to the deployed prefix shown in stack frames, such as <code>/app</code>.</li><li>Set Repository source root only for a real subfolder in the repo, such as <code>packages/api</code>. Leave it blank when source files are at the repo root.</li><li>Confirm the default branch or event commit/ref contains the file.</li></ol>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Common symptoms</p>
+              <h2>Most failures are mapping or ref mismatches.</h2>
+              <table><thead><tr><th>Message</th><th>Likely fix</th></tr></thead><tbody><tr><td>No source repository mapping exists</td><td>Syncing is not enough. Connect a repository mapping for the project.</td></tr><tr><td>Mappings waiting for App access</td><td>Install or link the GitHub App installation, accept permission changes, then sync repositories.</td></tr><tr><td>File was not found</td><td>Check runtime path prefix, source root, default branch, and event commit/ref.</td></tr><tr><td>Wrong file or stale source</td><td>Send <code>repository</code>, <code>commit_sha</code>, and <code>branch</code> from the SDK or CI deployment record.</td></tr></tbody></table>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

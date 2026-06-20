@@ -21,9 +21,12 @@ class ErrorGroupingService
     return nil unless @event.error?
 
     fingerprint = derive_fingerprint
-    group, created = upsert_group(fingerprint)
+    group, created, regressed = upsert_group(fingerprint)
     link_occurrence(group)
     ProjectErrorFirstOccurrenceAlertJob.perform_later(group.id) if created
+    ProjectErrorGroupNotificationJob.perform_later(group.id, "regression", regression_metadata(group)) if regressed
+    ProjectErrorGroupNotificationJob.perform_later(group.id, "error_milestone", milestone_metadata(group)) if milestone_reached?(group.occurrence_count)
+    ProjectErrorGroupNotificationJob.perform_later(group.id, "frequent_error", frequent_error_metadata) unless created
     group
   end
 
@@ -40,6 +43,8 @@ class ErrorGroupingService
     group = @project.error_groups.find_or_initialize_by(fingerprint: fingerprint)
 
     created = group.new_record?
+
+    regressed = false
 
     if created
       # Build initial state from the event
@@ -62,13 +67,14 @@ class ErrorGroupingService
       )
       group.save!
     else
+      regressed = !group.unresolved?
       group.record_occurrence!(@event)
     end
 
     # Back-link on the ingest_event row so we can JOIN cheaply
     @event.update_column(:error_group_id, group.id)
 
-    [ group, created ]
+    [ group, created, regressed ]
   end
 
   def link_occurrence(group)
@@ -79,5 +85,37 @@ class ErrorGroupingService
       occ.occurred_at = @event.occurred_at
       occ.ingest_event_occurred_at = @event.occurred_at
     end
+  end
+
+  def milestone_reached?(count)
+    count == 10 || count == 100 || count == 1_000 || (count > 1_000 && (count % 1_000).zero?)
+  end
+
+  def regression_metadata(group)
+    {
+      "event_id" => @event.id,
+      "event_uuid" => @event.uuid,
+      "occurred_at" => @event.occurred_at.utc.iso8601,
+      "reopen_count" => group.reopen_count,
+      "release" => IngestEvent.release(@event)
+    }.compact
+  end
+
+  def milestone_metadata(group)
+    {
+      "event_id" => @event.id,
+      "event_uuid" => @event.uuid,
+      "occurred_at" => @event.occurred_at.utc.iso8601,
+      "milestone" => group.occurrence_count
+    }
+  end
+
+  def frequent_error_metadata
+    {
+      "event_id" => @event.id,
+      "event_uuid" => @event.uuid,
+      "occurred_at" => @event.occurred_at.utc.iso8601,
+      "bucket" => @event.occurred_at.utc.strftime("%Y%m%d%H")
+    }
   end
 end

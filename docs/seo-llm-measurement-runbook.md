@@ -7,7 +7,7 @@ Use this after public releases and docs changes to confirm Logister is discovera
 Run these checks after a release reaches production and the docs deploy has finished:
 
 - Confirm the homepage, About page, public docs, `llms.txt`, `llms-full.txt`, `robots.txt`, and `sitemap.xml` return `200` responses.
-- Confirm the homepage and docs pages use the current product language from [seo-llm-discovery-plan.md](seo-llm-discovery-plan.md).
+- Confirm the homepage, README, public docs, changelog, and AI-readable files use the same current product language.
 - Confirm GitHub Releases show the new version as the latest release.
 - Confirm the GHCR and Docker Hub packages are public and the versioned Docker image can be pulled without authentication from both registries.
 - Confirm `README.md`, `CHANGELOG.md`, public docs, and AI-readable files mention the same current version.
@@ -126,13 +126,13 @@ Suggested checks:
 
 ```bash
 gh repo view taimoorq/logister --json description,homepageUrl,repositoryTopics,url
-gh release view v2.6.1 --json tagName,isDraft,isPrerelease,publishedAt,url
+gh release view v2.7.0 --json tagName,isDraft,isPrerelease,publishedAt,url
 gh api /user/packages/container/logister --jq '{name, visibility, html_url}'
 gh api /user/packages/container/logister/versions --jq '.[] | {id, tags: .metadata.container.tags, updated_at}'
-docker pull ghcr.io/taimoorq/logister:v2.6.1
-docker pull docker.io/taimoorq/logister:v2.6.1
+docker pull ghcr.io/taimoorq/logister:v2.7.0
+docker pull docker.io/taimoorq/logister:v2.7.0
 # Optional, when the Quay.io mirror is configured:
-docker pull quay.io/taimoorq/logister:v2.6.1
+docker pull quay.io/taimoorq/logister:v2.7.0
 ```
 
 ## Package and SDK Checks

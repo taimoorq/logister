@@ -3,6 +3,10 @@
 require "rails_helper"
 
 RSpec.describe ProjectDeployment, type: :model do
+  include ActiveJob::TestHelper
+
+  before { clear_enqueued_jobs }
+
   it "normalizes repository URLs and commit SHAs" do
     deployment = build(
       :project_deployment,
@@ -76,5 +80,11 @@ RSpec.describe ProjectDeployment, type: :model do
     expect(deployment.pull_request_url).to eq("https://github.com/acme/storefront/pull/42")
     expect(deployment.release_url).to eq("https://github.com/acme/storefront/releases/tag/v2026.06.18")
     expect(deployment.compare_url(previous)).to eq("https://github.com/acme/storefront/compare/abc1234...def5678")
+  end
+
+  it "queues a release summary notification when a deployment is created" do
+    deployment = create(:project_deployment)
+
+    expect(ProjectReleaseNotificationJob).to have_been_enqueued.with(deployment.id)
   end
 end

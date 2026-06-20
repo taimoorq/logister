@@ -1065,7 +1065,29 @@ CREATE TABLE public.project_notification_preferences (
     time_zone character varying DEFAULT 'UTC'::character varying NOT NULL,
     send_empty_digest boolean DEFAULT false NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    regression_enabled boolean DEFAULT true NOT NULL,
+    frequent_error_enabled boolean DEFAULT false NOT NULL,
+    frequent_error_threshold_count integer DEFAULT 25 NOT NULL,
+    frequent_error_window_minutes integer DEFAULT 60 NOT NULL,
+    milestone_alerts_enabled boolean DEFAULT false NOT NULL,
+    workflow_mode character varying DEFAULT 'assigned_to_me'::character varying NOT NULL,
+    monitor_alerts_enabled boolean DEFAULT true NOT NULL,
+    project_spike_enabled boolean DEFAULT false NOT NULL,
+    project_spike_threshold_count integer DEFAULT 100 NOT NULL,
+    project_spike_window_minutes integer DEFAULT 15 NOT NULL,
+    performance_alerts_enabled boolean DEFAULT false NOT NULL,
+    performance_p95_threshold_ms integer DEFAULT 1000 NOT NULL,
+    release_notifications_enabled boolean DEFAULT false NOT NULL,
+    usage_notifications_enabled boolean DEFAULT true NOT NULL,
+    retention_notifications_enabled boolean DEFAULT true NOT NULL,
+    environment_filter character varying DEFAULT 'all'::character varying NOT NULL,
+    severity_filter character varying DEFAULT 'all'::character varying NOT NULL,
+    status_filter character varying DEFAULT 'unresolved'::character varying NOT NULL,
+    immediate_email_limit_per_hour integer DEFAULT 10 NOT NULL,
+    quiet_hours_enabled boolean DEFAULT false NOT NULL,
+    quiet_hours_start integer DEFAULT 22 NOT NULL,
+    quiet_hours_end integer DEFAULT 7 NOT NULL
 );
 
 
@@ -2568,6 +2590,20 @@ CREATE INDEX idx_project_memberships_user_project ON public.project_memberships 
 --
 
 CREATE INDEX idx_project_notification_preferences_digest_due ON public.project_notification_preferences USING btree (digest_frequency, digest_send_hour);
+
+
+--
+-- Name: idx_project_notification_preferences_monitors; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_notification_preferences_monitors ON public.project_notification_preferences USING btree (project_id, monitor_alerts_enabled);
+
+
+--
+-- Name: idx_project_notification_preferences_regression; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_notification_preferences_regression ON public.project_notification_preferences USING btree (project_id, regression_enabled);
 
 
 --
@@ -9838,6 +9874,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260620183000'),
 ('20260618170000'),
 ('20260618161000'),
 ('20260618152000'),

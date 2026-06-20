@@ -82,11 +82,13 @@ class ErrorGroup < ApplicationRecord
   end
 
   def assign_to!(user, assigned_by:)
+    previous_assignee_id = assigned_user_id
     update!(
       assignee: user,
       assigned_by: assigned_by,
       assigned_at: Time.current
     )
+    notify_assignment_change!(assigned_by) if previous_assignee_id != user&.id
   end
 
   def clear_assignment!
@@ -194,5 +196,18 @@ class ErrorGroup < ApplicationRecord
   def derive_stage(event)
     ctx = event.context.is_a?(Hash) ? event.context : {}
     ctx["environment"].presence || ctx[:environment].presence || "production"
+  end
+
+  def notify_assignment_change!(actor)
+    ProjectWorkflowNotificationJob.perform_later(
+      id,
+      "assignment",
+      {
+        "assigned_user_id" => assigned_user_id,
+        "actor_user_id" => actor&.id,
+        "actor_name" => actor&.name.presence || actor&.email,
+        "assigned_at" => assigned_at&.utc&.iso8601
+      }.compact
+    )
   end
 end

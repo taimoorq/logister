@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Notification Setup Requirements | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Prepare SMTP, Sidekiq workers, project access, and scheduled jobs before relying on Logister project notification emails.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/notifications/setup/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Notification Setup Requirements | Logister">
+    <meta property="og:description" content="Prepare SMTP, Sidekiq workers, project access, and scheduled jobs before relying on Logister project notification emails.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/notifications/setup/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Notification setup</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/notifications/">Notifications</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Notifications / Setup</span><h1>Make the delivery path healthy before tuning preferences.</h1><p>Use this checklist when a self-hosted Logister install should send project emails.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Notifications</p><a href="/product/notifications/">Overview</a><a class="active" href="/product/notifications/setup/">Setup requirements</a><a href="/product/notifications/error-triage/">Error triage</a><a href="/product/notifications/project-health/">Project health</a><a href="/product/notifications/workflow-routing/">Workflow routing</a><a href="/product/notifications/digests-delivery/">Digests and delivery</a><a href="/product/notifications/operations/">Operational notices</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Required path</p>
+              <h2>Four pieces have to line up.</h2>
+              <table><thead><tr><th>Piece</th><th>Check</th></tr></thead><tbody><tr><td>SMTP</td><td>Set <code>LOGISTER_EMAIL_FROM</code> and SMTP or SES variables. Verify auth/password reset mail first.</td></tr><tr><td>Worker</td><td>Run <code>bundle exec sidekiq -C config/sidekiq.yml</code> with the same secrets as the web process.</td></tr><tr><td>Project access</td><td>The recipient must be a project owner or project member.</td></tr><tr><td>Scheduled jobs</td><td>Digest, monitor, health, and retention sweeps need a scheduler or job setup that enqueues them regularly.</td></tr></tbody></table>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Verify</p>
+              <h2>Test from simplest mail to project-specific mail.</h2>
+              <ol><li>Send a password reset email.</li><li>Start the worker and confirm it connects to Redis.</li><li>Create a new error group with a unique fingerprint.</li><li>Check worker logs and <code>EmailNotificationDelivery</code> records if the message does not arrive.</li></ol>
+              <p>For exact SMTP variables, read <a href="/deployment/#email">deployment email settings</a>. For symptoms, read <a href="/troubleshooting/#email">email troubleshooting</a>.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

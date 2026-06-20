@@ -1,56 +1,366 @@
-    <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
-             id="notifications"
-             <%= tag.attributes(data: product_tour_step_data(tour_group, :email_notifications)) %>>
-      <h2 class="text-base font-bold text-slate-900 mb-2">Email notifications</h2>
-      <p class="text-slate-600 text-sm mb-4">
-        Choose how Logister emails you about errors in this project.
+<% active_notification_path = @notification_path.presence || "overview" %>
+<% notification_settings_path = ->(path) {
+     settings_project_path(
+       @project,
+       { section: "notifications" }.merge(path == "overview" ? {} : { notification_path: path })
+     )
+   } %>
+<% notification_purposes = [
+     {
+       key: "errors",
+       icon: :inbox,
+       title: "Error triage alerts",
+       intent: "I want email when an error group needs attention.",
+       details: "New groups, regressions, milestones, and noisy single errors."
+     },
+     {
+       key: "health",
+       icon: :performance,
+       title: "Project health alerts",
+       intent: "I want email when the whole project looks unhealthy.",
+       details: "Project-wide spikes, slow transactions, and missed monitors."
+     },
+     {
+       key: "workflow",
+       icon: :team,
+       title: "Team workflow routing",
+       intent: "I want email for assigned work or status changes.",
+       details: "Assignment emails, status-change emails, and matching rules."
+     },
+     {
+       key: "reports",
+       icon: :calendar,
+       title: "Digest summaries",
+       intent: "I want one scheduled summary instead of many alerts.",
+       details: "Daily or weekly digest timing."
+     },
+     {
+       key: "delivery",
+       icon: :mail,
+       title: "Delivery limits",
+       intent: "I want fewer emails or quiet hours.",
+       details: "Hourly limits, quiet hours, and the time zone they use."
+     },
+     {
+       key: "operations",
+       icon: :deployments,
+       title: "Operational notices",
+       intent: "I want email about deploys and platform jobs.",
+       details: "Deployments, intake health, rate limits, retention, and archives."
+     }
+   ] %>
+<% active_purpose = notification_purposes.find { |purpose| purpose[:key] == active_notification_path } %>
+
+<section id="notifications"
+         class="space-y-5"
+         <%= tag.attributes(data: product_tour_step_data(tour_group, :email_notifications)) %>>
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <h2 class="text-lg font-bold text-slate-900">Email notifications</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        Start with the reason you want email, then tune only the settings for that purpose.
       </p>
+    </div>
+  </div>
 
-      <%= form_with model: @notification_preference,
-                    url: project_notification_preference_path(@project),
-                    method: :patch,
-                    data: { turbo: false } do |f| %>
-        <div class="space-y-4">
-          <label class="flex items-start gap-3">
-            <%= f.check_box :first_occurrence_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
-            <span>
-              <span class="block text-sm font-semibold text-slate-900">First occurrence alerts</span>
-              <span class="block text-sm text-slate-600">Email me when a new error type first appears.</span>
-            </span>
-          </label>
+  <nav class="mobile-x-scroll flex max-w-full flex-nowrap gap-2 pb-1" aria-label="Notification settings paths">
+    <% overview_active = active_notification_path == "overview" %>
+    <%= link_to(notification_settings_path.call("overview"),
+                class: "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold no-underline #{overview_active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}",
+                aria: { current: ("page" if overview_active) }) do %>
+      <%= app_icon(:notifications, css: "h-3.5 w-3.5 shrink-0") %>
+      <span>Start</span>
+    <% end %>
 
+    <% notification_purposes.each do |purpose| %>
+      <% active = purpose[:key] == active_notification_path %>
+      <%= link_to(notification_settings_path.call(purpose[:key]),
+                  class: "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold no-underline #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}",
+                  aria: { current: ("page" if active) }) do %>
+        <%= app_icon(purpose[:icon], css: "h-3.5 w-3.5 shrink-0") %>
+        <span><%= purpose[:title] %></span>
+      <% end %>
+    <% end %>
+  </nav>
+
+  <% if active_notification_path == "overview" %>
+    <section class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3" aria-label="Notification purposes">
+      <% notification_purposes.each do |purpose| %>
+        <%= link_to(notification_settings_path.call(purpose[:key]),
+                    class: "group flex min-h-40 flex-col rounded-lg border border-slate-200 bg-white p-5 text-left no-underline shadow-sm transition hover:border-blue-200 hover:bg-blue-50/60") do %>
+          <span class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-600 group-hover:border-blue-200 group-hover:bg-white group-hover:text-blue-700">
+            <%= app_icon(purpose[:icon], css: "h-5 w-5") %>
+          </span>
+          <span class="mt-4 text-base font-semibold text-slate-900"><%= purpose[:title] %></span>
+          <span class="mt-1 text-sm leading-6 text-slate-600"><%= purpose[:intent] %></span>
+          <span class="mt-3 text-xs leading-5 text-slate-500"><%= purpose[:details] %></span>
+          <span class="mt-auto pt-4 text-sm font-semibold text-blue-700">Configure</span>
+        <% end %>
+      <% end %>
+    </section>
+  <% else %>
+    <%= form_with model: @notification_preference,
+                  url: project_notification_preference_path(@project, notification_path: active_notification_path),
+                  method: :patch,
+                  data: { turbo: false } do |f| %>
+      <%= hidden_field_tag :notification_path, active_notification_path %>
+
+      <section class="card">
+        <div class="mb-5 flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <%= f.label :digest_frequency, "Digest frequency", class: "form-label" %>
-            <%= f.select :digest_frequency,
-                         options_for_select([ [ "No digest", "none" ], [ "Daily", "daily" ], [ "Weekly", "weekly" ] ], @notification_preference.digest_frequency),
-                         {},
-                         class: "form-input" %>
+            <p class="text-xs font-bold uppercase tracking-wider text-blue-700">Notification path</p>
+            <h3 class="mt-1 text-base font-bold text-slate-900"><%= active_purpose[:title] %></h3>
+            <p class="mt-1 text-sm text-slate-600"><%= active_purpose[:intent] %></p>
+          </div>
+          <%= link_to "Change purpose",
+                      notification_settings_path.call("overview"),
+                      class: "inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+        </div>
+
+        <% case active_notification_path %>
+        <% when "errors" %>
+          <div class="divide-y divide-slate-200 border-y border-slate-200">
+            <label class="flex gap-3 py-4">
+              <%= f.check_box :first_occurrence_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">New error groups</span>
+                <span class="block text-sm text-slate-600">Send once when Logister creates a new error group.</span>
+              </span>
+            </label>
+
+            <label class="flex gap-3 py-4">
+              <%= f.check_box :regression_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Reopened error groups</span>
+                <span class="block text-sm text-slate-600">Send when a resolved, ignored, or archived error group receives a new event.</span>
+              </span>
+            </label>
+
+            <label class="flex gap-3 py-4">
+              <%= f.check_box :milestone_alerts_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Lifetime count milestones</span>
+                <span class="block text-sm text-slate-600">Send when one error group's lifetime count reaches 10, 100, 1,000, or another 1,000.</span>
+              </span>
+            </label>
+
+            <div class="py-4">
+              <label class="flex gap-3">
+                <%= f.check_box :frequent_error_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <span>
+                  <span class="block text-sm font-semibold text-slate-900">Single-error volume threshold</span>
+                  <span class="block text-sm text-slate-600">Send when one error group receives the event count below inside the window below.</span>
+                </span>
+              </label>
+
+              <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <%= f.label :frequent_error_threshold_count, "Error-group event count", class: "form-label" %>
+                  <%= f.number_field :frequent_error_threshold_count, min: 1, class: "form-input" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">Minimum events for one error group.</p>
+                </div>
+                <div>
+                  <%= f.label :frequent_error_window_minutes, "Error-group window minutes", class: "form-label" %>
+                  <%= f.number_field :frequent_error_window_minutes, min: 1, class: "form-input" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">Lookback window for that one error group.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <p class="mt-4 text-sm text-slate-600">
+            Environment, severity, and status matching live in
+            <%= link_to "Team workflow routing", notification_settings_path.call("workflow"), class: "inline-link" %>.
+          </p>
+        <% when "health" %>
+          <div class="divide-y divide-slate-200 border-y border-slate-200">
+            <div class="py-4">
+              <label class="flex gap-3">
+                <%= f.check_box :project_spike_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <span>
+                  <span class="block text-sm font-semibold text-slate-900">Project-wide error spike</span>
+                  <span class="block text-sm text-slate-600">Send when the whole project receives the event count below inside the window below.</span>
+                </span>
+              </label>
+
+              <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <%= f.label :project_spike_threshold_count, "Project event count", class: "form-label" %>
+                  <%= f.number_field :project_spike_threshold_count, min: 1, class: "form-input" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">Minimum total error events across the project.</p>
+                </div>
+                <div>
+                  <%= f.label :project_spike_window_minutes, "Project window minutes", class: "form-label" %>
+                  <%= f.number_field :project_spike_window_minutes, min: 1, class: "form-input" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">Lookback window for project-wide error events.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="py-4">
+              <label class="flex gap-3">
+                <%= f.check_box :performance_alerts_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <span>
+                  <span class="block text-sm font-semibold text-slate-900">Project p95 latency</span>
+                  <span class="block text-sm text-slate-600">Send when project p95 transaction duration over the last 15 minutes is above the limit below.</span>
+                </span>
+              </label>
+
+              <div class="mt-3 max-w-sm">
+                <%= f.label :performance_p95_threshold_ms, "P95 limit (ms)", class: "form-label" %>
+                <%= f.number_field :performance_p95_threshold_ms, min: 1, class: "form-input" %>
+                <p class="mt-1 text-xs leading-5 text-slate-500">Maximum allowed p95 transaction duration.</p>
+              </div>
+            </div>
+
+            <label class="flex gap-3 py-4">
+              <%= f.check_box :monitor_alerts_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Check-in monitors</span>
+                <span class="block text-sm text-slate-600">Send when a check-in monitor is missed or later recovers.</span>
+              </span>
+            </label>
+          </div>
+        <% when "workflow" %>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <%= f.label :digest_send_hour, "Send hour", class: "form-label" %>
+              <%= f.label :workflow_mode, "Workflow emails", class: "form-label" %>
+              <%= f.select :workflow_mode,
+                           options_for_select([ [ "Off", "off" ], [ "Only errors assigned to me", "assigned_to_me" ], [ "All matching workflow changes", "all_project" ] ], @notification_preference.workflow_mode),
+                           {},
+                           class: "form-input" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Assignment and status-change emails for matching error groups.</p>
+            </div>
+            <div>
+              <%= f.label :environment_filter, "Environment match", class: "form-label" %>
+              <%= f.text_field :environment_filter, class: "form-input", placeholder: "all" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Use all, or one environment name like production.</p>
+            </div>
+            <div>
+              <%= f.label :severity_filter, "Severity match", class: "form-label" %>
+              <%= f.text_field :severity_filter, class: "form-input", placeholder: "all" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Use all, or one severity like error.</p>
+            </div>
+            <div>
+              <%= f.label :status_filter, "Status match", class: "form-label" %>
+              <%= f.select :status_filter,
+                           options_for_select([ [ "Unresolved", "unresolved" ], [ "Closed", "closed" ], [ "All", "all" ] ], @notification_preference.status_filter),
+                           {},
+                           class: "form-input" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Unresolved, closed, or every status.</p>
+            </div>
+          </div>
+        <% when "reports" %>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <%= f.label :digest_frequency, "Digest frequency", class: "form-label" %>
+              <%= f.select :digest_frequency,
+                           options_for_select([ [ "No digest", "none" ], [ "Daily", "daily" ], [ "Weekly", "weekly" ] ], @notification_preference.digest_frequency),
+                           {},
+                           class: "form-input" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">No digest, one per day, or one per week.</p>
+            </div>
+            <div>
+              <%= f.label :digest_send_hour, "Digest send hour", class: "form-label" %>
               <%= f.select :digest_send_hour,
                            options_for_select((0..23).map { |hour| [ "#{hour.to_s.rjust(2, "0")}:00", hour ] }, @notification_preference.digest_send_hour),
                            {},
                            class: "form-input" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Local hour when digest emails may send.</p>
             </div>
             <div>
-              <%= f.label :time_zone, "Time zone", class: "form-label" %>
+              <%= f.label :time_zone, "Email schedule time zone", class: "form-label" %>
               <%= f.time_zone_select :time_zone,
                                      nil,
                                      {},
                                      class: "form-input" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Used by digest summaries and quiet hours.</p>
+            </div>
+          </div>
+        <% when "delivery" %>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <%= f.label :immediate_email_limit_per_hour, "Hourly immediate email limit", class: "form-label" %>
+              <%= f.number_field :immediate_email_limit_per_hour, min: 0, class: "form-input" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Maximum immediate emails per notification type each hour. Use 0 to block immediate emails.</p>
+            </div>
+            <div>
+              <%= f.label :time_zone, "Email schedule time zone", class: "form-label" %>
+              <%= f.time_zone_select :time_zone,
+                                     nil,
+                                     {},
+                                     class: "form-input" %>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Used by digest summaries and quiet hours.</p>
             </div>
           </div>
 
-          <% if @notification_preference.errors.any? %>
-            <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
-              <%= @notification_preference.errors.full_messages.to_sentence %>
-            </div>
-          <% end %>
+          <div class="mt-5 border-t border-slate-200 pt-5">
+            <label class="flex gap-3">
+              <%= f.check_box :quiet_hours_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Pause immediate email during quiet hours</span>
+                <span class="block text-sm text-slate-600">Digest emails still use the schedule in Digest summaries.</span>
+              </span>
+            </label>
 
-          <%= f.submit "Save email settings", class: "btn-primary" %>
+            <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <%= f.label :quiet_hours_start, "Quiet starts", class: "form-label" %>
+                <%= f.select :quiet_hours_start,
+                             options_for_select((0..23).map { |hour| [ "#{hour.to_s.rjust(2, "0")}:00", hour ] }, @notification_preference.quiet_hours_start),
+                             {},
+                             class: "form-input" %>
+                <p class="mt-1 text-xs leading-5 text-slate-500">Local hour when immediate emails pause.</p>
+              </div>
+              <div>
+                <%= f.label :quiet_hours_end, "Quiet ends", class: "form-label" %>
+                <%= f.select :quiet_hours_end,
+                             options_for_select((0..23).map { |hour| [ "#{hour.to_s.rjust(2, "0")}:00", hour ] }, @notification_preference.quiet_hours_end),
+                             {},
+                             class: "form-input" %>
+                <p class="mt-1 text-xs leading-5 text-slate-500">Local hour when immediate emails resume.</p>
+              </div>
+            </div>
+          </div>
+        <% when "operations" %>
+          <div class="divide-y divide-slate-200 border-y border-slate-200">
+            <label class="flex gap-3 py-4">
+              <%= f.check_box :release_notifications_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Deployment summary emails</span>
+                <span class="block text-sm text-slate-600">Send after a deployment is recorded for this project.</span>
+              </span>
+            </label>
+
+            <label class="flex gap-3 py-4">
+              <%= f.check_box :usage_notifications_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Intake and quota warnings</span>
+                <span class="block text-sm text-slate-600">Send when event intake, rate limits, or quota checks need attention.</span>
+              </span>
+            </label>
+
+            <label class="flex gap-3 py-4">
+              <%= f.check_box :retention_notifications_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <span>
+                <span class="block text-sm font-semibold text-slate-900">Retention and archive failures</span>
+                <span class="block text-sm text-slate-600">Send when retention cleanup or archive export fails.</span>
+              </span>
+            </label>
+          </div>
+        <% end %>
+
+        <% if @notification_preference.errors.any? %>
+          <div class="mt-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+            <%= @notification_preference.errors.full_messages.to_sentence %>
+          </div>
+        <% end %>
+
+        <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-slate-500">Saving updates this notification path only.</p>
+          <%= f.submit "Save #{active_purpose[:title].downcase}", class: "btn-primary" %>
         </div>
-      <% end %>
-    </article>
+      </section>
+    <% end %>
+  <% end %>
+</section>

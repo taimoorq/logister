@@ -2,14 +2,11 @@ import { Controller } from "@hotwired/stimulus"
 import * as echarts from "echarts"
 import { EVENT_COLORS } from "charts/telemetry_timeline"
 
-const FALLBACK_COLORS = ["#2563eb", "#059669", "#ef4444", "#8b5cf6", "#d97706", "#0f766e", "#475569"]
-
 export default class extends Controller {
   static targets = [
     "timelineChart",
     "eventTypeChart",
     "projectChart",
-    "environmentChart",
     "summary",
     "filters",
     "openEventsLink",
@@ -46,7 +43,6 @@ export default class extends Controller {
       this.timelineChartTargets.forEach((target) => this.resizeObserver.observe(target))
       this.eventTypeChartTargets.forEach((target) => this.resizeObserver.observe(target))
       this.projectChartTargets.forEach((target) => this.resizeObserver.observe(target))
-      this.environmentChartTargets.forEach((target) => this.resizeObserver.observe(target))
     }
 
     this.syncOverviewHeight()
@@ -96,12 +92,10 @@ export default class extends Controller {
     if (this.hasTimelineChartTarget) this.charts.timeline = this.initializeChart(this.timelineChartTarget)
     if (this.hasEventTypeChartTarget) this.charts.eventTypes = this.initializeChart(this.eventTypeChartTarget)
     if (this.hasProjectChartTarget) this.charts.projects = this.initializeChart(this.projectChartTarget)
-    if (this.hasEnvironmentChartTarget) this.charts.environments = this.initializeChart(this.environmentChartTarget)
 
     this.charts.timeline?.on("click", (params) => this.toggleFilter("occurredOn", params.data?.filterValue))
     this.charts.eventTypes?.on("click", (params) => this.toggleFilter("eventType", params.data?.filterValue))
     this.charts.projects?.on("click", (params) => this.toggleFilter("projectId", params.data?.filterValue))
-    this.charts.environments?.on("click", (params) => this.toggleFilter("environment", params.data?.filterValue))
   }
 
   initializeChart(target) {
@@ -180,7 +174,6 @@ export default class extends Controller {
     this.renderTimeline(data)
     this.renderEventTypes(data)
     this.renderProjects(data)
-    this.renderEnvironments(data)
     this.resetButtonTarget.disabled = !this.hasActiveFilters()
     this.syncOverviewHeight()
   }
@@ -356,29 +349,6 @@ export default class extends Controller {
     })
   }
 
-  renderEnvironments(data) {
-    const chartData = (data.environments || []).map((environment) => ({
-      name: environment.name,
-      value: environment.count,
-      filterValue: environment.name
-    }))
-
-    this.setChartOption(this.charts.environments, {
-      aria: { enabled: true },
-      color: FALLBACK_COLORS,
-      graphic: emptyGraphic(chartData.length === 0, "No environments"),
-      tooltip: { trigger: "item", formatter: itemTooltipFormatter },
-      series: [{
-        type: "pie",
-        radius: ["48%", "78%"],
-        center: ["50%", "50%"],
-        avoidLabelOverlap: true,
-        label: { formatter: "{b}", overflow: "truncate", width: 90 },
-        data: chartData
-      }]
-    })
-  }
-
   timelineDays(data) {
     if (Array.isArray(data.days) && data.days.length > 0) return data.days
 
@@ -463,8 +433,7 @@ export default class extends Controller {
     return [
       ...this.timelineChartTargets,
       ...this.eventTypeChartTargets,
-      ...this.projectChartTargets,
-      ...this.environmentChartTargets
+      ...this.projectChartTargets
     ]
   }
 }

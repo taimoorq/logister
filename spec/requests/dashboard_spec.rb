@@ -227,6 +227,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(explorer).to be_present
         expect(explorer.at_css("script[data-dashboard-explorer-target='payload']")).to be_nil
         expect(explorer.at_css(".dashboard-explorer-slice[aria-label='Current explorer slice']")).to be_present
+        expect(explorer.to_html.index("dashboard-explorer-slice")).to be < explorer.to_html.index("dashboard-explorer-workbench")
         expect(explorer.at_css(".dashboard-explorer-summary[data-dashboard-explorer-target='summary']")).to be_present
         expect(explorer.at_css(".dashboard-explorer-filters[data-dashboard-explorer-target='filters']")).to be_present
         expect(explorer.at_css(".dashboard-explorer-open[data-dashboard-explorer-target='openEventsLink']")["href"]).to eq(dashboard_events_path)

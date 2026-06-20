@@ -7,35 +7,63 @@ class Dashboard
   EXPLORER_WINDOW_DAYS = 7
   EXPLORER_WINDOW = EXPLORER_WINDOW_DAYS.days
 
-  def self.summary_for(project_ids, viewer: nil)
+  def self.summary_for(project_ids,
+                       viewer: nil,
+                       include_assignments: true,
+                       include_context_events: true,
+                       include_project_signals: true,
+                       include_project_stats: true,
+                       recent_error_group_limit: 6,
+                       recent_context_event_limit: 12)
     return empty_summary if project_ids.blank?
 
     events_scope = IngestEvent.where(project_id: project_ids)
     events_last_24h_scope = events_scope.where("occurred_at >= ?", 24.hours.ago)
     error_groups_scope = ErrorGroup.where(project_id: project_ids)
     api_keys_scope = ApiKey.where(project_id: project_ids)
-    events_by_type_last_24h = event_type_counts(events_last_24h_scope)
     open_error_group_counts = error_groups_scope.unresolved.group(:project_id).count
-    assigned_error_groups_scope = viewer.present? ? error_groups_scope.unresolved.assigned_to(viewer) : ErrorGroup.none
-    assigned_error_group_counts = viewer.present? ? assigned_error_groups_scope.group(:project_id).count : {}
-    unassigned_error_group_counts = error_groups_scope.unresolved.unassigned.group(:project_id).count
-    activity_event_counts = events_last_24h_scope.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count
-    latest_event_at_by_project = events_last_24h_scope.group(:project_id).maximum(:occurred_at)
-    recent_context_event_refs = events_last_24h_scope
-      .where.not(event_type: IngestEvent.event_types[:error])
-      .order(occurred_at: :desc)
-      .limit(12)
-      .pluck(:id, :occurred_at)
-      .map { |id, occurred_at| { id: id, occurred_at: occurred_at } }
-    monitors = CheckInMonitor.where(project_id: project_ids)
-                             .select(:id, :last_status, :last_check_in_at, :expected_interval_seconds)
-                             .to_a
+    recent_error_group_ids = error_groups_scope.unresolved.order(last_seen_at: :desc).limit(recent_error_group_limit).pluck(:id)
+    events_by_type_last_24h = include_project_signals ? event_type_counts(events_last_24h_scope) : EVENT_TYPE_ORDER.index_with { 0 }
+    active_project_ids_last_24h = include_project_signals ? events_last_24h_scope.distinct.pluck(:project_id) : []
+    monitors = if include_project_signals
+      CheckInMonitor.where(project_id: project_ids)
+                    .select(:id, :last_status, :last_check_in_at, :expected_interval_seconds)
+                    .to_a
+    else
+      []
+    end
+
+    assigned_error_groups_scope = include_assignments && viewer.present? ? error_groups_scope.unresolved.assigned_to(viewer) : ErrorGroup.none
+    assigned_error_group_counts = include_assignments && viewer.present? ? assigned_error_groups_scope.group(:project_id).count : {}
+    unassigned_error_group_counts = include_assignments ? error_groups_scope.unresolved.unassigned.group(:project_id).count : {}
+    recent_context_event_refs = if include_context_events
+      events_last_24h_scope
+        .where.not(event_type: IngestEvent.event_types[:error])
+        .order(occurred_at: :desc)
+        .limit(recent_context_event_limit)
+        .pluck(:id, :occurred_at)
+        .map { |id, occurred_at| { id: id, occurred_at: occurred_at } }
+    else
+      []
+    end
+
+    project_stats = if include_project_stats
+      activity_event_counts = events_last_24h_scope.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count
+      latest_event_at_by_project = events_last_24h_scope.group(:project_id).maximum(:occurred_at)
+
+      project_stats(project_ids,
+                    open_error_group_counts: open_error_group_counts,
+                    activity_event_counts: activity_event_counts,
+                    latest_event_at_by_project: latest_event_at_by_project)
+    else
+      {}
+    end
 
     {
       projects_count: project_ids.size,
-      api_keys_count: relation_count(api_keys_scope),
+      api_keys_count: include_project_signals ? relation_count(api_keys_scope) : 0,
       events_last_24h: events_by_type_last_24h.values.sum,
-      active_project_ids_last_24h: events_last_24h_scope.distinct.pluck(:project_id),
+      active_project_ids_last_24h: active_project_ids_last_24h,
       events_by_type_last_24h: events_by_type_last_24h,
       open_error_groups_count: open_error_group_counts.values.sum,
       assigned_error_groups_count: assigned_error_group_counts.values.sum,
@@ -49,11 +77,8 @@ class Dashboard
       monitor_status_counts: monitor_status_counts(monitors),
       recent_context_event_refs: recent_context_event_refs,
       recent_context_event_ids: recent_context_event_refs.pluck(:id),
-      recent_error_group_ids: error_groups_scope.unresolved.order(last_seen_at: :desc).limit(6).pluck(:id),
-      project_stats: project_stats(project_ids,
-                                   open_error_group_counts: open_error_group_counts,
-                                   activity_event_counts: activity_event_counts,
-                                   latest_event_at_by_project: latest_event_at_by_project)
+      recent_error_group_ids: recent_error_group_ids,
+      project_stats: project_stats
     }
   end
 

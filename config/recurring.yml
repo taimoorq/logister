@@ -16,3 +16,9 @@ production:
   project_telemetry_retention:
     class: ProjectRetentionSweepJob
     schedule: every day at 2am
+  project_monitor_sweep:
+    class: ProjectMonitorSweepJob
+    schedule: every 15 minutes
+  project_health_notification_sweep:
+    class: ProjectHealthNotificationSweepJob
+    schedule: every 15 minutes

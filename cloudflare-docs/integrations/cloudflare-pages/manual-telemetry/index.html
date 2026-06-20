@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloudflare Pages Manual Telemetry | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Send Cloudflare Pages deployment and traffic metrics to Logister through the HTTP API.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/integrations/cloudflare-pages/manual-telemetry/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Cloudflare Pages Manual Telemetry | Logister">
+    <meta property="og:description" content="Send Cloudflare Pages deployment and traffic metrics to Logister through the HTTP API.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/integrations/cloudflare-pages/manual-telemetry/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Manual telemetry</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/integrations/cloudflare-pages/">Cloudflare Pages</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Cloudflare Pages / Manual telemetry</span><h1>Send one metric first.</h1><p>Manual telemetry is the supported path until the Cloudflare importer fetcher lands.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Cloudflare Pages</p><a href="/integrations/cloudflare-pages/">Overview</a><a class="active" href="/integrations/cloudflare-pages/manual-telemetry/">Manual telemetry</a><a href="/integrations/cloudflare-pages/importer-settings/">Importer settings</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Example</p>
+              <h2>Use the standard ingest endpoint.</h2>
+              <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#cf-pages-metric">Copy</button></div><pre><code id="cf-pages-metric">curl -i "$LOGISTER_ENDPOINT/api/v1/ingest_events" \
+  -H "Authorization: Bearer $LOGISTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": {
+      "event_type": "metric",
+      "message": "cloudflare.deployment_build_ms",
+      "environment": "production",
+      "context": {
+        "platform": "cloudflare_pages",
+        "service": "marketing-site",
+        "deployment_id": "abc123",
+        "branch": "main",
+        "value": 42150,
+        "unit": "ms"
+      }
+    }
+  }'</code></pre></div>
+              <p>Keep <code>platform</code>, <code>service</code>, <code>deployment_id</code>, and <code>branch</code> stable. Then check Activity or Insights for the event.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

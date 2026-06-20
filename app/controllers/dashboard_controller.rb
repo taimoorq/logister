@@ -6,14 +6,15 @@ class DashboardController < ApplicationController
   before_action :authenticate_user!
 
   def index
+    @dashboard_tab = params[:tab].presence_in(%w[overview projects]) || "overview"
     accessible = current_user.active_projects
     @projects = accessible.order(created_at: :desc).to_a
     project_ids = @projects.map(&:id)
 
     summary = safe_cache_fetch(
-      [ "dashboard_summary", current_user.id, project_ids, cache_time_bucket(DASHBOARD_CACHE_TTL) ],
+      [ "dashboard_summary", current_user.id, @dashboard_tab, project_ids, cache_time_bucket(DASHBOARD_CACHE_TTL) ],
       expires_in: DASHBOARD_CACHE_TTL
-    ) { Dashboard.summary_for(project_ids, viewer: current_user) }
+    ) { Dashboard.summary_for(project_ids, viewer: current_user, **dashboard_summary_options) }
 
     @project_stats = summary[:project_stats]
     @projects_count = summary[:projects_count]
@@ -32,16 +33,12 @@ class DashboardController < ApplicationController
     @monitors_count = summary[:monitors_count]
     @monitor_status_counts = summary[:monitor_status_counts]
     @unhealthy_monitors_count = @monitor_status_counts.fetch(:missed, 0) + @monitor_status_counts.fetch(:error, 0)
-    recent_context_event_refs = summary[:recent_context_event_refs] || summary[:recent_context_event_ids].map { |id| { id: id } }
-    @recent_context_events = ordered_records(
-      IngestEvent.for_partition_references(recent_context_event_refs, id_key: :id, occurred_at_key: :occurred_at).includes(:project),
-      recent_context_event_refs.pluck(:id)
-    )
-    @recent_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
-    @recent_error_group_latest_events = latest_events_for(@recent_error_groups)
-    @assigned_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:assigned_error_group_ids]), summary[:assigned_error_group_ids])
-    @project_summaries = ranked_project_summaries(@projects, @project_stats).first(6)
-    @dashboard_explorer = dashboard_explorer_config(@projects)
+
+    if @dashboard_tab == "overview"
+      load_overview_dashboard_data(summary)
+    else
+      load_projects_dashboard_data(summary)
+    end
   end
 
   def explorer
@@ -57,6 +54,43 @@ class DashboardController < ApplicationController
   end
 
   private
+
+  def dashboard_summary_options
+    if @dashboard_tab == "projects"
+      {
+        include_assignments: false,
+        include_context_events: false,
+        include_project_signals: true,
+        include_project_stats: true,
+        recent_error_group_limit: 1
+      }
+    else
+      {
+        include_assignments: true,
+        include_context_events: true,
+        include_project_signals: false,
+        include_project_stats: false,
+        recent_error_group_limit: 6
+      }
+    end
+  end
+
+  def load_overview_dashboard_data(summary)
+    recent_context_event_refs = summary[:recent_context_event_refs] || summary[:recent_context_event_ids].map { |id| { id: id } }
+    @recent_context_events = ordered_records(
+      IngestEvent.for_partition_references(recent_context_event_refs, id_key: :id, occurred_at_key: :occurred_at).includes(:project),
+      recent_context_event_refs.pluck(:id)
+    )
+    @recent_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
+    @recent_error_group_latest_events = latest_events_for(@recent_error_groups)
+    @assigned_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:assigned_error_group_ids]), summary[:assigned_error_group_ids])
+    @dashboard_explorer = dashboard_explorer_config(@projects)
+  end
+
+  def load_projects_dashboard_data(summary)
+    @recent_error_groups = ordered_records(ErrorGroup.includes(:project).where(id: summary[:recent_error_group_ids]), summary[:recent_error_group_ids])
+    @project_summaries = ranked_project_summaries(@projects, @project_stats).first(6)
+  end
 
   def ordered_records(relation, ids)
     records_by_id = relation.index_by(&:id)

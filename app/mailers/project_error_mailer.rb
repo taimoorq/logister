@@ -37,6 +37,62 @@ class ProjectErrorMailer < ApplicationMailer
     )
   end
 
+  def group_alert(delivery)
+    @delivery = delivery
+    @user = delivery.user
+    @project = delivery.project
+    @group = delivery.error_group
+    @preference = ProjectNotificationPreference.for(user: @user, project: @project)
+    @notification_label = notification_kind_label(delivery.notification_kind)
+    @metadata = delivery.metadata || {}
+    @group_url = inbox_project_url(@project, group_uuid: @group.uuid)
+    @settings_url = settings_project_url(@project, anchor: "notifications")
+
+    apply_notification_headers(kind: delivery.notification_kind, preference: @preference, project: @project)
+
+    mail(
+      to: @user.email,
+      subject: "[Logister] #{@notification_label} in #{@project.name}: #{@group.title.to_s.truncate(80)}"
+    )
+  end
+
+  def monitor_alert(delivery)
+    @delivery = delivery
+    @user = delivery.user
+    @project = delivery.project
+    @preference = ProjectNotificationPreference.for(user: @user, project: @project)
+    @metadata = delivery.metadata || {}
+    @monitor = @project.check_in_monitors.find_by(id: @metadata["monitor_id"])
+    @notification_label = notification_kind_label(delivery.notification_kind)
+    @monitor_url = monitors_project_url(@project)
+    @settings_url = settings_project_url(@project, anchor: "notifications")
+
+    apply_notification_headers(kind: delivery.notification_kind, preference: @preference, project: @project)
+
+    mail(
+      to: @user.email,
+      subject: "[Logister] #{@notification_label} for #{@project.name}: #{@metadata["monitor_slug"].presence || @monitor&.slug || "monitor"}"
+    )
+  end
+
+  def project_alert(delivery)
+    @delivery = delivery
+    @user = delivery.user
+    @project = delivery.project
+    @preference = ProjectNotificationPreference.for(user: @user, project: @project)
+    @metadata = delivery.metadata || {}
+    @notification_label = notification_kind_label(delivery.notification_kind)
+    @project_url = project_url(@project)
+    @settings_url = settings_project_url(@project, anchor: "notifications")
+
+    apply_notification_headers(kind: delivery.notification_kind, preference: @preference, project: @project)
+
+    mail(
+      to: @user.email,
+      subject: "[Logister] #{@notification_label} for #{@project.name}"
+    )
+  end
+
   private
 
   def apply_notification_headers(kind:, preference:, project:)
@@ -50,5 +106,22 @@ class ProjectErrorMailer < ApplicationMailer
 
   def tag_value(value)
     value.to_s.gsub(/[^A-Za-z0-9_-]/, "_").presence || "notification"
+  end
+
+  def notification_kind_label(kind)
+    {
+      "regression" => "Reopened error",
+      "frequent_error" => "Frequent error",
+      "error_milestone" => "Error milestone",
+      "assignment" => "Error assignment",
+      "status_change" => "Error status change",
+      "monitor_missed" => "Monitor missed",
+      "monitor_recovered" => "Monitor recovered",
+      "project_spike" => "Project error spike",
+      "performance_threshold" => "Performance threshold",
+      "release_summary" => "Release summary",
+      "usage_alert" => "Usage alert",
+      "retention_failure" => "Retention archive failure"
+    }.fetch(kind.to_s, kind.to_s.humanize)
   end
 end

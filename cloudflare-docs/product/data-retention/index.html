@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Data Retention and Archives | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/data-retention/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Data Retention and Archives | Logister">
+    <meta property="og:description" content="Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/data-retention/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Data Retention and Archives | Logister">
+    <meta name="twitter:description" content="Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.">
+    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Documentation / Product / Data retention</span><h1>Choose how long project telemetry stays hot.</h1><p>Retention settings live at <code>Project &gt; Settings &gt; Data</code>. Use them to keep PostgreSQL from holding high-volume telemetry forever, and enable archive exports only when you need a cold copy before cleanup.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group"><p class="sidebar-label">Product</p><a href="/product/">Product guide</a><a href="/product/notifications/">Notifications</a><a class="active" href="/product/data-retention/">Data retention</a><a href="/metrics/">Metrics reference</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">Retention pages</p><a href="/product/data-retention/policy/">Policy settings</a><a href="/product/data-retention/archive-storage/">Archive storage</a><a href="/product/data-retention/jobs/">Jobs and verification</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#model">Retention model</a><a href="#paths">Choose a page</a><a href="#defaults">Defaults</a></div>
+          </aside>
+          <article class="article" data-pagefind-body>
+            <section id="model" class="section">
+              <p class="eyebrow">Retention model</p>
+              <h2>Retention is project scoped.</h2>
+              <p>Logister keeps active product data in PostgreSQL. Retention policies decide when older project telemetry can be deleted. Archive exports are optional and use Active Storage to write compressed JSONL before deletion.</p>
+              <div class="note warn"><h4>Not a database backup</h4><p>Telemetry archives do not replace PostgreSQL backups. They export selected event/span rows, not accounts, settings, API keys, memberships, or full workflow state.</p></div>
+            </section>
+            <section id="paths" class="section">
+              <p class="eyebrow">Choose a page</p>
+              <h2>Use the subpage that matches the work.</h2>
+              <div class="card-grid">
+                <article class="card"><p class="eyebrow">Policy</p><h3>Choose retention windows</h3><p>Understand hot events, trace spans, closed error groups, and archive-before-delete.</p><p><a href="/product/data-retention/policy/">Read policy settings</a></p></article>
+                <article class="card"><p class="eyebrow">Storage</p><h3>Configure archive storage</h3><p>Set Active Storage, S3-compatible credentials, archive prefix, and object layout.</p><p><a href="/product/data-retention/archive-storage/">Read archive storage</a></p></article>
+                <article class="card"><p class="eyebrow">Jobs</p><h3>Run and verify retention</h3><p>Check scheduled sweeps, manual commands, recent archive runs, and failures.</p><p><a href="/product/data-retention/jobs/">Read jobs and verification</a></p></article>
+              </div>
+            </section>
+            <section id="defaults" class="section">
+              <p class="eyebrow">Defaults</p>
+              <h2>The default policy is conservative.</h2>
+              <table><thead><tr><th>Setting</th><th>Default</th></tr></thead><tbody><tr><td>Hot events</td><td>30 days</td></tr><tr><td>Trace spans</td><td>30 days</td></tr><tr><td>Closed error groups</td><td>Keep indefinitely</td></tr><tr><td>Archive exports</td><td>Off</td></tr><tr><td>Archive before delete</td><td>Off</td></tr></tbody></table>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

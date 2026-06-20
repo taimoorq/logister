@@ -1,5 +1,4 @@
 <% tour_group = "dashboard" %>
-<% dashboard_tab = params[:tab].presence_in(%w[overview projects]) || "overview" %>
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group, html_options: { class: "dashboard-page" } } do %>
   <section class="dashboard-title-row"
@@ -25,22 +24,22 @@
 
   <nav class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
     <%= link_to dashboard_path,
-                class: "dashboard-tab #{"is-active" if dashboard_tab == "overview"}",
+                class: "dashboard-tab #{"is-active" if @dashboard_tab == "overview"}",
                 role: "tab",
-                aria: { selected: (dashboard_tab == "overview").to_s, controls: "dashboard-tab-overview", current: ("page" if dashboard_tab == "overview") },
-                tabindex: (dashboard_tab == "overview" ? 0 : -1) do %>
+                aria: { selected: (@dashboard_tab == "overview").to_s, controls: "dashboard-tab-overview", current: ("page" if @dashboard_tab == "overview") },
+                tabindex: (@dashboard_tab == "overview" ? 0 : -1) do %>
       Overview
     <% end %>
     <%= link_to dashboard_path(tab: "projects"),
-                class: "dashboard-tab #{"is-active" if dashboard_tab == "projects"}",
+                class: "dashboard-tab #{"is-active" if @dashboard_tab == "projects"}",
                 role: "tab",
-                aria: { selected: (dashboard_tab == "projects").to_s, controls: "dashboard-tab-projects", current: ("page" if dashboard_tab == "projects") },
-                tabindex: (dashboard_tab == "projects" ? 0 : -1) do %>
+                aria: { selected: (@dashboard_tab == "projects").to_s, controls: "dashboard-tab-projects", current: ("page" if @dashboard_tab == "projects") },
+                tabindex: (@dashboard_tab == "projects" ? 0 : -1) do %>
       Projects
     <% end %>
   </nav>
 
-  <% if dashboard_tab == "overview" %>
+  <% if @dashboard_tab == "overview" %>
   <div id="dashboard-tab-overview" class="dashboard-overview-layout" role="tabpanel" aria-label="Overview">
   <section class="dashboard-priority-grid"
            data-controller="dashboard-attention"
@@ -201,40 +200,37 @@
       </div>
     </div>
 
+    <aside class="dashboard-explorer-slice" aria-label="Current explorer slice">
+      <div class="dashboard-explorer-slice-header">
+        <p class="dashboard-kicker">Current slice</p>
+        <button type="button" class="dashboard-explorer-reset" data-dashboard-explorer-target="resetButton" data-action="dashboard-explorer#resetFilters">Reset</button>
+      </div>
+
+      <div class="dashboard-explorer-summary" data-dashboard-explorer-target="summary"></div>
+
+      <div class="dashboard-explorer-filter-panel">
+        <div class="dashboard-explorer-filter-heading">
+          <span>Filters</span>
+        </div>
+        <div class="dashboard-explorer-filters" data-dashboard-explorer-target="filters"></div>
+      </div>
+
+      <div class="dashboard-explorer-actions">
+        <%= link_to dashboard_events_path,
+                    class: "dashboard-explorer-open",
+                    data: { dashboard_explorer_target: "openEventsLink" } do %>
+          Open matching events
+        <% end %>
+        <%= link_to "#",
+                    class: "dashboard-explorer-project",
+                    hidden: true,
+                    data: { dashboard_explorer_target: "openProjectLink" } do %>
+          Open project
+        <% end %>
+      </div>
+    </aside>
+
     <div class="dashboard-explorer-workbench">
-      <aside class="dashboard-explorer-slice" aria-label="Current explorer slice">
-        <div class="dashboard-explorer-slice-header">
-          <div>
-            <p class="dashboard-kicker">Current slice</p>
-            <h3>Selection totals</h3>
-          </div>
-          <button type="button" class="dashboard-explorer-reset" data-dashboard-explorer-target="resetButton" data-action="dashboard-explorer#resetFilters">Reset</button>
-        </div>
-
-        <div class="dashboard-explorer-summary" data-dashboard-explorer-target="summary"></div>
-
-        <div class="dashboard-explorer-actions">
-          <%= link_to dashboard_events_path,
-                      class: "dashboard-explorer-open",
-                      data: { dashboard_explorer_target: "openEventsLink" } do %>
-            Open matching events
-          <% end %>
-          <%= link_to "#",
-                      class: "dashboard-explorer-project",
-                      hidden: true,
-                      data: { dashboard_explorer_target: "openProjectLink" } do %>
-            Open project
-          <% end %>
-        </div>
-
-        <div class="dashboard-explorer-filter-panel">
-          <div class="dashboard-explorer-filter-heading">
-            <span>Filters</span>
-          </div>
-          <div class="dashboard-explorer-filters" data-dashboard-explorer-target="filters"></div>
-        </div>
-      </aside>
-
       <div class="dashboard-explorer-main">
         <div class="dashboard-explorer-layout">
           <article class="dashboard-explorer-card dashboard-explorer-card-wide">

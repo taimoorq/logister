@@ -27,24 +27,28 @@ class ErrorGroupsController < ApplicationController
   # PATCH /projects/:project_uuid/error_groups/:uuid/resolve
   def resolve
     @group.mark_resolved!
+    notify_status_change("resolved")
     respond_with_stream
   end
 
   # PATCH /projects/:project_uuid/error_groups/:uuid/ignore
   def ignore
     @group.ignore!
+    notify_status_change("ignored")
     respond_with_stream
   end
 
   # PATCH /projects/:project_uuid/error_groups/:uuid/archive
   def archive
     @group.archive!
+    notify_status_change("archived")
     respond_with_stream
   end
 
   # PATCH /projects/:project_uuid/error_groups/:uuid/reopen
   def reopen
     @group.reopen!
+    notify_status_change("unresolved")
     respond_with_stream
   end
 
@@ -56,6 +60,19 @@ class ErrorGroupsController < ApplicationController
 
   def set_group
     @group = @project.error_groups.find_by!(uuid: params[:uuid])
+  end
+
+  def notify_status_change(status)
+    ProjectWorkflowNotificationJob.perform_later(
+      @group.id,
+      "status_change",
+      {
+        "status" => status,
+        "actor_user_id" => current_user.id,
+        "actor_name" => current_user.name.presence || current_user.email,
+        "changed_at" => Time.current.utc.iso8601
+      }
+    )
   end
 
   def respond_with_stream

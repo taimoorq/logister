@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Retention Policy Settings | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Understand Logister project retention policy fields for hot events, trace spans, closed error groups, archive exports, and archive-before-delete.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/data-retention/policy/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Retention Policy Settings | Logister">
+    <meta property="og:description" content="Understand Logister project retention policy fields for hot events, trace spans, closed error groups, archive exports, and archive-before-delete.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/data-retention/policy/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention policy</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Data retention / Policy</span><h1>Choose the retention window for each kind of project data.</h1><p>Use <code>Project &gt; Settings &gt; Data</code> when a project manager wants to change how long telemetry remains in hot PostgreSQL tables.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/product/data-retention/">Overview</a><a class="active" href="/product/data-retention/policy/">Policy settings</a><a href="/product/data-retention/archive-storage/">Archive storage</a><a href="/product/data-retention/jobs/">Jobs and verification</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Fields</p>
+              <h2>Each field controls a separate cleanup scope.</h2>
+              <table><thead><tr><th>Field</th><th>What it controls</th></tr></thead><tbody><tr><td>Hot event retention</td><td>Non-error ingest events such as logs, metrics, transactions, and check-ins that are not attached to an error group.</td></tr><tr><td>Trace span retention</td><td>Span rows used for timing waterfalls and trace views.</td></tr><tr><td>Closed error retention</td><td>Resolved, ignored, or archived error groups. Blank means keep closed groups indefinitely.</td></tr><tr><td>Enable archive exports</td><td>Allows retention runs to write archive records.</td></tr><tr><td>Archive before delete</td><td>Requires archive exports and writes a completed archive before matching rows are deleted.</td></tr></tbody></table>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

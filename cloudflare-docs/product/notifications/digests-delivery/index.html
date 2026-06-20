@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Digest and Delivery Notification Settings | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Configure Logister digest summaries, digest send hour, email schedule time zone, immediate email caps, and quiet hours.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/notifications/digests-delivery/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Digest and Delivery Notification Settings | Logister">
+    <meta property="og:description" content="Configure Logister digest summaries, digest send hour, email schedule time zone, immediate email caps, and quiet hours.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/notifications/digests-delivery/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Digests and delivery</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/notifications/">Notifications</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Notifications / Digests and delivery</span><h1>Use summaries, caps, and quiet hours to reduce interruption.</h1><p>Use <code>Digest summaries</code> when the user wants scheduled email. Use <code>Delivery limits</code> when immediate mail should be capped or paused.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Notifications</p><a href="/product/notifications/">Overview</a><a href="/product/notifications/setup/">Setup requirements</a><a href="/product/notifications/error-triage/">Error triage</a><a href="/product/notifications/project-health/">Project health</a><a href="/product/notifications/workflow-routing/">Workflow routing</a><a class="active" href="/product/notifications/digests-delivery/">Digests and delivery</a><a href="/product/notifications/operations/">Operational notices</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Digest summaries</p>
+              <h2>Digest settings control scheduled summaries.</h2>
+              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Digest frequency</td><td><code>No digest</code>, <code>Daily</code>, or <code>Weekly</code>.</td></tr><tr><td>Digest send hour</td><td>The local hour when digest emails may send.</td></tr><tr><td>Email schedule time zone</td><td>The time zone used for digest hour and quiet hours.</td></tr></tbody></table>
+              <p>Weekly digests are evaluated on Monday in the selected time zone.</p>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Delivery limits</p>
+              <h2>Delivery settings control immediate mail.</h2>
+              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Hourly immediate email limit</td><td>Maximum immediate emails per notification type each hour. <code>0</code> blocks immediate emails.</td></tr><tr><td>Quiet hours</td><td>Pause immediate emails between the selected local hours.</td></tr></tbody></table>
+              <p>Quiet hours do not suppress digest emails; digests use their own schedule.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

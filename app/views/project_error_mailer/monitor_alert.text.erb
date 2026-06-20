@@ -1,0 +1,15 @@
+<%= @notification_label %> in <%= @project.name %>
+
+Logister detected a check-in monitor status change.
+
+Monitor: <%= @metadata["monitor_slug"].presence || @monitor&.slug || "Monitor" %>
+Environment: <%= @metadata["environment"].presence || @monitor&.environment || "production" %>
+Status: <%= @metadata["status"] || @monitor&.status %>
+<% if @monitor&.last_check_in_at.present? %>Last check-in: <%= l(@monitor.last_check_in_at, format: :long) %>
+<% end %><% if @monitor&.expected_interval_seconds.present? %>Expected interval: <%= distance_of_time_in_words(Time.current, Time.current + @monitor.expected_interval_seconds.seconds) %>
+<% end %>
+Open monitors:
+<%= @monitor_url %>
+
+Manage project email settings:
+<%= @settings_url %>

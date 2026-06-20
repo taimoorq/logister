@@ -86,6 +86,7 @@
               <a href="#rejected-events">Rejected events</a>
               <a href="#background-jobs">Background jobs</a>
               <a href="#email">Email</a>
+              <a href="#source-lookup">GitHub source lookup</a>
               <a href="#clickhouse">ClickHouse</a>
               <a href="#archives">Archive exports</a>
               <a href="#support-context">Support context</a>
@@ -200,7 +201,7 @@
               <p class="eyebrow">Background jobs</p>
               <h2>Run Sidekiq whenever the app needs async work.</h2>
               <p>
-                Sidekiq delivers email, writes optional ClickHouse copies, schedules digests, records first-occurrence alerts, and runs operator-triggered archive or prune tasks. The web app can accept events while some async work is delayed, so always check the worker when the UI accepts data but follow-up behavior is missing.
+                Sidekiq delivers email, writes optional ClickHouse copies, schedules digests, dispatches project notifications, and runs operator-triggered archive or prune tasks. The web app can accept events while some async work is delayed, so always check the worker when the UI accepts data but follow-up behavior is missing.
               </p>
               <div class="code-block">
                 <div class="code-head">
@@ -220,17 +221,27 @@
               <p class="eyebrow">Email</p>
               <h2>Check SMTP, sender identity, and worker delivery.</h2>
               <p>
-                Logister sends confirmation mail, password reset mail, first-occurrence error alerts, and daily or weekly digests through Action Mailer. In production-like environments, configure SMTP and keep Sidekiq running.
+                Logister sends confirmation mail, password reset mail, project alerts, digests, monitor notices, workflow notifications, and operational notices through Action Mailer. In production-like environments, configure SMTP and keep Sidekiq running.
               </p>
               <table>
                 <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
                 <tbody>
                   <tr><td>No auth mail</td><td>Confirm SMTP host, port, username, password, TLS/SSL mode, sender address, and provider-side domain verification.</td></tr>
-                  <tr><td>No project alerts</td><td>Confirm project notification preferences, first-occurrence settings, worker health, and that the event created a new error group.</td></tr>
+                  <tr><td>No project alerts</td><td>Confirm the user's notification path, worker health, quiet hours, hourly limits, and that the event created the configured alert condition.</td></tr>
                   <tr><td>No digests</td><td>Confirm recurring jobs are scheduled, Sidekiq is running, and the selected daily or weekly cadence has elapsed.</td></tr>
                 </tbody>
               </table>
-              <p><a href="/deployment/#email">Read the deployment email settings</a> for the environment variables used by SMTP and Amazon SES.</p>
+              <p><a href="/deployment/#email">Read deployment email settings</a> for SMTP variables, or <a href="/product/notifications/">read notification settings</a> for the product paths users configure.</p>
+            </section>
+
+            <section id="source-lookup" class="section">
+              <p class="eyebrow">GitHub source lookup</p>
+              <h2>Use attempted lookups when the repo is connected but the file is missing.</h2>
+              <p>
+                A synced GitHub repository is not enough by itself. Source lookup needs a connected project repository mapping, the right runtime path prefix, the right repository source root, and a branch or commit ref that contains the file.
+              </p>
+              <table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Configured repo, but source file not found</td><td>Read the attempted repository, path, ref, and reason. A path like <code>app/app/controllers/...</code> usually means the source root or runtime prefix is duplicating a path segment.</td></tr><tr><td>No repositories available</td><td>Install or link the GitHub App installation, accept permission changes, then click Sync repositories.</td></tr><tr><td>No source repository mapping</td><td>Click Connect for the synced repository in project settings.</td></tr></tbody></table>
+              <p><a href="/github-app/source-lookup/">Read source lookup diagnostics</a> for the focused checklist.</p>
             </section>
 
             <section id="clickhouse" class="section">
@@ -262,6 +273,7 @@
                 <li>Run archive tasks from the same release with access to the same database and storage variables.</li>
                 <li>Do not run prune tasks until you have verified the archive output you need.</li>
               </ul>
+              <p><a href="/product/data-retention/">Read data retention</a> for the product model, storage setup, and verification steps.</p>
             </section>
 
             <section id="support-context" class="section">

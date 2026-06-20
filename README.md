@@ -126,9 +126,9 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v2.6.1
+   docker pull ghcr.io/taimoorq/logister:v2.7.0
    # or
-   docker pull docker.io/taimoorq/logister:v2.6.1
+   docker pull docker.io/taimoorq/logister:v2.7.0
    ```
 
 3. Create production config from the sample.
@@ -288,10 +288,10 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v2.6.1`
+- `ghcr.io/taimoorq/logister:v2.7.0`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v2.6.1`
+- `docker.io/taimoorq/logister:v2.7.0`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 
@@ -355,6 +355,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [TRADEMARKS.md](TRADEMARKS.md) | Logister brand and trademark policy for forks, hosted services, and redistributed versions |
 | [AGENTS.md](AGENTS.md) | Architecture and conventions for AI agents and contributors |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing app release history |
+| [docs/documentation-style-guide.md](docs/documentation-style-guide.md) | Public docs voice, page structure, subpage rules, and maintenance checklist |
 | [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md) | Hotwire, Turbo, Stimulus, third-party JS, and asset pipeline conventions |
 | [docs/metrics-reference.md](docs/metrics-reference.md) | Telemetry families, Insights metrics, add-on support matrix, reporting fields, and collection boundaries |
 | [docs/mobile-add-ons.md](docs/mobile-add-ons.md) | Android and iOS package manager setup, SDK usage examples, release mechanics, and mobile telemetry boundaries |
@@ -363,12 +364,7 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json) | Postman collection with example requests for every supported event family |
 | [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
 | [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
-| [docs/seo-llm-discovery-plan.md](docs/seo-llm-discovery-plan.md) | SEO and LLM discovery plan for product positioning, intent pages, and AI-readable context |
 | [docs/seo-llm-measurement-runbook.md](docs/seo-llm-measurement-runbook.md) | Release-time checks for search, AI crawler, GitHub, container registries, and package discoverability |
-| [docs/2.0-release-plan.md](docs/2.0-release-plan.md) | 2.0 release scope, UI continuity plan, Insights GA checklist, and stable release gates |
-| [docs/1.1-release-plan.md](docs/1.1-release-plan.md) | 1.1 release scope, gates, and container registry verification plan |
-| [docs/1.0-release-plan.md](docs/1.0-release-plan.md) | 1.0 release scope, gates, rollout, and rollback plan |
-| [docs/error-assignment-plan.md](docs/error-assignment-plan.md) | Implementation record for team assignment on grouped errors |
 | [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | GitHub-facing pointer to the canonical CFML docs |
 
 ## Source and related repos

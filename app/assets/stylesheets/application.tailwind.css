@@ -655,27 +655,27 @@
     @apply mt-1 text-sm text-slate-500;
   }
   .dashboard-explorer-workbench {
-    @apply mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start;
+    @apply mt-4 min-w-0;
   }
   .dashboard-explorer-main {
-    @apply min-w-0 overflow-x-auto xl:order-1;
+    @apply min-w-0 overflow-x-auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-inline: contain;
   }
   .dashboard-explorer-slice {
-    @apply min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3 xl:sticky xl:top-[5.2rem] xl:order-2;
+    @apply mt-3 flex min-w-0 flex-col gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 lg:flex-row lg:items-center;
   }
   .dashboard-explorer-slice-header {
-    @apply flex items-start justify-between gap-3;
+    @apply flex items-center justify-between gap-3 lg:w-36 lg:shrink-0;
   }
-  .dashboard-explorer-slice-header h3 {
-    @apply text-sm font-semibold text-slate-900;
+  .dashboard-explorer-slice-header .dashboard-kicker {
+    @apply whitespace-nowrap;
   }
   .dashboard-explorer-filter-panel {
-    @apply mt-3 border-t border-slate-200 pt-3;
+    @apply min-w-0 border-t border-slate-200 pt-3 lg:flex lg:flex-1 lg:items-center lg:gap-2 lg:border-l lg:border-t-0 lg:pl-3 lg:pt-0;
   }
   .dashboard-explorer-filter-heading {
-    @apply mb-2 flex items-center justify-between gap-2;
+    @apply mb-2 flex items-center justify-between gap-2 lg:mb-0 lg:shrink-0;
   }
   .dashboard-explorer-filter-heading span {
     @apply text-[11px] font-semibold uppercase text-slate-400;
@@ -702,24 +702,24 @@
     @apply border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .dashboard-explorer-summary {
-    @apply mt-3 grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-white xl:grid-cols-1;
+    @apply grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-white lg:w-72 lg:shrink-0;
   }
   .dashboard-explorer-summary span {
-    @apply min-w-0 border-r border-slate-200 px-3 py-2 text-slate-500 last:border-r-0 xl:border-b xl:border-r-0 xl:last:border-b-0;
+    @apply min-w-0 border-r border-slate-200 px-2.5 py-1.5 text-slate-500 last:border-r-0;
   }
   .dashboard-explorer-summary strong {
-    @apply block truncate text-lg font-semibold leading-tight text-slate-900;
+    @apply block truncate text-sm font-semibold leading-tight text-slate-900 sm:text-base;
   }
   .dashboard-explorer-summary span span {
     @apply mt-0.5 block truncate text-[11px] font-semibold uppercase text-slate-500;
     letter-spacing: 0;
   }
   .dashboard-explorer-actions {
-    @apply mt-3 flex flex-col gap-2;
+    @apply flex flex-col gap-2 sm:flex-row lg:ml-auto lg:shrink-0;
   }
   .dashboard-explorer-open,
   .dashboard-explorer-project {
-    @apply flex h-9 items-center justify-center rounded-md px-3 text-xs font-bold uppercase no-underline;
+    @apply flex h-8 items-center justify-center whitespace-nowrap rounded-md px-3 text-xs font-bold uppercase no-underline;
     letter-spacing: 0;
   }
   .dashboard-explorer-open {
@@ -1375,9 +1375,6 @@
   .project-section-nav-link.is-active,
   .project-section-nav-link[aria-current="page"] {
     @apply border-blue-200 bg-blue-50 text-blue-700;
-  }
-  .project-overview-strip {
-    @apply grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;
   }
   .projects-overview-strip {
     @apply mb-4 grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;

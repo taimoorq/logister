@@ -163,10 +163,10 @@
                   <tr><td><span class="infra-cell-title">Web app process</span><span class="infra-label">Required</span></td><td>Serves the Logister UI, auth screens, project pages, public pages, and ingest endpoints.</td><td>Runs Rails on Puma, usually from the provided Docker image. Put it behind HTTPS through your platform, load balancer, or reverse proxy.</td></tr>
                   <tr><td><span class="infra-cell-title">PostgreSQL</span><span class="infra-label">Required</span></td><td>Stores accounts, active and archived projects, API keys, events, error groups, occurrences, monitors, project sharing, and notification preferences.</td><td>Set <code>DATABASE_URL</code>. Start with managed PostgreSQL if you want backups, upgrades, and point-in-time recovery handled for you.</td></tr>
                   <tr><td><span class="infra-cell-title">Redis</span><span class="infra-label">Required</span></td><td>Powers the Rails cache and Sidekiq job queue.</td><td>Set <code>REDIS_URL</code>. TLS Redis URLs such as <code>rediss://...</code> are supported by the Redis client.</td></tr>
-                  <tr><td><span class="infra-cell-title">Sidekiq worker process</span><span class="infra-label">Required</span></td><td>Runs asynchronous jobs, including optional ClickHouse event/span writes, Action Mailer delivery, first-occurrence error alerts, digest scheduling, and operator-run archive/prune tasks.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
+                  <tr><td><span class="infra-cell-title">Sidekiq worker process</span><span class="infra-label">Required</span></td><td>Runs asynchronous jobs, including optional ClickHouse event/span writes, Action Mailer delivery, project notifications, digest scheduling, and operator-run archive/prune tasks.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
                   <tr><td><span class="infra-cell-title">Persistent app storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Keeps any local Active Storage files if your deployment uses local disk storage.</td><td>Normal event data lives in PostgreSQL. If you rely on local Active Storage, mount and back up <code>/rails/storage</code>.</td></tr>
                   <tr><td><span class="infra-cell-title">S3-compatible archive storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Stores compressed JSONL archive exports for older hot telemetry before you prune high-volume non-error events from PostgreSQL.</td><td>Set <code>ACTIVE_STORAGE_SERVICE=amazon</code> plus the AWS/S3 variables from the deployment guide. Any S3-compatible provider can be used with endpoint/path-style overrides.</td></tr>
-                  <tr><td><span class="infra-cell-title">Outbound email / SMTP</span><span class="infra-label infra-label-recommended">Recommended</span></td><td>Enables confirmation, password reset, system mail, first-occurrence error alerts, and daily or weekly project digests.</td><td>The documented path uses Amazon SES SMTP variables, but any compatible SMTP endpoint can be provided through the same settings. Verify the sender domain and keep Sidekiq running for notification delivery.</td></tr>
+                  <tr><td><span class="infra-cell-title">Outbound email / SMTP</span><span class="infra-label infra-label-recommended">Recommended</span></td><td>Enables confirmation, password reset, system mail, immediate project alerts, digest summaries, monitor alerts, and operational notices.</td><td>The documented path uses Amazon SES SMTP variables, but any compatible SMTP endpoint can be provided through the same settings. Verify the sender domain, keep Sidekiq running, and use the <a href="/product/notifications/">notification guide</a> for project settings.</td></tr>
                   <tr><td><span class="infra-cell-title">ClickHouse</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds a dedicated analytics store for higher-volume event and span analysis.</td><td>Keep it disabled until PostgreSQL-only operation is not enough. When enabled, load the schema, run the worker, and verify <code>/health/clickhouse</code> reports ready.</td></tr>
                   <tr><td><span class="infra-cell-title">Cloudflare Turnstile</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds bot protection to auth flows.</td><td>Enable when your public sign-in, sign-up, password, or confirmation forms need extra protection.</td></tr>
                   <tr><td><span class="infra-cell-title">Cookie consent and analytics</span><span class="infra-label infra-label-optional">Optional</span></td><td>Lets operators add consent-gated Google Analytics or Cloudflare Web Analytics.</td><td>Useful for public product pages. It is not required for the app to monitor your services.</td></tr>
@@ -185,12 +185,12 @@
                   <span class="code-language">shell</span>
                   <button class="copy-button" data-copy-button data-copy-target="#docker-build-code">Copy</button>
                 </div>
-                <pre><code id="docker-build-code">docker pull ghcr.io/taimoorq/logister:v2.6.1
-docker pull docker.io/taimoorq/logister:v2.6.1
+                <pre><code id="docker-build-code">docker pull ghcr.io/taimoorq/logister:v2.7.0
+docker pull docker.io/taimoorq/logister:v2.7.0
 cp .env.sample .env.production
 # Edit .env.production with production URLs and secrets before starting containers.</code></pre>
               </div>
-              <p>Each release publishes three image tags to the configured registries: the version tag such as <code>v2.6.1</code>, <code>latest</code>, and the short commit SHA. GHCR and Docker Hub are the default public registries; Quay can be enabled as an additional mirror. If you prefer to build from source, the repository still includes a production <code>Dockerfile</code>.</p>
+              <p>Each release publishes three image tags to the configured registries: the version tag such as <code>v2.7.0</code>, <code>latest</code>, and the short commit SHA. GHCR and Docker Hub are the default public registries; Quay can be enabled as an additional mirror. If you prefer to build from source, the repository still includes a production <code>Dockerfile</code>.</p>
               <table>
                 <thead><tr><th>Docker shape</th><th>Use when</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -207,7 +207,7 @@ cp .env.sample .env.production
                 </div>
                 <pre><code id="docker-compose-selfhost-code">services:
   web:
-    image: ghcr.io/taimoorq/logister:v2.6.1
+    image: ghcr.io/taimoorq/logister:v2.7.0
     env_file: .env.production
     command: ./bin/thrust ./bin/rails server -b 0.0.0.0 -p 80
     ports:
@@ -217,7 +217,7 @@ cp .env.sample .env.production
       - redis
 
   worker:
-    image: ghcr.io/taimoorq/logister:v2.6.1
+    image: ghcr.io/taimoorq/logister:v2.7.0
     env_file: .env.production
     command: bundle exec sidekiq -C config/sidekiq.yml
     depends_on:
@@ -312,6 +312,18 @@ bin/dev</code></pre>
                   <h3>Set production variables and provider config</h3>
                   <p>Use this for the full <code>.env.sample</code> reference, S3 archive storage, Turnstile, analytics, Amazon SES, Cloudflare Pages docs variables, and deployment files.</p>
                   <p><a href="/deployment/">Read deployment config docs</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">Notifications</p>
+                  <h3>Configure project email without one long settings page</h3>
+                  <p>Use purpose-based notification docs for error triage, project health, workflow routing, digests, delivery limits, and operations.</p>
+                  <p><a href="/product/notifications/">Read notification docs</a></p>
+                </article>
+                <article class="card">
+                  <p class="eyebrow">Retention</p>
+                  <h3>Plan cleanup and archive exports</h3>
+                  <p>Use this for retention windows, S3-compatible archive storage, and job verification.</p>
+                  <p><a href="/product/data-retention/">Read data retention docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">ClickHouse</p>

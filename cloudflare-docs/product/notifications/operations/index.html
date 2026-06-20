@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Operational Notification Settings | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Configure Logister operational emails for deployment summaries, intake and quota warnings, and retention or archive failures.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/notifications/operations/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Operational Notification Settings | Logister">
+    <meta property="og:description" content="Configure Logister operational emails for deployment summaries, intake and quota warnings, and retention or archive failures.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/notifications/operations/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Operational notices</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/notifications/">Notifications</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Notifications / Operational notices</span><h1>Email me about platform events and maintenance failures.</h1><p>Use <code>Project &gt; Settings &gt; Notifications &gt; Operational notices</code> for deployment, intake, quota, retention, and archive emails.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Notifications</p><a href="/product/notifications/">Overview</a><a href="/product/notifications/setup/">Setup requirements</a><a href="/product/notifications/error-triage/">Error triage</a><a href="/product/notifications/project-health/">Project health</a><a href="/product/notifications/workflow-routing/">Workflow routing</a><a href="/product/notifications/digests-delivery/">Digests and delivery</a><a class="active" href="/product/notifications/operations/">Operational notices</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Settings</p>
+              <h2>These emails are for project operations, not issue triage.</h2>
+              <table><thead><tr><th>Setting</th><th>Use it for</th><th>Default</th></tr></thead><tbody><tr><td>Deployment summary emails</td><td>Send after a deployment record is stored for the project.</td><td>Off</td></tr><tr><td>Intake and quota warnings</td><td>Send when event intake, rate limits, or quota checks need attention.</td><td>On</td></tr><tr><td>Retention and archive failures</td><td>Send when retention cleanup or archive export fails.</td><td>On</td></tr></tbody></table>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Related setup</p>
+              <h2>Operational notices depend on other systems working.</h2>
+              <p>Deployment summaries require deployment records. Retention and archive failure notices require retention jobs and, when archives are enabled, working object storage.</p>
+              <p>Read <a href="/http-api/#deployments">deployment records</a> or <a href="/product/data-retention/">data retention</a> next.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

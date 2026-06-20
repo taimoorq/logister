@@ -1,0 +1,49 @@
+<h1 style="margin:0 0 12px; font-size:24px; line-height:1.25; color:#0f172a;"><%= @notification_label %> in <%= @project.name %></h1>
+
+<p style="margin:0 0 18px; color:#475569; font-size:15px; line-height:1.6;">
+  Logister noticed activity that matches your email notification settings.
+</p>
+
+<div style="border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin:0 0 18px; background:#f8fafc;">
+  <p style="margin:0 0 8px; font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:#64748b; font-weight:700;">Error</p>
+  <p style="margin:0 0 6px; font-size:18px; line-height:1.35; color:#0f172a; font-weight:700;"><%= @group.title %></p>
+  <% if @group.subtitle.present? %>
+    <p style="margin:0; color:#475569; font-size:14px;"><%= @group.subtitle %></p>
+  <% end %>
+</div>
+
+<table role="presentation" style="width:100%; border-collapse:collapse; margin:0 0 20px;">
+  <tr>
+    <td style="padding:8px 0; color:#64748b; font-size:13px;">Environment</td>
+    <td style="padding:8px 0; color:#0f172a; font-size:13px; text-align:right;"><%= @group.stage %></td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0; color:#64748b; font-size:13px;">Severity</td>
+    <td style="padding:8px 0; color:#0f172a; font-size:13px; text-align:right;"><%= @group.severity %></td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0; color:#64748b; font-size:13px;">Occurrences</td>
+    <td style="padding:8px 0; color:#0f172a; font-size:13px; text-align:right;"><%= number_with_delimiter(@group.occurrence_count) %></td>
+  </tr>
+  <% if @metadata["milestone"].present? %>
+    <tr>
+      <td style="padding:8px 0; color:#64748b; font-size:13px;">Milestone</td>
+      <td style="padding:8px 0; color:#0f172a; font-size:13px; text-align:right;"><%= number_with_delimiter(@metadata["milestone"]) %></td>
+    </tr>
+  <% end %>
+  <% if @metadata["release"].present? %>
+    <tr>
+      <td style="padding:8px 0; color:#64748b; font-size:13px;">Release</td>
+      <td style="padding:8px 0; color:#0f172a; font-size:13px; text-align:right;"><%= @metadata["release"] %></td>
+    </tr>
+  <% end %>
+</table>
+
+<p style="margin:0 0 22px;">
+  <a href="<%= @group_url %>" style="display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; border-radius:8px; padding:11px 16px; font-weight:700; font-size:14px;">Open error in Logister</a>
+</p>
+
+<p style="margin:0; color:#64748b; font-size:12px; line-height:1.5;">
+  You received this because <%= @notification_label.downcase %> emails are enabled for <%= @project.name %>.
+  <a href="<%= @settings_url %>" style="color:#2563eb;">Manage project email settings</a>.
+</p>

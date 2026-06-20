@@ -1,19 +1,68 @@
 module ProjectSettingsContext
   extend ActiveSupport::Concern
 
+  NOTIFICATION_PATHS = %w[overview errors health workflow reports delivery operations].freeze
+  DEFAULT_NOTIFICATION_PATH = "overview"
+
   private
 
-  def load_project_settings_context
+  def load_project_settings_context(include: nil)
     ensure_project_settings_navigation
     @owner = @project.user
+    @project_manager = @project.managed_by?(current_user)
+
+    settings_context_sections(include).each do |section|
+      case section
+      when "notifications"
+        load_notification_settings_context
+      when "team"
+        load_team_settings_context
+      when "integrations"
+        load_integration_settings_context
+      when "data"
+        load_data_settings_context
+      when "admin"
+        load_admin_settings_context
+      when "setup"
+        load_setup_settings_context
+      end
+    end
+  end
+
+  def settings_context_sections(include)
+    requested = include.presence || @settings_section.presence || params[:section].presence || "general"
+    Array(requested).map(&:to_s)
+  end
+
+  def load_notification_settings_context
+    @notification_preference ||= ProjectNotificationPreference.for(user: current_user, project: @project)
+    @notification_path = normalized_notification_path
+  end
+
+  def normalized_notification_path
+    params[:notification_path].presence_in(NOTIFICATION_PATHS) || DEFAULT_NOTIFICATION_PATH
+  end
+
+  def load_team_settings_context
     @project_memberships = @project.project_memberships
                                   .select(:id, :uuid, :project_id, :user_id, :role, :created_at)
                                   .includes(:user)
                                   .order(created_at: :asc)
+    @assignment_summary = ProjectAssignmentSummary.new(@project)
+  end
+
+  def load_setup_settings_context
+    load_api_keys_settings_context
+    @setup_has_source_repository = @project.source_repositories.enabled.exists?
+  end
+
+  def load_api_keys_settings_context
     @api_keys = @project.api_keys
                         .select(:id, :uuid, :project_id, :name, :last_used_at, :revoked_at, :created_at)
                         .order(created_at: :desc)
-    @notification_preference ||= ProjectNotificationPreference.for(user: current_user, project: @project)
+  end
+
+  def load_integration_settings_context
     @cloudflare_integration_setting ||= ProjectIntegrationSetting.for(
       project: @project,
       provider: ProjectIntegrationSetting::PROVIDERS[:cloudflare_pages]
@@ -26,7 +75,6 @@ module ProjectSettingsContext
       enabled: true
     )
     @github_app_configured = Logister::GithubAppConfig.configured?
-    @project_manager = @project.managed_by?(current_user)
     @github_app_install_url = Logister::GithubAppConfig.install_url(state: @project.uuid) if @project_manager
     @github_setup_url = github_setup_url
     @github_webhook_url = github_webhooks_url
@@ -46,13 +94,10 @@ module ProjectSettingsContext
     @linkable_github_installations = @github_integration_state.linkable_installations
     @available_github_repositories = @github_integration_state.available_repositories
     @connectable_github_repositories = @github_integration_state.connectable_repositories
-    @assignment_summary = ProjectAssignmentSummary.new(@project)
+  end
+
+  def load_data_settings_context
     @retention_policy ||= ProjectRetentionPolicy.for(project: @project) if @project_manager
-    @public_api_rate_limit_defaults = {
-      requests: Project.default_public_api_rate_limit_requests,
-      period_seconds: Project.default_public_api_rate_limit_period_seconds,
-      auth_failure_requests: Project.default_public_api_auth_failure_rate_limit_requests
-    }
     @recent_telemetry_archives = @project.telemetry_archives
                                          .select(
                                            :id,
@@ -69,6 +114,14 @@ module ProjectSettingsContext
                                          )
                                          .recent_first
                                          .limit(5)
+  end
+
+  def load_admin_settings_context
+    @public_api_rate_limit_defaults = {
+      requests: Project.default_public_api_rate_limit_requests,
+      period_seconds: Project.default_public_api_rate_limit_period_seconds,
+      auth_failure_requests: Project.default_public_api_auth_failure_rate_limit_requests
+    }
   end
 
   def ensure_project_settings_navigation

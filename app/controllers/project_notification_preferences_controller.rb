@@ -8,9 +8,12 @@ class ProjectNotificationPreferencesController < ApplicationController
 
   def update
     @notification_preference = ProjectNotificationPreference.for(user: current_user, project: @project)
+    notification_path = normalized_notification_path
 
     if @notification_preference.update(notification_preference_params)
-      redirect_to settings_project_path(@project, section: "notifications"), notice: "Email notification settings updated."
+      redirect_options = { section: "notifications" }
+      redirect_options[:notification_path] = notification_path unless notification_path == DEFAULT_NOTIFICATION_PATH
+      redirect_to settings_project_path(@project, redirect_options), notice: "Email notification settings updated."
     else
       @settings_section = "notifications"
       load_project_settings_context
@@ -38,6 +41,28 @@ class ProjectNotificationPreferencesController < ApplicationController
   def notification_preference_params
     params.require(:project_notification_preference).permit(
       :first_occurrence_enabled,
+      :regression_enabled,
+      :frequent_error_enabled,
+      :frequent_error_threshold_count,
+      :frequent_error_window_minutes,
+      :milestone_alerts_enabled,
+      :workflow_mode,
+      :monitor_alerts_enabled,
+      :project_spike_enabled,
+      :project_spike_threshold_count,
+      :project_spike_window_minutes,
+      :performance_alerts_enabled,
+      :performance_p95_threshold_ms,
+      :release_notifications_enabled,
+      :usage_notifications_enabled,
+      :retention_notifications_enabled,
+      :environment_filter,
+      :severity_filter,
+      :status_filter,
+      :immediate_email_limit_per_hour,
+      :quiet_hours_enabled,
+      :quiet_hours_start,
+      :quiet_hours_end,
       :digest_frequency,
       :digest_send_hour,
       :time_zone

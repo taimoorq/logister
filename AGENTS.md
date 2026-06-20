@@ -107,6 +107,10 @@ Used when one action should update several DOM regions:
   3. Step-by-step setup or usage flow
   4. Verification section
   5. Next steps or troubleshooting
+- **Do not overload one public docs page with every related setting.** When a feature has several user intents, make a short overview/hub page and split the detailed guidance into focused subpages. The hub should answer "which path do I need?" and each subpage should answer one concrete operator or user question.
+- **Group docs by the user's purpose, not by the database shape.** For example, notification docs should be separated into setup requirements, error triage, project health, workflow routing, digests/delivery, and operational notices. Retention docs should separate policy choices, archive storage, and job verification.
+- **Make relationships between settings visible.** If a page has controls or examples, explain which section owns which outcome so users can tell similar options apart. Avoid placing a long form or option list under one generic heading when smaller cards, sections, or subpages would make the mental model clearer.
+- **Avoid checking in completed planning artifacts.** Once a plan has shipped and its durable lessons are captured in `AGENTS.md`, a runbook, the changelog, tests, or public docs, remove the completed plan/roadmap file instead of carrying stale checklist docs forward.
 - **Keep docs hosting concerns separate from Rails concerns.** Analytics, docs robots, docs sitemap, and docs metadata for the configured docs host belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
 
 ### Authentication hardening

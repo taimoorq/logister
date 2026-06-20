@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Archive Storage | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Configure Active Storage and S3-compatible object storage for Logister telemetry archive exports.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://docs.logister.org/product/data-retention/archive-storage/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Archive Storage | Logister">
+    <meta property="og:description" content="Configure Active Storage and S3-compatible object storage for Logister telemetry archive exports.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://docs.logister.org/product/data-retention/archive-storage/">
+    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
+    <link rel="icon" href="/assets/icon.png" type="image/png">
+    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/assets/icon.png">
+    <link rel="stylesheet" href="/assets/site.css">
+    <script defer src="/assets/analytics-config.js"></script>
+    <script defer src="/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Archive storage</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <main class="page">
+        <section class="hero"><span class="hero-kicker">Data retention / Archive storage</span><h1>Configure object storage before enabling archive-before-delete.</h1><p>Archive exports use Active Storage and write compressed JSONL objects. Configure storage on both web and worker processes.</p></section>
+        <div class="docs-layout">
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/product/data-retention/">Overview</a><a href="/product/data-retention/policy/">Policy settings</a><a class="active" href="/product/data-retention/archive-storage/">Archive storage</a><a href="/product/data-retention/jobs/">Jobs and verification</a></div></aside>
+          <article class="article" data-pagefind-body>
+            <section class="section">
+              <p class="eyebrow">Environment</p>
+              <h2>Use S3-compatible storage for durable archives.</h2>
+              <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#archive-env">Copy</button></div><pre><code id="archive-env">ACTIVE_STORAGE_SERVICE=amazon
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=
+LOGISTER_ARCHIVE_PREFIX=telemetry
+# Optional:
+# LOGISTER_ARCHIVE_STORAGE_SERVICE=amazon
+# AWS_S3_ENDPOINT=
+# AWS_S3_FORCE_PATH_STYLE=true</code></pre></div>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Object shape</p>
+              <h2>Archives are compressed JSONL.</h2>
+              <div class="output-block"><div class="output-head"><span class="output-label">Example key</span></div><pre><code>telemetry/ingest_events/project=PROJECT_UUID/year=2026/month=06/day=20/20260620T180000Z-1000-1999.jsonl.gz</code></pre></div>
+              <p>Each line includes <code>archive_version</code>, <code>record_type</code>, <code>exported_at</code>, and the original row attributes.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -30,6 +30,28 @@ Most feature or operations pages should follow this order:
 
 Use tables for choices, status codes, settings, or feature comparisons. Use ordered lists for procedures. Use bullets for checks and guidelines.
 
+## Page Scope And Subpages
+
+Keep each public docs page small enough that a user can understand why they are there before they start reading details. If a feature has multiple reasons a user might visit the page, make the top-level page a routing page and move the detailed instructions into subpages.
+
+Use a hub page when a feature contains several distinct jobs:
+
+- Notifications: setup requirements, error triage, project health, workflow routing, digests and delivery, operational notices.
+- Data retention: policy settings, archive storage, archive and prune jobs.
+- Source lookup: setup, repository mapping, path/ref diagnostics.
+- Integrations: working telemetry path, optional importer or credential settings, troubleshooting.
+
+The hub page should:
+
+1. Name the feature in one sentence.
+2. Explain the default behavior and required infrastructure.
+3. Show cards or a compact table that maps "I want..." to the right subpage.
+4. Link to the next page instead of explaining every field inline.
+
+Each subpage should own one user purpose. It should not repeat the full product tour from the hub. Include only the controls, commands, verification steps, and failure modes needed for that path.
+
+When two settings sound similar, separate them and state the difference plainly. For example, an error milestone alert is about one error group's lifetime count, a single-error volume threshold is about one group crossing a count inside a time window, and a project spike alert is about the whole project becoming noisy.
+
 ## Preferred Docs Voice
 
 The public docs should feel like a practical self-hosted product manual, in the same spirit as the Bugsink docs we used as a reference: direct, operational, and written by someone who has actually had to run the service.
@@ -117,3 +139,4 @@ When adding a new public docs page:
 4. Update `cloudflare-docs/llms.txt` and `cloudflare-docs/llms-full.txt` when the page is important for AI or search discovery.
 5. Update `public/llms.txt` and `public/llms-full.txt` when the public app should point crawlers to the new docs page.
 6. Run `bin/build-cloudflare-docs` before deploying the static docs.
+7. Remove completed plan or roadmap docs once the shipped behavior is represented in durable docs, changelog entries, tests, and agent guidance.
