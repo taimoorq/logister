@@ -562,6 +562,21 @@
   .dashboard-action-row .projects-secondary-button {
     @apply gap-2;
   }
+  .dashboard-tabs {
+    @apply flex gap-2 border-b border-slate-200 px-4 sm:px-5;
+  }
+  .dashboard-tab {
+    @apply -mb-px inline-flex h-10 items-center border-b-2 border-transparent px-3 text-sm font-semibold text-slate-500 no-underline hover:text-blue-700;
+  }
+  .dashboard-tab.is-active {
+    @apply border-blue-600 text-blue-700;
+  }
+  .dashboard-tab-panel {
+    @apply space-y-5;
+  }
+  .dashboard-overview-layout {
+    @apply grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-stretch 2xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,0.85fr)];
+  }
   .dashboard-title-metrics {
     @apply grid grid-cols-2 gap-1.5 border-t border-slate-100 pt-2 sm:grid-cols-4;
   }
@@ -715,13 +730,13 @@
     letter-spacing: 0;
   }
   .dashboard-explorer-layout {
-    @apply grid min-w-[42rem] grid-cols-1 gap-4 sm:min-w-0 lg:grid-cols-2 2xl:grid-cols-3;
+    @apply grid min-w-[34rem] grid-cols-2 gap-4;
   }
   .dashboard-explorer-card {
     @apply min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3 shadow-sm;
   }
   .dashboard-explorer-card-wide {
-    @apply lg:col-span-2;
+    @apply col-span-2;
   }
   .dashboard-explorer-card-header {
     @apply mb-2 flex items-baseline justify-between gap-3;
@@ -734,7 +749,7 @@
     letter-spacing: 0;
   }
   .dashboard-explorer-chart {
-    @apply h-64 w-full min-w-[20rem] sm:min-w-0;
+    @apply h-64 w-full min-w-0;
   }
   .dashboard-explorer-chart-tall {
     @apply h-72;
@@ -1031,6 +1046,33 @@
   .dashboard-priority-grid {
     @apply grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start;
   }
+  .dashboard-overview-layout .dashboard-explorer {
+    @apply min-w-0 order-1 rounded-md border border-slate-200;
+  }
+  .dashboard-overview-layout .dashboard-priority-grid {
+    @apply min-w-0 order-2 grid-cols-1 xl:grid-cols-1 xl:grid-rows-[auto_minmax(0,1fr)] xl:items-stretch xl:overflow-hidden;
+  }
+  .dashboard-overview-layout .dashboard-attention-panel {
+    @apply flex min-h-0 flex-col overflow-hidden;
+  }
+  .dashboard-overview-layout .dashboard-attention-list {
+    @apply min-h-0 flex-1 overflow-y-auto;
+  }
+  .dashboard-overview-layout .dashboard-attention-row {
+    @apply md:grid-cols-1 md:items-start;
+  }
+  .dashboard-overview-layout .dashboard-attention-side {
+    @apply md:w-auto;
+  }
+  .dashboard-overview-layout .dashboard-attention-actions {
+    @apply md:justify-start;
+  }
+  @media (min-width: 80rem) {
+    .dashboard-overview-layout .dashboard-priority-grid {
+      height: var(--dashboard-explorer-height, auto);
+      max-height: var(--dashboard-explorer-height, none);
+    }
+  }
   .dashboard-project-overview-grid {
     @apply grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start;
   }
@@ -1039,9 +1081,6 @@
   }
   .dashboard-attention-panel {
     @apply min-w-0;
-  }
-  .dashboard-event-mix-panel {
-    @apply min-w-0 xl:sticky xl:top-[5.2rem];
   }
   .dashboard-project-overview-main,
   .dashboard-project-summary-panel {
@@ -1177,29 +1216,8 @@
   .dashboard-empty-state span {
     @apply mt-1 block;
   }
-  .dashboard-event-mix {
-    @apply space-y-2 rounded-md bg-slate-900 px-3 py-3 shadow-sm ring-1 ring-slate-800;
-  }
-  .dashboard-event-mix-row {
-    @apply block w-full rounded-md border border-transparent px-2 py-2 text-left transition-colors hover:bg-white/5;
-  }
-  .dashboard-event-mix-row.is-active {
-    @apply border-blue-300/40 bg-blue-900/40;
-  }
-  .dashboard-event-mix-label {
-    @apply mb-1 flex items-center justify-between gap-3 text-sm;
-  }
-  .dashboard-event-mix-label strong {
-    @apply font-semibold text-slate-100;
-  }
-  .dashboard-event-bar {
-    @apply h-2 overflow-hidden rounded-full bg-white/10;
-  }
-  .dashboard-event-bar span {
-    @apply block h-full rounded-full bg-blue-400;
-  }
   .dashboard-assignment-panel {
-    @apply mt-4 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm;
+    @apply overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm;
   }
   .dashboard-assignment-header {
     @apply flex items-start justify-between gap-3 border-b border-slate-100 px-3 py-3;

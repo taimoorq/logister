@@ -27,6 +27,7 @@ export default class extends Controller {
     this.projects = this.payload.projects || []
     this.projectById = new Map(this.projects.map((project) => [String(project.id), project]))
     this.typeLabelByKey = new Map(this.eventTypes.map((eventType) => [eventType.key, eventType.label]))
+    this.overviewElement = this.element.closest(".dashboard-overview-layout")
     this.charts = {}
     this.resizeHandler = () => this.queueResize()
     this.beforeCacheHandler = () => this.beforeCache()
@@ -47,6 +48,8 @@ export default class extends Controller {
       this.projectChartTargets.forEach((target) => this.resizeObserver.observe(target))
       this.environmentChartTargets.forEach((target) => this.resizeObserver.observe(target))
     }
+
+    this.syncOverviewHeight()
   }
 
   disconnect() {
@@ -54,6 +57,7 @@ export default class extends Controller {
     window.removeEventListener("resize", this.resizeHandler)
     document.removeEventListener("turbo:before-cache", this.beforeCacheHandler)
     this.resizeObserver?.disconnect()
+    this.clearOverviewHeight()
     cancelAnimationFrame(this.resizeFrame)
     this.teardownCharts()
   }
@@ -62,6 +66,7 @@ export default class extends Controller {
     this.abortController?.abort()
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
+    this.clearOverviewHeight()
     cancelAnimationFrame(this.resizeFrame)
     this.teardownCharts({ clear: true })
   }
@@ -88,18 +93,20 @@ export default class extends Controller {
   }
 
   initializeCharts() {
-    this.charts.timeline = this.initializeChart(this.timelineChartTarget)
-    this.charts.eventTypes = this.initializeChart(this.eventTypeChartTarget)
-    this.charts.projects = this.initializeChart(this.projectChartTarget)
-    this.charts.environments = this.initializeChart(this.environmentChartTarget)
+    if (this.hasTimelineChartTarget) this.charts.timeline = this.initializeChart(this.timelineChartTarget)
+    if (this.hasEventTypeChartTarget) this.charts.eventTypes = this.initializeChart(this.eventTypeChartTarget)
+    if (this.hasProjectChartTarget) this.charts.projects = this.initializeChart(this.projectChartTarget)
+    if (this.hasEnvironmentChartTarget) this.charts.environments = this.initializeChart(this.environmentChartTarget)
 
-    this.charts.timeline.on("click", (params) => this.toggleFilter("occurredOn", params.data?.filterValue))
-    this.charts.eventTypes.on("click", (params) => this.toggleFilter("eventType", params.data?.filterValue))
-    this.charts.projects.on("click", (params) => this.toggleFilter("projectId", params.data?.filterValue))
-    this.charts.environments.on("click", (params) => this.toggleFilter("environment", params.data?.filterValue))
+    this.charts.timeline?.on("click", (params) => this.toggleFilter("occurredOn", params.data?.filterValue))
+    this.charts.eventTypes?.on("click", (params) => this.toggleFilter("eventType", params.data?.filterValue))
+    this.charts.projects?.on("click", (params) => this.toggleFilter("projectId", params.data?.filterValue))
+    this.charts.environments?.on("click", (params) => this.toggleFilter("environment", params.data?.filterValue))
   }
 
   initializeChart(target) {
+    if (!target) return null
+
     echarts.getInstanceByDom(target)?.dispose()
 
     return echarts.init(target, null, { renderer: "canvas" })
@@ -175,6 +182,7 @@ export default class extends Controller {
     this.renderProjects(data)
     this.renderEnvironments(data)
     this.resetButtonTarget.disabled = !this.hasActiveFilters()
+    this.syncOverviewHeight()
   }
 
   renderError() {
@@ -185,6 +193,7 @@ export default class extends Controller {
     `
     this.renderOpenEventsLink()
     this.renderOpenProjectLink()
+    this.syncOverviewHeight()
   }
 
   toggleFilter(key, value) {
@@ -395,20 +404,38 @@ export default class extends Controller {
   }
 
   resizeCharts() {
-    Object.values(this.charts).forEach((chart) => chart.resize())
+    Object.values(this.charts).forEach((chart) => chart?.resize())
   }
 
   queueResize() {
     cancelAnimationFrame(this.resizeFrame)
-    this.resizeFrame = requestAnimationFrame(() => this.resizeCharts())
+    this.resizeFrame = requestAnimationFrame(() => {
+      this.resizeCharts()
+      this.syncOverviewHeight()
+    })
+  }
+
+  syncOverviewHeight() {
+    if (!this.overviewElement) return
+
+    const height = Math.ceil(this.element.getBoundingClientRect().height)
+    if (height > 0) this.overviewElement.style.setProperty("--dashboard-explorer-height", `${height}px`)
+  }
+
+  clearOverviewHeight() {
+    this.overviewElement?.style.removeProperty("--dashboard-explorer-height")
   }
 
   setChartOption(chart, option) {
+    if (!chart) return
+
     chart.setOption(option, true)
   }
 
   setLoading(loading) {
     Object.values(this.charts).forEach((chart) => {
+      if (!chart) return
+
       if (loading) {
         chart.showLoading("default", { text: "", color: "#2563eb", maskColor: "rgba(248, 250, 252, 0.78)" })
       } else {
@@ -426,7 +453,7 @@ export default class extends Controller {
   }
 
   teardownCharts({ clear = false } = {}) {
-    Object.values(this.charts || {}).forEach((chart) => chart.dispose())
+    Object.values(this.charts || {}).forEach((chart) => chart?.dispose())
     this.charts = {}
 
     if (clear) this.chartTargets().forEach((target) => target.replaceChildren())

@@ -6,8 +6,6 @@
 <% open_errors_count = @counts.fetch(:unresolved, 0) %>
 <% introduced_today_count = @counts.fetch(:introduced_today, 0) %>
 <% all_error_groups_count = @counts.fetch(:all, 0) %>
-<% activity_types = Dashboard::EVENT_TYPE_ORDER.reject { |event_type| event_type == "error" } %>
-<% active_activity_types = activity_types.select { |event_type| @event_type_counts_last_24h.fetch(event_type, 0).positive? } %>
 <% transaction_count = @transaction_stats.fetch(:count, 0).to_i %>
 <% db_query_count = @db_stats.fetch(:count, 0).to_i %>
 <% request_span_count = @request_span_count_last_24h.to_i %>
@@ -15,110 +13,6 @@
 <% error_rate_percent = (@transaction_stats.fetch(:error_rate, 0.0).to_f * 100.0).round(1) %>
 
 <section class="space-y-6">
-  <section class="grid grid-cols-1 gap-4 lg:grid-cols-3"
-           aria-label="Project collection areas"
-           <%= tag.attributes(data: product_tour_step_data(tour_group, :sections)) %>>
-    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <p class="dashboard-kicker">Inbox</p>
-          <h2 class="text-lg font-bold text-slate-900">Error groups</h2>
-        </div>
-        <span class="project-overview-icon <%= dashboard_metric_state_class(open_errors_count) %>"><%= app_icon(:warning, css: "w-5 h-5") %></span>
-      </div>
-
-      <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
-        <%= link_to inbox_project_path(@project, filter: "unresolved"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
-          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(open_errors_count) %></strong>
-          <span class="text-xs font-semibold uppercase text-slate-500">Open</span>
-        <% end %>
-        <%= link_to inbox_project_path(@project, filter: "introduced_today"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
-          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(introduced_today_count) %></strong>
-          <span class="text-xs font-semibold uppercase text-slate-500">New today</span>
-        <% end %>
-        <%= link_to inbox_project_path(@project, filter: "all"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
-          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(all_error_groups_count) %></strong>
-          <span class="text-xs font-semibold uppercase text-slate-500">All groups</span>
-        <% end %>
-      </div>
-
-      <p class="mt-4 text-sm text-slate-600">
-        <%= open_errors_count.positive? ? "#{pluralize(open_errors_count, "open error group")} waiting for review." : "No open error groups right now." %>
-      </p>
-
-      <%= link_to inbox_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
-        <%= app_icon(:folder_open, css: "w-4 h-4") %>
-        <span>Open inbox</span>
-      <% end %>
-    </article>
-
-    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <p class="dashboard-kicker">Events</p>
-          <h2 class="text-lg font-bold text-slate-900">Events and logs</h2>
-        </div>
-        <span class="project-overview-icon"><%= app_icon(:chart, css: "w-5 h-5") %></span>
-      </div>
-
-      <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-        <strong class="block text-2xl font-semibold text-slate-900"><%= number_with_delimiter(@activity_events_last_24h) %></strong>
-          <span class="text-xs font-semibold uppercase text-slate-500">Events 24h</span>
-      </div>
-
-      <div class="mt-4 flex flex-wrap gap-2">
-        <% activity_types.each do |event_type| %>
-          <span class="<%= dashboard_event_badge_class(event_type) %>">
-            <%= dashboard_event_type_label(event_type) %> <%= number_with_delimiter(@event_type_counts_last_24h.fetch(event_type, 0)) %>
-          </span>
-        <% end %>
-      </div>
-
-      <p class="mt-4 text-sm text-slate-600">
-        <%= active_activity_types.any? ? "#{active_activity_types.map { |event_type| dashboard_event_type_label(event_type).downcase }.to_sentence} arrived in the last 24 hours." : "No logs, metrics, transactions, or check-ins in the last 24 hours." %>
-      </p>
-
-      <%= link_to activity_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
-        <%= app_icon(:chart, css: "w-4 h-4") %>
-        <span>View events</span>
-      <% end %>
-    </article>
-
-    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <p class="dashboard-kicker">Performance</p>
-          <h2 class="text-lg font-bold text-slate-900">Request timing</h2>
-        </div>
-        <span class="project-overview-icon"><%= app_icon(:dashboard, css: "w-5 h-5") %></span>
-      </div>
-
-      <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
-        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(transaction_count) %></strong>
-          <span class="text-xs font-semibold uppercase text-slate-500">Transactions</span>
-        </div>
-        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <strong class="block text-xl font-semibold text-slate-900"><%= @transaction_stats.fetch(:p95_ms, 0.0) %> ms</strong>
-          <span class="text-xs font-semibold uppercase text-slate-500">P95</span>
-        </div>
-        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(db_query_count) %></strong>
-          <span class="text-xs font-semibold uppercase text-slate-500">DB queries</span>
-        </div>
-      </div>
-
-      <p class="mt-4 text-sm text-slate-600">
-        <%= performance_events_count.positive? ? "#{pluralize(performance_events_count, "performance signal")} collected in the last 24 hours, including #{pluralize(request_span_count, "request span")}. Transaction error rate is #{error_rate_percent}%." : "No spans, transactions, or database timing events in the last 24 hours." %>
-      </p>
-
-      <%= link_to performance_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
-        <%= app_icon(:dashboard, css: "w-4 h-4") %>
-        <span>View performance</span>
-      <% end %>
-    </article>
-  </section>
-
   <section class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]"
            aria-label="Recent project signals"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :recent_signals)) %>>
@@ -132,65 +26,73 @@
     </section>
 
     <aside class="dashboard-panel">
-      <div class="dashboard-panel-header">
-        <div>
-          <h2>Recent errors</h2>
-          <p>Newest unresolved groups</p>
+      <section aria-label="Project error groups summary">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="dashboard-kicker">Inbox</p>
+            <h2 class="text-lg font-bold text-slate-900">Error groups</h2>
+          </div>
+          <span class="project-overview-icon <%= dashboard_metric_state_class(open_errors_count) %>"><%= app_icon(:warning, css: "w-5 h-5") %></span>
         </div>
-        <%= link_to "Inbox", inbox_project_path(@project), class: "dashboard-panel-link" %>
-      </div>
 
-      <div class="dashboard-title-metrics" aria-label="Project totals">
-        <span>
-          <strong><%= number_with_delimiter(@events_last_24h) %></strong>
-          <span>Events 24h</span>
-        </span>
-        <span>
-          <strong><%= number_with_delimiter(@event_type_counts_last_24h.fetch("error", 0)) %></strong>
-          <span>Error events</span>
-        </span>
-        <span>
-          <strong><%= number_with_delimiter(@project_overview.fetch(:monitors_count, 0)) %></strong>
-          <span>Monitors</span>
-        </span>
-        <span>
-          <strong><%= number_with_delimiter(@project_overview.fetch(:unhealthy_monitors_count, 0)) %></strong>
-          <span>Monitor issues</span>
-        </span>
-      </div>
-
-      <% if @recent_error_groups.any? %>
-        <div class="dashboard-attention-list mt-4">
-          <% @recent_error_groups.each do |group| %>
-            <article class="dashboard-attention-row">
-              <div class="dashboard-attention-main">
-                <div class="dashboard-attention-title-row">
-                  <%= link_to group.title, inbox_project_path(@project, group_uuid: group.uuid), class: "dashboard-attention-title" %>
-                  <span class="dashboard-attention-chip"><%= group.severity.presence || "error" %></span>
-                </div>
-                <span class="dashboard-attention-meta"><%= group.subtitle.presence || group.stage.presence || "Error" %> · <%= group.assignee.present? ? "Assigned to #{group.assignee.name.presence || group.assignee.email}" : "Unassigned" %></span>
-              </div>
-              <div class="dashboard-attention-side">
-                <div class="dashboard-attention-stats dashboard-attention-stats-compact">
-                  <span>
-                    <strong><%= number_with_delimiter(group.occurrence_count) %></strong>
-                    <span>Events</span>
-                  </span>
-                  <span>
-                    <strong><%= group.last_seen_at.present? ? "#{time_ago_in_words(group.last_seen_at)} ago" : "--" %></strong>
-                    <span>Last seen</span>
-                  </span>
-                </div>
-              </div>
-            </article>
+        <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
+          <%= link_to inbox_project_path(@project, filter: "unresolved"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
+            <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(open_errors_count) %></strong>
+            <span class="text-xs font-semibold uppercase text-slate-500">Open</span>
+          <% end %>
+          <%= link_to inbox_project_path(@project, filter: "introduced_today"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
+            <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(introduced_today_count) %></strong>
+            <span class="text-xs font-semibold uppercase text-slate-500">New today</span>
+          <% end %>
+          <%= link_to inbox_project_path(@project, filter: "all"), class: "rounded-lg border border-slate-200 bg-slate-50 p-3 text-slate-600 no-underline hover:bg-white" do %>
+            <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(all_error_groups_count) %></strong>
+            <span class="text-xs font-semibold uppercase text-slate-500">All groups</span>
           <% end %>
         </div>
-      <% else %>
-        <div class="dashboard-empty-state mt-4">
-          <strong>No unresolved error groups</strong>
-          <span>Errors will appear here as groups are opened or reopened.</span>
+
+        <p class="mt-4 text-sm text-slate-600">
+          <%= open_errors_count.positive? ? "#{pluralize(open_errors_count, "open error group")} waiting for review." : "No open error groups right now." %>
+        </p>
+
+        <%= link_to inbox_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
+          <%= app_icon(:folder_open, css: "w-4 h-4") %>
+          <span>Open inbox</span>
+        <% end %>
+      </section>
+
+      <section class="mt-5 border-t border-slate-200 pt-4" aria-label="Project performance summary">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="dashboard-kicker">Performance</p>
+            <h3 class="text-base font-bold text-slate-900">Request timing</h3>
+          </div>
+          <span class="project-overview-icon"><%= app_icon(:dashboard, css: "w-5 h-5") %></span>
         </div>
-      <% end %>
+
+        <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(transaction_count) %></strong>
+            <span class="text-xs font-semibold uppercase text-slate-500">Transactions</span>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <strong class="block text-xl font-semibold text-slate-900"><%= @transaction_stats.fetch(:p95_ms, 0.0) %> ms</strong>
+            <span class="text-xs font-semibold uppercase text-slate-500">P95</span>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <strong class="block text-xl font-semibold text-slate-900"><%= number_with_delimiter(db_query_count) %></strong>
+            <span class="text-xs font-semibold uppercase text-slate-500">DB queries</span>
+          </div>
+        </div>
+
+        <p class="mt-4 text-sm text-slate-600">
+          <%= performance_events_count.positive? ? "#{pluralize(performance_events_count, "performance signal")} collected in the last 24 hours, including #{pluralize(request_span_count, "request span")}. Transaction error rate is #{error_rate_percent}%." : "No spans, transactions, or database timing events in the last 24 hours." %>
+        </p>
+
+        <%= link_to performance_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
+          <%= app_icon(:dashboard, css: "w-4 h-4") %>
+          <span>View performance</span>
+        <% end %>
+      </section>
     </aside>
   </section>
 </section>

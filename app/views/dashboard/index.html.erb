@@ -1,4 +1,5 @@
 <% tour_group = "dashboard" %>
+<% dashboard_tab = params[:tab].presence_in(%w[overview projects]) || "overview" %>
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group, html_options: { class: "dashboard-page" } } do %>
   <section class="dashboard-title-row"
@@ -22,95 +23,72 @@
     </div>
   </section>
 
-  <section class="dashboard-explorer"
-           data-controller="dashboard-explorer"
-           data-dashboard-explorer-payload-value="<%= @dashboard_explorer.to_json %>"
-           <%= tag.attributes(data: product_tour_step_data(tour_group, :explorer)) %>
-           aria-label="Cross-app event explorer">
-    <div class="dashboard-explorer-header">
-      <div>
-        <p class="dashboard-kicker">Explorer</p>
-        <h2>Overall Event flow</h2>
-        <p>Last <%= @dashboard_explorer[:window_days] %> days across accessible apps</p>
-      </div>
-    </div>
+  <nav class="dashboard-tabs" role="tablist" aria-label="Dashboard sections">
+    <%= link_to dashboard_path,
+                class: "dashboard-tab #{"is-active" if dashboard_tab == "overview"}",
+                role: "tab",
+                aria: { selected: (dashboard_tab == "overview").to_s, controls: "dashboard-tab-overview", current: ("page" if dashboard_tab == "overview") },
+                tabindex: (dashboard_tab == "overview" ? 0 : -1) do %>
+      Overview
+    <% end %>
+    <%= link_to dashboard_path(tab: "projects"),
+                class: "dashboard-tab #{"is-active" if dashboard_tab == "projects"}",
+                role: "tab",
+                aria: { selected: (dashboard_tab == "projects").to_s, controls: "dashboard-tab-projects", current: ("page" if dashboard_tab == "projects") },
+                tabindex: (dashboard_tab == "projects" ? 0 : -1) do %>
+      Projects
+    <% end %>
+  </nav>
 
-    <div class="dashboard-explorer-workbench">
-      <aside class="dashboard-explorer-slice" aria-label="Current explorer slice">
-        <div class="dashboard-explorer-slice-header">
-          <div>
-            <p class="dashboard-kicker">Current slice</p>
-            <h3>Selection totals</h3>
-          </div>
-          <button type="button" class="dashboard-explorer-reset" data-dashboard-explorer-target="resetButton" data-action="dashboard-explorer#resetFilters">Reset</button>
-        </div>
-
-        <div class="dashboard-explorer-summary" data-dashboard-explorer-target="summary"></div>
-
-        <div class="dashboard-explorer-actions">
-          <%= link_to dashboard_events_path,
-                      class: "dashboard-explorer-open",
-                      data: { dashboard_explorer_target: "openEventsLink" } do %>
-            Open matching events
-          <% end %>
-          <%= link_to "#",
-                      class: "dashboard-explorer-project",
-                      hidden: true,
-                      data: { dashboard_explorer_target: "openProjectLink" } do %>
-            Open project
-          <% end %>
-        </div>
-
-        <div class="dashboard-explorer-filter-panel">
-          <div class="dashboard-explorer-filter-heading">
-            <span>Filters</span>
-          </div>
-          <div class="dashboard-explorer-filters" data-dashboard-explorer-target="filters"></div>
-        </div>
-      </aside>
-
-      <div class="dashboard-explorer-main">
-        <div class="dashboard-explorer-layout">
-          <article class="dashboard-explorer-card dashboard-explorer-card-wide">
-            <div class="dashboard-explorer-card-header">
-              <h3>Daily volume</h3>
-              <span>By event type</span>
-            </div>
-            <div class="dashboard-explorer-chart dashboard-explorer-chart-tall" data-dashboard-explorer-target="timelineChart" role="img" aria-label="Daily event volume by type"></div>
-          </article>
-
-          <article class="dashboard-explorer-card">
-            <div class="dashboard-explorer-card-header">
-              <h3>Event types</h3>
-              <span>Current slice</span>
-            </div>
-            <div class="dashboard-explorer-chart" data-dashboard-explorer-target="eventTypeChart" role="img" aria-label="Events grouped by type"></div>
-          </article>
-
-          <article class="dashboard-explorer-card">
-            <div class="dashboard-explorer-card-header">
-              <h3>Apps by volume</h3>
-              <span>Top active apps</span>
-            </div>
-            <div class="dashboard-explorer-chart" data-dashboard-explorer-target="projectChart" role="img" aria-label="Top apps by event volume"></div>
-          </article>
-
-          <article class="dashboard-explorer-card">
-            <div class="dashboard-explorer-card-header">
-              <h3>Environments</h3>
-              <span>Grouped from event context</span>
-            </div>
-            <div class="dashboard-explorer-chart" data-dashboard-explorer-target="environmentChart" role="img" aria-label="Events grouped by environment"></div>
-          </article>
-        </div>
-      </div>
-    </div>
-  </section>
-
+  <% if dashboard_tab == "overview" %>
+  <div id="dashboard-tab-overview" class="dashboard-overview-layout" role="tabpanel" aria-label="Overview">
   <section class="dashboard-priority-grid"
            data-controller="dashboard-attention"
            data-dashboard-attention-active-value="error"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :attention_queue)) %>>
+    <aside class="dashboard-assignment-panel" aria-label="Your assigned issues">
+      <div class="dashboard-assignment-header">
+        <div>
+          <h3>My assignments</h3>
+          <p>Open bugs across active apps</p>
+        </div>
+        <% if @assigned_error_groups.first %>
+          <%= link_to "Open", inbox_project_path(@assigned_error_groups.first.project, group_uuid: @assigned_error_groups.first.uuid, assignee: "me"), class: "dashboard-panel-link" %>
+        <% else %>
+          <%= link_to "Projects", projects_path, class: "dashboard-panel-link" %>
+        <% end %>
+      </div>
+
+      <div class="dashboard-assignment-summary">
+        <span>
+          <strong><%= number_with_delimiter(@assigned_error_groups_count) %></strong>
+          <span>Assigned to me</span>
+        </span>
+        <span>
+          <strong><%= number_with_delimiter(@unassigned_error_groups_count) %></strong>
+          <span>Unassigned</span>
+        </span>
+      </div>
+
+      <% if @assigned_error_groups.any? %>
+        <div class="dashboard-assignment-list">
+          <% @assigned_error_groups.each do |group| %>
+            <%= link_to inbox_project_path(group.project, group_uuid: group.uuid, assignee: "me"), class: "dashboard-assignment-row" do %>
+              <span class="dashboard-assignment-title"><%= group.title %></span>
+              <span class="dashboard-assignment-meta">
+                <%= group.project.name %> · <%= group.last_seen_at.present? ? "#{time_ago_in_words(group.last_seen_at)} ago" : "No events yet" %>
+              </span>
+            <% end %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="dashboard-assignment-empty">
+          <strong>Nothing assigned to you</strong>
+          <span><%= pluralize(@unassigned_error_groups_count, "open issue") %> still <%= @unassigned_error_groups_count == 1 ? "needs" : "need" %> an owner.</span>
+        </div>
+      <% end %>
+    </aside>
+
     <article class="dashboard-panel dashboard-attention-panel">
       <div class="dashboard-panel-header">
         <div>
@@ -208,79 +186,89 @@
       </div>
     </article>
 
-    <aside class="dashboard-panel dashboard-event-mix-panel">
-      <div class="dashboard-panel-header">
-        <div>
-          <h2>Event mix</h2>
-          <p>Filters the attention list</p>
-        </div>
-      </div>
-      <% max_event_count = @events_by_type_last_24h.values.map(&:to_i).max.to_i %>
-      <div class="dashboard-event-mix" role="listbox" aria-label="Filter attention by event type">
-        <% Dashboard::EVENT_TYPE_ORDER.each do |event_type| %>
-          <% count = @events_by_type_last_24h.fetch(event_type, 0).to_i %>
-          <% width = max_event_count.positive? ? ((count.to_f / max_event_count) * 100).round : 0 %>
-          <button type="button"
-                  class="dashboard-event-mix-row"
-                  data-dashboard-attention-target="filter"
-                  data-action="dashboard-attention#filter"
-                  data-event-type="<%= event_type %>"
-                  aria-pressed="<%= event_type == 'error' ? 'true' : 'false' %>">
-            <div class="dashboard-event-mix-label">
-              <span class="<%= dashboard_event_badge_class(event_type) %>"><%= dashboard_event_type_label(event_type) %></span>
-              <strong><%= number_with_delimiter(count) %></strong>
-            </div>
-            <div class="dashboard-event-bar" aria-hidden="true">
-              <span style="width: <%= width %>%"></span>
-            </div>
-          </button>
-        <% end %>
-      </div>
+  </section>
 
-      <div class="dashboard-assignment-panel" aria-label="Your assigned issues">
-        <div class="dashboard-assignment-header">
+  <section class="dashboard-explorer"
+           data-controller="dashboard-explorer"
+           data-dashboard-explorer-payload-value="<%= @dashboard_explorer.to_json %>"
+           <%= tag.attributes(data: product_tour_step_data(tour_group, :explorer)) %>
+           aria-label="Cross-app event explorer">
+    <div class="dashboard-explorer-header">
+      <div>
+        <p class="dashboard-kicker">Explorer</p>
+        <h2>Overall Event flow</h2>
+        <p>Last <%= @dashboard_explorer[:window_days] %> days across accessible apps</p>
+      </div>
+    </div>
+
+    <div class="dashboard-explorer-workbench">
+      <aside class="dashboard-explorer-slice" aria-label="Current explorer slice">
+        <div class="dashboard-explorer-slice-header">
           <div>
-            <h3>My assignments</h3>
-            <p>Open bugs across active apps</p>
+            <p class="dashboard-kicker">Current slice</p>
+            <h3>Selection totals</h3>
           </div>
-          <% if @assigned_error_groups.first %>
-            <%= link_to "Open", inbox_project_path(@assigned_error_groups.first.project, group_uuid: @assigned_error_groups.first.uuid, assignee: "me"), class: "dashboard-panel-link" %>
-          <% else %>
-            <%= link_to "Projects", projects_path, class: "dashboard-panel-link" %>
+          <button type="button" class="dashboard-explorer-reset" data-dashboard-explorer-target="resetButton" data-action="dashboard-explorer#resetFilters">Reset</button>
+        </div>
+
+        <div class="dashboard-explorer-summary" data-dashboard-explorer-target="summary"></div>
+
+        <div class="dashboard-explorer-actions">
+          <%= link_to dashboard_events_path,
+                      class: "dashboard-explorer-open",
+                      data: { dashboard_explorer_target: "openEventsLink" } do %>
+            Open matching events
+          <% end %>
+          <%= link_to "#",
+                      class: "dashboard-explorer-project",
+                      hidden: true,
+                      data: { dashboard_explorer_target: "openProjectLink" } do %>
+            Open project
           <% end %>
         </div>
 
-        <div class="dashboard-assignment-summary">
-          <span>
-            <strong><%= number_with_delimiter(@assigned_error_groups_count) %></strong>
-            <span>Assigned to me</span>
-          </span>
-          <span>
-            <strong><%= number_with_delimiter(@unassigned_error_groups_count) %></strong>
-            <span>Unassigned</span>
-          </span>
+        <div class="dashboard-explorer-filter-panel">
+          <div class="dashboard-explorer-filter-heading">
+            <span>Filters</span>
+          </div>
+          <div class="dashboard-explorer-filters" data-dashboard-explorer-target="filters"></div>
         </div>
+      </aside>
 
-        <% if @assigned_error_groups.any? %>
-          <div class="dashboard-assignment-list">
-            <% @assigned_error_groups.each do |group| %>
-              <%= link_to inbox_project_path(group.project, group_uuid: group.uuid, assignee: "me"), class: "dashboard-assignment-row" do %>
-                <span class="dashboard-assignment-title"><%= group.title %></span>
-                <span class="dashboard-assignment-meta">
-                  <%= group.project.name %> · <%= group.last_seen_at.present? ? "#{time_ago_in_words(group.last_seen_at)} ago" : "No events yet" %>
-                </span>
-              <% end %>
-            <% end %>
-          </div>
-        <% else %>
-          <div class="dashboard-assignment-empty">
-            <strong>Nothing assigned to you</strong>
-            <span><%= pluralize(@unassigned_error_groups_count, "open issue") %> still <%= @unassigned_error_groups_count == 1 ? "needs" : "need" %> an owner.</span>
-          </div>
-        <% end %>
+      <div class="dashboard-explorer-main">
+        <div class="dashboard-explorer-layout">
+          <article class="dashboard-explorer-card dashboard-explorer-card-wide">
+            <div class="dashboard-explorer-card-header">
+              <h3>Daily volume</h3>
+              <span>By event type</span>
+            </div>
+            <div class="dashboard-explorer-chart dashboard-explorer-chart-tall" data-dashboard-explorer-target="timelineChart" role="img" aria-label="Daily event volume by type"></div>
+          </article>
+
+          <article class="dashboard-explorer-card">
+            <div class="dashboard-explorer-card-header">
+              <h3>Event types</h3>
+              <span>Current slice</span>
+            </div>
+            <div class="dashboard-explorer-chart" data-dashboard-explorer-target="eventTypeChart" role="img" aria-label="Events grouped by type"></div>
+          </article>
+
+          <article class="dashboard-explorer-card">
+            <div class="dashboard-explorer-card-header">
+              <h3>Apps by volume</h3>
+              <span>Top active apps</span>
+            </div>
+            <div class="dashboard-explorer-chart" data-dashboard-explorer-target="projectChart" role="img" aria-label="Top apps by event volume"></div>
+          </article>
+
+        </div>
       </div>
-    </aside>
+    </div>
   </section>
+
+  </div>
+  <% else %>
+  <div id="dashboard-tab-projects" class="dashboard-tab-panel" role="tabpanel" aria-label="Projects">
 
   <section class="dashboard-project-overview-grid"
            aria-label="Project overview"
@@ -394,4 +382,6 @@
       </div>
     </aside>
   </section>
+  </div>
+  <% end %>
 <% end %>

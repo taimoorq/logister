@@ -3,6 +3,53 @@
 require "rails_helper"
 
 RSpec.describe "Project retention policies", type: :request do
+  describe "GET /projects/:uuid/settings?section=data" do
+    it "shows archive object keys, sizes, and failure details for project managers" do
+      project = projects(:one)
+      archive_key = "telemetry/ingest_events/project=#{project.uuid}/year=2026/month=06/day=20/archive.jsonl.gz"
+      create(
+        :telemetry_archive,
+        project: project,
+        scope: "hot_events",
+        rows: 7,
+        bytes: 2.kilobytes,
+        objects: [
+          {
+            "key" => archive_key,
+            "rows" => 7,
+            "bytes" => 2.kilobytes
+          }
+        ],
+        created_at: 2.minutes.ago
+      )
+      create(
+        :telemetry_archive,
+        project: project,
+        record_type: "trace_spans",
+        scope: "trace_spans",
+        status: "failed",
+        rows: 0,
+        bytes: 0,
+        objects: [],
+        error_message: "Logister::TelemetryArchiveExporter::Error: storage unavailable",
+        created_at: 1.minute.ago
+      )
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "data")
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Recent archive runs")
+      expect(response.body).to include("Activity events")
+      expect(response.body).to include("Trace spans")
+      expect(response.body).to include("1 object")
+      expect(response.body).to include("2 KB")
+      expect(response.body).to include(archive_key)
+      expect(response.body).to include("Failed")
+      expect(response.body).to include("storage unavailable")
+    end
+  end
+
   describe "PATCH /projects/:uuid/retention_policy" do
     it "updates an owned project's retention policy" do
       project = projects(:one)

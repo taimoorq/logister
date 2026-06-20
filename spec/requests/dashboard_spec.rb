@@ -48,7 +48,12 @@ RSpec.describe "Dashboard", type: :request do
         expect(tour_root["data-action"]).to include("click->product-tour#startForNewUser:capture", "turbo:before-cache@document->product-tour#beforeCache")
         expect(document.at_css(".tour-help-button[data-action='click->product-tour#start']")).to be_present
         expect(document.at_css(".tour-help-button .tour-help-button-mark")&.text).to eq("?")
-        expect(document.css("[data-tg-group='dashboard']").map { |node| node["data-tg-title"] }).to include("Dashboard overview", "Explorer", "Attention queue", "Project signals")
+        expect(document.css("[data-tg-group='dashboard']").map { |node| node["data-tg-title"] }).to include("Dashboard overview", "Explorer", "Attention queue")
+
+        get dashboard_path(tab: "projects")
+
+        document = Nokogiri::HTML.parse(response.body)
+        expect(document.css("[data-tg-group='dashboard']").map { |node| node["data-tg-title"] }).to include("Project signals")
       end
 
       it "renders active accessible projects in the top navigation dropdown" do
@@ -119,7 +124,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(response.body).not_to include(archived_project.name)
       end
 
-      it "renders overview cards and compact project shortcuts" do
+      it "renders the overview tab and project shortcuts tab" do
         project = projects(:one)
         create(:ingest_event, :log, project: project, api_key: api_keys(:one), occurred_at: 30.minutes.ago)
 
@@ -128,27 +133,61 @@ RSpec.describe "Dashboard", type: :request do
         expect(response).to have_http_status(:success)
 
         document = Nokogiri::HTML.parse(response.body)
-        project_row = document.css(".dashboard-project-row").find { |node| node.text.include?(project.name) }
-        project_overview = document.at_css(".dashboard-project-overview-grid")
+        tabs = document.at_css(".dashboard-tabs[role='tablist']")
+        active_tab = tabs.at_css(".dashboard-tab.is-active[aria-selected='true']")
+        overview_panel = document.at_css("#dashboard-tab-overview.dashboard-overview-layout")
+        priority_grid = overview_panel.at_css(".dashboard-priority-grid")
+        explorer = overview_panel.at_css(".dashboard-explorer")
 
         expect(document.at_css(".dashboard-page")).to be_present
         expect(document.at_css(".dashboard-title-row .dashboard-title-metrics")).to be_nil
-        expect(project_overview).to be_present
-        expect(project_overview.css(".dashboard-title-metrics > span").size).to eq(4)
+        expect(tabs).to be_present
+        expect(active_tab.text.strip).to eq("Overview")
+        expect(tabs.at_css("a[href='#{dashboard_path(tab: "projects")}']")).to be_present
+        expect(overview_panel).to be_present
+        expect(document.at_css("#dashboard-tab-projects")).to be_nil
         expect(document.at_css(".projects-search input[aria-label='Search projects']")).to be_nil
-        expect(project_overview.css(".dashboard-metric-card").size).to eq(4)
-        expect(project_overview.at_css(".dashboard-project-summary-panel")).to be_present
-        expect(project_overview.at_css(".dashboard-project-overview-main")).to be_present
         expect(document.at_css("a.projects-new-button")["href"]).to eq(new_project_path)
         expect(document.at_css("a[href='#{projects_path}']")).to be_present
-        expect(document.text).to include("Needs attention", "Event mix", "Projects at a glance")
+        expect(document.text).to include("Needs attention")
         expect(document.text).to include("My assignments")
+        expect(document.text).not_to include("Event mix", "Projects at a glance")
         expect(document.text).not_to include("Recent activity")
+        expect(document.at_css(".dashboard-project-overview-grid")).to be_nil
         expect(document.at_css("[data-controller='dashboard-attention']")).to be_present
-        expect(document.css(".dashboard-event-mix-row[data-dashboard-attention-target='filter']").size).to eq(Dashboard::EVENT_TYPE_ORDER.size)
+        expect(document.css(".dashboard-priority-grid").size).to eq(1)
+        expect(priority_grid).to be_present
+        expect(overview_panel.at_xpath("./*[contains(concat(' ', normalize-space(@class), ' '), ' dashboard-explorer ')]")).to be_present
+        expect(overview_panel.at_xpath("./*[contains(concat(' ', normalize-space(@class), ' '), ' dashboard-priority-grid ')]")).to be_present
+        expect(priority_grid.at_xpath("./*[contains(concat(' ', normalize-space(@class), ' '), ' dashboard-assignment-panel ')]")).to be_present
+        expect(priority_grid.to_html.index("dashboard-assignment-panel")).to be < priority_grid.to_html.index("dashboard-attention-panel")
+        expect(explorer).to be_present
+        expect(document.at_css(".dashboard-event-mix-row[data-dashboard-attention-target='filter']")).to be_nil
         expect(document.at_css(".dashboard-attention-row[data-event-type='error']")).to be_present
         expect(document.at_css(".dashboard-attention-row-context")).to be_present
         expect(document.at_css(".project-card")).to be_nil
+
+        get dashboard_path(tab: "projects")
+
+        expect(response).to have_http_status(:success)
+
+        document = Nokogiri::HTML.parse(response.body)
+        project_row = document.css(".dashboard-project-row").find { |node| node.text.include?(project.name) }
+        project_overview = document.at_css(".dashboard-project-overview-grid")
+        active_tab = document.at_css(".dashboard-tab.is-active[aria-selected='true']")
+
+        expect(active_tab.text.strip).to eq("Projects")
+        expect(document.at_css("#dashboard-tab-overview")).to be_nil
+        expect(document.at_css("#dashboard-tab-projects")).to be_present
+        expect(document.at_css("[data-controller='dashboard-attention']")).to be_nil
+        expect(document.at_css("[data-controller='dashboard-explorer']")).to be_nil
+        expect(project_overview).to be_present
+        expect(project_overview.css(".dashboard-title-metrics > span").size).to eq(4)
+        expect(project_overview.css(".dashboard-metric-card").size).to eq(4)
+        expect(project_overview.at_css(".dashboard-project-summary-panel")).to be_present
+        expect(project_overview.at_css(".dashboard-project-overview-main")).to be_present
+        expect(document.text).to include("Projects at a glance", "Project signals")
+        expect(document.text).not_to include("Event mix")
         expect(project_row).to be_present
         expect(project_row.at_css(".dashboard-project-main")["href"]).to eq(project_path(project))
         expect(project_row.at_css(".project-type-icon-ruby use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-ruby\z})
@@ -197,7 +236,8 @@ RSpec.describe "Dashboard", type: :request do
         expect(payload["window_days"]).to eq(Dashboard::EXPLORER_WINDOW_DAYS)
         expect(payload["projects"]).to include(hash_including("name" => projects(:one).name, "url" => project_path(projects(:one))))
         expect(payload["rows"]).to be_nil
-        expect(document.css("[data-dashboard-explorer-target$='Chart']").size).to eq(4)
+        expect(explorer.css("[data-dashboard-explorer-target$='Chart']").size).to eq(3)
+        expect(explorer.at_css("[data-dashboard-explorer-target='environmentChart']")).to be_nil
       end
 
       it "returns filtered explorer aggregates as JSON" do

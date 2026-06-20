@@ -12,4 +12,24 @@ class TelemetryArchive < ApplicationRecord
 
   scope :completed, -> { where(status: "completed") }
   scope :recent_first, -> { order(created_at: :desc) }
+
+  def archive_objects
+    objects.is_a?(Array) ? objects : []
+  end
+
+  def object_keys
+    archive_objects.filter_map do |object|
+      next unless object.respond_to?(:[])
+
+      object["key"].presence || object[:key].presence
+    end
+  end
+
+  def completed?
+    status == "completed"
+  end
+
+  def failed?
+    status == "failed"
+  end
 end

@@ -94,16 +94,43 @@
               <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Scope</th>
               <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Before</th>
               <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Rows</th>
+              <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Objects</th>
+              <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Bytes</th>
               <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 bg-white">
             <% recent_archives.each do |archive| %>
+              <% archive_object_keys = archive.object_keys %>
               <tr>
                 <td class="px-3 py-2 text-slate-900"><%= retention_archive_scope_label(archive.scope) %></td>
                 <td class="px-3 py-2 text-slate-600"><%= retention_timestamp(archive.before_at) %></td>
                 <td class="px-3 py-2 text-slate-600"><%= number_with_delimiter(archive.rows) %></td>
-                <td class="px-3 py-2 text-slate-600"><%= archive.status.humanize %></td>
+                <td class="px-3 py-2 text-slate-600">
+                  <% if archive_object_keys.any? %>
+                    <details>
+                      <summary class="cursor-pointer text-sm font-semibold text-blue-700 hover:text-blue-800">
+                        <%= pluralize(archive_object_keys.size, "object") %>
+                      </summary>
+                      <div class="mt-2 space-y-1">
+                        <% archive_object_keys.each do |object_key| %>
+                          <code class="block max-w-96 truncate rounded bg-slate-100 px-2 py-1 text-xs text-slate-700" title="<%= object_key %>"><%= object_key %></code>
+                        <% end %>
+                      </div>
+                    </details>
+                  <% else %>
+                    <span class="text-slate-400">No objects</span>
+                  <% end %>
+                </td>
+                <td class="px-3 py-2 text-slate-600"><%= number_to_human_size(archive.bytes) %></td>
+                <td class="px-3 py-2 text-slate-600">
+                  <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold <%= archive.completed? ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700" %>">
+                    <%= archive.status.humanize %>
+                  </span>
+                  <% if archive.failed? && archive.error_message.present? %>
+                    <p class="mt-1 max-w-80 text-xs text-red-700"><%= archive.error_message %></p>
+                  <% end %>
+                </td>
               </tr>
             <% end %>
           </tbody>

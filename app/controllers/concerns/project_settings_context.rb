@@ -54,7 +54,19 @@ module ProjectSettingsContext
       auth_failure_requests: Project.default_public_api_auth_failure_rate_limit_requests
     }
     @recent_telemetry_archives = @project.telemetry_archives
-                                         .select(:id, :project_id, :scope, :before_at, :rows, :status, :created_at)
+                                         .select(
+                                           :id,
+                                           :project_id,
+                                           :record_type,
+                                           :scope,
+                                           :before_at,
+                                           :rows,
+                                           :bytes,
+                                           :objects,
+                                           :status,
+                                           :error_message,
+                                           :created_at
+                                         )
                                          .recent_first
                                          .limit(5)
   end
