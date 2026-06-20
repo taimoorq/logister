@@ -23,6 +23,73 @@
 
         <%= render "integration_picker", f: f, tour_group: tour_group %>
 
+        <fieldset class="border-t border-slate-200 pt-5"
+                  <%= tag.attributes(data: product_tour_step_data(tour_group, :retention_policy)) %>>
+          <legend class="form-label">Data retention</legend>
+          <p class="text-slate-500 text-xs mb-3">
+            Choose the data lifecycle before this project starts accepting telemetry.
+          </p>
+
+          <%= f.fields_for :retention_policy do |retention_fields| %>
+            <% retention_policy = retention_fields.object %>
+
+            <% if retention_policy.errors.any? %>
+              <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+                <%= retention_policy.errors.full_messages.to_sentence %>
+              </div>
+            <% end %>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div>
+                <%= retention_fields.label :hot_retention_days, "Event retention", class: "form-label" %>
+                <%= retention_fields.select :hot_retention_days,
+                                            options_for_select(retention_day_options, retention_policy.hot_retention_days),
+                                            {},
+                                            required: true,
+                                            class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Logs, metrics, transactions, and check-ins.</p>
+              </div>
+
+              <div>
+                <%= retention_fields.label :trace_retention_days, "Trace retention", class: "form-label" %>
+                <%= retention_fields.select :trace_retention_days,
+                                            options_for_select(retention_day_options, retention_policy.trace_retention_days),
+                                            {},
+                                            required: true,
+                                            class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Request span waterfall data.</p>
+              </div>
+
+              <div>
+                <%= retention_fields.label :error_retention_days, "Closed error retention", class: "form-label" %>
+                <%= retention_fields.select :error_retention_days,
+                                            options_for_select(retention_day_options(include_forever: true), retention_policy.error_retention_days),
+                                            {},
+                                            class: "form-input" %>
+                <p class="mt-1 text-xs text-slate-500">Resolved, ignored, or archived groups.</p>
+              </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <label class="flex items-start gap-3 border border-slate-200 bg-slate-50 p-4">
+                <%= retention_fields.check_box :archive_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <span>
+                  <span class="block text-sm font-semibold text-slate-900">Enable archive exports</span>
+                  <span class="block text-sm text-slate-600">Store gzip JSONL exports before old telemetry is removed.</span>
+                </span>
+              </label>
+
+              <label class="flex items-start gap-3 border border-slate-200 bg-slate-50 p-4">
+                <%= retention_fields.check_box :archive_before_delete, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <span>
+                  <span class="block text-sm font-semibold text-slate-900">Archive before deleting</span>
+                  <span class="block text-sm text-slate-600">Require an archive export before retention cleanup deletes rows.</span>
+                </span>
+              </label>
+            </div>
+          <% end %>
+        </fieldset>
+
         <% if @project.errors.any? %>
           <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
             <%= @project.errors.full_messages.to_sentence %>

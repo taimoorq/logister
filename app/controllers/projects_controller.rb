@@ -49,14 +49,24 @@ class ProjectsController < ApplicationController
 
   def new
     @project = current_user.projects.new
+    build_default_retention_policy
   end
 
   def create
     @project = current_user.projects.new(project_create_params)
+
+    if retention_policy_attributes_missing?
+      build_default_retention_policy
+      @project.errors.add(:base, "Choose a data retention policy before creating the project.")
+      @project.retention_policy.errors.add(:base, "Choose a data retention policy before creating the project.")
+      return render :new, status: :unprocessable_content
+    end
+
     if @project.save
       redirect_to setup_project_path(@project),
                   notice: "Project created. Follow the #{@project.integration_label} setup guide to start ingesting events."
     else
+      build_default_retention_policy
       render :new, status: :unprocessable_content
     end
   end
@@ -155,11 +165,34 @@ class ProjectsController < ApplicationController
   end
 
   def project_create_params
-    params.require(:project).permit(:name, :description, :integration_kind)
+    params.require(:project).permit(
+      :name,
+      :description,
+      :integration_kind,
+      retention_policy_attributes: [
+        :hot_retention_days,
+        :trace_retention_days,
+        :error_retention_days,
+        :archive_enabled,
+        :archive_before_delete
+      ]
+    )
   end
 
   def project_update_params
     params.require(:project).permit(:name, :description)
+  end
+
+  def retention_policy_attributes_missing?
+    params.dig(:project, :retention_policy_attributes).blank?
+  end
+
+  def build_default_retention_policy
+    @project.build_retention_policy(
+      hot_retention_days: ProjectRetentionPolicy::DEFAULT_HOT_RETENTION_DAYS,
+      trace_retention_days: ProjectRetentionPolicy::DEFAULT_TRACE_RETENTION_DAYS,
+      error_retention_days: ProjectRetentionPolicy::DEFAULT_ERROR_RETENTION_DAYS
+    ) unless @project.retention_policy
   end
 
   def filtered_projects(scope, filter)

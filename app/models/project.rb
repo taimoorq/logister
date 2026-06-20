@@ -26,6 +26,8 @@ class Project < ApplicationRecord
   has_many :telemetry_archives, dependent: :destroy
   has_many :members, through: :project_memberships, source: :user
 
+  accepts_nested_attributes_for :retention_policy
+
   before_validation :ensure_uuid
   before_validation :normalize_slug
 

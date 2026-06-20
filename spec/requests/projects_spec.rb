@@ -1151,6 +1151,16 @@ RSpec.describe "Projects", type: :request do
   describe "POST /projects" do
     before { sign_in users(:one) }
 
+    let(:retention_policy_attributes) do
+      {
+        hot_retention_days: "60",
+        trace_retention_days: "90",
+        error_retention_days: "180",
+        archive_enabled: "1",
+        archive_before_delete: "1"
+      }
+    end
+
     it "does not render slug as a user-editable field" do
       get new_project_path
 
@@ -1183,24 +1193,50 @@ RSpec.describe "Projects", type: :request do
       )
       expect(document.css("[data-tg-group='project-new']").map { |node| node["data-tg-title"] }).to eq([
         "Name the app",
-        "Choose integration type"
+        "Choose integration type",
+        "Choose retention policy"
       ])
       expect(document.css("[data-tg-group='project-new']").map { |node| node["data-tg-tour"] }.join(" ")).to include(
         "Enter a clear name",
         "Manual / HTTP API",
-        "language-specific package manager integration"
+        "language-specific package manager integration",
+        "before this project starts accepting telemetry"
       )
       expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq("ruby")
+      expect(document.at_css("select[name='project[retention_policy_attributes][hot_retention_days]']")).to be_present
+      expect(document.at_css("select[name='project[retention_policy_attributes][trace_retention_days]']")).to be_present
+      expect(document.at_css("select[name='project[retention_policy_attributes][error_retention_days]']")).to be_present
+      expect(document.at_css("input[name='project[retention_policy_attributes][archive_enabled]'][type='checkbox']")).to be_present
+      expect(document.at_css("input[name='project[retention_policy_attributes][archive_before_delete]'][type='checkbox']")).to be_present
       expect(response.body.index('name="project[description]"')).to be < response.body.index("integration-picker")
+      expect(response.body.index("integration-picker")).to be < response.body.index("Data retention")
     end
 
-    it "creates project and redirects" do
+    it "creates project with the selected retention policy and redirects" do
       expect {
-        post projects_path, params: { project: { name: "New App", slug: "manual-change", description: "Desc", integration_kind: "http_api" } }
+        post projects_path, params: {
+          project: {
+            name: "New App",
+            slug: "manual-change",
+            description: "Desc",
+            integration_kind: "http_api",
+            retention_policy_attributes: retention_policy_attributes
+          }
+        }
       }.to change(Project, :count).by(1)
-      expect(response).to redirect_to(setup_project_path(Project.last))
-      expect(Project.last.slug).to eq("new-app")
-      expect(Project.last.integration_kind).to eq("http_api")
+        .and change(ProjectRetentionPolicy, :count).by(1)
+
+      project = Project.last
+      expect(response).to redirect_to(setup_project_path(project))
+      expect(project.slug).to eq("new-app")
+      expect(project.integration_kind).to eq("http_api")
+      expect(project.retention_policy).to have_attributes(
+        hot_retention_days: 60,
+        trace_retention_days: 90,
+        error_retention_days: 180,
+        archive_enabled: true,
+        archive_before_delete: true
+      )
       follow_redirect!
       expect(response.body).to include("Project created")
       expect(response.body).to include("Connect this project", "Recommended setup for")
@@ -1208,8 +1244,47 @@ RSpec.describe "Projects", type: :request do
       expect(response.body).to include("HTTP API docs")
     end
 
+    it "does not create an active project when retention settings are omitted" do
+      expect {
+        post projects_path, params: {
+          project: {
+            name: "New App",
+            description: "Desc",
+            integration_kind: "http_api"
+          }
+        }
+      }.not_to change(Project, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Choose a data retention policy before creating the project.")
+    end
+
+    it "renders new with retention validation errors" do
+      expect {
+        post projects_path, params: {
+          project: {
+            name: "New App",
+            integration_kind: "ruby",
+            retention_policy_attributes: retention_policy_attributes.merge(
+              archive_enabled: "0",
+              archive_before_delete: "1"
+            )
+          }
+        }
+      }.not_to change(Project, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Data retention")
+      expect(response.body).to include("requires retention exports to be enabled")
+    end
+
     it "renders new with errors when invalid" do
-      post projects_path, params: { project: { name: "" } }
+      post projects_path, params: {
+        project: {
+          name: "",
+          retention_policy_attributes: retention_policy_attributes
+        }
+      }
       expect(response).to have_http_status(:unprocessable_content)
     end
   end

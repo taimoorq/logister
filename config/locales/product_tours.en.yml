@@ -177,6 +177,10 @@ en:
           order: 2
           title: "Choose integration type"
           tour: "Use Manual / HTTP API for any runtime or custom client when you want the advanced API path. Otherwise choose a language-specific package manager integration, such as RubyGems, npm, NuGet, PyPI, or CFML."
+        retention_policy:
+          order: 3
+          title: "Choose retention policy"
+          tour: "Set how long events, traces, and closed errors stay hot before this project starts accepting telemetry, and choose whether old data should be archived before cleanup."
       project-edit:
         edit_project:
           order: 1
