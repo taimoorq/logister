@@ -5,8 +5,15 @@
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/ingest_events</code>
         with header
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">Authorization: Bearer &lt;token&gt;</code>.
-        Accepted ingest requests are limited to 1,200 per minute per API token by default, with retry headers on <code>429</code> responses.
+        Accepted ingest requests are limited to 1,200 per minute per API or mobile ingest token by default, with retry headers on <code>429</code> responses.
       </p>
+      <% if @project.integration_android? || @project.integration_ios? %>
+        <p class="text-slate-600 text-sm mb-3">
+          For mobile apps, keep the project API key on your backend. The app should request short-lived mobile ingest tokens from your backend, and your backend should mint them with
+          <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">POST /api/v1/mobile_ingest_tokens</code>.
+          Do not compile a long-lived Logister API key into an APK or IPA.
+        </p>
+      <% end %>
       <p class="text-slate-600 text-sm mb-3">
         This project uses
         <strong class="text-slate-900"><%= @project.integration_label %></strong>.
@@ -21,9 +28,9 @@
         <% elsif @project.integration_cloudflare_pages? %>
           Use direct HTTP telemetry for deployment signals today; the planned Rails importer will pull Cloudflare Pages and Web Analytics metrics.
         <% elsif @project.integration_android? %>
-          Install <code>org.logister:logister-android</code> and send mobile telemetry through the Android SDK.
+          Install <code>org.logister:logister-android</code> and send mobile telemetry through a backend-backed token provider.
         <% elsif @project.integration_ios? %>
-          Add <code>logister-ios</code> with Swift Package Manager and send mobile telemetry through the iOS SDK.
+          Add <code>logister-ios</code> with Swift Package Manager and send mobile telemetry through a backend-backed token provider.
         <% elsif @project.integration_http_api? %>
           Send JSON directly to the HTTP API from any runtime, script, worker, or custom client.
         <% else %>

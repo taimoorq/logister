@@ -1,0 +1,167 @@
+class MobileIngestToken < ApplicationRecord
+  DEFAULT_TOKEN_PREFIX = "logister_mobile".freeze
+  DEFAULT_EXPIRES_IN_SECONDS = 15.minutes.to_i
+  MIN_EXPIRES_IN_SECONDS = 1.minute.to_i
+  MAX_EXPIRES_IN_SECONDS = 1.hour.to_i
+  REFRESH_SKEW_SECONDS = 60
+  PLATFORMS = %w[android ios].freeze
+  DEFAULT_ALLOWED_EVENT_TYPES = %w[error log metric transaction span check_in].freeze
+  IMMUTABLE_CONTEXT_FIELDS = %w[platform service environment release session_id].freeze
+
+  belongs_to :project
+  belongs_to :api_key
+
+  attr_reader :plain_token
+
+  scope :not_revoked, -> { where(revoked_at: nil) }
+  scope :not_expired, -> { where("mobile_ingest_tokens.expires_at > ?", Time.current) }
+
+  before_validation :ensure_uuid
+  before_validation :ensure_token_digest, on: :create
+  before_validation :normalize_fields
+  before_validation :normalize_allowed_event_types
+
+  validates :uuid, presence: true, uniqueness: true
+  validates :token_digest, presence: true, uniqueness: true
+  validates :platform, inclusion: { in: PLATFORMS }
+  validates :service, :environment, :expires_at, presence: true
+  validate :project_must_be_active
+  validate :parent_api_key_must_match_project
+  validate :parent_api_key_must_be_active
+  validate :project_platform_must_match_token
+  validate :expires_at_must_be_short_lived, on: :create
+  validate :allowed_event_types_must_be_known
+
+  def self.authenticate(token)
+    return nil if token.blank?
+
+    not_revoked
+      .not_expired
+      .joins(:project, :api_key)
+      .merge(Project.active)
+      .merge(ApiKey.active)
+      .includes(:project, :api_key)
+      .find_by(token_digest: digest(token))
+  end
+
+  def self.digest(token)
+    Digest::SHA256.hexdigest(token.to_s)
+  end
+
+  def active?
+    revoked_at.nil? &&
+      expires_at.present? &&
+      expires_at.future? &&
+      project.present? &&
+      !project.archived? &&
+      api_key&.active?
+  end
+
+  def expired?
+    expires_at.present? && expires_at <= Time.current
+  end
+
+  def revoke!
+    update!(revoked_at: Time.current)
+  end
+
+  def touch_last_used!
+    update_column(:last_used_at, Time.current)
+  end
+
+  def allows_event_type?(event_type)
+    allowed_event_types.include?(normalize_event_type(event_type))
+  end
+
+  def context_bindings
+    {
+      "platform" => platform,
+      "service" => service,
+      "environment" => environment,
+      "release" => release.presence,
+      "session_id" => session_id.presence
+    }.compact
+  end
+
+  private
+
+  def ensure_uuid
+    self.uuid ||= SecureRandom.uuid
+  end
+
+  def ensure_token_digest
+    return if token_digest.present?
+
+    @plain_token = generated_plain_token
+    self.token_digest = self.class.digest(@plain_token)
+  end
+
+  def generated_plain_token
+    [ DEFAULT_TOKEN_PREFIX, SecureRandom.hex(32) ].join("_")
+  end
+
+  def normalize_fields
+    self.platform = platform.to_s.strip.downcase
+    self.service = service.to_s.strip
+    self.environment = environment.to_s.strip
+    self.release = release.to_s.strip.presence
+    self.session_id = session_id.to_s.strip.presence
+  end
+
+  def normalize_allowed_event_types
+    normalized = Array(allowed_event_types.presence || DEFAULT_ALLOWED_EVENT_TYPES)
+                   .map { |event_type| normalize_event_type(event_type) }
+                   .reject(&:blank?)
+                   .uniq
+    self.allowed_event_types = normalized.presence || DEFAULT_ALLOWED_EVENT_TYPES
+  end
+
+  def normalize_event_type(event_type)
+    event_type.to_s.strip.underscore.downcase
+  end
+
+  def project_must_be_active
+    return unless project&.archived?
+
+    errors.add(:project, "is archived")
+  end
+
+  def parent_api_key_must_match_project
+    return if api_key.blank? || project.blank?
+    return if api_key.project_id == project.id
+
+    errors.add(:api_key, "must belong to the same project")
+  end
+
+  def parent_api_key_must_be_active
+    return if api_key.blank?
+    return if api_key.active?
+
+    errors.add(:api_key, "is revoked")
+  end
+
+  def project_platform_must_match_token
+    return if project.blank? || platform.blank?
+    return if project.integration_kind == platform
+
+    errors.add(:platform, "must match the project integration kind")
+  end
+
+  def expires_at_must_be_short_lived
+    return if expires_at.blank?
+
+    seconds_from_now = expires_at - Time.current
+    if seconds_from_now < MIN_EXPIRES_IN_SECONDS - 1
+      errors.add(:expires_at, "must be at least #{MIN_EXPIRES_IN_SECONDS} seconds from now")
+    elsif seconds_from_now > MAX_EXPIRES_IN_SECONDS + 1
+      errors.add(:expires_at, "must be within #{MAX_EXPIRES_IN_SECONDS} seconds")
+    end
+  end
+
+  def allowed_event_types_must_be_known
+    unknown = allowed_event_types - DEFAULT_ALLOWED_EVENT_TYPES
+    return if unknown.empty?
+
+    errors.add(:allowed_event_types, "contains unsupported values: #{unknown.join(', ')}")
+  end
+end

@@ -14,12 +14,61 @@ and dashboards are shaped for the selected platform.
 ## Before You Start
 
 1. Create a Logister project with type `Android app` or `iOS app`.
-2. Create a project API key in the project settings page.
-3. Store the API key in the mobile app's runtime configuration, not in source.
-4. Set the SDK `baseUrl` to the Logister app host, such as
+2. Create a server project API key in the project settings page.
+3. Store that server key only in your trusted backend or CI/CD environment.
+4. Add a backend endpoint that mints short-lived mobile ingest tokens with
+   `POST /api/v1/mobile_ingest_tokens`.
+5. Set the SDK `baseUrl` to the Logister app host, such as
    `https://logister.example`.
-5. Send stable `environment`, `release`, `service`, and session context so
+6. Send stable `environment`, `release`, `service`, and session context so
    Logister can group, filter, and correlate events.
+
+Do not compile a Logister project API key into an Android or iOS app. Mobile
+SDKs use short-lived mobile ingest tokens fetched from your backend at runtime.
+
+## Mobile Token Issuer
+
+Your backend should authenticate the app/session, decide whether reporting is
+allowed, then call Logister with the server project API key:
+
+```http
+POST /api/v1/mobile_ingest_tokens
+Authorization: Bearer <server-project-api-key>
+```
+
+```json
+{
+  "mobile_ingest_token": {
+    "platform": "android",
+    "service": "com.example.app",
+    "environment": "production",
+    "release": "1.4.0+42",
+    "session_id": "session-123",
+    "expires_in_seconds": 900,
+    "allowed_event_types": ["error", "log", "metric", "transaction", "span", "check_in"]
+  }
+}
+```
+
+Logister returns the plaintext token once:
+
+```json
+{
+  "token": "logister_mobile_...",
+  "expires_at": "2026-06-20T18:30:00Z",
+  "platform": "android",
+  "service": "com.example.app",
+  "environment": "production",
+  "release": "1.4.0+42",
+  "session_id": "session-123",
+  "allowed_event_types": ["error", "log", "metric", "transaction", "span", "check_in"]
+}
+```
+
+Mobile ingest tokens can send ingest events and check-ins only. They cannot
+write deployments or mint more tokens. Logister rejects mobile payloads that
+try to override token-bound `platform`, `service`, `environment`, `release`, or
+`session_id` values.
 
 ## Android
 
@@ -27,7 +76,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.1.1")
+    implementation("org.logister:logister-android:0.1.2")
 }
 ```
 
@@ -38,11 +87,20 @@ import org.logister.android.captureExceptionAsync
 import org.logister.android.captureMetricAsync
 import org.logister.android.captureMessageAsync
 import org.logister.android.captureTransactionAsync
+import org.logister.android.LogisterToken
+import org.logister.android.LogisterTokenProvider
 import org.logister.android.logisterClient
 
+class AppBackendTokenProvider : LogisterTokenProvider {
+    override fun fetchToken(): LogisterToken {
+        // Call your backend token issuer and parse token/expires_at.
+        return LogisterToken("short-lived-mobile-token", System.currentTimeMillis() / 1000 + 900)
+    }
+}
+
 val client = logisterClient(
-    apiKey = "your-project-api-token",
-    baseUrl = "https://your-logister-host.example"
+    baseUrl = "https://your-logister-host.example",
+    tokenProvider = AppBackendTokenProvider()
 ) {
     environment("production")
     release("${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}")
@@ -117,7 +175,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.1")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.2")
 ]
 ```
 
@@ -133,9 +191,19 @@ Use the async client from app code:
 import Foundation
 import Logister
 
+struct AppBackendTokenProvider: LogisterTokenProvider {
+    func fetchToken() async throws -> LogisterToken {
+        // Call your backend token issuer and parse token/expires_at.
+        LogisterToken(
+            token: "short-lived-mobile-token",
+            expiresAt: Date().addingTimeInterval(900)
+        )
+    }
+}
+
 let client = LogisterClient(
-    apiKey: "your-project-api-token",
     baseURL: URL(string: "https://your-logister-host.example")!,
+    tokenProvider: AppBackendTokenProvider(),
     environment: "production",
     release: "1.4.0+42",
     repository: "acme/ios-app",
@@ -238,20 +306,20 @@ request bodies, raw local variables, or other sensitive user data.
 Android releases are tag-driven:
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
 The Android GitHub Actions release workflow builds, tests, signs, and uploads
 the artifact to Sonatype Central Portal with automatic Maven Central release.
 The workflow also creates the matching GitHub Release after the package version
-matches the tag. Version `0.1.1` is public at `org.logister:logister-android`.
+matches the tag. Version `0.1.2` is public at `org.logister:logister-android`.
 
 iOS releases are also tag-driven:
 
 ```bash
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
 Swift Package Manager resolves packages from the public Git repository and tag.
@@ -264,12 +332,12 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.1.1/logister-android-0.1.1.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.1.2/logister-android-0.1.2.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.1.1 --repo taimoorq/logister-ios
+gh release view v0.1.2 --repo taimoorq/logister-ios
 ```

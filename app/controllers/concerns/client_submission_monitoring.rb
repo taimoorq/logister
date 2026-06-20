@@ -5,21 +5,84 @@ module ClientSubmissionMonitoring
 
   def authenticate_api_key!
     token = submitted_api_key_token
-    @api_key = ApiKey.authenticate(token)
-    if @api_key
-      project = @api_key.project
-      return unless public_api_rate_limited?(
-        identity: "api_key:#{@api_key.id}",
-        kind: "accepted",
-        limit: public_api_rate_limit_requests(project),
-        period: public_api_rate_limit_period_seconds(project)
-      )
+    return if authenticate_submitted_api_key(token)
+    return if authenticate_submitted_mobile_ingest_token(token)
 
-      return render_public_api_rate_limited
+    render_unauthorized_submission(token)
+  end
+
+  def authenticate_server_api_key!
+    token = submitted_api_key_token
+    return if authenticate_submitted_api_key(token)
+
+    diagnostic_mobile_ingest_token = diagnostic_mobile_ingest_token_for(token)
+    if diagnostic_mobile_ingest_token
+      report_client_submission_failure(
+        reason: "mobile_ingest_token_forbidden",
+        status: :forbidden,
+        api_key: diagnostic_mobile_ingest_token.api_key,
+        mobile_ingest_token: diagnostic_mobile_ingest_token,
+        token: token
+      )
+      render json: { error: "Forbidden" }, status: :forbidden
+      return
     end
 
+    render_unauthorized_submission(token)
+  end
+
+  def authenticate_submitted_api_key(token)
+    @api_key = ApiKey.authenticate(token)
+    return false unless @api_key
+
+    @client_submission_credential_type = "api_key"
+    project = @api_key.project
+    return true unless public_api_rate_limited?(
+      identity: "api_key:#{@api_key.id}",
+      kind: "accepted",
+      limit: public_api_rate_limit_requests(project),
+      period: public_api_rate_limit_period_seconds(project)
+    )
+
+    render_public_api_rate_limited
+    true
+  end
+
+  def authenticate_submitted_mobile_ingest_token(token)
+    @mobile_ingest_token = MobileIngestToken.authenticate(token)
+    return false unless @mobile_ingest_token
+
+    @api_key = @mobile_ingest_token.api_key
+    @client_submission_credential_type = "mobile_ingest_token"
+
+    unless mobile_ingest_token_endpoint_allowed?
+      report_client_submission_failure(
+        reason: "mobile_ingest_token_forbidden",
+        status: :forbidden,
+        api_key: @api_key,
+        mobile_ingest_token: @mobile_ingest_token,
+        token: token
+      )
+      render json: { error: "Forbidden" }, status: :forbidden
+      return true
+    end
+
+    project = @mobile_ingest_token.project
+    return true unless public_api_rate_limited?(
+      identity: "mobile_ingest_token:#{@mobile_ingest_token.id}",
+      kind: "accepted",
+      limit: public_api_rate_limit_requests(project),
+      period: public_api_rate_limit_period_seconds(project)
+    )
+
+    render_public_api_rate_limited
+    true
+  end
+
+  def render_unauthorized_submission(token)
     diagnostic_api_key = diagnostic_api_key_for(token)
-    diagnostic_project = diagnostic_api_key&.project
+    diagnostic_mobile_ingest_token = diagnostic_mobile_ingest_token_for(token)
+    diagnostic_project = diagnostic_api_key&.project || diagnostic_mobile_ingest_token&.project
     if public_api_rate_limited?(
       identity: "ip:#{request.remote_ip.presence || 'unknown'}",
       kind: "auth_failure",
@@ -30,13 +93,18 @@ module ClientSubmissionMonitoring
     end
 
     report_client_submission_failure(
-      reason: auth_failure_reason(token, diagnostic_api_key),
+      reason: auth_failure_reason(token, diagnostic_api_key, diagnostic_mobile_ingest_token),
       status: :unauthorized,
       api_key: diagnostic_api_key,
+      mobile_ingest_token: diagnostic_mobile_ingest_token,
       token: token
     )
 
     render json: { error: "Unauthorized" }, status: :unauthorized
+  end
+
+  def mobile_ingest_token_endpoint_allowed?
+    %w[ingest check_in].include?(client_submission_endpoint_label)
   end
 
   def public_api_rate_limited?(identity:, kind:, limit:, period:)
@@ -135,6 +203,7 @@ module ClientSubmissionMonitoring
     errors: nil,
     exception: nil,
     api_key: @api_key,
+    mobile_ingest_token: @mobile_ingest_token,
     token: submitted_api_key_token
   )
     return if client_submission_monitoring_payload?
@@ -160,6 +229,7 @@ module ClientSubmissionMonitoring
           auth: client_submission_auth_context(token),
           project: client_submission_project_context(api_key&.project),
           api_key: client_submission_api_key_context(api_key),
+          mobile_ingest_token: client_submission_mobile_ingest_token_context(mobile_ingest_token),
           payload: client_submission_payload_summary,
           errors: Array(errors).presence,
           exception: exception && {
@@ -196,8 +266,23 @@ module ClientSubmissionMonitoring
     ApiKey.includes(:project).find_by(token_digest: ApiKey.digest(token))
   end
 
-  def auth_failure_reason(token, api_key)
+  def diagnostic_mobile_ingest_token_for(token)
+    return nil if token.blank?
+
+    MobileIngestToken.includes(:project, :api_key).find_by(token_digest: MobileIngestToken.digest(token))
+  end
+
+  def auth_failure_reason(token, api_key, mobile_ingest_token)
     return "missing_api_key" if token.blank?
+    if mobile_ingest_token
+      return "revoked_mobile_ingest_token" if mobile_ingest_token.revoked_at.present?
+      return "expired_mobile_ingest_token" if mobile_ingest_token.expired?
+      return "revoked_api_key" if mobile_ingest_token.api_key&.revoked_at.present?
+      return "archived_project" if mobile_ingest_token.project&.archived?
+
+      return "inactive_mobile_ingest_token"
+    end
+
     return "invalid_api_key" unless api_key
     return "revoked_api_key" if api_key.revoked_at.present?
     return "archived_project" if api_key.project&.archived?
@@ -213,6 +298,7 @@ module ClientSubmissionMonitoring
       authorization_scheme: authorization.split.first,
       bearer_present: authorization.start_with?("Bearer "),
       x_api_key_present: request.headers["X-Api-Key"].present?,
+      credential_type: @client_submission_credential_type,
       token_source: @client_submission_token_source,
       token_digest_prefix: token.present? ? ApiKey.digest(token)[0, 16] : nil
     }.compact
@@ -240,6 +326,24 @@ module ClientSubmissionMonitoring
       active: api_key.active?,
       revoked_at: api_key.revoked_at&.iso8601,
       last_used_at: api_key.last_used_at&.iso8601
+    }.compact
+  end
+
+  def client_submission_mobile_ingest_token_context(mobile_ingest_token)
+    return nil unless mobile_ingest_token
+
+    {
+      uuid: mobile_ingest_token.uuid,
+      platform: mobile_ingest_token.platform,
+      service: mobile_ingest_token.service,
+      environment: mobile_ingest_token.environment,
+      release: mobile_ingest_token.release,
+      session_id: mobile_ingest_token.session_id,
+      allowed_event_types: mobile_ingest_token.allowed_event_types,
+      active: mobile_ingest_token.active?,
+      expires_at: mobile_ingest_token.expires_at&.iso8601,
+      revoked_at: mobile_ingest_token.revoked_at&.iso8601,
+      last_used_at: mobile_ingest_token.last_used_at&.iso8601
     }.compact
   end
 
@@ -285,6 +389,8 @@ module ClientSubmissionMonitoring
       %w[check_in CHECK_IN]
     when "deployment"
       %w[deployment DEPLOYMENT]
+    when "mobile_token"
+      %w[mobile_ingest_token MOBILE_INGEST_TOKEN]
     else
       %w[event EVENT]
     end
@@ -293,6 +399,7 @@ module ClientSubmissionMonitoring
   def client_submission_endpoint_label
     return "check_in" if controller_path.end_with?("check_ins")
     return "deployment" if controller_path.end_with?("deployments")
+    return "mobile_token" if controller_path.end_with?("mobile_ingest_tokens")
 
     "ingest"
   end
@@ -328,6 +435,68 @@ module ClientSubmissionMonitoring
 
   def submission_normalized_key(key)
     key.to_s.underscore.downcase
+  end
+
+  def enforce_mobile_ingest_token_scope!(event_type:, context:)
+    return true unless @mobile_ingest_token
+
+    normalized_event_type = event_type.to_s.strip.underscore.downcase
+    unless @mobile_ingest_token.allows_event_type?(normalized_event_type)
+      report_client_submission_failure(
+        reason: "mobile_event_type_forbidden",
+        status: :forbidden,
+        errors: [ "Mobile ingest token cannot send #{normalized_event_type} events" ]
+      )
+      render json: { error: "Mobile ingest token cannot send this event type" }, status: :forbidden
+      return false
+    end
+
+    apply_mobile_ingest_token_context!(context)
+  end
+
+  def apply_mobile_ingest_token_context!(context)
+    conflicts = mobile_ingest_token_context_conflicts(context)
+    if conflicts.any?
+      errors = conflicts.map do |key, values|
+        "#{key} must match the mobile ingest token binding (got #{values[:submitted].inspect}, expected #{values[:bound].inspect})"
+      end
+      report_client_submission_failure(
+        reason: "mobile_context_conflict",
+        status: :unprocessable_content,
+        errors: errors
+      )
+      render json: { errors: errors }, status: :unprocessable_content
+      return false
+    end
+
+    @mobile_ingest_token.context_bindings.each do |key, value|
+      context[key] = value
+    end
+    true
+  end
+
+  def mobile_ingest_token_context_conflicts(context)
+    return {} unless @mobile_ingest_token
+
+    @mobile_ingest_token.context_bindings.each_with_object({}) do |(key, bound_value), conflicts|
+      submitted_value = context[key] || context[key.to_sym]
+      next if submitted_value.blank?
+      next if submitted_value.to_s == bound_value.to_s
+
+      conflicts[key] = {
+        submitted: submitted_value,
+        bound: bound_value
+      }
+    end
+  end
+
+  def mobile_ingest_token?
+    @mobile_ingest_token.present?
+  end
+
+  def touch_client_submission_credential!
+    @api_key&.touch_last_used!
+    @mobile_ingest_token&.touch_last_used!
   end
 
   def response_status_code(status)

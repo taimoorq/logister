@@ -44,7 +44,7 @@ If you are trying to instrument an application, the language integrations live i
 - JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - .NET package for .NET 8+ apps, ASP.NET Core services, workers, and C# services: https://github.com/taimoorq/logister-dotnet, https://www.nuget.org/packages/Logister, and https://www.nuget.org/packages/Logister.AspNetCore
 - Android package for Kotlin and Java Android apps: https://github.com/taimoorq/logister-android and https://central.sonatype.com/artifact/org.logister/logister-android
-- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1
+- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2
 
 ## Public docs
 
@@ -126,9 +126,9 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v2.7.0
+   docker pull ghcr.io/taimoorq/logister:v2.7.1
    # or
-   docker pull docker.io/taimoorq/logister:v2.7.0
+   docker pull docker.io/taimoorq/logister:v2.7.1
    ```
 
 3. Create production config from the sample.
@@ -222,7 +222,7 @@ Mobile add-ons use the same ingest envelope with platform-specific setup:
 
 | Platform | Package manager | Package / URL | Docs |
 |----------|-------------|-------------|-------------|
-| Android | Maven Central / Gradle | `org.logister:logister-android:0.1.1` | https://docs.logister.org/integrations/android/ |
+| Android | Maven Central / Gradle | `org.logister:logister-android:0.1.2` | https://docs.logister.org/integrations/android/ |
 | iOS | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` with product `Logister` | https://docs.logister.org/integrations/ios/ |
 
 The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint. Only app admins, not project owners or shared project members, can set project-level overrides.
@@ -288,10 +288,10 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v2.7.0`
+- `ghcr.io/taimoorq/logister:v2.7.1`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v2.7.0`
+- `docker.io/taimoorq/logister:v2.7.1`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 
@@ -382,4 +382,4 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - PyPI: https://pypi.org/project/logister-python/
 - npm: https://www.npmjs.com/package/logister-js
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
-- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1
+- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2

@@ -264,6 +264,8 @@ const client = new LogisterClient({
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install <code>org.logister:logister-android</code> from Maven Central through Gradle.</li>
+              <li>Implement a backend token issuer that uses the server project API key to create short-lived mobile ingest tokens.</li>
+              <li>Configure the Android SDK with a <code>LogisterTokenProvider</code>; do not compile the project API key into the app.</li>
               <li>Start with the Kotlin helpers for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
               <li>Add app metadata such as package name, version name, version code, build type, Android version, API level, device model, locale, and session ID.</li>
               <li>Add <code>repository</code>, <code>commit_sha</code>, and <code>branch</code> when the project is connected to the GitHub App.</li>
@@ -275,7 +277,7 @@ const client = new LogisterClient({
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
             <pre class="<%= project_setup_code_block_class %>"><code>dependencies {
-    implementation("org.logister:logister-android:0.1.1")
+    implementation("org.logister:logister-android:0.1.2")
 }</code></pre>
           </div>
 
@@ -306,6 +308,7 @@ const client = new LogisterClient({
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
             <p class="text-sm text-slate-600">
               Android SDK source, Gradle build files, examples, tests, and release notes live in <code>logister-android</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
+              Mobile ingest tokens are minted by the Rails API and should be requested by the app through your backend.
             </p>
           </div>
 
@@ -330,6 +333,8 @@ const client = new LogisterClient({
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Add <code>logister-ios</code> from GitHub through Swift Package Manager.</li>
+              <li>Implement a backend token issuer that uses the server project API key to create short-lived mobile ingest tokens.</li>
+              <li>Configure the iOS SDK with a <code>LogisterTokenProvider</code>; do not compile the project API key into the app.</li>
               <li>Start with the async Swift client for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
               <li>Add app metadata such as bundle ID, app version, build number, iOS version, device model, locale, and session ID.</li>
               <li>Add <code>repository</code>, <code>commit_sha</code>, and <code>branch</code> when the project is connected to the GitHub App.</li>
@@ -341,7 +346,7 @@ const client = new LogisterClient({
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
             <pre class="<%= project_setup_code_block_class %>"><code>dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.1")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.2")
 ]</code></pre>
           </div>
 
@@ -372,6 +377,7 @@ const client = new LogisterClient({
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
             <p class="text-sm text-slate-600">
               iOS SDK source, <code>Package.swift</code>, examples, tests, and release notes live in <code>logister-ios</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
+              Mobile ingest tokens are minted by the Rails API and should be requested by the app through your backend.
             </p>
           </div>
 
@@ -383,8 +389,8 @@ const client = new LogisterClient({
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
             Release:
-            <%= link_to "v0.1.1",
-                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1",
+            <%= link_to "v0.1.2",
+                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2",
                         target: "_blank",
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.

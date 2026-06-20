@@ -2,6 +2,29 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.7.1 - 2026-06-20
+
+### Added
+
+- Added short-lived mobile ingest tokens for Android and iOS SDKs so mobile apps no longer need compiled-in Logister project API keys.
+- Added a server-authenticated `POST /api/v1/mobile_ingest_tokens` endpoint that mints scoped, expiring mobile tokens bound to platform, service, environment, release, session, and allowed event types.
+- Added OpenAPI, setup-page, and mobile add-on docs for backend-backed mobile token providers.
+
+### Changed
+
+- Updated Android and iOS setup guidance for `logister-android` `0.1.2` and `logister-ios` `0.1.2`.
+- Enforced token-bound mobile context on ingest events, spans, and check-ins before telemetry is accepted.
+
+### Fixed
+
+- Prevented mobile tokens from minting new tokens or writing deployment records.
+- Rejected expired, revoked, parent-revoked, archived-project, wrong-scope, and context-conflicting mobile telemetry with explicit diagnostics.
+
+### Upgrade Notes
+
+- Run the Rails database migrations before starting the new version; this release adds `mobile_ingest_tokens`.
+- Update Android and iOS apps to fetch short-lived mobile ingest tokens from a trusted backend instead of shipping Logister project API keys in app binaries.
+
 ## v2.7.0 - 2026-06-20
 
 ### Added

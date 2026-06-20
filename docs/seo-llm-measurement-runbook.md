@@ -126,13 +126,13 @@ Suggested checks:
 
 ```bash
 gh repo view taimoorq/logister --json description,homepageUrl,repositoryTopics,url
-gh release view v2.7.0 --json tagName,isDraft,isPrerelease,publishedAt,url
+gh release view v2.7.1 --json tagName,isDraft,isPrerelease,publishedAt,url
 gh api /user/packages/container/logister --jq '{name, visibility, html_url}'
 gh api /user/packages/container/logister/versions --jq '.[] | {id, tags: .metadata.container.tags, updated_at}'
-docker pull ghcr.io/taimoorq/logister:v2.7.0
-docker pull docker.io/taimoorq/logister:v2.7.0
+docker pull ghcr.io/taimoorq/logister:v2.7.1
+docker pull docker.io/taimoorq/logister:v2.7.1
 # Optional, when the Quay.io mirror is configured:
-docker pull quay.io/taimoorq/logister:v2.7.0
+docker pull quay.io/taimoorq/logister:v2.7.1
 ```
 
 ## Package and SDK Checks
@@ -144,7 +144,7 @@ Keep language package surfaces aligned with the app and docs:
 - JavaScript package: npm page at https://www.npmjs.com/package/logister-js, README, browser and Node notes.
 - .NET packages: NuGet pages at https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore, README, ASP.NET Core notes.
 - Android package: Maven Central page at https://central.sonatype.com/artifact/org.logister/logister-android, README, Gradle install snippet, Kotlin usage notes.
-- iOS package: Swift Package Manager repository at https://github.com/taimoorq/logister-ios.git and GitHub release at https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1, README, Xcode/Package.swift install snippet, Swift usage notes.
+- iOS package: Swift Package Manager repository at https://github.com/taimoorq/logister-ios.git and GitHub release at https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2, README, Xcode/Package.swift install snippet, Swift usage notes.
 
 For each package, verify the description says it reports errors or events to Logister and links back to the public docs.
 

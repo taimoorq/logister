@@ -900,6 +900,48 @@ CREATE TABLE public.ingest_events_partitioned_default (
 
 
 --
+-- Name: mobile_ingest_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mobile_ingest_tokens (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    project_id bigint NOT NULL,
+    api_key_id bigint NOT NULL,
+    token_digest character varying NOT NULL,
+    platform character varying NOT NULL,
+    service character varying NOT NULL,
+    environment character varying NOT NULL,
+    release character varying,
+    session_id character varying,
+    allowed_event_types jsonb DEFAULT '[]'::jsonb NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    revoked_at timestamp(6) without time zone,
+    last_used_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: mobile_ingest_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.mobile_ingest_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mobile_ingest_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.mobile_ingest_tokens_id_seq OWNED BY public.mobile_ingest_tokens.id;
+
+--
 -- Name: project_deployments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1592,6 +1634,12 @@ ALTER TABLE ONLY public.ingest_events ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: mobile_ingest_tokens id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mobile_ingest_tokens ALTER COLUMN id SET DEFAULT nextval('public.mobile_ingest_tokens_id_seq'::regclass);
+
+--
 -- Name: project_deployments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1906,6 +1954,13 @@ ALTER TABLE ONLY public.ingest_events_partitioned_default
 ALTER TABLE ONLY public.ingest_events
     ADD CONSTRAINT ingest_events_pkey PRIMARY KEY (id);
 
+
+--
+-- Name: mobile_ingest_tokens mobile_ingest_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mobile_ingest_tokens
+    ADD CONSTRAINT mobile_ingest_tokens_pkey PRIMARY KEY (id);
 
 --
 -- Name: project_deployments project_deployments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
@@ -3102,6 +3157,47 @@ CREATE INDEX index_ingest_events_part_project_type ON ONLY public.ingest_events_
 
 CREATE INDEX index_ingest_events_part_uuid ON ONLY public.ingest_events_partitioned USING btree (uuid);
 
+
+--
+-- Name: index_mobile_ingest_tokens_on_api_key_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mobile_ingest_tokens_on_api_key_id ON public.mobile_ingest_tokens USING btree (api_key_id);
+
+
+--
+-- Name: index_mobile_ingest_tokens_on_api_key_id_and_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mobile_ingest_tokens_on_api_key_id_and_expires_at ON public.mobile_ingest_tokens USING btree (api_key_id, expires_at);
+
+
+--
+-- Name: index_mobile_ingest_tokens_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mobile_ingest_tokens_on_project_id ON public.mobile_ingest_tokens USING btree (project_id);
+
+
+--
+-- Name: index_mobile_ingest_tokens_on_project_id_and_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mobile_ingest_tokens_on_project_id_and_expires_at ON public.mobile_ingest_tokens USING btree (project_id, expires_at);
+
+
+--
+-- Name: index_mobile_ingest_tokens_on_token_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_mobile_ingest_tokens_on_token_digest ON public.mobile_ingest_tokens USING btree (token_digest);
+
+
+--
+-- Name: index_mobile_ingest_tokens_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_mobile_ingest_tokens_on_uuid ON public.mobile_ingest_tokens USING btree (uuid);
 
 --
 -- Name: index_project_deployments_on_github_repository_id; Type: INDEX; Schema: public; Owner: -
@@ -9556,6 +9652,13 @@ ALTER TABLE ONLY public.api_keys
 
 
 --
+-- Name: mobile_ingest_tokens fk_rails_0bc57896ad; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mobile_ingest_tokens
+    ADD CONSTRAINT fk_rails_0bc57896ad FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+--
 -- Name: email_notification_deliveries fk_rails_0bf84f58c1; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9860,6 +9963,13 @@ ALTER TABLE ONLY public.check_in_monitors
 
 
 --
+-- Name: mobile_ingest_tokens fk_rails_f599113ac4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mobile_ingest_tokens
+    ADD CONSTRAINT fk_rails_f599113ac4 FOREIGN KEY (api_key_id) REFERENCES public.api_keys(id);
+
+--
 -- Name: user_notification_dismissals fk_rails_feaaa03c25; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9875,6 +9985,7 @@ SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
 ('20260620183000'),
+('20260620180000'),
 ('20260618170000'),
 ('20260618161000'),
 ('20260618152000'),

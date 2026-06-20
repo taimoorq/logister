@@ -73,7 +73,7 @@ Canonical documentation lives on the public docs host:
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.7.0` or `docker.io/taimoorq/logister:v2.7.0`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.7.1` or `docker.io/taimoorq/logister:v2.7.1`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
 - Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
@@ -119,9 +119,9 @@ Canonical documentation lives on the public docs host:
 - JavaScript source: https://github.com/taimoorq/logister-js
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
 - Android source: https://github.com/taimoorq/logister-android
-- Android coordinates: `org.logister:logister-android:0.1.1`
+- Android coordinates: `org.logister:logister-android:0.1.2`
 - Swift Package Manager source: https://github.com/taimoorq/logister-ios.git
-- iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.1
+- iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2
 - Cloudflare Pages integration docs: https://docs.logister.org/integrations/cloudflare-pages/
 - Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 

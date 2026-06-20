@@ -109,6 +109,7 @@ Rails.application.routes.draw do
       resources :ingest_events, only: :create
       resources :check_ins, only: :create
       resources :deployments, only: :create
+      resources :mobile_ingest_tokens, only: :create
     end
   end
 

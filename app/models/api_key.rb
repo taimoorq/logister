@@ -5,6 +5,7 @@ class ApiKey < ApplicationRecord
   belongs_to :project
   has_many :ingest_events, dependent: :destroy
   has_many :trace_spans, dependent: :destroy
+  has_many :mobile_ingest_tokens, dependent: :destroy
 
   attr_reader :plain_token
 

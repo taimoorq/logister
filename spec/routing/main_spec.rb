@@ -55,6 +55,13 @@ RSpec.describe "Routes", type: :routing do
         action: "create"
       )
     end
+
+    it "routes POST /api/v1/mobile_ingest_tokens to api/v1/mobile_ingest_tokens#create" do
+      expect(post: "/api/v1/mobile_ingest_tokens").to route_to(
+        controller: "api/v1/mobile_ingest_tokens",
+        action: "create"
+      )
+    end
   end
 
   describe "health" do

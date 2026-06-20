@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: 2.4.0
+  version: 2.7.1
   summary: Send application telemetry and scheduled-work check-ins to Logister.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
@@ -25,6 +25,8 @@ tags:
     description: Send compact monitor heartbeats for scheduled work.
   - name: Deployments
     description: Record release-to-commit mappings for source-linked debugging.
+  - name: Mobile tokens
+    description: Mint short-lived Android and iOS ingest tokens from a trusted backend.
 security:
   - bearerAuth: []
   - apiKeyHeader: []
@@ -240,6 +242,84 @@ paths:
           $ref: "#/components/responses/UnprocessableContent"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+  /api/v1/mobile_ingest_tokens:
+    post:
+      operationId: createMobileIngestToken
+      tags:
+        - Mobile tokens
+      summary: Mint one short-lived mobile ingest token.
+      description: |
+        Trusted backends call this endpoint with a server project API key after
+        authenticating the mobile app/session. The returned token is plaintext
+        once, expires quickly, and can only call ingest and check-in endpoints.
+        Do not call this endpoint directly from Android or iOS apps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/MobileIngestTokenEnvelope"
+                - $ref: "#/components/schemas/UppercaseMobileIngestTokenEnvelope"
+            examples:
+              android:
+                summary: Android session token
+                value:
+                  mobile_ingest_token:
+                    platform: android
+                    service: com.example.app
+                    environment: production
+                    release: "1.4.0+42"
+                    session_id: session-123
+                    expires_in_seconds: 900
+                    allowed_event_types:
+                      - error
+                      - log
+                      - metric
+                      - transaction
+                      - span
+                      - check_in
+      responses:
+        "201":
+          description: Mobile ingest token minted.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileIngestTokenResponse"
+              examples:
+                accepted:
+                  value:
+                    token: logister_mobile_abc123
+                    expires_at: "2026-06-20T18:30:00Z"
+                    platform: android
+                    service: com.example.app
+                    environment: production
+                    release: "1.4.0+42"
+                    session_id: session-123
+                    allowed_event_types:
+                      - error
+                      - log
+                      - metric
+                      - transaction
+                      - span
+                      - check_in
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/check_ins:
     post:
       operationId: createCheckIn
@@ -348,7 +428,7 @@ components:
               value:
                 error: "param is missing or the value is empty: event"
     Unauthorized:
-      description: API key was missing, invalid, revoked, inactive, or belongs to an archived project.
+      description: API key or mobile ingest token was missing, invalid, revoked, inactive, expired, or belongs to an archived project.
       content:
         application/json:
           schema:
@@ -357,6 +437,16 @@ components:
             unauthorized:
               value:
                 error: Unauthorized
+    Forbidden:
+      description: The credential is valid but cannot access this endpoint or event type.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            forbidden:
+              value:
+                error: Forbidden
     UnprocessableContent:
       description: Envelope was present, but validation failed.
       content:
@@ -746,6 +836,101 @@ components:
           type: object
           additionalProperties: true
       additionalProperties: true
+    MobileIngestTokenEnvelope:
+      type: object
+      required:
+        - mobile_ingest_token
+      properties:
+        mobile_ingest_token:
+          $ref: "#/components/schemas/MobileIngestTokenRequest"
+      additionalProperties: false
+    UppercaseMobileIngestTokenEnvelope:
+      type: object
+      required:
+        - MOBILE_INGEST_TOKEN
+      properties:
+        MOBILE_INGEST_TOKEN:
+          $ref: "#/components/schemas/MobileIngestTokenRequest"
+      additionalProperties: false
+    MobileIngestTokenRequest:
+      type: object
+      required:
+        - platform
+        - service
+        - environment
+      properties:
+        platform:
+          type: string
+          enum:
+            - android
+            - ios
+          description: Must match the Logister project integration kind.
+        service:
+          type: string
+          description: Android package name or iOS bundle identifier.
+        environment:
+          type: string
+        release:
+          type: string
+        session_id:
+          type: string
+        expires_in_seconds:
+          type: integer
+          default: 900
+          minimum: 60
+          maximum: 3600
+        allowed_event_types:
+          type: array
+          default:
+            - error
+            - log
+            - metric
+            - transaction
+            - span
+            - check_in
+          items:
+            type: string
+            enum:
+              - error
+              - log
+              - metric
+              - transaction
+              - span
+              - check_in
+      additionalProperties: false
+    MobileIngestTokenResponse:
+      type: object
+      required:
+        - token
+        - expires_at
+        - platform
+        - service
+        - environment
+        - allowed_event_types
+      properties:
+        token:
+          type: string
+          description: Plaintext mobile ingest token. Store only in app memory and refresh before expiry.
+        expires_at:
+          type: string
+          format: date-time
+        platform:
+          type: string
+          enum:
+            - android
+            - ios
+        service:
+          type: string
+        environment:
+          type: string
+        release:
+          type: string
+        session_id:
+          type: string
+        allowed_event_types:
+          type: array
+          items:
+            type: string
     AcceptedEventResponse:
       type: object
       required:

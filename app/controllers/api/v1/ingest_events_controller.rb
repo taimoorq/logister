@@ -10,7 +10,13 @@ class Api::V1::IngestEventsController < ApplicationController
     raw_event = normalized_event_payload_hash
     return create_trace_span(raw_event) if span_payload?(raw_event)
 
-    event = @api_key.project.ingest_events.new(event_params(raw_event))
+    attrs = event_params(raw_event)
+    return unless enforce_mobile_ingest_token_scope!(
+      event_type: attrs["event_type"],
+      context: attrs["context"]
+    )
+
+    event = @api_key.project.ingest_events.new(attrs)
     event.api_key = @api_key
     event.occurred_at ||= Time.current
 
@@ -20,7 +26,7 @@ class Api::V1::IngestEventsController < ApplicationController
       CheckInMonitor.record!(project: @api_key.project, event: event) if event.check_in?
       ClickhouseIngestJob.perform_later(event.id, request_context, event.occurred_at)
 
-      @api_key.touch_last_used!
+      touch_client_submission_credential!
       render json: { id: event.uuid, legacy_id: event.id, status: "accepted" }, status: :created
     else
       report_client_submission_failure(
@@ -35,12 +41,18 @@ class Api::V1::IngestEventsController < ApplicationController
   private
 
   def create_trace_span(raw_event)
-    span = @api_key.project.trace_spans.new(trace_span_params(raw_event))
+    attrs = trace_span_params(raw_event)
+    return unless enforce_mobile_ingest_token_scope!(
+      event_type: "span",
+      context: attrs[:context]
+    )
+
+    span = @api_key.project.trace_spans.new(attrs)
     span.api_key = @api_key
 
     if span.save
       ClickhouseSpanIngestJob.perform_later(span.id, request_context)
-      @api_key.touch_last_used!
+      touch_client_submission_credential!
       render json: { id: span.uuid, legacy_id: span.id, status: "accepted", type: "span" }, status: :created
     else
       report_client_submission_failure(
@@ -114,7 +126,7 @@ class Api::V1::IngestEventsController < ApplicationController
     context["parent_span_id"] ||= normalized["parent_span_id"] if normalized["parent_span_id"].present?
     context["span_kind"] ||= normalized["kind"]
     context["duration_ms"] ||= normalized["duration_ms"]
-    context["environment"] ||= first_present(event_hash[:environment], context["environment"], Rails.env)
+    context["environment"] ||= first_present(event_hash[:environment], context["environment"], default_event_environment)
     context["release"] ||= first_present(event_hash[:release], context["release"])
     context["service"] ||= first_present(event_hash[:service], context["service"])
     context["request_id"] ||= first_present(event_hash[:request_id], event_hash[:requestId], context["request_id"], context["requestId"])
@@ -180,7 +192,7 @@ class Api::V1::IngestEventsController < ApplicationController
   def normalize_event_payload(attrs, raw_event)
     context = attrs["context"].is_a?(Hash) ? attrs["context"].deep_dup : {}
 
-    merge_context_value!(context, "environment", raw_event[:environment], fallback: Rails.env)
+    merge_context_value!(context, "environment", raw_event[:environment], fallback: default_event_environment)
     merge_context_value!(context, "release", raw_event[:release])
     merge_context_value!(context, "trace_id", raw_event[:trace_id] || raw_event[:traceId])
     merge_context_value!(context, "request_id", raw_event[:request_id] || raw_event[:requestId])
@@ -195,9 +207,13 @@ class Api::V1::IngestEventsController < ApplicationController
     merge_context_value!(context, "check_in_slug", raw_event[:check_in_slug] || raw_event[:monitor_slug])
     merge_context_value!(context, "check_in_status", raw_event[:check_in_status] || raw_event[:status])
 
-    context["environment"] ||= Rails.env
+    context["environment"] ||= default_event_environment if default_event_environment.present?
     attrs["context"] = context
     attrs
+  end
+
+  def default_event_environment
+    mobile_ingest_token? ? nil : Rails.env
   end
 
   def merge_context_value!(context, key, value, fallback: nil)
