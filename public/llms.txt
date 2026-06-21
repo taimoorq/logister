@@ -18,6 +18,8 @@ It supports:
 
 Canonical documentation lives at the public docs URL:
 - Product docs: https://logister.org/docs/
+- Docs AI map: https://logister.org/docs/llms.txt
+- Docs full AI context: https://logister.org/docs/llms-full.txt
 - Docs sitemap: https://logister.org/docs/sitemap.xml
 - Self-host source: https://github.com/taimoorq/logister
 
