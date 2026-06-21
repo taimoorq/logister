@@ -1,0 +1,134 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "pathname"
+
+repo_root = Pathname.new(__dir__).join("..").expand_path
+workspace_root = Pathname.new(ENV.fetch("LOGISTER_WORKSPACE_ROOT", repo_root.dirname.to_s)).expand_path
+check_only = ARGV.include?("--check")
+
+def read_match(path, pattern)
+  return nil unless path.file?
+
+  path.read[pattern, 1]
+end
+
+def read_json_version(path)
+  return nil unless path.file?
+
+  JSON.parse(path.read)["version"]
+rescue JSON::ParserError
+  nil
+end
+
+versions = {
+  app: read_match(repo_root.join("CHANGELOG.md"), /^## (v[0-9][0-9A-Za-z.\-]*)\b/),
+  ruby: read_match(workspace_root.join("logister-ruby/lib/logister/version.rb"), /VERSION\s*=\s*["']([^"']+)["']/),
+  python: read_match(workspace_root.join("logister-python/pyproject.toml"), /^version\s*=\s*"([^"]+)"/),
+  javascript: read_json_version(workspace_root.join("logister-js/package.json")),
+  dotnet: read_match(workspace_root.join("logister-dotnet/src/Logister/Logister.csproj"), /<Version>([^<]+)<\/Version>/),
+  android: read_match(workspace_root.join("logister-android/gradle.properties"), /^VERSION_NAME=(.+)$/),
+  ios: read_match(workspace_root.join("logister-ios/VERSION"), /^(.+)$/)
+}.compact
+
+def rule(name, pattern, replacement)
+  { name:, pattern:, replacement: }
+end
+
+rules = []
+
+if versions[:app]
+  app = versions[:app]
+  rules.concat([
+    rule("ghcr app image", /(ghcr\.io\/taimoorq\/logister:)v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
+    rule("docker app image", /(docker\.io\/taimoorq\/logister:)v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
+    rule("quay app image", /(quay\.io\/taimoorq\/logister:)v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
+    rule("app gh release", /(gh release view )v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}")
+  ])
+end
+
+if versions[:ruby]
+  rules.concat([
+    rule("ruby sdk parity", /(`logister-ruby` v)[0-9][0-9A-Za-z.\-]*/, "\\1#{versions[:ruby]}"),
+    rule("ruby gem setup snippet", /(gem "logister-ruby", "~> )[^"]+(")/, "\\1#{versions[:ruby]}\\2")
+  ])
+end
+
+if versions[:python]
+  rules << rule("python sdk parity", /(`logister-python` v)[0-9][0-9A-Za-z.\-]*/, "\\1#{versions[:python]}")
+end
+
+if versions[:javascript]
+  rules << rule("javascript sdk parity", /(`logister-js` v)[0-9][0-9A-Za-z.\-]*/, "\\1#{versions[:javascript]}")
+end
+
+if versions[:dotnet]
+  rules << rule("dotnet sdk parity", /(`Logister` \/ `Logister\.AspNetCore` v)[0-9][0-9A-Za-z.\-]*/, "\\1#{versions[:dotnet]}")
+end
+
+if versions[:android]
+  android = versions[:android]
+  rules.concat([
+    rule("android coordinate", /(org\.logister:logister-android:)[0-9][0-9A-Za-z.\-]*/, "\\1#{android}"),
+    rule("android current version html", /(current public Android package version is <code>)[^<]+(<\/code>)/i, "\\1#{android}\\2"),
+    rule("android sdk parity", /(`logister-android` v)[0-9][0-9A-Za-z.\-]*/, "\\1#{android}"),
+    rule("android maven pom path", /(repo1\.maven\.org\/maven2\/org\/logister\/logister-android\/)[0-9][0-9A-Za-z.\-]*(\/logister-android-)[0-9][0-9A-Za-z.\-]*(\.pom)/, "\\1#{android}\\2#{android}\\3")
+  ])
+end
+
+if versions[:ios]
+  ios = versions[:ios]
+  rules.concat([
+    rule("ios release url", /(logister-ios\/releases\/tag\/v)[0-9][0-9A-Za-z.\-]*/, "\\1#{ios}"),
+    rule("ios release link label", /(href="https:\/\/github\.com\/taimoorq\/logister-ios\/releases\/tag\/v[0-9][0-9A-Za-z.\-]*">v)[0-9][0-9A-Za-z.\-]*/, "\\1#{ios}"),
+    rule("ios rails release link label", /(link_to "v)[0-9][0-9A-Za-z.\-]*(",\s*\n\s*"https:\/\/github\.com\/taimoorq\/logister-ios\/releases\/tag\/v[0-9][0-9A-Za-z.\-]*)/m, "\\1#{ios}\\2"),
+    rule("ios open release label", /(Open the v)[0-9][0-9A-Za-z.\-]*( GitHub Release)/, "\\1#{ios}\\2"),
+    rule("ios current version html", /(current public iOS package version is <code>)[^<]+(<\/code>)/i, "\\1#{ios}\\2"),
+    rule("ios swift package version", /(\.package\(url: "https:\/\/github\.com\/taimoorq\/logister-ios\.git", from: ")[^"]+(")/, "\\1#{ios}\\2"),
+    rule("ios sdk parity", /(`logister-ios` v)[0-9][0-9A-Za-z.\-]*/, "\\1#{ios}"),
+    rule("ios gh release command", /(gh release view v)[0-9][0-9A-Za-z.\-]*( --repo taimoorq\/logister-ios)/, "\\1#{ios}\\2"),
+    rule("ios tag command", /(iOS releases are also tag-driven:.*?git tag v)[0-9][0-9A-Za-z.\-]*/m, "\\1#{ios}"),
+    rule("ios tag push command", /(iOS releases are also tag-driven:.*?git push origin v)[0-9][0-9A-Za-z.\-]*/m, "\\1#{ios}")
+  ])
+end
+
+files = [
+  repo_root.join("README.md"),
+  repo_root.join("public/llms.txt"),
+  repo_root.join("public/llms-full.txt"),
+  repo_root.join("docs/mobile-add-ons.md"),
+  repo_root.join("docs/sdk-parity-and-self-monitoring.md"),
+  repo_root.join("docs/seo-llm-measurement-runbook.md")
+]
+files.concat(Dir[repo_root.join("cloudflare-docs/**/*.html")].map { |file| Pathname.new(file) })
+files.concat(Dir[repo_root.join("cloudflare-docs/llms*.txt")].map { |file| Pathname.new(file) })
+files.concat(Dir[repo_root.join("app/views/**/*.erb")].map { |file| Pathname.new(file) })
+
+changed = []
+
+files.uniq.each do |path|
+  next unless path.file?
+
+  original = path.read
+  updated = original.dup
+  rules.each do |version_rule|
+    updated.gsub!(version_rule[:pattern], version_rule[:replacement])
+  end
+
+  next if updated == original
+
+  changed << path.relative_path_from(repo_root).to_s
+  path.write(updated) unless check_only
+end
+
+missing = %i[ruby python javascript dotnet android ios].reject { |key| versions[key] }
+warn "Skipped missing companion repo versions: #{missing.join(", ")}" if missing.any?
+
+if check_only && changed.any?
+  warn "Version references are stale:"
+  changed.each { |path| warn "  #{path}" }
+  exit 1
+end
+
+puts "Version references #{check_only ? "checked" : "synced"}."

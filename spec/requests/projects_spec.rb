@@ -22,7 +22,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Events 7d")
         expect(response.body).to include("Active", "Archived", "All")
         expect(response.body).to include(">Docs<")
-        expect(response.body).to include("documentation section")
+        expect(response.body).to include("Open the docs")
         expect(response.body).to include("https://docs.logister.org/")
         expect(response.body).to include('target="_blank"')
         expect(response.body).to include('rel="noopener noreferrer"')
@@ -501,9 +501,11 @@ RSpec.describe "Projects", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("JavaScript / TypeScript")
+        expect(response.body).to include("First event guide", "First event checklist")
         expect(response.body).to include("logister-js")
         expect(response.body).to include("logister-js/express")
-        expect(response.body).to include("instrumentConsole")
+        expect(response.body).to include("controlled exception")
+        expect(response.body).to include("release, route, and request identifiers")
         expect(response.body).to include("source maps")
         expect(response.body).to include("LOGISTER_RELEASE")
         expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
@@ -516,9 +518,10 @@ RSpec.describe "Projects", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Python")
+        expect(response.body).to include("First event guide", "First event checklist")
         expect(response.body).to include("logister-python")
         expect(response.body).to include("instrument_fastapi")
-        expect(response.body).to include("instrument_flask")
+        expect(response.body).to include("FastAPI", "Django", "Flask")
         expect(response.body).to include("https://docs.logister.org/integrations/python/")
       end
 
@@ -529,10 +532,11 @@ RSpec.describe "Projects", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include(".NET / ASP.NET Core")
+        expect(response.body).to include("First event guide", "First event checklist")
         expect(response.body).to include("Logister.AspNetCore")
         expect(response.body).to include("AddLogister")
         expect(response.body).to include("UseLogisterExceptionReporting")
-        expect(response.body).to include("CaptureMetricAsync")
+        expect(response.body).to include("LogisterClient")
         expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
       end
 
@@ -915,11 +919,9 @@ RSpec.describe "Projects", type: :request do
         get activity_project_path(project)
 
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("client.captureMetric()")
-        expect(response.body).to include("client.checkIn()")
-        expect(response.body).to include("instrumentConsole()")
-        expect(response.body).to include("browser")
-        expect(response.body).to include("route")
+        expect(response.body).to include("No events yet")
+        expect(response.body).to include("logister-js")
+        expect(response.body).to include("send one Node, Express, or worker event")
         expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
       end
 
@@ -960,9 +962,9 @@ RSpec.describe "Projects", type: :request do
         get activity_project_path(project)
 
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("client.capture_metric()")
-        expect(response.body).to include("client.check_in()")
-        expect(response.body).to include("instrument_flask()")
+        expect(response.body).to include("No events yet")
+        expect(response.body).to include("logister-python")
+        expect(response.body).to include("send one web or worker event")
         expect(response.body).to include("https://docs.logister.org/integrations/python/")
       end
 
@@ -972,9 +974,9 @@ RSpec.describe "Projects", type: :request do
         get activity_project_path(project)
 
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("CaptureMetricAsync()")
-        expect(response.body).to include("CheckInAsync()")
-        expect(response.body).to include("UseLogisterExceptionReporting()")
+        expect(response.body).to include("No events yet")
+        expect(response.body).to include("Logister.AspNetCore")
+        expect(response.body).to include("send one request or worker event")
         expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
       end
 
@@ -1083,7 +1085,7 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css("select[name='project[integration_kind]']")).to be_nil
         expect(document.at_css("input[name='project[integration_kind]']")).to be_nil
         expect(document.css(".integration-choice-panel")).to be_empty
-        expect(response.body).to include("Project type cannot be changed after telemetry starts flowing")
+        expect(response.body).to include("Project type is locked after creation")
         expect(response.body).to include(projects(:one).integration_label)
       end
 
@@ -1198,9 +1200,9 @@ RSpec.describe "Projects", type: :request do
       ])
       expect(document.css("[data-tg-group='project-new']").map { |node| node["data-tg-tour"] }.join(" ")).to include(
         "Enter a clear name",
-        "Manual / HTTP API",
-        "language-specific package manager integration",
-        "before this project starts accepting telemetry"
+        "runtime or manual HTTP path",
+        "first event",
+        "whether cleanup must archive first"
       )
       expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq("ruby")
       expect(document.at_css("select[name='project[retention_policy_attributes][hot_retention_days]']")).to be_present
@@ -1239,7 +1241,8 @@ RSpec.describe "Projects", type: :request do
       )
       follow_redirect!
       expect(response.body).to include("Project created")
-      expect(response.body).to include("Connect this project", "Recommended setup for")
+      expect(response.body).to include("Connect this project", "First event guide")
+      expect(response.body).to include("Send one representative event")
       expect(response.body).to include("Manual / HTTP API")
       expect(response.body).to include("HTTP API docs")
     end

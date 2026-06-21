@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: 2.7.1
+  version: 2.7.2
   summary: Send application telemetry and scheduled-work check-ins to Logister.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the

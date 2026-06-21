@@ -14,6 +14,8 @@
     <meta property="og:url" content="https://docs.logister.org/use-cases/amazon-ses-error-alerts/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Amazon SES Project Notifications | Logister">
+    <meta name="twitter:description" content="Send Logister project notification emails through standard Rails SMTP settings, commonly backed by Amazon SES in self-hosted deployments.">
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="alternate" type="text/plain" href="/llms-full.txt" title="LLMs full context">
     <link rel="icon" href="/assets/icon.png" type="image/png">
@@ -36,6 +38,7 @@
             <section class="section"><p class="eyebrow">Email delivery</p><h2>SES is configured through ordinary SMTP environment variables.</h2><p>Logister does not need checked-in provider secrets. Self-hosters put SMTP host, port, domain, username, password, sender, and reply-to values in their deploy provider's secret/config store. The deployment reference explains each sample entry and which provider values to use.</p><p><a href="/deployment/">Read the deployment environment reference</a>.</p></section>
             <section class="section"><p class="eyebrow">Deliverability</p><h2>Branded, useful mail is less likely to be treated as noise.</h2><p>Error emails include project, environment, release, occurrence, and triage links when available. That helps recipients understand why the message was sent and makes the email more useful than a generic exception dump. Operators should also configure SES identity verification, SPF, DKIM, DMARC, and a sending domain that matches the self-hosted instance.</p></section>
             <section class="section"><p class="eyebrow">Worker requirement</p><h2>Keep Sidekiq running for project mail.</h2><p>Email delivery, immediate alerts, digest scheduling, monitor notifications, and operational notices run through background jobs. A self-hosted deployment should run at least one Sidekiq worker alongside the Rails web process.</p><p><a href="/product/notifications/setup/">Read notification setup requirements</a>.</p></section>
+            <section class="section"><p class="eyebrow">Verify</p><h2>Test provider delivery and Logister routing separately.</h2><ol><li>Verify the SES identity, SPF, DKIM, DMARC, sender, and reply-to settings outside Logister.</li><li>Set the Rails SMTP environment variables in the deploy secret store.</li><li>Send or trigger one account email to confirm baseline SMTP delivery.</li><li>Enable one project error notification or digest for a project user.</li><li>Trigger a controlled event and confirm Sidekiq delivers the expected project email.</li></ol></section>
           </article>
         </div>
       </main>

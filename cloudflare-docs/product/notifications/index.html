@@ -42,13 +42,13 @@
             <section id="before" class="section">
               <p class="eyebrow">Before you start</p>
               <h2>Notifications are per user, per project.</h2>
-              <p>Each project member controls their own email preferences. Self-hosted installs must also have SMTP configured and at least one Sidekiq worker running, because most notification work happens outside the web request.</p>
-              <p><a href="/product/notifications/setup/">Read the setup requirements</a> before debugging notification delivery.</p>
+              <p>Each project member controls their own email preferences, so two people on the same project can choose different alert behavior. Before changing thresholds, confirm which user should receive email and which project they are configuring.</p>
+              <p><a href="/product/notifications/setup/">Read the setup requirements</a> when an enabled notification does not arrive.</p>
             </section>
             <section id="paths" class="section">
               <p class="eyebrow">Choose a path</p>
-              <h2>Use the page that matches the user's intent.</h2>
-              <figure class="screenshot-figure"><img src="/assets/screenshots/project-notifications.webp" alt="Logister notification settings overview with separate configuration cards for each notification path." width="3600" height="1754" loading="lazy" decoding="async"><figcaption>The Notifications settings page starts with the reason the user wants email, then sends them to the smaller settings path for that purpose.</figcaption></figure>
+              <h2>Use the card that matches why the user wants email.</h2>
+              <figure class="screenshot-figure"><img src="/assets/screenshots/project-notifications-cards.webp" alt="Logister notification settings overview cards for each notification path." width="3340" height="1260" loading="lazy" decoding="async"><figcaption>The first screen is intentionally a chooser. Pick the card that matches the user's goal, then tune only those controls.</figcaption></figure>
               <div class="card-grid">
                 <article class="card"><p class="eyebrow">Errors</p><h3>Error triage alerts</h3><p>Use when the user wants immediate email about one error group needing attention.</p><p><a href="/product/notifications/error-triage/">Configure error triage</a></p></article>
                 <article class="card"><p class="eyebrow">Health</p><h3>Project health alerts</h3><p>Use when the user wants to know when the whole project is noisy, slow, or missing check-ins.</p><p><a href="/product/notifications/project-health/">Configure project health</a></p></article>
@@ -65,7 +65,7 @@
             <section id="next" class="section">
               <p class="eyebrow">Next steps</p>
               <h2>Keep the overview short; use the subpages for exact controls.</h2>
-              <p>When something does not send, start with <a href="/product/notifications/setup/">setup requirements</a>, then open the path that owns the alert type. The troubleshooting page has the short operator checklist for SMTP and worker issues.</p>
+              <p>When something does not send, first confirm the alert belongs to the path you configured. For example, a noisy single error belongs to Error triage, while a noisy whole project belongs to Project health. Then use <a href="/product/notifications/setup/">setup requirements</a> for delivery checks.</p>
             </section>
           </article>
         </div>

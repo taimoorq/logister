@@ -14,6 +14,9 @@
     <meta property="og:url" content="https://docs.logister.org/product/notifications/error-triage/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Error Triage Notifications | Logister">
+    <meta name="twitter:description" content="Configure Logister notification settings for new error groups, reopened groups, lifetime milestones, and frequent single-error thresholds.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/notifications/error-triage/#article","headline":"Email me when one error group needs attention.","name":"Error Triage Notifications | Logister","url":"https://docs.logister.org/product/notifications/error-triage/","description":"Configure Logister notification settings for new error groups, reopened groups, lifetime milestones, and frequent single-error thresholds.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Notifications","item":"https://docs.logister.org/product/notifications/"},{"@type":"ListItem","position":4,"name":"Error Triage","item":"https://docs.logister.org/product/notifications/error-triage/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -33,13 +36,19 @@
             <section class="section">
               <p class="eyebrow">Settings</p>
               <h2>Each option answers a different question.</h2>
-              <table><thead><tr><th>Setting</th><th>Use it for</th><th>Default</th></tr></thead><tbody><tr><td>New error groups</td><td>A new grouped issue was created for a new fingerprint.</td><td>On</td></tr><tr><td>Reopened error groups</td><td>A resolved, ignored, or archived group received a new event.</td><td>On</td></tr><tr><td>Lifetime count milestones</td><td>One group's total lifetime occurrence count reached a notable number.</td><td>Off</td></tr><tr><td>Single-error volume threshold</td><td>One group received enough events inside the configured recent window.</td><td>Off, 25 events in 60 minutes</td></tr></tbody></table>
-              <div class="note tip"><h4>Do not confuse the thresholds</h4><p>Milestones look at one group's lifetime total. The single-error threshold looks at recent volume for one group. Project-wide spike alerts live on the Project health page.</p></div>
+              <table><thead><tr><th>Setting</th><th>What it means in the inbox</th><th>Default</th></tr></thead><tbody><tr><td>New error groups</td><td>Email when a brand-new grouped issue appears in the inbox.</td><td>On</td></tr><tr><td>Reopened error groups</td><td>Email when a group you had resolved, ignored, or archived gets a fresh occurrence and needs another look.</td><td>On</td></tr><tr><td>Lifetime count milestones</td><td>Email when one group's all-time occurrence count reaches a milestone, even if those events were spread out.</td><td>Off</td></tr><tr><td>Single-error volume threshold</td><td>Email when one grouped issue becomes noisy inside the recent window you choose.</td><td>Off, 25 events in 60 minutes</td></tr></tbody></table>
+              <div class="note tip"><h4>Do not confuse the thresholds</h4><p>Milestones answer "has this one issue become important over its whole life?" The single-error threshold answers "is this one issue suddenly noisy right now?" Project-wide spike alerts live on the Project health page because they count the whole project, not one group.</p></div>
             </section>
             <section class="section">
               <p class="eyebrow">Verify</p>
               <h2>Trigger the exact condition you enabled.</h2>
-              <ol><li>For new group mail, send a test error with a unique fingerprint.</li><li>For regression mail, close the group and send the same fingerprint again.</li><li>For frequent-error mail, temporarily lower the count and window, then send repeated events for the same fingerprint.</li></ol>
+              <ol><li>For new group mail, create a test error that has not appeared before.</li><li>For reopened group mail, mark the group resolved or ignored, then send the same grouped error again.</li><li>For frequent-error mail, temporarily lower the count and window, then send repeated events for the same grouped issue.</li></ol>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>Check grouping before checking email delivery.</h2>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>No new-group email</td><td>The event may have grouped into an existing issue. Use a unique fingerprint or message for the test.</td></tr><tr><td>No reopened email</td><td>The group may still be unresolved, or the new occurrence may not share the same grouping fingerprint.</td></tr><tr><td>No frequent-error email</td><td>The repeated events may not have crossed the configured count inside the configured window.</td></tr><tr><td>The wrong person receives mail</td><td>Notification preferences are per user and per project; check the recipient's own project settings.</td></tr></tbody></table>
+              <p>Use <a href="/product/notifications/setup/">notification setup requirements</a> after the inbox state proves the alert condition happened.</p>
             </section>
           </article>
         </div>

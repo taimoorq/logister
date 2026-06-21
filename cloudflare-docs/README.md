@@ -113,8 +113,12 @@ This static export mirrors the current public docs pages from the main Logister 
 When you add or change docs pages in this folder:
 
 - follow the practical manual structure in `docs/documentation-style-guide.md`
+- write for a named reader and task: operator, app developer, project user, or maintainer
 - update any repeated sidebar or footer integration links if navigation changed
 - keep sidebar groups as `<div class="sidebar-group"><p class="sidebar-label">...</p>...</div>`; `assets/site.js` turns those groups into accessible collapsible sections at runtime
+- include prerequisites, verification, likely failure modes, and the next page for setup, integration, and operations guidance
+- use real screenshots, examples, or tables when they explain the task faster than prose; keep screenshot files available through `bin/build-cloudflare-docs`
+- avoid manually drifting SDK version references; prefer generated values from companion repo metadata when available
 - run `bin/build-cloudflare-docs` when you add a new public page so `sitemap.xml` and `robots.txt` stay aligned
 - keep article content inside `<article class="article" data-pagefind-body>` so Pagefind indexes page content without sidebars and navigation
 - preview locally with `wrangler pages dev cloudflare-docs`

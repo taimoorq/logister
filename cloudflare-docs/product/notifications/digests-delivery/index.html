@@ -14,6 +14,9 @@
     <meta property="og:url" content="https://docs.logister.org/product/notifications/digests-delivery/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Digest and Delivery Notification Settings | Logister">
+    <meta name="twitter:description" content="Configure Logister digest summaries, digest send hour, email schedule time zone, immediate email caps, and quiet hours.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/notifications/digests-delivery/#article","headline":"Use summaries, caps, and quiet hours to reduce interruption.","name":"Digest and Delivery Notification Settings | Logister","url":"https://docs.logister.org/product/notifications/digests-delivery/","description":"Configure Logister digest summaries, digest send hour, email schedule time zone, immediate email caps, and quiet hours.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Notifications","item":"https://docs.logister.org/product/notifications/"},{"@type":"ListItem","position":4,"name":"Digests Delivery","item":"https://docs.logister.org/product/notifications/digests-delivery/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -33,14 +36,25 @@
             <section class="section">
               <p class="eyebrow">Digest summaries</p>
               <h2>Digest settings control scheduled summaries.</h2>
-              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Digest frequency</td><td><code>No digest</code>, <code>Daily</code>, or <code>Weekly</code>.</td></tr><tr><td>Digest send hour</td><td>The local hour when digest emails may send.</td></tr><tr><td>Email schedule time zone</td><td>The time zone used for digest hour and quiet hours.</td></tr></tbody></table>
+              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Digest frequency</td><td><code>No digest</code> disables scheduled summaries. <code>Daily</code> sends one project summary each day. <code>Weekly</code> sends one summary for the week.</td></tr><tr><td>Digest send hour</td><td>The local hour when digest emails may send. Pick a time when the recipient normally reviews project health.</td></tr><tr><td>Email schedule time zone</td><td>The time zone used for digest hour and quiet hours. This matters for distributed teams because 9 AM depends on the selected zone.</td></tr></tbody></table>
               <p>Weekly digests are evaluated on Monday in the selected time zone.</p>
             </section>
             <section class="section">
               <p class="eyebrow">Delivery limits</p>
               <h2>Delivery settings control immediate mail.</h2>
-              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Hourly immediate email limit</td><td>Maximum immediate emails per notification type each hour. <code>0</code> blocks immediate emails.</td></tr><tr><td>Quiet hours</td><td>Pause immediate emails between the selected local hours.</td></tr></tbody></table>
-              <p>Quiet hours do not suppress digest emails; digests use their own schedule.</p>
+              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Hourly immediate email limit</td><td>Maximum immediate emails per notification type each hour. Use this to prevent a noisy project from flooding one inbox. <code>0</code> blocks immediate emails.</td></tr><tr><td>Quiet hours</td><td>Pause immediate emails between the selected local hours. Use this for overnight or focus-time suppression.</td></tr></tbody></table>
+              <p>Quiet hours do not suppress digest emails; digests use their own schedule. If someone still gets a digest during quiet hours, check the digest send hour instead of the quiet-hours fields.</p>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Verify</p>
+              <h2>Test digests and immediate mail separately.</h2>
+              <ol><li>For immediate mail, enable one error triage or workflow alert, set the hourly cap above <code>0</code>, make sure the current time is outside quiet hours, then trigger that exact alert.</li><li>For daily or weekly digests, confirm the digest frequency, send hour, and time zone, then wait for the next scheduled digest window with Sidekiq running.</li><li>Check the user's inbox and spam folder, then check Rails and worker logs for Action Mailer delivery around the expected time.</li></ol>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>Caps and schedules explain most surprises.</h2>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>No immediate email arrives</td><td>Hourly limit may be <code>0</code>, the user may be inside quiet hours, or the triggering alert path may be disabled.</td></tr><tr><td>Digest does not arrive</td><td>Digest frequency may be <code>No digest</code>, the send hour may not have arrived in the selected time zone, or the worker may not be running.</td></tr><tr><td>Email arrives during quiet hours</td><td>Quiet hours only pause immediate mail. Check digest schedule separately.</td></tr><tr><td>Only some notification types arrive</td><td>Hourly limits apply per notification type, so one noisy path can be capped while another still sends.</td></tr></tbody></table>
+              <p>Use <a href="/product/notifications/setup/">notification setup requirements</a> when the schedule looks right but delivery still fails.</p>
             </section>
           </article>
         </div>

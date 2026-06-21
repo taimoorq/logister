@@ -17,6 +17,7 @@
     <meta name="twitter:title" content="Data Retention and Archives | Logister">
     <meta name="twitter:description" content="Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/data-retention/#article","headline":"Choose how long project data stays visible in Logister.","name":"Data Retention and Archives | Logister","url":"https://docs.logister.org/product/data-retention/","description":"Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://docs.logister.org/product/data-retention/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -29,7 +30,7 @@
     <div class="site-shell">
       <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
-        <section class="hero"><span class="hero-kicker">Documentation / Product / Data retention</span><h1>Choose how long project telemetry stays hot.</h1><p>Retention settings live at <code>Project &gt; Settings &gt; Data</code>. Use them to keep PostgreSQL from holding high-volume telemetry forever, and enable archive exports only when you need a cold copy before cleanup.</p></section>
+        <section class="hero"><span class="hero-kicker">Documentation / Product / Data retention</span><h1>Choose how long project data stays visible in Logister.</h1><p>Retention settings live at <code>Project &gt; Settings &gt; Data</code>. Use them when older activity should stop filling day-to-day project views, or when you want an archive copy before cleanup removes data from the UI.</p></section>
         <div class="docs-layout">
           <aside class="sidebar">
             <div class="sidebar-group"><p class="sidebar-label">Product</p><a href="/product/">Product guide</a><a href="/product/notifications/">Notifications</a><a class="active" href="/product/data-retention/">Data retention</a><a href="/metrics/">Metrics reference</a></div>
@@ -41,17 +42,17 @@
             <section id="model" class="section">
               <p class="eyebrow">Retention model</p>
               <h2>Retention is project scoped.</h2>
-              <p>Logister keeps active product data in PostgreSQL. Retention policies decide when older project telemetry can be deleted. Archive exports are optional and use Active Storage to write compressed JSONL before deletion.</p>
-              <figure class="screenshot-figure"><img src="/assets/screenshots/project-data-retention.webp" alt="Logister data retention settings showing event, trace, closed error retention, archive exports, and archive before delete." width="3600" height="1754" loading="lazy" decoding="async"><figcaption>Project data settings separate hot event retention, trace retention, closed error retention, archive exports, and archive-before-delete behavior.</figcaption></figure>
-              <div class="note warn"><h4>Not a database backup</h4><p>Telemetry archives do not replace PostgreSQL backups. They export selected event/span rows, not accounts, settings, API keys, memberships, or full workflow state.</p></div>
+              <p>Retention is project scoped. Changing one project's Data tab does not change another project's history. The fields are separated because logs and metrics, trace spans, and closed error groups often have different review value after the first few weeks.</p>
+              <figure class="screenshot-figure"><img src="/assets/screenshots/project-data-retention-controls.webp" alt="Logister data retention controls for event retention, trace retention, closed error retention, archive exports, and archive before deleting." width="3460" height="850" loading="lazy" decoding="async"><figcaption>The key choice is whether old data should simply be removed from product views, or exported first through archive-before-delete.</figcaption></figure>
+              <div class="note warn"><h4>Archives are not a full backup</h4><p>Telemetry archives are for older event history. They do not preserve user accounts, project settings, API keys, memberships, or every workflow decision. Keep ordinary backups for full restore needs.</p></div>
             </section>
             <section id="paths" class="section">
               <p class="eyebrow">Choose a page</p>
               <h2>Use the subpage that matches the work.</h2>
               <div class="card-grid">
-                <article class="card"><p class="eyebrow">Policy</p><h3>Choose retention windows</h3><p>Understand hot events, trace spans, closed error groups, and archive-before-delete.</p><p><a href="/product/data-retention/policy/">Read policy settings</a></p></article>
-                <article class="card"><p class="eyebrow">Storage</p><h3>Configure archive storage</h3><p>Set Active Storage, S3-compatible credentials, archive prefix, and object layout.</p><p><a href="/product/data-retention/archive-storage/">Read archive storage</a></p></article>
-                <article class="card"><p class="eyebrow">Jobs</p><h3>Run and verify retention</h3><p>Check scheduled sweeps, manual commands, recent archive runs, and failures.</p><p><a href="/product/data-retention/jobs/">Read jobs and verification</a></p></article>
+                <article class="card"><p class="eyebrow">Policy</p><h3>Choose retention windows</h3><p>Understand which screens are affected by event, trace, and closed-error retention.</p><p><a href="/product/data-retention/policy/">Read policy settings</a></p></article>
+                <article class="card"><p class="eyebrow">Storage</p><h3>Prepare archives</h3><p>Use this only when archive exports are enabled or archive-before-delete is selected.</p><p><a href="/product/data-retention/archive-storage/">Read archive storage</a></p></article>
+                <article class="card"><p class="eyebrow">Verification</p><h3>Check recent archive runs</h3><p>Use the Recent archive runs area to confirm cleanup work succeeded before trusting it on important projects.</p><p><a href="/product/data-retention/jobs/">Read jobs and verification</a></p></article>
               </div>
             </section>
             <section id="defaults" class="section">

@@ -44,7 +44,7 @@ If you are trying to instrument an application, the language integrations live i
 - JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - .NET package for .NET 8+ apps, ASP.NET Core services, workers, and C# services: https://github.com/taimoorq/logister-dotnet, https://www.nuget.org/packages/Logister, and https://www.nuget.org/packages/Logister.AspNetCore
 - Android package for Kotlin and Java Android apps: https://github.com/taimoorq/logister-android and https://central.sonatype.com/artifact/org.logister/logister-android
-- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2
+- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
 
 ## Public docs
 
@@ -126,9 +126,9 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v2.7.1
+   docker pull ghcr.io/taimoorq/logister:v2.7.2
    # or
-   docker pull docker.io/taimoorq/logister:v2.7.1
+   docker pull docker.io/taimoorq/logister:v2.7.2
    ```
 
 3. Create production config from the sample.
@@ -288,10 +288,10 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v2.7.1`
+- `ghcr.io/taimoorq/logister:v2.7.2`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v2.7.1`
+- `docker.io/taimoorq/logister:v2.7.2`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 
@@ -382,4 +382,4 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - PyPI: https://pypi.org/project/logister-python/
 - npm: https://www.npmjs.com/package/logister-js
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
-- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2
+- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3

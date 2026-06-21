@@ -14,6 +14,9 @@
     <meta property="og:url" content="https://docs.logister.org/product/notifications/operations/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Operational Notification Settings | Logister">
+    <meta name="twitter:description" content="Configure Logister operational emails for deployment summaries, intake and quota warnings, and retention or archive failures.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/notifications/operations/#article","headline":"Email me about platform events and maintenance failures.","name":"Operational Notification Settings | Logister","url":"https://docs.logister.org/product/notifications/operations/","description":"Configure Logister operational emails for deployment summaries, intake and quota warnings, and retention or archive failures.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Notifications","item":"https://docs.logister.org/product/notifications/"},{"@type":"ListItem","position":4,"name":"Operations","item":"https://docs.logister.org/product/notifications/operations/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -33,13 +36,23 @@
             <section class="section">
               <p class="eyebrow">Settings</p>
               <h2>These emails are for project operations, not issue triage.</h2>
-              <table><thead><tr><th>Setting</th><th>Use it for</th><th>Default</th></tr></thead><tbody><tr><td>Deployment summary emails</td><td>Send after a deployment record is stored for the project.</td><td>Off</td></tr><tr><td>Intake and quota warnings</td><td>Send when event intake, rate limits, or quota checks need attention.</td><td>On</td></tr><tr><td>Retention and archive failures</td><td>Send when retention cleanup or archive export fails.</td><td>On</td></tr></tbody></table>
+              <table><thead><tr><th>Setting</th><th>Use it for</th><th>Default</th></tr></thead><tbody><tr><td>Deployment summary emails</td><td>Email when a deploy is recorded so the team can connect later errors or latency changes to that release.</td><td>Off</td></tr><tr><td>Intake and quota warnings</td><td>Email when the project may be missing expected events or hitting limits that affect what appears in the UI.</td><td>On</td></tr><tr><td>Retention and archive failures</td><td>Email when cleanup or archive work fails so someone can fix it before old telemetry is removed.</td><td>On</td></tr></tbody></table>
             </section>
             <section class="section">
               <p class="eyebrow">Related setup</p>
-              <h2>Operational notices depend on other systems working.</h2>
-              <p>Deployment summaries require deployment records. Retention and archive failure notices require retention jobs and, when archives are enabled, working object storage.</p>
+              <h2>Operational notices explain changes around the project.</h2>
+              <p>Use these when someone should know about deploys, intake health, limits, or cleanup failures without watching every error group. If a deployment summary is missing, confirm the deployment appears for the project. If a retention notice is missing, confirm the Data tab has the retention or archive setting enabled.</p>
               <p>Read <a href="/http-api/#deployments">deployment records</a> or <a href="/product/data-retention/">data retention</a> next.</p>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Verify</p>
+              <h2>Trigger the operational event you want to hear about.</h2>
+              <ol><li>For deployment summaries, enable the setting, send or record one deployment, then confirm it appears on the project Deployments page.</li><li>For retention and archive failures, verify the Data tab has retention or archive settings enabled before expecting a notice.</li><li>For intake and quota warnings, check the project has recent ingest activity and that the warning condition actually happened.</li><li>If the project state is correct but no email arrives, use the setup requirements page to check project access, caps, quiet hours, SMTP, and Sidekiq.</li></ol>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>Operational emails depend on the system that creates the event.</h2>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>No deployment summary</td><td>The project may not have a stored deployment record, or deployment summary emails may still be off.</td></tr><tr><td>No retention failure notice</td><td>Confirm retention jobs ran, archive-before-delete or archive exports are enabled where expected, and a failure appears in Recent archive runs.</td></tr><tr><td>No intake warning</td><td>Check rate-limit responses, usage warning conditions, and project-level API traffic before changing email settings.</td></tr><tr><td>Operational mail arrives but triage mail does not</td><td>Operational notices and error triage alerts are separate preference paths.</td></tr></tbody></table>
             </section>
           </article>
         </div>

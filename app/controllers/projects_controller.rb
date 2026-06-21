@@ -64,7 +64,7 @@ class ProjectsController < ApplicationController
 
     if @project.save
       redirect_to setup_project_path(@project),
-                  notice: "Project created. Follow the #{@project.integration_label} setup guide to start ingesting events."
+                  notice: "Project created. Create a token and send one event to verify setup."
     else
       build_default_retention_policy
       render :new, status: :unprocessable_content

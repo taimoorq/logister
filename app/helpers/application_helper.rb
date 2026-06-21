@@ -22,7 +22,11 @@ module ApplicationHelper
     cfml_integration: "/integrations/cfml/",
     javascript_integration: "/integrations/javascript/",
     python_integration: "/integrations/python/",
-    dotnet_integration: "/integrations/dotnet/"
+    dotnet_integration: "/integrations/dotnet/",
+    cloudflare_pages_integration: "/integrations/cloudflare-pages/",
+    cloudflare_pages_manual_telemetry: "/integrations/cloudflare-pages/manual-telemetry/",
+    android_integration: "/integrations/android/",
+    ios_integration: "/integrations/ios/"
   }.freeze
 
   STREAMLINE_ICON_SPRITE = "streamline-freehand.svg"

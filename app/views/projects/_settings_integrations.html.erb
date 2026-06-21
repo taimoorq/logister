@@ -5,7 +5,7 @@
             <div>
               <h2 class="text-base font-bold text-slate-900 mb-2">Cloudflare Pages connection</h2>
               <p class="text-slate-600 text-sm">
-                Store the Pages project identifiers Logister will use when the Cloudflare importer pulls Web Analytics and deployment health.
+                Store Pages identifiers for the future importer. Use manual telemetry for data today.
               </p>
             </div>
             <% if @cloudflare_integration_setting&.configured? %>
@@ -31,7 +31,7 @@
               <%= f.check_box :enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Enable Cloudflare imports</span>
-                <span class="block text-sm text-slate-600">Importer jobs will use this record once the Cloudflare fetcher is implemented.</span>
+                <span class="block text-sm text-slate-600">Marks this project eligible for future importer jobs.</span>
               </span>
             </label>
 
@@ -64,9 +64,9 @@
             </div>
 
             <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <h3 class="text-sm font-semibold text-slate-900 mb-2">Importer target</h3>
+              <h3 class="text-sm font-semibold text-slate-900 mb-2">Importer status</h3>
               <p class="text-sm text-slate-600">
-                The first Cloudflare importer will record page-view and visitor metrics, top paths, deployment status, build duration, branch, and failed deployment logs into this project.
+                Importer jobs are not live yet. Send Cloudflare Pages metrics or deployment records through manual HTTP telemetry when you need events now.
               </p>
             </div>
 

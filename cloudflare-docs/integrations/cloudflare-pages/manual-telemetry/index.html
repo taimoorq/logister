@@ -14,6 +14,9 @@
     <meta property="og:url" content="https://docs.logister.org/integrations/cloudflare-pages/manual-telemetry/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Cloudflare Pages Manual Telemetry | Logister">
+    <meta name="twitter:description" content="Send Cloudflare Pages deployment and traffic metrics to Logister through the HTTP API.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/integrations/cloudflare-pages/manual-telemetry/#article","headline":"Send one metric first.","name":"Cloudflare Pages Manual Telemetry | Logister","url":"https://docs.logister.org/integrations/cloudflare-pages/manual-telemetry/","description":"Send Cloudflare Pages deployment and traffic metrics to Logister through the HTTP API.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Integrations","item":"https://docs.logister.org/integrations/"},{"@type":"ListItem","position":3,"name":"Cloudflare Pages","item":"https://docs.logister.org/integrations/cloudflare-pages/"},{"@type":"ListItem","position":4,"name":"Manual Telemetry","item":"https://docs.logister.org/integrations/cloudflare-pages/manual-telemetry/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -28,10 +31,16 @@
       <main class="page">
         <section class="hero"><span class="hero-kicker">Cloudflare Pages / Manual telemetry</span><h1>Send one metric first.</h1><p>Manual telemetry is the supported path until the Cloudflare importer fetcher lands.</p></section>
         <div class="docs-layout">
-          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Cloudflare Pages</p><a href="/integrations/cloudflare-pages/">Overview</a><a class="active" href="/integrations/cloudflare-pages/manual-telemetry/">Manual telemetry</a><a href="/integrations/cloudflare-pages/importer-settings/">Importer settings</a></div></aside>
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Cloudflare Pages</p><a href="/integrations/cloudflare-pages/">Overview</a><a class="active" href="/integrations/cloudflare-pages/manual-telemetry/">Manual telemetry</a><a href="/integrations/cloudflare-pages/importer-settings/">Importer settings</a></div><hr><div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#metric">Send a metric</a><a href="#deployment">Record a deploy</a><a href="#verify">Verify</a><a href="#troubleshooting">Troubleshooting</a></div></aside>
           <article class="article" data-pagefind-body>
-            <section class="section">
-              <p class="eyebrow">Example</p>
+            <section id="before" class="section">
+              <p class="eyebrow">Before you start</p>
+              <h2>Start from CI, a script, a Worker, or a Pages Function.</h2>
+              <p>Manual telemetry is just the Logister HTTP API with Cloudflare Pages context. Use it when you already know a deployment finished, a build took a certain amount of time, a route received traffic, or a Pages Function logged a useful event.</p>
+              <table><thead><tr><th>Value</th><th>Use</th></tr></thead><tbody><tr><td><code>LOGISTER_ENDPOINT</code></td><td>Your Logister base URL, such as <code>https://logister.example.com</code>.</td></tr><tr><td><code>LOGISTER_API_KEY</code></td><td>The API token for the Cloudflare Pages project.</td></tr><tr><td><code>service</code></td><td>A stable Pages site name, such as <code>marketing-site</code>.</td></tr><tr><td><code>environment</code></td><td><code>production</code>, <code>preview</code>, or the release channel you review in Logister.</td></tr></tbody></table>
+            </section>
+            <section id="metric" class="section">
+              <p class="eyebrow">Metric example</p>
               <h2>Use the standard ingest endpoint.</h2>
               <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#cf-pages-metric">Copy</button></div><pre><code id="cf-pages-metric">curl -i "$LOGISTER_ENDPOINT/api/v1/ingest_events" \
   -H "Authorization: Bearer $LOGISTER_API_KEY" \
@@ -51,7 +60,36 @@
       }
     }
   }'</code></pre></div>
-              <p>Keep <code>platform</code>, <code>service</code>, <code>deployment_id</code>, and <code>branch</code> stable. Then check Activity or Insights for the event.</p>
+              <p>Keep <code>platform</code>, <code>service</code>, <code>deployment_id</code>, and <code>branch</code> stable. Use <code>context.value</code> and <code>context.unit</code> for numeric Cloudflare Pages metrics so Insights can chart the value instead of only counting events.</p>
+            </section>
+            <section id="deployment" class="section">
+              <p class="eyebrow">Deployment example</p>
+              <h2>Record the deploy when CI knows the commit.</h2>
+              <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#cf-pages-deploy">Copy</button></div><pre><code id="cf-pages-deploy">curl -i "$LOGISTER_ENDPOINT/api/v1/deployments" \
+  -H "Authorization: Bearer $LOGISTER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deployment": {
+      "release": "pages-abc123",
+      "environment": "production",
+      "repository": "acme/marketing-site",
+      "commit_sha": "4f8c2d1",
+      "branch": "main",
+      "workflow_url": "https://dash.cloudflare.com/..."
+    }
+  }'</code></pre></div>
+              <p>Deployment records are stronger than metric-only release strings because they tell Logister which commit was deployed for a release and environment.</p>
+            </section>
+            <section id="verify" class="section">
+              <p class="eyebrow">Verification</p>
+              <h2>Confirm one Pages signal before sending more.</h2>
+              <ol><li>Run the metric request and confirm the HTTP response is <code>201 Created</code>.</li><li>Open the Cloudflare Pages project in Logister.</li><li>Open Events, filter to <code>metric</code>, and look for <code>cloudflare.deployment_build_ms</code>.</li><li>Open Insights and check the recent stream for the same service, branch, and environment.</li><li>If you sent a deployment record, open Deployments and confirm the release appears there too.</li></ol>
+            </section>
+            <section id="troubleshooting" class="section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>Most missing events are token, URL, or payload problems.</h2>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td><code>401 Unauthorized</code></td><td>The API key is missing, wrong, revoked, or belongs to a different project.</td></tr><tr><td><code>422 Unprocessable Entity</code></td><td>The payload is missing the <code>event</code> or <code>deployment</code> root key, event type, message, or required field.</td></tr><tr><td><code>429 Too Many Requests</code></td><td>The project token hit a rate limit. Read the <code>Retry-After</code> header before retrying.</td></tr><tr><td>Request succeeds but Inbox is empty</td><td>Metrics and deployments do not appear in the error inbox. Check Events, Insights, or Deployments.</td></tr><tr><td>Insights filters are empty</td><td>Send stable <code>environment</code>, <code>release</code>, <code>service</code>, and low-cardinality context values.</td></tr></tbody></table>
+              <p>Use the <a href="/http-api/#responses">HTTP API response reference</a> for exact status codes and <a href="/troubleshooting/">troubleshooting</a> for deeper ingestion checks.</p>
             </section>
           </article>
         </div>

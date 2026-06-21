@@ -17,7 +17,7 @@
        key: "health",
        icon: :performance,
        title: "Project health alerts",
-       intent: "I want email when the whole project looks unhealthy.",
+       intent: "I want email when project health changes.",
        details: "Project-wide spikes, slow transactions, and missed monitors."
      },
      {
@@ -45,7 +45,7 @@
        key: "operations",
        icon: :deployments,
        title: "Operational notices",
-       intent: "I want email about deploys and platform jobs.",
+       intent: "I want email about deploys, intake, and cleanup jobs.",
        details: "Deployments, intake health, rate limits, retention, and archives."
      }
    ] %>
@@ -149,7 +149,7 @@
                 <%= f.check_box :frequent_error_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Single-error volume threshold</span>
-                  <span class="block text-sm text-slate-600">Send when one error group receives the event count below inside the window below.</span>
+                  <span class="block text-sm text-slate-600">Send when one error group crosses the count and window below.</span>
                 </span>
               </label>
 
@@ -179,7 +179,7 @@
                 <%= f.check_box :project_spike_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Project-wide error spike</span>
-                  <span class="block text-sm text-slate-600">Send when the whole project receives the event count below inside the window below.</span>
+                  <span class="block text-sm text-slate-600">Send when the project crosses the count and window below.</span>
                 </span>
               </label>
 
@@ -202,7 +202,7 @@
                 <%= f.check_box :performance_alerts_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Project p95 latency</span>
-                  <span class="block text-sm text-slate-600">Send when project p95 transaction duration over the last 15 minutes is above the limit below.</span>
+                  <span class="block text-sm text-slate-600">Send when project p95 latency over 15 minutes exceeds the limit below.</span>
                 </span>
               </label>
 
@@ -357,7 +357,7 @@
         <% end %>
 
         <div class="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-sm text-slate-500">Saving updates this notification path only.</p>
+          <p class="text-sm text-slate-500">Only this notification path will change.</p>
           <%= f.submit "Save #{active_purpose[:title].downcase}", class: "btn-primary" %>
         </div>
       </section>

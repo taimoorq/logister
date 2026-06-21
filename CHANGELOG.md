@@ -2,6 +2,31 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.7.2 - 2026-06-21
+
+### Added
+
+- Added durable product documentation guidance for Codex agents and future docs updates, including task-first structure, source-backed version freshness, and review checklists.
+- Added public screenshot assets and richer Cloudflare docs coverage for dashboards, project workflows, data retention, notifications, Cloudflare Pages telemetry, and self-hosted use cases.
+- Added `bin/sync-doc-versions` so Rails app copy, public docs, and Cloudflare docs can keep SDK package versions aligned with companion repo metadata.
+
+### Changed
+
+- Reworked public docs around focused setup, verification, and troubleshooting pages instead of long planning-style narratives.
+- Tightened Rails app setup, activity empty states, monitor empty states, notification settings, retention settings, project cards, and product tour copy so users see the next action quickly.
+- Pointed Cloudflare Pages, Android, and iOS project help links at their public integration docs while keeping SDK release versions independent from the Rails app release.
+- Updated self-hosting and AI-readable release references for the `v2.7.2` image tag.
+
+### Fixed
+
+- Fixed stale app/docs package references by syncing iOS, Android, Ruby, Python, JavaScript, and .NET SDK versions from their companion repos during docs builds.
+- Clarified that Cloudflare Pages importer settings prepare a future importer, while manual HTTP telemetry is the working path today.
+
+### Upgrade Notes
+
+- No database migrations are required for this release.
+- Rebuild the public docs after updating the app so `llms.txt`, `llms-full.txt`, OpenAPI metadata, screenshots, and versioned image references stay aligned.
+
 ## v2.7.1 - 2026-06-20
 
 ### Added

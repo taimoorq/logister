@@ -46,11 +46,10 @@
       <% end %>
     <% else %>
       <p class="text-slate-600 text-sm">
-        No check-ins yet. Send heartbeats to
+        No check-ins yet. Send one heartbeat to
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">/api/v1/check_ins</code>.
-        The
         <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
-        show examples for scheduling these check-ins. Accepted check-ins are limited to 1,200 per minute per API token by default.
+        show runtime examples.
       </p>
     <% end %>
   </section>

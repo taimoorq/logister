@@ -4,13 +4,173 @@
 require "cgi"
 require "date"
 require "fileutils"
+require "json"
 require "pathname"
+
+def plain_text(html)
+  CGI.unescapeHTML(html.to_s.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip)
+end
+
+def docs_path_for(docs_root, file)
+  relative = Pathname.new(file).relative_path_from(docs_root).to_s
+  relative == "index.html" ? "/" : "/#{relative.delete_suffix("index.html")}"
+end
+
+def page_name_for(path)
+  return "Documentation" if path == "/"
+
+  path.split("/").reject(&:empty?).last.to_s.split("-").map(&:capitalize).join(" ")
+end
+
+def breadcrumb_items(docs_url, path)
+  items = [{ "@type" => "ListItem", "position" => 1, "name" => "Documentation", "item" => "#{docs_url}/" }]
+  parts = path.split("/").reject(&:empty?)
+  parts.each_with_index do |part, index|
+    current_path = "/#{parts.first(index + 1).join("/")}/"
+    items << {
+      "@type" => "ListItem",
+      "position" => index + 2,
+      "name" => part.split("-").map(&:capitalize).join(" "),
+      "item" => "#{docs_url}#{current_path}"
+    }
+  end
+  items
+end
+
+def ensure_html_metadata!(docs_root, docs_url)
+  Dir[docs_root.join("**/*.html")].sort.each do |file|
+    path = Pathname.new(file)
+    html = path.read
+    updated = html.dup
+
+    title = plain_text(html[/<title>(.*?)<\/title>/m, 1])
+    description = html[/<meta name="description" content="([^"]+)"/, 1].to_s
+    canonical = html[/<link rel="canonical" href="([^"]+)"/, 1].to_s
+    h1 = plain_text(html[/<h1[^>]*>(.*?)<\/h1>/m, 1])
+    docs_path = docs_path_for(docs_root, file)
+    canonical = "#{docs_url}#{docs_path}" if canonical.empty?
+
+    if updated.include?('<meta name="twitter:card"')
+      unless updated.include?('name="twitter:title"')
+        updated.sub!(/(<meta name="twitter:card" content="[^"]+">\n)/, "\\1    <meta name=\"twitter:title\" content=\"#{CGI.escapeHTML(title)}\">\n")
+      end
+
+      unless updated.include?('name="twitter:description"')
+        if updated.include?('name="twitter:title"')
+          updated.sub!(/(<meta name="twitter:title" content="[^"]+">\n)/, "\\1    <meta name=\"twitter:description\" content=\"#{CGI.escapeHTML(description)}\">\n")
+        else
+          updated.sub!(/(<meta name="twitter:card" content="[^"]+">\n)/, "\\1    <meta name=\"twitter:description\" content=\"#{CGI.escapeHTML(description)}\">\n")
+        end
+      end
+    end
+
+    unless updated.include?('application/ld+json')
+      name = title.empty? ? page_name_for(docs_path) : title
+      headline = h1.empty? ? name : h1
+      schema = {
+        "@context" => "https://schema.org",
+        "@graph" => [
+          {
+            "@type" => "Organization",
+            "@id" => "#{docs_url}/#organization",
+            "name" => "Logister",
+            "url" => "https://logister.org/",
+            "sameAs" => ["https://github.com/taimoorq/logister"]
+          },
+          {
+            "@type" => docs_path == "/" ? "CollectionPage" : "TechArticle",
+            "@id" => "#{canonical}#article",
+            "headline" => headline,
+            "name" => name,
+            "url" => canonical,
+            "description" => description,
+            "publisher" => { "@id" => "#{docs_url}/#organization" },
+            "author" => { "@id" => "#{docs_url}/#organization" },
+            "audience" => { "@type" => "Audience", "audienceType" => "Developers and operators" },
+            "inLanguage" => "en-US"
+          },
+          {
+            "@type" => "BreadcrumbList",
+            "itemListElement" => breadcrumb_items(docs_url, docs_path)
+          }
+        ]
+      }
+      script = "    <script type=\"application/ld+json\">#{JSON.generate(schema)}</script>\n"
+      unless updated.sub!(/(    <link rel="alternate")/, "#{script}\\1")
+        updated.sub!(/(    <link rel="icon")/, "#{script}\\1")
+      end
+    end
+
+    path.write(updated) if updated != html
+  end
+end
+
+def audit_cloudflare_docs!(docs_root)
+  errors = []
+  html_files = Dir[docs_root.join("**/*.html")].sort
+
+  html_files.each do |file|
+    relative = Pathname.new(file).relative_path_from(docs_root).to_s
+    html = File.read(file)
+    errors << "#{relative}: missing <title>" unless html.include?("<title>")
+    errors << "#{relative}: missing meta description" unless html.include?('name="description"')
+    errors << "#{relative}: missing canonical link" unless html.include?('rel="canonical"')
+    errors << "#{relative}: missing Open Graph description" unless html.include?('property="og:description"')
+    errors << "#{relative}: missing Twitter description" if html.include?('name="twitter:card"') && !html.include?('name="twitter:description"')
+    errors << "#{relative}: missing JSON-LD structured data" unless html.include?('application/ld+json')
+    errors << "#{relative}: missing h1" unless html.match?(/<h1[ >]/)
+    errors << "#{relative}: article content is not marked for Pagefind" unless html.include?("data-pagefind-body")
+
+    html.scan(/<img\b[^>]*>/i).each do |tag|
+      errors << "#{relative}: image missing alt text: #{tag}" unless tag.match?(/\balt="[^"]*"/i)
+    end
+  end
+
+  existing = html_files.flat_map do |file|
+    path = "/#{Pathname.new(file).relative_path_from(docs_root)}"
+    [path, path.sub(%r{index\.html$}, ""), path.sub(%r{/index\.html$}, "/")]
+  end
+  existing += Dir[docs_root.join("**/*")].select { |file| File.file?(file) }.map do |file|
+    "/#{Pathname.new(file).relative_path_from(docs_root)}"
+  end
+  existing = existing.uniq
+
+  html_files.each do |file|
+    relative = Pathname.new(file).relative_path_from(docs_root).to_s
+    File.read(file).scan(/\b(?:href|src)="([^"]+)"/).flatten.each do |link|
+      next if link.match?(/\A(?:https?:|mailto:|#|javascript:|data:)/)
+
+      local_path = link.split("#", 2).first
+      next if local_path.empty? || local_path == "/assets/analytics-config.js"
+
+      next unless local_path.start_with?("/")
+
+      candidates = [local_path]
+      candidates << (local_path.end_with?("/") ? "#{local_path}index.html" : "#{local_path}/index.html")
+      errors << "#{relative}: broken local link #{link}" unless candidates.any? { |candidate| existing.include?(candidate) }
+    end
+  end
+
+  return if errors.empty?
+
+  warn "Cloudflare docs audit failed:"
+  errors.each { |error| warn "  #{error}" }
+  exit 1
+end
 
 repo_root = Pathname.new(__dir__).join("..").expand_path
 docs_root = repo_root.join("cloudflare-docs")
 docs_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
 docs_url = "https://docs.logister.org" if docs_url.empty?
 docs_url = docs_url.chomp("/")
+
+sync_versions = repo_root.join("bin/sync-doc-versions")
+if sync_versions.file?
+  unless system(sync_versions.to_s)
+    warn "Docs version sync failed."
+    exit 1
+  end
+end
 
 lastmod = ENV["DOCS_SITEMAP_LASTMOD"].to_s.strip
 lastmod = Date.today.iso8601 if lastmod.empty?
@@ -36,6 +196,9 @@ if screenshots_source.directory?
     FileUtils.cp(source, screenshots_target.join(entry)) if source.file?
   end
 end
+
+ensure_html_metadata!(docs_root, docs_url)
+audit_cloudflare_docs!(docs_root)
 
 pagefind_bin = repo_root.join("node_modules/.bin/pagefind")
 unless pagefind_bin.file?

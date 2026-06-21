@@ -11,7 +11,7 @@ en:
         project_navigation:
           order: 2
           title: "Project navigation"
-          tour: "Use the project sections as user paths: start at Home, triage in Inbox, inspect Events and Performance, explore Insights, review Deployments and Monitors, then use Setup or Settings when you need configuration."
+          tour: "Use Home for the overview, Inbox for triage, Events and Performance for telemetry, and Setup or Settings for configuration."
       dashboard:
         overview:
           order: 1
@@ -145,7 +145,7 @@ en:
         integration_guide:
           order: 3
           title: "Integration guide"
-          tour: "The setup guide keeps the shortest path visible first and leaves detailed integration notes behind a disclosure."
+          tour: "Start with one event here. Open the details or docs when you need runtime-specific examples."
       project-monitors:
         status:
           order: 1
@@ -155,7 +155,7 @@ en:
         email_notifications:
           order: 1
           title: "Email notifications"
-          tour: "Notification settings control first-occurrence alerts and digest timing for this project."
+          tour: "Choose the reason you want email, then tune only that notification path."
         access:
           order: 2
           title: "Project access"
@@ -176,11 +176,11 @@ en:
         integration_type:
           order: 2
           title: "Choose integration type"
-          tour: "Use Manual / HTTP API for any runtime or custom client when you want the advanced API path. Otherwise choose a language-specific package manager integration, such as RubyGems, npm, NuGet, PyPI, or CFML."
+          tour: "Choose the runtime or manual HTTP path that will send this project's first event."
         retention_policy:
           order: 3
           title: "Choose retention policy"
-          tour: "Set how long events, traces, and closed errors stay hot before this project starts accepting telemetry, and choose whether old data should be archived before cleanup."
+          tour: "Set how long events, traces, and closed errors stay hot, and whether cleanup must archive first."
       project-edit:
         edit_project:
           order: 1

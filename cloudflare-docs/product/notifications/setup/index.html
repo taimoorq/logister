@@ -4,16 +4,19 @@
     <meta charset="utf-8">
     <title>Notification Setup Requirements | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Prepare SMTP, Sidekiq workers, project access, and scheduled jobs before relying on Logister project notification emails.">
+    <meta name="description" content="Check Logister project notification preferences, project access, alert conditions, quiet hours, caps, and delivery setup when notification emails do not arrive.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://docs.logister.org/product/notifications/setup/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Notification Setup Requirements | Logister">
-    <meta property="og:description" content="Prepare SMTP, Sidekiq workers, project access, and scheduled jobs before relying on Logister project notification emails.">
+    <meta property="og:description" content="Check Logister project notification preferences, project access, alert conditions, quiet hours, caps, and delivery setup when notification emails do not arrive.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://docs.logister.org/product/notifications/setup/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Notification Setup Requirements | Logister">
+    <meta name="twitter:description" content="Check Logister project notification preferences, project access, alert conditions, quiet hours, caps, and delivery setup when notification emails do not arrive.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/notifications/setup/#article","headline":"Make the delivery path healthy before tuning preferences.","name":"Notification Setup Requirements | Logister","url":"https://docs.logister.org/product/notifications/setup/","description":"Check Logister project notification preferences, project access, alert conditions, quiet hours, caps, and delivery setup when notification emails do not arrive.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Notifications","item":"https://docs.logister.org/product/notifications/"},{"@type":"ListItem","position":4,"name":"Setup","item":"https://docs.logister.org/product/notifications/setup/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -31,14 +34,14 @@
           <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Notifications</p><a href="/product/notifications/">Overview</a><a class="active" href="/product/notifications/setup/">Setup requirements</a><a href="/product/notifications/error-triage/">Error triage</a><a href="/product/notifications/project-health/">Project health</a><a href="/product/notifications/workflow-routing/">Workflow routing</a><a href="/product/notifications/digests-delivery/">Digests and delivery</a><a href="/product/notifications/operations/">Operational notices</a></div></aside>
           <article class="article" data-pagefind-body>
             <section class="section">
-              <p class="eyebrow">Required path</p>
-              <h2>Four pieces have to line up.</h2>
-              <table><thead><tr><th>Piece</th><th>Check</th></tr></thead><tbody><tr><td>SMTP</td><td>Set <code>LOGISTER_EMAIL_FROM</code> and SMTP or SES variables. Verify auth/password reset mail first.</td></tr><tr><td>Worker</td><td>Run <code>bundle exec sidekiq -C config/sidekiq.yml</code> with the same secrets as the web process.</td></tr><tr><td>Project access</td><td>The recipient must be a project owner or project member.</td></tr><tr><td>Scheduled jobs</td><td>The Sidekiq worker seeds digest, monitor, health, and retention sweeps on startup and each recurring job schedules its next run.</td></tr></tbody></table>
+              <p class="eyebrow">Delivery path</p>
+              <h2>Check the visible choices before debugging delivery.</h2>
+              <table><thead><tr><th>Piece</th><th>What to check</th></tr></thead><tbody><tr><td>User preference</td><td>The right project member enabled the matching notification path for this project.</td></tr><tr><td>Project access</td><td>The recipient is still a project owner or project member.</td></tr><tr><td>Alert condition</td><td>The exact condition happened: a new group, reopened group, threshold crossing, assignment, digest schedule, or operational notice.</td></tr><tr><td>Email delivery</td><td>If the UI choices look right but nothing arrives, verify ordinary account email first, then check the instance's email and background-processing setup.</td></tr></tbody></table>
             </section>
             <section class="section">
               <p class="eyebrow">Verify</p>
               <h2>Test from simplest mail to project-specific mail.</h2>
-              <ol><li>Send a password reset email.</li><li>Start the worker and confirm it connects to Redis.</li><li>Create a new error group with a unique fingerprint.</li><li>Check worker logs and <code>EmailNotificationDelivery</code> records if the message does not arrive.</li></ol>
+              <ol><li>Open the user's notification settings for the project.</li><li>Confirm the matching path is enabled and not blocked by quiet hours or hourly caps.</li><li>Create a new error group with a unique fingerprint.</li><li>If the message does not arrive, test password reset email, then check instance-level email delivery logs.</li></ol>
               <p>For exact SMTP variables, read <a href="/deployment/#email">deployment email settings</a>. For symptoms, read <a href="/troubleshooting/#email">email troubleshooting</a>.</p>
             </section>
           </article>

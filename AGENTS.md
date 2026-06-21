@@ -101,15 +101,20 @@ Used when one action should update several DOM regions:
 - **The static docs are a product surface, not a markdown dump.** Update `cloudflare-docs/` pages directly when changing setup, deployment, API, or integration guidance.
 - **Write docs like a practical self-hosted operator manual.** Keep the Bugsink-inspired style we settled on: task-first, concise, self-hosting-aware, and useful to someone configuring a real instance. Prefer exact settings, UI paths, commands, required permissions, verification steps, and symptom-driven troubleshooting over broad product copy.
 - **Use the docs style guide as the AI instruction for new docs work.** Before adding or rewriting public docs, read [docs/documentation-style-guide.md](docs/documentation-style-guide.md) and follow its page shape, tone, and maintenance checklist.
+- **Start docs from audience and job-to-be-done.** Before writing, name the reader and the action they came to finish: first-time self-hoster, app developer integrating an SDK, project user triaging an error, admin configuring email, or maintainer releasing packages. Put the shortest successful path near the top, then add context.
 - **Docs content should follow a consistent guide shape.** The preferred flow is:
   1. Short overview
   2. Prerequisites or before-you-start context
   3. Step-by-step setup or usage flow
   4. Verification section
   5. Next steps or troubleshooting
+- **Make docs useful as Tier 0 support.** Every setup, integration, and operations page should answer the common support question without requiring Slack or source-code archaeology. Include how to verify the result, what failure looks like, where logs or UI status appear, and what to try next.
 - **Do not overload one public docs page with every related setting.** When a feature has several user intents, make a short overview/hub page and split the detailed guidance into focused subpages. The hub should answer "which path do I need?" and each subpage should answer one concrete operator or user question.
 - **Group docs by the user's purpose, not by the database shape.** For example, notification docs should be separated into setup requirements, error triage, project health, workflow routing, digests/delivery, and operational notices. Retention docs should separate policy choices, archive storage, and job verification.
 - **Make relationships between settings visible.** If a page has controls or examples, explain which section owns which outcome so users can tell similar options apart. Avoid placing a long form or option list under one generic heading when smaller cards, sections, or subpages would make the mental model clearer.
+- **Show the product when visual context matters.** Prefer real screenshots, payload examples, diagrams, or compact tables over abstract descriptions. Screenshots need useful alt text, stable dimensions, and files available under `cloudflare-docs/assets/screenshots/` after `bin/build-cloudflare-docs`.
+- **Keep docs freshness tied to source-of-truth files.** Avoid hand-updating package versions in multiple places when a script can read the SDK repos. Version references should come from the companion repo metadata where possible: Ruby `lib/logister/version.rb`, Python `pyproject.toml`, JavaScript `package.json`, .NET `.csproj` package versions, Android `gradle.properties`, and iOS `VERSION`.
+- **Add feedback and maintenance paths.** User-facing docs should make the next correction path obvious through support, GitHub issues, or troubleshooting links. When a page changes because of a support question, fold the durable lesson back into the page or the style guide.
 - **Avoid checking in completed planning artifacts.** Once a plan has shipped and its durable lessons are captured in `AGENTS.md`, a runbook, the changelog, tests, or public docs, remove the completed plan/roadmap file instead of carrying stale checklist docs forward.
 - **Keep docs hosting concerns separate from Rails concerns.** Analytics, docs robots, docs sitemap, and docs metadata for the configured docs host belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
 

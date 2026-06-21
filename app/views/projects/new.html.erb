@@ -27,7 +27,7 @@
                   <%= tag.attributes(data: product_tour_step_data(tour_group, :retention_policy)) %>>
           <legend class="form-label">Data retention</legend>
           <p class="text-slate-500 text-xs mb-3">
-            Choose the data lifecycle before this project starts accepting telemetry.
+            Set the data lifecycle before sending the first event.
           </p>
 
           <%= f.fields_for :retention_policy do |retention_fields| %>
@@ -75,7 +75,7 @@
                 <%= retention_fields.check_box :archive_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Enable archive exports</span>
-                  <span class="block text-sm text-slate-600">Store gzip JSONL exports before old telemetry is removed.</span>
+                  <span class="block text-sm text-slate-600">Write gzip JSONL exports before old telemetry is removed.</span>
                 </span>
               </label>
 
@@ -83,7 +83,7 @@
                 <%= retention_fields.check_box :archive_before_delete, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Archive before deleting</span>
-                  <span class="block text-sm text-slate-600">Require an archive export before retention cleanup deletes rows.</span>
+                  <span class="block text-sm text-slate-600">Require a successful export before cleanup deletes rows.</span>
                 </span>
               </label>
             </div>

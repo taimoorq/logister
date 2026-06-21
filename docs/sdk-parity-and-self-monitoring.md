@@ -69,7 +69,7 @@ Current client coverage after the 2026-06-18 source-context pass:
 | Python | `logister-python` v0.2.4 | Supports errors, logs, metrics, transactions, spans, check-ins, source context, GitHub Actions env fallback, and `record_deployment`. |
 | JavaScript | `logister-js` v0.2.5 | Supports errors, logs, metrics, transactions, spans, check-ins, source context, browser context defaults, and `recordDeployment`. |
 | Android | `logister-android` v0.1.2 | Kotlin-first Android SDK with Java interop; supports manual errors, logs, metrics, transactions, spans, check-ins, and source context. |
-| iOS | `logister-ios` v0.1.2 | Swift Package Manager SDK; supports manual errors, logs, metrics, transactions, spans, check-ins, and source context. |
+| iOS | `logister-ios` v0.1.3 | Swift Package Manager SDK; supports manual errors, logs, metrics, transactions, spans, check-ins, and source context. |
 
 ## Logister Self-Monitoring
 

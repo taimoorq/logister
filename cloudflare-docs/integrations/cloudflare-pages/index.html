@@ -17,6 +17,7 @@
     <meta name="twitter:title" content="Cloudflare Pages Integration | Logister">
     <meta name="twitter:description" content="Use Cloudflare Pages projects in Logister with direct HTTP telemetry today and importer settings for future Cloudflare API imports.">
     <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/integrations/cloudflare-pages/#article","headline":"Use a Logister project for a Cloudflare Pages site.","name":"Cloudflare Pages Integration | Logister","url":"https://docs.logister.org/integrations/cloudflare-pages/","description":"Use Cloudflare Pages projects in Logister with direct HTTP telemetry today and importer settings for future Cloudflare API imports.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Integrations","item":"https://docs.logister.org/integrations/"},{"@type":"ListItem","position":3,"name":"Cloudflare Pages","item":"https://docs.logister.org/integrations/cloudflare-pages/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -34,20 +35,39 @@
           <aside class="sidebar">
             <div class="sidebar-group"><p class="sidebar-label">Integrations</p><a href="/integrations/ruby/">Ruby</a><a href="/integrations/dotnet/">.NET</a><a href="/integrations/python/">Python</a><a href="/integrations/javascript/">JavaScript</a><a class="active" href="/integrations/cloudflare-pages/">Cloudflare Pages</a><a href="/integrations/android/">Android</a><a href="/integrations/ios/">iOS</a><a href="/integrations/cfml/">CFML</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Cloudflare Pages</p><a href="/integrations/cloudflare-pages/manual-telemetry/">Manual telemetry</a><a href="/integrations/cloudflare-pages/importer-settings/">Importer settings</a></div>
+            <hr>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#status">Current status</a><a href="#paths">Pick a task</a><a href="#success">What success looks like</a><a href="#next">Next steps</a></div>
           </aside>
           <article class="article" data-pagefind-body>
-            <section class="section">
+            <section id="before" class="section">
+              <p class="eyebrow">Before you start</p>
+              <h2>Use this project type for a Pages site, not a server runtime.</h2>
+              <p>Create a Cloudflare Pages project in Logister when the monitored surface is the Pages deployment itself: deploy records, build duration, branch, traffic counters, worker or function logs, and site-level checks. If your Pages site also has a separate Node, Ruby, Python, .NET, Android, or iOS backend, create a separate Logister project for that runtime.</p>
+              <table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Cloudflare Pages project in Logister</td><td>Keeps Pages telemetry separate from app-server telemetry.</td></tr><tr><td>Project API token</td><td>Authenticates manual HTTP events from CI, scripts, Workers, or Pages Functions.</td></tr><tr><td>Stable service name</td><td>Lets Insights and Events group values for the site, such as <code>marketing-site</code>.</td></tr><tr><td>Release or deployment ID</td><td>Connects traffic and build signals to the Pages deployment you are reviewing.</td></tr></tbody></table>
+            </section>
+            <section id="status" class="section">
               <p class="eyebrow">Current status</p>
               <h2>Manual telemetry works now; automatic importing is not live yet.</h2>
               <table><thead><tr><th>Available now</th><th>Not automatic yet</th></tr></thead><tbody><tr><td>Create a Cloudflare Pages project type.</td><td>Pull Cloudflare Web Analytics from the Cloudflare API.</td></tr><tr><td>Send metrics, logs, check-ins, and deployment records through the HTTP API.</td><td>Import top paths, visitors, deployment status, build duration, branch, and failed deployment logs automatically.</td></tr><tr><td>Store account ID, Pages project name, optional project ID, and credential reference.</td><td>Store raw Cloudflare API tokens in the Logister settings form.</td></tr></tbody></table>
+              <div class="note warn"><h4>Current importer status</h4><p>The Rails-side Cloudflare fetcher is not implemented yet. Store importer settings only when you want the project ready for that future job; use manual telemetry when you need data in Logister today.</p></div>
             </section>
-            <section class="section">
+            <section id="paths" class="section">
               <p class="eyebrow">Where to go</p>
               <h2>Pick one task.</h2>
               <div class="card-grid">
                 <article class="card"><p class="eyebrow">Today</p><h3>Send manual telemetry</h3><p>Use the HTTP API from CI, a script, a Worker, or a Pages Function.</p><p><a href="/integrations/cloudflare-pages/manual-telemetry/">Read manual telemetry</a></p></article>
                 <article class="card"><p class="eyebrow">Prepare</p><h3>Save importer settings</h3><p>Store Cloudflare identifiers and a credential reference for the future Rails importer.</p><p><a href="/integrations/cloudflare-pages/importer-settings/">Read importer settings</a></p></article>
               </div>
+            </section>
+            <section id="success" class="section">
+              <p class="eyebrow">Verification</p>
+              <h2>A working Pages project shows manual signals in Events and Insights.</h2>
+              <ol><li>Send one metric from the manual telemetry guide.</li><li>Open the project Events page and filter to <code>metric</code>.</li><li>Open Insights and use the <code>24h</code> window to confirm the event appears in the recent stream.</li><li>If you sent a deployment record, open Deployments and confirm the release, environment, branch, and commit match the Pages deploy.</li></ol>
+            </section>
+            <section id="next" class="section">
+              <p class="eyebrow">If it is missing</p>
+              <h2>Debug the manual path before changing importer settings.</h2>
+              <p>Importer settings do not make data arrive yet. If a manual event is missing, check the project API token, endpoint URL, payload shape, event type, and rate-limit response. Use the <a href="/http-api/">HTTP API guide</a> for request contracts and <a href="/troubleshooting/#empty-inbox">troubleshooting</a> when an accepted event does not appear where expected.</p>
             </section>
           </article>
         </div>

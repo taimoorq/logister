@@ -175,7 +175,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.2")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.3")
 ]
 ```
 
@@ -318,8 +318,8 @@ matches the tag. Version `0.1.2` is public at `org.logister:logister-android`.
 iOS releases are also tag-driven:
 
 ```bash
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 Swift Package Manager resolves packages from the public Git repository and tag.
@@ -339,5 +339,5 @@ curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-meta
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.1.2 --repo taimoorq/logister-ios
+gh release view v0.1.3 --repo taimoorq/logister-ios
 ```

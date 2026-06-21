@@ -8,22 +8,22 @@ module ProjectsHelper
     "dotnet" => {
       label: ".NET / ASP.NET Core",
       badge: "NuGet",
-      description: "ASP.NET Core apps, .NET workers, C# services, and custom metrics with logister-dotnet."
+      description: "ASP.NET Core apps, C# workers, and custom .NET telemetry."
     },
     "cloudflare_pages" => {
       label: "Cloudflare Pages",
-      badge: "Importer",
-      description: "Pages deployments, Web Analytics, traffic rollups, build health, and domain-level site signals."
+      badge: "HTTP",
+      description: "Pages deployment and traffic signals through manual HTTP telemetry today."
     },
     "android" => {
       label: "Android app",
       badge: "Gradle",
-      description: "Android app telemetry from logister-android, plus optional Google Play vitals imports."
+      description: "Android telemetry through logister-android and backend-issued ingest tokens."
     },
     "ios" => {
       label: "iOS app",
       badge: "SPM",
-      description: "iOS app telemetry from logister-ios, plus optional App Store Connect analytics imports."
+      description: "iOS telemetry through logister-ios and backend-issued ingest tokens."
     },
     "cfml" => {
       label: "CFML",
@@ -43,7 +43,7 @@ module ProjectsHelper
     "http_api" => {
       label: "Manual / HTTP API",
       badge: "Manual",
-      description: "Unsupported runtimes, custom clients, scripts, workers, and direct HTTP reporting."
+      description: "Any runtime, script, worker, or custom client that posts JSON directly."
     }
   }.freeze
 
@@ -59,9 +59,9 @@ module ProjectsHelper
     return docs_site_url(:javascript_integration) if project&.integration_javascript?
     return docs_site_url(:python_integration) if project&.integration_python?
     return docs_site_url(:http_api) if project&.integration_http_api?
-    return docs_site_url(:http_api) if project&.integration_cloudflare_pages?
-    return "https://github.com/taimoorq/logister-android" if project&.integration_android?
-    return "https://github.com/taimoorq/logister-ios" if project&.integration_ios?
+    return docs_site_url(:cloudflare_pages_integration) if project&.integration_cloudflare_pages?
+    return docs_site_url(:android_integration) if project&.integration_android?
+    return docs_site_url(:ios_integration) if project&.integration_ios?
 
     docs_site_url(:ruby_integration)
   end
@@ -72,7 +72,7 @@ module ProjectsHelper
     return "JavaScript integration docs" if project&.integration_javascript?
     return "Python integration docs" if project&.integration_python?
     return "HTTP API docs" if project&.integration_http_api?
-    return "HTTP API docs" if project&.integration_cloudflare_pages?
+    return "Cloudflare Pages docs" if project&.integration_cloudflare_pages?
     return "Android SDK docs" if project&.integration_android?
     return "iOS SDK docs" if project&.integration_ios?
 

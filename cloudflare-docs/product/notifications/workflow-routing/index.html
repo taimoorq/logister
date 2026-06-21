@@ -14,6 +14,9 @@
     <meta property="og:url" content="https://docs.logister.org/product/notifications/workflow-routing/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Workflow Routing Notifications | Logister">
+    <meta name="twitter:description" content="Configure Logister assignment and status-change emails with workflow mode, environment, severity, and status filters.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/notifications/workflow-routing/#article","headline":"Email me for assigned work and matching workflow changes.","name":"Workflow Routing Notifications | Logister","url":"https://docs.logister.org/product/notifications/workflow-routing/","description":"Configure Logister assignment and status-change emails with workflow mode, environment, severity, and status filters.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Notifications","item":"https://docs.logister.org/product/notifications/"},{"@type":"ListItem","position":4,"name":"Workflow Routing","item":"https://docs.logister.org/product/notifications/workflow-routing/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -33,12 +36,17 @@
             <section class="section">
               <p class="eyebrow">Settings</p>
               <h2>Routing is about matching the right work.</h2>
-              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Off</td><td>No assignment or status-change emails.</td></tr><tr><td>Only errors assigned to me</td><td>Assignment mail when the user becomes owner, and status-change mail for their assigned groups.</td></tr><tr><td>All matching workflow changes</td><td>Any matching assignment or status change in the project.</td></tr><tr><td>Environment match</td><td><code>all</code> or one exact environment such as <code>production</code>.</td></tr><tr><td>Severity match</td><td><code>all</code> or one exact severity such as <code>error</code>.</td></tr><tr><td>Status match</td><td><code>Unresolved</code>, <code>Closed</code>, or <code>All</code>.</td></tr></tbody></table>
+              <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Off</td><td>No assignment or status-change emails.</td></tr><tr><td>Only errors assigned to me</td><td>Email when the user becomes the owner, and when one of their assigned groups changes status.</td></tr><tr><td>All matching workflow changes</td><td>Email for any matching assignment or status change in the project, even if the user is not the owner.</td></tr><tr><td>Environment match</td><td>Use <code>all</code> for every environment or choose one exact label, such as <code>production</code>.</td></tr><tr><td>Severity match</td><td>Use <code>all</code> for every severity or choose one exact level, such as <code>error</code>.</td></tr><tr><td>Status match</td><td>Use <code>Unresolved</code> for active work, <code>Closed</code> for fixed or ignored work, or <code>All</code> when both matter.</td></tr></tbody></table>
             </section>
             <section class="section">
               <p class="eyebrow">Verify</p>
               <h2>Test with a real assignment.</h2>
-              <ol><li>Make sure the recipient has project access.</li><li>Assign an error group to the recipient.</li><li>Change the group status as another user if you are testing assigned-to-me status mail.</li></ol>
+              <ol><li>Make sure the recipient has project access and the workflow routing mode you expect.</li><li>Assign an error group to the recipient.</li><li>Change the group status as another user if you are testing assigned-to-me status mail.</li><li>If no email arrives, check whether environment, severity, or status filters excluded the change.</li></ol>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>Routing filters are exact matches.</h2>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>No assignment email</td><td>The user may not have project access, routing may be off, or the mode may only send for assignments to that user.</td></tr><tr><td>Status-change email is missing</td><td>Status filters may exclude the new state, or the group may not match the configured environment or severity.</td></tr><tr><td>Too many workflow emails</td><td>Use <code>Only errors assigned to me</code> instead of <code>All matching workflow changes</code>, or narrow environment and severity filters.</td></tr><tr><td>Email arrives for another user</td><td>Each project member owns their own preferences; check the recipient's settings, not only the project owner settings.</td></tr></tbody></table>
             </section>
           </article>
         </div>

@@ -14,6 +14,9 @@
     <meta property="og:url" content="https://docs.logister.org/product/notifications/project-health/">
     <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Project Health Notifications | Logister">
+    <meta name="twitter:description" content="Configure Logister project health emails for project-wide error spikes, p95 latency thresholds, and missed or recovered check-in monitors.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/notifications/project-health/#article","headline":"Email me when the project itself looks unhealthy.","name":"Project Health Notifications | Logister","url":"https://docs.logister.org/product/notifications/project-health/","description":"Configure Logister project health emails for project-wide error spikes, p95 latency thresholds, and missed or recovered check-in monitors.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Notifications","item":"https://docs.logister.org/product/notifications/"},{"@type":"ListItem","position":4,"name":"Project Health","item":"https://docs.logister.org/product/notifications/project-health/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
     <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
@@ -33,13 +36,19 @@
             <section class="section">
               <p class="eyebrow">Settings</p>
               <h2>These settings look across the project.</h2>
-              <table><thead><tr><th>Setting</th><th>Use it for</th><th>Default</th></tr></thead><tbody><tr><td>Project-wide error spike</td><td>Total project error events crossed the configured count inside the configured window.</td><td>Off, 100 events in 15 minutes</td></tr><tr><td>Project p95 latency</td><td>Project p95 transaction duration over the last 15 minutes crossed the configured millisecond limit.</td><td>Off, 1,000 ms</td></tr><tr><td>Check-in monitors</td><td>A check-in monitor was missed or later recovered.</td><td>On</td></tr></tbody></table>
-              <p>Project-wide error spike is not the same as the single-error volume threshold. This setting counts all project error events in the window.</p>
+              <table><thead><tr><th>Setting</th><th>What it means in the project</th><th>Default</th></tr></thead><tbody><tr><td>Project-wide error spike</td><td>Email when total error volume across the project crosses the count and time window you choose.</td><td>Off, 100 events in 15 minutes</td></tr><tr><td>Project p95 latency</td><td>Email when recent transaction latency is above the millisecond limit you choose.</td><td>Off, 1,000 ms</td></tr><tr><td>Check-in monitors</td><td>Email when scheduled work is missed, then again when it recovers.</td><td>On</td></tr></tbody></table>
+              <p>Project-wide error spike is not the same as the single-error volume threshold. This setting is about the whole project becoming noisy, even if no single grouped issue crosses its own threshold.</p>
             </section>
             <section class="section">
               <p class="eyebrow">Verify</p>
-              <h2>Health alerts depend on sweeps.</h2>
-              <p>Keep the worker and scheduled sweeps running. To test, temporarily lower the threshold, generate matching events, then watch the worker enqueue a project health notification.</p>
+              <h2>Health alerts are not always instant.</h2>
+              <p>These alerts are evaluated in the background, so expect a short delay. To test, temporarily lower the threshold, generate matching activity, and wait for the project health email instead of refreshing the settings page immediately.</p>
+            </section>
+            <section class="section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>Make sure the project-level condition actually happened.</h2>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>No spike alert</td><td>The total project error count may not have crossed the threshold in the selected window.</td></tr><tr><td>No latency alert</td><td>Transactions may be missing durations, or p95 may still be below the configured millisecond limit.</td></tr><tr><td>No missed monitor alert</td><td>The check-in may not have an expected interval, or the monitor sweep may not have run yet.</td></tr><tr><td>Only one group is noisy</td><td>Use Error triage alerts for a single grouped issue; this page is for the whole project.</td></tr></tbody></table>
+              <p>Keep Sidekiq running for the sweeps that evaluate health alerts.</p>
             </section>
           </article>
         </div>

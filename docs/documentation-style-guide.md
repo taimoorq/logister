@@ -16,6 +16,26 @@ Organize the docs around the user's path through Logister:
 
 The docs homepage should work as a table of contents. Feature pages should go deeper, but they should still keep this reader path in mind.
 
+## Audience And Objectives
+
+Start every new or rewritten page by naming the reader and their goal. Logister docs usually serve one of these readers:
+
+- Self-hosted operators getting an instance running or keeping it healthy.
+- App developers wiring Ruby, .NET, Python, JavaScript, Android, iOS, CFML, Cloudflare Pages, or direct HTTP telemetry.
+- Project users triaging errors, reading event context, tuning notifications, reviewing Insights, or changing retention settings.
+- Maintainers releasing the app, SDKs, public docs, and discovery files.
+
+Write the page for the reader's immediate job before adding product background. The first screen should tell them whether they are in the right place, what they can accomplish, and what prerequisite they must satisfy first.
+
+Use objectives that can be tested:
+
+- "Send one error and see it in the inbox."
+- "Configure SMTP and prove project mail can be delivered."
+- "Store Cloudflare Pages importer settings without pasting raw tokens into Logister."
+- "Choose a retention window and verify the worker archived or pruned the expected rows."
+
+Avoid vague objectives such as "learn more about notifications" unless the page is a short hub that routes the reader to the right task.
+
 ## Page Template
 
 Most feature or operations pages should follow this order:
@@ -29,6 +49,18 @@ Most feature or operations pages should follow this order:
 7. Links to the next most likely page.
 
 Use tables for choices, status codes, settings, or feature comparisons. Use ordered lists for procedures. Use bullets for checks and guidelines.
+
+## Formats And Visuals
+
+Choose the format that matches the task:
+
+- Use ordered steps for procedures.
+- Use tables for choices, settings, permissions, status codes, fields, and support matrices.
+- Use code blocks for commands, payloads, config, and SDK snippets. Add copy buttons in static HTML pages when the block is meant to be reused.
+- Use screenshots when the UI path or control relationship matters. Screenshots should show the real Logister product state, not generic decoration.
+- Use diagrams only when a flow is hard to explain in text, such as token issuance, webhook callbacks, ingestion paths, or retention jobs.
+
+Screenshots need useful alt text, fixed width and height attributes, and a caption that explains what the reader should look for. After changing screenshots, run `bin/build-cloudflare-docs` so files from `app/assets/images/screenshots/public` are copied into `cloudflare-docs/assets/screenshots`, then check for missing local assets.
 
 ## Page Scope And Subpages
 
@@ -129,6 +161,27 @@ Troubleshooting pages should be symptom-driven:
 
 For each symptom, list the likely cause, the specific check, and the page that contains the full reference.
 
+## Freshness And Feedback
+
+Treat docs as the first support surface. A page is not done until it helps the reader confirm success and recover from likely failure.
+
+Include feedback paths where they fit:
+
+- Link to the troubleshooting guide for operational symptoms.
+- Link to the relevant GitHub repo or issue tracker for package-specific problems.
+- Mention `support@logister.org` only when the reader needs a human support path rather than a product reference.
+
+Keep versioned values close to their source of truth. Prefer generated or checked references over manually repeated strings:
+
+- Ruby package version: `logister-ruby/lib/logister/version.rb`.
+- Python package version: `logister-python/pyproject.toml`.
+- JavaScript package version: `logister-js/package.json`.
+- .NET package versions: `logister-dotnet/src/*/*.csproj`.
+- Android package version: `logister-android/gradle.properties`.
+- iOS package version: `logister-ios/VERSION`.
+
+When changing SDK or release guidance, update the public docs, SDK README, `llms.txt`, `llms-full.txt`, package links, and release runbooks together. If version references are generated, update the generator and run its check mode instead of hand-editing the output.
+
 ## Maintenance Checklist
 
 When adding a new public docs page:
@@ -139,4 +192,5 @@ When adding a new public docs page:
 4. Update `cloudflare-docs/llms.txt` and `cloudflare-docs/llms-full.txt` when the page is important for AI or search discovery.
 5. Update `public/llms.txt` and `public/llms-full.txt` when the public app should point crawlers to the new docs page.
 6. Run `bin/build-cloudflare-docs` before deploying the static docs.
-7. Remove completed plan or roadmap docs once the shipped behavior is represented in durable docs, changelog entries, tests, and agent guidance.
+7. Check that screenshots, local links, Pagefind content, metadata, and package version references are not stale.
+8. Remove completed plan or roadmap docs once the shipped behavior is represented in durable docs, changelog entries, tests, and agent guidance.

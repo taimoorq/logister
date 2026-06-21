@@ -1,24 +1,24 @@
     <article id="integration-guide"
              class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 scroll-mt-24 lg:col-span-2"
              <%= tag.attributes(data: product_tour_step_data(tour_group, :integration_guide)) %>>
-      <h2 class="text-base font-bold text-slate-900 mb-2">Integration guide</h2>
+      <h2 class="text-base font-bold text-slate-900 mb-2">First event guide</h2>
       <p class="text-slate-600 text-sm mb-4">
-        Recommended setup for
+        Send one representative event from
         <strong class="text-slate-900"><%= @project.integration_label %></strong>
-        projects.
+        before adding optional telemetry.
       </p>
 
       <details class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <summary class="cursor-pointer text-sm font-semibold text-slate-900">Detailed <%= @project.integration_label %> setup guide</summary>
+        <summary class="cursor-pointer text-sm font-semibold text-slate-900">Examples and package links</summary>
         <div class="mt-4">
       <% if @project.integration_cfml? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Use a small `LogisterClient.cfc` wrapper around `cfhttp`.</li>
-              <li>Capture uncaught exceptions in `Application.cfc.onError()`.</li>
-              <li>Send request timings as `transaction` events and query timings as `metric` events.</li>
+              <li>Wrap <code>cfhttp</code> in a small <code>LogisterClient.cfc</code>.</li>
+              <li>Capture one controlled exception from <code>Application.cfc.onError()</code>.</li>
+              <li>Verify the grouped issue in the inbox before adding transactions or metrics.</li>
             </ul>
           </div>
 
@@ -50,16 +50,12 @@
       <% elsif @project.integration_python? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Install <code>logister-python</code> in the Python service or worker you want to monitor.</li>
-              <li>Use <code>instrument_fastapi</code> for FastAPI apps, <code>LogisterMiddleware</code> for Django apps, <code>instrument_flask</code> for Flask apps, and <code>instrument_celery</code> for Celery workers.</li>
-              <li>Pass <code>capture_spans=True</code> to FastAPI, Django, or Flask instrumentation when you want request load waterfall charts.</li>
-              <li>Attach <code>instrument_logging(client, logger=...)</code> if you want standard Python <code>logging</code> records and <code>logger.exception(...)</code> events to flow into Logister automatically.</li>
-              <li>Use the shared client for the parts Python teams usually customize after that: business metrics, job heartbeats, and service-specific logs or transactions.</li>
-              <li>Set <code>LOGISTER_RELEASE</code>, <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
-              <li>Call <code>record_deployment()</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
-              <li>Set <code>LOGISTER_CAPTURE_LOCALS=true</code> only when you want frame locals in Python error details.</li>
+              <li>Install <code>logister-python</code> in one service or worker.</li>
+              <li>Use the matching framework hook for FastAPI, Django, Flask, or Celery.</li>
+              <li>Send one controlled exception with environment and release metadata.</li>
+              <li>Add logging, spans, deployments, and source context after the first event appears.</li>
             </ul>
           </div>
 
@@ -76,7 +72,7 @@ instrument_fastapi(app, client, capture_spans=True)</code></pre>
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Also supported</h3>
             <p class="text-sm text-slate-600">
-              Django apps can use <code>LogisterMiddleware</code>, Flask apps can use <code>instrument_flask(app, client)</code>, Celery workers can use <code>instrument_celery()</code> with optional monitor slugs for check-ins, and any Python app can forward built-in logging records with <code>instrument_logging()</code>. Python events now include structured frames, chained exceptions, runtime metadata, and logger metadata when events come through the logging integration.
+              Django, Flask, Celery, logging capture, spans, check-ins, and source context are covered in the Python docs.
             </p>
           </div>
 
@@ -98,15 +94,12 @@ instrument_fastapi(app, client, capture_spans=True)</code></pre>
       <% elsif @project.integration_dotnet? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Install <code>Logister.AspNetCore</code> in the ASP.NET Core app you want to monitor.</li>
-              <li>Use <code>AddLogister(builder.Configuration)</code> to register the client and <code>UseLogisterExceptionReporting()</code> to capture uncaught request exceptions.</li>
-              <li>Turn on <code>UseLogisterRequestTransactions()</code> when you want ASP.NET Core request timings in the performance view.</li>
-              <li>Set <code>CaptureRequestSpans = true</code> when you want request load waterfall charts.</li>
-              <li>Use the shared <code>LogisterClient</code> for business metrics, spans, check-ins, worker errors, and service-specific logs.</li>
-              <li>Set <code>LOGISTER_RELEASE</code>, <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
-              <li>Call <code>RecordDeploymentAsync()</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
+              <li>Install <code>Logister.AspNetCore</code> in one ASP.NET Core app.</li>
+              <li>Register the client with <code>AddLogister()</code>.</li>
+              <li>Capture one request exception with <code>UseLogisterExceptionReporting()</code>.</li>
+              <li>Add transactions, spans, check-ins, deployments, and source context after the first event appears.</li>
             </ul>
           </div>
 
@@ -131,7 +124,7 @@ app.UseLogisterRequestTransactions();</code></pre>
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Custom metrics</h3>
             <p class="text-sm text-slate-600">
-              Inject <code>LogisterClient</code> anywhere in the app and call <code>CaptureMetricAsync()</code>, <code>CaptureTransactionAsync()</code>, <code>CaptureSpanAsync()</code>, <code>CaptureMessageAsync()</code>, <code>CheckInAsync()</code>, or <code>RecordDeploymentAsync()</code> for the app-specific signals you choose.
+              Use <code>LogisterClient</code> for app-specific metrics, transactions, spans, messages, check-ins, and deployments.
             </p>
           </div>
 
@@ -159,16 +152,12 @@ app.UseLogisterRequestTransactions();</code></pre>
       <% elsif @project.integration_javascript? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Install <code>logister-js</code> in the JavaScript or TypeScript service you want to monitor.</li>
-              <li>Use the base client for Node workers and scripts, or add <code>createLogisterMiddleware()</code> and <code>createLogisterErrorHandler()</code> if the app runs on Express.</li>
-              <li>Set <code>captureRequestSpans: true</code> for Express request load waterfall charts, or call <code>capturePageLoad()</code> from <code>logister-js/browser</code> for browser navigation and resource timing.</li>
-              <li>Attach <code>instrumentConsole(client)</code> if you want standard <code>console</code> output and <code>console.error(error)</code> calls to flow into Logister automatically.</li>
-              <li>Set <code>LOGISTER_RELEASE</code>, <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
-              <li>Call <code>recordDeployment()</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
-              <li>Include route, browser, component, or request metadata so JavaScript teams can tell whether an issue came from a request path, a worker, or bundled client-side code.</li>
-              <li>If your frontend stack produces bundles, keep source maps available in your release pipeline so minified frames can be traced back to real source.</li>
+              <li>Install <code>logister-js</code> in one Node, Express, or TypeScript service.</li>
+              <li>Use the base client or Express middleware to capture one controlled exception.</li>
+              <li>Include environment, release, route, and request identifiers when available.</li>
+              <li>Add console capture, browser timing, deployments, and source maps after the first event appears.</li>
             </ul>
           </div>
 
@@ -193,7 +182,7 @@ const client = new LogisterClient({
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">What good JavaScript events should include</h3>
             <p class="text-sm text-slate-600">
-              The most useful JavaScript reports include the route or screen, release, browser or runtime details, chained causes when errors wrap other errors, and enough stack context to tell whether the problem came from app code, an HTTP edge, or bundled output that still needs source maps.
+              Useful reports include route or screen, release, runtime details, chained causes, and stack context.
             </p>
           </div>
 
@@ -215,13 +204,12 @@ const client = new LogisterClient({
       <% elsif @project.integration_cloudflare_pages? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Use this project for a single Cloudflare Pages site or a tightly related group of preview and production deployments.</li>
-              <li>Enable Cloudflare Web Analytics on the Pages project so traffic and visitor metrics are available from Cloudflare.</li>
-              <li>Track production and preview deployments with context such as branch, commit hash, deployment ID, domain, and Pages project name.</li>
-              <li>When the Rails importer is added, connect a Cloudflare API token from project settings instead of committing credentials to source control.</li>
-              <li>Until the importer exists, use direct HTTP metric and log events for deployment health, build duration, and site-specific counters.</li>
+              <li>Use this project for one Cloudflare Pages site.</li>
+              <li>Manual telemetry is the working path today.</li>
+              <li>Send one metric or deployment record with service, environment, branch, and deployment ID.</li>
+              <li>Store importer settings only to prepare for the future Cloudflare fetcher.</li>
             </ul>
           </div>
 
@@ -246,31 +234,26 @@ const client = new LogisterClient({
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Planned importer</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">Importer status</h3>
             <p class="text-sm text-slate-600">
-              The Cloudflare Pages importer will live in the Rails app and pull Web Analytics, Pages deployment status, build duration, branch, domain, and failure data into this project as normalized metric and log events.
+              Importer jobs are not live yet. Send manual telemetry when you need data in Logister today.
             </p>
           </div>
 
           <p class="text-sm text-slate-600">
-            Until the dedicated Cloudflare Pages docs are published, use the
-            <%= link_to "HTTP API docs", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>
-            for direct telemetry payloads.
+            Public setup guide:
+            <%= link_to "Cloudflare Pages docs", docs_site_url(:cloudflare_pages_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
           </p>
         </div>
       <% elsif @project.integration_android? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install <code>org.logister:logister-android</code> from Maven Central through Gradle.</li>
-              <li>Implement a backend token issuer that uses the server project API key to create short-lived mobile ingest tokens.</li>
-              <li>Configure the Android SDK with a <code>LogisterTokenProvider</code>; do not compile the project API key into the app.</li>
-              <li>Start with the Kotlin helpers for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
-              <li>Add app metadata such as package name, version name, version code, build type, Android version, API level, device model, locale, and session ID.</li>
-              <li>Add <code>repository</code>, <code>commit_sha</code>, and <code>branch</code> when the project is connected to the GitHub App.</li>
-              <li>Keep crash and network instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
-              <li>Use Google Play vitals imports later for aggregate crash rate, ANR rate, slow starts, slow rendering, and related platform metrics.</li>
+              <li>Issue short-lived mobile ingest tokens from your backend.</li>
+              <li>Configure the SDK with a <code>LogisterTokenProvider</code>; never ship the project API key.</li>
+              <li>Send one manual error, log, metric, transaction, span, or check-in with app metadata.</li>
             </ul>
           </div>
 
@@ -307,12 +290,17 @@ const client = new LogisterClient({
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
             <p class="text-sm text-slate-600">
-              Android SDK source, Gradle build files, examples, tests, and release notes live in <code>logister-android</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
-              Mobile ingest tokens are minted by the Rails API and should be requested by the app through your backend.
+              SDK source, examples, tests, and release notes live in <code>logister-android</code>.
             </p>
           </div>
 
           <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "Android SDK docs",
+                        docs_site_url(:android_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
             Package repo:
             <%= link_to "logister-android",
                         "https://github.com/taimoorq/logister-android",
@@ -330,23 +318,19 @@ const client = new LogisterClient({
       <% elsif @project.integration_ios? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Add <code>logister-ios</code> from GitHub through Swift Package Manager.</li>
-              <li>Implement a backend token issuer that uses the server project API key to create short-lived mobile ingest tokens.</li>
-              <li>Configure the iOS SDK with a <code>LogisterTokenProvider</code>; do not compile the project API key into the app.</li>
-              <li>Start with the async Swift client for manual errors, logs, metrics, transactions, spans, and check-ins.</li>
-              <li>Add app metadata such as bundle ID, app version, build number, iOS version, device model, locale, and session ID.</li>
-              <li>Add <code>repository</code>, <code>commit_sha</code>, and <code>branch</code> when the project is connected to the GitHub App.</li>
-              <li>Keep crash, URLSession timing, and automatic screen instrumentation opt-in until privacy, retry, and offline-queue behavior are settled.</li>
-              <li>Use App Store Connect imports later for aggregate downloads, engagement, usage, retention, and crash trend data.</li>
+              <li>Issue short-lived mobile ingest tokens from your backend.</li>
+              <li>Configure the SDK with a <code>LogisterTokenProvider</code>; never ship the project API key.</li>
+              <li>Send one manual error, log, metric, transaction, span, or check-in with app metadata.</li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
             <pre class="<%= project_setup_code_block_class %>"><code>dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.2")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.1.3")
 ]</code></pre>
           </div>
 
@@ -376,12 +360,17 @@ const client = new LogisterClient({
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Package repo</h3>
             <p class="text-sm text-slate-600">
-              iOS SDK source, <code>Package.swift</code>, examples, tests, and release notes live in <code>logister-ios</code>. The Rails app stores project setup, API keys, platform import settings, and received telemetry.
-              Mobile ingest tokens are minted by the Rails API and should be requested by the app through your backend.
+              SDK source, <code>Package.swift</code>, examples, tests, and release notes live in <code>logister-ios</code>.
             </p>
           </div>
 
           <p class="text-sm text-slate-600">
+            Public setup guide:
+            <%= link_to "iOS SDK docs",
+                        docs_site_url(:ios_integration),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
             Package repo:
             <%= link_to "logister-ios",
                         "https://github.com/taimoorq/logister-ios",
@@ -389,8 +378,8 @@ const client = new LogisterClient({
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
             Release:
-            <%= link_to "v0.1.2",
-                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.1.2",
+            <%= link_to "v0.1.3",
+                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3",
                         target: "_blank",
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
@@ -399,13 +388,12 @@ const client = new LogisterClient({
       <% elsif @project.integration_http_api? %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
-              <li>Generate a project API key and store it in the sending app, script, or service.</li>
-              <li>POST JSON to <code>/api/v1/ingest_events</code> with <code>Authorization: Bearer &lt;token&gt;</code> or <code>X-Api-Key: &lt;token&gt;</code>.</li>
-              <li>Use <code>event_type</code> values such as <code>error</code>, <code>log</code>, <code>metric</code>, <code>transaction</code>, <code>span</code>, and <code>check_in</code>.</li>
-              <li>Send stable <code>environment</code>, <code>release</code>, <code>trace_id</code>, and <code>request_id</code> fields when you have them so Logister can filter and correlate events.</li>
-              <li>Use <code>/api/v1/check_ins</code> for cron jobs and scheduled tasks when you only need monitor heartbeats.</li>
+              <li>Generate a project API key and keep it in the sending service or secret store.</li>
+              <li>POST one JSON event to <code>/api/v1/ingest_events</code>.</li>
+              <li>Use <code>error</code>, <code>log</code>, <code>metric</code>, <code>transaction</code>, <code>span</code>, or <code>check_in</code>.</li>
+              <li>Include stable environment, release, trace, or request IDs when available.</li>
             </ul>
           </div>
 
@@ -446,13 +434,12 @@ const client = new LogisterClient({
       <% else %>
         <div class="space-y-4">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 mb-2">Best path</h3>
+            <h3 class="text-sm font-semibold text-slate-900 mb-2">First event checklist</h3>
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Install the <code>logister-ruby</code> gem in the Rails app you want to monitor.</li>
               <li>Configure the project API token and ingest endpoint in the initializer.</li>
-              <li>Enable database metrics and <code>capture_request_spans</code> if you want request load waterfall charts in the performance view.</li>
-              <li>Set <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, and <code>LOGISTER_BRANCH</code> so source-aware error detail can resolve frames to the right code.</li>
-              <li>Call <code>Logister.record_deployment</code> from CI/CD after a deploy so release history links back to the deployed commit.</li>
+              <li>Send one known Rails or Ruby exception.</li>
+              <li>Add spans, database metrics, deployments, and source context after the first event appears.</li>
             </ul>
           </div>
 

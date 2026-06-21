@@ -11,24 +11,24 @@ RSpec.describe ProjectsHelper, type: :helper do
       expect(helper.project_integration_docs_label(project)).to eq("HTTP API docs")
     end
 
-    it "points planned Cloudflare projects to the HTTP API docs until dedicated docs ship" do
+    it "points Cloudflare Pages projects to the Cloudflare Pages docs" do
       project = Project.new(integration_kind: "cloudflare_pages")
 
-      expect(helper.project_integration_docs_path(project)).to eq("https://docs.logister.org/http-api/")
-      expect(helper.project_integration_docs_label(project)).to eq("HTTP API docs")
+      expect(helper.project_integration_docs_path(project)).to eq("https://docs.logister.org/integrations/cloudflare-pages/")
+      expect(helper.project_integration_docs_label(project)).to eq("Cloudflare Pages docs")
     end
 
-    it "points Android projects to the public Android SDK repo" do
+    it "points Android projects to the Android integration docs" do
       project = Project.new(integration_kind: "android")
 
-      expect(helper.project_integration_docs_path(project)).to eq("https://github.com/taimoorq/logister-android")
+      expect(helper.project_integration_docs_path(project)).to eq("https://docs.logister.org/integrations/android/")
       expect(helper.project_integration_docs_label(project)).to eq("Android SDK docs")
     end
 
-    it "points iOS projects to the public iOS SDK repo" do
+    it "points iOS projects to the iOS integration docs" do
       project = Project.new(integration_kind: "ios")
 
-      expect(helper.project_integration_docs_path(project)).to eq("https://github.com/taimoorq/logister-ios")
+      expect(helper.project_integration_docs_path(project)).to eq("https://docs.logister.org/integrations/ios/")
       expect(helper.project_integration_docs_label(project)).to eq("iOS SDK docs")
     end
   end
