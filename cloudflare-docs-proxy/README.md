@@ -26,7 +26,8 @@ Legacy host redirects preserve path and query strings:
 - `logister.org` must be proxied through Cloudflare. If the apex domain resolves directly to the Rails/Fly origin, Cloudflare Worker routes for `/docs` will not run.
 - `docs.logister.org` must also be proxied through Cloudflare so the Worker can issue the legacy-host `301` redirects.
 - Cloudflare security rules should allow unauthenticated requests to `docs.logister.org/*` and `logister.org/docs*`; a WAF or bot challenge can block crawlers and clients before the Worker returns the redirect or proxied docs page.
-- The GitHub `CLOUDFLARE_API_TOKEN` used by `.github/workflows/cloudflare-docs-proxy-deploy.yml` must be scoped to the same account as `CLOUDFLARE_ACCOUNT_ID` and be able to deploy Worker scripts and manage Worker routes for the `logister.org` zone. The expected Cloudflare token permissions are `Account > Workers Scripts > Edit`, `Zone > Workers Routes > Edit`, and `Zone > Zone > Read`.
+- The GitHub `CLOUDFLARE_WORKERS_API_TOKEN` used by `.github/workflows/cloudflare-docs-proxy-deploy.yml` must be scoped to the same account as `CLOUDFLARE_ACCOUNT_ID` and be able to deploy Worker scripts and manage Worker routes for the `logister.org` zone. The workflow falls back to `CLOUDFLARE_API_TOKEN` when the Worker-specific secret is not set, but a dedicated token is preferred.
+- If CI fails with Cloudflare `Authentication error [code: 10000]` while deploying `/accounts/.../workers/services/logister-docs-proxy`, update the GitHub token secret. The expected Cloudflare token permissions are `Account > Workers Scripts > Edit`, `Zone > Workers Routes > Edit`, and `Zone > Zone > Read`.
 
 ## Deploy
 
