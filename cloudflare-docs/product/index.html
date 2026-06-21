@@ -54,7 +54,13 @@
             <section id="connect" class="section">
               <p class="eyebrow">Connect services</p>
               <h2>Start each monitored app as a project.</h2>
-              <p>A project is the workspace for one app or service. From the project list you can see which apps are active, which have open errors, which have been quiet, and which one you should open next. When you create a project, pick the integration type so the Setup tab can show the right instructions for that app.</p>
+              <div class="media-pair">
+                <div class="media-pair-content">
+                  <p>A project is the workspace for one app or service. It keeps API keys, events, settings, notifications, team access, and retention choices scoped to that app.</p>
+                  <p>When you create a project, pick the integration type that will send the first event. The Setup tab then shows package, API key, and verification steps for that runtime.</p>
+                </div>
+                <figure class="screenshot-figure is-narrow"><img src="/assets/screenshots/projects-new.webp" alt="Logister new project screen showing project details, integration choices, and data retention settings." width="1728" height="2993" loading="lazy" decoding="async"><figcaption>The new project screen sets app identity, integration path, and data lifecycle before the first event arrives.</figcaption></figure>
+              </div>
               <figure class="screenshot-figure"><img src="/assets/screenshots/projects-dashboard-summary.webp" alt="Logister projects dashboard showing filters, project totals, and the first project cards." width="3600" height="1550" loading="lazy" decoding="async"><figcaption>The projects dashboard is a scan view: look for open errors, recent event volume, quiet apps, and cards whose latest activity needs a closer look.</figcaption></figure>
               <table><thead><tr><th>You want to...</th><th>Use the UI to...</th></tr></thead><tbody><tr><td>Connect a new app</td><td>Create a project, choose the app type, then open the Setup tab for package and key instructions.</td></tr><tr><td>Find the next app to review</td><td>Sort visually by open errors, latest event, events over seven days, or quiet-project status.</td></tr><tr><td>Keep access scoped</td><td>Manage keys and teammates inside that project instead of sharing one global setup across every app.</td></tr><tr><td>Retire an app without losing context</td><td>Archive the project so it leaves active views but remains available when you need history.</td></tr></tbody></table>
             </section>

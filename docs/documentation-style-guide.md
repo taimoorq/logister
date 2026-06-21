@@ -58,6 +58,7 @@ Choose the format that matches the task:
 - Use tables for choices, settings, permissions, status codes, fields, and support matrices.
 - Use code blocks for commands, payloads, config, and SDK snippets. Add copy buttons in static HTML pages when the block is meant to be reused.
 - Use screenshots when the UI path or control relationship matters. Screenshots should show the real Logister product state, not generic decoration.
+- Match screenshot layout to the job it does. Use full-width figures for broad scan views, dashboards, inboxes, and charts. Use a paired column layout for tall forms, narrow panels, settings cards, or focused controls so the visual can sit next to the explanation.
 - Use diagrams only when a flow is hard to explain in text, such as token issuance, webhook callbacks, ingestion paths, or retention jobs.
 
 Screenshots need useful alt text, fixed width and height attributes, and a caption that explains what the reader should look for. After changing screenshots, run `bin/build-cloudflare-docs` so files from `app/assets/images/screenshots/public` are copied into `cloudflare-docs/assets/screenshots`, then check for missing local assets.

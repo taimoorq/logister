@@ -568,6 +568,29 @@ code, pre {
   font-size: 0.9rem;
   line-height: 1.55;
 }
+.media-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.72fr);
+  gap: 1.25rem;
+  align-items: start;
+  margin: 1.15rem 0 1.35rem;
+}
+.media-pair-content {
+  min-width: 0;
+}
+.media-pair-content > :first-child {
+  margin-top: 0;
+}
+.media-pair-content > :last-child {
+  margin-bottom: 0;
+}
+.media-pair .screenshot-figure {
+  margin: 0;
+}
+.screenshot-figure.is-narrow {
+  max-width: 24rem;
+  justify-self: center;
+}
 .infra-cell-title {
   display: block;
   font-weight: 750;
@@ -750,8 +773,12 @@ code, pre {
   }
   .outline-grid,
   .card-grid,
-  .doc-link-list.compact {
+  .doc-link-list.compact,
+  .media-pair {
     grid-template-columns: 1fr;
+  }
+  .screenshot-figure.is-narrow {
+    max-width: min(100%, 24rem);
   }
   .article {
     padding: 1.25rem;
