@@ -123,11 +123,13 @@ class ProjectArchiveInvestigationSearch
   end
 
   def apply_time_range(scope, column)
+    timestamp_column = scope.klass.arel_table[column]
+
     if parsed_from
-      scope = scope.where("#{column} >= ?", parsed_from)
+      scope = scope.where(timestamp_column.gteq(parsed_from))
     end
     if parsed_to
-      scope = scope.where("#{column} <= ?", parsed_to)
+      scope = scope.where(timestamp_column.lteq(parsed_to))
     end
     scope
   end

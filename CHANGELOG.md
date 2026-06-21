@@ -2,6 +2,29 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.8 - 2026-06-21
+
+### Added
+
+- Added Archive Center to project Data settings with Overview, Coverage, Catalog, and Search Archives paths for verifying archived telemetry.
+- Added archive search across hot events, trace spans, and candidate archive runs so older incident evidence can be located from the Data settings area.
+- Added compact docs screenshot previews with dismissible full-screen inspection for public documentation screenshots.
+
+### Changed
+
+- Reworked retention archive settings around Archive retained data and Require archive before deletion so protected cleanup behavior is clearer.
+- Collapsed saved retention policy settings into a compact summary row that expands back into the full form when users need to edit it.
+- Updated public docs, AI-readable docs, and screenshots for the Archive Center workflow.
+
+### Fixed
+
+- Fixed archive search time filtering to build timestamp comparisons with Arel so static security checks no longer flag dynamic SQL.
+
+### Upgrade Notes
+
+- Run the Rails database migrations before starting the new version.
+- Rebuild the public docs after updating the app so OpenAPI metadata, screenshots, AI-readable files, and versioned image references stay aligned.
+
 ## v2.7.2 - 2026-06-21
 
 ### Added
