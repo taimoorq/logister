@@ -68,7 +68,7 @@ Project owners can configure retention from **Project settings -> Data retention
 3. Optionally choose how long to keep closed error groups. Leave this as forever to preserve resolved, ignored, and archived error history.
 4. Enable archive exports and **Archive before deleting** when old rows should be exported to the configured Active Storage archive service before cleanup.
 
-The production recurring job runs `ProjectRetentionSweepJob` daily and enqueues one `ProjectRetentionJob` per project. Cleanup is project-scoped and uses `occurred_at` for ingest events, `started_at` for spans, and `last_seen_at` for closed error groups.
+The production Sidekiq worker schedules `ProjectRetentionSweepJob` daily and enqueues one `ProjectRetentionJob` per project. Cleanup is project-scoped and uses `occurred_at` for ingest events, `started_at` for spans, and `last_seen_at` for closed error groups.
 
 Run a safe dry run for every project:
 

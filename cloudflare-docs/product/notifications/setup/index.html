@@ -33,7 +33,7 @@
             <section class="section">
               <p class="eyebrow">Required path</p>
               <h2>Four pieces have to line up.</h2>
-              <table><thead><tr><th>Piece</th><th>Check</th></tr></thead><tbody><tr><td>SMTP</td><td>Set <code>LOGISTER_EMAIL_FROM</code> and SMTP or SES variables. Verify auth/password reset mail first.</td></tr><tr><td>Worker</td><td>Run <code>bundle exec sidekiq -C config/sidekiq.yml</code> with the same secrets as the web process.</td></tr><tr><td>Project access</td><td>The recipient must be a project owner or project member.</td></tr><tr><td>Scheduled jobs</td><td>Digest, monitor, health, and retention sweeps need a scheduler or job setup that enqueues them regularly.</td></tr></tbody></table>
+              <table><thead><tr><th>Piece</th><th>Check</th></tr></thead><tbody><tr><td>SMTP</td><td>Set <code>LOGISTER_EMAIL_FROM</code> and SMTP or SES variables. Verify auth/password reset mail first.</td></tr><tr><td>Worker</td><td>Run <code>bundle exec sidekiq -C config/sidekiq.yml</code> with the same secrets as the web process.</td></tr><tr><td>Project access</td><td>The recipient must be a project owner or project member.</td></tr><tr><td>Scheduled jobs</td><td>The Sidekiq worker seeds digest, monitor, health, and retention sweeps on startup and each recurring job schedules its next run.</td></tr></tbody></table>
             </section>
             <section class="section">
               <p class="eyebrow">Verify</p>

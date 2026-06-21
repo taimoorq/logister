@@ -1,5 +1,12 @@
 class ProjectHealthNotificationSweepJob < ApplicationJob
+  include SidekiqRecurringJob
+
   queue_as :notifications
+  sidekiq_recurring_schedule(
+    key: "project_health_notification_sweep",
+    every: 15.minutes,
+    arguments: ->(run_at) { [ run_at.utc.iso8601 ] }
+  )
 
   def perform(now_iso8601 = Time.current.iso8601)
     now = Time.zone.parse(now_iso8601.to_s)
@@ -9,6 +16,8 @@ class ProjectHealthNotificationSweepJob < ApplicationJob
       dispatch_project_spike(project, now: now, bucket: bucket)
       dispatch_performance_threshold(project, now: now, bucket: bucket)
     end
+  ensure
+    reschedule_sidekiq_recurring_job
   end
 
   private

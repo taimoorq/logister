@@ -4,7 +4,7 @@ Sidekiq.configure_server do |config|
   config.redis = { url: redis_url }
 
   config.on(:startup) do
-    ProjectErrorDigestSchedulerJob.ensure_scheduled! if Rails.env.production?
+    Logister::SidekiqRecurringScheduler.install! if Rails.env.production?
   end
 end
 
