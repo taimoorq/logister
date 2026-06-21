@@ -94,7 +94,7 @@ module ProjectsHelper
   end
 
   def inbox_assignee_label(project, viewer, user)
-    label = user.name.presence || user.email
+    label = user_display_name(user)
     suffixes = []
     suffixes << "owner" if project.owned_by?(user)
     suffixes << "you" if viewer == user

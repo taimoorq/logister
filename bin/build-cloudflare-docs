@@ -26,6 +26,17 @@ if postman_source.file?
   FileUtils.cp(postman_source, postman_target)
 end
 
+screenshots_source = repo_root.join("app/assets/images/screenshots/public")
+screenshots_target = docs_root.join("assets/screenshots")
+if screenshots_source.directory?
+  FileUtils.rm_rf(screenshots_target)
+  FileUtils.mkdir_p(screenshots_target)
+  Dir.children(screenshots_source).each do |entry|
+    source = screenshots_source.join(entry)
+    FileUtils.cp(source, screenshots_target.join(entry)) if source.file?
+  end
+end
+
 pagefind_bin = repo_root.join("node_modules/.bin/pagefind")
 unless pagefind_bin.file?
   warn "Pagefind is not installed. Run `npm ci` before `bin/build-cloudflare-docs`."

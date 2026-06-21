@@ -33,6 +33,7 @@
             <section class="section">
               <p class="eyebrow">Fields</p>
               <h2>Each field controls a separate cleanup scope.</h2>
+              <figure class="screenshot-figure"><img src="/assets/screenshots/project-data-retention.webp" alt="Logister retention policy form showing retention windows, archive export settings, and recent archive runs." width="3600" height="1754" loading="lazy" decoding="async"><figcaption>The policy form keeps retention windows and archive export choices in one project-scoped settings panel.</figcaption></figure>
               <table><thead><tr><th>Field</th><th>What it controls</th></tr></thead><tbody><tr><td>Hot event retention</td><td>Non-error ingest events such as logs, metrics, transactions, and check-ins that are not attached to an error group.</td></tr><tr><td>Trace span retention</td><td>Span rows used for timing waterfalls and trace views.</td></tr><tr><td>Closed error retention</td><td>Resolved, ignored, or archived error groups. Blank means keep closed groups indefinitely.</td></tr><tr><td>Enable archive exports</td><td>Allows retention runs to write archive records.</td></tr><tr><td>Archive before delete</td><td>Requires archive exports and writes a completed archive before matching rows are deleted.</td></tr></tbody></table>
             </section>
           </article>

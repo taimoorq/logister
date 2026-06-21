@@ -42,6 +42,7 @@
               <p class="eyebrow">Retention model</p>
               <h2>Retention is project scoped.</h2>
               <p>Logister keeps active product data in PostgreSQL. Retention policies decide when older project telemetry can be deleted. Archive exports are optional and use Active Storage to write compressed JSONL before deletion.</p>
+              <figure class="screenshot-figure"><img src="/assets/screenshots/project-data-retention.webp" alt="Logister data retention settings showing event, trace, closed error retention, archive exports, and archive before delete." width="3600" height="1754" loading="lazy" decoding="async"><figcaption>Project data settings separate hot event retention, trace retention, closed error retention, archive exports, and archive-before-delete behavior.</figcaption></figure>
               <div class="note warn"><h4>Not a database backup</h4><p>Telemetry archives do not replace PostgreSQL backups. They export selected event/span rows, not accounts, settings, API keys, memberships, or full workflow state.</p></div>
             </section>
             <section id="paths" class="section">

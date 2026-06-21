@@ -56,6 +56,54 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#user_display_name" do
+    it "returns the user's name when present" do
+      user = User.new(name: "Taylor Example", email: "taylor@example.com")
+
+      expect(helper.user_display_name(user)).to eq("Taylor Example")
+    end
+
+    it "falls back to email when the user has no name" do
+      user = User.new(name: " ", email: "taylor@example.com")
+
+      expect(helper.user_display_name(user)).to eq("taylor@example.com")
+    end
+  end
+
+  describe "#github_issue_creatable_repositories" do
+    it "does not preload direct installations when a synced GitHub repository provides the installation" do
+      project = create(:project)
+      installation = create(:github_installation, permissions: { "contents" => "read", "metadata" => "read", "issues" => "write" })
+      github_repository = create(:github_repository, github_installation: installation)
+      create(
+        :project_source_repository,
+        project: project,
+        github_installation: installation,
+        github_repository: github_repository,
+        full_name: github_repository.full_name
+      )
+
+      repositories = helper.github_issue_creatable_repositories(project)
+
+      expect(repositories.size).to eq(1)
+      repository = repositories.first
+      expect(repository.association(:github_repository)).to be_loaded
+      expect(repository.github_repository.association(:github_installation)).to be_loaded
+      expect(repository.association(:github_installation)).not_to be_loaded
+    end
+
+    it "preloads direct installations for manual source repository mappings" do
+      project = create(:project)
+      installation = create(:github_installation, permissions: { "contents" => "read", "metadata" => "read", "issues" => "write" })
+      create(:project_source_repository, project: project, github_installation: installation, full_name: "acme/manual-api")
+
+      repositories = helper.github_issue_creatable_repositories(project)
+
+      expect(repositories.size).to eq(1)
+      expect(repositories.first.association(:github_installation)).to be_loaded
+    end
+  end
+
   describe "#cookie_banner_proxy_base_url" do
     around do |example|
       original_url_options = Rails.application.routes.default_url_options.dup

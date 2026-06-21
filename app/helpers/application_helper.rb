@@ -97,6 +97,10 @@ module ApplicationHelper
     authenticated_layout_theme? ? "h-6 w-auto" : "public-brand-logo"
   end
 
+  def user_display_name(user)
+    user&.name.presence || user&.email
+  end
+
   def layout_mobile_toggle_class
     authenticated_layout_theme? ?
       "md:hidden flex items-center justify-center w-11 h-11 -mr-2 rounded-lg text-blue-100 hover:bg-blue-900/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-[var(--app-nav-bg)]" :
@@ -559,9 +563,12 @@ module ApplicationHelper
   end
 
   def github_issue_creatable_repositories(project)
-    project.source_repositories.github.enabled
-           .includes(:github_installation, github_repository: :github_installation)
-           .select(&:github_issue_creation_available?)
+    repositories = project.source_repositories.github.enabled
+                          .includes(github_repository: :github_installation)
+                          .to_a
+    preload_direct_github_installations(repositories)
+
+    repositories.select(&:github_issue_creation_available?)
   end
 
   def deployment_context_for_error_group(project, group, event)
@@ -629,5 +636,17 @@ module ApplicationHelper
     base_url = +"#{protocol}://#{host}"
     base_url << ":#{port}" if port.present?
     base_url
+  end
+
+  def preload_direct_github_installations(repositories)
+    direct_repositories = repositories.select do |repository|
+      repository.github_repository_id.blank? && repository.github_installation_id.present?
+    end
+    return if direct_repositories.empty?
+
+    ActiveRecord::Associations::Preloader.new(
+      records: direct_repositories,
+      associations: :github_installation
+    ).call
   end
 end

@@ -47,38 +47,54 @@
 }) %>
 <%
   screenshot_exists = ->(path) { Rails.root.join("app/assets/images", path).exist? }
-  dashboard_path = "marketing/logister-dashboard.webp"
-  needs_attention_path = "marketing/logister-dashboard-2.webp"
-  inbox_path = "marketing/logister-inbox.webp"
-  insights_path = "marketing/logister-insights.webp"
+  dashboard_path = "screenshots/public/dashboard-overview.webp"
+  project_home_path = "screenshots/public/project-home.webp"
+  inbox_path = "screenshots/public/project-error-inbox.webp"
+  insights_path = "screenshots/public/project-insights.webp"
+  notifications_path = "screenshots/public/project-notifications.webp"
+  retention_path = "screenshots/public/project-data-retention.webp"
   screenshots = [
     {
       path: dashboard_path,
-      alt: "Logister overview dashboard showing cross-app event flow",
-      width: 3562,
-      height: 2092,
+      alt: "Logister overview dashboard showing cross-app event flow, assignments, and errors that need attention",
+      width: 3600,
+      height: 2213,
       label: "overview"
     },
     {
-      path: needs_attention_path,
-      alt: "Logister stability dashboard showing errors that need attention",
+      path: project_home_path,
+      alt: "Logister project home showing a telemetry timeline and project health summaries",
       width: 3576,
-      height: 2240,
-      label: "stability dashboard"
+      height: 1472,
+      label: "project home"
     },
     {
       path: inbox_path,
-      alt: "Logister project inbox and triage detail",
-      width: 3570,
-      height: 2222,
+      alt: "Logister project inbox with search, assignee filters, and stacktrace detail",
+      width: 3600,
+      height: 1660,
       label: "inbox"
     },
     {
       path: insights_path,
       alt: "Logister project insights timeline and recent event stream",
-      width: 3574,
-      height: 2222,
+      width: 3600,
+      height: 2795,
       label: "insights"
+    },
+    {
+      path: notifications_path,
+      alt: "Logister notification settings organized by alert purpose",
+      width: 3600,
+      height: 1754,
+      label: "notifications"
+    },
+    {
+      path: retention_path,
+      alt: "Logister data retention settings for hot events, traces, and archive exports",
+      width: 3600,
+      height: 1754,
+      label: "retention"
     }
   ]
 %>
@@ -113,8 +129,8 @@
             <%= image_tag dashboard_path,
                           alt: "Logister overview dashboard showing cross-app event flow",
                           class: "hero-shot",
-                          width: 3562,
-                          height: 2092,
+                          width: 3600,
+                          height: 2213,
                           loading: "eager",
                           fetchpriority: "high",
                           decoding: "async" %>
@@ -124,17 +140,17 @@
         </div>
         <div class="hero-mobile-shots" aria-hidden="true">
           <div class="shot-frame">
-            <% if screenshot_exists.call(needs_attention_path) %>
-              <%= image_tag needs_attention_path,
+            <% if screenshot_exists.call(project_home_path) %>
+              <%= image_tag project_home_path,
                             alt: "",
                             class: "hero-shot",
                             width: 3576,
-                            height: 2240,
+                            height: 1472,
                             loading: "lazy",
                             fetchpriority: "low",
                             decoding: "async" %>
             <% else %>
-              <div class="shot-placeholder">needs attention</div>
+              <div class="shot-placeholder">project home</div>
             <% end %>
           </div>
           <div class="shot-frame">
@@ -142,8 +158,8 @@
               <%= image_tag insights_path,
                             alt: "",
                             class: "hero-shot",
-                            width: 3574,
-                            height: 2222,
+                            width: 3600,
+                            height: 2795,
                             loading: "lazy",
                             fetchpriority: "low",
                             decoding: "async" %>

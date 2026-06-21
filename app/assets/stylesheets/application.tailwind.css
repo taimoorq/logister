@@ -2565,7 +2565,7 @@
 
   .shot-main {
     @apply mb-3;
-    aspect-ratio: 3562 / 2092;
+    aspect-ratio: 3600 / 2213;
   }
 
   .hero-shot {
@@ -2606,7 +2606,7 @@
   }
 
   .about-hero .shot-frame {
-    aspect-ratio: 3562 / 2092;
+    aspect-ratio: 3600 / 2213;
   }
 
   .about-shot-card .shot-frame {

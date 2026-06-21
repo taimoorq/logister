@@ -547,6 +547,27 @@ code, pre {
   padding: 0.16rem 0.38rem;
   border-radius: 0.45rem;
 }
+.screenshot-figure {
+  margin: 1.15rem 0 1.35rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+.screenshot-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.screenshot-figure figcaption {
+  padding: 0.75rem 0.95rem;
+  border-top: 1px solid var(--border);
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
 .infra-cell-title {
   display: block;
   font-weight: 750;
