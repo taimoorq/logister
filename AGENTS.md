@@ -95,9 +95,10 @@ Used when one action should update several DOM regions:
 
 ### Documentation section
 
-- **Public docs no longer live in the Rails app.** Canonical docs are hosted separately on `https://docs.logister.org` from the static site in `cloudflare-docs/`.
-- **Rails should link out to the external docs host.** Use the shared docs URL helpers in `ApplicationHelper` / `ProjectsHelper` instead of hardcoding internal `/docs` paths in new app UI.
-- **Legacy Rails docs URLs should redirect permanently.** Keep `/docs...` routes as `301` redirects so old links preserve SEO equity and do not serve duplicate content from the app.
+- **Public docs no longer live in the Rails app.** Canonical docs are served at `https://logister.org/docs`, but the content origin is the standalone static site in `cloudflare-docs/`.
+- **Rails should use the configured docs URL.** Use the shared docs URL helpers in `ApplicationHelper` / `ProjectsHelper` instead of hardcoding `/docs` paths in new app UI.
+- **The main-domain docs path is owned by Cloudflare.** Production traffic for `logister.org/docs` and `logister.org/docs/*` should hit the Worker proxy before Rails, then proxy to the Cloudflare Pages docs origin.
+- **Legacy docs hostnames should redirect permanently.** Keep `docs.logister.org` routed through the docs Worker as a 301 redirect surface to `https://logister.org/docs/...`; do not serve duplicate docs content from the old hostname.
 - **The static docs are a product surface, not a markdown dump.** Update `cloudflare-docs/` pages directly when changing setup, deployment, API, or integration guidance.
 - **Write docs like a practical self-hosted operator manual.** Keep the Bugsink-inspired style we settled on: task-first, concise, self-hosting-aware, and useful to someone configuring a real instance. Prefer exact settings, UI paths, commands, required permissions, verification steps, and symptom-driven troubleshooting over broad product copy.
 - **Use the docs style guide as the AI instruction for new docs work.** Before adding or rewriting public docs, read [docs/documentation-style-guide.md](docs/documentation-style-guide.md) and follow its page shape, tone, and maintenance checklist.
@@ -112,11 +113,11 @@ Used when one action should update several DOM regions:
 - **Do not overload one public docs page with every related setting.** When a feature has several user intents, make a short overview/hub page and split the detailed guidance into focused subpages. The hub should answer "which path do I need?" and each subpage should answer one concrete operator or user question.
 - **Group docs by the user's purpose, not by the database shape.** For example, notification docs should be separated into setup requirements, error triage, project health, workflow routing, digests/delivery, and operational notices. Retention docs should separate policy choices, archive storage, and job verification.
 - **Make relationships between settings visible.** If a page has controls or examples, explain which section owns which outcome so users can tell similar options apart. Avoid placing a long form or option list under one generic heading when smaller cards, sections, or subpages would make the mental model clearer.
-- **Show the product when visual context matters.** Prefer real screenshots, payload examples, diagrams, or compact tables over abstract descriptions. Screenshots need useful alt text, stable dimensions, and files available under `cloudflare-docs/assets/screenshots/` after `bin/build-cloudflare-docs`. Use full-width screenshots for broad scan views; use paired columns for tall forms, narrow panels, settings cards, or focused controls that read better beside explanatory text.
+- **Show the product when visual context matters.** Prefer real screenshots, payload examples, diagrams, or compact tables over abstract descriptions. Screenshots need useful alt text, stable dimensions, and files available under `cloudflare-docs/assets/screenshots/` after `bin/build-cloudflare-docs`. Use full-width screenshots for broad scan views; use paired columns for tall forms, narrow panels, settings cards, or focused controls that read better beside explanatory text. Do not scale screenshots larger than the UI would reasonably appear in the app.
 - **Keep docs freshness tied to source-of-truth files.** Avoid hand-updating package versions in multiple places when a script can read the SDK repos. Version references should come from the companion repo metadata where possible: Ruby `lib/logister/version.rb`, Python `pyproject.toml`, JavaScript `package.json`, .NET `.csproj` package versions, Android `gradle.properties`, and iOS `VERSION`.
 - **Add feedback and maintenance paths.** User-facing docs should make the next correction path obvious through support, GitHub issues, or troubleshooting links. When a page changes because of a support question, fold the durable lesson back into the page or the style guide.
 - **Avoid checking in completed planning artifacts.** Once a plan has shipped and its durable lessons are captured in `AGENTS.md`, a runbook, the changelog, tests, or public docs, remove the completed plan/roadmap file instead of carrying stale checklist docs forward.
-- **Keep docs hosting concerns separate from Rails concerns.** Analytics, docs robots, docs sitemap, and docs metadata for the configured docs host belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
+- **Keep docs hosting concerns separate from Rails concerns.** Analytics, docs robots, docs sitemap, and docs metadata for the configured docs URL belong in `cloudflare-docs/`, not in the Rails layouts or gem setup.
 
 ### Authentication hardening
 
@@ -129,16 +130,16 @@ Used when one action should update several DOM regions:
 
 ### SEO and crawl surfaces
 
-- **Treat the app host and docs host as separate hosts.** The official hosts are `logister.org` and `docs.logister.org`, but forks can configure their own with `LOGISTER_PUBLIC_URL` and `LOGISTER_DOCS_URL`. Each host should own its own canonical URLs, robots policy, and sitemap.
+- **Treat app and docs deployment concerns as separate, even when they share a hostname.** The official public app is `https://logister.org` and the official public docs are `https://logister.org/docs`, but forks can configure their own values with `LOGISTER_PUBLIC_URL` and `LOGISTER_DOCS_URL`. Each surface should own its canonical URLs, robots policy, and sitemap.
 - **The Rails sitemap is intentionally app-only.** `app/views/home/sitemap.xml.builder` should include only Rails-hosted public pages like home/about/privacy/terms, not external docs URLs.
-- **Use dynamic `robots.txt` for discovery across hosts.** `home#robots` advertises both the app sitemap and the docs sitemap so crawlers can discover both surfaces from the main domain. It must derive the app host from Rails URL settings / `LOGISTER_PUBLIC_URL` and the docs host from `LOGISTER_DOCS_URL`; do not reintroduce a hardcoded `public/robots.txt`.
+- **Use dynamic `robots.txt` for discovery across public surfaces.** `home#robots` advertises both the app sitemap and the docs sitemap so crawlers can discover both surfaces from the main domain. It must derive the app URL from Rails URL settings / `LOGISTER_PUBLIC_URL` and the docs URL from `LOGISTER_DOCS_URL`; do not reintroduce a hardcoded `public/robots.txt`.
 - **Generate static docs metadata before deploy.** Run `bin/build-cloudflare-docs` when docs pages change so `cloudflare-docs/sitemap.xml` and `cloudflare-docs/robots.txt` include the current docs pages and the configured `LOGISTER_DOCS_URL`.
 - **Keep `llms.txt` current with the real product shape.** `public/llms.txt` should describe the self-hosted app, supported languages, companion packages, and public docs URLs. It should not drift back to a Ruby-only description.
 - **Static docs pages should carry strong metadata.** In `cloudflare-docs/`, keep page-level canonical tags, `robots`, Open Graph, Twitter tags, and JSON-LD structured data aligned with the actual audience and technology on each page.
 
 ### Hotwire, Turbo, and Stimulus
 
-- **Cloudflare docs are plain static pages.** The Rails app links to `docs.logister.org`; do not assume the static docs have the Rails importmap, Turbo, or Stimulus runtime.
+- **Cloudflare docs are plain static pages.** The Rails app links to the configured `LOGISTER_DOCS_URL`; do not assume the static docs have the Rails importmap, Turbo, or Stimulus runtime.
 - **Keep JS boot standard.** Turbo is loaded in `app/javascript/application.js`, Stimulus controllers are registered in `app/javascript/controllers/index.js`, and layouts should use `app_javascript_tags` so importmap and npm-backed classic scripts share one path.
 - **Use Stimulus for small behavior only.** Existing docs behavior such as copy buttons and nav toggles should remain Stimulus-driven or simple DOM behavior, not custom page-specific JS frameworks.
 - **Prefer Stimulus actions and lifecycle over page-load JavaScript.** Attach behavior with `data-controller`, `data-action`, targets, and values. Initialize third-party UI in `connect()`, dispose it in `disconnect()`, and use `turbo:before-cache@document` to remove transient DOM before Turbo snapshots the page. See [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md).
@@ -181,7 +182,7 @@ Used when one action should update several DOM regions:
 ### Helpful CLI workflow learnings
 
 - **Use `gh` for repo configuration and release plumbing.** It is the fastest path for checking repo visibility, collaborators, Actions secrets/variables, and triggering or inspecting workflows. Prefer it over manual GitHub UI work when the change is operational and repeatable.
-- **Use `wrangler` for Cloudflare Pages work.** It is the right CLI for authenticating against Cloudflare, creating Pages projects, and deploying the static docs in `cloudflare-docs/`. The docs host is operationally separate from the Rails app, so treat Wrangler usage as part of the docs deployment toolchain.
+- **Use `wrangler` for Cloudflare Pages and Worker work.** It is the right CLI for authenticating against Cloudflare, creating Pages projects, deploying the static docs in `cloudflare-docs/`, and deploying the `/docs` Worker proxy. The docs deployment path is operationally separate from the Rails app, so treat Wrangler usage as part of the docs deployment toolchain.
 - **Use `flyctl` for runtime deploy diagnosis.** Build failures, release-command hangs, machine state, and deploy logs are easiest to reason about with `flyctl`. It is especially useful for checking whether a failed deploy is a build issue or a release/runtime issue.
 - **Prefer CLIs for repeatable ops, but keep secrets out of the repo.** `gh`, `wrangler`, and `flyctl` are great for configuration and deployment, but secrets should stay in the provider secret store or GitHub Actions secrets, not in tracked files.
 - **Document the required CLIs in repo-facing docs.** When a workflow depends on `gh`, `wrangler`, or `flyctl`, keep that recommendation visible in the README or the relevant static docs page so contributors do not have to rediscover the toolchain.

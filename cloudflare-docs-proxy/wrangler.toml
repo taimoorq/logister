@@ -1,0 +1,15 @@
+name = "logister-docs-proxy"
+main = "src/index.js"
+compatibility_date = "2026-06-21"
+
+routes = [
+  { pattern = "docs.logister.org/*", zone_name = "logister.org" },
+  { pattern = "logister.org/docs", zone_name = "logister.org" },
+  { pattern = "logister.org/docs/*", zone_name = "logister.org" }
+]
+
+[vars]
+DOCS_MOUNT_PATH = "/docs"
+DOCS_PAGES_ORIGIN = "https://logister-docs.pages.dev"
+OLD_DOCS_HOSTS = "docs.logister.org"
+PUBLIC_DOCS_ORIGIN = "https://logister.org"

@@ -15,15 +15,15 @@ RSpec.describe ApplicationHelper, type: :helper do
 
   describe "#docs_site_url" do
     it "returns the Cloudflare-hosted docs URL for the requested section" do
-      expect(helper.docs_site_url).to eq("https://docs.logister.org/")
-      expect(helper.docs_site_url(:http_api)).to eq("https://docs.logister.org/http-api/")
-      expect(helper.docs_site_url(:api_reference)).to eq("https://docs.logister.org/api-reference/")
-      expect(helper.docs_site_url(:metrics)).to eq("https://docs.logister.org/metrics/")
-      expect(helper.docs_site_url(:product)).to eq("https://docs.logister.org/product/")
-      expect(helper.docs_site_url(:cfml_integration)).to eq("https://docs.logister.org/integrations/cfml/")
-      expect(helper.docs_site_url(:javascript_integration)).to eq("https://docs.logister.org/integrations/javascript/")
-      expect(helper.docs_site_url(:python_integration)).to eq("https://docs.logister.org/integrations/python/")
-      expect(helper.docs_site_url(:dotnet_integration)).to eq("https://docs.logister.org/integrations/dotnet/")
+      expect(helper.docs_site_url).to eq("https://logister.org/docs/")
+      expect(helper.docs_site_url(:http_api)).to eq("https://logister.org/docs/http-api/")
+      expect(helper.docs_site_url(:api_reference)).to eq("https://logister.org/docs/api-reference/")
+      expect(helper.docs_site_url(:metrics)).to eq("https://logister.org/docs/metrics/")
+      expect(helper.docs_site_url(:product)).to eq("https://logister.org/docs/product/")
+      expect(helper.docs_site_url(:cfml_integration)).to eq("https://logister.org/docs/integrations/cfml/")
+      expect(helper.docs_site_url(:javascript_integration)).to eq("https://logister.org/docs/integrations/javascript/")
+      expect(helper.docs_site_url(:python_integration)).to eq("https://logister.org/docs/integrations/python/")
+      expect(helper.docs_site_url(:dotnet_integration)).to eq("https://logister.org/docs/integrations/dotnet/")
     end
   end
 

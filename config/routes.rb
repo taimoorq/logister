@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   docs_base_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
-  docs_base_url = "https://docs.logister.org" if docs_base_url.empty?
+  docs_base_url = "https://logister.org/docs" if docs_base_url.empty?
   docs_base_url = docs_base_url.chomp("/")
 
   devise_for :users, controllers: {

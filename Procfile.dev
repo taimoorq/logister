@@ -1,2 +1,3 @@
 web: bin/rails server
 css: bin/rails tailwindcss:watch
+docs: wrangler pages dev cloudflare-docs --port ${DOCS_PORT} --compatibility-date ${DOCS_COMPATIBILITY_DATE}

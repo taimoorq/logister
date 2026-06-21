@@ -6,32 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://docs.logister.org/product/data-retention/jobs/">
+    <link rel="canonical" href="https://logister.org/docs/product/data-retention/jobs/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Retention Jobs and Verification | Logister">
     <meta property="og:description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="https://docs.logister.org/product/data-retention/jobs/">
-    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta property="og:url" content="https://logister.org/docs/product/data-retention/jobs/">
+    <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Retention Jobs and Verification | Logister">
     <meta name="twitter:description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/data-retention/jobs/#article","headline":"Verify cleanup before trusting it on important projects.","name":"Retention Jobs and Verification | Logister","url":"https://docs.logister.org/product/data-retention/jobs/","description":"Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://docs.logister.org/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Jobs","item":"https://docs.logister.org/product/data-retention/jobs/"}]}]}</script>
-    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
-    <link rel="icon" href="/assets/icon.png" type="image/png">
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/assets/icon.png">
-    <link rel="stylesheet" href="/assets/site.css">
-    <script defer src="/assets/analytics-config.js"></script>
-    <script defer src="/assets/site.js"></script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/jobs/#article","headline":"Verify cleanup before trusting it on important projects.","name":"Retention Jobs and Verification | Logister","url":"https://logister.org/docs/product/data-retention/jobs/","description":"Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Jobs","item":"https://logister.org/docs/product/data-retention/jobs/"}]}]}</script>
+    <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
+    <link rel="icon" href="/docs/assets/icon.png" type="image/png">
+    <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/docs/assets/icon.png">
+    <link rel="stylesheet" href="/docs/assets/site.css">
+    <script defer src="/docs/assets/analytics-config.js"></script>
+    <script defer src="/docs/assets/site.js"></script>
   </head>
   <body>
     <div class="site-shell">
-      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention jobs</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/docs/"><img src="/docs/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention jobs</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/docs/">Docs home</a><a href="/docs/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
         <section class="hero"><span class="hero-kicker">Data retention / Jobs</span><h1>Verify cleanup before trusting it on important projects.</h1><p>The Data tab shows recent archive runs because users need proof that archive exports and cleanup are working. Use that visible history before relying on archive-before-delete for an important project.</p></section>
         <div class="docs-layout">
-          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/product/data-retention/">Overview</a><a href="/product/data-retention/policy/">Policy settings</a><a href="/product/data-retention/archive-storage/">Archive storage</a><a class="active" href="/product/data-retention/jobs/">Jobs and verification</a></div></aside>
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/docs/product/data-retention/">Overview</a><a href="/docs/product/data-retention/policy/">Policy settings</a><a href="/docs/product/data-retention/archive-storage/">Archive storage</a><a class="active" href="/docs/product/data-retention/jobs/">Jobs and verification</a></div></aside>
           <article class="article" data-pagefind-body>
             <section class="section">
               <p class="eyebrow">Maintenance</p>

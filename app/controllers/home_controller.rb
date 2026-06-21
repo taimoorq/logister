@@ -50,7 +50,7 @@ class HomeController < ApplicationController
 
   def docs_base_url
     docs_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
-    docs_url = "https://docs.logister.org" if docs_url.empty?
+    docs_url = "https://logister.org/docs" if docs_url.empty?
     docs_url.chomp("/")
   end
 

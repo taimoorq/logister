@@ -28,7 +28,7 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include("logister-python")
         expect(response.body).to include("Self-host Logister")
         expect(response.body).to include("Use hosted app")
-        expect(response.body).to include("https://docs.logister.org/")
+        expect(response.body).to include("https://logister.org/docs/")
         expect(response.body).to include('target="_blank"')
         expect(response.body).to include('rel="noopener noreferrer"')
         expect(response.body).to include("<meta name=\"description\"")
@@ -93,7 +93,7 @@ RSpec.describe "Home", type: :request do
       get "/docs"
 
       expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://docs.logister.org/")
+      expect(response).to redirect_to("https://logister.org/docs/")
     end
   end
 
@@ -102,7 +102,7 @@ RSpec.describe "Home", type: :request do
       get "/docs/product"
 
       expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://docs.logister.org/product/")
+      expect(response).to redirect_to("https://logister.org/docs/product/")
     end
   end
 
@@ -111,7 +111,7 @@ RSpec.describe "Home", type: :request do
       get "/docs/metrics"
 
       expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://docs.logister.org/metrics/")
+      expect(response).to redirect_to("https://logister.org/docs/metrics/")
     end
   end
 
@@ -120,7 +120,7 @@ RSpec.describe "Home", type: :request do
       get "/docs/api-reference"
 
       expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://docs.logister.org/api-reference/")
+      expect(response).to redirect_to("https://logister.org/docs/api-reference/")
     end
   end
 
@@ -129,7 +129,7 @@ RSpec.describe "Home", type: :request do
       get "/docs/integrations/javascript"
 
       expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://docs.logister.org/integrations/javascript/")
+      expect(response).to redirect_to("https://logister.org/docs/integrations/javascript/")
     end
   end
 
@@ -138,7 +138,7 @@ RSpec.describe "Home", type: :request do
       get "/docs/integrations/python"
 
       expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://docs.logister.org/integrations/python/")
+      expect(response).to redirect_to("https://logister.org/docs/integrations/python/")
     end
   end
 
@@ -147,7 +147,7 @@ RSpec.describe "Home", type: :request do
       get "/docs/integrations/dotnet"
 
       expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://docs.logister.org/integrations/dotnet/")
+      expect(response).to redirect_to("https://logister.org/docs/integrations/dotnet/")
     end
   end
 
@@ -190,23 +190,23 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("Docker Hub image package")
       expect(response.body).to include("docker.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("Optional Quay image mirror")
-      expect(response.body).to include("https://docs.logister.org/use-cases/")
-      expect(response.body).to include("https://docs.logister.org/use-cases/rails-error-monitoring/")
-      expect(response.body).to include("https://docs.logister.org/use-cases/python-error-monitoring/")
-      expect(response.body).to include("https://docs.logister.org/use-cases/docker-ghcr-self-hosting/")
-      expect(response.body).to include("https://docs.logister.org/use-cases/error-assignment-team-triage/")
-      expect(response.body).to include("https://docs.logister.org/use-cases/amazon-ses-error-alerts/")
+      expect(response.body).to include("https://logister.org/docs/use-cases/")
+      expect(response.body).to include("https://logister.org/docs/use-cases/rails-error-monitoring/")
+      expect(response.body).to include("https://logister.org/docs/use-cases/python-error-monitoring/")
+      expect(response.body).to include("https://logister.org/docs/use-cases/docker-ghcr-self-hosting/")
+      expect(response.body).to include("https://logister.org/docs/use-cases/error-assignment-team-triage/")
+      expect(response.body).to include("https://logister.org/docs/use-cases/amazon-ses-error-alerts/")
       expect(response.body).to include("https://logister.org/llms-full.txt")
       expect(response.body).to include("Python apps via the `logister-python` package")
       expect(response.body).to include(".NET and ASP.NET Core apps via the `logister-dotnet` SDK")
-      expect(response.body).to include("https://docs.logister.org/product/")
-      expect(response.body).to include("https://docs.logister.org/integrations/python/")
-      expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
+      expect(response.body).to include("https://logister.org/docs/product/")
+      expect(response.body).to include("https://logister.org/docs/integrations/python/")
+      expect(response.body).to include("https://logister.org/docs/integrations/dotnet/")
       expect(response.body).to include("https://pypi.org/project/logister-python/")
       expect(response.body).to include("JavaScript and TypeScript apps via the `logister-js` package")
       expect(response.body).to include("CFML apps running on Lucee or Adobe ColdFusion")
-      expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
-      expect(response.body).to include("https://docs.logister.org/integrations/cfml/")
+      expect(response.body).to include("https://logister.org/docs/integrations/javascript/")
+      expect(response.body).to include("https://logister.org/docs/integrations/cfml/")
       expect(response.body).to include("https://www.npmjs.com/package/logister-js")
     end
   end

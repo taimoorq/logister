@@ -6,32 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://docs.logister.org/self-hosting/">
+    <link rel="canonical" href="https://logister.org/docs/self-hosting/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Self-hosting | Logister">
     <meta property="og:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="https://docs.logister.org/self-hosting/">
-    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta property="og:url" content="https://logister.org/docs/self-hosting/">
+    <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Self-hosting | Logister">
     <meta name="twitter:description" content="Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.">
-    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
-    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
-    <link rel="icon" href="/assets/icon.png" type="image/png">
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://docs.logister.org/self-hosting/","description":"Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Open source observability"},{"@type":"Thing","name":"S3 archive storage"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://docs.logister.org/self-hosting/"}]}]}</script>
-    <link rel="stylesheet" href="/assets/site.css">
-    <script defer src="/assets/analytics-config.js"></script>
-    <script defer src="/assets/site.js"></script>
+    <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/self-hosting/#article","headline":"Run Logister yourself.","name":"Self-hosting | Logister","url":"https://logister.org/docs/self-hosting/","description":"Plan and run a self-hosted Logister install, including the required web app, PostgreSQL, Redis, worker, and optional ClickHouse, S3 archive storage, email, Turnstile, and analytics services.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error tracking"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Open source observability"},{"@type":"Thing","name":"S3 archive storage"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Self-hosting","item":"https://logister.org/docs/self-hosting/"}]}]}</script>
+    <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
+    <link rel="icon" href="/docs/assets/icon.png" type="image/png">
+    <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/docs/assets/icon.png">
+    <link rel="stylesheet" href="/docs/assets/site.css">
+    <script defer src="/docs/assets/analytics-config.js"></script>
+    <script defer src="/docs/assets/site.js"></script>
   </head>
   <body>
     <div class="site-shell">
       <header class="topbar">
         <div class="topbar-inner">
-          <a class="brand" href="/">
-            <img src="/assets/logister-logo.svg" alt="Logister">
+          <a class="brand" href="/docs/">
+            <img src="/docs/assets/logister-logo.svg" alt="Logister">
             <span class="brand-copy">
               <span class="brand-kicker">Documentation</span>
               <span class="brand-title">Self-hosting</span>
@@ -39,7 +39,7 @@
           </a>
           <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
           <nav class="topnav" data-nav-panel>
-            <a href="/">Docs home</a>
+            <a href="/docs/">Docs home</a>
             <a href="https://logister.org/">Hosted app</a>
             <a href="https://github.com/taimoorq/logister">GitHub</a>
           </nav>
@@ -60,29 +60,29 @@
           <aside class="sidebar">
             <div class="sidebar-group">
               <p class="sidebar-label">Start here</p>
-              <a href="/">Overview</a>
-              <a href="/getting-started/">Getting started</a>
-              <a href="/product/">Product guide</a>
-              <a class="active" href="/self-hosting/">Self-hosting</a>
+              <a href="/docs/">Overview</a>
+              <a href="/docs/getting-started/">Getting started</a>
+              <a href="/docs/product/">Product guide</a>
+              <a class="active" href="/docs/self-hosting/">Self-hosting</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">Operations</p>
-              <a href="/local-development/">Local development</a>
-              <a href="/deployment/">Deployment config</a>
-              <a href="/github-app/">GitHub App</a>
-              <a href="/clickhouse/">ClickHouse</a>
-              <a href="/http-api/">HTTP API</a>
-              <a href="/troubleshooting/">Troubleshooting</a>
+              <a href="/docs/local-development/">Local development</a>
+              <a href="/docs/deployment/">Deployment config</a>
+              <a href="/docs/github-app/">GitHub App</a>
+              <a href="/docs/clickhouse/">ClickHouse</a>
+              <a href="/docs/http-api/">HTTP API</a>
+              <a href="/docs/troubleshooting/">Troubleshooting</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">Integrations</p>
-              <a href="/integrations/ruby/">Ruby integration</a>
-              <a href="/integrations/dotnet/">.NET integration</a>
-              <a href="/integrations/python/">Python integration</a>
-              <a href="/integrations/javascript/">JavaScript integration</a>
-              <a href="/integrations/android/">Android integration</a>
-              <a href="/integrations/ios/">iOS integration</a>
-              <a href="/integrations/cfml/">CFML integration</a>
+              <a href="/docs/integrations/ruby/">Ruby integration</a>
+              <a href="/docs/integrations/dotnet/">.NET integration</a>
+              <a href="/docs/integrations/python/">Python integration</a>
+              <a href="/docs/integrations/javascript/">JavaScript integration</a>
+              <a href="/docs/integrations/android/">Android integration</a>
+              <a href="/docs/integrations/ios/">iOS integration</a>
+              <a href="/docs/integrations/cfml/">CFML integration</a>
             </div>
             <hr>
             <div class="sidebar-group">
@@ -166,11 +166,11 @@
                   <tr><td><span class="infra-cell-title">Sidekiq worker process</span><span class="infra-label">Required</span></td><td>Runs asynchronous jobs, including optional ClickHouse event/span writes, Action Mailer delivery, project notifications, digest scheduling, monitor and health sweeps, and retention/archive sweeps.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
                   <tr><td><span class="infra-cell-title">Persistent app storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Keeps any local Active Storage files if your deployment uses local disk storage.</td><td>Normal event data lives in PostgreSQL. If you rely on local Active Storage, mount and back up <code>/rails/storage</code>.</td></tr>
                   <tr><td><span class="infra-cell-title">S3-compatible archive storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Stores compressed JSONL archive exports for older hot telemetry before you prune high-volume non-error events from PostgreSQL.</td><td>Set <code>ACTIVE_STORAGE_SERVICE=amazon</code> plus the AWS/S3 variables from the deployment guide. Any S3-compatible provider can be used with endpoint/path-style overrides.</td></tr>
-                  <tr><td><span class="infra-cell-title">Outbound email / SMTP</span><span class="infra-label infra-label-recommended">Recommended</span></td><td>Enables confirmation, password reset, system mail, immediate project alerts, digest summaries, monitor alerts, and operational notices.</td><td>The documented path uses Amazon SES SMTP variables, but any compatible SMTP endpoint can be provided through the same settings. Verify the sender domain, keep Sidekiq running, and use the <a href="/product/notifications/">notification guide</a> for project settings.</td></tr>
+                  <tr><td><span class="infra-cell-title">Outbound email / SMTP</span><span class="infra-label infra-label-recommended">Recommended</span></td><td>Enables confirmation, password reset, system mail, immediate project alerts, digest summaries, monitor alerts, and operational notices.</td><td>The documented path uses Amazon SES SMTP variables, but any compatible SMTP endpoint can be provided through the same settings. Verify the sender domain, keep Sidekiq running, and use the <a href="/docs/product/notifications/">notification guide</a> for project settings.</td></tr>
                   <tr><td><span class="infra-cell-title">ClickHouse</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds a dedicated analytics store for higher-volume event and span analysis.</td><td>Keep it disabled until PostgreSQL-only operation is not enough. When enabled, load the schema, run the worker, and verify <code>/health/clickhouse</code> reports ready.</td></tr>
                   <tr><td><span class="infra-cell-title">Cloudflare Turnstile</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds bot protection to auth flows.</td><td>Enable when your public sign-in, sign-up, password, or confirmation forms need extra protection.</td></tr>
                   <tr><td><span class="infra-cell-title">Cookie consent and analytics</span><span class="infra-label infra-label-optional">Optional</span></td><td>Lets operators add consent-gated Google Analytics or Cloudflare Web Analytics.</td><td>Useful for public product pages. It is not required for the app to monitor your services.</td></tr>
-                  <tr><td><span class="infra-cell-title">Static docs hosting</span><span class="infra-label infra-label-optional">Optional</span></td><td>Hosts your fork of these public docs separately from the app.</td><td>The repo includes Cloudflare Pages docs, but your self-hosted app can also point to the canonical public docs host.</td></tr>
+                  <tr><td><span class="infra-cell-title">Static docs hosting</span><span class="infra-label infra-label-optional">Optional</span></td><td>Hosts your fork of these public docs separately from the app.</td><td>The repo includes Cloudflare Pages docs, but your self-hosted app can also point to the canonical public docs URL.</td></tr>
                 </tbody>
               </table>
               <div class="note tip"><h4>Start small</h4><p>For a first production install, plan one web process, one Sidekiq worker, managed PostgreSQL, and managed Redis. Add S3 archive storage when you need export-before-prune retention, and add ClickHouse after you know your event volume and analytics needs.</p></div>
@@ -293,7 +293,7 @@ bin/dev</code></pre>
               </div>
               <div class="note tip">
                 <h4>Tip</h4>
-                <p><code>bin/dev</code> starts the Rails app and Tailwind watcher. Keep PostgreSQL and Redis available yourself, or use <code>bin/dev-infra</code> when you want Docker to start local infrastructure first. For production, use the <a href="/deployment/#env-reference"><code>.env.sample</code> reference</a> to decide which values belong in your deploy provider's secret store.</p>
+                <p><code>bin/dev</code> starts the Rails app and Tailwind watcher. Keep PostgreSQL and Redis available yourself, or use <code>bin/dev-infra</code> when you want Docker to start local infrastructure first. For production, use the <a href="/docs/deployment/#env-reference"><code>.env.sample</code> reference</a> to decide which values belong in your deploy provider's secret store.</p>
               </div>
             </section>
 
@@ -305,31 +305,31 @@ bin/dev</code></pre>
                   <p class="eyebrow">Local development</p>
                   <h3>Boot, seed, and verify the app locally</h3>
                   <p>Use this for <code>bin/dev</code>, Docker-backed infra, seeds, and local verification.</p>
-                  <p><a href="/local-development/">Read local development docs</a></p>
+                  <p><a href="/docs/local-development/">Read local development docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">Deployment config</p>
                   <h3>Set production variables and provider config</h3>
                   <p>Use this for the full <code>.env.sample</code> reference, S3 archive storage, Turnstile, analytics, Amazon SES, Cloudflare Pages docs variables, and deployment files.</p>
-                  <p><a href="/deployment/">Read deployment config docs</a></p>
+                  <p><a href="/docs/deployment/">Read deployment config docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">Notifications</p>
                   <h3>Configure project email without one long settings page</h3>
                   <p>Use purpose-based notification docs for error triage, project health, workflow routing, digests, delivery limits, and operations.</p>
-                  <p><a href="/product/notifications/">Read notification docs</a></p>
+                  <p><a href="/docs/product/notifications/">Read notification docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">Retention</p>
                   <h3>Plan cleanup and archive exports</h3>
                   <p>Use this for retention windows, S3-compatible archive storage, and job verification.</p>
-                  <p><a href="/product/data-retention/">Read data retention docs</a></p>
+                  <p><a href="/docs/product/data-retention/">Read data retention docs</a></p>
                 </article>
                 <article class="card">
                   <p class="eyebrow">ClickHouse</p>
                   <h3>Enable dedicated analytics storage</h3>
                   <p>Use this when you want the optional ClickHouse path, schema readiness, raw event/span tables, and rollups.</p>
-                  <p><a href="/clickhouse/">Read ClickHouse docs</a></p>
+                  <p><a href="/docs/clickhouse/">Read ClickHouse docs</a></p>
                 </article>
               </div>
             </section>

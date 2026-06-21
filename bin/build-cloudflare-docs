@@ -6,6 +6,7 @@ require "date"
 require "fileutils"
 require "json"
 require "pathname"
+require "uri"
 
 def plain_text(html)
   CGI.unescapeHTML(html.to_s.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip)
@@ -14,6 +15,115 @@ end
 def docs_path_for(docs_root, file)
   relative = Pathname.new(file).relative_path_from(docs_root).to_s
   relative == "index.html" ? "/" : "/#{relative.delete_suffix("index.html")}"
+end
+
+def docs_mount_path_for(docs_url)
+  path = URI.parse(docs_url).path.to_s
+  path = "" if path == "/"
+  path.chomp("/")
+rescue URI::InvalidURIError
+  ""
+end
+
+def strip_mount_path(path, docs_mount_path)
+  return path if docs_mount_path.empty?
+  return "/" if path == docs_mount_path
+  return path.delete_prefix(docs_mount_path) if path.start_with?("#{docs_mount_path}/")
+
+  path
+end
+
+def mounted_path(path, docs_mount_path)
+  return path if docs_mount_path.empty? || !path.start_with?("/") || path.start_with?("//")
+
+  normalized = strip_mount_path(path, docs_mount_path)
+  normalized = "/#{normalized}" unless normalized.start_with?("/")
+  "#{docs_mount_path}#{normalized}"
+end
+
+def public_url(docs_url, docs_path)
+  "#{docs_url}#{docs_path}"
+end
+
+def rewrite_local_url(value, docs_mount_path)
+  return value unless value.start_with?("/")
+  return value if value.start_with?("//")
+
+  path, suffix = value.match(/\A([^?#]*)(.*)\z/).captures
+  "#{mounted_path(path, docs_mount_path)}#{suffix}"
+end
+
+def rewrite_local_attribute_urls(html, docs_mount_path)
+  return html if docs_mount_path.empty?
+
+  html.gsub(/\b(href|src|action)="([^"]+)"/) do
+    attribute = Regexp.last_match(1)
+    value = Regexp.last_match(2)
+    %(#{attribute}="#{rewrite_local_url(value, docs_mount_path)}")
+  end
+end
+
+def set_link_href(html, rel, href)
+  pattern = /(<link\b(?=[^>]*\brel="#{Regexp.escape(rel)}")[^>]*\bhref=")[^"]*("[^>]*>)/
+  return html.sub(pattern, "\\1#{CGI.escapeHTML(href)}\\2") if html.match?(pattern)
+
+  html
+end
+
+def set_meta_content(html, selector, value)
+  key, name = selector
+  pattern = /(<meta\b(?=[^>]*\b#{Regexp.escape(key)}="#{Regexp.escape(name)}")[^>]*\bcontent=")[^"]*("[^>]*>)/
+  return html.sub(pattern, "\\1#{CGI.escapeHTML(value)}\\2") if html.match?(pattern)
+
+  html
+end
+
+def previous_docs_url_for(canonical, docs_path)
+  return "" if canonical.empty?
+  return canonical.delete_suffix("/").chomp("/") if docs_path == "/"
+  return canonical.delete_suffix(docs_path).chomp("/") if canonical.end_with?(docs_path)
+
+  ""
+end
+
+def rewrite_docs_url(value, docs_url, previous_docs_url)
+  candidates = [previous_docs_url, "https://docs.logister.org", "https://logister.org/docs"]
+    .compact
+    .map { |candidate| candidate.chomp("/") }
+    .reject(&:empty?)
+    .uniq
+
+  candidates.reduce(value) do |memo, candidate|
+    memo.gsub(candidate, docs_url)
+  end
+end
+
+def rewrite_json_ld_urls(value, docs_url, previous_docs_url)
+  case value
+  when Hash
+    value.transform_values { |child| rewrite_json_ld_urls(child, docs_url, previous_docs_url) }
+  when Array
+    value.map { |child| rewrite_json_ld_urls(child, docs_url, previous_docs_url) }
+  when String
+    rewrite_docs_url(value, docs_url, previous_docs_url)
+  else
+    value
+  end
+end
+
+def rewrite_json_ld_blocks(html, docs_url, previous_docs_url)
+  html.gsub(/(<script type="application\/ld\+json">)(.*?)(<\/script>)/m) do
+    prefix = Regexp.last_match(1)
+    body = Regexp.last_match(2)
+    suffix = Regexp.last_match(3)
+
+    begin
+      data = JSON.parse(body)
+      "#{prefix}#{JSON.generate(rewrite_json_ld_urls(data, docs_url, previous_docs_url))}#{suffix}"
+    rescue JSON::ParserError
+      "#{prefix}#{rewrite_docs_url(body, docs_url, previous_docs_url)}#{suffix}"
+    end
+  end
 end
 
 def page_name_for(path)
@@ -37,7 +147,40 @@ def breadcrumb_items(docs_url, path)
   items
 end
 
-def ensure_html_metadata!(docs_root, docs_url)
+def json_ld_schema(docs_url, canonical, docs_path, title, description, h1)
+  name = title.empty? ? page_name_for(docs_path) : title
+  headline = h1.empty? ? name : h1
+  {
+    "@context" => "https://schema.org",
+    "@graph" => [
+      {
+        "@type" => "Organization",
+        "@id" => "#{docs_url}/#organization",
+        "name" => "Logister",
+        "url" => "https://logister.org/",
+        "sameAs" => ["https://github.com/taimoorq/logister"]
+      },
+      {
+        "@type" => docs_path == "/" ? "CollectionPage" : "TechArticle",
+        "@id" => "#{canonical}#article",
+        "headline" => headline,
+        "name" => name,
+        "url" => canonical,
+        "description" => description,
+        "publisher" => { "@id" => "#{docs_url}/#organization" },
+        "author" => { "@id" => "#{docs_url}/#organization" },
+        "audience" => { "@type" => "Audience", "audienceType" => "Developers and operators" },
+        "inLanguage" => "en-US"
+      },
+      {
+        "@type" => "BreadcrumbList",
+        "itemListElement" => breadcrumb_items(docs_url, docs_path)
+      }
+    ]
+  }
+end
+
+def ensure_html_metadata!(docs_root, docs_url, docs_mount_path)
   Dir[docs_root.join("**/*.html")].sort.each do |file|
     path = Pathname.new(file)
     html = path.read
@@ -45,10 +188,22 @@ def ensure_html_metadata!(docs_root, docs_url)
 
     title = plain_text(html[/<title>(.*?)<\/title>/m, 1])
     description = html[/<meta name="description" content="([^"]+)"/, 1].to_s
-    canonical = html[/<link rel="canonical" href="([^"]+)"/, 1].to_s
     h1 = plain_text(html[/<h1[^>]*>(.*?)<\/h1>/m, 1])
     docs_path = docs_path_for(docs_root, file)
-    canonical = "#{docs_url}#{docs_path}" if canonical.empty?
+    existing_canonical = html[/<link rel="canonical" href="([^"]+)"/, 1].to_s
+    previous_docs_url = previous_docs_url_for(existing_canonical, docs_path)
+    canonical = public_url(docs_url, docs_path)
+    image_url = public_url(docs_url, "/assets/logister-logo.webp")
+
+    updated = set_link_href(updated, "canonical", canonical)
+    updated = set_link_href(updated, "alternate", mounted_path("/llms.txt", docs_mount_path))
+    updated = updated.sub(
+      /(<link\b(?=[^>]*\brel="alternate")(?=[^>]*\btitle="LLMs full context")[^>]*\bhref=")[^"]*("[^>]*>)/,
+      "\\1#{mounted_path("/llms-full.txt", docs_mount_path)}\\2"
+    )
+    updated = set_meta_content(updated, ["property", "og:url"], canonical)
+    updated = set_meta_content(updated, ["property", "og:image"], image_url)
+    updated = set_meta_content(updated, ["name", "twitter:image"], image_url)
 
     if updated.include?('<meta name="twitter:card"')
       unless updated.include?('name="twitter:title"')
@@ -64,48 +219,21 @@ def ensure_html_metadata!(docs_root, docs_url)
       end
     end
 
+    updated = rewrite_json_ld_blocks(updated, docs_url, previous_docs_url)
     unless updated.include?('application/ld+json')
-      name = title.empty? ? page_name_for(docs_path) : title
-      headline = h1.empty? ? name : h1
-      schema = {
-        "@context" => "https://schema.org",
-        "@graph" => [
-          {
-            "@type" => "Organization",
-            "@id" => "#{docs_url}/#organization",
-            "name" => "Logister",
-            "url" => "https://logister.org/",
-            "sameAs" => ["https://github.com/taimoorq/logister"]
-          },
-          {
-            "@type" => docs_path == "/" ? "CollectionPage" : "TechArticle",
-            "@id" => "#{canonical}#article",
-            "headline" => headline,
-            "name" => name,
-            "url" => canonical,
-            "description" => description,
-            "publisher" => { "@id" => "#{docs_url}/#organization" },
-            "author" => { "@id" => "#{docs_url}/#organization" },
-            "audience" => { "@type" => "Audience", "audienceType" => "Developers and operators" },
-            "inLanguage" => "en-US"
-          },
-          {
-            "@type" => "BreadcrumbList",
-            "itemListElement" => breadcrumb_items(docs_url, docs_path)
-          }
-        ]
-      }
+      schema = json_ld_schema(docs_url, canonical, docs_path, title, description, h1)
       script = "    <script type=\"application/ld+json\">#{JSON.generate(schema)}</script>\n"
       unless updated.sub!(/(    <link rel="alternate")/, "#{script}\\1")
         updated.sub!(/(    <link rel="icon")/, "#{script}\\1")
       end
     end
 
+    updated = rewrite_local_attribute_urls(updated, docs_mount_path)
     path.write(updated) if updated != html
   end
 end
 
-def audit_cloudflare_docs!(docs_root)
+def audit_cloudflare_docs!(docs_root, docs_mount_path)
   errors = []
   html_files = Dir[docs_root.join("**/*.html")].sort
 
@@ -141,12 +269,15 @@ def audit_cloudflare_docs!(docs_root)
       next if link.match?(/\A(?:https?:|mailto:|#|javascript:|data:)/)
 
       local_path = link.split("#", 2).first
-      next if local_path.empty? || local_path == "/assets/analytics-config.js"
+      next if local_path.empty?
 
       next unless local_path.start_with?("/")
 
-      candidates = [local_path]
-      candidates << (local_path.end_with?("/") ? "#{local_path}index.html" : "#{local_path}/index.html")
+      docs_local_path = strip_mount_path(local_path, docs_mount_path)
+      next if docs_local_path == "/assets/analytics-config.js"
+
+      candidates = [docs_local_path]
+      candidates << (docs_local_path.end_with?("/") ? "#{docs_local_path}index.html" : "#{docs_local_path}/index.html")
       errors << "#{relative}: broken local link #{link}" unless candidates.any? { |candidate| existing.include?(candidate) }
     end
   end
@@ -161,8 +292,9 @@ end
 repo_root = Pathname.new(__dir__).join("..").expand_path
 docs_root = repo_root.join("cloudflare-docs")
 docs_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
-docs_url = "https://docs.logister.org" if docs_url.empty?
+docs_url = "https://logister.org/docs" if docs_url.empty?
 docs_url = docs_url.chomp("/")
+docs_mount_path = docs_mount_path_for(docs_url)
 
 sync_versions = repo_root.join("bin/sync-doc-versions")
 if sync_versions.file?
@@ -197,8 +329,8 @@ if screenshots_source.directory?
   end
 end
 
-ensure_html_metadata!(docs_root, docs_url)
-audit_cloudflare_docs!(docs_root)
+ensure_html_metadata!(docs_root, docs_url, docs_mount_path)
+audit_cloudflare_docs!(docs_root, docs_mount_path)
 
 pagefind_bin = repo_root.join("node_modules/.bin/pagefind")
 unless pagefind_bin.file?
@@ -287,7 +419,7 @@ sitemap = +"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 sitemap << "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
 ordered_paths.each do |path|
   sitemap << "  <url>\n"
-  sitemap << "    <loc>#{CGI.escapeHTML("#{docs_url}#{path}")}</loc>\n"
+  sitemap << "    <loc>#{CGI.escapeHTML(public_url(docs_url, path))}</loc>\n"
   sitemap << "    <lastmod>#{lastmod}</lastmod>\n"
   sitemap << "  </url>\n"
 end
@@ -297,33 +429,33 @@ docs_root.join("sitemap.xml").write(sitemap)
 
 robots = <<~ROBOTS
   User-agent: OAI-SearchBot
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: GPTBot
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: ChatGPT-User
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: ClaudeBot
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: Claude-SearchBot
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: Claude-User
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: PerplexityBot
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: Google-Extended
-  Allow: /
+  Allow: #{mounted_path("/", docs_mount_path)}
 
   User-agent: *
-  Allow: /
-  Allow: /llms.txt
-  Allow: /llms-full.txt
+  Allow: #{mounted_path("/", docs_mount_path)}
+  Allow: #{mounted_path("/llms.txt", docs_mount_path)}
+  Allow: #{mounted_path("/llms-full.txt", docs_mount_path)}
 
   Sitemap: #{docs_url}/sitemap.xml
 ROBOTS
@@ -331,9 +463,32 @@ ROBOTS
 docs_root.join("robots.txt").write(robots)
 
 FileUtils.rm_rf(docs_root.join("pagefind"))
-unless system(pagefind_bin.to_s, "--site", docs_root.to_s, "--quiet", "--force-language", "en")
+pagefind_site_root = docs_root
+pagefind_tmp_root = nil
+unless docs_mount_path.empty?
+  pagefind_tmp_root = repo_root.join("tmp/cloudflare-docs-pagefind")
+  pagefind_site_root = pagefind_tmp_root
+  mounted_docs_root = pagefind_tmp_root.join(docs_mount_path.delete_prefix("/"))
+  FileUtils.rm_rf(pagefind_tmp_root)
+  FileUtils.mkdir_p(mounted_docs_root)
+  Dir.children(docs_root).each do |entry|
+    next if entry == "pagefind"
+
+    FileUtils.cp_r(docs_root.join(entry), mounted_docs_root.join(entry))
+  end
+end
+
+pagefind_args = [
+  pagefind_bin.to_s,
+  "--site", pagefind_site_root.to_s,
+  "--output-path", docs_root.join("pagefind").to_s,
+  "--quiet",
+  "--force-language", "en"
+]
+unless system(*pagefind_args)
   warn "Pagefind index build failed."
   exit 1
 end
+FileUtils.rm_rf(pagefind_tmp_root) if pagefind_tmp_root
 
 puts "Built Cloudflare docs metadata for #{docs_url}"

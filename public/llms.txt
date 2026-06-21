@@ -16,9 +16,9 @@ It supports:
 - CFML apps running on Lucee or Adobe ColdFusion via direct HTTP ingestion
 - Cloudflare Pages sites via direct HTTP telemetry today and project importer settings ahead of automatic fetching
 
-Canonical documentation lives on the public docs host:
-- Product docs: https://docs.logister.org/
-- Docs sitemap: https://docs.logister.org/sitemap.xml
+Canonical documentation lives at the public docs URL:
+- Product docs: https://logister.org/docs/
+- Docs sitemap: https://logister.org/docs/sitemap.xml
 - Self-host source: https://github.com/taimoorq/logister
 
 ## Public pages
@@ -28,42 +28,42 @@ Canonical documentation lives on the public docs host:
 - Terms of Use: /terms
 
 ## Public docs
-- Docs home: https://docs.logister.org/
-- Getting started: https://docs.logister.org/getting-started/
-- Product guide: https://docs.logister.org/product/
-- Email notifications: https://docs.logister.org/product/notifications/
-- Data retention: https://docs.logister.org/product/data-retention/
-- Use cases and comparisons: https://docs.logister.org/use-cases/
-- Self-hosted error monitoring use case: https://docs.logister.org/use-cases/self-hosted-error-monitoring/
-- Sentry alternative comparison: https://docs.logister.org/use-cases/sentry-alternative/
-- Bugsnag alternative comparison: https://docs.logister.org/use-cases/bugsnag-alternative/
-- Bugzilla alternative comparison: https://docs.logister.org/use-cases/bugzilla-alternative/
-- Rails error monitoring use case: https://docs.logister.org/use-cases/rails-error-monitoring/
-- Python error monitoring use case: https://docs.logister.org/use-cases/python-error-monitoring/
-- .NET / ASP.NET Core error monitoring use case: https://docs.logister.org/use-cases/dotnet-error-monitoring/
-- JavaScript / TypeScript error monitoring use case: https://docs.logister.org/use-cases/javascript-error-monitoring/
-- ColdFusion / CFML error monitoring use case: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker, GHCR, Docker Hub, and optional Quay self-hosting use case: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
-- Error assignment and team triage use case: https://docs.logister.org/use-cases/error-assignment-team-triage/
-- Amazon SES project notifications use case: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
-- Self-hosting: https://docs.logister.org/self-hosting/
-- Local development: https://docs.logister.org/local-development/
-- Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
-- GitHub App source integration: https://docs.logister.org/github-app/
-- GitHub source lookup diagnostics: https://docs.logister.org/github-app/source-lookup/
+- Docs home: https://logister.org/docs/
+- Getting started: https://logister.org/docs/getting-started/
+- Product guide: https://logister.org/docs/product/
+- Email notifications: https://logister.org/docs/product/notifications/
+- Data retention: https://logister.org/docs/product/data-retention/
+- Use cases and comparisons: https://logister.org/docs/use-cases/
+- Self-hosted error monitoring use case: https://logister.org/docs/use-cases/self-hosted-error-monitoring/
+- Sentry alternative comparison: https://logister.org/docs/use-cases/sentry-alternative/
+- Bugsnag alternative comparison: https://logister.org/docs/use-cases/bugsnag-alternative/
+- Bugzilla alternative comparison: https://logister.org/docs/use-cases/bugzilla-alternative/
+- Rails error monitoring use case: https://logister.org/docs/use-cases/rails-error-monitoring/
+- Python error monitoring use case: https://logister.org/docs/use-cases/python-error-monitoring/
+- .NET / ASP.NET Core error monitoring use case: https://logister.org/docs/use-cases/dotnet-error-monitoring/
+- JavaScript / TypeScript error monitoring use case: https://logister.org/docs/use-cases/javascript-error-monitoring/
+- ColdFusion / CFML error monitoring use case: https://logister.org/docs/use-cases/cfml-error-monitoring/
+- Docker, GHCR, Docker Hub, and optional Quay self-hosting use case: https://logister.org/docs/use-cases/docker-ghcr-self-hosting/
+- Error assignment and team triage use case: https://logister.org/docs/use-cases/error-assignment-team-triage/
+- Amazon SES project notifications use case: https://logister.org/docs/use-cases/amazon-ses-error-alerts/
+- Self-hosting: https://logister.org/docs/self-hosting/
+- Local development: https://logister.org/docs/local-development/
+- Deployment and `.env.sample` reference: https://logister.org/docs/deployment/
+- GitHub App source integration: https://logister.org/docs/github-app/
+- GitHub source lookup diagnostics: https://logister.org/docs/github-app/source-lookup/
 - Full AI context: https://logister.org/llms-full.txt
-- Docker self-hosting option and registry images: https://docs.logister.org/self-hosting/#docker
-- ClickHouse: https://docs.logister.org/clickhouse/
-- HTTP API: https://docs.logister.org/http-api/
-- Troubleshooting: https://docs.logister.org/troubleshooting/
-- Ruby integration: https://docs.logister.org/integrations/ruby/
-- .NET integration: https://docs.logister.org/integrations/dotnet/
-- Python integration: https://docs.logister.org/integrations/python/
-- JavaScript integration: https://docs.logister.org/integrations/javascript/
-- Cloudflare Pages integration: https://docs.logister.org/integrations/cloudflare-pages/
-- Android integration: https://docs.logister.org/integrations/android/
-- iOS integration: https://docs.logister.org/integrations/ios/
-- CFML integration: https://docs.logister.org/integrations/cfml/
+- Docker self-hosting option and registry images: https://logister.org/docs/self-hosting/#docker
+- ClickHouse: https://logister.org/docs/clickhouse/
+- HTTP API: https://logister.org/docs/http-api/
+- Troubleshooting: https://logister.org/docs/troubleshooting/
+- Ruby integration: https://logister.org/docs/integrations/ruby/
+- .NET integration: https://logister.org/docs/integrations/dotnet/
+- Python integration: https://logister.org/docs/integrations/python/
+- JavaScript integration: https://logister.org/docs/integrations/javascript/
+- Cloudflare Pages integration: https://logister.org/docs/integrations/cloudflare-pages/
+- Android integration: https://logister.org/docs/integrations/android/
+- iOS integration: https://logister.org/docs/integrations/ios/
+- CFML integration: https://logister.org/docs/integrations/cfml/
 
 ## Self-hosting and release distribution
 - Source to fork or self-host: https://github.com/taimoorq/logister
@@ -75,11 +75,11 @@ Canonical documentation lives on the public docs host:
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
 - Versioned Docker images: `ghcr.io/taimoorq/logister:v2.7.2` or `docker.io/taimoorq/logister:v2.7.2`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
-- Docker self-hosting docs: https://docs.logister.org/self-hosting/#docker
-- Deployment and `.env.sample` reference: https://docs.logister.org/deployment/
-- GitHub App source integration: https://docs.logister.org/github-app/
-- Notification paths: https://docs.logister.org/product/notifications/
-- Data retention: https://docs.logister.org/product/data-retention/
+- Docker self-hosting docs: https://logister.org/docs/self-hosting/#docker
+- Deployment and `.env.sample` reference: https://logister.org/docs/deployment/
+- GitHub App source integration: https://logister.org/docs/github-app/
+- Notification paths: https://logister.org/docs/product/notifications/
+- Data retention: https://logister.org/docs/product/data-retention/
 - Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Product summary
@@ -122,7 +122,7 @@ Canonical documentation lives on the public docs host:
 - Android coordinates: `org.logister:logister-android:0.1.2`
 - Swift Package Manager source: https://github.com/taimoorq/logister-ios.git
 - iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
-- Cloudflare Pages integration docs: https://docs.logister.org/integrations/cloudflare-pages/
+- Cloudflare Pages integration docs: https://logister.org/docs/integrations/cloudflare-pages/
 - Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 
 ## Self-host source

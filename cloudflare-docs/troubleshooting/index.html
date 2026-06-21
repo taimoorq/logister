@@ -6,32 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://docs.logister.org/troubleshooting/">
+    <link rel="canonical" href="https://logister.org/docs/troubleshooting/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Troubleshooting | Logister">
     <meta property="og:description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="https://docs.logister.org/troubleshooting/">
-    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta property="og:url" content="https://logister.org/docs/troubleshooting/">
+    <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Troubleshooting | Logister">
     <meta name="twitter:description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
-    <meta name="twitter:image" content="https://docs.logister.org/assets/logister-logo.webp">
-    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
-    <link rel="icon" href="/assets/icon.png" type="image/png">
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/assets/icon.png">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/troubleshooting/#article","headline":"Troubleshoot Logister.","name":"Troubleshooting | Logister","url":"https://docs.logister.org/troubleshooting/","description":"Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error monitoring"},{"@type":"Thing","name":"Event ingestion troubleshooting"},{"@type":"Thing","name":"Sidekiq troubleshooting"},{"@type":"Thing","name":"ClickHouse readiness"},{"@type":"Thing","name":"SMTP delivery"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Troubleshooting","item":"https://docs.logister.org/troubleshooting/"}]}]}</script>
-    <link rel="stylesheet" href="/assets/site.css">
-    <script defer src="/assets/analytics-config.js"></script>
-    <script defer src="/assets/site.js"></script>
+    <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/troubleshooting/#article","headline":"Troubleshoot Logister.","name":"Troubleshooting | Logister","url":"https://logister.org/docs/troubleshooting/","description":"Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error monitoring"},{"@type":"Thing","name":"Event ingestion troubleshooting"},{"@type":"Thing","name":"Sidekiq troubleshooting"},{"@type":"Thing","name":"ClickHouse readiness"},{"@type":"Thing","name":"SMTP delivery"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Troubleshooting","item":"https://logister.org/docs/troubleshooting/"}]}]}</script>
+    <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
+    <link rel="icon" href="/docs/assets/icon.png" type="image/png">
+    <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/docs/assets/icon.png">
+    <link rel="stylesheet" href="/docs/assets/site.css">
+    <script defer src="/docs/assets/analytics-config.js"></script>
+    <script defer src="/docs/assets/site.js"></script>
   </head>
   <body>
     <div class="site-shell">
       <header class="topbar">
         <div class="topbar-inner">
-          <a class="brand" href="/">
-            <img src="/assets/logister-logo.svg" alt="Logister">
+          <a class="brand" href="/docs/">
+            <img src="/docs/assets/logister-logo.svg" alt="Logister">
             <span class="brand-copy">
               <span class="brand-kicker">Documentation</span>
               <span class="brand-title">Troubleshooting</span>
@@ -39,7 +39,7 @@
           </a>
           <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
           <nav class="topnav" data-nav-panel>
-            <a href="/">Docs home</a>
+            <a href="/docs/">Docs home</a>
             <a href="https://logister.org/">Hosted app</a>
             <a href="https://github.com/taimoorq/logister">GitHub</a>
           </nav>
@@ -59,24 +59,24 @@
           <aside class="sidebar">
             <div class="sidebar-group">
               <p class="sidebar-label">Documentation</p>
-              <a href="/">Overview</a>
-              <a href="/product/">What Logister does</a>
-              <a href="/metrics/">Metrics reference</a>
-              <a href="/use-cases/">Use cases</a>
+              <a href="/docs/">Overview</a>
+              <a href="/docs/product/">What Logister does</a>
+              <a href="/docs/metrics/">Metrics reference</a>
+              <a href="/docs/use-cases/">Use cases</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">Installation</p>
-              <a href="/self-hosting/">Self-hosting</a>
-              <a href="/local-development/">Local development</a>
-              <a href="/self-hosting/#docker">Docker option</a>
-              <a href="/deployment/">Deployment config</a>
-              <a href="/github-app/">GitHub App</a>
+              <a href="/docs/self-hosting/">Self-hosting</a>
+              <a href="/docs/local-development/">Local development</a>
+              <a href="/docs/self-hosting/#docker">Docker option</a>
+              <a href="/docs/deployment/">Deployment config</a>
+              <a href="/docs/github-app/">GitHub App</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">API and help</p>
-              <a href="/http-api/">HTTP API</a>
-              <a href="/api-reference/">API reference</a>
-              <a class="active" href="/troubleshooting/">Troubleshooting</a>
+              <a href="/docs/http-api/">HTTP API</a>
+              <a href="/docs/api-reference/">API reference</a>
+              <a class="active" href="/docs/troubleshooting/">Troubleshooting</a>
             </div>
             <hr>
             <div class="sidebar-group">
@@ -105,10 +105,10 @@
                 </section>
                 <aside class="outline-card chapter-links">
                   <h3>Useful references</h3>
-                  <a href="/http-api/#responses"><span>API responses</span><span class="kbd">codes</span></a>
-                  <a href="/deployment/"><span>Deployment config</span><span class="kbd">env</span></a>
-                  <a href="/clickhouse/"><span>ClickHouse</span><span class="kbd">health</span></a>
-                  <a href="/self-hosting/#verify"><span>Deploy verification</span><span class="kbd">ops</span></a>
+                  <a href="/docs/http-api/#responses"><span>API responses</span><span class="kbd">codes</span></a>
+                  <a href="/docs/deployment/"><span>Deployment config</span><span class="kbd">env</span></a>
+                  <a href="/docs/clickhouse/"><span>ClickHouse</span><span class="kbd">health</span></a>
+                  <a href="/docs/self-hosting/#verify"><span>Deploy verification</span><span class="kbd">ops</span></a>
                 </aside>
               </div>
             </section>
@@ -173,7 +173,7 @@
                   <tr>
                     <td><code>400</code></td>
                     <td>The JSON body is missing the required <code>event</code>, <code>EVENT</code>, <code>check_in</code>, or <code>CHECK_IN</code> envelope.</td>
-                    <td>Compare the request with the <a href="/http-api/">HTTP API guide</a>. Some runtimes uppercase struct keys, which Logister accepts.</td>
+                    <td>Compare the request with the <a href="/docs/http-api/">HTTP API guide</a>. Some runtimes uppercase struct keys, which Logister accepts.</td>
                   </tr>
                   <tr>
                     <td><code>401</code></td>
@@ -231,7 +231,7 @@
                   <tr><td>No digests</td><td>Confirm recurring jobs are scheduled, Sidekiq is running, and the selected daily or weekly cadence has elapsed.</td></tr>
                 </tbody>
               </table>
-              <p><a href="/deployment/#email">Read deployment email settings</a> for SMTP variables, or <a href="/product/notifications/">read notification settings</a> for the product paths users configure.</p>
+              <p><a href="/docs/deployment/#email">Read deployment email settings</a> for SMTP variables, or <a href="/docs/product/notifications/">read notification settings</a> for the product paths users configure.</p>
             </section>
 
             <section id="source-lookup" class="section">
@@ -241,7 +241,7 @@
                 A synced GitHub repository is not enough by itself. Source lookup needs a connected project repository mapping, the right runtime path prefix, the right repository source root, and a branch or commit ref that contains the file.
               </p>
               <table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Configured repo, but source file not found</td><td>Read the attempted repository, path, ref, and reason. A path like <code>app/app/controllers/...</code> usually means the source root or runtime prefix is duplicating a path segment.</td></tr><tr><td>No repositories available</td><td>Install or link the GitHub App installation, accept permission changes, then click Sync repositories.</td></tr><tr><td>No source repository mapping</td><td>Click Connect for the synced repository in project settings.</td></tr></tbody></table>
-              <p><a href="/github-app/source-lookup/">Read source lookup diagnostics</a> for the focused checklist.</p>
+              <p><a href="/docs/github-app/source-lookup/">Read source lookup diagnostics</a> for the focused checklist.</p>
             </section>
 
             <section id="clickhouse" class="section">
@@ -273,7 +273,7 @@
                 <li>Run archive tasks from the same release with access to the same database and storage variables.</li>
                 <li>Do not run prune tasks until you have verified the archive output you need.</li>
               </ul>
-              <p><a href="/product/data-retention/">Read data retention</a> for the product model, storage setup, and verification steps.</p>
+              <p><a href="/docs/product/data-retention/">Read data retention</a> for the product model, storage setup, and verification steps.</p>
             </section>
 
             <section id="support-context" class="section">

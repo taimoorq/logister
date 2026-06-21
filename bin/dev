@@ -5,8 +5,13 @@ if ! gem list foreman -i --silent; then
   gem install foreman
 fi
 
-# Default to port 3000 if not specified
+# Default local server ports if not specified
 export PORT="${PORT:-3000}"
+export DOCS_PORT="${DOCS_PORT:-3001}"
+
+# Keep local docs preview compatible with installed Wrangler versions that
+# cannot run a Workers runtime dated newer than their bundled binary.
+export DOCS_COMPATIBILITY_DATE="${DOCS_COMPATIBILITY_DATE:-2026-04-27}"
 
 # Let the debug gem allow remote connections,
 # but avoid loading until `debugger` is called

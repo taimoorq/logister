@@ -48,44 +48,44 @@ If you are trying to instrument an application, the language integrations live i
 
 ## Public docs
 
-Canonical setup and integration docs live on `docs.logister.org`, with self-hosting treated as the primary deployment path.
+Canonical setup and integration docs live on `logister.org/docs`, with self-hosting treated as the primary deployment path.
 
 ### Start here
 
-- Overview: https://docs.logister.org/
-- Getting started: https://docs.logister.org/getting-started/
-- Product guide: https://docs.logister.org/product/
-- Metrics reference: https://docs.logister.org/metrics/
-- Use cases and comparisons: https://docs.logister.org/use-cases/
-- Rails error monitoring: https://docs.logister.org/use-cases/rails-error-monitoring/
-- Python error monitoring: https://docs.logister.org/use-cases/python-error-monitoring/
-- .NET / ASP.NET Core error monitoring: https://docs.logister.org/use-cases/dotnet-error-monitoring/
-- JavaScript / TypeScript error monitoring: https://docs.logister.org/use-cases/javascript-error-monitoring/
-- ColdFusion / CFML error monitoring: https://docs.logister.org/use-cases/cfml-error-monitoring/
-- Docker registry self-hosting: https://docs.logister.org/use-cases/docker-ghcr-self-hosting/
-- Error assignment and team triage: https://docs.logister.org/use-cases/error-assignment-team-triage/
-- Amazon SES error alert emails and digests: https://docs.logister.org/use-cases/amazon-ses-error-alerts/
-- Self-hosting: https://docs.logister.org/self-hosting/
+- Overview: https://logister.org/docs/
+- Getting started: https://logister.org/docs/getting-started/
+- Product guide: https://logister.org/docs/product/
+- Metrics reference: https://logister.org/docs/metrics/
+- Use cases and comparisons: https://logister.org/docs/use-cases/
+- Rails error monitoring: https://logister.org/docs/use-cases/rails-error-monitoring/
+- Python error monitoring: https://logister.org/docs/use-cases/python-error-monitoring/
+- .NET / ASP.NET Core error monitoring: https://logister.org/docs/use-cases/dotnet-error-monitoring/
+- JavaScript / TypeScript error monitoring: https://logister.org/docs/use-cases/javascript-error-monitoring/
+- ColdFusion / CFML error monitoring: https://logister.org/docs/use-cases/cfml-error-monitoring/
+- Docker registry self-hosting: https://logister.org/docs/use-cases/docker-ghcr-self-hosting/
+- Error assignment and team triage: https://logister.org/docs/use-cases/error-assignment-team-triage/
+- Amazon SES error alert emails and digests: https://logister.org/docs/use-cases/amazon-ses-error-alerts/
+- Self-hosting: https://logister.org/docs/self-hosting/
 
 ### Operations
 
-- Local development: https://docs.logister.org/local-development/
-- Deployment config: https://docs.logister.org/deployment/
-- ClickHouse: https://docs.logister.org/clickhouse/
-- HTTP API: https://docs.logister.org/http-api/
-- API reference and Swagger UI: https://docs.logister.org/api-reference/
-- OpenAPI YAML: https://docs.logister.org/openapi.yaml
-- Postman collection: https://docs.logister.org/postman/logister-api.postman_collection.json
+- Local development: https://logister.org/docs/local-development/
+- Deployment config: https://logister.org/docs/deployment/
+- ClickHouse: https://logister.org/docs/clickhouse/
+- HTTP API: https://logister.org/docs/http-api/
+- API reference and Swagger UI: https://logister.org/docs/api-reference/
+- OpenAPI YAML: https://logister.org/docs/openapi.yaml
+- Postman collection: https://logister.org/docs/postman/logister-api.postman_collection.json
 
 ### Integrations
 
-- Ruby integration: https://docs.logister.org/integrations/ruby/
-- .NET integration: https://docs.logister.org/integrations/dotnet/
-- Python integration: https://docs.logister.org/integrations/python/
-- JavaScript integration: https://docs.logister.org/integrations/javascript/
-- Android integration: https://docs.logister.org/integrations/android/
-- iOS integration: https://docs.logister.org/integrations/ios/
-- CFML integration: https://docs.logister.org/integrations/cfml/
+- Ruby integration: https://logister.org/docs/integrations/ruby/
+- .NET integration: https://logister.org/docs/integrations/dotnet/
+- Python integration: https://logister.org/docs/integrations/python/
+- JavaScript integration: https://logister.org/docs/integrations/javascript/
+- Android integration: https://logister.org/docs/integrations/android/
+- iOS integration: https://logister.org/docs/integrations/ios/
+- CFML integration: https://logister.org/docs/integrations/cfml/
 
 When changing setup, deployment, or integration guidance, update the public docs first and keep this README focused on repository orientation.
 
@@ -93,7 +93,7 @@ When changing setup, deployment, or integration guidance, update the public docs
 
 Use the product guide when you want the user-facing map of what Logister helps teams do:
 
-- https://docs.logister.org/product/
+- https://logister.org/docs/product/
 
 At a high level, Logister helps teams run their own observability hub, connect services, scan cross-app dashboard signals, triage and assign grouped errors, inspect event context and related logs, review metrics/logs/transactions/spans/check-ins, watch scheduled work, understand performance and release health, archive retired services without losing history, and share project visibility with teammates.
 
@@ -207,14 +207,14 @@ Use the guide that matches the app you want to connect:
 
 | Integration | Best for | Package / path |
 |----------|-------------|-------------|
-| Ruby | Rails and Ruby apps | `logister-ruby` on RubyGems: https://rubygems.org/gems/logister-ruby + https://docs.logister.org/integrations/ruby/ |
-| .NET / ASP.NET Core | .NET 8+ apps, ASP.NET Core services, workers, and C# services | NuGet packages `Logister` and `Logister.AspNetCore`: https://www.nuget.org/packages/Logister + https://www.nuget.org/packages/Logister.AspNetCore + https://docs.logister.org/integrations/dotnet/ |
-| Python | FastAPI, Django, Flask, Celery, Python services, and native Python logging capture | `logister-python` on PyPI: https://pypi.org/project/logister-python/ + https://docs.logister.org/integrations/python/ |
-| JavaScript / TypeScript | JavaScript and TypeScript services with optional Express middleware and console capture | `logister-js` on npm: https://www.npmjs.com/package/logister-js + https://docs.logister.org/integrations/javascript/ |
-| Android | Kotlin and Java Android apps | `org.logister:logister-android` on Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android + https://docs.logister.org/integrations/android/ |
-| iOS | Swift iOS apps | `Logister` through Swift Package Manager: https://github.com/taimoorq/logister-ios.git + https://docs.logister.org/integrations/ios/ |
-| CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://docs.logister.org/integrations/cfml/ |
-| Manual / HTTP API | Custom clients, scripts, workers, and unsupported runtimes | https://docs.logister.org/http-api/ + https://docs.logister.org/api-reference/ |
+| Ruby | Rails and Ruby apps | `logister-ruby` on RubyGems: https://rubygems.org/gems/logister-ruby + https://logister.org/docs/integrations/ruby/ |
+| .NET / ASP.NET Core | .NET 8+ apps, ASP.NET Core services, workers, and C# services | NuGet packages `Logister` and `Logister.AspNetCore`: https://www.nuget.org/packages/Logister + https://www.nuget.org/packages/Logister.AspNetCore + https://logister.org/docs/integrations/dotnet/ |
+| Python | FastAPI, Django, Flask, Celery, Python services, and native Python logging capture | `logister-python` on PyPI: https://pypi.org/project/logister-python/ + https://logister.org/docs/integrations/python/ |
+| JavaScript / TypeScript | JavaScript and TypeScript services with optional Express middleware and console capture | `logister-js` on npm: https://www.npmjs.com/package/logister-js + https://logister.org/docs/integrations/javascript/ |
+| Android | Kotlin and Java Android apps | `org.logister:logister-android` on Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android + https://logister.org/docs/integrations/android/ |
+| iOS | Swift iOS apps | `Logister` through Swift Package Manager: https://github.com/taimoorq/logister-ios.git + https://logister.org/docs/integrations/ios/ |
+| CFML | Lucee and Adobe ColdFusion | direct HTTP ingestion + https://logister.org/docs/integrations/cfml/ |
+| Manual / HTTP API | Custom clients, scripts, workers, and unsupported runtimes | https://logister.org/docs/http-api/ + https://logister.org/docs/api-reference/ |
 
 All first-party add-ons send the same core telemetry families into the main app so the inbox, activity, performance, Insights, and monitor views stay consistent across languages. Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 
@@ -222,12 +222,12 @@ Mobile add-ons use the same ingest envelope with platform-specific setup:
 
 | Platform | Package manager | Package / URL | Docs |
 |----------|-------------|-------------|-------------|
-| Android | Maven Central / Gradle | `org.logister:logister-android:0.1.2` | https://docs.logister.org/integrations/android/ |
-| iOS | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` with product `Logister` | https://docs.logister.org/integrations/ios/ |
+| Android | Maven Central / Gradle | `org.logister:logister-android:0.1.2` | https://logister.org/docs/integrations/android/ |
+| iOS | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` with product `Logister` | https://logister.org/docs/integrations/ios/ |
 
 The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint. Only app admins, not project owners or shared project members, can set project-level overrides.
 
-The machine-readable API contract lives in [docs/openapi.yaml](docs/openapi.yaml), and the ready-to-import Postman collection lives in [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json). The Cloudflare docs build copies both artifacts to the public docs host.
+The machine-readable API contract lives in [docs/openapi.yaml](docs/openapi.yaml), and the ready-to-import Postman collection lives in [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json). The Cloudflare docs build copies both artifacts to the public docs URL.
 
 | Capability | Ruby | .NET | Python | JavaScript / TypeScript | CFML / HTTP |
 |----------|----------|----------|----------|----------|----------|
@@ -284,7 +284,7 @@ bin/rails db:prepare
 
 The repo uses `.env.sample` as the example environment file. For self-hosted production installs, copy the entries you need into your deploy provider's secret/config store rather than committing a filled-in `.env` file. The public deployment guide explains the full environment reference:
 
-- https://docs.logister.org/deployment/#env-reference
+- https://logister.org/docs/deployment/#env-reference
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
@@ -299,7 +299,7 @@ The release workflow also supports an optional Quay.io mirror. Add `QUAY_USERNAM
 
 The self-hosting guide includes a Docker option for either managed PostgreSQL/Redis or a single-host Compose-style stack with optional ClickHouse:
 
-- https://docs.logister.org/self-hosting/#docker
+- https://logister.org/docs/self-hosting/#docker
 
 ## Local development nuances
 
@@ -310,14 +310,14 @@ A few things are worth knowing before you start changing the app locally:
 - For frontend behavior conventions, use [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md).
 - Redis-backed behavior matters. Sidekiq, caching, and some operational flows behave more realistically when Redis is available.
 - PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path; S3-compatible archive storage is optional and only needed when you want compressed exports of older hot telemetry before pruning.
-- The public docs are hosted separately on `docs.logister.org`, so app links to docs intentionally point out of the Rails app.
+- The public docs are served from the separately deployed Cloudflare docs site at `logister.org/docs`, so app links intentionally leave the Rails app.
 - On Fly, database preparation should run in the release phase rather than on every web boot. If your database provider gives you separate runtime and migration URLs, set `DATABASE_URL` to the runtime URL and `DATABASE_MIGRATION_URL` to the direct migration/admin URL.
 - On Fly and other production hosts, keep one Sidekiq worker running. It handles ClickHouse writes, Action Mailer delivery, first-occurrence error alerts, digest scheduling, monitor and health sweeps, and retention/archive sweeps; no separate cron service is required for the built-in scheduler jobs.
 
 If you want Docker-backed local infra, or want ClickHouse and PostgreSQL running together locally, use:
 
-- https://docs.logister.org/local-development/
-- https://docs.logister.org/clickhouse/
+- https://logister.org/docs/local-development/
+- https://logister.org/docs/clickhouse/
 
 If you are working on the static docs in `cloudflare-docs/`, use [cloudflare-docs/README.md](cloudflare-docs/README.md) for local preview and deployment notes.
 

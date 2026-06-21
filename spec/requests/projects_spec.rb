@@ -23,7 +23,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Active", "Archived", "All")
         expect(response.body).to include(">Docs<")
         expect(response.body).to include("Open the docs")
-        expect(response.body).to include("https://docs.logister.org/")
+        expect(response.body).to include("https://logister.org/docs/")
         expect(response.body).to include('target="_blank"')
         expect(response.body).to include('rel="noopener noreferrer"')
       end
@@ -508,7 +508,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("release, route, and request identifiers")
         expect(response.body).to include("source maps")
         expect(response.body).to include("LOGISTER_RELEASE")
-        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+        expect(response.body).to include("https://logister.org/docs/integrations/javascript/")
       end
 
       it "shows Python-specific integration guidance for logister-python projects" do
@@ -522,7 +522,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("logister-python")
         expect(response.body).to include("instrument_fastapi")
         expect(response.body).to include("FastAPI", "Django", "Flask")
-        expect(response.body).to include("https://docs.logister.org/integrations/python/")
+        expect(response.body).to include("https://logister.org/docs/integrations/python/")
       end
 
       it "shows .NET-specific integration guidance for logister-dotnet projects" do
@@ -537,7 +537,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("AddLogister")
         expect(response.body).to include("UseLogisterExceptionReporting")
         expect(response.body).to include("LogisterClient")
-        expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
+        expect(response.body).to include("https://logister.org/docs/integrations/dotnet/")
       end
 
       it "returns 404 for project user cannot access" do
@@ -591,7 +591,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("Integration guide")
         expect(response.body).to include("CFML integration docs")
         expect(response.body).to include("Application.cfc.onError()")
-        expect(response.body).to include("https://docs.logister.org/integrations/cfml/")
+        expect(response.body).to include("https://logister.org/docs/integrations/cfml/")
         expect(response.body).to include('target="_blank"')
       end
     end
@@ -615,7 +615,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(project.name)
         expect(response.body).to include("Instrumentation help")
         expect(response.body).to include("Ruby integration docs")
-        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+        expect(response.body).to include("https://logister.org/docs/integrations/ruby/")
 
         document = Nokogiri::HTML.parse(response.body)
         expect(document.at_css("turbo-frame#performance_request_breakdown")["src"]).to eq(performance_request_breakdown_project_path(project))
@@ -714,7 +714,7 @@ RSpec.describe "Projects", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("JavaScript integration docs")
-        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+        expect(response.body).to include("https://logister.org/docs/integrations/javascript/")
       end
 
       it "renders database load stats when db.query metrics exist" do
@@ -771,7 +771,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Cron and uptime monitors")
         expect(response.body).to include("Ruby integration docs")
-        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+        expect(response.body).to include("https://logister.org/docs/integrations/ruby/")
       end
 
       it "shows primary project paths directly and secondary paths in a menu" do
@@ -818,7 +818,7 @@ RSpec.describe "Projects", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("JavaScript integration docs")
-        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+        expect(response.body).to include("https://logister.org/docs/integrations/javascript/")
       end
 
       it "shows Python integration docs on Python monitor pages" do
@@ -828,7 +828,7 @@ RSpec.describe "Projects", type: :request do
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Python integration docs")
-        expect(response.body).to include("https://docs.logister.org/integrations/python/")
+        expect(response.body).to include("https://logister.org/docs/integrations/python/")
       end
 
       it "returns 404 for project user cannot access" do
@@ -864,7 +864,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Events")
         expect(response.body).to include("Ruby integration docs")
-        expect(response.body).to include("https://docs.logister.org/integrations/ruby/")
+        expect(response.body).to include("https://logister.org/docs/integrations/ruby/")
       end
 
       it "filters and cursor-paginates custom events" do
@@ -922,7 +922,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("No events yet")
         expect(response.body).to include("logister-js")
         expect(response.body).to include("send one Node, Express, or worker event")
-        expect(response.body).to include("https://docs.logister.org/integrations/javascript/")
+        expect(response.body).to include("https://logister.org/docs/integrations/javascript/")
       end
 
       it "shows JavaScript logger metadata inline for JavaScript log events" do
@@ -965,7 +965,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("No events yet")
         expect(response.body).to include("logister-python")
         expect(response.body).to include("send one web or worker event")
-        expect(response.body).to include("https://docs.logister.org/integrations/python/")
+        expect(response.body).to include("https://logister.org/docs/integrations/python/")
       end
 
       it "shows .NET-specific empty-state guidance for .NET projects" do
@@ -977,7 +977,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("No events yet")
         expect(response.body).to include("Logister.AspNetCore")
         expect(response.body).to include("send one request or worker event")
-        expect(response.body).to include("https://docs.logister.org/integrations/dotnet/")
+        expect(response.body).to include("https://logister.org/docs/integrations/dotnet/")
       end
 
       it "shows .NET logger metadata inline for .NET log events" do
@@ -1060,7 +1060,7 @@ RSpec.describe "Projects", type: :request do
         get activity_project_path(projects(:two))
         expect(response).to have_http_status(:success)
         expect(response.body).to include("CFML integration docs")
-        expect(response.body).to include("https://docs.logister.org/integrations/cfml/")
+        expect(response.body).to include("https://logister.org/docs/integrations/cfml/")
       end
     end
   end

@@ -9,7 +9,7 @@ info:
     a custom client, script, worker integration, or direct HTTP reporter.
   contact:
     name: Logister
-    url: https://docs.logister.org/
+    url: https://logister.org/docs/
   license:
     name: MIT
     url: https://github.com/taimoorq/logister/blob/main/LICENSE

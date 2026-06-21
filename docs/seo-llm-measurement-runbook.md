@@ -21,11 +21,11 @@ curl -sI https://logister.org/llms.txt
 curl -sI https://logister.org/llms-full.txt
 curl -sI https://logister.org/robots.txt
 curl -sI https://logister.org/sitemap.xml
-curl -sI https://docs.logister.org/
-curl -sI https://docs.logister.org/llms.txt
-curl -sI https://docs.logister.org/llms-full.txt
-curl -sI https://docs.logister.org/robots.txt
-curl -sI https://docs.logister.org/sitemap.xml
+curl -sI https://logister.org/docs/
+curl -sI https://logister.org/docs/llms.txt
+curl -sI https://logister.org/docs/llms-full.txt
+curl -sI https://logister.org/docs/robots.txt
+curl -sI https://logister.org/docs/sitemap.xml
 ```
 
 ## Search Console Checks
@@ -33,7 +33,7 @@ curl -sI https://docs.logister.org/sitemap.xml
 Submit or resubmit these sitemaps after major public docs changes:
 
 - `https://logister.org/sitemap.xml`
-- `https://docs.logister.org/sitemap.xml`
+- `https://logister.org/docs/sitemap.xml`
 
 Track these query families in Google Search Console and Bing Webmaster Tools:
 
@@ -99,13 +99,13 @@ Track these public-page signals:
 
 Useful paths to compare after each release:
 
-- `https://docs.logister.org/use-cases/self-hosted-error-monitoring/`
-- `https://docs.logister.org/use-cases/sentry-alternative/`
-- `https://docs.logister.org/use-cases/bugsnag-alternative/`
-- `https://docs.logister.org/use-cases/bugzilla-alternative/`
-- `https://docs.logister.org/self-hosting/`
-- `https://docs.logister.org/self-hosting/#docker`
-- `https://docs.logister.org/deployment/`
+- `https://logister.org/docs/use-cases/self-hosted-error-monitoring/`
+- `https://logister.org/docs/use-cases/sentry-alternative/`
+- `https://logister.org/docs/use-cases/bugsnag-alternative/`
+- `https://logister.org/docs/use-cases/bugzilla-alternative/`
+- `https://logister.org/docs/self-hosting/`
+- `https://logister.org/docs/self-hosting/#docker`
+- `https://logister.org/docs/deployment/`
 - `https://github.com/taimoorq/logister`
 - `https://github.com/taimoorq/logister/releases`
 - `https://github.com/taimoorq/logister/pkgs/container/logister`

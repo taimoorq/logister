@@ -6,32 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://docs.logister.org/product/data-retention/archive-storage/">
+    <link rel="canonical" href="https://logister.org/docs/product/data-retention/archive-storage/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Archive Storage | Logister">
     <meta property="og:description" content="Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="https://docs.logister.org/product/data-retention/archive-storage/">
-    <meta property="og:image" content="https://docs.logister.org/assets/logister-logo.webp">
+    <meta property="og:url" content="https://logister.org/docs/product/data-retention/archive-storage/">
+    <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Archive Storage | Logister">
     <meta name="twitter:description" content="Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://docs.logister.org/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://docs.logister.org/product/data-retention/archive-storage/#article","headline":"Prepare archive storage before users rely on archive-before-delete.","name":"Archive Storage | Logister","url":"https://docs.logister.org/product/data-retention/archive-storage/","description":"Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.","publisher":{"@id":"https://docs.logister.org/#organization"},"author":{"@id":"https://docs.logister.org/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://docs.logister.org/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://docs.logister.org/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://docs.logister.org/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Archive Storage","item":"https://docs.logister.org/product/data-retention/archive-storage/"}]}]}</script>
-    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs">
-    <link rel="icon" href="/assets/icon.png" type="image/png">
-    <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/assets/icon.png">
-    <link rel="stylesheet" href="/assets/site.css">
-    <script defer src="/assets/analytics-config.js"></script>
-    <script defer src="/assets/site.js"></script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/archive-storage/#article","headline":"Prepare archive storage before users rely on archive-before-delete.","name":"Archive Storage | Logister","url":"https://logister.org/docs/product/data-retention/archive-storage/","description":"Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Archive Storage","item":"https://logister.org/docs/product/data-retention/archive-storage/"}]}]}</script>
+    <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
+    <link rel="icon" href="/docs/assets/icon.png" type="image/png">
+    <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/docs/assets/icon.png">
+    <link rel="stylesheet" href="/docs/assets/site.css">
+    <script defer src="/docs/assets/analytics-config.js"></script>
+    <script defer src="/docs/assets/site.js"></script>
   </head>
   <body>
     <div class="site-shell">
-      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/"><img src="/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Archive storage</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/">Docs home</a><a href="/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
+      <header class="topbar"><div class="topbar-inner"><a class="brand" href="/docs/"><img src="/docs/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Archive storage</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/docs/">Docs home</a><a href="/docs/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
         <section class="hero"><span class="hero-kicker">Data retention / Archive storage</span><h1>Prepare archive storage before users rely on archive-before-delete.</h1><p>Users see archive controls in <code>Project &gt; Settings &gt; Data</code>. This page explains what has to be ready before those controls can safely preserve old telemetry outside the normal product views.</p></section>
         <div class="docs-layout">
-          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/product/data-retention/">Overview</a><a href="/product/data-retention/policy/">Policy settings</a><a class="active" href="/product/data-retention/archive-storage/">Archive storage</a><a href="/product/data-retention/jobs/">Jobs and verification</a></div><hr><div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#config">Configuration</a><a href="#shape">Archive shape</a><a href="#verify">Verify</a><a href="#troubleshooting">Troubleshooting</a></div></aside>
+          <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/docs/product/data-retention/">Overview</a><a href="/docs/product/data-retention/policy/">Policy settings</a><a class="active" href="/docs/product/data-retention/archive-storage/">Archive storage</a><a href="/docs/product/data-retention/jobs/">Jobs and verification</a></div><hr><div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#config">Configuration</a><a href="#shape">Archive shape</a><a href="#verify">Verify</a><a href="#troubleshooting">Troubleshooting</a></div></aside>
           <article class="article" data-pagefind-body>
             <section id="before" class="section">
               <p class="eyebrow">What users see</p>
@@ -68,7 +68,7 @@ LOGISTER_ARCHIVE_PREFIX=telemetry
               <p class="eyebrow">Troubleshooting</p>
               <h2>Archive failures usually mean storage configuration differs between processes.</h2>
               <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>Archive run fails immediately</td><td>Check bucket, credentials, region, endpoint, and path-style settings.</td></tr><tr><td>Web shows settings but worker cannot write</td><td>Confirm the worker process has the same archive environment variables as the web process.</td></tr><tr><td>Archive-before-delete never prunes</td><td>Cleanup waits for a successful archive when archive-before-delete is enabled. Fix the archive failure first.</td></tr><tr><td>Object exists but cannot be inspected</td><td>Confirm it is a compressed JSONL file and that the operator has permission to download from the bucket.</td></tr></tbody></table>
-              <p>Use <a href="/product/data-retention/jobs/">jobs and verification</a> for manual commands and the failure visibility path.</p>
+              <p>Use <a href="/docs/product/data-retention/jobs/">jobs and verification</a> for manual commands and the failure visibility path.</p>
             </section>
           </article>
         </div>

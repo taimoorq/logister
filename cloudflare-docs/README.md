@@ -14,14 +14,23 @@ This directory contains a standalone static version of the Logister documentatio
 
 ## Suggested Cloudflare Pages setup
 
-Use `cloudflare-docs` as the project root or output directory and deploy it as a plain static site. Before deploying, install JavaScript dependencies and run the metadata/search build so `sitemap.xml`, `robots.txt`, API artifacts, and the Pagefind search index are current.
+Use `cloudflare-docs` as the Cloudflare Pages project root or output directory and deploy it as a plain static origin. Public traffic should come through the Worker route at `https://logister.org/docs`, not directly through the Pages origin. Before deploying, install JavaScript dependencies and run the metadata/search build so `sitemap.xml`, `robots.txt`, API artifacts, and the Pagefind search index are current.
 
 ```bash
 npm ci
-LOGISTER_DOCS_URL=https://docs.example.com bin/build-cloudflare-docs
+LOGISTER_DOCS_URL=https://logister.org/docs bin/build-cloudflare-docs
 ```
 
-`LOGISTER_DOCS_URL` defaults to `https://docs.logister.org`. `DOCS_SITEMAP_LASTMOD` can be set when you want to pin sitemap `lastmod` during a release.
+`LOGISTER_DOCS_URL` defaults to `https://logister.org/docs`. When it includes a path such as `/docs`, the build rewrites local docs links, assets, sitemap, robots, and Pagefind URLs for that mount path. `DOCS_SITEMAP_LASTMOD` can be set when you want to pin sitemap `lastmod` during a release.
+
+## Main-domain docs proxy
+
+The repository includes a Worker in `cloudflare-docs-proxy/` for the public `/docs` route. Deploy the static Pages project first, then deploy the Worker so these routes proxy to the Pages origin:
+
+- `logister.org/docs`
+- `logister.org/docs/*`
+
+The same Worker also owns the old `docs.logister.org` routes and returns `301` redirects to the equivalent `https://logister.org/docs` URL. The Worker strips `/docs` before fetching the Pages origin, so a public request for `/docs/getting-started/` fetches `/getting-started/` from the static site. Keep `DOCS_PAGES_ORIGIN` in `cloudflare-docs-proxy/wrangler.toml` aligned with the Pages origin for your Cloudflare account.
 
 ## Local preview
 
@@ -31,7 +40,7 @@ To preview the static docs locally with Cloudflare Pages behavior, run this from
 wrangler pages dev cloudflare-docs
 ```
 
-That serves the `cloudflare-docs/` directory locally so you can verify layout, navigation, search, copy buttons, sitemap, robots, and other static-site behavior before deploying.
+That serves the `cloudflare-docs/` directory locally at the Pages root. For a root-only preview, set `LOGISTER_DOCS_URL` to the local root before building. For production parity, preview through the Worker path so `/docs` asset, navigation, and Pagefind URLs are exercised.
 
 ## GitHub Actions deployment
 
@@ -53,8 +62,10 @@ The workflow runs `npm ci` and `bin/build-cloudflare-docs` first, then deploys t
 
 Optional GitHub repository variables:
 
-- `LOGISTER_DOCS_URL` sets the public docs host used in generated metadata.
+- `LOGISTER_DOCS_URL` sets the public docs URL used in generated metadata.
 - `DOCS_SITEMAP_LASTMOD` pins the sitemap date for a release.
+
+The Worker proxy has its own deploy workflow at `.github/workflows/cloudflare-docs-proxy-deploy.yml`. It uses the same `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets and deploys `cloudflare-docs-proxy/wrangler.toml`.
 
 ## Runtime docs configuration
 
@@ -73,7 +84,7 @@ Docs analytics will not load unless both `DOCS_PROBO_COOKIE_BANNER_ID` and `DOCS
 
 For the Rails app itself, keep using `.env.sample` as the operator map. The public deployment page includes a full entry-by-entry reference for Rails, PostgreSQL, Redis, Sidekiq, Amazon SES SMTP, S3-compatible archive storage, ClickHouse, Turnstile, analytics, and Cloudflare Pages docs variables:
 
-- https://docs.logister.org/deployment/#env-reference
+- https://logister.org/docs/deployment/#env-reference
 
 ## Current scope
 
@@ -121,5 +132,5 @@ When you add or change docs pages in this folder:
 - avoid manually drifting SDK version references; prefer generated values from companion repo metadata when available
 - run `bin/build-cloudflare-docs` when you add a new public page so `sitemap.xml` and `robots.txt` stay aligned
 - keep article content inside `<article class="article" data-pagefind-body>` so Pagefind indexes page content without sidebars and navigation
-- preview locally with `wrangler pages dev cloudflare-docs`
+- preview locally with `wrangler pages dev cloudflare-docs` for root previews or through the Worker proxy for `/docs` previews
 - deploy through the GitHub Actions workflow or `wrangler pages deploy cloudflare-docs --project-name=<project>`

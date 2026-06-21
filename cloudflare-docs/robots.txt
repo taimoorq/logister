@@ -1,30 +1,30 @@
 User-agent: OAI-SearchBot
-Allow: /
+Allow: /docs/
 
 User-agent: GPTBot
-Allow: /
+Allow: /docs/
 
 User-agent: ChatGPT-User
-Allow: /
+Allow: /docs/
 
 User-agent: ClaudeBot
-Allow: /
+Allow: /docs/
 
 User-agent: Claude-SearchBot
-Allow: /
+Allow: /docs/
 
 User-agent: Claude-User
-Allow: /
+Allow: /docs/
 
 User-agent: PerplexityBot
-Allow: /
+Allow: /docs/
 
 User-agent: Google-Extended
-Allow: /
+Allow: /docs/
 
 User-agent: *
-Allow: /
-Allow: /llms.txt
-Allow: /llms-full.txt
+Allow: /docs/
+Allow: /docs/llms.txt
+Allow: /docs/llms-full.txt
 
-Sitemap: https://docs.logister.org/sitemap.xml
+Sitemap: https://logister.org/docs/sitemap.xml

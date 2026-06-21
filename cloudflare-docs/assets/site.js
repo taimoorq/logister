@@ -1,3 +1,21 @@
+const DOCS_BASE_PATH = docsBasePath();
+
+function docsBasePath() {
+  const script = document.currentScript || document.querySelector('script[src$="/assets/site.js"]');
+  if (!script) return "";
+
+  const scriptUrl = new URL(script.src, window.location.href);
+  const assetPath = "/assets/site.js";
+  if (!scriptUrl.pathname.endsWith(assetPath)) return "";
+
+  return scriptUrl.pathname.slice(0, -assetPath.length).replace(/\/$/, "");
+}
+
+function docsPath(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${DOCS_BASE_PATH}${normalizedPath}`;
+}
+
 function loadDocsAnalytics() {
   const config = window.LOGISTER_DOCS_ANALYTICS || {};
   const googleTagId = typeof config.googleTagId === "string" ? config.googleTagId.trim() : "";
@@ -107,13 +125,13 @@ function loadDocsSearch() {
   if (!document.querySelector('[data-logister-docs-search-style="pagefind"]')) {
     const stylesheet = document.createElement("link");
     stylesheet.rel = "stylesheet";
-    stylesheet.href = "/pagefind/pagefind-ui.css";
+    stylesheet.href = docsPath("/pagefind/pagefind-ui.css");
     stylesheet.setAttribute("data-logister-docs-search-style", "pagefind");
     document.head.appendChild(stylesheet);
   }
 
   const script = document.createElement("script");
-  script.src = "/pagefind/pagefind-ui.js";
+  script.src = docsPath("/pagefind/pagefind-ui.js");
   script.defer = true;
   script.setAttribute("data-logister-docs-search-script", "pagefind");
   script.addEventListener("load", () => {
