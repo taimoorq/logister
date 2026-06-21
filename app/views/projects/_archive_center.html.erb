@@ -1,0 +1,65 @@
+<%# locals: (project:, archive_overview:, archive_catalog:, archive_path:, archive_catalog_scope:, archive_catalog_status:, archive_investigation_search:, tour_group:) %>
+<% archive_path = archive_path.presence || "overview" %>
+<% archive_paths = [
+  [ "overview", "Overview", :dashboard ],
+  [ "coverage", "Coverage", :shield ],
+  [ "catalog", "Catalog", :archive ],
+  [ "search_archives", "Search Archives", :search ]
+] %>
+
+<article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+         id="archive-center"
+         <%= tag.attributes(data: product_tour_step_data(tour_group, :archive_center)) if tour_group.present? %>>
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+    <div>
+      <p class="dashboard-kicker">Archive Center</p>
+      <h2 class="text-base font-bold text-slate-900 mb-2">Archived data</h2>
+      <p class="text-slate-600 text-sm">
+        Verify coverage, review stored archive objects, and look up older evidence from one place.
+      </p>
+    </div>
+
+    <div class="max-w-md rounded-lg border <%= archive_status_badge_class(archive_overview.health_tone) %> px-3 py-2 text-sm">
+      <div class="flex items-center gap-2 font-semibold">
+        <%= app_icon(archive_overview.health_tone == :danger ? :warning : :archive, css: "h-4 w-4 shrink-0") %>
+        <span><%= archive_overview.health_label %></span>
+      </div>
+      <p class="mt-1 text-xs leading-5"><%= archive_overview.health_message %></p>
+    </div>
+  </div>
+
+  <nav class="projects-filter-tabs mt-5" aria-label="Archive Center paths">
+    <% archive_paths.each do |path, label, icon| %>
+      <% active = archive_path == path %>
+      <%= link_to settings_project_path(project, section: "data", archive_path: path, anchor: "archive-center"),
+                  class: "projects-filter-tab #{"is-active" if active}",
+                  aria: { current: ("page" if active) } do %>
+        <%= app_icon(icon, css: "w-3.5 h-3.5") %>
+        <span><%= label %></span>
+      <% end %>
+    <% end %>
+  </nav>
+
+  <% case archive_path %>
+  <% when "coverage" %>
+    <%= render "projects/archive_center_coverage",
+               project: project,
+               archive_overview: archive_overview %>
+  <% when "catalog" %>
+    <%= render "projects/archive_center_catalog",
+               project: project,
+               archive_overview: archive_overview,
+               archive_catalog: archive_catalog,
+               archive_catalog_scope: archive_catalog_scope,
+               archive_catalog_status: archive_catalog_status %>
+  <% when "search_archives" %>
+    <%= render "projects/archive_center_search_archives",
+               project: project,
+               archive_investigation_search: archive_investigation_search %>
+  <% else %>
+    <%= render "projects/archive_center_overview",
+               project: project,
+               archive_overview: archive_overview,
+               archive_catalog: archive_catalog %>
+  <% end %>
+</article>

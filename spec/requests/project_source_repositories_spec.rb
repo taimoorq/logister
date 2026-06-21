@@ -285,6 +285,20 @@ RSpec.describe "Project source repositories", type: :request do
       expect(app_access.text).to include("Webhook URL")
     end
 
+    it "points users to install the GitHub App when no installation is linked" do
+      stub_github_app_configured
+      project = create(:project, user: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      install_links = document.css("a[href='https://github.com/apps/logister/installations/new']")
+      expect(response.body).to include("App not installed")
+      expect(response.body).to include("No GitHub App installation is linked to this project.")
+      expect(install_links.map(&:text).join(" ")).to include("Install GitHub App")
+    end
+
     it "shows the manual repository option after synced repository choices" do
       project = create(:project, user: users(:one))
       installation = create(:github_installation, installed_by: users(:one), account_login: "acme")

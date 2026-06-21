@@ -4,19 +4,19 @@
     <meta charset="utf-8">
     <title>Archive Storage | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.">
+    <meta name="description" content="Prepare archive storage for Logister project Data tab controls, Archive retained data, and Require archive before deletion behavior.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://logister.org/docs/product/data-retention/archive-storage/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Archive Storage | Logister">
-    <meta property="og:description" content="Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.">
+    <meta property="og:description" content="Prepare archive storage for Logister project Data tab controls, Archive retained data, and Require archive before deletion behavior.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://logister.org/docs/product/data-retention/archive-storage/">
     <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Archive Storage | Logister">
-    <meta name="twitter:description" content="Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/archive-storage/#article","headline":"Prepare archive storage before users rely on archive-before-delete.","name":"Archive Storage | Logister","url":"https://logister.org/docs/product/data-retention/archive-storage/","description":"Prepare archive storage for Logister project Data tab controls, archive exports, and archive-before-delete behavior.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Archive Storage","item":"https://logister.org/docs/product/data-retention/archive-storage/"}]}]}</script>
+    <meta name="twitter:description" content="Prepare archive storage for Logister project Data tab controls, Archive retained data, and Require archive before deletion behavior.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/archive-storage/#article","headline":"Prepare archive storage before users require archives before deletion.","name":"Archive Storage | Logister","url":"https://logister.org/docs/product/data-retention/archive-storage/","description":"Prepare archive storage for Logister project Data tab controls, Archive retained data, and Require archive before deletion behavior.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Archive Storage","item":"https://logister.org/docs/product/data-retention/archive-storage/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
     <link rel="icon" href="/docs/assets/icon.png" type="image/png">
     <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
@@ -29,14 +29,14 @@
     <div class="site-shell">
       <header class="topbar"><div class="topbar-inner"><a class="brand" href="/docs/"><img src="/docs/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Archive storage</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/docs/">Docs home</a><a href="/docs/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
-        <section class="hero"><span class="hero-kicker">Data retention / Archive storage</span><h1>Prepare archive storage before users rely on archive-before-delete.</h1><p>Users see archive controls in <code>Project &gt; Settings &gt; Data</code>. This page explains what has to be ready before those controls can safely preserve old telemetry outside the normal product views.</p></section>
+        <section class="hero"><span class="hero-kicker">Data retention / Archive storage</span><h1>Prepare archive storage before users require archives before deletion.</h1><p>Users see archive controls in <code>Project &gt; Settings &gt; Data</code>. This page explains what has to be ready before those controls can safely preserve old telemetry outside the normal product views.</p></section>
         <div class="docs-layout">
           <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/docs/product/data-retention/">Overview</a><a href="/docs/product/data-retention/policy/">Policy settings</a><a class="active" href="/docs/product/data-retention/archive-storage/">Archive storage</a><a href="/docs/product/data-retention/jobs/">Jobs and verification</a></div><hr><div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#before">Before you start</a><a href="#config">Configuration</a><a href="#shape">Archive shape</a><a href="#verify">Verify</a><a href="#troubleshooting">Troubleshooting</a></div></aside>
           <article class="article" data-pagefind-body>
             <section id="before" class="section">
               <p class="eyebrow">What users see</p>
-              <h2>Archive exports only help when there is somewhere to put them.</h2>
-              <p>In the Data tab, <strong>Enable archive exports</strong> means Logister may write archive files. <strong>Archive before deleting</strong> means old matching data should not be removed until an archive file is successfully written. Configure storage before enabling that second option on important projects.</p>
+              <h2>Archive writes only help when there is somewhere to put them.</h2>
+              <p>In the Data tab, <strong>Archive retained data</strong> means Logister may write gzip JSONL archive files. <strong>Require archive before deletion</strong> means old matching data should not be removed until its archive export succeeds. Configure storage before enabling that second option on important projects.</p>
               <div class="note warn"><h4>Do not treat archives as full backups</h4><p>Archives contain old telemetry rows. They do not replace PostgreSQL backups for users, projects, memberships, API keys, settings, and workflow history.</p></div>
             </section>
             <section id="config" class="section">
@@ -61,13 +61,13 @@ LOGISTER_ARCHIVE_PREFIX=telemetry
             </section>
             <section id="verify" class="section">
               <p class="eyebrow">Verify</p>
-              <h2>Write and read one archive before enabling archive-before-delete broadly.</h2>
-              <ol><li>Configure storage on both the web and worker processes.</li><li>Restart the processes so both read the same storage settings.</li><li>Run one controlled archive command from the jobs page.</li><li>Confirm Recent archive runs shows success in the Data tab.</li><li>Open the bucket and confirm the expected <code>.jsonl.gz</code> object exists under the configured prefix.</li></ol>
+              <h2>Write and read one archive before requiring archives broadly.</h2>
+              <ol><li>Configure storage on both the web and worker processes.</li><li>Restart the processes so both read the same storage settings.</li><li>Run one controlled archive command from the jobs page.</li><li>Confirm Archive Center shows a successful run in Catalog.</li><li>Open the bucket and confirm the expected <code>.jsonl.gz</code> object exists under the configured prefix.</li></ol>
             </section>
             <section id="troubleshooting" class="section">
               <p class="eyebrow">Troubleshooting</p>
               <h2>Archive failures usually mean storage configuration differs between processes.</h2>
-              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>Archive run fails immediately</td><td>Check bucket, credentials, region, endpoint, and path-style settings.</td></tr><tr><td>Web shows settings but worker cannot write</td><td>Confirm the worker process has the same archive environment variables as the web process.</td></tr><tr><td>Archive-before-delete never prunes</td><td>Cleanup waits for a successful archive when archive-before-delete is enabled. Fix the archive failure first.</td></tr><tr><td>Object exists but cannot be inspected</td><td>Confirm it is a compressed JSONL file and that the operator has permission to download from the bucket.</td></tr></tbody></table>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td>Archive run fails immediately</td><td>Check bucket, credentials, region, endpoint, and path-style settings.</td></tr><tr><td>Web shows settings but worker cannot write</td><td>Confirm the worker process has the same archive environment variables as the web process.</td></tr><tr><td>Require archive before deletion never prunes</td><td>Cleanup waits for a successful archive when deletion protection is enabled. Fix the archive failure first.</td></tr><tr><td>Object exists but cannot be inspected</td><td>Confirm it is a compressed JSONL file and that the operator has permission to download from the bucket.</td></tr></tbody></table>
               <p>Use <a href="/docs/product/data-retention/jobs/">jobs and verification</a> for manual commands and the failure visibility path.</p>
             </section>
           </article>

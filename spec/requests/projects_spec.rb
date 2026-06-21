@@ -1202,7 +1202,7 @@ RSpec.describe "Projects", type: :request do
         "Enter a clear name",
         "runtime or manual HTTP path",
         "first event",
-        "whether cleanup must archive first"
+        "whether retained data must be archived before deletion"
       )
       expect(document.at_css("input[name='project[integration_kind]'][type='radio'][checked]")["value"]).to eq("ruby")
       expect(document.at_css("select[name='project[retention_policy_attributes][hot_retention_days]']")).to be_present
@@ -1210,6 +1210,9 @@ RSpec.describe "Projects", type: :request do
       expect(document.at_css("select[name='project[retention_policy_attributes][error_retention_days]']")).to be_present
       expect(document.at_css("input[name='project[retention_policy_attributes][archive_enabled]'][type='checkbox']")).to be_present
       expect(document.at_css("input[name='project[retention_policy_attributes][archive_before_delete]'][type='checkbox']")).to be_present
+      expect(document.at_css("[data-controller='retention-archive']")).to be_present
+      expect(response.body).to include("Archive retained data")
+      expect(response.body).to include("Require archive before deletion")
       expect(response.body.index('name="project[description]"')).to be < response.body.index("integration-picker")
       expect(response.body.index("integration-picker")).to be < response.body.index("Data retention")
     end
@@ -1278,7 +1281,7 @@ RSpec.describe "Projects", type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(response.body).to include("Data retention")
-      expect(response.body).to include("requires retention exports to be enabled")
+      expect(response.body).to include("requires Archive retained data to be enabled")
     end
 
     it "renders new with errors when invalid" do

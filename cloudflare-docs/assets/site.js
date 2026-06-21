@@ -242,9 +242,156 @@ function writeSidebarState(key, isOpen) {
   }
 }
 
+function enhanceScreenshotFigures() {
+  const figures = Array.from(document.querySelectorAll(".screenshot-figure"));
+  if (figures.length === 0) return;
+
+  const lightbox = createScreenshotLightbox();
+
+  figures.forEach((figure) => {
+    if (figure.dataset.screenshotEnhanced === "true") return;
+
+    const image = Array.from(figure.children).find((child) => child.tagName === "IMG");
+    if (!image) return;
+
+    const altText = (image.getAttribute("alt") || "Screenshot").trim();
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "screenshot-preview-button";
+    button.setAttribute("aria-label", `Open full size screenshot: ${altText}`);
+
+    figure.insertBefore(button, image);
+    button.appendChild(image);
+    figure.classList.add("is-lightbox-ready");
+    figure.dataset.screenshotEnhanced = "true";
+
+    button.addEventListener("click", () => {
+      openScreenshotLightbox(lightbox, image, figure);
+    });
+  });
+}
+
+function createScreenshotLightbox() {
+  const existing = document.querySelector("[data-screenshot-lightbox]");
+  if (existing) return existing.screenshotLightbox;
+
+  const root = document.createElement("div");
+  root.className = "screenshot-lightbox";
+  root.hidden = true;
+  root.setAttribute("role", "dialog");
+  root.setAttribute("aria-modal", "true");
+  root.setAttribute("aria-labelledby", "screenshot-lightbox-title");
+  root.setAttribute("data-screenshot-lightbox", "true");
+  root.setAttribute("data-pagefind-ignore", "true");
+
+  const header = document.createElement("div");
+  header.className = "screenshot-lightbox-header";
+
+  const title = document.createElement("p");
+  title.id = "screenshot-lightbox-title";
+  title.className = "screenshot-lightbox-title";
+
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.className = "screenshot-lightbox-close";
+  closeButton.textContent = "Close";
+
+  const frame = document.createElement("div");
+  frame.className = "screenshot-lightbox-frame";
+
+  const image = document.createElement("img");
+  image.className = "screenshot-lightbox-image";
+  image.alt = "";
+
+  header.append(title, closeButton);
+  frame.appendChild(image);
+  root.append(header, frame);
+  document.body.appendChild(root);
+
+  const lightbox = {
+    root,
+    title,
+    closeButton,
+    frame,
+    image,
+    previousFocus: null,
+    keydownHandler: null
+  };
+
+  root.screenshotLightbox = lightbox;
+
+  closeButton.addEventListener("click", () => {
+    closeScreenshotLightbox(lightbox);
+  });
+
+  root.addEventListener("click", (event) => {
+    if (event.target === root || event.target === frame) {
+      closeScreenshotLightbox(lightbox);
+    }
+  });
+
+  return lightbox;
+}
+
+function openScreenshotLightbox(lightbox, sourceImage, figure) {
+  if (!lightbox || !sourceImage) return;
+
+  const caption = figure.querySelector("figcaption");
+  const captionText = caption ? caption.textContent.trim() : "";
+  const altText = (sourceImage.getAttribute("alt") || "Screenshot").trim();
+
+  lightbox.previousFocus = document.activeElement;
+  lightbox.image.src = sourceImage.currentSrc || sourceImage.src;
+  lightbox.image.alt = altText;
+  lightbox.title.textContent = captionText || altText;
+  lightbox.root.hidden = false;
+  document.body.classList.add("screenshot-lightbox-open");
+
+  if (lightbox.keydownHandler) {
+    document.removeEventListener("keydown", lightbox.keydownHandler);
+  }
+
+  lightbox.keydownHandler = (event) => {
+    if (event.key === "Escape") {
+      closeScreenshotLightbox(lightbox);
+      return;
+    }
+
+    if (event.key === "Tab") {
+      event.preventDefault();
+      lightbox.closeButton.focus();
+    }
+  };
+
+  document.addEventListener("keydown", lightbox.keydownHandler);
+  lightbox.closeButton.focus({ preventScroll: true });
+}
+
+function closeScreenshotLightbox(lightbox) {
+  if (!lightbox || lightbox.root.hidden) return;
+
+  lightbox.root.hidden = true;
+  lightbox.image.removeAttribute("src");
+  lightbox.image.alt = "";
+  lightbox.title.textContent = "";
+  document.body.classList.remove("screenshot-lightbox-open");
+
+  if (lightbox.keydownHandler) {
+    document.removeEventListener("keydown", lightbox.keydownHandler);
+    lightbox.keydownHandler = null;
+  }
+
+  if (lightbox.previousFocus && typeof lightbox.previousFocus.focus === "function") {
+    lightbox.previousFocus.focus({ preventScroll: true });
+  }
+
+  lightbox.previousFocus = null;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadDocsAnalytics();
   loadDocsSearch();
+  enhanceScreenshotFigures();
 
   const navToggle = document.querySelector("[data-nav-toggle]");
   const navPanel = document.querySelector("[data-nav-panel]");

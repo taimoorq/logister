@@ -70,22 +70,8 @@
               </div>
             </div>
 
-            <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <label class="flex items-start gap-3 border border-slate-200 bg-slate-50 p-4">
-                <%= retention_fields.check_box :archive_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
-                <span>
-                  <span class="block text-sm font-semibold text-slate-900">Enable archive exports</span>
-                  <span class="block text-sm text-slate-600">Write gzip JSONL exports before old telemetry is removed.</span>
-                </span>
-              </label>
-
-              <label class="flex items-start gap-3 border border-slate-200 bg-slate-50 p-4">
-                <%= retention_fields.check_box :archive_before_delete, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
-                <span>
-                  <span class="block text-sm font-semibold text-slate-900">Archive before deleting</span>
-                  <span class="block text-sm text-slate-600">Require a successful export before cleanup deletes rows.</span>
-                </span>
-              </label>
+            <div class="mt-4">
+              <%= render "projects/retention_archive_controls", form: retention_fields %>
             </div>
           <% end %>
         </fieldset>

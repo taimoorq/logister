@@ -1,0 +1,31 @@
+<%# locals: (form:) %>
+
+<div class="rounded-lg border border-slate-200 bg-slate-50 p-4" data-controller="retention-archive">
+  <label class="flex items-start gap-3">
+    <%= form.check_box :archive_enabled,
+                       class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500",
+                       data: {
+                         retention_archive_target: "exports",
+                         action: "retention-archive#sync"
+                       } %>
+    <span>
+      <span class="block text-sm font-semibold text-slate-900">Archive retained data</span>
+      <span class="block text-sm text-slate-600">Write gzip JSONL exports to the configured archive service.</span>
+    </span>
+  </label>
+
+  <div class="ml-7 mt-4 border-l border-slate-200 pl-4" data-retention-archive-target="guardPanel">
+    <label class="flex items-start gap-3">
+      <%= form.check_box :archive_before_delete,
+                         class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60",
+                         data: { retention_archive_target: "guard" } %>
+      <span>
+        <span class="block text-sm font-semibold text-slate-900">Require archive before deletion</span>
+        <span class="block text-sm text-slate-600">Do not remove matching rows unless their archive export succeeds.</span>
+      </span>
+    </label>
+    <p class="mt-2 text-xs text-slate-500" data-retention-archive-target="guardHint">
+      Turn on Archive retained data to require archives before deletion.
+    </p>
+  </div>
+</div>

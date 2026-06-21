@@ -14,6 +14,7 @@ import ProductTourController from "controllers/product_tour_controller"
 import ProjectInsightsController from "controllers/project_insights_controller"
 import ProjectSearchController from "controllers/project_search_controller"
 import RevealController from "controllers/reveal_controller"
+import RetentionArchiveController from "controllers/retention_archive_controller"
 import ScreenshotsSliderController from "controllers/screenshots_slider_controller"
 import TabsController from "controllers/tabs_controller"
 
@@ -32,5 +33,6 @@ application.register("product-tour", ProductTourController)
 application.register("project-insights", ProjectInsightsController)
 application.register("project-search", ProjectSearchController)
 application.register("reveal", RevealController)
+application.register("retention-archive", RetentionArchiveController)
 application.register("screenshots-slider", ScreenshotsSliderController)
 application.register("tabs", TabsController)

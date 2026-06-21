@@ -1,5 +1,14 @@
 <%= render "projects/retention_policy",
            project: @project,
            retention_policy: @retention_policy,
-           recent_archives: @recent_telemetry_archives,
+           tour_group: tour_group %>
+
+<%= render "projects/archive_center",
+           project: @project,
+           archive_overview: @archive_overview,
+           archive_catalog: @archive_catalog,
+           archive_path: @archive_path,
+           archive_catalog_scope: @archive_catalog_scope,
+           archive_catalog_status: @archive_catalog_status,
+           archive_investigation_search: @archive_investigation_search,
            tour_group: tour_group %>

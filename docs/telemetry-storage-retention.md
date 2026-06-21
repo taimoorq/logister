@@ -61,12 +61,21 @@ Run with `DRY_RUN=true` to estimate object counts and bytes without uploading.
 
 ## Per-project Retention
 
-Project owners can configure retention from **Project settings -> Data retention**:
+Project owners can configure retention from **Project settings -> Data**:
 
 1. Choose how long to keep activity events: logs, metrics, transactions, and check-ins.
 2. Choose how long to keep trace spans.
 3. Optionally choose how long to keep closed error groups. Leave this as forever to preserve resolved, ignored, and archived error history.
-4. Enable archive exports and **Archive before deleting** when old rows should be exported to the configured Active Storage archive service before cleanup.
+4. Enable **Archive retained data** to write gzip JSONL exports, then enable **Require archive before deletion** when cleanup must wait for a successful archive before removing old rows.
+
+After the settings are saved, the retention form collapses into a summary row. Expand it when you need to change windows or archive behavior.
+
+The **Archive Center** on the same Data page is the verification surface:
+
+- **Overview** shows whether the project is not archiving, archiving without deletion protection, protected before deletion, or blocked by an archive problem.
+- **Coverage** shows each retention scope, the latest cleanup cutoff, archived-through date, candidate count, archived rows, deleted rows, and status.
+- **Catalog** lists recent archive runs, object keys, row counts, bytes, status, and failure messages.
+- **Search Archives** searches current hot telemetry first and narrows candidate archive runs for older event evidence.
 
 The production Sidekiq worker schedules `ProjectRetentionSweepJob` daily and enqueues one `ProjectRetentionJob` per project. Cleanup is project-scoped and uses `occurred_at` for ingest events, `started_at` for spans, and `last_seen_at` for closed error groups.
 

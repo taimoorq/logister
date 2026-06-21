@@ -82,24 +82,90 @@
 <% end %>
 
       <% github_connection_healthy = @github_integration_state.app_connection_healthy? %>
-      <% github_connection_classes = github_connection_healthy ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800" %>
+      <% github_connection_tone = @github_integration_state.app_connection_tone %>
+      <% github_connection_classes = github_integration_status_classes(github_connection_tone) %>
 
       <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
                id="source-repositories">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 class="text-base font-bold text-slate-900 mb-2">GitHub repositories</h2>
+            <p class="dashboard-kicker">GitHub Integration</p>
+            <h2 class="text-base font-bold text-slate-900 mb-2">GitHub integration dashboard</h2>
             <p class="text-slate-600 text-sm">
-              Connected repositories power source-aware stack frames, CODEOWNERS hints, deployments, and GitHub issue actions.
+              GitHub repositories power source-aware stack frames, CODEOWNERS hints, deployments, and GitHub issue actions.
             </p>
           </div>
-          <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold <%= github_connection_classes %>">
-            <%= @github_integration_state.app_connection_label %>
+          <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold <%= github_connection_classes %>">
+            <%= app_icon(github_connection_healthy ? :check : :warning, css: "h-3.5 w-3.5 shrink-0") %>
+            <span><%= @github_integration_state.app_connection_status_label %></span>
           </span>
         </div>
 
+        <section class="mt-5 rounded-lg border p-4 <%= github_connection_classes %>" aria-labelledby="github-health-heading">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <%= app_icon(github_connection_healthy ? :check : :warning, css: "h-4 w-4 shrink-0") %>
+                <h3 id="github-health-heading" class="text-sm font-semibold"><%= @github_integration_state.app_connection_label %></h3>
+              </div>
+              <p class="mt-1 text-sm"><%= @github_integration_state.app_connection_message %></p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <% @github_integration_state.dashboard_actions.each do |action| %>
+                <% action_href = github_integration_action_href(action) %>
+                <% next if action_href.blank? %>
+                <%= link_to action_href,
+                            class: github_integration_action_classes(action),
+                            target: (action.external? ? "_blank" : nil),
+                            rel: (action.external? ? "noopener" : nil) do %>
+                  <%= app_icon(action.icon, css: "h-4 w-4 shrink-0") %>
+                  <span><%= action.label %></span>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </section>
+
+        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <% @github_integration_state.dashboard_metrics.each do |metric| %>
+            <div class="min-h-28 rounded-md border-0 border-l-4 p-4 ring-1 <%= github_integration_metric_classes(metric.tone) %>">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/80 text-slate-700 ring-1 ring-slate-200">
+                  <%= app_icon(metric.icon, css: "h-4 w-4") %>
+                </span>
+                <span class="text-xs font-semibold uppercase text-slate-500"><%= metric.label %></span>
+              </div>
+              <strong class="mt-3 block text-xl font-bold leading-tight text-slate-900"><%= metric.value %></strong>
+              <p class="mt-1 text-xs leading-5 text-slate-600"><%= metric.detail %></p>
+            </div>
+          <% end %>
+        </div>
+
+        <section class="mt-5" aria-labelledby="github-routes-heading">
+          <h3 id="github-routes-heading" class="text-sm font-semibold text-slate-900">Management paths</h3>
+          <div class="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <% @github_integration_state.dashboard_actions.each do |action| %>
+              <% action_href = github_integration_action_href(action) %>
+              <% next if action_href.blank? %>
+              <%= link_to action_href,
+                          class: "group flex min-h-28 flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 no-underline hover:border-blue-200 hover:bg-blue-50/60",
+                          target: (action.external? ? "_blank" : nil),
+                          rel: (action.external? ? "noopener" : nil) do %>
+                <span>
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white text-slate-700 ring-1 ring-slate-200 group-hover:text-blue-700">
+                    <%= app_icon(action.icon, css: "h-4 w-4") %>
+                  </span>
+                  <span class="mt-3 block text-sm font-semibold text-slate-900"><%= action.label %></span>
+                  <span class="mt-1 block text-xs leading-5 text-slate-600"><%= action.description %></span>
+                </span>
+              <% end %>
+            <% end %>
+          </div>
+        </section>
+
         <details id="github-app-access"
-                 class="mt-5 rounded-lg border <%= github_connection_healthy ? "border-slate-200 bg-white" : "border-amber-200 bg-amber-50" %> p-4"
+                 class="mt-6 rounded-lg border <%= github_connection_healthy ? "border-slate-200 bg-white" : "border-amber-200 bg-amber-50" %> p-4"
                  <%= "open" if @github_integration_state.app_access_details_open? %>>
           <summary class="flex cursor-pointer list-none flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -109,15 +175,11 @@
               </p>
             </div>
             <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold <%= github_connection_classes %>">
-              <% if github_connection_healthy %>
-                <%= @github_integration_state.app_connection_label %> · <%= pluralize(@github_integration_state.linked_installation_count, "linked installation") %>
-              <% else %>
-                <%= @github_integration_state.app_connection_label %>
-              <% end %>
+              <%= @github_integration_state.app_connection_label %> · <%= pluralize(@github_integration_state.linked_installation_count, "linked installation") %>
             </span>
           </summary>
 
-          <div class="mt-4 space-y-4">
+          <div class="mt-4 space-y-5">
             <% if @github_integration_state.app_connection_needs_attention? %>
               <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <p class="text-sm text-slate-700">
@@ -126,7 +188,7 @@
                 </p>
                 <% if @github_app_install_url.present? %>
                   <%= link_to @github_app_install_url,
-                              class: "btn-secondary inline-flex items-center gap-2",
+                              class: "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50",
                               target: "_blank",
                               rel: "noopener" do %>
                     <%= app_icon(:external, css: "w-4 h-4") %><span>Install GitHub App</span>
@@ -160,9 +222,12 @@
               </div>
             <% end %>
 
-            <% if @project_github_installations.any? %>
-              <div class="space-y-2">
+            <div id="linked-github-installations" class="space-y-2">
+              <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <h4 class="text-sm font-semibold text-slate-900">Linked installations</h4>
+                <span class="text-xs text-slate-500"><%= pluralize(@github_integration_state.linked_installation_count, "installation") %> linked</span>
+              </div>
+              <% if @project_github_installations.any? %>
                 <% @project_github_installations.each do |project_installation| %>
                   <% installation = project_installation.github_installation %>
                   <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 md:flex-row md:items-center md:justify-between">
@@ -185,25 +250,35 @@
                       <%= button_to "Sync repositories",
                                     project_github_installation_sync_path(@project, installation),
                                     method: :post,
-                                    class: "btn-secondary",
+                                    class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50",
                                     disabled: !installation.available? %>
                       <%= button_to "Unlink",
                                     project_github_installation_link_path(@project, project_installation),
                                     method: :delete,
-                                    class: "btn-secondary text-red-700 hover:text-red-700",
+                                    class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 hover:text-red-700",
                                     form: { data: { turbo_confirm: "Unlink #{installation.account_login} from this project?" } } %>
                     </div>
                   </div>
                 <% end %>
-              </div>
-            <% else %>
-              <p class="rounded-lg border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-600">
-                No GitHub App installations are linked to this project yet.
-              </p>
-            <% end %>
+              <% else %>
+                <div class="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
+                  <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <p>No GitHub App installations are linked to this project yet.</p>
+                    <% if @github_app_install_url.present? %>
+                      <%= link_to @github_app_install_url,
+                                  class: "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-blue-700",
+                                  target: "_blank",
+                                  rel: "noopener" do %>
+                        <%= app_icon(:external, css: "w-4 h-4") %><span>Install GitHub App</span>
+                      <% end %>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
 
             <% if @linkable_github_installations.any? %>
-              <div class="space-y-2">
+              <div id="available-github-installations" class="space-y-2 border-t border-slate-200 pt-4">
                 <h4 class="text-sm font-semibold text-slate-900">Available installations</h4>
                 <% @linkable_github_installations.each do |installation| %>
                   <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 md:flex-row md:items-center md:justify-between">
@@ -222,7 +297,7 @@
                                   project_github_installation_links_path(@project),
                                   method: :post,
                                   params: { github_installation: { uuid: installation.uuid } },
-                                  class: "btn-secondary",
+                                  class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50",
                                   disabled: !installation.available? %>
                   </div>
                 <% end %>
@@ -231,9 +306,12 @@
           </div>
         </details>
 
-        <div class="mt-6 space-y-3">
+        <section id="connected-source-repositories" class="mt-6 space-y-3" aria-labelledby="connected-source-repositories-heading">
           <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <h3 class="text-sm font-semibold text-slate-900">Connected repositories</h3>
+            <div>
+              <h3 id="connected-source-repositories-heading" class="text-sm font-semibold text-slate-900">Connected repositories</h3>
+              <p class="mt-1 text-xs text-slate-500">Manage the repositories this project uses for source lookup and GitHub actions.</p>
+            </div>
             <span class="text-xs text-slate-500"><%= pluralize(@github_integration_state.connected_repository_count, "repository") %> connected</span>
           </div>
           <% if @source_repositories.any? %>
@@ -269,7 +347,7 @@
                   <%= button_to "Remove",
                                 project_source_repository_path(@project, source_repository),
                                 method: :delete,
-                                class: "btn-secondary text-red-700 hover:text-red-700",
+                                class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 hover:text-red-700",
                                 form: { data: { turbo_confirm: "Remove #{source_repository.full_name} from this project?" } } %>
                 </div>
 
@@ -297,7 +375,7 @@
                       <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
                       <span class="text-sm font-semibold text-slate-900">Enabled</span>
                     </label>
-                    <%= f.submit "Save", class: "btn-secondary" %>
+                    <%= f.submit "Save", class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" %>
                   </div>
                 <% end %>
               </div>
@@ -307,7 +385,7 @@
               No source repositories are connected yet.
             </p>
           <% end %>
-        </div>
+        </section>
 
         <details id="available-source-repositories"
                  class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4"
@@ -319,7 +397,7 @@
                 <%= pluralize(@github_integration_state.connectable_repository_count, "synced repository") %> can be connected from linked installations.
               </p>
             </div>
-            <span class="btn-secondary">Add repository</span>
+            <span class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Add repository</span>
           </summary>
 
           <div class="mt-4 space-y-3">

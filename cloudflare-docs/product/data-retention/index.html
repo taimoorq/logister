@@ -4,20 +4,20 @@
     <meta charset="utf-8">
     <title>Data Retention and Archives | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.">
+    <meta name="description" content="Choose Logister project retention windows, Archive Center checks, archive storage setup, and retention job verification.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://logister.org/docs/product/data-retention/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Data Retention and Archives | Logister">
-    <meta property="og:description" content="Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.">
+    <meta property="og:description" content="Choose Logister project retention windows, Archive Center checks, archive storage setup, and retention job verification.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://logister.org/docs/product/data-retention/">
     <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Data Retention and Archives | Logister">
-    <meta name="twitter:description" content="Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.">
+    <meta name="twitter:description" content="Choose Logister project retention windows, Archive Center checks, archive storage setup, and retention job verification.">
     <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/#article","headline":"Choose how long project data stays visible in Logister.","name":"Data Retention and Archives | Logister","url":"https://logister.org/docs/product/data-retention/","description":"Choose Logister project retention settings, archive storage setup, and retention job checks without overloading one page.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/#article","headline":"Choose how long project data stays visible, then prove archive coverage.","name":"Data Retention and Archives | Logister","url":"https://logister.org/docs/product/data-retention/","description":"Choose Logister project retention windows, Archive Center checks, archive storage setup, and retention job verification.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
     <link rel="icon" href="/docs/assets/icon.png" type="image/png">
     <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
@@ -30,35 +30,43 @@
     <div class="site-shell">
       <header class="topbar"><div class="topbar-inner"><a class="brand" href="/docs/"><img src="/docs/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/docs/">Docs home</a><a href="https://logister.org/">Hosted app</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
-        <section class="hero"><span class="hero-kicker">Documentation / Product / Data retention</span><h1>Choose how long project data stays visible in Logister.</h1><p>Retention settings live at <code>Project &gt; Settings &gt; Data</code>. Use them when older activity should stop filling day-to-day project views, or when you want an archive copy before cleanup removes data from the UI.</p></section>
+        <section class="hero"><span class="hero-kicker">Documentation / Product / Data retention</span><h1>Choose how long project data stays visible, then prove archive coverage.</h1><p>Retention settings live at <code>Project &gt; Settings &gt; Data</code>. Use them to choose hot-data windows, decide whether cleanup must archive first, and verify the result from Archive Center.</p></section>
         <div class="docs-layout">
           <aside class="sidebar">
             <div class="sidebar-group"><p class="sidebar-label">Product</p><a href="/docs/product/">Product guide</a><a href="/docs/product/notifications/">Notifications</a><a class="active" href="/docs/product/data-retention/">Data retention</a><a href="/docs/metrics/">Metrics reference</a></div>
             <div class="sidebar-group"><p class="sidebar-label">Retention pages</p><a href="/docs/product/data-retention/policy/">Policy settings</a><a href="/docs/product/data-retention/archive-storage/">Archive storage</a><a href="/docs/product/data-retention/jobs/">Jobs and verification</a></div>
             <hr>
-            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#model">Retention model</a><a href="#paths">Choose a page</a><a href="#defaults">Defaults</a></div>
+            <div class="sidebar-group"><p class="sidebar-label">On this page</p><a href="#model">Retention model</a><a href="#archive-center">Archive Center</a><a href="#paths">Choose a page</a><a href="#defaults">Defaults</a></div>
           </aside>
           <article class="article" data-pagefind-body>
             <section id="model" class="section">
               <p class="eyebrow">Retention model</p>
               <h2>Retention is project scoped.</h2>
-              <p>Retention is project scoped. Changing one project's Data tab does not change another project's history. The fields are separated because logs and metrics, trace spans, and closed error groups often have different review value after the first few weeks.</p>
-              <figure class="screenshot-figure"><img src="/docs/assets/screenshots/project-data-retention-controls.webp" alt="Logister data retention controls for event retention, trace retention, closed error retention, archive exports, and archive before deleting." width="3460" height="850" loading="lazy" decoding="async"><figcaption>The key choice is whether old data should simply be removed from product views, or exported first through archive-before-delete.</figcaption></figure>
+              <p>Changing one project's Data tab does not change another project's history. The policy controls are separated because logs and metrics, trace spans, and closed error groups often have different review value after the first few weeks.</p>
+              <p>After a policy is saved, the form collapses into a summary row. Expand it when you need to change the retention windows, turn on archive writes, or require an archive before cleanup can delete matching rows.</p>
+              <figure class="screenshot-figure"><img src="/docs/assets/screenshots/project-data-retention.webp" alt="Logister Data settings page with saved retention summary, Archive Center status, overview metrics, and archive paths." width="3600" height="2093" loading="lazy" decoding="async"><figcaption>The Data page keeps the saved policy compact and uses Archive Center to show whether cleanup is protected before deletion.</figcaption></figure>
               <div class="note warn"><h4>Archives are not a full backup</h4><p>Telemetry archives are for older event history. They do not preserve user accounts, project settings, API keys, memberships, or every workflow decision. Keep ordinary backups for full restore needs.</p></div>
+            </section>
+            <section id="archive-center" class="section">
+              <p class="eyebrow">Archive Center</p>
+              <h2>Use Archive Center to check whether the plan is working.</h2>
+              <p>Archive Center is the operational evidence area on the Data page. It separates the question you are asking into four paths so users do not have to scan one long settings page.</p>
+              <table><thead><tr><th>Path</th><th>Use it when you need to...</th></tr></thead><tbody><tr><td>Overview</td><td>Confirm whether the project is not archiving, archiving without deletion protection, protected before deletion, or blocked by a failed archive.</td></tr><tr><td>Coverage</td><td>Check each retention scope against the latest cleanup cutoff, archived-through date, candidate count, archived rows, and deleted rows.</td></tr><tr><td>Catalog</td><td>Review recent archive runs, object keys, byte counts, row counts, status, and failure messages.</td></tr><tr><td>Search Archives</td><td>Search current hot telemetry first and narrow candidate archive runs for older event evidence.</td></tr></tbody></table>
+              <figure class="screenshot-figure"><img src="/docs/assets/screenshots/project-data-retention-search.webp" alt="Logister Search Archives path showing filters for event IDs, messages, trace IDs, request IDs, environment, release, service, route, and time range." width="3600" height="2239" loading="lazy" decoding="async"><figcaption>Use Search Archives when an incident, customer report, or audit starts with an old identifier and you need to find hot matches or candidate archive runs.</figcaption></figure>
             </section>
             <section id="paths" class="section">
               <p class="eyebrow">Choose a page</p>
               <h2>Use the subpage that matches the work.</h2>
               <div class="card-grid">
                 <article class="card"><p class="eyebrow">Policy</p><h3>Choose retention windows</h3><p>Understand which screens are affected by event, trace, and closed-error retention.</p><p><a href="/docs/product/data-retention/policy/">Read policy settings</a></p></article>
-                <article class="card"><p class="eyebrow">Storage</p><h3>Prepare archives</h3><p>Use this only when archive exports are enabled or archive-before-delete is selected.</p><p><a href="/docs/product/data-retention/archive-storage/">Read archive storage</a></p></article>
-                <article class="card"><p class="eyebrow">Verification</p><h3>Check recent archive runs</h3><p>Use the Recent archive runs area to confirm cleanup work succeeded before trusting it on important projects.</p><p><a href="/docs/product/data-retention/jobs/">Read jobs and verification</a></p></article>
+                <article class="card"><p class="eyebrow">Storage</p><h3>Prepare archives</h3><p>Use this before enabling Archive retained data or Require archive before deletion on important projects.</p><p><a href="/docs/product/data-retention/archive-storage/">Read archive storage</a></p></article>
+                <article class="card"><p class="eyebrow">Verification</p><h3>Check archive runs and coverage</h3><p>Use Archive Center to confirm cleanup work succeeded before trusting it on important projects.</p><p><a href="/docs/product/data-retention/jobs/">Read jobs and verification</a></p></article>
               </div>
             </section>
             <section id="defaults" class="section">
               <p class="eyebrow">Defaults</p>
               <h2>The default policy is conservative.</h2>
-              <table><thead><tr><th>Setting</th><th>Default</th></tr></thead><tbody><tr><td>Hot events</td><td>30 days</td></tr><tr><td>Trace spans</td><td>30 days</td></tr><tr><td>Closed error groups</td><td>Keep indefinitely</td></tr><tr><td>Archive exports</td><td>Off</td></tr><tr><td>Archive before delete</td><td>Off</td></tr></tbody></table>
+              <table><thead><tr><th>Setting</th><th>Default</th></tr></thead><tbody><tr><td>Hot events</td><td>30 days</td></tr><tr><td>Trace spans</td><td>30 days</td></tr><tr><td>Closed error groups</td><td>Keep indefinitely</td></tr><tr><td>Archive retained data</td><td>Off</td></tr><tr><td>Require archive before deletion</td><td>Off</td></tr></tbody></table>
             </section>
           </article>
         </div>

@@ -560,6 +560,40 @@ code, pre {
   width: 100%;
   height: auto;
 }
+.screenshot-figure.is-lightbox-ready {
+  background: #f8fafc;
+}
+.screenshot-preview-button {
+  width: 100%;
+  max-height: min(26rem, 58vh);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #f8fafc;
+  cursor: zoom-in;
+}
+.screenshot-preview-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.55);
+  outline-offset: -3px;
+}
+.screenshot-preview-button img {
+  width: auto;
+  max-width: 100%;
+  max-height: min(26rem, 58vh);
+  margin: 0 auto;
+}
+.screenshot-figure.is-medium .screenshot-preview-button,
+.screenshot-figure.is-medium .screenshot-preview-button img {
+  max-height: min(24rem, 54vh);
+}
+.screenshot-figure.is-narrow .screenshot-preview-button,
+.screenshot-figure.is-narrow .screenshot-preview-button img {
+  max-height: min(30rem, 62vh);
+}
 .screenshot-figure figcaption {
   padding: 0.75rem 0.95rem;
   border-top: 1px solid var(--border);
@@ -603,6 +637,71 @@ code, pre {
 .screenshot-figure.is-narrow {
   max-width: min(100%, 18rem);
   justify-self: center;
+}
+body.screenshot-lightbox-open {
+  overflow: hidden;
+}
+.screenshot-lightbox[hidden] {
+  display: none;
+}
+.screenshot-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: clamp(0.85rem, 2vw, 1.5rem);
+  background: rgba(15, 23, 42, 0.88);
+}
+.screenshot-lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+.screenshot-lightbox-title {
+  min-width: 0;
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.screenshot-lightbox-close {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+.screenshot-lightbox-close:hover,
+.screenshot-lightbox-close:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+}
+.screenshot-lightbox-frame {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+.screenshot-lightbox-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
 }
 .infra-cell-title {
   display: block;
@@ -792,6 +891,9 @@ code, pre {
   }
   .screenshot-figure.is-narrow {
     max-width: min(100%, 18rem);
+  }
+  .screenshot-lightbox-title {
+    white-space: normal;
   }
   .article {
     padding: 1.25rem;

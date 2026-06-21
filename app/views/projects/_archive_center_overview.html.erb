@@ -1,0 +1,131 @@
+<%# locals: (project:, archive_overview:, archive_catalog:) %>
+<% coverage_rows = archive_overview.coverage_rows %>
+<% gap_count = coverage_rows.count(&:archive_gap?) %>
+<% failed_archive = archive_overview.last_failed_archive %>
+<% archive_enabled = archive_overview.policy.archive_enabled? %>
+<% archive_before_delete = archive_overview.policy.archive_before_delete? %>
+
+<section class="mt-5 space-y-5" aria-labelledby="archive-overview-heading">
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <span class="block text-xs font-semibold uppercase text-slate-500">Archive retained data</span>
+      <strong class="mt-1 block text-sm text-slate-900">
+        <%= archive_boolean_label(archive_enabled, enabled: "Enabled", disabled: "Not archiving") %>
+      </strong>
+      <p class="mt-1 text-xs text-slate-600">
+        <% if archive_enabled %>
+          Gzip JSONL exports can be written to the configured archive service.
+        <% else %>
+          Archive writes are off for retention cleanup.
+        <% end %>
+      </p>
+    </div>
+
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <span class="block text-xs font-semibold uppercase text-slate-500">Require archive before deletion</span>
+      <strong class="mt-1 block text-sm text-slate-900">
+        <% if archive_before_delete %>
+          Protected before deletion
+        <% elsif archive_enabled %>
+          Deletion not protected
+        <% else %>
+          Disabled
+        <% end %>
+      </strong>
+      <p class="mt-1 text-xs text-slate-600">
+        <% if archive_before_delete %>
+          Cleanup must export matching rows successfully before removal.
+        <% elsif archive_enabled %>
+          Cleanup can delete old rows without waiting for an archive.
+        <% else %>
+          Archive retained data must be on before deletion can require an archive.
+        <% end %>
+      </p>
+    </div>
+
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <span class="block text-xs font-semibold uppercase text-slate-500">Last cleanup</span>
+      <strong class="mt-1 block text-sm text-slate-900"><%= retention_timestamp(archive_overview.last_cleanup_at) %></strong>
+    </div>
+
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <span class="block text-xs font-semibold uppercase text-slate-500">Next sweep</span>
+      <strong class="mt-1 block text-sm text-slate-900"><%= local_time_tag(archive_overview.next_sweep_at, format: :long) %></strong>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <div class="rounded-lg border border-slate-200 bg-white p-4">
+      <span class="block text-xs font-semibold uppercase text-slate-500">Last successful archive</span>
+      <strong class="mt-1 block text-sm text-slate-900"><%= retention_timestamp(archive_overview.last_successful_archive&.created_at) %></strong>
+      <% if archive_overview.last_successful_archive.present? %>
+        <p class="mt-1 text-xs text-slate-600">
+          <%= retention_archive_scope_label(archive_overview.last_successful_archive.scope) %>,
+          <%= number_with_delimiter(archive_overview.last_successful_archive.rows) %> rows,
+          <%= number_to_human_size(archive_overview.last_successful_archive.bytes) %>.
+        </p>
+      <% end %>
+    </div>
+
+    <div class="rounded-lg border border-slate-200 bg-white p-4">
+      <span class="block text-xs font-semibold uppercase text-slate-500">Last failed archive</span>
+      <strong class="mt-1 block text-sm text-slate-900"><%= retention_timestamp(failed_archive&.created_at) %></strong>
+      <% if failed_archive&.error_message.present? %>
+        <p class="mt-1 text-xs text-red-700"><%= failed_archive.error_message %></p>
+      <% else %>
+        <p class="mt-1 text-xs text-slate-600">No archive failure has been recorded for this project.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <section aria-labelledby="archive-overview-heading">
+    <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 id="archive-overview-heading" class="text-sm font-semibold text-slate-900">Choose a path</h3>
+        <p class="mt-1 text-xs text-slate-500">Start with the question you are trying to answer.</p>
+      </div>
+    </div>
+
+    <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <%= link_to settings_project_path(project, section: "data", archive_path: "coverage", anchor: "archive-center"),
+                  class: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-700 no-underline hover:bg-white" do %>
+        <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <%= app_icon(:shield, css: "h-4 w-4") %>
+          <span>Review coverage</span>
+        </span>
+        <span class="mt-2 block text-xs text-slate-600">
+          <%= gap_count.positive? ? pluralize(gap_count, "scope") + " need attention." : "All configured scopes have a status." %>
+        </span>
+      <% end %>
+
+      <%= link_to settings_project_path(project, section: "data", archive_path: "catalog", anchor: "archive-center"),
+                  class: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-700 no-underline hover:bg-white" do %>
+        <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <%= app_icon(:archive, css: "h-4 w-4") %>
+          <span>View catalog</span>
+        </span>
+        <span class="mt-2 block text-xs text-slate-600">
+          <%= pluralize(archive_catalog.size, "recent run") %> loaded.
+        </span>
+      <% end %>
+
+      <%= link_to settings_project_path(project, section: "data", archive_path: "search_archives", anchor: "archive-center"),
+                  class: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-700 no-underline hover:bg-white" do %>
+        <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <%= app_icon(:search, css: "h-4 w-4") %>
+          <span>Search archives</span>
+        </span>
+        <span class="mt-2 block text-xs text-slate-600">Find hot matches and candidate archive runs.</span>
+      <% end %>
+
+      <%= link_to settings_project_path(project, section: "data", anchor: "retention"),
+                  class: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-700 no-underline hover:bg-white" do %>
+        <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <%= app_icon(:settings, css: "h-4 w-4") %>
+          <span>Edit policy</span>
+        </span>
+        <span class="mt-2 block text-xs text-slate-600">Change retention windows and archive requirements.</span>
+      <% end %>
+    </div>
+  </section>
+</section>

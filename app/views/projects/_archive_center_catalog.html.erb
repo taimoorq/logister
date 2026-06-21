@@ -1,0 +1,115 @@
+<%# locals: (project:, archive_overview:, archive_catalog:, archive_catalog_scope:, archive_catalog_status:) %>
+<% scope_filters = [
+  [ nil, "All scopes" ],
+  [ "hot_events", "Activity" ],
+  [ "trace_spans", "Traces" ],
+  [ "error_events", "Errors" ]
+] %>
+<% status_filters = [
+  [ nil, "All statuses" ],
+  [ "completed", "Completed" ],
+  [ "failed", "Failed" ]
+] %>
+
+<section class="mt-5" aria-labelledby="archive-catalog-heading">
+  <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h3 id="archive-catalog-heading" class="text-sm font-semibold text-slate-900">Archive catalog</h3>
+      <p class="mt-1 text-xs text-slate-500">Latest recorded exports, object keys, sizes, and failures.</p>
+    </div>
+    <p class="text-xs text-slate-500">Last policy archive: <%= retention_timestamp(archive_overview.policy.last_archive_run_at) %></p>
+  </div>
+
+  <div class="mt-3 flex flex-wrap gap-2">
+    <% scope_filters.each do |scope, label| %>
+      <% active = archive_catalog_scope.to_s == scope.to_s %>
+      <%= link_to label,
+                  settings_project_path(project, section: "data", archive_path: "catalog", archive_scope: scope, archive_status: archive_catalog_status, anchor: "archive-center"),
+                  class: "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}",
+                  aria: { current: ("page" if active) } %>
+    <% end %>
+  </div>
+
+  <div class="mt-2 flex flex-wrap gap-2">
+    <% status_filters.each do |status, label| %>
+      <% active = archive_catalog_status.to_s == status.to_s %>
+      <%= link_to label,
+                  settings_project_path(project, section: "data", archive_path: "catalog", archive_scope: archive_catalog_scope, archive_status: status, anchor: "archive-center"),
+                  class: "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}",
+                  aria: { current: ("page" if active) } %>
+    <% end %>
+  </div>
+
+  <% if archive_catalog.any? %>
+    <%= responsive_scroll_region(class: "mt-3") do %>
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50">
+          <tr>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Scope</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Range</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Exported</th>
+            <th scope="col" class="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Rows</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Objects</th>
+            <th scope="col" class="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Bytes</th>
+            <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 bg-white">
+          <% archive_catalog.each do |archive| %>
+            <% archive_object_keys = archive.object_keys %>
+            <tr>
+              <td class="px-3 py-2 text-slate-900"><%= retention_archive_scope_label(archive.scope) %></td>
+              <td class="px-3 py-2 text-slate-600">
+                <span class="block"><%= archive.after_at.present? ? retention_timestamp(archive.after_at) : "Start" %></span>
+                <span class="block text-xs text-slate-500">to <%= retention_timestamp(archive.before_at) %></span>
+              </td>
+              <td class="px-3 py-2 text-slate-600"><%= retention_timestamp(archive.created_at) %></td>
+              <td class="px-3 py-2 text-right text-slate-600"><%= number_with_delimiter(archive.rows) %></td>
+              <td class="px-3 py-2 text-slate-600">
+                <% if archive_object_keys.any? %>
+                  <details>
+                    <summary class="cursor-pointer text-sm font-semibold text-blue-700 hover:text-blue-800">
+                      <%= pluralize(archive_object_keys.size, "object") %>
+                    </summary>
+                    <div class="mt-2 space-y-1">
+                      <% archive_object_keys.each do |object_key| %>
+                        <div class="flex max-w-[34rem] items-center gap-2 rounded bg-slate-100 px-2 py-1">
+                          <code class="min-w-0 flex-1 truncate text-xs text-slate-700" title="<%= object_key %>"><%= object_key %></code>
+                          <div data-controller="copy" data-copy-text-value="<%= object_key %>">
+                            <button type="button"
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                                    data-action="copy#copy"
+                                    title="Copy object key"
+                                    aria-label="Copy object key">
+                              <%= app_icon(:clipboard, css: "h-3.5 w-3.5") %>
+                              <span class="sr-only" data-copy-target="buttonLabel">Copy</span>
+                            </button>
+                          </div>
+                        </div>
+                      <% end %>
+                    </div>
+                  </details>
+                <% else %>
+                  <span class="text-slate-400">No objects</span>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-right text-slate-600"><%= number_to_human_size(archive.bytes) %></td>
+              <td class="px-3 py-2 text-slate-600">
+                <span class="inline-flex rounded-full border px-2 py-1 text-xs font-semibold <%= archive_status_badge_class(archive.completed? ? :success : :danger) %>">
+                  <%= archive.status.humanize %>
+                </span>
+                <% if archive.failed? && archive.error_message.present? %>
+                  <p class="mt-1 max-w-80 text-xs text-red-700"><%= archive.error_message %></p>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% else %>
+    <div class="mt-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+      No archive runs match this path.
+    </div>
+  <% end %>
+</section>

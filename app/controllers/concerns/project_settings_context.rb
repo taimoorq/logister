@@ -3,6 +3,8 @@ module ProjectSettingsContext
 
   NOTIFICATION_PATHS = %w[overview errors health workflow reports delivery operations].freeze
   DEFAULT_NOTIFICATION_PATH = "overview"
+  ARCHIVE_PATHS = %w[overview coverage catalog search_archives].freeze
+  DEFAULT_ARCHIVE_PATH = "overview"
 
   private
 
@@ -98,22 +100,53 @@ module ProjectSettingsContext
 
   def load_data_settings_context
     @retention_policy ||= ProjectRetentionPolicy.for(project: @project) if @project_manager
-    @recent_telemetry_archives = @project.telemetry_archives
-                                         .select(
-                                           :id,
-                                           :project_id,
-                                           :record_type,
-                                           :scope,
-                                           :before_at,
-                                           :rows,
-                                           :bytes,
-                                           :objects,
-                                           :status,
-                                           :error_message,
-                                           :created_at
-                                         )
-                                         .recent_first
-                                         .limit(5)
+    @archive_overview = ProjectArchiveOverview.new(project: @project, policy: @retention_policy) if @retention_policy
+    @archive_path = normalized_archive_path
+    @archive_catalog_scope = normalized_archive_catalog_scope
+    @archive_catalog_status = normalized_archive_catalog_status
+    @archive_catalog = archive_catalog_scope
+                       .select(
+                         :id,
+                         :project_id,
+                         :record_type,
+                         :scope,
+                         :before_at,
+                         :after_at,
+                         :rows,
+                         :bytes,
+                         :objects,
+                         :status,
+                         :error_message,
+                         :dry_run,
+                         :created_at
+                       )
+                       .recent_first
+                       .limit(50)
+    @archive_investigation_search = ProjectArchiveInvestigationSearch.new(
+      project: @project,
+      params: params.fetch(:archive_search, {})
+    )
+  end
+
+  def normalized_archive_path
+    return "search_archives" if params[:archive_path] == "investigations"
+
+    params[:archive_path].presence_in(ARCHIVE_PATHS) || DEFAULT_ARCHIVE_PATH
+  end
+
+  def normalized_archive_catalog_scope
+    params[:archive_scope].presence_in(%w[hot_events trace_spans error_events])
+  end
+
+  def normalized_archive_catalog_status
+    params[:archive_status].presence_in(TelemetryArchive::STATUSES)
+  end
+
+  def archive_catalog_scope
+    scope = @project.telemetry_archives
+    scope = scope.where(scope: @archive_catalog_scope) if @archive_catalog_scope.present?
+    scope = scope.where(status: @archive_catalog_status) if @archive_catalog_status.present?
+    scope
   end
 
   def load_admin_settings_context

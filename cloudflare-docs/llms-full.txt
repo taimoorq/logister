@@ -16,7 +16,7 @@ The docs are organized as a practical self-hosted product manual: Documentation,
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
 - Provides a project Insights tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event type breakdowns, metric series, and recent matching events.
 - Sends purpose-based project notifications through SMTP, commonly Amazon SES: new or reopened error groups, milestones, single-error volume, project spikes, latency alerts, monitor alerts, workflow routing, digests, release summaries, usage warnings, and retention/archive failures.
-- Supports configurable hot-data retention and optional S3-compatible archive exports for older telemetry before pruning high-volume non-error rows from PostgreSQL.
+- Supports configurable hot-data retention, optional S3-compatible archive writes, Archive Center coverage, and archive search for older telemetry before pruning high-volume non-error rows from PostgreSQL.
 - Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.
 
 ## Use Cases And Comparisons
@@ -57,7 +57,7 @@ GitHub App setup docs live at https://logister.org/docs/github-app/. Self-hoster
 
 API tooling lives at https://logister.org/docs/api-reference/. The public OpenAPI contract is available at https://logister.org/docs/openapi.yaml, and the Postman collection is available at https://logister.org/docs/postman/logister-api.postman_collection.json.
 
-Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers quick baseline checks, empty inboxes, rejected events, API status codes, Sidekiq worker issues, SMTP delivery, optional ClickHouse readiness, S3-compatible archive exports, and what support context to collect without sharing secrets.
+Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers quick baseline checks, empty inboxes, rejected events, API status codes, Sidekiq worker issues, SMTP delivery, optional ClickHouse readiness, S3-compatible archive storage, Archive Center checks, and what support context to collect without sharing secrets.
 
 ## Operational Use Cases
 
@@ -91,7 +91,7 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - Redis for caching and Sidekiq.
 - Sidekiq worker for async jobs, Action Mailer delivery, project notifications, digest scheduling, optional ClickHouse writes, and operator-run archive/prune tasks.
 - SMTP/Amazon SES for auth mail, project alerts, digests, monitor alerts, and operational notices.
-- Optional S3-compatible archive storage through Active Storage for compressed JSONL archive exports.
+- Optional S3-compatible archive storage through Active Storage for compressed JSONL archive writes and Archive Center verification.
 - Optional ClickHouse for higher-volume event/span analytics, raw tables, and one-minute rollups.
 - Optional GitHub App source integration for private repository access without personal tokens.
 - Optional Cloudflare Turnstile for auth bot protection.
@@ -107,9 +107,9 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - ClickHouse readiness requires the event table, span table, one-minute rollup tables, and materialized views from `docs/clickhouse_schema.sql`.
 - `/health/clickhouse` reports ready only when ClickHouse is enabled, reachable, and schema-ready; it reports missing tables when it can determine them.
 - ClickHouse write failures are reported through `logister-ruby` as throttled logs and count metrics when Logister self-observability is configured.
-- Data retention docs are split by task: overview, policy choices, archive storage, and archive/prune jobs at https://logister.org/docs/product/data-retention/.
+- Data retention docs are split by task: overview, Archive Center paths, policy choices, archive storage, and archive/prune jobs at https://logister.org/docs/product/data-retention/.
 - S3-compatible archive storage is optional and uses Active Storage with `ACTIVE_STORAGE_SERVICE=amazon` plus AWS/S3 variables.
-- Archive tasks export `ingest_events` and `trace_spans` as compressed JSONL before `logister:telemetry:prune_hot` removes older non-error hot telemetry.
+- Archive tasks export `ingest_events` and `trace_spans` as compressed JSONL before `logister:telemetry:prune_hot` removes older non-error hot telemetry; Archive Center separates Overview, Coverage, Catalog, and Search Archives for verification.
 
 ## Release Distribution
 

@@ -1,0 +1,208 @@
+<%# locals: (project:, archive_investigation_search:) %>
+<% search = archive_investigation_search %>
+
+<section class="mt-5 space-y-5" aria-labelledby="archive-search-archives-heading">
+  <div>
+    <h3 id="archive-search-archives-heading" class="text-sm font-semibold text-slate-900">Search Archives</h3>
+    <p class="mt-1 text-xs text-slate-500">Search hot telemetry first, then narrow candidate archive runs for older evidence.</p>
+  </div>
+
+  <%= form_with url: settings_project_path(project), method: :get, local: true, class: "rounded-lg border border-slate-200 bg-slate-50 p-4" do %>
+    <%= hidden_field_tag :section, "data" %>
+    <%= hidden_field_tag :archive_path, "search_archives" %>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div class="xl:col-span-2">
+        <%= label_tag "archive_search_q", "Event ID, UUID, message, fingerprint, or object key", class: "form-label" %>
+        <%= text_field_tag "archive_search[q]", search.value("q"), id: "archive_search_q", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_event_type", "Event type", class: "form-label" %>
+        <%= select_tag "archive_search[event_type]",
+                       options_for_select([ [ "Any type", "" ], *IngestEvent.event_types.keys.map { |event_type| [ event_type.humanize, event_type ] }, [ "Trace spans", "span" ] ], search.value("event_type")),
+                       id: "archive_search_event_type",
+                       class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_trace_id", "Trace ID", class: "form-label" %>
+        <%= text_field_tag "archive_search[trace_id]", search.value("trace_id"), id: "archive_search_trace_id", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_request_id", "Request ID", class: "form-label" %>
+        <%= text_field_tag "archive_search[request_id]", search.value("request_id"), id: "archive_search_request_id", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_session_id", "Session ID", class: "form-label" %>
+        <%= text_field_tag "archive_search[session_id]", search.value("session_id"), id: "archive_search_session_id", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_user_id", "User ID", class: "form-label" %>
+        <%= text_field_tag "archive_search[user_id]", search.value("user_id"), id: "archive_search_user_id", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_environment", "Environment", class: "form-label" %>
+        <%= text_field_tag "archive_search[environment]", search.value("environment"), id: "archive_search_environment", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_release", "Release", class: "form-label" %>
+        <%= text_field_tag "archive_search[release]", search.value("release"), id: "archive_search_release", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_service", "Service", class: "form-label" %>
+        <%= text_field_tag "archive_search[service]", search.value("service"), id: "archive_search_service", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_route", "Route", class: "form-label" %>
+        <%= text_field_tag "archive_search[route]", search.value("route"), id: "archive_search_route", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_from", "From", class: "form-label" %>
+        <%= text_field_tag "archive_search[from]", search.value("from"), id: "archive_search_from", placeholder: "2026-06-01", class: "form-input" %>
+      </div>
+
+      <div>
+        <%= label_tag "archive_search_to", "To", class: "form-label" %>
+        <%= text_field_tag "archive_search[to]", search.value("to"), id: "archive_search_to", placeholder: "2026-06-21", class: "form-input" %>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <%= button_tag class: "btn-primary inline-flex items-center gap-2" do %>
+        <%= app_icon(:search, css: "h-4 w-4") %>
+        <span>Search</span>
+      <% end %>
+      <%= link_to "Clear", settings_project_path(project, section: "data", archive_path: "search_archives", anchor: "archive-center"), class: "btn-ghost" %>
+    </div>
+  <% end %>
+
+  <% if search.query_present? %>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div class="rounded-lg border border-slate-200 bg-white p-4">
+        <span class="block text-xs font-semibold uppercase text-slate-500">Hot events</span>
+        <strong class="mt-1 block text-lg text-slate-900"><%= number_with_delimiter(search.total_hot_events) %></strong>
+      </div>
+      <div class="rounded-lg border border-slate-200 bg-white p-4">
+        <span class="block text-xs font-semibold uppercase text-slate-500">Hot spans</span>
+        <strong class="mt-1 block text-lg text-slate-900"><%= number_with_delimiter(search.total_hot_spans) %></strong>
+      </div>
+      <div class="rounded-lg border border-slate-200 bg-white p-4">
+        <span class="block text-xs font-semibold uppercase text-slate-500">Candidate archive runs</span>
+        <strong class="mt-1 block text-lg text-slate-900"><%= number_with_delimiter(search.total_archive_runs) %></strong>
+      </div>
+    </div>
+
+    <section aria-labelledby="archive-search-archives-events-heading">
+      <h4 id="archive-search-archives-events-heading" class="text-sm font-semibold text-slate-900">Hot event matches</h4>
+      <% if search.hot_events.any? %>
+        <%= responsive_scroll_region(class: "mt-2") do %>
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Type</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Message</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Occurred</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Path</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 bg-white">
+              <% search.hot_events.each do |event| %>
+                <tr>
+                  <td class="px-3 py-2 text-slate-600"><%= event.event_type.humanize %></td>
+                  <td class="px-3 py-2 text-slate-900"><%= event.message %></td>
+                  <td class="px-3 py-2 text-slate-600"><%= local_time_tag(event.occurred_at, format: :long) %></td>
+                  <td class="px-3 py-2 text-slate-600">
+                    <%= link_to "Open", partitioned_project_event_path(project, event), class: "text-sm font-semibold text-blue-700 hover:text-blue-800" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      <% else %>
+        <div class="mt-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          No matching hot events.
+        </div>
+      <% end %>
+    </section>
+
+    <section aria-labelledby="archive-search-archives-spans-heading">
+      <h4 id="archive-search-archives-spans-heading" class="text-sm font-semibold text-slate-900">Hot span matches</h4>
+      <% if search.hot_spans.any? %>
+        <%= responsive_scroll_region(class: "mt-2") do %>
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Name</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Trace</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Started</th>
+                <th class="px-3 py-2 text-right text-xs font-semibold uppercase text-slate-500">Duration</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 bg-white">
+              <% search.hot_spans.each do |span| %>
+                <tr>
+                  <td class="px-3 py-2 text-slate-900"><%= span.name %></td>
+                  <td class="px-3 py-2 text-slate-600"><code><%= span.trace_id %></code></td>
+                  <td class="px-3 py-2 text-slate-600"><%= local_time_tag(span.started_at, format: :long) %></td>
+                  <td class="px-3 py-2 text-right text-slate-600"><%= span.duration_ms.round(1) %> ms</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      <% else %>
+        <div class="mt-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          No matching hot spans.
+        </div>
+      <% end %>
+    </section>
+
+    <section aria-labelledby="archive-search-archives-archives-heading">
+      <h4 id="archive-search-archives-archives-heading" class="text-sm font-semibold text-slate-900">Candidate archive runs</h4>
+      <% if search.archive_runs.any? %>
+        <%= responsive_scroll_region(class: "mt-2") do %>
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Scope</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Range</th>
+                <th class="px-3 py-2 text-right text-xs font-semibold uppercase text-slate-500">Rows</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Path</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 bg-white">
+              <% search.archive_runs.each do |archive| %>
+                <tr>
+                  <td class="px-3 py-2 text-slate-900"><%= retention_archive_scope_label(archive.scope) %></td>
+                  <td class="px-3 py-2 text-slate-600">
+                    <span class="block"><%= archive.after_at.present? ? retention_timestamp(archive.after_at) : "Start" %></span>
+                    <span class="block text-xs text-slate-500">to <%= retention_timestamp(archive.before_at) %></span>
+                  </td>
+                  <td class="px-3 py-2 text-right text-slate-600"><%= number_with_delimiter(archive.rows) %></td>
+                  <td class="px-3 py-2 text-slate-600">
+                    <%= link_to "Catalog",
+                                settings_project_path(project, section: "data", archive_path: "catalog", archive_scope: archive.scope, anchor: "archive-center"),
+                                class: "text-sm font-semibold text-blue-700 hover:text-blue-800" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      <% else %>
+        <div class="mt-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          No candidate archive runs.
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+</section>

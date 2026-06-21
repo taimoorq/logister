@@ -164,8 +164,12 @@ en:
           order: 3
           title: "Data retention"
           tour: "Set how long project events, traces, and closed errors stay hot, and choose whether old data is archived before cleanup."
-        lifecycle:
+        archive_center:
           order: 4
+          title: "Archived data"
+          tour: "Check archive health, coverage by data type, recent object keys, and failures from the latest retention runs."
+        lifecycle:
+          order: 5
           title: "Project lifecycle"
           tour: "Archive keeps history while hiding the project from active views; delete permanently removes project data."
       project-new:
@@ -180,7 +184,7 @@ en:
         retention_policy:
           order: 3
           title: "Choose retention policy"
-          tour: "Set how long events, traces, and closed errors stay hot, and whether cleanup must archive first."
+          tour: "Set how long events, traces, and closed errors stay hot, and whether retained data must be archived before deletion."
       project-edit:
         edit_project:
           order: 1

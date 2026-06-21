@@ -32,6 +32,6 @@ class ProjectRetentionPolicy < ApplicationRecord
   def archive_before_delete_requires_archive
     return unless archive_before_delete? && !archive_enabled?
 
-    errors.add(:archive_before_delete, "requires retention exports to be enabled")
+    errors.add(:archive_before_delete, "requires Archive retained data to be enabled")
   end
 end

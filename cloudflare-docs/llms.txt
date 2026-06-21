@@ -53,7 +53,7 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - GitHub App setup for project-scoped source repository connections, private repository source excerpts, repository sync, CODEOWNERS hints, deployment links, and optional issue creation: https://logister.org/docs/github-app/
 - GitHub source lookup diagnostics for file-not-found and path/ref mapping problems: https://logister.org/docs/github-app/source-lookup/
 - Product notification paths: https://logister.org/docs/product/notifications/
-- Data retention and archive exports: https://logister.org/docs/product/data-retention/
+- Data retention, Archive Center, and archive search: https://logister.org/docs/product/data-retention/
 - Docker self-hosting option and registry images: https://logister.org/docs/self-hosting/#docker
 - ClickHouse: https://logister.org/docs/clickhouse/
 
@@ -73,7 +73,7 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 
 ## Audience
 - Teams using Logister to connect app telemetry to daily work: cross-app dashboard exploration, project Insights dashboards, grouped error triage, error assignment with dashboard and project workload views, assignee-filtered inboxes, event investigation with request method and URL/path context, related logs, performance visibility, check-in monitors, purpose-based project notification paths, digest summaries, activity review, release visibility, project sharing, data retention policies, and active or archived project views
-- Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project notification delivery, S3-compatible archive exports, optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
+- Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project notification delivery, S3-compatible archive storage, Archive Center verification, optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
 - Teams comparing self-hosted and open source alternatives to Bugzilla, Bugsnag, Sentry, and other paid monitoring or issue triage tools
 - Ruby teams using `logister-ruby`
 - .NET teams using `logister-dotnet` with ASP.NET Core and C# services

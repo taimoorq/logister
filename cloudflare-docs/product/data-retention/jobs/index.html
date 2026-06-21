@@ -4,19 +4,19 @@
     <meta charset="utf-8">
     <title>Retention Jobs and Verification | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
+    <meta name="description" content="Run, verify, and troubleshoot Logister project retention jobs, Archive Center status, and telemetry archive writes.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://logister.org/docs/product/data-retention/jobs/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Retention Jobs and Verification | Logister">
-    <meta property="og:description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
+    <meta property="og:description" content="Run, verify, and troubleshoot Logister project retention jobs, Archive Center status, and telemetry archive writes.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://logister.org/docs/product/data-retention/jobs/">
     <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Retention Jobs and Verification | Logister">
-    <meta name="twitter:description" content="Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/jobs/#article","headline":"Verify cleanup before trusting it on important projects.","name":"Retention Jobs and Verification | Logister","url":"https://logister.org/docs/product/data-retention/jobs/","description":"Run, verify, and troubleshoot Logister project retention jobs and telemetry archive exports.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Jobs","item":"https://logister.org/docs/product/data-retention/jobs/"}]}]}</script>
+    <meta name="twitter:description" content="Run, verify, and troubleshoot Logister project retention jobs, Archive Center status, and telemetry archive writes.">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/product/data-retention/jobs/#article","headline":"Verify cleanup before trusting it on important projects.","name":"Retention Jobs and Verification | Logister","url":"https://logister.org/docs/product/data-retention/jobs/","description":"Run, verify, and troubleshoot Logister project retention jobs, Archive Center status, and telemetry archive writes.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Product","item":"https://logister.org/docs/product/"},{"@type":"ListItem","position":3,"name":"Data Retention","item":"https://logister.org/docs/product/data-retention/"},{"@type":"ListItem","position":4,"name":"Jobs","item":"https://logister.org/docs/product/data-retention/jobs/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
     <link rel="icon" href="/docs/assets/icon.png" type="image/png">
     <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
@@ -29,7 +29,7 @@
     <div class="site-shell">
       <header class="topbar"><div class="topbar-inner"><a class="brand" href="/docs/"><img src="/docs/assets/logister-logo.svg" alt="Logister"><span class="brand-copy"><span class="brand-kicker">Documentation</span><span class="brand-title">Retention jobs</span></span></a><button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button><nav class="topnav" data-nav-panel><a href="/docs/">Docs home</a><a href="/docs/product/data-retention/">Data retention</a><a href="https://github.com/taimoorq/logister">GitHub</a></nav></div></header>
       <main class="page">
-        <section class="hero"><span class="hero-kicker">Data retention / Jobs</span><h1>Verify cleanup before trusting it on important projects.</h1><p>The Data tab shows recent archive runs because users need proof that archive exports and cleanup are working. Use that visible history before relying on archive-before-delete for an important project.</p></section>
+        <section class="hero"><span class="hero-kicker">Data retention / Jobs</span><h1>Verify cleanup before trusting it on important projects.</h1><p>The Data tab includes Archive Center because users need proof that archive writes and cleanup are working. Use that visible history before requiring archives before deletion on an important project.</p></section>
         <div class="docs-layout">
           <aside class="sidebar"><div class="sidebar-group"><p class="sidebar-label">Data retention</p><a href="/docs/product/data-retention/">Overview</a><a href="/docs/product/data-retention/policy/">Policy settings</a><a href="/docs/product/data-retention/archive-storage/">Archive storage</a><a class="active" href="/docs/product/data-retention/jobs/">Jobs and verification</a></div></aside>
           <article class="article" data-pagefind-body>
@@ -44,12 +44,12 @@ CONFIRM=prune bin/rails "logister:telemetry:prune_hot[30]"</code></pre></div>
             <section class="section">
               <p class="eyebrow">Verify</p>
               <h2>Check the Data tab first.</h2>
-              <ol><li>Use a low-risk project before changing retention on important projects.</li><li>Open <code>Project &gt; Settings &gt; Data</code> and review Recent archive runs.</li><li>Confirm the latest run succeeded before enabling archive-before-delete more broadly.</li><li>If your team uses archive storage, confirm the matching <code>.jsonl.gz</code> object exists and can be opened.</li></ol>
+              <ol><li>Use a low-risk project before changing retention on important projects.</li><li>Open <code>Project &gt; Settings &gt; Data</code> and review Archive Center.</li><li>Use Overview for the overall state, Coverage for each retention scope, and Catalog for recent archive runs and object keys.</li><li>Confirm the latest relevant run succeeded before enabling Require archive before deletion more broadly.</li><li>If your team uses archive storage, confirm the matching <code>.jsonl.gz</code> object exists and can be opened.</li></ol>
             </section>
             <section class="section">
               <p class="eyebrow">Failures</p>
               <h2>Retention failures should be visible.</h2>
-              <p>Failed archive runs should appear in Recent archive runs and can send retention failure notifications. If archive-before-delete is enabled, treat a failure as a stop sign: fix the archive problem first, then run cleanup again.</p>
+              <p>Failed archive runs should appear in Archive Center and can send retention failure notifications. If Require archive before deletion is enabled, treat a failure as a stop sign: fix the archive problem first, then run cleanup again.</p>
             </section>
           </article>
         </div>

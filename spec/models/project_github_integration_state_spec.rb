@@ -3,8 +3,8 @@
 require "rails_helper"
 
 RSpec.describe ProjectGithubIntegrationState, type: :model do
-  def diagnostics(ready:)
-    instance_double(Github::ConfigurationDiagnostics::Result, ready?: ready)
+  def diagnostics(ready:, install_url: nil)
+    instance_double(Github::ConfigurationDiagnostics::Result, ready?: ready, install_url: install_url)
   end
 
   it "shows linked installations and hides them from linkable installations" do
@@ -93,5 +93,45 @@ RSpec.describe ProjectGithubIntegrationState, type: :model do
 
     expect(state).to be_app_access_details_open
     expect(state.app_connection_message).to eq("No GitHub App installation is linked to this project.")
+  end
+
+  it "exposes install actions when the project has no linked GitHub App installation" do
+    project = create(:project, user: users(:one))
+
+    state = described_class.new(
+      project: project,
+      user: users(:one),
+      app_diagnostics: diagnostics(ready: true, install_url: "https://github.com/apps/logister/installations/new")
+    )
+
+    actions = state.dashboard_actions
+    expect(state.app_connection_status).to eq(:missing_installation)
+    expect(state.app_connection_status_label).to eq("App not installed")
+    expect(actions.first.label).to eq("Install GitHub App")
+    expect(actions.first.target).to eq(:github_app_install_url)
+    expect(actions.first).to be_external
+    expect(actions.first).to be_primary
+  end
+
+  it "exposes setup actions when GitHub App configuration is incomplete" do
+    project = create(:project, user: users(:one))
+
+    state = described_class.new(project: project, user: users(:one), app_diagnostics: diagnostics(ready: false))
+
+    expect(state.app_connection_status).to eq(:configuration_missing)
+    expect(state.app_connection_tone).to eq(:danger)
+    expect(state.dashboard_actions.map(&:target)).to eq([ :github_app_docs, :github_app_access ])
+  end
+
+  it "promotes repository connection when synced repositories are ready" do
+    project = create(:project, user: users(:one))
+    installation = create(:github_installation, installed_by: users(:one))
+    create(:project_github_installation, project: project, github_installation: installation)
+    create(:github_repository, github_installation: installation, full_name: "acme/private-api")
+
+    state = described_class.new(project: project, user: users(:one), app_diagnostics: diagnostics(ready: true))
+
+    expect(state.dashboard_actions.first.label).to eq("Connect repositories")
+    expect(state.dashboard_actions.first.target).to eq(:available_source_repositories)
   end
 end
