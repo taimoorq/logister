@@ -16,28 +16,28 @@
   <nav class="detail-tabs" role="tablist" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
     <%= link_to "Context",
                 partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "context"),
-                class: "detail-tab #{'is-active' if active_tab == 'context'}",
+                class: "detail-tab",
                 role: "tab",
                 aria: { controls: "tab-context", selected: (active_tab == "context").to_s, current: ("page" if active_tab == "context") },
                 tabindex: (active_tab == "context" ? 0 : -1),
                 data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to stacktrace_tab_label,
                 partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace"),
-                class: "detail-tab #{'is-active' if active_tab == 'stacktrace'}",
+                class: "detail-tab",
                 role: "tab",
                 aria: { controls: "tab-stacktrace", selected: (active_tab == "stacktrace").to_s, current: ("page" if active_tab == "stacktrace") },
                 tabindex: (active_tab == "stacktrace" ? 0 : -1),
                 data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to "Occurrences (#{occurrences.size})",
                 partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "occurrences"),
-                class: "detail-tab #{'is-active' if active_tab == 'occurrences'}",
+                class: "detail-tab",
                 role: "tab",
                 aria: { controls: "tab-occurrences", selected: (active_tab == "occurrences").to_s, current: ("page" if active_tab == "occurrences") },
                 tabindex: (active_tab == "occurrences" ? 0 : -1),
                 data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
     <%= link_to "Related logs (#{related_logs.size})",
                 partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "related_logs"),
-                class: "detail-tab #{'is-active' if active_tab == 'related_logs'}",
+                class: "detail-tab",
                 role: "tab",
                 aria: { controls: "tab-related-logs", selected: (active_tab == "related_logs").to_s, current: ("page" if active_tab == "related_logs") },
                 tabindex: (active_tab == "related_logs" ? 0 : -1),
@@ -45,7 +45,7 @@
   </nav>
 
   <section id="tab-context"
-           class="detail-panel<%= ' is-hidden' unless active_tab == 'context' %>"
+           class="detail-panel"
            role="tabpanel"
            aria-hidden="<%= active_tab == 'context' ? 'false' : 'true' %>"
            <%= 'hidden' unless active_tab == 'context' %>
@@ -54,7 +54,7 @@
   </section>
 
   <section id="tab-stacktrace"
-           class="detail-panel<%= ' is-hidden' unless active_tab == 'stacktrace' %>"
+           class="detail-panel"
            role="tabpanel"
            aria-hidden="<%= active_tab == 'stacktrace' ? 'false' : 'true' %>"
            <%= 'hidden' unless active_tab == 'stacktrace' %>
@@ -84,7 +84,7 @@
   </section>
 
   <section id="tab-occurrences"
-           class="detail-panel<%= ' is-hidden' unless active_tab == 'occurrences' %>"
+           class="detail-panel"
            role="tabpanel"
            aria-hidden="<%= active_tab == 'occurrences' ? 'false' : 'true' %>"
            <%= 'hidden' unless active_tab == 'occurrences' %>
@@ -124,7 +124,7 @@
   </section>
 
   <section id="tab-related-logs"
-           class="detail-panel<%= ' is-hidden' unless active_tab == 'related_logs' %>"
+           class="detail-panel"
            role="tabpanel"
            aria-hidden="<%= active_tab == 'related_logs' ? 'false' : 'true' %>"
            <%= 'hidden' unless active_tab == 'related_logs' %>

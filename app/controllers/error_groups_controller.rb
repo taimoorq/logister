@@ -98,16 +98,19 @@ class ErrorGroupsController < ApplicationController
               filter: filter,
               query: query,
               assignee: assignee
-            }
+            },
+            method: :morph
           ),
           # Update sidebar counts
           turbo_stream.replace("inbox_counts",
             partial: "projects/inbox_counts",
-            locals: { project: @project, counts: @counts, filter: filter, query: query, assignee: assignee }
+            locals: { project: @project, counts: @counts, filter: filter, query: query, assignee: assignee },
+            method: :morph
           ),
           # Clear the detail pane
           turbo_stream.replace("error_detail",
-            partial: "projects/empty_detail"
+            partial: "projects/empty_detail",
+            method: :morph
           )
         ]
       end

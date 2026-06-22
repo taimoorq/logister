@@ -17,7 +17,8 @@ export default class extends Controller {
     }
 
     this.guardTarget.disabled = !exportsEnabled
-    this.guardPanelTarget.classList.toggle("opacity-50", !exportsEnabled)
+    this.guardPanelTarget.dataset.state = exportsEnabled ? "enabled" : "disabled"
+    this.guardPanelTarget.setAttribute("aria-disabled", exportsEnabled ? "false" : "true")
     this.guardHintTarget.hidden = exportsEnabled
   }
 }

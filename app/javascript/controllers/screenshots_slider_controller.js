@@ -45,8 +45,8 @@ export default class extends Controller {
 
     this.dotTargets.forEach((dot, idx) => {
       const active = idx === this.index
-      dot.classList.toggle("is-active", active)
       dot.setAttribute("aria-current", active ? "true" : "false")
+      dot.dataset.state = active ? "active" : "inactive"
     })
   }
 }

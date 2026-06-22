@@ -16,7 +16,7 @@ export default class extends Controller {
       const name = (card.dataset.projectName || "").toLowerCase()
       const slug = (card.dataset.projectSlug || "").toLowerCase()
       const match = !query || name.includes(query) || slug.includes(query)
-      card.classList.toggle("hidden", !match)
+      card.hidden = !match
     })
   }
 }

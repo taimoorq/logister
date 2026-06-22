@@ -58,12 +58,14 @@ class ErrorGroupAssignmentsController < ApplicationController
               filter: filter,
               query: query,
               assignee: assignee
-            }
+            },
+            method: :morph
           ),
           turbo_stream.replace(
             "inbox_counts",
             partial: "projects/inbox_counts",
-            locals: { project: @project, counts: counts, filter: filter, query: query, assignee: assignee }
+            locals: { project: @project, counts: counts, filter: filter, query: query, assignee: assignee },
+            method: :morph
           ),
           detail_stream(selected_uuid, filter: filter, query: query, assignee: assignee)
         ]
@@ -95,10 +97,11 @@ class ErrorGroupAssignmentsController < ApplicationController
           tab: params[:tab],
           frame_scope: params[:frame_scope],
           frame: params[:frame]
-        }
+        },
+        method: :morph
       )
     end
 
-    turbo_stream.replace("error_detail", partial: "projects/empty_detail")
+    turbo_stream.replace("error_detail", partial: "projects/empty_detail", method: :morph)
   end
 end

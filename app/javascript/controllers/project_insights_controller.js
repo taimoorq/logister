@@ -412,8 +412,8 @@ export default class extends Controller {
   renderWindowButtons() {
     this.windowButtonTargets.forEach((button) => {
       const active = button.dataset.window === this.window
-      button.classList.toggle("is-active", active)
       button.setAttribute("aria-pressed", String(active))
+      button.dataset.state = active ? "active" : "inactive"
     })
   }
 
@@ -429,9 +429,9 @@ export default class extends Controller {
 
     this.lensButtonTargets.forEach((button) => {
       const active = button.dataset.lens === this.lens
-      button.classList.toggle("is-active", active)
       button.setAttribute("aria-selected", String(active))
       button.setAttribute("tabindex", active ? "0" : "-1")
+      button.dataset.state = active ? "active" : "inactive"
     })
   }
 
@@ -476,9 +476,11 @@ export default class extends Controller {
 
     return `
       <button type="button"
-              class="project-insights-metric ${availabilityClass} ${selected ? "is-selected" : ""}"
+              class="project-insights-metric ${availabilityClass}"
               data-action="project-insights#addMetric"
               data-metric-key="${escapeHtml(metric.key)}"
+              data-state="${selected ? "selected" : "available"}"
+              aria-pressed="${selected ? "true" : "false"}"
               ${transitionAttributes("insights-metric", metric.key, "project-insights-catalog")}
               ${selected ? "disabled" : ""}>
         <span class="project-insights-metric-summary">
@@ -706,8 +708,8 @@ export default class extends Controller {
     if (!this.hasSeriesPopoverTarget || !this.hasSeriesToggleTarget) return
 
     this.seriesPopoverTarget.hidden = !this.seriesCatalogOpen
-    this.seriesToggleTarget.classList.toggle("is-open", this.seriesCatalogOpen)
     this.seriesToggleTarget.setAttribute("aria-expanded", String(this.seriesCatalogOpen))
+    this.seriesToggleTarget.dataset.state = this.seriesCatalogOpen ? "open" : "closed"
   }
 
   queueResize() {

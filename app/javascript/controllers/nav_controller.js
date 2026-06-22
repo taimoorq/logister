@@ -90,7 +90,6 @@ export default class extends Controller {
     this.element.dataset.navState = panelVisible ? "open" : "closed"
 
     if (this.hasPanelTarget) {
-      this.panelTarget.classList.toggle("hidden", !panelVisible)
       this.panelTarget.setAttribute("aria-hidden", panelVisible ? "false" : "true")
       this.panelTarget.dataset.state = panelVisible ? "open" : "closed"
     }

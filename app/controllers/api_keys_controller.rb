@@ -15,7 +15,7 @@ class ApiKeysController < ApplicationController
           render turbo_stream: [
             turbo_stream.remove("api_keys_empty"),
             turbo_stream.prepend("api_keys_tbody", partial: "api_keys/row", locals: { api_key: api_key, project: @project }),
-            turbo_stream.replace("api_key_new_token", partial: "api_keys/new_token_message", locals: { token: token })
+            turbo_stream.replace("api_key_new_token", partial: "api_keys/new_token_message", locals: { token: token }, method: :morph)
           ]
         end
         format.html do
@@ -25,7 +25,7 @@ class ApiKeysController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render turbo_stream: turbo_stream.replace("api_key_new_token", partial: "api_keys/error_message", locals: { message: api_key.errors.full_messages.to_sentence }), status: :unprocessable_content }
+        format.turbo_stream { render turbo_stream: turbo_stream.replace("api_key_new_token", partial: "api_keys/error_message", locals: { message: api_key.errors.full_messages.to_sentence }, method: :morph), status: :unprocessable_content }
         format.html { redirect_to setup_project_path(@project, anchor: "api-keys"), alert: api_key.errors.full_messages.to_sentence }
       end
     end

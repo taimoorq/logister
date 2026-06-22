@@ -38,13 +38,19 @@ export default class extends Controller {
   }
 
   syncStateFromMarkup() {
-    const activeTab = this.tabTargets.find((tab) => tab.classList.contains("is-active")) || this.tabTargets[0]
+    const activeTab = this.tabTargets.find((tab) => {
+      return tab.getAttribute("aria-current") === "page" ||
+        tab.getAttribute("aria-selected") === "true" ||
+        tab.dataset.state === "active" ||
+        tab.classList.contains("is-active")
+    }) || this.tabTargets[0]
     if (!activeTab) return
 
     this.applyActiveState(activeTab)
     this.panelTargets.forEach((panel) => {
-      const isVisible = !panel.classList.contains("is-hidden") && !panel.hidden
+      const isVisible = !panel.hidden
       panel.setAttribute("aria-hidden", isVisible ? "false" : "true")
+      panel.dataset.state = isVisible ? "active" : "inactive"
     })
   }
 
@@ -53,9 +59,9 @@ export default class extends Controller {
 
     this.tabTargets.forEach((tab) => {
       const isActive = tab === activeTab
-      tab.classList.toggle("is-active", isActive)
       tab.setAttribute("aria-selected", isActive ? "true" : "false")
       tab.setAttribute("tabindex", isActive ? "0" : "-1")
+      tab.dataset.state = isActive ? "active" : "inactive"
       if (isActive) {
         tab.setAttribute("aria-current", "page")
       } else {
@@ -65,9 +71,9 @@ export default class extends Controller {
 
     this.panelTargets.forEach((panel) => {
       const isActive = panel.id === activePanelId
-      panel.classList.toggle("is-hidden", !isActive)
       panel.hidden = !isActive
       panel.setAttribute("aria-hidden", isActive ? "false" : "true")
+      panel.dataset.state = isActive ? "active" : "inactive"
     })
   }
 

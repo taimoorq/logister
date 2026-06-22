@@ -67,7 +67,7 @@ class ErrorGroupExternalLinksController < ApplicationController
 
   def detail_stream(filter:, query:, assignee:)
     latest_event = @group.latest_event_record
-    return turbo_stream.replace("error_detail", partial: "projects/empty_detail") if latest_event.blank?
+    return turbo_stream.replace("error_detail", partial: "projects/empty_detail", method: :morph) if latest_event.blank?
 
     detail_data = build_project_event_detail(@project, latest_event, group: @group)
     turbo_stream.replace(
@@ -87,7 +87,8 @@ class ErrorGroupExternalLinksController < ApplicationController
         frame_scope: params[:frame_scope],
         frame: params[:frame],
         external_link_errors: @external_link&.errors&.full_messages || []
-      }
+      },
+      method: :morph
     )
   end
 end

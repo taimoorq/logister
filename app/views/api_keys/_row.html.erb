@@ -1,4 +1,5 @@
-<tr id="<%= dom_id(api_key) %>">
+<tr id="<%= dom_id(api_key) %>"
+    style="view-transition-name: <%= dom_id(api_key) %>; view-transition-class: api-key-row;">
   <td class="px-3 py-2 text-sm text-slate-900"><%= api_key.name %></td>
   <td class="px-3 py-2 text-sm text-slate-600"><%= api_key.active? ? "active" : "revoked" %></td>
   <td class="px-3 py-2 text-sm text-slate-600"><%= api_key.last_used_at ? local_time_tag(api_key.last_used_at) : "never" %></td>

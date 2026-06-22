@@ -60,6 +60,7 @@ RSpec.describe "Landing and dashboard", type: :system do
 
   it "opens the signed-in projects dropdown" do
     sign_in users(:one)
+    page.current_window.resize_to(1400, 1400)
     visit dashboard_path
 
     find(".nav-project-menu summary", text: "Projects").click
@@ -91,7 +92,8 @@ RSpec.describe "Landing and dashboard", type: :system do
 
     expect(page).to have_css("nav[data-nav-state='closed']", visible: :all)
     expect(page).to have_css("button[aria-controls='nav-menu-panel'][aria-expanded='false']", visible: :all)
-    expect(page).to have_css("#nav-menu-panel.hidden[data-state='closed'][aria-hidden='true']", visible: :all)
+    expect(page).to have_css("#nav-menu-panel[data-state='closed'][aria-hidden='true']", visible: :all)
+    expect(page.evaluate_script("getComputedStyle(document.querySelector('#nav-menu-panel')).display")).to eq("none")
 
     find("button[aria-controls='nav-menu-panel']", visible: :all).click
 

@@ -781,10 +781,12 @@
   .project-insights-lens small {
     @apply mt-0.5 block truncate text-[11px] text-slate-500;
   }
-  .project-insights-lens.is-active {
+  .project-insights-lens.is-active,
+  .project-insights-lens[aria-selected="true"] {
     @apply border-blue-200 bg-blue-50;
   }
-  .project-insights-lens.is-active span {
+  .project-insights-lens.is-active span,
+  .project-insights-lens[aria-selected="true"] span {
     @apply text-blue-700;
   }
   .project-insights-scope {
@@ -809,7 +811,8 @@
   .project-insights-segment {
     @apply h-9 flex-1 border-r border-slate-200 px-3 text-xs font-semibold text-slate-600 last:border-r-0 hover:bg-white lg:flex-none;
   }
-  .project-insights-segment.is-active {
+  .project-insights-segment.is-active,
+  .project-insights-segment[aria-pressed="true"] {
     @apply bg-blue-600 text-white hover:bg-blue-600;
   }
   .project-insights-select {
@@ -892,7 +895,8 @@
   .project-insights-series-toggle {
     @apply relative inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 shadow-sm hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700;
   }
-  .project-insights-series-toggle.is-open {
+  .project-insights-series-toggle.is-open,
+  .project-insights-series-toggle[aria-expanded="true"] {
     @apply border-blue-200 bg-blue-50 text-blue-700;
   }
   .project-insights-series-count {
@@ -975,7 +979,8 @@
     @apply shrink-0 whitespace-nowrap rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600;
     letter-spacing: 0;
   }
-  .project-insights-metric.is-selected .project-insights-metric-action {
+  .project-insights-metric.is-selected .project-insights-metric-action,
+  .project-insights-metric[aria-pressed="true"] .project-insights-metric-action {
     @apply border-blue-200 bg-blue-100 text-blue-700;
   }
   .project-insights-metric-details {
@@ -1868,6 +1873,9 @@
   .detail-panel.is-hidden {
     @apply hidden;
   }
+  .detail-panel[hidden] {
+    @apply hidden;
+  }
   .detail-tabs-wrap[aria-busy="true"] {
     @apply opacity-75;
   }
@@ -2675,7 +2683,8 @@
     background: color-mix(in srgb, var(--app-primary-900) 35%, transparent);
   }
 
-  .screenshots-slider-dot.is-active {
+  .screenshots-slider-dot.is-active,
+  .screenshots-slider-dot[aria-current="true"] {
     background: var(--mk-accent);
   }
 
@@ -4247,6 +4256,10 @@
 }
 
 @layer utilities {
+  .retention-archive-guard[data-state="disabled"] {
+    @apply opacity-50;
+  }
+
   @media (max-width: 767px) {
     .nav-link {
       min-height: 2.75rem;
@@ -4258,6 +4271,10 @@
       opacity: 0;
       transform: translateY(-4px);
       transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .nav-shell[data-nav-state="closed"] .nav-panel {
+      display: none;
     }
 
     .nav-shell[data-nav-state="open"] .nav-panel {
@@ -4278,14 +4295,17 @@
   }
 }
 
-
 /* View Transitions (Turbo 8): keep server-rendered navigation and frame updates feeling continuous. */
 @supports (view-transition-name: none) {
   ::view-transition-group(.app-shell),
+  ::view-transition-group(.api-key-message),
+  ::view-transition-group(.api-key-row),
   ::view-transition-group(.project-insights-panel),
   ::view-transition-group(.project-insights-event),
   ::view-transition-group(.project-insights-catalog),
   ::view-transition-group(.project-insights-chip),
+  ::view-transition-group(.project-membership-message),
+  ::view-transition-group(.project-membership-row),
   ::view-transition-group(.project-card),
   ::view-transition-group(.inbox-row),
   ::view-transition-group(.error-detail-pane),

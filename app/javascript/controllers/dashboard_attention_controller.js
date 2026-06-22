@@ -29,8 +29,8 @@ export default class extends Controller {
 
     this.filterTargets.forEach((filter) => {
       const active = filter.dataset.eventType === eventType
-      filter.classList.toggle("is-active", active)
       filter.setAttribute("aria-pressed", active ? "true" : "false")
+      filter.dataset.state = active ? "active" : "inactive"
     })
 
     this.itemTargets.forEach((item) => {

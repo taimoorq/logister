@@ -21,7 +21,7 @@ class ProjectMembershipsController < ApplicationController
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.append("project_memberships_tbody", partial: "project_memberships/row", locals: { membership: membership, project: @project }),
-            turbo_stream.replace("project_membership_message", partial: "project_memberships/success_message", locals: { email: user.email })
+            turbo_stream.replace("project_membership_message", partial: "project_memberships/success_message", locals: { email: user.email }, method: :morph)
           ]
         end
         format.html { redirect_to settings_project_path(@project, section: "team"), notice: "Project shared with #{user.email}." }
@@ -41,7 +41,8 @@ class ProjectMembershipsController < ApplicationController
           render turbo_stream: turbo_stream.replace(
             membership,
             partial: "project_memberships/row",
-            locals: { membership: membership, project: @project, assignment_summary: assignment_summary }
+            locals: { membership: membership, project: @project, assignment_summary: assignment_summary },
+            method: :morph
           )
         end
         format.html { redirect_to settings_project_path(@project, section: "team"), notice: "Member role updated." }
@@ -64,7 +65,8 @@ class ProjectMembershipsController < ApplicationController
           turbo_stream.replace(
             "project_assignment_summary",
             partial: "projects/assignment_summary",
-            locals: { assignment_summary: assignment_summary }
+            locals: { assignment_summary: assignment_summary },
+            method: :morph
           )
         ]
       end
@@ -103,7 +105,8 @@ class ProjectMembershipsController < ApplicationController
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace("project_membership_message",
           partial: "project_memberships/error_message",
-          locals: { message: message }), status: :unprocessable_content
+          locals: { message: message },
+          method: :morph), status: :unprocessable_content
       end
       format.html { redirect_to settings_project_path(@project, section: "team"), alert: message }
     end

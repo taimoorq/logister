@@ -48,7 +48,6 @@ export default class extends Controller {
     const link = event.currentTarget
     this.filterLinkTargets.forEach(currentLink => {
       const isActive = currentLink === link
-      currentLink.classList.toggle("is-active", isActive)
       if (isActive) {
         currentLink.setAttribute("aria-current", "page")
       } else {
@@ -118,7 +117,6 @@ export default class extends Controller {
   setSelectedRow(row) {
     this.element.querySelectorAll(".inbox-table tbody tr").forEach(currentRow => {
       const isSelected = currentRow === row
-      currentRow.classList.toggle("is-selected", isSelected)
       currentRow.setAttribute("aria-selected", isSelected ? "true" : "false")
     })
   }

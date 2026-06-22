@@ -18,7 +18,9 @@
             <% end %>
           <% end %>
 
-          <div id="api_key_new_token" class="mt-3">
+          <div id="api_key_new_token"
+               class="mt-3"
+               style="view-transition-name: api-key-message; view-transition-class: api-key-message;">
             <% if flash[:new_api_key_token].present? %>
               <div class="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 mb-4">
                 New API token:
@@ -45,7 +47,8 @@
                     <%= render "api_keys/row", api_key: key, project: @project %>
                   <% end %>
                 <% else %>
-                  <tr id="api_keys_empty"><td colspan="4" class="px-3 py-2 text-slate-600 text-sm">No API keys yet.</td></tr>
+                  <tr id="api_keys_empty"
+                      style="view-transition-name: api-keys-empty; view-transition-class: api-key-row;"><td colspan="4" class="px-3 py-2 text-slate-600 text-sm">No API keys yet.</td></tr>
                 <% end %>
               </tbody>
             </table>

@@ -93,7 +93,7 @@ module Github
     end
 
     def detail_stream(filter:, query:, assignee:)
-      return turbo_stream.replace("error_detail", partial: "projects/empty_detail") if latest_event.blank?
+      return turbo_stream.replace("error_detail", partial: "projects/empty_detail", method: :morph) if latest_event.blank?
 
       detail_data = build_project_event_detail(@project, latest_event, group: @group)
       turbo_stream.replace(
@@ -113,7 +113,8 @@ module Github
           frame_scope: params[:frame_scope],
           frame: params[:frame],
           external_link_errors: @external_link_errors
-        }
+        },
+        method: :morph
       )
     end
   end

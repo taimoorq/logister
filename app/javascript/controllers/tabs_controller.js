@@ -44,7 +44,11 @@ export default class extends Controller {
 
   // Called after a Turbo Frame replaces content so tabs stay in sync
   syncActive() {
-    const activeTab = this.tabTargets.find(t => t.classList.contains("is-active")) || this.tabTargets[0]
+    const activeTab = this.tabTargets.find((tab) => {
+      return tab.getAttribute("aria-selected") === "true" ||
+        tab.dataset.state === "active" ||
+        tab.classList.contains("is-active")
+    }) || this.tabTargets[0]
     if (!activeTab) return
     const panelId = activeTab.dataset.panel
     this.activate(panelId)
@@ -53,16 +57,16 @@ export default class extends Controller {
   activate(panelId) {
     this.tabTargets.forEach(tab => {
       const isActive = tab.dataset.panel === panelId
-      tab.classList.toggle("is-active", isActive)
       tab.setAttribute("aria-selected", isActive ? "true" : "false")
       tab.setAttribute("tabindex", isActive ? "0" : "-1")
+      tab.dataset.state = isActive ? "active" : "inactive"
     })
 
     this.panelTargets.forEach(panel => {
       const isActive = panel.id === panelId
-      panel.classList.toggle("is-hidden", !isActive)
       panel.hidden = !isActive
       panel.setAttribute("aria-hidden", isActive ? "false" : "true")
+      panel.dataset.state = isActive ? "active" : "inactive"
     })
   }
 
