@@ -54,10 +54,19 @@
             <section id="connect" class="section">
               <p class="eyebrow">Connect services</p>
               <h2>Start each monitored app as a project.</h2>
-              <div class="media-pair">
+              <div class="media-pair is-screenshot-flow">
                 <div class="media-pair-content">
                   <p>A project is the workspace for one app or service. It keeps API keys, events, settings, notifications, team access, and retention choices scoped to that app.</p>
                   <p>When you create a project, pick the integration type that will send the first event. The Setup tab then shows package, API key, and verification steps for that runtime.</p>
+                  <div class="doc-flow-panel">
+                    <p class="eyebrow">Project path</p>
+                    <h3>Move from setup to review without leaving the app context.</h3>
+                    <ul class="doc-flow-list">
+                      <li><strong>Connect</strong>Create the project, choose the runtime, and generate the first API key.</li>
+                      <li><strong>Review</strong>Open the dashboard card when recent activity or open errors need a closer look.</li>
+                      <li><strong>Retire</strong>Archive quiet apps when you want history without keeping them in active lists.</li>
+                    </ul>
+                  </div>
                 </div>
                 <figure class="screenshot-figure is-narrow"><img src="/docs/assets/screenshots/projects-new.webp" alt="Logister new project screen showing project details, integration choices, and data retention settings." width="1728" height="2993" loading="lazy" decoding="async"><figcaption>The new project screen sets app identity, integration path, and data lifecycle before the first event arrives.</figcaption></figure>
               </div>
@@ -70,9 +79,18 @@
               <h2>Use the dashboard for cross-app signal before opening a project.</h2>
               <p>The dashboard has two jobs. Overview is for today's cross-app work: the big chart shows overall activity, My assignments shows work owned by you, and Needs attention highlights open issues that should not be buried in project cards. Projects is for scanning app health one project at a time.</p>
               <figure class="screenshot-figure"><img src="/docs/assets/screenshots/dashboard-overview-explorer.webp" alt="Logister dashboard Explorer area with current slice, daily volume, event type, and app volume charts." width="2240" height="1800" loading="lazy" decoding="async"><figcaption>The Explorer is the broad scan area: use it to see whether event volume, event types, or noisy apps changed during the selected time slice.</figcaption></figure>
-              <div class="media-pair">
+              <div class="media-pair is-screenshot-flow">
                 <div class="media-pair-content">
                   <ul><li>Use Explorer when you want to know whether the whole account is getting noisier, quieter, or changing shape by event type.</li><li>Use My assignments when you already own errors and need to get back to them quickly.</li><li>Use Needs attention when you want a short list of open problems sorted by recent activity.</li><li>Switch to Projects when you want to compare apps rather than investigate one chart.</li></ul>
+                  <div class="doc-flow-panel">
+                    <p class="eyebrow">Dashboard rhythm</p>
+                    <h3>Start broad, then open the smallest useful view.</h3>
+                    <ul class="doc-flow-list">
+                      <li><strong>Account</strong>Use Explorer to spot volume and shape changes across every app.</li>
+                      <li><strong>Ownership</strong>Use My assignments when the next action already belongs to you.</li>
+                      <li><strong>Queue</strong>Use Needs attention when the team has not claimed the newest open work.</li>
+                    </ul>
+                  </div>
                 </div>
                 <figure class="screenshot-figure is-narrow"><img src="/docs/assets/screenshots/dashboard-overview-attention.webp" alt="Logister dashboard right column showing My assignments and Needs attention panels." width="1240" height="1820" loading="lazy" decoding="async"><figcaption>My assignments is your owned work. Needs attention is the shared queue of open problems that deserve a look even before someone owns them.</figcaption></figure>
               </div>
@@ -87,10 +105,19 @@
               <h3>Good dashboard recipes</h3>
               <ul><li><strong>Release validation:</strong> filter to the new release, add total events, errors, transaction P95, and database query average, then compare the last hour with the previous day.</li><li><strong>Instrumentation audit:</strong> use the metric catalog, recent stream, and performance page to confirm logs, custom metrics, transactions, spans, and check-ins are arriving from the expected service or environment.</li><li><strong>Performance triage:</strong> add transaction P95, database query P95, request load spans, and error count so slowdowns and new failures share one timeline.</li><li><strong>Operational monitoring:</strong> filter by job or queue attributes and add custom metric series such as queue depth, processed jobs, retry count, or worker latency.</li></ul>
               <h3>Why some filters or charts may look empty</h3>
-              <div class="media-pair">
+              <div class="media-pair is-screenshot-flow">
                 <div class="media-pair-content">
                   <p>Insights can only filter and chart values that your app sends consistently. If environment or release menus are empty, the incoming events probably do not include those labels yet.</p>
                   <ul><li>Use stable values such as <code>service</code>, <code>region</code>, <code>queue</code>, <code>route</code>, or <code>tenant_tier</code>.</li><li>Avoid raw IDs, emails, full URLs, and request bodies as chart dimensions.</li><li>Keep custom metric names stable and send a numeric value when you want a value chart instead of just a count.</li><li>Use faster live refresh only while actively watching a deploy or incident.</li></ul>
+                  <div class="doc-flow-panel">
+                    <p class="eyebrow">Recent stream</p>
+                    <h3>Use the stream after the chart has been narrowed.</h3>
+                    <ul class="doc-flow-list">
+                      <li><strong>Filter</strong>Choose the time, release, environment, and attribute slice first.</li>
+                      <li><strong>Confirm</strong>Check that the newest matching events have the labels you expect.</li>
+                      <li><strong>Inspect</strong>Open one row to move from trend-level signal into event detail.</li>
+                    </ul>
+                  </div>
                 </div>
                 <figure class="screenshot-figure is-narrow"><img src="/docs/assets/screenshots/project-insights-recent-stream.webp" alt="Logister Insights recent stream showing matching logs and metric events." width="760" height="1700" loading="lazy" decoding="async"><figcaption>The recent stream bridges chart and detail. After filtering, open a matching event to inspect the exact payload.</figcaption></figure>
               </div>

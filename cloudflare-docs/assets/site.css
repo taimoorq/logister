@@ -609,8 +609,18 @@ code, pre {
   align-items: start;
   margin: 1.15rem 0 1.35rem;
 }
+.media-pair.is-screenshot-flow {
+  --media-figure-width: 15.5rem;
+  grid-template-columns: minmax(0, 1fr) minmax(11rem, var(--media-figure-width));
+  align-items: stretch;
+}
 .media-pair-content {
   min-width: 0;
+}
+.media-pair.is-screenshot-flow .media-pair-content {
+  display: grid;
+  align-content: start;
+  gap: 0.95rem;
 }
 .media-pair-content > :first-child {
   margin-top: 0;
@@ -637,6 +647,54 @@ code, pre {
 .screenshot-figure.is-narrow {
   max-width: min(100%, 18rem);
   justify-self: center;
+}
+.media-pair.is-screenshot-flow .screenshot-figure.is-narrow {
+  max-width: min(100%, var(--media-figure-width));
+}
+.media-pair.is-screenshot-flow .screenshot-figure.is-narrow .screenshot-preview-button,
+.media-pair.is-screenshot-flow .screenshot-figure.is-narrow .screenshot-preview-button img {
+  max-height: min(21rem, 50vh);
+}
+.media-pair.is-screenshot-flow .screenshot-figure figcaption {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.doc-flow-panel {
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, rgba(239, 246, 255, 0.88), rgba(255, 255, 255, 0.96) 54%),
+    repeating-linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0, rgba(37, 99, 235, 0.06) 1px, transparent 1px, transparent 12px);
+  padding: 0.95rem;
+}
+.doc-flow-panel h3 {
+  margin: 0.25rem 0 0.65rem;
+  font-size: 1.05rem;
+}
+.doc-flow-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.doc-flow-list li {
+  border: 1px solid rgba(203, 213, 225, 0.86);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  padding: 0.75rem;
+}
+.doc-flow-list strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.35;
 }
 body.screenshot-lightbox-open {
   overflow: hidden;
@@ -887,6 +945,12 @@ body.screenshot-lightbox-open {
   .card-grid,
   .doc-link-list.compact,
   .media-pair {
+    grid-template-columns: 1fr;
+  }
+  .media-pair.is-screenshot-flow {
+    grid-template-columns: 1fr;
+  }
+  .doc-flow-list {
     grid-template-columns: 1fr;
   }
   .screenshot-figure.is-narrow {
