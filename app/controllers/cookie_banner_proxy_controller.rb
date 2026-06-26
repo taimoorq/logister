@@ -24,15 +24,12 @@ class CookieBannerProxyController < ApplicationController
     uri = probo_upstream_uri
     request = build_upstream_request(uri)
 
-    Net::HTTP.start(
-      uri.host,
-      uri.port,
-      use_ssl: uri.scheme == "https",
+    Logister::HttpClient.request(
+      uri,
+      request,
       open_timeout: REQUEST_TIMEOUT_SECONDS,
       read_timeout: REQUEST_TIMEOUT_SECONDS
-    ) do |http|
-      http.request(request)
-    end
+    )
   end
 
   def build_upstream_request(uri)

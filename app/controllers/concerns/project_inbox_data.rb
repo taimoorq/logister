@@ -62,7 +62,7 @@ module ProjectInboxData
 
     safe_cache_fetch(cache_key, expires_in: 20.seconds) do
       start_date = days.days.ago.to_date
-      trend_dates = (0...days).map { |offset| start_date + offset }
+      trend_dates = inbox_trend_dates(start_date, days)
       trends = group_ids.index_with { Array.new(days, 0) }
 
       ErrorOccurrence.where(error_group_id: group_ids)
@@ -110,6 +110,10 @@ module ProjectInboxData
 
   def inbox_status_count(counts, status)
     counts[status].to_i + counts[status.to_sym].to_i + counts[ErrorGroup.statuses.fetch(status)].to_i
+  end
+
+  def inbox_trend_dates(start_date, days)
+    (0...days).map { |offset| start_date + offset }
   end
 
   def base_inbox_scope(project, filter)

@@ -3,6 +3,7 @@
 module Github
   class IssuePayload
     Result = Data.define(:title, :body)
+    INLINE_CODE_DELIMITER = "`"
 
     def self.call(project:, group:, event: nil, source_excerpt: nil, deployment_context: nil, logister_url: nil)
       new(
@@ -44,7 +45,7 @@ module Github
         "- Error: #{group.title}",
         "- Status: #{group.status}",
         "- Occurrences: #{group.occurrence_count}",
-        "- Fingerprint: `#{group.fingerprint}`",
+        "- Fingerprint: #{inline_code(group.fingerprint)}",
         release_line,
         deployment_line,
         source_line,
@@ -59,7 +60,7 @@ module Github
       release = (event ? IngestEvent.release(event).presence : nil) || group.last_seen_release.presence || group.introduced_in_release.presence
       return if release.blank?
 
-      "- Release: `#{release}`"
+      "- Release: #{inline_code(release)}"
     end
 
     def deployment_line
@@ -67,7 +68,7 @@ module Github
       return if deployment.blank?
 
       parts = [
-        "`#{deployment.release}`",
+        inline_code(deployment.release),
         deployment.environment,
         deployment.repository_full_name,
         deployment.short_commit_sha
@@ -87,6 +88,11 @@ module Github
       return if logister_url.blank?
 
       "- Logister: #{logister_url}"
+    end
+
+    def inline_code(value)
+      escaped = value.to_s.gsub(INLINE_CODE_DELIMITER, "\\#{INLINE_CODE_DELIMITER}")
+      INLINE_CODE_DELIMITER + escaped + INLINE_CODE_DELIMITER
     end
   end
 end

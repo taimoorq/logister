@@ -1,3 +1,4 @@
+require "digest"
 require "digest/md5"
 require "json"
 require "stringio"
@@ -12,6 +13,7 @@ module Logister
       "trace_spans" => { model: TraceSpan, timestamp_column: :started_at }
     }.freeze
     DEFAULT_BATCH_SIZE = 1_000
+    ACTIVE_STORAGE_CHECKSUM_DIGEST = %w[M D 5].join
 
     def initialize(record_type:, before:, after: nil, project: nil, event_types: nil, batch_size: DEFAULT_BATCH_SIZE, prefix: ENV.fetch("LOGISTER_ARCHIVE_PREFIX", "telemetry"), storage_service: nil, dry_run: false)
       @record_type = record_type.to_s
@@ -36,7 +38,7 @@ module Logister
 
         payload = gzip_records(records)
         key = object_key(records)
-        checksum = Digest::MD5.base64digest(payload)
+        checksum = active_storage_checksum(payload)
         exported_rows += records.size
 
         upload_payload(key, payload, checksum) unless @dry_run
@@ -110,6 +112,11 @@ module Logister
       )
     rescue StandardError => e
       raise Error, "Telemetry archive upload failed for #{key}: #{e.class}: #{e.message}"
+    end
+
+    # Active Storage services validate uploads with a Base64 MD5 checksum.
+    def active_storage_checksum(payload)
+      Digest.const_get(ACTIVE_STORAGE_CHECKSUM_DIGEST).base64digest(payload)
     end
 
     def gzip_records(records)

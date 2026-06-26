@@ -49,9 +49,7 @@ module Github
       request[STATELESS_S2S_TOKEN_HEADER] = stateless_s2s_token_override if stateless_s2s_token_override.present?
       request.body = request_body.to_json
 
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 5) do |http|
-        http.request(request)
-      end
+      response = Logister::HttpClient.request(uri, request, open_timeout: 5, read_timeout: 5)
 
       parsed = JSON.parse(response.body.presence || "{}")
       unless response.is_a?(Net::HTTPSuccess) && parsed["token"].present?

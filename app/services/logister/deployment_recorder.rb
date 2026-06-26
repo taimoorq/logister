@@ -14,15 +14,12 @@ module Logister
         return false unless ready?(configuration)
 
         uri = deployment_uri(configuration)
-        response = Net::HTTP.start(
-          uri.host,
-          uri.port,
-          use_ssl: uri.scheme == "https",
+        response = Logister::HttpClient.request(
+          uri,
+          request(payload, configuration),
           open_timeout: configuration.timeout_seconds,
           read_timeout: configuration.timeout_seconds
-        ) do |http|
-          http.request(request(payload, configuration))
-        end
+        )
 
         response.is_a?(Net::HTTPSuccess)
       rescue StandardError => error

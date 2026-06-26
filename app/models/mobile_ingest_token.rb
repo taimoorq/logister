@@ -25,12 +25,7 @@ class MobileIngestToken < ApplicationRecord
   validates :token_digest, presence: true, uniqueness: true
   validates :platform, inclusion: { in: PLATFORMS }
   validates :service, :environment, :expires_at, presence: true
-  validate :project_must_be_active
-  validate :parent_api_key_must_match_project
-  validate :parent_api_key_must_be_active
-  validate :project_platform_must_match_token
-  validate :expires_at_must_be_short_lived, on: :create
-  validate :allowed_event_types_must_be_known
+  validate :validate_mobile_ingest_token_constraints
 
   def self.authenticate(token)
     return nil if token.blank?
@@ -120,48 +115,7 @@ class MobileIngestToken < ApplicationRecord
     event_type.to_s.strip.underscore.downcase
   end
 
-  def project_must_be_active
-    return unless project&.archived?
-
-    errors.add(:project, "is archived")
-  end
-
-  def parent_api_key_must_match_project
-    return if api_key.blank? || project.blank?
-    return if api_key.project_id == project.id
-
-    errors.add(:api_key, "must belong to the same project")
-  end
-
-  def parent_api_key_must_be_active
-    return if api_key.blank?
-    return if api_key.active?
-
-    errors.add(:api_key, "is revoked")
-  end
-
-  def project_platform_must_match_token
-    return if project.blank? || platform.blank?
-    return if project.integration_kind == platform
-
-    errors.add(:platform, "must match the project integration kind")
-  end
-
-  def expires_at_must_be_short_lived
-    return if expires_at.blank?
-
-    seconds_from_now = expires_at - Time.current
-    if seconds_from_now < MIN_EXPIRES_IN_SECONDS - 1
-      errors.add(:expires_at, "must be at least #{MIN_EXPIRES_IN_SECONDS} seconds from now")
-    elsif seconds_from_now > MAX_EXPIRES_IN_SECONDS + 1
-      errors.add(:expires_at, "must be within #{MAX_EXPIRES_IN_SECONDS} seconds")
-    end
-  end
-
-  def allowed_event_types_must_be_known
-    unknown = allowed_event_types - DEFAULT_ALLOWED_EVENT_TYPES
-    return if unknown.empty?
-
-    errors.add(:allowed_event_types, "contains unsupported values: #{unknown.join(', ')}")
+  def validate_mobile_ingest_token_constraints
+    MobileIngestTokenValidator.call(self)
   end
 end

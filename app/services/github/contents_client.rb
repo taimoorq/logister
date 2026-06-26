@@ -34,9 +34,7 @@ module Github
       request["Authorization"] = "Bearer #{token}"
       request["X-GitHub-Api-Version"] = config.api_version
 
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 5) do |http|
-        http.request(request)
-      end
+      response = Logister::HttpClient.request(uri, request, open_timeout: 5, read_timeout: 5)
       return nil if response.is_a?(Net::HTTPNotFound)
 
       parsed = JSON.parse(response.body.presence || "{}")

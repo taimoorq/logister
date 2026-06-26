@@ -57,7 +57,7 @@ module Logister
     end
 
     def changelog_version
-      match = File.read(Rails.root.join("CHANGELOG.md")).match(/^##\s+(v[0-9][^\s]*)\s+-\s+[0-9]{4}-[0-9]{2}-[0-9]{2}\s*$/)
+      match = Rails.root.join("CHANGELOG.md").read.match(/^##\s+(v[0-9][^\s]*)\s+-\s+[0-9]{4}-[0-9]{2}-[0-9]{2}\s*$/)
       normalize_tag(match[1]) if match
     end
 
@@ -68,9 +68,13 @@ module Logister
       request["User-Agent"] = "Logister release checker"
       request["Authorization"] = "Bearer #{ENV["LOGISTER_GITHUB_TOKEN"]}" if ENV["LOGISTER_GITHUB_TOKEN"].present?
 
-      response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: REQUEST_TIMEOUT, read_timeout: REQUEST_TIMEOUT) do |http|
-        http.request(request)
-      end
+      response = Logister::HttpClient.request(
+        uri,
+        request,
+        use_ssl: true,
+        open_timeout: REQUEST_TIMEOUT,
+        read_timeout: REQUEST_TIMEOUT
+      )
       return nil unless response.is_a?(Net::HTTPSuccess)
 
       JSON.parse(response.body)

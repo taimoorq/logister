@@ -88,7 +88,7 @@ class ErrorGroup < ApplicationRecord
       assigned_by: assigned_by,
       assigned_at: Time.current
     )
-    notify_assignment_change!(assigned_by) if previous_assignee_id != user&.id
+    ErrorGroupAssignmentNotification.call(self, actor: assigned_by) if previous_assignee_id != user&.id
   end
 
   def clear_assignment!
@@ -113,9 +113,9 @@ class ErrorGroup < ApplicationRecord
         last_seen_at:     event.occurred_at,
         first_seen_at:    [ first_seen_at, event.occurred_at ].compact.min,
         occurrence_count: occurrence_count + 1,
-        title:            derive_title(event),
-        subtitle:         derive_subtitle(event),
-        stage:            derive_stage(event),
+        title:            ErrorGroupEventDetails.title(event, fallback: title),
+        subtitle:         ErrorGroupEventDetails.subtitle(event),
+        stage:            ErrorGroupEventDetails.stage(event),
         severity:         event.level.presence || severity,
         last_seen_release: event_release.presence || last_seen_release,
         regressed_in_release: was_closed ? (event_release.presence || regressed_in_release) : regressed_in_release,
@@ -179,35 +179,5 @@ class ErrorGroup < ApplicationRecord
     return if assigned_by.blank? || project&.assignable_user?(assigned_by)
 
     errors.add(:assigned_by, "must have access to this project")
-  end
-
-  def derive_title(event)
-    event.message.to_s.lines.first.to_s.strip.presence || title.presence || "Untitled error"
-  end
-
-  def derive_subtitle(event)
-    ctx = event.context.is_a?(Hash) ? event.context : {}
-    exc = ctx["exception"] || ctx[:exception]
-    return nil unless exc.is_a?(Hash)
-
-    exc["class"].presence || exc[:class].presence
-  end
-
-  def derive_stage(event)
-    ctx = event.context.is_a?(Hash) ? event.context : {}
-    ctx["environment"].presence || ctx[:environment].presence || "production"
-  end
-
-  def notify_assignment_change!(actor)
-    ProjectWorkflowNotificationJob.perform_later(
-      id,
-      "assignment",
-      {
-        "assigned_user_id" => assigned_user_id,
-        "actor_user_id" => actor&.id,
-        "actor_name" => actor&.name.presence || actor&.email,
-        "assigned_at" => assigned_at&.utc&.iso8601
-      }.compact
-    )
   end
 end

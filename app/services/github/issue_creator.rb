@@ -82,9 +82,7 @@ module Github
       request["X-GitHub-Api-Version"] = config.api_version
       request.body = { title: payload.title, body: payload.body }.to_json
 
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 5) do |http|
-        http.request(request)
-      end
+      response = Logister::HttpClient.request(uri, request, open_timeout: 5, read_timeout: 5)
       parsed = JSON.parse(response.body.presence || "{}")
 
       return parsed if response.is_a?(Net::HTTPCreated) && parsed["html_url"].present?

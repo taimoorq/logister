@@ -6,6 +6,45 @@ class Project < ApplicationRecord
   MAX_PUBLIC_API_RATE_LIMIT_REQUESTS = 10_000_000
   MIN_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 1
   MAX_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 86_400
+  INTEGRATION_LABELS = {
+    "ruby" => "Ruby gem",
+    "cfml" => "CFML",
+    "javascript" => "JavaScript / TypeScript",
+    "python" => "Python",
+    "dotnet" => ".NET / ASP.NET Core",
+    "cloudflare_pages" => "Cloudflare Pages",
+    "android" => "Android app",
+    "ios" => "iOS app",
+    "http_api" => "Manual / HTTP API"
+  }.freeze
+  @integration_options = [
+    [ "Manual / HTTP API (custom client)", "http_api" ],
+    [ "Cloudflare Pages", "cloudflare_pages" ],
+    [ "Android app (logister-android)", "android" ],
+    [ "iOS app (logister-ios)", "ios" ],
+    [ "Ruby gem", "ruby" ],
+    [ ".NET / ASP.NET Core (logister-dotnet)", "dotnet" ],
+    [ "JavaScript / TypeScript (logister-js)", "javascript" ],
+    [ "Python (logister-python)", "python" ],
+    [ "CFML", "cfml" ]
+  ].freeze
+
+  class << self
+    attr_reader :integration_options
+
+    delegate :default_public_api_rate_limit_requests,
+             :default_public_api_rate_limit_period_seconds,
+             :default_public_api_auth_failure_rate_limit_requests,
+             to: "ProjectRateLimits"
+    delegate :stats_for,
+             :latest_event_at_by_project,
+             to: "ProjectStats"
+  end
+
+  delegate :public_api_rate_limit_requests_effective,
+           :public_api_rate_limit_period_seconds_effective,
+           :public_api_auth_failure_rate_limit_requests_effective,
+           to: :rate_limits
 
   belongs_to :user
   has_many :api_keys, dependent: :destroy
@@ -47,6 +86,22 @@ class Project < ApplicationRecord
 
   scope :active, -> { where(archived_at: nil) }
   scope :archived, -> { where.not(archived_at: nil) }
+  scope :accessible_to, lambda { |user|
+    if user
+      shared_project_ids = ProjectMembership.where(user_id: user.id).select(:project_id)
+      where(user_id: user.id).or(where(id: shared_project_ids))
+    else
+      none
+    end
+  }
+  scope :manageable_by, lambda { |user|
+    if user
+      admin_project_ids = ProjectMembership.admin.where(user_id: user.id).select(:project_id)
+      where(user_id: user.id).or(where(id: admin_project_ids))
+    else
+      none
+    end
+  }
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: { scope: :user_id }
@@ -69,20 +124,6 @@ class Project < ApplicationRecord
 
   def to_param
     uuid
-  end
-
-  def self.accessible_to(user)
-    return none unless user
-
-    shared_project_ids = ProjectMembership.where(user_id: user.id).select(:project_id)
-    where(user_id: user.id).or(where(id: shared_project_ids))
-  end
-
-  def self.manageable_by(user)
-    return none unless user
-
-    admin_project_ids = ProjectMembership.admin.where(user_id: user.id).select(:project_id)
-    where(user_id: user.id).or(where(id: admin_project_ids))
   end
 
   def owned_by?(viewer)
@@ -131,139 +172,14 @@ class Project < ApplicationRecord
   end
 
   def integration_label
-    {
-      "ruby" => "Ruby gem",
-      "cfml" => "CFML",
-      "javascript" => "JavaScript / TypeScript",
-      "python" => "Python",
-      "dotnet" => ".NET / ASP.NET Core",
-      "cloudflare_pages" => "Cloudflare Pages",
-      "android" => "Android app",
-      "ios" => "iOS app",
-      "http_api" => "Manual / HTTP API"
-    }.fetch(integration_kind, integration_kind.to_s.humanize)
-  end
-
-  def public_api_rate_limit_requests_effective(default)
-    public_api_rate_limit_requests_override || default
-  end
-
-  def public_api_rate_limit_period_seconds_effective(default)
-    public_api_rate_limit_period_seconds_override || default
-  end
-
-  def public_api_auth_failure_rate_limit_requests_effective(default)
-    public_api_auth_failure_rate_limit_requests_override || default
-  end
-
-  def self.integration_options
-    [
-      [ "Manual / HTTP API (custom client)", "http_api" ],
-      [ "Cloudflare Pages", "cloudflare_pages" ],
-      [ "Android app (logister-android)", "android" ],
-      [ "iOS app (logister-ios)", "ios" ],
-      [ "Ruby gem", "ruby" ],
-      [ ".NET / ASP.NET Core (logister-dotnet)", "dotnet" ],
-      [ "JavaScript / TypeScript (logister-js)", "javascript" ],
-      [ "Python (logister-python)", "python" ],
-      [ "CFML", "cfml" ]
-    ]
-  end
-
-  def self.default_public_api_rate_limit_requests
-    positive_integer_logister_config(:public_api_rate_limit_requests, DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS)
-  end
-
-  def self.default_public_api_rate_limit_period_seconds
-    positive_integer_logister_config(:public_api_rate_limit_period_seconds, DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS)
-  end
-
-  def self.default_public_api_auth_failure_rate_limit_requests
-    positive_integer_logister_config(
-      :public_api_auth_failure_rate_limit_requests,
-      DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS
-    )
-  end
-
-  # Stats for project index: recent event volume, activity volume, open error groups,
-  # total error groups, and 7-day raw event trend per project.
-  def self.stats_for(project_ids)
-    return {} if project_ids.blank?
-
-    stats = project_ids.index_with do
-      { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, latest_event_at: nil, trend: Array.new(7, 0) }
-    end
-    project_error_groups = ErrorGroup.where(project_id: project_ids)
-    project_events = IngestEvent.where(project_id: project_ids)
-    trend_dates = 7.times.map { |i| Date.current - (6 - i) }
-    recent_events = project_events.where("occurred_at >= ?", trend_dates.first.beginning_of_day)
-
-    project_error_groups.group(:project_id).count.each do |pid, count|
-      stats[pid][:all_groups] = count
-    end
-
-    project_error_groups.unresolved.group(:project_id).count.each do |pid, count|
-      stats[pid][:open_groups] = count
-    end
-
-    recent_events.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count.each do |pid, count|
-      stats[pid][:activity_events] = count
-    end
-
-    recent_events.group(:project_id).maximum(:occurred_at).each do |pid, occurred_at|
-      stats[pid][:latest_event_at] = occurred_at
-    end
-
-    recent_events
-      .group(:project_id, "DATE(occurred_at)")
-      .count
-      .each do |(pid, date), count|
-        idx = trend_dates.index(date.to_date)
-        next unless idx
-
-        stats[pid][:trend][idx] = count
-        stats[pid][:total_events] += count
-      end
-
-    stats
-  end
-
-  def self.latest_event_at_by_project(project_ids)
-    ids = Array(project_ids).filter_map { |project_id| Integer(project_id, exception: false) }.uniq
-    return {} if ids.blank?
-
-    sql = sanitize_sql_array([
-      <<~SQL.squish,
-        SELECT requested_projects.project_id, latest_events.occurred_at
-        FROM unnest(ARRAY[?]::bigint[]) AS requested_projects(project_id)
-        LEFT JOIN LATERAL (
-          SELECT occurred_at
-          FROM ingest_events
-          WHERE ingest_events.project_id = requested_projects.project_id
-          ORDER BY occurred_at DESC
-          LIMIT 1
-        ) latest_events ON TRUE
-      SQL
-      ids
-    ])
-
-    connection.exec_query(sql).each_with_object({}) do |row, latest_events|
-      occurred_at = row["occurred_at"]
-      next if occurred_at.blank?
-
-      latest_events[row["project_id"].to_i] = occurred_at
-    end
+    INTEGRATION_LABELS.fetch(integration_kind, integration_kind.to_s.humanize)
   end
 
   private
 
-  def self.positive_integer_logister_config(name, default)
-    value = Rails.application.config.x.logister.public_send(name)
-    value.to_i.positive? ? value.to_i : default
-  rescue NoMethodError
-    default
+  def rate_limits
+    @rate_limits ||= ProjectRateLimits.new(self)
   end
-  private_class_method :positive_integer_logister_config
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid

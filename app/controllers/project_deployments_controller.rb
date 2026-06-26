@@ -20,7 +20,7 @@ class ProjectDeploymentsController < ApplicationController
                    .newest_first
                    .limit(LIMIT)
                    .to_a
-    @previous_deployments_by_id = previous_deployments_for(@deployments)
+    @previous_deployments_by_id = ProjectDeploymentPreviousLookup.call(project: @project, deployments: @deployments)
 
     render "project_deployments/index"
   end
@@ -65,18 +65,5 @@ class ProjectDeploymentsController < ApplicationController
       SQL
       term: term
     )
-  end
-
-  def previous_deployments_for(deployments)
-    deployments.each_with_object({}) do |deployment, previous_by_id|
-      timestamp = deployment.deployed_at || deployment.created_at
-      next if timestamp.blank?
-
-      previous_by_id[deployment.id] = @project.deployments
-                                      .where(repository_full_name: deployment.repository_full_name, environment: deployment.environment)
-                                      .where("COALESCE(deployed_at, created_at) < ?", timestamp)
-                                      .newest_first
-                                      .first
-    end
   end
 end

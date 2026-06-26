@@ -35,6 +35,16 @@ class ProjectDeployment < ApplicationRecord
 
   scope :newest_first, -> { order(Arel.sql("COALESCE(deployed_at, updated_at) DESC"), id: :desc) }
 
+  delegate :short_commit_sha,
+           :github_commit_url,
+           :pull_request_number,
+           :pull_request_url,
+           :pull_request_label,
+           :release_url,
+           :release_tag,
+           :compare_url,
+           to: :links
+
   def self.resolve_commit(project:, repository:, release:, environment:)
     release = release.to_s.strip.presence
     repository_full_name = normalize_repository_full_name(repository_full_name_for(repository))
@@ -68,44 +78,8 @@ class ProjectDeployment < ApplicationRecord
     uuid
   end
 
-  def short_commit_sha
-    commit_sha.to_s.first(7)
-  end
-
-  def github_commit_url
-    return if repository_full_name.blank? || commit_sha.blank?
-
-    "#{Logister::GithubAppConfig.web_url}/#{repository_full_name}/commit/#{commit_sha}"
-  end
-
-  def pull_request_number
-    metadata_value("pull_request_number")
-  end
-
-  def pull_request_url
-    metadata_value("pull_request_url").presence || inferred_pull_request_url
-  end
-
-  def pull_request_label
-    return if pull_request_number.blank?
-
-    "PR ##{pull_request_number}"
-  end
-
-  def release_url
-    metadata_value("release_url").presence || inferred_release_url
-  end
-
-  def release_tag
-    metadata_value("release_tag").presence || release
-  end
-
-  def compare_url(previous_deployment)
-    return if previous_deployment.blank?
-    return unless previous_deployment.repository_full_name == repository_full_name
-    return if previous_deployment.commit_sha.blank? || commit_sha.blank?
-
-    "#{Logister::GithubAppConfig.web_url}/#{repository_full_name}/compare/#{previous_deployment.commit_sha}...#{commit_sha}"
+  def links
+    @links ||= ProjectDeploymentLinks.new(self)
   end
 
   private
@@ -140,22 +114,6 @@ class ProjectDeployment < ApplicationRecord
 
   def normalize_branch(value)
     value.to_s.strip.delete_prefix("refs/heads/").presence
-  end
-
-  def metadata_value(key)
-    metadata.is_a?(Hash) ? metadata[key] || metadata[key.to_sym] : nil
-  end
-
-  def inferred_pull_request_url
-    return if repository_full_name.blank? || pull_request_number.blank?
-
-    "#{Logister::GithubAppConfig.web_url}/#{repository_full_name}/pull/#{pull_request_number}"
-  end
-
-  def inferred_release_url
-    return if repository_full_name.blank? || release_tag.blank?
-
-    "#{Logister::GithubAppConfig.web_url}/#{repository_full_name}/releases/tag/#{ERB::Util.url_encode(release_tag)}"
   end
 
   def enqueue_release_notification

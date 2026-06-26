@@ -47,32 +47,12 @@ class ProjectNotificationPreference < ApplicationRecord
   def immediate_email_enabled_for?(kind, error_group: nil, metadata: {}, now: Time.current)
     return false if quiet_hours_active?(now)
 
-    case kind.to_s
-    when "first_occurrence"
-      first_occurrence_enabled? && error_group_matches_filters?(error_group)
-    when "regression"
-      regression_enabled? && error_group_matches_filters?(error_group)
-    when "frequent_error"
-      frequent_error_enabled? && error_group_matches_filters?(error_group)
-    when "error_milestone"
-      milestone_alerts_enabled? && error_group_matches_filters?(error_group)
-    when "assignment", "status_change"
-      workflow_email_enabled?(kind, error_group: error_group, metadata: metadata)
-    when "monitor_missed", "monitor_recovered"
-      monitor_alerts_enabled?
-    when "project_spike"
-      project_spike_enabled?
-    when "performance_threshold"
-      performance_alerts_enabled?
-    when "release_summary"
-      release_notifications_enabled?
-    when "usage_alert"
-      usage_notifications_enabled?
-    when "retention_failure"
-      retention_notifications_enabled?
-    else
-      false
-    end
+    ProjectNotificationPreferenceRules.immediate_email_enabled?(
+      self,
+      kind,
+      error_group: error_group,
+      metadata: metadata
+    )
   end
 
   def immediate_rate_limit_available?(kind, now: Time.current)
@@ -169,53 +149,6 @@ class ProjectNotificationPreference < ApplicationRecord
     return if ActiveSupport::TimeZone[time_zone]
 
     errors.add(:time_zone, "is not supported")
-  end
-
-  def error_group_matches_filters?(group)
-    return true unless group
-
-    return false unless environment_matches?(group.stage)
-    return false unless severity_matches?(group.severity)
-
-    status_matches?(group.status)
-  end
-
-  def workflow_email_enabled?(kind, error_group:, metadata:)
-    return false if workflow_mode == "off"
-    return false unless error_group_matches_filters?(error_group)
-    return true if workflow_mode == "all_project"
-
-    case kind.to_s
-    when "assignment"
-      metadata_user_id(metadata, "assigned_user_id") == user_id
-    when "status_change"
-      error_group&.assigned_user_id == user_id && metadata_user_id(metadata, "actor_user_id") != user_id
-    else
-      false
-    end
-  end
-
-  def environment_matches?(environment)
-    environment_filter == FILTER_ALL || environment_filter == environment.to_s
-  end
-
-  def severity_matches?(severity)
-    severity_filter == FILTER_ALL || severity_filter == severity.to_s
-  end
-
-  def status_matches?(status)
-    case status_filter
-    when "all"
-      true
-    when "closed"
-      status.to_s != "unresolved"
-    else
-      status.to_s == status_filter
-    end
-  end
-
-  def metadata_user_id(metadata, key)
-    Integer(metadata[key] || metadata[key.to_sym], exception: false)
   end
 
   def normalized_filter(value)

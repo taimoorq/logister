@@ -44,9 +44,7 @@ module Github
       request["Authorization"] = "Bearer #{token}"
       request["X-GitHub-Api-Version"] = config.api_version
 
-      Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https", open_timeout: 5, read_timeout: 5) do |http|
-        http.request(request)
-      end
+      Logister::HttpClient.request(uri, request, open_timeout: 5, read_timeout: 5)
     end
 
     def next_page_uri(response)
