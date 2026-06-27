@@ -104,48 +104,32 @@ module ClientSubmissionMonitoring
   end
 
   def mobile_ingest_token_endpoint_allowed?
-    %w[ingest check_in].include?(client_submission_endpoint_label)
+    ClientSubmissions::MobileTokenPolicy.endpoint_allowed?(client_submission_endpoint_label)
   end
 
   def public_api_rate_limited?(identity:, kind:, limit:, period:)
-    limit = limit.to_i
-    return false unless limit.positive?
-
-    period = period.to_i
-    return false unless period.positive?
-
-    window_started_at = Time.current.to_i / period * period
-    reset_at = window_started_at + period
-    count = public_api_rate_limit_count(kind, identity, window_started_at, period)
-    return false unless count
-
-    set_public_api_rate_limit_headers(limit, count, reset_at)
-    @public_api_rate_limit_context = {
+    result = public_api_rate_limiter.check(
+      identity: identity,
+      kind: kind,
+      endpoint: client_submission_endpoint_label,
       limit: limit,
-      remaining: [ limit - count, 0 ].max,
-      reset_at: reset_at,
-      retry_after: public_api_retry_after(reset_at),
-      window_seconds: period
+      period: period
+    )
+    return false unless result
+
+    set_public_api_rate_limit_headers(result)
+    @public_api_rate_limit_context = {
+      limit: result.limit,
+      remaining: result.remaining,
+      reset_at: result.reset_at,
+      retry_after: result.retry_after,
+      window_seconds: result.window_seconds
     }
-    count > limit
-  rescue StandardError => error
-    Rails.logger.warn("public API rate limiting skipped: #{error.class} #{error.message}")
-    false
+    result.limited?
   end
 
-  def public_api_rate_limit_count(kind, identity, window_started_at, period)
-    cache_key = public_api_rate_limit_cache_key(kind, identity, window_started_at)
-    count = Rails.cache.increment(cache_key, 1, expires_in: period + 5)
-    return count if count
-
-    Rails.cache.write(cache_key, 1, expires_in: period + 5)
-    1
-  end
-
-  def public_api_rate_limit_cache_key(kind, identity, window_started_at)
-    endpoint = kind == "auth_failure" ? "all" : client_submission_endpoint_label
-    identity_digest = Digest::SHA256.hexdigest(identity.to_s)
-    "logister:public_api_rate_limit:v1:#{kind}:#{endpoint}:#{identity_digest}:#{window_started_at}"
+  def public_api_rate_limiter
+    @public_api_rate_limiter ||= ClientSubmissions::RateLimiter.new
   end
 
   def render_public_api_rate_limited
@@ -166,14 +150,10 @@ module ClientSubmissionMonitoring
     }, status: :too_many_requests
   end
 
-  def set_public_api_rate_limit_headers(limit, count, reset_at)
-    response.set_header("X-RateLimit-Limit", limit.to_s)
-    response.set_header("X-RateLimit-Remaining", [ limit - count, 0 ].max.to_s)
-    response.set_header("X-RateLimit-Reset", reset_at.to_s)
-  end
-
-  def public_api_retry_after(reset_at)
-    [ reset_at - Time.current.to_i, 1 ].max
+  def set_public_api_rate_limit_headers(result)
+    response.set_header("X-RateLimit-Limit", result.limit.to_s)
+    response.set_header("X-RateLimit-Remaining", result.remaining.to_s)
+    response.set_header("X-RateLimit-Reset", result.reset_at.to_s)
   end
 
   def public_api_rate_limit_requests(project)
@@ -244,20 +224,13 @@ module ClientSubmissionMonitoring
   end
 
   def submitted_api_key_token
-    authorization = request.headers["Authorization"].to_s
-    if authorization.start_with?("Bearer ")
-      @client_submission_token_source = "authorization_bearer"
-      return authorization.delete_prefix("Bearer ").strip
-    end
+    token = client_submission_token
+    @client_submission_token_source = token.source
+    token.token
+  end
 
-    x_api_key = request.headers["X-Api-Key"].to_s
-    if x_api_key.present?
-      @client_submission_token_source = "x_api_key"
-      return x_api_key.strip
-    end
-
-    @client_submission_token_source = nil
-    nil
+  def client_submission_token
+    @client_submission_token ||= ClientSubmissions::TokenExtractor.call(request)
   end
 
   def diagnostic_api_key_for(token)
@@ -440,54 +413,29 @@ module ClientSubmissionMonitoring
   def enforce_mobile_ingest_token_scope!(event_type:, context:)
     return true unless @mobile_ingest_token
 
-    normalized_event_type = event_type.to_s.strip.underscore.downcase
-    unless @mobile_ingest_token.allows_event_type?(normalized_event_type)
+    result = ClientSubmissions::MobileTokenPolicy.new(@mobile_ingest_token).enforce_event(
+      event_type: event_type,
+      context: context
+    )
+    return true if result.allowed?
+
+    if result.status == :forbidden
       report_client_submission_failure(
         reason: "mobile_event_type_forbidden",
-        status: :forbidden,
-        errors: [ "Mobile ingest token cannot send #{normalized_event_type} events" ]
+        status: result.status,
+        errors: result.errors
       )
-      render json: { error: "Mobile ingest token cannot send this event type" }, status: :forbidden
+      render json: { error: result.error }, status: result.status
       return false
     end
 
-    apply_mobile_ingest_token_context!(context)
-  end
-
-  def apply_mobile_ingest_token_context!(context)
-    conflicts = mobile_ingest_token_context_conflicts(context)
-    if conflicts.any?
-      errors = conflicts.map do |key, values|
-        "#{key} must match the mobile ingest token binding (got #{values[:submitted].inspect}, expected #{values[:bound].inspect})"
-      end
-      report_client_submission_failure(
-        reason: "mobile_context_conflict",
-        status: :unprocessable_content,
-        errors: errors
-      )
-      render json: { errors: errors }, status: :unprocessable_content
-      return false
-    end
-
-    @mobile_ingest_token.context_bindings.each do |key, value|
-      context[key] = value
-    end
-    true
-  end
-
-  def mobile_ingest_token_context_conflicts(context)
-    return {} unless @mobile_ingest_token
-
-    @mobile_ingest_token.context_bindings.each_with_object({}) do |(key, bound_value), conflicts|
-      submitted_value = context[key] || context[key.to_sym]
-      next if submitted_value.blank?
-      next if submitted_value.to_s == bound_value.to_s
-
-      conflicts[key] = {
-        submitted: submitted_value,
-        bound: bound_value
-      }
-    end
+    report_client_submission_failure(
+      reason: "mobile_context_conflict",
+      status: result.status,
+      errors: result.errors
+    )
+    render json: { errors: result.errors }, status: result.status
+    false
   end
 
   def mobile_ingest_token?

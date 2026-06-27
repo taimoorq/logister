@@ -2,6 +2,24 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v2.9 - 2026-06-27
+
+### Changed
+
+- Split public submission token extraction, rate limiting, and mobile token scope enforcement into focused services behind the existing ingest controllers.
+- Cleaned public documentation indexes so durable user and operator docs stay separate from local planning artifacts.
+- Updated public release references, OpenAPI metadata, and structured data for the `v2.9` image tag.
+
+### Fixed
+
+- Hardened error grouping against duplicate occurrence races and repeat processing so counters, event back-links, and notifications stay idempotent.
+- Added per-project retention locking for non-dry-run cleanup jobs to prevent overlapping archive and delete passes.
+
+### Upgrade Notes
+
+- No database migrations are required for this release.
+- Rebuild the public docs after updating the app so OpenAPI metadata, AI-readable files, and versioned image references stay aligned.
+
 ## v2.8 - 2026-06-21
 
 ### Added

@@ -126,9 +126,9 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v2.8
+   docker pull ghcr.io/taimoorq/logister:v2.9
    # or
-   docker pull docker.io/taimoorq/logister:v2.8
+   docker pull docker.io/taimoorq/logister:v2.9
    ```
 
 3. Create production config from the sample.
@@ -288,10 +288,10 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v2.8`
+- `ghcr.io/taimoorq/logister:v2.9`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v2.8`
+- `docker.io/taimoorq/logister:v2.9`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 
@@ -359,12 +359,9 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md) | Hotwire, Turbo, Stimulus, third-party JS, and asset pipeline conventions |
 | [docs/metrics-reference.md](docs/metrics-reference.md) | Telemetry families, Insights metrics, add-on support matrix, reporting fields, and collection boundaries |
 | [docs/mobile-add-ons.md](docs/mobile-add-ons.md) | Android and iOS package manager setup, SDK usage examples, release mechanics, and mobile telemetry boundaries |
-| [docs/cloudflare-mobile-integrations-plan.md](docs/cloudflare-mobile-integrations-plan.md) | Product plan for Cloudflare Pages metrics, Android telemetry, iOS telemetry, and project-type-aware dashboards |
 | [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI contract for the public ingest and check-in APIs |
 | [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json) | Postman collection with example requests for every supported event family |
-| [docs/sdk-parity-and-self-monitoring.md](docs/sdk-parity-and-self-monitoring.md) | SDK option parity and internal Logister self-monitoring checklist |
 | [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
-| [docs/seo-llm-measurement-runbook.md](docs/seo-llm-measurement-runbook.md) | Release-time checks for search, AI crawler, GitHub, container registries, and package discoverability |
 | [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | GitHub-facing pointer to the canonical CFML docs |
 
 ## Source and related repos

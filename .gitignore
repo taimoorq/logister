@@ -65,3 +65,6 @@ node_modules
 
 # Generated static docs search index.
 /cloudflare-docs/pagefind/
+
+# Local-only planning artifacts. Public docs should be durable user/operator docs.
+/docs/local-plans/

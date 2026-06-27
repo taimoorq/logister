@@ -5,11 +5,23 @@ class ProjectRetentionJob < ApplicationJob
 
   def perform(project_id, dry_run: false)
     project = Project.find(project_id)
-    result = Logister::ProjectRetentionRunner.new(project: project, dry_run: dry_run).call
+    lock = Logister::ProjectRetentionLock.new(project_id: project.id, dry_run: dry_run)
+    unless lock.acquire
+      Rails.logger.info(
+        "project_retention.skipped_locked project_id=#{project.id} project_uuid=#{project.uuid} dry_run=#{dry_run}"
+      )
+      return
+    end
 
-    Rails.logger.info(
-      "project_retention.complete project_id=#{project.id} project_uuid=#{project.uuid} " \
-      "dry_run=#{dry_run} deleted=#{result.fetch(:deleted).inspect}"
-    )
+    begin
+      result = Logister::ProjectRetentionRunner.new(project: project, dry_run: dry_run).call
+
+      Rails.logger.info(
+        "project_retention.complete project_id=#{project.id} project_uuid=#{project.uuid} " \
+        "dry_run=#{dry_run} deleted=#{result.fetch(:deleted).inspect}"
+      )
+    ensure
+      lock.release
+    end
   end
 end

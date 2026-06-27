@@ -7,6 +7,8 @@
 # Call ErrorGroupingService.call(event) immediately after the event is saved.
 #
 class ErrorGroupingService
+  RECORD_NOT_UNIQUE_RETRIES = 2
+
   # Returns the ErrorGroup that was created or updated.
   def self.call(event)
     new(event).call
@@ -20,13 +22,35 @@ class ErrorGroupingService
   def call
     return nil unless @event.error?
 
-    fingerprint = derive_fingerprint
-    group, created, regressed = upsert_group(fingerprint)
-    link_occurrence(group)
+    attempts = 0
+    group = created = occurrence_created = regressed = nil
+
+    begin
+      fingerprint = derive_fingerprint
+      ErrorGroup.transaction(requires_new: true) do
+        group, created = upsert_group(fingerprint)
+        _occurrence, occurrence_created = link_occurrence(group)
+
+        if !created && occurrence_created
+          regressed = !group.unresolved?
+          group.record_occurrence!(@event)
+        end
+
+        # Back-link on the ingest_event row so we can JOIN cheaply
+        @event.update_column(:error_group_id, group.id)
+      end
+    rescue ActiveRecord::RecordNotUnique
+      raise if attempts >= RECORD_NOT_UNIQUE_RETRIES
+
+      attempts += 1
+      @event.reload
+      retry
+    end
+
     ProjectErrorFirstOccurrenceAlertJob.perform_later(group.id) if created
-    ProjectErrorGroupNotificationJob.perform_later(group.id, "regression", regression_metadata(group)) if regressed
-    ProjectErrorGroupNotificationJob.perform_later(group.id, "error_milestone", milestone_metadata(group)) if milestone_reached?(group.occurrence_count)
-    ProjectErrorGroupNotificationJob.perform_later(group.id, "frequent_error", frequent_error_metadata) unless created
+    ProjectErrorGroupNotificationJob.perform_later(group.id, "regression", regression_metadata(group)) if occurrence_created && regressed
+    ProjectErrorGroupNotificationJob.perform_later(group.id, "error_milestone", milestone_metadata(group)) if occurrence_created && milestone_reached?(group.occurrence_count)
+    ProjectErrorGroupNotificationJob.perform_later(group.id, "frequent_error", frequent_error_metadata) if occurrence_created && !created
     group
   end
 
@@ -38,13 +62,12 @@ class ErrorGroupingService
       @event.uuid
   end
 
-  # find-or-create the ErrorGroup, then update counters atomically
+  # find-or-create the ErrorGroup. Existing groups are counted only after a new
+  # occurrence link is created, which keeps retries and duplicate workers idempotent.
   def upsert_group(fingerprint)
     group = @project.error_groups.find_or_initialize_by(fingerprint: fingerprint)
 
     created = group.new_record?
-
-    regressed = false
 
     if created
       # Build initial state from the event
@@ -66,25 +89,25 @@ class ErrorGroupingService
         occurrence_count: 1
       )
       group.save!
-    else
-      regressed = !group.unresolved?
-      group.record_occurrence!(@event)
     end
 
-    # Back-link on the ingest_event row so we can JOIN cheaply
-    @event.update_column(:error_group_id, group.id)
-
-    [ group, created, regressed ]
+    [ group, created ]
   end
 
   def link_occurrence(group)
-    ErrorOccurrence.find_or_create_by!(
+    occurrence = ErrorOccurrence.find_by(
       error_group:  group,
       ingest_event: @event
-    ) do |occ|
-      occ.occurred_at = @event.occurred_at
-      occ.ingest_event_occurred_at = @event.occurred_at
-    end
+    )
+    return [ occurrence, false ] if occurrence
+
+    occurrence = ErrorOccurrence.create!(
+      error_group: group,
+      ingest_event: @event,
+      occurred_at: @event.occurred_at,
+      ingest_event_occurred_at: @event.occurred_at
+    )
+    [ occurrence, true ]
   end
 
   def milestone_reached?(count)

@@ -77,13 +77,12 @@ GitHub App setup docs live at https://logister.org/docs/github-app/. Self-hoster
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
-- Current versioned images: `ghcr.io/taimoorq/logister:v2.8` or `docker.io/taimoorq/logister:v2.8`
+- Current versioned images: `ghcr.io/taimoorq/logister:v2.9` or `docker.io/taimoorq/logister:v2.9`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
 
 ## Maintainer And Discovery Context
 
-- SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
 - Documentation style guide: https://github.com/taimoorq/logister/blob/main/docs/documentation-style-guide.md
 - Public docs, GitHub Releases, GHCR images, Docker Hub images, optional Quay mirrors, RubyGems, NuGet, PyPI, npm, Maven Central, Swift Package Manager tags, `llms.txt`, and `llms-full.txt` should stay aligned after each release.
 
@@ -144,7 +143,6 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - GitHub source lookup diagnostics: https://logister.org/docs/github-app/source-lookup/
 - Docker self-hosting: https://logister.org/docs/self-hosting/#docker
 - ClickHouse: https://logister.org/docs/clickhouse/
-- SEO and LLM measurement runbook: https://github.com/taimoorq/logister/blob/main/docs/seo-llm-measurement-runbook.md
 - Documentation style guide: https://github.com/taimoorq/logister/blob/main/docs/documentation-style-guide.md
 - HTTP API: https://logister.org/docs/http-api/
 - Troubleshooting: https://logister.org/docs/troubleshooting/

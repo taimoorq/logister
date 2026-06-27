@@ -78,6 +78,52 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group2.id, "frequent_error", hash_including("event_id" => event2.id))
     end
 
+    it "does not double-count when the same event is grouped again" do
+      event = IngestEvent.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "Same event",
+        fingerprint: "same-event-fp",
+        occurred_at: Time.current
+      )
+
+      group = described_class.call(event)
+      clear_enqueued_jobs
+
+      expect(described_class.call(event.reload).id).to eq(group.id)
+      expect(group.reload.occurrence_count).to eq(1)
+      expect(ErrorOccurrence.where(error_group: group, ingest_event: event).count).to eq(1)
+      expect(ProjectErrorGroupNotificationJob).not_to have_been_enqueued
+    end
+
+    it "retries duplicate occurrence races without leaving partial group state" do
+      event = IngestEvent.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "Duplicate race",
+        fingerprint: "duplicate-race-fp",
+        occurred_at: Time.current
+      )
+      attempts = 0
+
+      allow(ErrorOccurrence).to receive(:create!).and_wrap_original do |original, *args, **kwargs, &block|
+        attempts += 1
+        raise ActiveRecord::RecordNotUnique, "duplicate occurrence" if attempts == 1
+
+        original.call(*args, **kwargs, &block)
+      end
+
+      group = described_class.call(event)
+
+      expect(attempts).to eq(2)
+      expect(ErrorGroup.where(project: project, fingerprint: "duplicate-race-fp").count).to eq(1)
+      expect(group.reload.occurrence_count).to eq(1)
+      expect(event.reload.error_group_id).to eq(group.id)
+      expect(ErrorOccurrence.where(error_group: group, ingest_event: event).count).to eq(1)
+    end
+
     it "enqueues a regression alert when a closed group receives a new occurrence" do
       group = create(:error_group, :resolved, project: project, fingerprint: "resolved-fp", occurrence_count: 1)
       event = IngestEvent.create!(

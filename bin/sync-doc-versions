@@ -97,9 +97,7 @@ files = [
   repo_root.join("README.md"),
   repo_root.join("public/llms.txt"),
   repo_root.join("public/llms-full.txt"),
-  repo_root.join("docs/mobile-add-ons.md"),
-  repo_root.join("docs/sdk-parity-and-self-monitoring.md"),
-  repo_root.join("docs/seo-llm-measurement-runbook.md")
+  repo_root.join("docs/mobile-add-ons.md")
 ]
 files.concat(Dir[repo_root.join("cloudflare-docs/**/*.html")].map { |file| Pathname.new(file) })
 files.concat(Dir[repo_root.join("cloudflare-docs/llms*.txt")].map { |file| Pathname.new(file) })
