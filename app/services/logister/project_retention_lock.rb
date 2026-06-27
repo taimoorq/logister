@@ -6,6 +6,7 @@ require "securerandom"
 module Logister
   class ProjectRetentionLock
     CACHE_TTL = 6.hours
+    ADVISORY_LOCK_TYPE = ActiveRecord::Type::BigInteger.new
 
     def initialize(project_id:, dry_run:, cache: Rails.cache)
       @project_id = project_id
@@ -35,7 +36,7 @@ module Logister
 
       case backend
       when :postgres
-        connection.select_value("SELECT pg_advisory_unlock(#{advisory_lock_key})")
+        connection.select_value("SELECT pg_advisory_unlock($1)", "ProjectRetentionLock", [ advisory_lock_bind ])
       when :cache
         cache.delete(cache_key) if cache.read(cache_key) == token
       end
@@ -58,7 +59,7 @@ module Logister
     def acquire_postgres_lock
       @backend = :postgres
       @connection = ActiveRecord::Base.connection
-      truthy?(connection.select_value("SELECT pg_try_advisory_lock(#{advisory_lock_key})"))
+      truthy?(connection.select_value("SELECT pg_try_advisory_lock($1)", "ProjectRetentionLock", [ advisory_lock_bind ]))
     end
 
     def acquire_cache_lock
@@ -68,6 +69,14 @@ module Logister
 
     def advisory_lock_key
       @advisory_lock_key ||= Digest::SHA256.digest("logister:project_retention:#{project_id}").unpack1("q>")
+    end
+
+    def advisory_lock_bind
+      @advisory_lock_bind ||= ActiveRecord::Relation::QueryAttribute.new(
+        "advisory_lock_key",
+        advisory_lock_key,
+        ADVISORY_LOCK_TYPE
+      )
     end
 
     def cache_key

@@ -30,4 +30,36 @@ RSpec.describe Logister::ProjectRetentionLock, type: :model do
 
     expect(cache).not_to have_received(:write)
   end
+
+  it "uses bound parameters for PostgreSQL advisory locks" do
+    connection = double("postgres_connection")
+    lock = described_class.new(project_id: 123, dry_run: false)
+
+    allow(ActiveRecord::Base).to receive(:connection).and_return(connection)
+    allow(connection).to receive(:adapter_name).and_return("PostgreSQL")
+
+    expect(connection).to receive(:select_value) do |sql, name, binds|
+      expect(sql).to eq("SELECT pg_try_advisory_lock($1)")
+      expect(name).to eq("ProjectRetentionLock")
+      expect(binds.length).to eq(1)
+      expect(binds.first.name).to eq("advisory_lock_key")
+      expect(binds.first.value_for_database).to be_a(Integer)
+
+      "t"
+    end
+
+    expect(lock.acquire).to be(true)
+
+    expect(connection).to receive(:select_value) do |sql, name, binds|
+      expect(sql).to eq("SELECT pg_advisory_unlock($1)")
+      expect(name).to eq("ProjectRetentionLock")
+      expect(binds.length).to eq(1)
+      expect(binds.first.name).to eq("advisory_lock_key")
+      expect(binds.first.value_for_database).to be_a(Integer)
+
+      "t"
+    end
+
+    lock.release
+  end
 end
