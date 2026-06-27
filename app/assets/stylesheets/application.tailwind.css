@@ -2571,6 +2571,19 @@
     box-shadow: 0 14px 30px -24px color-mix(in srgb, var(--app-neutral-900) 65%, transparent);
   }
 
+  .screenshot-fullsize-link {
+    @apply block w-full h-full;
+    border-radius: inherit;
+    color: inherit;
+    cursor: zoom-in;
+    outline: none;
+  }
+
+  .screenshot-fullsize-link:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--app-primary-600) 58%, transparent);
+    outline-offset: -3px;
+  }
+
   .shot-main {
     @apply mb-3;
     aspect-ratio: 3600 / 2213;
@@ -2609,7 +2622,9 @@
   .hero-mobile-shots .hero-shot,
   .shot-wide .hero-shot,
   .about-hero .shot-frame > .hero-shot,
-  .about-shot-card .shot-frame > .hero-shot {
+  .about-shot-card .shot-frame > .hero-shot,
+  .about-hero .shot-frame > .screenshot-fullsize-link > .hero-shot,
+  .about-shot-card .shot-frame > .screenshot-fullsize-link > .hero-shot {
     @apply h-full;
   }
 

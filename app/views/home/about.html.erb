@@ -15,6 +15,7 @@
   projects_dashboard_path = "screenshots/public/projects-dashboard.webp"
   inbox_path = "screenshots/public/project-error-inbox.webp"
   insights_path = "screenshots/public/project-insights.webp"
+  full_size_screenshot_label = ->(label) { "Open full-size #{label} screenshot" }
 %>
 
 <div class="marketing-home about-page">
@@ -36,7 +37,13 @@
       </div>
       <div class="shot-frame" data-controller="reveal" data-reveal-animation-class-value="reveal-scale" data-reveal-delay-value="120">
         <% if screenshot_exists.call(dashboard_path) %>
-          <%= image_tag dashboard_path, alt: "Logister overview dashboard showing cross-app event flow", class: "hero-shot", width: 3600, height: 2213 %>
+          <%= link_to asset_path(dashboard_path),
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                      class: "screenshot-fullsize-link",
+                      aria: { label: full_size_screenshot_label.call("overview dashboard") } do %>
+            <%= image_tag dashboard_path, alt: "Logister overview dashboard showing cross-app event flow", class: "hero-shot", width: 3600, height: 2213 %>
+          <% end %>
         <% else %>
           <div class="shot-placeholder">Add <code>app/assets/images/<%= dashboard_path %></code></div>
         <% end %>
@@ -69,7 +76,13 @@
         <p class="feature-kicker">Project inbox</p>
         <div class="shot-frame">
           <% if screenshot_exists.call(inbox_path) %>
-            <%= image_tag inbox_path, alt: "Logister inbox detail view screenshot", class: "hero-shot", width: 3600, height: 1660 %>
+            <%= link_to asset_path(inbox_path),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "screenshot-fullsize-link",
+                        aria: { label: full_size_screenshot_label.call("project inbox") } do %>
+              <%= image_tag inbox_path, alt: "Logister inbox detail view screenshot", class: "hero-shot", width: 3600, height: 1660 %>
+            <% end %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_path %></code></div>
           <% end %>
@@ -79,7 +92,13 @@
         <p class="feature-kicker">Project insights</p>
         <div class="shot-frame">
           <% if screenshot_exists.call(insights_path) %>
-            <%= image_tag insights_path, alt: "Logister insights timeline screenshot", class: "hero-shot", width: 3600, height: 2795 %>
+            <%= link_to asset_path(insights_path),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "screenshot-fullsize-link",
+                        aria: { label: full_size_screenshot_label.call("project insights") } do %>
+              <%= image_tag insights_path, alt: "Logister insights timeline screenshot", class: "hero-shot", width: 3600, height: 2795 %>
+            <% end %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= insights_path %></code></div>
           <% end %>
@@ -89,7 +108,13 @@
         <p class="feature-kicker">Projects dashboard</p>
         <div class="shot-frame">
           <% if screenshot_exists.call(projects_dashboard_path) %>
-            <%= image_tag projects_dashboard_path, alt: "Logister projects dashboard screenshot", class: "hero-shot", width: 3600, height: 3217 %>
+            <%= link_to asset_path(projects_dashboard_path),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "screenshot-fullsize-link",
+                        aria: { label: full_size_screenshot_label.call("projects dashboard") } do %>
+              <%= image_tag projects_dashboard_path, alt: "Logister projects dashboard screenshot", class: "hero-shot", width: 3600, height: 3217 %>
+            <% end %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= projects_dashboard_path %></code></div>
           <% end %>

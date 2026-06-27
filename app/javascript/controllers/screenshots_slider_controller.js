@@ -40,7 +40,15 @@ export default class extends Controller {
     }
 
     this.slideTargets.forEach((slide, idx) => {
-      slide.setAttribute("aria-hidden", idx === this.index ? "false" : "true")
+      const active = idx === this.index
+      slide.setAttribute("aria-hidden", active ? "false" : "true")
+      slide.querySelectorAll("a, button").forEach((control) => {
+        if (active) {
+          control.removeAttribute("tabindex")
+        } else {
+          control.setAttribute("tabindex", "-1")
+        }
+      })
     })
 
     this.dotTargets.forEach((dot, idx) => {

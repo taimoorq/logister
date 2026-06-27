@@ -81,6 +81,7 @@
   insights_path = "screenshots/public/project-insights.webp"
   notifications_path = "screenshots/public/project-notifications.webp"
   retention_path = "screenshots/public/project-data-retention.webp"
+  full_size_screenshot_label = ->(label) { "Open full-size #{label} screenshot" }
   screenshots = [
     {
       path: dashboard_path,
@@ -154,14 +155,20 @@
       <div class="hero-surface" data-controller="reveal" data-reveal-animation-class-value="reveal-scale" data-reveal-delay-value="120">
         <div class="shot-frame shot-main">
           <% if screenshot_exists.call(dashboard_path) %>
-            <%= image_tag dashboard_path,
-                          alt: "Logister overview dashboard showing cross-app event flow",
-                          class: "hero-shot",
-                          width: 3600,
-                          height: 2213,
-                          loading: "eager",
-                          fetchpriority: "high",
-                          decoding: "async" %>
+            <%= link_to asset_path(dashboard_path),
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "screenshot-fullsize-link",
+                        aria: { label: full_size_screenshot_label.call("overview dashboard") } do %>
+              <%= image_tag dashboard_path,
+                            alt: "Logister overview dashboard showing cross-app event flow",
+                            class: "hero-shot",
+                            width: 3600,
+                            height: 2213,
+                            loading: "eager",
+                            fetchpriority: "high",
+                            decoding: "async" %>
+            <% end %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= dashboard_path %></code></div>
           <% end %>
@@ -218,14 +225,20 @@
         <% screenshots.each do |screenshot| %>
           <div class="screenshots-slide" data-screenshots-slider-target="slide">
             <% if screenshot_exists.call(screenshot[:path]) %>
-              <%= image_tag screenshot[:path],
-                            alt: screenshot[:alt],
-                            class: "hero-shot",
-                            width: screenshot[:width],
-                            height: screenshot[:height],
-                            loading: "lazy",
-                            fetchpriority: "low",
-                            decoding: "async" %>
+              <%= link_to asset_path(screenshot[:path]),
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                          class: "screenshot-fullsize-link",
+                          aria: { label: full_size_screenshot_label.call(screenshot[:label]) } do %>
+                <%= image_tag screenshot[:path],
+                              alt: screenshot[:alt],
+                              class: "hero-shot",
+                              width: screenshot[:width],
+                              height: screenshot[:height],
+                              loading: "lazy",
+                              fetchpriority: "low",
+                              decoding: "async" %>
+              <% end %>
             <% else %>
               <div class="shot-placeholder">Add <code>app/assets/images/<%= screenshot[:path] %></code></div>
             <% end %>

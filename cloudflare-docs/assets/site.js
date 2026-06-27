@@ -259,6 +259,7 @@ function enhanceScreenshotFigures() {
     button.type = "button";
     button.className = "screenshot-preview-button";
     button.setAttribute("aria-label", `Open full size screenshot: ${altText}`);
+    button.title = "Open full-size screenshot";
 
     figure.insertBefore(button, image);
     button.appendChild(image);
@@ -296,6 +297,16 @@ function createScreenshotLightbox() {
   closeButton.className = "screenshot-lightbox-close";
   closeButton.textContent = "Close";
 
+  const openLink = document.createElement("a");
+  openLink.className = "screenshot-lightbox-open-image";
+  openLink.target = "_blank";
+  openLink.rel = "noopener noreferrer";
+  openLink.textContent = "Open image";
+  openLink.setAttribute("aria-label", "Open screenshot image in a new tab");
+
+  const actions = document.createElement("div");
+  actions.className = "screenshot-lightbox-actions";
+
   const frame = document.createElement("div");
   frame.className = "screenshot-lightbox-frame";
 
@@ -303,7 +314,8 @@ function createScreenshotLightbox() {
   image.className = "screenshot-lightbox-image";
   image.alt = "";
 
-  header.append(title, closeButton);
+  actions.append(openLink, closeButton);
+  header.append(title, actions);
   frame.appendChild(image);
   root.append(header, frame);
   document.body.appendChild(root);
@@ -311,6 +323,7 @@ function createScreenshotLightbox() {
   const lightbox = {
     root,
     title,
+    openLink,
     closeButton,
     frame,
     image,
@@ -341,8 +354,10 @@ function openScreenshotLightbox(lightbox, sourceImage, figure) {
   const altText = (sourceImage.getAttribute("alt") || "Screenshot").trim();
 
   lightbox.previousFocus = document.activeElement;
-  lightbox.image.src = sourceImage.currentSrc || sourceImage.src;
+  const imageSource = sourceImage.currentSrc || sourceImage.src;
+  lightbox.image.src = imageSource;
   lightbox.image.alt = altText;
+  lightbox.openLink.href = imageSource;
   lightbox.title.textContent = captionText || altText;
   lightbox.root.hidden = false;
   document.body.classList.add("screenshot-lightbox-open");
@@ -358,8 +373,19 @@ function openScreenshotLightbox(lightbox, sourceImage, figure) {
     }
 
     if (event.key === "Tab") {
+      const controls = [lightbox.openLink, lightbox.closeButton].filter((control) => control && !control.hidden);
+      if (controls.length === 0) return;
+
       event.preventDefault();
-      lightbox.closeButton.focus();
+      const currentIndex = controls.indexOf(document.activeElement);
+      const fallbackIndex = event.shiftKey ? controls.length - 1 : 0;
+      const nextIndex = currentIndex === -1
+        ? fallbackIndex
+        : event.shiftKey
+          ? (currentIndex - 1 + controls.length) % controls.length
+          : (currentIndex + 1) % controls.length;
+
+      controls[nextIndex].focus();
     }
   };
 
@@ -373,6 +399,7 @@ function closeScreenshotLightbox(lightbox) {
   lightbox.root.hidden = true;
   lightbox.image.removeAttribute("src");
   lightbox.image.alt = "";
+  lightbox.openLink.removeAttribute("href");
   lightbox.title.textContent = "";
   document.body.classList.remove("screenshot-lightbox-open");
 

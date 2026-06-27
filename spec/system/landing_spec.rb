@@ -50,6 +50,25 @@ RSpec.describe "Landing and dashboard", type: :system do
     expect(metrics.fetch("slideWidth")).to be_within(2).of(metrics.fetch("frameWidth"))
     expect(metrics.fetch("imageWidth")).to be <= metrics.fetch("frameWidth")
     expect(metrics.fetch("imageHeight")).to be <= metrics.fetch("frameHeight")
+
+    screenshot_link = find("a.screenshot-fullsize-link[aria-label='Open full-size overview dashboard screenshot']", visible: :all)
+    expect(screenshot_link[:href]).to match(%r{/assets/screenshots/public/dashboard-overview})
+    expect(screenshot_link[:target]).to eq("_blank")
+    expect(screenshot_link[:rel]).to include("noopener")
+
+    slide_tab_stops = page.evaluate_script(<<~JS)
+      Array.from(document.querySelectorAll(".screenshots-slide")).map(function(slide) {
+        var link = slide.querySelector(".screenshot-fullsize-link")
+        return {
+          hidden: slide.getAttribute("aria-hidden"),
+          tabindex: link ? link.getAttribute("tabindex") : null
+        }
+      })
+    JS
+
+    expect(slide_tab_stops.first.fetch("hidden")).to eq("false")
+    expect(slide_tab_stops.first.fetch("tabindex")).to be_nil
+    expect(slide_tab_stops.drop(1).map { |slide| slide.fetch("tabindex") }.uniq).to eq([ "-1" ])
   end
 
   it "redirects to dashboard when signed in" do
