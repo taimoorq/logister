@@ -1,49 +1,77 @@
-<% content_for :title, "Open Source Error Monitoring and Bug Triage" %>
-<% content_for :meta_description, "Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows." %>
+<% content_for :title, "Self-Hosted Error Monitoring" %>
+<% content_for :meta_description, "Logister is an open source, self-hosted error monitoring and bug triage app with grouped errors, assignment, runtime integrations, and Docker deployment docs." %>
 <% content_for :canonical_path, root_path %>
 <% content_for :og_type, "website" %>
 <% content_for :json_ld, json_ld({
   "@context" => "https://schema.org",
-  "@type" => "SoftwareApplication",
-  "name" => "Logister",
-  "applicationCategory" => "DeveloperApplication",
-  "applicationSubCategory" => "Error monitoring and bug triage",
-  "operatingSystem" => "Web",
-  "description" => "Open source, self-hosted error monitoring and bug triage for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.",
-  "url" => absolute_url_for(root_path),
-  "image" => absolute_url_for("/icon.png"),
-  "license" => "https://github.com/taimoorq/logister/blob/main/LICENSE",
-  "codeRepository" => "https://github.com/taimoorq/logister",
-  "downloadUrl" => [
-    "https://github.com/taimoorq/logister/pkgs/container/logister",
-    "https://hub.docker.com/r/taimoorq/logister"
-  ],
-  "softwareVersion" => "2.9",
-  "keywords" => "open source error monitoring, self-hosted bug tracking, Bugsnag alternative, Bugzilla alternative, Sentry alternative, application observability, Rails error tracking, Docker self hosting",
-  "sameAs" => [
-    "https://github.com/taimoorq/logister",
-    "https://github.com/taimoorq/logister-ruby",
-    "https://github.com/taimoorq/logister-dotnet",
-    "https://github.com/taimoorq/logister-python",
-    "https://github.com/taimoorq/logister-js"
-  ],
-  "featureList" => [
-    "Open source and forkable application source",
-    "Self-hosted Rails app with PostgreSQL, Redis, and Sidekiq",
-    "Versioned GHCR and Docker Hub images with optional Quay mirrors",
-    "Grouped error inbox with assignment, status, and occurrence history",
-    "Ruby instrumentation via the published gem",
-    ".NET instrumentation for ASP.NET Core and C# services",
-    "Python instrumentation for FastAPI, Django, Flask, Celery, and logging",
-    "JavaScript and TypeScript instrumentation",
-    "CFML HTTP ingestion",
-    "Error, log, metric, transaction, span, and check-in capture"
-  ],
-  "offers" => {
-    "@type" => "Offer",
-    "price" => "0",
-    "priceCurrency" => "USD"
-  }
+  "@graph" => [
+    {
+      "@type" => "SoftwareApplication",
+      "name" => "Logister",
+      "applicationCategory" => "DeveloperApplication",
+      "applicationSubCategory" => "Error monitoring and bug triage",
+      "operatingSystem" => "Web",
+      "description" => "Open source, self-hosted error monitoring and bug triage with grouped errors, assignment, runtime integrations, and Docker deployment docs.",
+      "url" => absolute_url_for(root_path),
+      "image" => absolute_url_for("/icon.png"),
+      "license" => "https://github.com/taimoorq/logister/blob/main/LICENSE",
+      "codeRepository" => "https://github.com/taimoorq/logister",
+      "downloadUrl" => [
+        "https://github.com/taimoorq/logister/pkgs/container/logister",
+        "https://hub.docker.com/r/taimoorq/logister"
+      ],
+      "softwareVersion" => "2.9",
+      "keywords" => "open source error monitoring, self-hosted bug tracking, Bugsnag alternative, Bugzilla alternative, Sentry alternative, application observability, Rails error tracking, Docker self hosting",
+      "sameAs" => [
+        "https://github.com/taimoorq/logister",
+        "https://github.com/taimoorq/logister-ruby",
+        "https://github.com/taimoorq/logister-dotnet",
+        "https://github.com/taimoorq/logister-python",
+        "https://github.com/taimoorq/logister-js",
+        "https://github.com/taimoorq/logister-android",
+        "https://github.com/taimoorq/logister-ios"
+      ],
+      "featureList" => [
+        "Open source and forkable application source",
+        "Self-hosted Rails app with PostgreSQL, Redis, and Sidekiq",
+        "Versioned GHCR and Docker Hub images with optional Quay mirrors",
+        "Grouped error inbox with assignment, status, and occurrence history",
+        "Ruby instrumentation via the published gem",
+        ".NET instrumentation for ASP.NET Core and C# services",
+        "Python instrumentation for FastAPI, Django, Flask, Celery, and logging",
+        "JavaScript and TypeScript instrumentation",
+        "Android and iOS mobile integrations",
+        "CFML and direct HTTP ingestion",
+        "Error, log, metric, transaction, span, and check-in capture"
+      ],
+      "offers" => {
+        "@type" => "Offer",
+        "price" => "0",
+        "priceCurrency" => "USD"
+      }
+    },
+    {
+      "@type" => "FAQPage",
+      "mainEntity" => [
+        {
+          "@type" => "Question",
+          "name" => "Can Logister be self-hosted?",
+          "acceptedAnswer" => {
+            "@type" => "Answer",
+            "text" => "Yes. Logister is an open source Rails app designed to run with PostgreSQL, Redis, and a Sidekiq worker, with optional ClickHouse and S3-compatible archive storage."
+          }
+        },
+        {
+          "@type" => "Question",
+          "name" => "Which runtimes can send events to Logister?",
+          "acceptedAnswer" => {
+            "@type" => "Answer",
+            "text" => "Logister supports Ruby, .NET, Python, JavaScript and TypeScript, Android, iOS, CFML, Cloudflare Pages, and custom HTTP clients."
+          }
+        }
+      ]
+    }
+  ]
 }) %>
 <%
   screenshot_exists = ->(path) { Rails.root.join("app/assets/images", path).exist? }
@@ -103,23 +131,23 @@
   <section class="marketing-hero" style="view-transition-name: public-hero; view-transition-class: public-panel;">
     <div class="hero-grid">
       <div>
-        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Open source error monitoring and bug triage</p>
+        <p class="hero-kicker" data-controller="reveal" data-reveal-animation-class-value="reveal-up">Self-hosted error monitoring</p>
         <h1 class="hero-title" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
-          An open source alternative for teams who want to self-host error monitoring.
+          Self-host error monitoring and bug triage with Logister.
         </h1>
         <p class="hero-copy" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
-          Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. Run it yourself, pull versioned Docker images from GHCR or Docker Hub, use optional Quay mirrors when configured, and keep errors, transactions, spans, logs, metrics, and check-ins in infrastructure you control.
+          Logister gives teams a forkable Rails app for grouped production errors, ownership, and runtime telemetry. Run it with PostgreSQL, Redis, and Sidekiq, then connect Ruby, .NET, Python, JavaScript, Android, iOS, CFML, Cloudflare Pages, or direct HTTP clients.
         </p>
         <div class="hero-actions" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="200">
-          <%= link_to "Self-host Logister", docs_site_url(:self_hosting), target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-primary" %>
-          <%= link_to "Use hosted app", new_user_registration_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
+          <%= link_to "Read self-hosting docs", docs_site_url(:self_hosting), target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-primary" %>
+          <%= link_to "Create hosted account", new_user_registration_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
         </div>
         <div class="hero-proof" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="250">
           <span>Open source</span>
           <span>Forkable</span>
           <span>Versioned registry images</span>
           <span>Self-host first</span>
-          <span>Ruby, .NET, Python, JS, and CFML</span>
+          <span>Ruby, .NET, Python, JS, Android, iOS, and CFML</span>
         </div>
       </div>
 
@@ -215,19 +243,19 @@
 
   <section class="stats-grid" style="view-transition-name: public-stats; view-transition-class: public-panel;">
     <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
-      <p class="stat-label">Median triage time cut</p>
-      <p class="stat-value" data-controller="countup" data-countup-number-value="72" data-countup-suffix-value="%">72%</p>
-      <p class="stat-meta">from first alert to assigned owner</p>
+      <p class="stat-label">Signal families</p>
+      <p class="stat-value" data-controller="countup" data-countup-number-value="6">6</p>
+      <p class="stat-meta">errors, logs, metrics, transactions, spans, check-ins</p>
     </article>
     <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="90">
-      <p class="stat-label">Signal retention</p>
-      <p class="stat-value" data-controller="countup" data-countup-number-value="99.9" data-countup-decimals-value="1" data-countup-suffix-value="%">99.9%</p>
-      <p class="stat-meta">stacktrace, context, trace and request IDs</p>
+      <p class="stat-label">Integration paths</p>
+      <p class="stat-value" data-controller="countup" data-countup-number-value="9">9</p>
+      <p class="stat-meta">SDK, mobile, Cloudflare Pages, CFML, and HTTP options</p>
     </article>
     <article class="stat-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="150">
-      <p class="stat-label">Time to first event</p>
-      <p class="stat-value" data-controller="countup" data-countup-number-value="5" data-countup-suffix-value=" min">5 min</p>
-      <p class="stat-meta">install a package, generate key, ship</p>
+      <p class="stat-label">Required app processes</p>
+      <p class="stat-value" data-controller="countup" data-countup-number-value="2">2</p>
+      <p class="stat-meta">Rails web plus Sidekiq worker</p>
     </article>
   </section>
 
@@ -276,7 +304,7 @@
   <section class="workflow-wrap" style="view-transition-name: public-workflow; view-transition-class: public-panel;">
     <div class="workflow-head" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
       <p class="workflow-kicker">How it works</p>
-        <h2>Three steps from setup to calmer on-call rotations</h2>
+        <h2>Three steps from setup to owned triage</h2>
     </div>
     <div class="workflow-grid">
       <article class="workflow-step" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
@@ -299,7 +327,7 @@
 
   <section class="code-and-proof" style="view-transition-name: public-proof; view-transition-class: public-panel;">
     <article class="code-block-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
-      <p class="feature-kicker">Install in minutes</p>
+      <p class="feature-kicker">Connect your stack</p>
       <pre><code>bundle add logister-ruby
 dotnet add package Logister.AspNetCore
 pip install logister-python
@@ -308,10 +336,12 @@ LOGISTER_API_KEY=your_key_here
 </code></pre>
     </article>
     <article class="proof-card" data-controller="reveal" data-reveal-animation-class-value="reveal-scale" data-reveal-delay-value="120">
-      <p class="proof-quote">“We replaced three dashboards with one triage inbox and cut incident response time the same week.”</p>
-      <p class="proof-person">Lead Engineer, StoreStuff.app</p>
+      <p class="proof-quote">MIT-licensed source, versioned Docker images, public SDK packages, and practical self-hosting docs keep the operating model inspectable.</p>
+      <p class="proof-person">Proof links</p>
       <div class="proof-links">
         <a href="https://github.com/taimoorq/logister" target="_blank" rel="noopener">Self-host source</a>
+        <a href="<%= docs_site_url(:self_hosting) %>" target="_blank" rel="noopener">Self-hosting docs</a>
+        <a href="<%= docs_site_url(:product) %>" target="_blank" rel="noopener">Product guide</a>
         <a href="https://rubygems.org/gems/logister-ruby" target="_blank" rel="noopener">Ruby gem</a>
         <a href="https://www.nuget.org/packages/Logister.AspNetCore" target="_blank" rel="noopener">.NET package</a>
         <a href="https://pypi.org/project/logister-python/" target="_blank" rel="noopener">Python package</a>
@@ -319,6 +349,24 @@ LOGISTER_API_KEY=your_key_here
         <a href="<%= docs_site_url(:cfml_integration) %>" target="_blank" rel="noopener">CFML guide</a>
         <a href="/llms.txt">AI docs</a>
       </div>
+    </article>
+  </section>
+
+  <section class="feature-grid" style="view-transition-name: public-faq; view-transition-class: public-panel;">
+    <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up">
+      <p class="feature-kicker">FAQ</p>
+      <h2>Can Logister be self-hosted?</h2>
+      <p>Yes. The documented baseline is a Rails web process, a Sidekiq worker, PostgreSQL, and Redis. SMTP, ClickHouse, S3-compatible archives, Turnstile, and analytics are optional.</p>
+    </article>
+    <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="80">
+      <p class="feature-kicker">FAQ</p>
+      <h2>What does Logister collect?</h2>
+      <p>Logister stores application errors, logs, metrics, transactions, spans, and check-ins, then turns repeated failures into grouped issues that can be assigned and reviewed.</p>
+    </article>
+    <article class="feature-card" data-controller="reveal" data-reveal-animation-class-value="reveal-up" data-reveal-delay-value="140">
+      <p class="feature-kicker">FAQ</p>
+      <h2>Is the hosted app required?</h2>
+      <p>No. The hosted app is optional. The primary product path is open source and self-hosted, with public source, Docker images, and deployment documentation.</p>
     </article>
   </section>
 

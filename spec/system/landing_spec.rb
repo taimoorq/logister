@@ -5,10 +5,10 @@ require "rails_helper"
 RSpec.describe "Landing and dashboard", type: :system do
   it "shows the landing page when not signed in" do
     visit root_path
-    expect(page).to have_content("An open source alternative for teams who want to self-host error monitoring.")
-    expect(page).to have_content("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
+    expect(page).to have_content("Self-host error monitoring and bug triage with Logister.")
+    expect(page).to have_content("forkable Rails app for grouped production errors")
     expect(page).to have_content("Versioned registry images")
-    expect(page).to have_content("Self-host Logister")
+    expect(page).to have_content("Read self-hosting docs")
     expect(page).to have_content("Use hosted app")
     expect(page).to have_link(href: /logister-ruby/)
   end

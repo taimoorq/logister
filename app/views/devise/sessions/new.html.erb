@@ -1,3 +1,8 @@
+<% content_for :title, "Sign In" %>
+<% content_for :meta_description, "Sign in to Logister to review projects, triage grouped errors, inspect event context, and manage self-hosted monitoring settings." %>
+<% content_for :canonical_path, new_user_session_path %>
+<% content_for :meta_robots, "noindex, follow" %>
+
 <%= render "devise/shared/auth_shell",
            title: "Welcome back",
            subtitle: "Sign in to monitor errors, triage incidents, and keep releases stable." do %>

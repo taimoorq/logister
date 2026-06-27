@@ -1,3 +1,8 @@
+<% content_for :title, "Resend Confirmation" %>
+<% content_for :meta_description, "Resend Logister account confirmation instructions so you can finish account setup and access your monitoring workspace." %>
+<% content_for :canonical_path, new_user_confirmation_path %>
+<% content_for :meta_robots, "noindex, follow" %>
+
 <%= render "devise/shared/auth_shell",
            title: "Confirm your account",
            subtitle: "Need a fresh confirmation email? We can resend it instantly." do %>

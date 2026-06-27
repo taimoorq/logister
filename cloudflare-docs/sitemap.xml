@@ -2,206 +2,206 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://logister.org/docs/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/llms.txt</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/llms-full.txt</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/openapi.yaml</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/postman/logister-api.postman_collection.json</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/getting-started/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/notifications/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/notifications/setup/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/notifications/error-triage/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/notifications/project-health/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/notifications/workflow-routing/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/notifications/digests-delivery/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/notifications/operations/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/data-retention/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/data-retention/policy/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/data-retention/archive-storage/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/product/data-retention/jobs/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/metrics/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/api-reference/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/self-hosted-error-monitoring/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/sentry-alternative/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/bugsnag-alternative/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/bugzilla-alternative/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/rails-error-monitoring/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/python-error-monitoring/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/dotnet-error-monitoring/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/javascript-error-monitoring/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/cfml-error-monitoring/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/docker-ghcr-self-hosting/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/error-assignment-team-triage/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/use-cases/amazon-ses-error-alerts/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/self-hosting/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/local-development/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/deployment/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/github-app/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/github-app/source-lookup/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/clickhouse/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/http-api/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/troubleshooting/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/ruby/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/dotnet/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/python/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/javascript/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/cloudflare-pages/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/cloudflare-pages/manual-telemetry/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/cloudflare-pages/importer-settings/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/android/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/ios/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
   <url>
     <loc>https://logister.org/docs/integrations/cfml/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <lastmod>2026-06-27</lastmod>
   </url>
 </urlset>

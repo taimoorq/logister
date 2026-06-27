@@ -20,13 +20,14 @@ RSpec.describe "Home", type: :request do
       it "returns success and shows landing content" do
         get root_path
         expect(response).to have_http_status(:success)
-        expect(response.body).to include("An open source alternative for teams who want to self-host error monitoring.")
+        expect(response.body).to include("Self-host error monitoring and bug triage with Logister.")
+        expect(response.body).to include("forkable Rails app for grouped production errors")
         expect(response.body).to include("Versioned registry images")
-        expect(response.body).to include("forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows")
+        expect(response.body).to include("MIT-licensed source, versioned Docker images, public SDK packages")
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("logister-dotnet")
         expect(response.body).to include("logister-python")
-        expect(response.body).to include("Self-host Logister")
+        expect(response.body).to include("Read self-hosting docs")
         expect(response.body).to include("Use hosted app")
         expect(response.body).to include("https://logister.org/docs/")
         expect(response.body).to include('target="_blank"')
@@ -84,7 +85,7 @@ RSpec.describe "Home", type: :request do
       get about_path
       expect(response).to have_http_status(:success)
       expect(response.body).to include("About Logister")
-      expect(response.body).to include("<title>About | Logister</title>")
+      expect(response.body).to include("<title>About Logister | Logister</title>")
     end
   end
 

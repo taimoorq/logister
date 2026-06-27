@@ -4,20 +4,20 @@
     <meta charset="utf-8">
     <title>Logister Documentation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
+    <meta name="description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://logister.org/docs/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Logister Documentation">
-    <meta property="og:description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
+    <meta property="og:description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://logister.org/docs/">
     <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Logister Documentation">
-    <meta name="twitter:description" content="Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.">
+    <meta name="twitter:description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.">
     <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js","https://github.com/taimoorq/logister-android","https://github.com/taimoorq/logister-ios"]},{"@type":"WebSite","@id":"https://logister.org/docs/#website","name":"Logister Documentation","url":"https://logister.org/docs/","publisher":{"@id":"https://logister.org/docs/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://logister.org/docs/#webpage","url":"https://logister.org/docs/","name":"Logister Documentation","description":"Docs for Logister, an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows.","isPartOf":{"@id":"https://logister.org/docs/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Error assignment"},{"@type":"Thing","name":"Application telemetry"},{"@type":"Thing","name":"HTTP API"},{"@type":"Thing","name":"Troubleshooting"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js","https://github.com/taimoorq/logister-android","https://github.com/taimoorq/logister-ios"]},{"@type":"WebSite","@id":"https://logister.org/docs/#website","name":"Logister Documentation","url":"https://logister.org/docs/","publisher":{"@id":"https://logister.org/docs/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://logister.org/docs/#webpage","url":"https://logister.org/docs/","name":"Logister Documentation","description":"Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.","isPartOf":{"@id":"https://logister.org/docs/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Error assignment"},{"@type":"Thing","name":"Application telemetry"},{"@type":"Thing","name":"HTTP API"},{"@type":"Thing","name":"Troubleshooting"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
     <link rel="alternate" type="text/plain" href="/docs/llms-full.txt" title="LLMs full context">
     <link rel="icon" href="/docs/assets/icon.png" type="image/png">
@@ -52,11 +52,12 @@
           <span class="hero-kicker">Documentation</span>
           <h1>Logister documentation</h1>
           <p>
-            Use these docs as the operator and developer manual for Logister. Start by understanding what Logister is, install it, configure the pieces your instance needs, then connect applications and troubleshoot ingestion.
+            Use these docs as the operator and developer manual for Logister. Start with the self-hosted app, confirm what the product does, connect one application, and then add the optional services your instance actually needs.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/docs/self-hosting/">Install Logister</a>
             <a class="btn btn-secondary" href="/docs/getting-started/">Send your first event</a>
+            <a class="btn btn-secondary" href="/docs/use-cases/">Evaluate fit</a>
             <a class="btn btn-secondary" href="/docs/troubleshooting/">Troubleshooting</a>
           </div>
         </section>
@@ -149,7 +150,7 @@
               <p class="eyebrow">Why Logister?</p>
               <h2>Understand what Logister is before choosing an install path.</h2>
               <p>
-                Logister is an open source, self-hosted error monitoring and bug triage app. It is built for teams that want grouped production errors, ownership, event context, and operational control without handing monitoring data to a third-party service by default.
+                Logister is an open source, self-hosted error monitoring and bug triage app. It is built for teams that want grouped production errors, ownership, event context, release-aware triage, and operational control without making a hosted service the only path.
               </p>
               <div class="doc-link-list">
                 <a class="doc-link" href="/docs/product/">

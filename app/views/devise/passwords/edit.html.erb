@@ -1,3 +1,8 @@
+<% content_for :title, "Choose New Password" %>
+<% content_for :meta_description, "Choose a new Logister password after using a secure reset link." %>
+<% content_for :canonical_path, new_user_password_path %>
+<% content_for :meta_robots, "noindex, follow" %>
+
 <%= render "devise/shared/auth_shell",
            title: "Choose a new password",
            subtitle: "Set a fresh password and return to your Logister workspace." do %>
