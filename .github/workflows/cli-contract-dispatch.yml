@@ -1,0 +1,32 @@
+name: CLI Contract Dispatch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/openapi.yaml
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch CLI contract sync
+        env:
+          GH_TOKEN: ${{ secrets.LOGISTER_CLI_SYNC_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "LOGISTER_CLI_SYNC_TOKEN is not configured; skipping CLI contract dispatch."
+            exit 0
+          fi
+
+          gh api repos/taimoorq/logister-cli/dispatches \
+            --method POST \
+            --input - <<'JSON'
+          {
+            "event_type": "logister-contract-updated",
+            "client_payload": {
+              "openapi_url": "https://raw.githubusercontent.com/taimoorq/logister/main/docs/openapi.yaml"
+            }
+          }
+          JSON

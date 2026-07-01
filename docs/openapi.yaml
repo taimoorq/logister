@@ -27,10 +27,390 @@ tags:
     description: Record release-to-commit mappings for source-linked debugging.
   - name: Mobile tokens
     description: Mint short-lived Android and iOS ingest tokens from a trusted backend.
+  - name: CLI
+    description: Discover CLI compatibility and server feature support.
 security:
   - bearerAuth: []
   - apiKeyHeader: []
 paths:
+  /api/v1/cli/capabilities:
+    get:
+      operationId: getCliCapabilities
+      tags:
+        - CLI
+      summary: Inspect CLI compatibility metadata.
+      description: |
+        Returns public metadata that lets the Logister CLI understand server
+        version, API contract, minimum CLI requirements, and currently exposed
+        CLI feature groups. This endpoint does not expose project data and does
+        not require authentication.
+      security: []
+      responses:
+        "200":
+          description: CLI compatibility metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliCapabilities"
+              examples:
+                current:
+                  value:
+                    server: logister
+                    server_version: "2.9"
+                    api_contract_version: "2.9"
+                    api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
+                    minimum_cli_version: "0.1.0"
+                    recommended_cli_version: "0.1.0"
+                    generated_at: "2026-07-01T12:00:00Z"
+                    endpoints:
+                      capabilities: /api/v1/cli/capabilities
+                      device_authorizations: /api/v1/cli/device_authorizations
+                      device_token: /api/v1/cli/device_authorizations/token
+                    auth:
+                      cli_access_tokens: true
+                      device_authorization: true
+                      project_ingest_keys_for_read: false
+                    features:
+                      capabilities: true
+                      cli_access_tokens: true
+                      device_authorization: true
+                      projects: true
+                      events: true
+                      error_groups: true
+                      ai_context_bundles: true
+  /api/v1/cli/device_authorizations:
+    post:
+      operationId: createCliDeviceAuthorization
+      tags:
+        - CLI
+      summary: Start browser-approved CLI login.
+      description: |
+        Creates a short-lived device authorization request. The CLI displays
+        the returned user code and polls the token endpoint while the user
+        approves or denies the request in the signed-in web app.
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CliDeviceAuthorizationRequest"
+      responses:
+        "201":
+          description: Device authorization challenge.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliDeviceAuthorization"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
+  /api/v1/cli/device_authorizations/token:
+    post:
+      operationId: exchangeCliDeviceAuthorization
+      tags:
+        - CLI
+      summary: Poll a browser-approved CLI login for an access token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CliDeviceTokenRequest"
+      responses:
+        "200":
+          description: CLI access token. Returned once after approval.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliDeviceTokenResponse"
+        "400":
+          description: Authorization is pending, denied, expired, or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliDeviceAuthorizationError"
+  /api/v1/cli/projects:
+    get:
+      operationId: listCliProjects
+      tags:
+        - CLI
+      summary: List projects available to a CLI token.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - name: include_archived
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Projects visible to this token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CliProject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/cli/projects/{project_uuid}:
+    get:
+      operationId: getCliProject
+      tags:
+        - CLI
+      summary: Show one project available to a CLI token.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+      responses:
+        "200":
+          description: Project details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliProject"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/cli/projects/{project_uuid}/summary:
+    get:
+      operationId: getCliProjectSummary
+      tags:
+        - CLI
+      summary: Summarize project telemetry for CLI and AI inspection.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Since"
+      responses:
+        "200":
+          description: Project summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliProjectSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/cli/projects/{project_uuid}/events:
+    get:
+      operationId: listCliEvents
+      tags:
+        - CLI
+      summary: List server-redacted telemetry events for a project.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - name: type
+          in: query
+          schema:
+            type: string
+            description: Comma-separated event types.
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
+        - $ref: "#/components/parameters/Environment"
+        - $ref: "#/components/parameters/Release"
+        - $ref: "#/components/parameters/Limit"
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: trace_id
+          in: query
+          schema:
+            type: string
+        - name: request_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            description: Event or transaction status. Supports `ok`, `errored`, exact context statuses, or comma-separated exact statuses.
+        - name: min_duration_ms
+          in: query
+          schema:
+            type: number
+            minimum: 0
+      responses:
+        "200":
+          description: Redacted event records.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CliEvent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/cli/projects/{project_uuid}/events/{uuid}:
+    get:
+      operationId: getCliEvent
+      tags:
+        - CLI
+      summary: Show one server-redacted telemetry event.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Uuid"
+      responses:
+        "200":
+          description: Redacted event record.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliEvent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/cli/projects/{project_uuid}/error_groups:
+    get:
+      operationId: listCliErrorGroups
+      tags:
+        - CLI
+      summary: List error groups for a project.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [unresolved, resolved, ignored, archived, all]
+        - name: introduced_today
+          in: query
+          schema:
+            type: boolean
+        - name: q
+          in: query
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Error group records.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CliErrorGroup"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}:
+    get:
+      operationId: getCliErrorGroup
+      tags:
+        - CLI
+      summary: Show one error group with optional related logs.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Uuid"
+        - name: related_logs
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Error group detail.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}/export:
+    get:
+      operationId: exportCliErrorGroup
+      tags:
+        - CLI
+      summary: Export a server-redacted error group investigation bundle.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Uuid"
+        - name: include_occurrences
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Redacted error group export.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}/context:
+    get:
+      operationId: getCliErrorGroupAiContext
+      tags:
+        - CLI
+      summary: Build a minimized, server-redacted AI context bundle for an error group.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Uuid"
+        - name: token_budget
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Minimized redacted AI context payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliAiContext"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/v1/ingest_events:
     post:
       operationId: createIngestEvent
@@ -387,6 +767,11 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
 components:
   securitySchemes:
+    cliBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: CLI access token
+      description: "Send `Authorization: Bearer <cli-access-token>`. CLI tokens are user-scoped, scope-limited, project-limited, and expiring read credentials."
     bearerAuth:
       type: http
       scheme: bearer
@@ -397,6 +782,49 @@ components:
       in: header
       name: X-Api-Key
       description: Alternative project API token header.
+  parameters:
+    CliProjectUuid:
+      name: project_uuid
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Project UUID or slug available to the CLI token.
+    Uuid:
+      name: uuid
+      in: path
+      required: true
+      schema:
+        type: string
+    Since:
+      name: since
+      in: query
+      schema:
+        type: string
+      description: ISO-8601 timestamp or compact duration such as `15m`, `1h`, `24h`, `7d`, or `1w`.
+    Until:
+      name: until
+      in: query
+      schema:
+        type: string
+        format: date-time
+    Environment:
+      name: environment
+      in: query
+      schema:
+        type: string
+    Release:
+      name: release
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
   headers:
     RetryAfter:
       description: Seconds to wait before retrying after a rate limit.
@@ -447,6 +875,16 @@ components:
             forbidden:
               value:
                 error: Forbidden
+    NotFound:
+      description: The requested project or record was not found for this credential.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            notFound:
+              value:
+                error: Not found
     UnprocessableContent:
       description: Envelope was present, but validation failed.
       content:
@@ -481,6 +919,314 @@ components:
                 window_seconds: 60
                 retry_after: 42
   schemas:
+    CliCapabilities:
+      type: object
+      required:
+        - server
+        - server_version
+        - api_contract_version
+        - api_contract_sha256
+        - minimum_cli_version
+        - recommended_cli_version
+        - generated_at
+        - endpoints
+        - auth
+        - features
+      properties:
+        server:
+          type: string
+          const: logister
+        server_version:
+          type: string
+        api_contract_version:
+          type: string
+        api_contract_sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        minimum_cli_version:
+          type: string
+        recommended_cli_version:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+        endpoints:
+          type: object
+          additionalProperties:
+            type: string
+        auth:
+          type: object
+          required:
+            - cli_access_tokens
+            - device_authorization
+            - project_ingest_keys_for_read
+          properties:
+            cli_access_tokens:
+              type: boolean
+            device_authorization:
+              type: boolean
+            project_ingest_keys_for_read:
+              type: boolean
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+    CliDeviceAuthorizationRequest:
+      type: object
+      properties:
+        client_name:
+          type: string
+          maxLength: 80
+        scope:
+          type: string
+          description: Space-separated CLI read scopes. Defaults to all read scopes currently supported by the server.
+    CliDeviceAuthorization:
+      type: object
+      required:
+        - device_code
+        - user_code
+        - verification_uri
+        - verification_uri_complete
+        - expires_in
+        - interval
+      properties:
+        device_code:
+          type: string
+          description: High-entropy polling secret. Store only temporarily.
+        user_code:
+          type: string
+          pattern: "^[A-Z0-9]{4}-[A-Z0-9]{4}$"
+        verification_uri:
+          type: string
+          format: uri
+        verification_uri_complete:
+          type: string
+          format: uri
+        expires_in:
+          type: integer
+        interval:
+          type: integer
+          minimum: 1
+    CliDeviceTokenRequest:
+      type: object
+      required:
+        - device_code
+      properties:
+        device_code:
+          type: string
+    CliDeviceTokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_at
+        - scope
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          const: Bearer
+        expires_at:
+          type: string
+          format: date-time
+        scope:
+          type: string
+    CliDeviceAuthorizationError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - authorization_pending
+            - slow_down
+            - access_denied
+            - expired_token
+            - invalid_grant
+        error_description:
+          type: string
+        interval:
+          type: integer
+    CliProject:
+      type: object
+      required:
+        - uuid
+        - name
+        - slug
+        - integration_kind
+        - archived
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        integration_kind:
+          type: string
+        integration_label:
+          type: string
+        archived:
+          type: boolean
+        archived_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CliEvent:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        level:
+          type: string
+        message:
+          type: string
+        fingerprint:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        environment:
+          type: string
+        release:
+          type: string
+        transaction_name:
+          type: string
+        trace_id:
+          type: string
+        request_id:
+          type: string
+        session_id:
+          type: string
+        user_identifier:
+          type: string
+        duration_ms:
+          type: number
+        status:
+          oneOf:
+            - type: string
+            - type: integer
+        error_group_uuid:
+          type: string
+          format: uuid
+        context:
+          type: object
+          description: Server-redacted event context. Sensitive-looking keys are replaced with `[REDACTED]`.
+          additionalProperties: true
+    CliErrorGroup:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        fingerprint:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        stage:
+          type: string
+        severity:
+          type: string
+        status:
+          type: string
+        occurrence_count:
+          type: integer
+        first_seen_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        ignored_at:
+          type: string
+          format: date-time
+        archived_at:
+          type: string
+          format: date-time
+        latest_event:
+          $ref: "#/components/schemas/CliEvent"
+    CliProjectSummary:
+      type: object
+      properties:
+        project:
+          $ref: "#/components/schemas/CliProject"
+        window_started_at:
+          type: string
+          format: date-time
+        generated_at:
+          type: string
+          format: date-time
+        latest_event:
+          $ref: "#/components/schemas/CliEvent"
+        events_by_type:
+          type: object
+          additionalProperties:
+            type: integer
+        errors:
+          type: object
+          additionalProperties:
+            type: integer
+        activity_events:
+          type: integer
+    CliAiContext:
+      type: object
+      properties:
+        format:
+          type: string
+          const: logister_ai_context
+        version:
+          type: integer
+        generated_at:
+          type: string
+          format: date-time
+        token_budget:
+          type: integer
+        project:
+          $ref: "#/components/schemas/CliProject"
+        issue:
+          $ref: "#/components/schemas/CliErrorGroup"
+        latest_event:
+          $ref: "#/components/schemas/CliEvent"
+        exception:
+          type: object
+          additionalProperties: true
+        request:
+          type: object
+          additionalProperties: true
+        occurrences:
+          type: object
+          additionalProperties: true
+        related_logs:
+          type: object
+          additionalProperties: true
+        deployment_context:
+          type: object
+          additionalProperties: true
+        notes:
+          type: array
+          items:
+            type: string
     EventEnvelope:
       type: object
       required:

@@ -203,6 +203,92 @@ ALTER SEQUENCE public.check_in_monitors_id_seq OWNED BY public.check_in_monitors
 
 
 --
+-- Name: cli_access_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cli_access_tokens (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id bigint NOT NULL,
+    name character varying NOT NULL,
+    token_digest character varying NOT NULL,
+    scopes jsonb DEFAULT '[]'::jsonb NOT NULL,
+    allowed_project_ids jsonb DEFAULT '[]'::jsonb NOT NULL,
+    all_projects boolean DEFAULT false NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    revoked_at timestamp(6) without time zone,
+    last_used_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: cli_access_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.cli_access_tokens_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cli_access_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.cli_access_tokens_id_seq OWNED BY public.cli_access_tokens.id;
+
+
+--
+-- Name: cli_device_authorizations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.cli_device_authorizations (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    device_code_digest character varying NOT NULL,
+    user_code_digest character varying NOT NULL,
+    user_code_display character varying NOT NULL,
+    client_name character varying NOT NULL,
+    status integer DEFAULT 0 NOT NULL,
+    requested_scopes jsonb DEFAULT '[]'::jsonb NOT NULL,
+    approved_all_projects boolean DEFAULT false NOT NULL,
+    approved_project_ids jsonb DEFAULT '[]'::jsonb NOT NULL,
+    user_id bigint,
+    cli_access_token_id bigint,
+    expires_at timestamp(6) without time zone NOT NULL,
+    approved_at timestamp(6) without time zone,
+    denied_at timestamp(6) without time zone,
+    consumed_at timestamp(6) without time zone,
+    last_polled_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: cli_device_authorizations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.cli_device_authorizations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: cli_device_authorizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.cli_device_authorizations_id_seq OWNED BY public.cli_device_authorizations.id;
+
+
+--
 -- Name: email_notification_deliveries; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1585,6 +1671,20 @@ ALTER TABLE ONLY public.check_in_monitors ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: cli_access_tokens id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cli_access_tokens ALTER COLUMN id SET DEFAULT nextval('public.cli_access_tokens_id_seq'::regclass);
+
+
+--
+-- Name: cli_device_authorizations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cli_device_authorizations ALTER COLUMN id SET DEFAULT nextval('public.cli_device_authorizations_id_seq'::regclass);
+
+
+--
 -- Name: email_notification_deliveries id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1745,6 +1845,22 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 ALTER TABLE ONLY public.check_in_monitors
     ADD CONSTRAINT check_in_monitors_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cli_access_tokens cli_access_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cli_access_tokens
+    ADD CONSTRAINT cli_access_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cli_device_authorizations cli_device_authorizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cli_device_authorizations
+    ADD CONSTRAINT cli_device_authorizations_pkey PRIMARY KEY (id);
 
 
 --
@@ -2106,6 +2222,83 @@ CREATE UNIQUE INDEX idx_check_in_monitors_uniqueness ON public.check_in_monitors
 --
 
 CREATE INDEX idx_email_deliveries_digest_lookup ON public.email_notification_deliveries USING btree (user_id, project_id, notification_kind, period_start_at);
+
+
+--
+-- Name: index_cli_access_tokens_on_token_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_cli_access_tokens_on_token_digest ON public.cli_access_tokens USING btree (token_digest);
+
+
+--
+-- Name: index_cli_access_tokens_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cli_access_tokens_on_user_id ON public.cli_access_tokens USING btree (user_id);
+
+
+--
+-- Name: index_cli_access_tokens_on_user_id_and_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cli_access_tokens_on_user_id_and_expires_at ON public.cli_access_tokens USING btree (user_id, expires_at);
+
+
+--
+-- Name: index_cli_access_tokens_on_user_id_and_revoked_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cli_access_tokens_on_user_id_and_revoked_at ON public.cli_access_tokens USING btree (user_id, revoked_at);
+
+
+--
+-- Name: index_cli_access_tokens_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_cli_access_tokens_on_uuid ON public.cli_access_tokens USING btree (uuid);
+
+
+--
+-- Name: index_cli_device_authorizations_on_cli_access_token_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cli_device_authorizations_on_cli_access_token_id ON public.cli_device_authorizations USING btree (cli_access_token_id);
+
+
+--
+-- Name: index_cli_device_authorizations_on_device_code_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_cli_device_authorizations_on_device_code_digest ON public.cli_device_authorizations USING btree (device_code_digest);
+
+
+--
+-- Name: index_cli_device_authorizations_on_status_and_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cli_device_authorizations_on_status_and_expires_at ON public.cli_device_authorizations USING btree (status, expires_at);
+
+
+--
+-- Name: index_cli_device_authorizations_on_user_code_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_cli_device_authorizations_on_user_code_digest ON public.cli_device_authorizations USING btree (user_code_digest);
+
+
+--
+-- Name: index_cli_device_authorizations_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_cli_device_authorizations_on_user_id ON public.cli_device_authorizations USING btree (user_id);
+
+
+--
+-- Name: index_cli_device_authorizations_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_cli_device_authorizations_on_uuid ON public.cli_device_authorizations USING btree (uuid);
 
 
 --
@@ -9963,6 +10156,30 @@ ALTER TABLE ONLY public.check_in_monitors
 
 
 --
+-- Name: cli_device_authorizations fk_rails_57e8eeff05; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cli_device_authorizations
+    ADD CONSTRAINT fk_rails_57e8eeff05 FOREIGN KEY (cli_access_token_id) REFERENCES public.cli_access_tokens(id);
+
+
+--
+-- Name: cli_access_tokens fk_rails_d295f5f850; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cli_access_tokens
+    ADD CONSTRAINT fk_rails_d295f5f850 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: cli_device_authorizations fk_rails_f74cfc2adf; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cli_device_authorizations
+    ADD CONSTRAINT fk_rails_f74cfc2adf FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: mobile_ingest_tokens fk_rails_f599113ac4; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9984,6 +10201,8 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260701193000'),
+('20260701190000'),
 ('20260620183000'),
 ('20260620180000'),
 ('20260618170000'),

@@ -1,0 +1,75 @@
+<% content_for :title, "Connect Logister CLI" %>
+
+<section class="mx-auto max-w-3xl space-y-4">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Connect Logister CLI</h1>
+    <p class="mt-1 text-sm text-slate-600">Approve a terminal login request for your Logister account.</p>
+  </div>
+
+  <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5">
+    <% if @authorization.blank? %>
+      <h2 class="text-base font-bold text-slate-900 mb-3">Enter login code</h2>
+      <%= form_with url: cli_device_authorization_path, method: :get, local: true, class: "space-y-4" do %>
+        <div>
+          <%= label_tag :user_code, "Code from terminal", class: "form-label" %>
+          <%= text_field_tag :user_code, @user_code, required: true, autofocus: true, autocomplete: "one-time-code", placeholder: "ABCD-EFGH", class: "form-input font-mono tracking-wider uppercase" %>
+        </div>
+        <%= submit_tag "Continue", class: "btn-primary" %>
+      <% end %>
+    <% elsif @authorization.expired? %>
+      <h2 class="text-base font-bold text-slate-900 mb-2">Code expired</h2>
+      <p class="text-sm text-slate-600">Start a new CLI login from your terminal.</p>
+    <% elsif @authorization.pending? %>
+      <div class="mb-4 rounded-lg bg-slate-50 border border-slate-200 px-4 py-3">
+        <div class="text-xs font-semibold uppercase text-slate-500">Login code</div>
+        <div class="mt-1 font-mono text-xl font-semibold tracking-wider text-slate-900"><%= @authorization.user_code_display %></div>
+        <div class="mt-1 text-sm text-slate-600"><%= @authorization.client_name %></div>
+      </div>
+
+      <%= form_with url: cli_device_authorization_path, method: :post, local: true, class: "space-y-5" do %>
+        <%= hidden_field_tag :user_code, @authorization.user_code_display %>
+
+        <fieldset class="space-y-3">
+          <legend class="text-sm font-semibold text-slate-900">Project access</legend>
+          <label class="flex gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
+            <%= check_box_tag :all_projects, "1", false, class: "mt-1" %>
+            <span>
+              <span class="block font-medium text-slate-900">All accessible projects</span>
+              <span class="block text-xs text-slate-500">Includes projects shared with you now and later.</span>
+            </span>
+          </label>
+
+          <% if @projects.any? %>
+            <div class="rounded-lg border border-slate-200 divide-y divide-slate-200">
+              <% @projects.each do |project| %>
+                <label class="flex items-start gap-3 px-3 py-2 text-sm text-slate-700">
+                  <%= check_box_tag "project_ids[]", project.id, true, id: "project_#{project.uuid}", class: "mt-1" %>
+                  <span>
+                    <span class="block font-medium text-slate-900"><%= project.name %></span>
+                    <span class="block text-xs text-slate-500"><%= project.slug %></span>
+                  </span>
+                </label>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-sm text-slate-600">You do not have active projects yet.</p>
+          <% end %>
+        </fieldset>
+
+        <div class="flex flex-wrap gap-3">
+          <%= button_tag "Approve CLI login", type: :submit, name: :decision, value: "approve", class: "btn-primary" %>
+          <%= button_tag "Deny", type: :submit, name: :decision, value: "deny", class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+        </div>
+      <% end %>
+    <% elsif @authorization.approved? %>
+      <h2 class="text-base font-bold text-slate-900 mb-2">CLI login approved</h2>
+      <p class="text-sm text-slate-600">Return to your terminal. The CLI will finish automatically.</p>
+    <% elsif @authorization.denied? %>
+      <h2 class="text-base font-bold text-slate-900 mb-2">CLI login denied</h2>
+      <p class="text-sm text-slate-600">Start a new CLI login if this was a mistake.</p>
+    <% elsif @authorization.consumed? %>
+      <h2 class="text-base font-bold text-slate-900 mb-2">CLI is connected</h2>
+      <p class="text-sm text-slate-600">The terminal has received its CLI access token.</p>
+    <% end %>
+  </article>
+</section>

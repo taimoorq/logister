@@ -62,6 +62,69 @@ RSpec.describe "Routes", type: :routing do
         action: "create"
       )
     end
+
+    it "routes GET /api/v1/cli/capabilities to api/v1/cli/capabilities#show" do
+      expect(get: "/api/v1/cli/capabilities").to route_to(
+        controller: "api/v1/cli/capabilities",
+        action: "show"
+      )
+    end
+
+    it "routes CLI device authorization endpoints" do
+      expect(post: "/api/v1/cli/device_authorizations").to route_to(
+        controller: "api/v1/cli/device_authorizations",
+        action: "create"
+      )
+      expect(post: "/api/v1/cli/device_authorizations/token").to route_to(
+        controller: "api/v1/cli/device_authorizations",
+        action: "token"
+      )
+      expect(get: "/cli/device").to route_to(
+        controller: "cli_device_authorizations",
+        action: "show"
+      )
+      expect(post: "/cli/device").to route_to(
+        controller: "cli_device_authorizations",
+        action: "update"
+      )
+    end
+
+    it "routes CLI project read endpoints" do
+      expect(get: "/api/v1/cli/projects").to route_to(
+        controller: "api/v1/cli/projects",
+        action: "index"
+      )
+      expect(get: "/api/v1/cli/projects/project-1").to route_to(
+        controller: "api/v1/cli/projects",
+        action: "show",
+        uuid: "project-1"
+      )
+      expect(get: "/api/v1/cli/projects/project-1/summary").to route_to(
+        controller: "api/v1/cli/project_summaries",
+        action: "show",
+        uuid: "project-1"
+      )
+    end
+
+    it "routes CLI event and error group read endpoints" do
+      expect(get: "/api/v1/cli/projects/project-1/events").to route_to(
+        controller: "api/v1/cli/events",
+        action: "index",
+        project_uuid: "project-1"
+      )
+      expect(get: "/api/v1/cli/projects/project-1/events/event-1").to route_to(
+        controller: "api/v1/cli/events",
+        action: "show",
+        project_uuid: "project-1",
+        uuid: "event-1"
+      )
+      expect(get: "/api/v1/cli/projects/project-1/error_groups/group-1/context").to route_to(
+        controller: "api/v1/cli/error_groups",
+        action: "context",
+        project_uuid: "project-1",
+        uuid: "group-1"
+      )
+    end
   end
 
   describe "health" do

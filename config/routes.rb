@@ -42,6 +42,8 @@ Rails.application.routes.draw do
   get "health/clickhouse", to: "health#clickhouse"
   get "github/setup", to: "github/setup#show", as: :github_setup
   post "github/webhooks", to: "github/webhooks#create", as: :github_webhooks
+  get "cli/device", to: "cli_device_authorizations#show", as: :cli_device_authorization
+  post "cli/device", to: "cli_device_authorizations#update"
   resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
   get "account/security", to: redirect("/users/edit"), as: :account_security
 
@@ -106,6 +108,24 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      namespace :cli do
+        get :capabilities, to: "capabilities#show"
+        resources :device_authorizations, only: :create do
+          post :token, on: :collection
+        end
+        resources :projects, only: [ :index, :show ], param: :uuid do
+          member do
+            get :summary, to: "project_summaries#show"
+          end
+        end
+        get "projects/:project_uuid/events", to: "events#index"
+        get "projects/:project_uuid/events/:uuid", to: "events#show"
+        get "projects/:project_uuid/error_groups", to: "error_groups#index"
+        get "projects/:project_uuid/error_groups/:uuid", to: "error_groups#show"
+        get "projects/:project_uuid/error_groups/:uuid/export", to: "error_groups#export"
+        get "projects/:project_uuid/error_groups/:uuid/context", to: "error_groups#context"
+      end
+
       resources :ingest_events, only: :create
       resources :check_ins, only: :create
       resources :deployments, only: :create
