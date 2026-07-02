@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Logister CLI | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://logister.org/docs/cli/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Logister CLI | Logister">
+    <meta property="og:description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://logister.org/docs/cli/">
+    <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Logister CLI | Logister">
+    <meta name="twitter:description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.">
+    <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-cli","https://www.npmjs.com/package/logister-cli"]},{"@type":"TechArticle","@id":"https://logister.org/docs/cli/#article","headline":"Use the Logister CLI to inspect project telemetry from a terminal.","name":"Logister CLI | Logister","url":"https://logister.org/docs/cli/","description":"Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"about":[{"@type":"Thing","name":"Command line tools"},{"@type":"Thing","name":"Telemetry investigation"},{"@type":"Thing","name":"CLI access tokens"},{"@type":"Thing","name":"AI debugging context"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Logister CLI","item":"https://logister.org/docs/cli/"}]}]}</script>
+    <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
+    <link rel="alternate" type="text/plain" href="/docs/llms-full.txt" title="LLMs full context">
+    <link rel="icon" href="/docs/assets/icon.png" type="image/png">
+    <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/docs/assets/icon.png">
+    <link rel="stylesheet" href="/docs/assets/site.css">
+    <script defer src="/docs/assets/analytics-config.js"></script>
+    <script defer src="/docs/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/docs/">
+            <img src="/docs/assets/logister-logo.svg" alt="Logister">
+            <span class="brand-copy">
+              <span class="brand-kicker">Documentation</span>
+              <span class="brand-title">CLI</span>
+            </span>
+          </a>
+          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
+          <nav class="topnav" data-nav-panel>
+            <a href="/docs/">Docs home</a>
+            <a href="https://logister.org/">Hosted app</a>
+            <a href="https://github.com/taimoorq/logister">GitHub</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero">
+          <span class="hero-kicker">Documentation / CLI</span>
+          <h1>Use the Logister CLI to inspect project telemetry from a terminal.</h1>
+          <p>
+            The Logister CLI gives developers, operators, scripts, and AI coding tools read access to project telemetry without using project ingest keys. Use it after events are flowing so you can list projects, check server capabilities, inspect recent events and logs, and export grouped issue context.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#install">Install the CLI</a>
+            <a class="btn btn-secondary" href="#login">Connect to Logister</a>
+            <a class="btn btn-secondary" href="#commands">Run read commands</a>
+          </div>
+        </section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group">
+              <p class="sidebar-label">Start here</p>
+              <a href="/docs/">Overview</a>
+              <a href="/docs/getting-started/">Getting started</a>
+              <a href="/docs/product/">Product guide</a>
+              <a href="/docs/self-hosting/">Self-hosting</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Operations</p>
+              <a href="/docs/local-development/">Local development</a>
+              <a href="/docs/deployment/">Deployment config</a>
+              <a href="/docs/github-app/">GitHub App</a>
+              <a href="/docs/clickhouse/">ClickHouse</a>
+              <a href="/docs/http-api/">HTTP API</a>
+              <a href="/docs/api-reference/">API reference</a>
+              <a class="active" href="/docs/cli/">CLI</a>
+              <a href="/docs/troubleshooting/">Troubleshooting</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Integrations</p>
+              <a href="/docs/integrations/ruby/">Ruby integration</a>
+              <a href="/docs/integrations/dotnet/">.NET integration</a>
+              <a href="/docs/integrations/python/">Python integration</a>
+              <a href="/docs/integrations/javascript/">JavaScript integration</a>
+              <a href="/docs/integrations/cloudflare-pages/">Cloudflare Pages</a>
+              <a href="/docs/integrations/android/">Android integration</a>
+              <a href="/docs/integrations/ios/">iOS integration</a>
+              <a href="/docs/integrations/cfml/">CFML integration</a>
+            </div>
+            <hr>
+            <div class="sidebar-group">
+              <p class="sidebar-label">On this page</p>
+              <a href="#when">When to use it</a>
+              <a href="#before">Before you start</a>
+              <a href="#install">Install</a>
+              <a href="#login">Log in</a>
+              <a href="#verify">Verify setup</a>
+              <a href="#commands">Read project data</a>
+              <a href="#capabilities">Capabilities</a>
+              <a href="#security">Security model</a>
+              <a href="#troubleshooting">Troubleshooting</a>
+              <a href="#next">Next steps</a>
+            </div>
+          </aside>
+
+          <article class="article" data-pagefind-body>
+            <section class="article-header">
+              <div class="outline-grid">
+                <section class="outline-card">
+                  <p class="eyebrow">Guide overview</p>
+                  <h2>Start here when you want terminal access to Logister data.</h2>
+                  <p class="lead">
+                    The CLI reads from the Logister server API with a user-scoped CLI access token. It is for investigation and automation after a project exists; SDKs and the HTTP API still own telemetry ingestion.
+                  </p>
+                </section>
+                <aside class="outline-card chapter-links">
+                  <h3>Useful references</h3>
+                  <a href="https://www.npmjs.com/package/logister-cli"><span>npm package</span><span class="kbd">install</span></a>
+                  <a href="https://github.com/taimoorq/logister-cli"><span>CLI source</span><span class="kbd">repo</span></a>
+                  <a href="/docs/api-reference/"><span>API reference</span><span class="kbd">contract</span></a>
+                  <a href="/docs/troubleshooting/"><span>Troubleshooting</span><span class="kbd">help</span></a>
+                </aside>
+              </div>
+            </section>
+
+            <section id="when" class="section">
+              <p class="eyebrow">When to use it</p>
+              <h2>Use the CLI when reading project data from a terminal is faster than opening the web UI.</h2>
+              <p>
+                The CLI is useful for quick checks during deploys, scripted investigations, support handoffs, and AI-assisted debugging. It can list projects available to your account, summarize recent telemetry, inspect events and redacted logs, list grouped issues, export issue details, and request minimized AI context bundles for an error group.
+              </p>
+              <p>
+                It does not replace SDKs or the HTTP API. Ruby, .NET, Python, JavaScript, Android, iOS, CFML, Cloudflare Pages, and custom clients still send telemetry into Logister. The CLI reads selected data back out with a user-approved read token.
+              </p>
+            </section>
+
+            <section id="before" class="section">
+              <p class="eyebrow">Before you start</p>
+              <h2>Have a Logister host, account, and project ready.</h2>
+              <ul>
+                <li>Node.js 20 or newer for the npm package.</li>
+                <li>A hosted or self-hosted Logister URL, such as <code>https://logister.example.com</code>.</li>
+                <li>A Logister user account with access to at least one active project.</li>
+                <li>Server support for CLI device authorization and CLI access tokens. Use <code>logister doctor</code> to confirm.</li>
+              </ul>
+              <div class="note tip"><h4>Project ingest keys are not CLI tokens</h4><p>Project API keys are write-only credentials for SDKs and direct HTTP clients. They cannot list projects, read events, or export issue context. Use browser-approved CLI login or a user-scoped CLI access token instead.</p></div>
+            </section>
+
+            <section id="install" class="section">
+              <p class="eyebrow">Install</p>
+              <h2>Install the CLI with the package manager that fits your machine.</h2>
+              <p>
+                Every install path gives you the same <code>logister</code> executable. The npm package is the canonical release artifact; Homebrew and Scoop wrap the same published <code>logister-cli</code> tarball for macOS, Linuxbrew, and Windows users.
+              </p>
+              <p>Use npm when Node is already part of your toolchain:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-npm-install">Copy</button>
+                </div>
+                <pre><code id="cli-npm-install">npm install -g logister-cli
+logister version</code></pre>
+              </div>
+              <p>Use Homebrew on macOS or Linuxbrew:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-homebrew-install">Copy</button>
+                </div>
+                <pre><code id="cli-homebrew-install">brew tap taimoorq/logister
+brew install logister
+logister version</code></pre>
+              </div>
+              <p>Use Scoop on Windows:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">powershell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-scoop-install">Copy</button>
+                </div>
+                <pre><code id="cli-scoop-install">scoop bucket add logister https://github.com/taimoorq/scoop-logister
+scoop install logister
+logister version</code></pre>
+              </div>
+              <p>Use Yarn or pnpm when those already own global developer tools on your machine:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-js-pm-install">Copy</button>
+                </div>
+                <pre><code id="cli-js-pm-install">yarn global add logister-cli
+pnpm add -g logister-cli</code></pre>
+              </div>
+              <p>Use <code>npx</code> for one-off checks without a global install:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-npx">Copy</button>
+                </div>
+                <pre><code id="cli-npx">npx logister-cli doctor --host https://logister.example.com</code></pre>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Install path</th>
+                    <th>Best when</th>
+                    <th>Install</th>
+                    <th>Update</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>npm</td>
+                    <td>You already use Node global packages.</td>
+                    <td><code>npm install -g logister-cli</code></td>
+                    <td><code>npm install -g logister-cli@latest</code></td>
+                  </tr>
+                  <tr>
+                    <td>npx</td>
+                    <td>You want a one-off command without a global install.</td>
+                    <td><code>npx logister-cli doctor --host &lt;url&gt;</code></td>
+                    <td>Runs the registry package each time.</td>
+                  </tr>
+                  <tr>
+                    <td>Yarn</td>
+                    <td>Yarn owns your global developer tools.</td>
+                    <td><code>yarn global add logister-cli</code></td>
+                    <td><code>yarn global upgrade logister-cli</code></td>
+                  </tr>
+                  <tr>
+                    <td>pnpm</td>
+                    <td>pnpm owns your global developer tools.</td>
+                    <td><code>pnpm add -g logister-cli</code></td>
+                    <td><code>pnpm add -g logister-cli@latest</code></td>
+                  </tr>
+                  <tr>
+                    <td>Homebrew</td>
+                    <td>You are on macOS or Linuxbrew.</td>
+                    <td><code>brew tap taimoorq/logister</code>, then <code>brew install logister</code></td>
+                    <td><code>brew update</code>, then <code>brew upgrade logister</code></td>
+                  </tr>
+                  <tr>
+                    <td>Scoop</td>
+                    <td>You are on Windows and use Scoop.</td>
+                    <td><code>scoop bucket add logister https://github.com/taimoorq/scoop-logister</code>, then <code>scoop install logister</code></td>
+                    <td><code>scoop update</code>, then <code>scoop update logister</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section id="login" class="section">
+              <p class="eyebrow">Log in</p>
+              <h2>Use browser-approved login for interactive work.</h2>
+              <p>
+                The default login starts a short-lived device authorization request. The CLI prints a code and opens the Logister approval URL. Sign in, choose which projects the token may read, approve the request, then return to the terminal.
+              </p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-login">Copy</button>
+                </div>
+                <pre><code id="cli-login">logister auth login --host https://logister.example.com</code></pre>
+              </div>
+              <p>If the CLI cannot open a browser, copy the displayed URL manually:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-no-browser">Copy</button>
+                </div>
+                <pre><code id="cli-no-browser">logister auth login --host https://logister.example.com --no-browser</code></pre>
+              </div>
+              <p>For automation, avoid putting tokens directly into shell history:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-token-stdin">Copy</button>
+                </div>
+                <pre><code id="cli-token-stdin">printf '%s' "$LOGISTER_TOKEN" | logister auth login \
+  --host https://logister.example.com \
+  --token-stdin</code></pre>
+              </div>
+              <p>Saved tokens use macOS Keychain when available and fall back to a local <code>0600</code> config file on other platforms.</p>
+            </section>
+
+            <section id="verify" class="section">
+              <p class="eyebrow">Verify setup</p>
+              <h2>Check the active profile and server capability map.</h2>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-verify">Copy</button>
+                </div>
+                <pre><code id="cli-verify">logister doctor
+logister auth status
+logister projects list</code></pre>
+              </div>
+              <p>
+                <code>doctor</code> reports the local CLI version, active profile, configured host, token presence, and the server feature map. It does not print the token value. A healthy first run should show the Logister server version, recommended CLI version, and enabled features such as projects, events, logs, error groups, and AI context bundles.
+              </p>
+            </section>
+
+            <section id="commands" class="section">
+              <p class="eyebrow">Read project data</p>
+              <h2>Start with project listing, then inspect the current problem.</h2>
+              <p>
+                Most commands accept <code>--project &lt;uuid-or-slug&gt;</code>. You can also set <code>LOGISTER_PROJECT</code> for one-off commands or save a project in your profile.
+              </p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-read-commands">Copy</button>
+                </div>
+                <pre><code id="cli-read-commands">logister projects list
+logister projects show &lt;project&gt;
+logister overview --project &lt;project&gt; --since 24h
+logister events list --project &lt;project&gt; --type error --since 1h
+logister events show &lt;event-id&gt; --project &lt;project&gt;
+logister logs list --project &lt;project&gt; --level warn,error
+logister logs tail --project &lt;project&gt; --follow</code></pre>
+              </div>
+              <p>Use grouped issue commands when you already know the failing error group:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-issue-commands">Copy</button>
+                </div>
+                <pre><code id="cli-issue-commands">logister issues list --project &lt;project&gt; --status unresolved
+logister issues show &lt;group-id&gt; --project &lt;project&gt; --related-logs
+logister issues export &lt;group-id&gt; --project &lt;project&gt; --format json
+logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --format json</code></pre>
+              </div>
+              <p>
+                <code>issues context</code> returns a minimized, server-redacted bundle designed for AI coding tools. It is still project data, so review the output before pasting it into any external tool.
+              </p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Format</th>
+                    <th>Use it when</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>--format table</code></td>
+                    <td>You are reading short lists in a terminal.</td>
+                  </tr>
+                  <tr>
+                    <td><code>--format json</code></td>
+                    <td>You want a full structured response or are passing data to another tool.</td>
+                  </tr>
+                  <tr>
+                    <td><code>--format ndjson</code></td>
+                    <td>You are streaming list output into line-oriented tooling.</td>
+                  </tr>
+                  <tr>
+                    <td><code>--format markdown</code></td>
+                    <td>You are preparing a human-readable debugging note.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section id="capabilities" class="section">
+              <p class="eyebrow">Capabilities</p>
+              <h2>The CLI checks what your server exposes before running feature-specific commands.</h2>
+              <p>
+                Logister servers publish their CLI feature map at <code>/api/v1/cli/capabilities</code>. Current servers support the first read slice: projects, project summaries, events, logs, error groups, issue export, and AI context bundles. Other command groups are scaffolded in the CLI but stay disabled until the server exposes those read or write capabilities.
+              </p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Feature group</th>
+                    <th>Current support</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Projects and summaries</td>
+                    <td>Enabled</td>
+                    <td>Use <code>projects</code> and <code>overview</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>Events and logs</td>
+                    <td>Enabled</td>
+                    <td>Logs use the event read capability with <code>type=log</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>Error groups and AI context</td>
+                    <td>Enabled</td>
+                    <td>Use <code>issues list</code>, <code>issues show</code>, <code>issues export</code>, and <code>issues context</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>Transactions</td>
+                    <td>Partial</td>
+                    <td>Transaction listing uses the event read capability with <code>type=transaction</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>Traces, monitors, deployments, insights, and metrics</td>
+                    <td>Feature-gated</td>
+                    <td>The CLI has command scaffolding, but current servers report these features as unavailable.</td>
+                  </tr>
+                  <tr>
+                    <td>Error group mutations</td>
+                    <td>Feature-gated</td>
+                    <td>Commands such as resolve, ignore, archive, reopen, and assign should wait for write-scoped CLI tokens.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section id="security" class="section">
+              <p class="eyebrow">Security model</p>
+              <h2>Treat CLI tokens as user read credentials.</h2>
+              <ul>
+                <li>CLI read access uses user-scoped CLI access tokens.</li>
+                <li>Tokens are scope-limited, project-limited, expiring, revocable, and audited by the Logister server.</li>
+                <li>Browser-approved login issues a CLI token through the signed-in Logister web session.</li>
+                <li>Project ingest API keys are not accepted for CLI reads.</li>
+                <li>CLI output redacts sensitive-looking fields by default.</li>
+                <li>Use <code>--no-redact</code> only when you intentionally need raw payloads and have permission to view them.</li>
+              </ul>
+              <div class="note warn"><h4>Do not paste secrets into issues</h4><p>When reporting CLI bugs, include the CLI version, install method, OS, shell, server version from <code>logister doctor</code>, command shape, and error message. Do not include tokens, authorization headers, cookies, private telemetry, customer payloads, local config files, or exploit details.</p></div>
+            </section>
+
+            <section id="troubleshooting" class="section">
+              <p class="eyebrow">Troubleshooting</p>
+              <h2>Most CLI setup failures are host, token, project, or server-capability issues.</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Symptom</th>
+                    <th>What to check</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Browser did not open</td>
+                    <td>Run <code>logister auth login --host &lt;url&gt; --no-browser</code>, then copy the printed URL into your browser.</td>
+                  </tr>
+                  <tr>
+                    <td>Device login expired</td>
+                    <td>Start a fresh <code>auth login</code>. Device authorization requests are short-lived by design.</td>
+                  </tr>
+                  <tr>
+                    <td><code>401 Unauthorized</code></td>
+                    <td>Run <code>logister auth status</code>, then log in again. Confirm you are using a CLI access token, not a project ingest API key.</td>
+                  </tr>
+                  <tr>
+                    <td>No projects are visible</td>
+                    <td>Confirm the signed-in account has active project access. If you approved selected projects, start a new login and include the missing project.</td>
+                  </tr>
+                  <tr>
+                    <td>Missing project error</td>
+                    <td>Pass <code>--project &lt;uuid-or-slug&gt;</code> or set <code>LOGISTER_PROJECT</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>Feature is not supported</td>
+                    <td>Run <code>logister doctor</code> and read the server feature map. The server may not expose that command group yet.</td>
+                  </tr>
+                  <tr>
+                    <td>Output hides values you expected</td>
+                    <td>The CLI redacts sensitive-looking fields by default. Prefer server-minimized output; use <code>--no-redact</code> only for approved local debugging.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>For package-specific bugs and feature requests, use the <a href="https://github.com/taimoorq/logister-cli/issues">Logister CLI issue tracker</a>.</p>
+            </section>
+
+            <section id="next" class="section">
+              <p class="eyebrow">Next steps</p>
+              <h2>Use the CLI alongside the product guides.</h2>
+              <div class="doc-link-list">
+                <a class="doc-link" href="/docs/getting-started/">
+                  <strong>Create a project first</strong>
+                  <span>The CLI can read projects your account can access, but ingestion starts with a Logister project and an API key.</span>
+                </a>
+                <a class="doc-link" href="/docs/http-api/">
+                  <strong>Send telemetry over HTTP</strong>
+                  <span>Use project API keys for events, check-ins, and deployment records. Keep CLI tokens for reads.</span>
+                </a>
+                <a class="doc-link" href="/docs/product/#triage">
+                  <strong>Understand grouped issue triage</strong>
+                  <span>Read how Logister groups errors, stores context, and tracks owner/status changes before exporting issue context from the CLI.</span>
+                </a>
+              </div>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

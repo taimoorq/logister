@@ -4,7 +4,7 @@ Logister is an open source, self-hosted error monitoring and bug triage app for 
 
 The primary Logister deployment model is self-hosting. The public hosted app at https://logister.org/ is secondary. The source repository is https://github.com/taimoorq/logister.
 
-Canonical docs are organized as a practical self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, API reference, and Troubleshooting. Feature explanations should define the concept, explain why it exists, show how users interact with it, name common failure modes, and point to the next guide.
+Canonical docs are organized as a practical self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, CLI read workflows, API reference, and Troubleshooting. Feature explanations should define the concept, explain why it exists, show how users interact with it, name common failure modes, and point to the next guide.
 
 ## What Logister Does
 
@@ -14,6 +14,7 @@ Canonical docs are organized as a practical self-hosted product manual: Document
 - Supports optional project-scoped GitHub App source integration for private repository source excerpts, CODEOWNERS hints, explicit repository connections, deployment links, and GitHub issue creation when Issues write permission is granted.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
+- Provides CLI read access for terminal workflows, scripts, and AI-assisted debugging through user-scoped CLI access tokens.
 - Provides project performance views with transactions, database metrics, release health, and span-backed request load breakdowns.
 - Sends purpose-based project notifications through SMTP, commonly Amazon SES: new or reopened error groups, milestones, single-error volume, project spikes, latency alerts, monitor alerts, workflow routing, digests, release summaries, usage warnings, and retention/archive failures.
 - Supports configurable hot-data retention and optional S3-compatible archive exports for older telemetry before pruning high-volume non-error rows from PostgreSQL.
@@ -25,6 +26,7 @@ Canonical docs are organized as a practical self-hosted product manual: Document
 - .NET and ASP.NET Core apps use `logister-dotnet`: https://github.com/taimoorq/logister-dotnet with NuGet packages https://www.nuget.org/packages/Logister and https://www.nuget.org/packages/Logister.AspNetCore.
 - Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
 - JavaScript and TypeScript apps use `logister-js`: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
+- Developers and operators can use the Logister CLI for read-only project investigation: https://github.com/taimoorq/logister-cli, https://www.npmjs.com/package/logister-cli, https://github.com/taimoorq/homebrew-logister, https://github.com/taimoorq/scoop-logister, and https://logister.org/docs/cli/
 - Android apps use `logister-android`: https://github.com/taimoorq/logister-android with Maven Central coordinates `org.logister:logister-android:0.1.2` at https://central.sonatype.com/artifact/org.logister/logister-android
 - iOS apps use the `Logister` Swift package from https://github.com/taimoorq/logister-ios.git with release tags such as https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
@@ -39,6 +41,8 @@ Public ingestion endpoints `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/a
 Source-linked debugging works best when SDKs and custom clients send `repository`, `commit_sha`, `branch`, `release`, and `environment` on error events. CI/CD can also POST a `deployment` envelope to `/api/v1/deployments` with `release`, `repository`, `commit_sha`, optional `branch`, `deployed_at`, `pull_request_number`, `release_tag`, and GitHub URLs so Logister can show source excerpts, PR/release links, and "this started after deploy X" context.
 
 GitHub App setup docs live at https://logister.org/docs/github-app/. Self-hosters create their own GitHub App instead of storing personal access tokens. Required variables are `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`; GitHub Enterprise Server installs can also set `LOGISTER_GITHUB_API_URL` and `LOGISTER_GITHUB_WEB_URL`. Project owners and project admins install or link GitHub App installations from project settings, sync repository metadata, and explicitly connect the repositories each project should use. Syncing or telemetry alone does not create source mappings. Source lookup diagnostics live at https://logister.org/docs/github-app/source-lookup/.
+
+Logister CLI docs live at https://logister.org/docs/cli/. Install with `npm install -g logister-cli`, `brew tap taimoorq/logister && brew install logister`, or `scoop bucket add logister https://github.com/taimoorq/scoop-logister && scoop install logister`. The npm package at https://www.npmjs.com/package/logister-cli is the canonical release artifact, with source at https://github.com/taimoorq/logister-cli. Homebrew and Scoop wrap the same npm tarball through https://github.com/taimoorq/homebrew-logister and https://github.com/taimoorq/scoop-logister. Browser-approved login issues user-scoped CLI access tokens and can limit access to selected projects. Project ingest API keys are write credentials for SDKs and direct HTTP clients; they are not accepted for CLI reads. Current server support covers projects, project summaries, events, logs, error groups, issue export, and AI context bundles. Traces, monitors, deployments, insights, metrics, and error-group mutations remain feature-gated until the server exposes those capabilities.
 
 ## Operational Use Cases
 
@@ -145,11 +149,16 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - ClickHouse: https://logister.org/docs/clickhouse/
 - Documentation style guide: https://github.com/taimoorq/logister/blob/main/docs/documentation-style-guide.md
 - HTTP API: https://logister.org/docs/http-api/
+- Logister CLI: https://logister.org/docs/cli/
 - Troubleshooting: https://logister.org/docs/troubleshooting/
 - Ruby integration: https://logister.org/docs/integrations/ruby/
 - .NET integration: https://logister.org/docs/integrations/dotnet/
 - Python integration: https://logister.org/docs/integrations/python/
 - JavaScript integration: https://logister.org/docs/integrations/javascript/
+- Logister CLI source: https://github.com/taimoorq/logister-cli
+- Logister CLI npm package: https://www.npmjs.com/package/logister-cli
+- Logister CLI Homebrew tap: https://github.com/taimoorq/homebrew-logister
+- Logister CLI Scoop bucket: https://github.com/taimoorq/scoop-logister
 - Cloudflare Pages integration: https://logister.org/docs/integrations/cloudflare-pages/
 - Cloudflare Pages manual telemetry: https://logister.org/docs/integrations/cloudflare-pages/manual-telemetry/
 - Cloudflare Pages importer settings: https://logister.org/docs/integrations/cloudflare-pages/importer-settings/

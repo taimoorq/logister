@@ -4,7 +4,7 @@ Canonical product and integration documentation for Logister lives at this docs 
 
 The public hosted app at logister.org is a secondary option. The primary goal is helping teams run Logister themselves.
 
-The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, API reference, and Troubleshooting.
+The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, CLI read workflows, API reference, and Troubleshooting.
 
 ## Start here
 - Docs home: https://logister.org/docs/
@@ -29,6 +29,7 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - Amazon SES project notifications use case: https://logister.org/docs/use-cases/amazon-ses-error-alerts/
 - HTTP API: https://logister.org/docs/http-api/
 - API reference and Swagger UI: https://logister.org/docs/api-reference/
+- Logister CLI: https://logister.org/docs/cli/
 - Troubleshooting: https://logister.org/docs/troubleshooting/
 - OpenAPI YAML: https://logister.org/docs/openapi.yaml
 - Postman collection: https://logister.org/docs/postman/logister-api.postman_collection.json
@@ -56,6 +57,7 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - Data retention, Archive Center, and archive search: https://logister.org/docs/product/data-retention/
 - Docker self-hosting option and registry images: https://logister.org/docs/self-hosting/#docker
 - ClickHouse: https://logister.org/docs/clickhouse/
+- Logister CLI install through npm, Homebrew, or Scoop, browser-approved login, read commands, and capability support: https://logister.org/docs/cli/
 
 ## Self-hosting and releases
 - App source to fork or self-host: https://github.com/taimoorq/logister
@@ -76,6 +78,7 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - Teams planning and operating their own self-hosted infrastructure footprint for the Rails web app, PostgreSQL, Redis, Sidekiq workers, project notification delivery, S3-compatible archive storage, Archive Center verification, optional ClickHouse, Amazon SES email, Turnstile, analytics, and static docs hosting
 - Teams comparing self-hosted and open source alternatives to Bugzilla, Bugsnag, Sentry, and other paid monitoring or issue triage tools
 - Ruby teams using `logister-ruby`
+- Developers and operators using the Logister CLI to list projects, inspect recent events and logs, export grouped issue context, and prepare AI debugging bundles
 - .NET teams using `logister-dotnet` with ASP.NET Core and C# services
 - Python teams using `logister-python` with FastAPI, Django, Flask, Celery, and Python logging
 - JavaScript and TypeScript teams using `logister-js`
@@ -102,6 +105,11 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - Python SDK package: https://pypi.org/project/logister-python/
 - JavaScript SDK source: https://github.com/taimoorq/logister-js
 - JavaScript SDK package: https://www.npmjs.com/package/logister-js
+- Logister CLI source: https://github.com/taimoorq/logister-cli
+- Logister CLI npm package: https://www.npmjs.com/package/logister-cli
+- Logister CLI Homebrew tap: https://github.com/taimoorq/homebrew-logister
+- Logister CLI Scoop bucket: https://github.com/taimoorq/scoop-logister
+- Logister CLI docs: https://logister.org/docs/cli/
 - Android SDK source: https://github.com/taimoorq/logister-android
 - Android SDK package: https://central.sonatype.com/artifact/org.logister/logister-android
 - Android Maven coordinates: `org.logister:logister-android:0.1.2`
@@ -110,5 +118,6 @@ The docs are organized as a self-hosted product manual: Documentation, Installat
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://logister.org/docs/integrations/cfml/
 - Cloudflare Pages projects can send manual HTTP telemetry today and store importer settings for a future Rails-side Cloudflare API fetcher. Start at https://logister.org/docs/integrations/cloudflare-pages/.
 - Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, direct JSON reporters, and CI/CD deployment records. Send `repository`, `commit_sha`, `branch`, `release`, and `environment` on events; POST `/api/v1/deployments` when CI knows the exact deployed commit.
+- Logister CLI installs with `npm install -g logister-cli`, `brew tap taimoorq/logister && brew install logister`, or `scoop bucket add logister https://github.com/taimoorq/scoop-logister && scoop install logister`. It reads project data with user-scoped CLI access tokens, not project ingest API keys. Browser-approved login can limit access to selected projects. Current server support covers projects, project summaries, events, logs, error groups, issue export, and AI context bundles; traces, monitors, deployments, insights, metrics, and error-group mutations remain feature-gated until the server exposes those capabilities.
 - Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 - The GitHub App source integration uses App installation access instead of personal access tokens. Self-hosters create their own GitHub App, configure `LOGISTER_GITHUB_APP_ID`, `LOGISTER_GITHUB_APP_PRIVATE_KEY`, `LOGISTER_GITHUB_WEBHOOK_SECRET`, and either `LOGISTER_GITHUB_APP_SLUG` or `LOGISTER_GITHUB_APP_INSTALL_URL`, then project owners or project admins install or link an installation, sync repositories, and explicitly connect the repositories each project should use.

@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   get "docs/clickhouse", to: redirect("#{docs_base_url}/clickhouse/", status: 301)
   get "docs/http-api", to: redirect("#{docs_base_url}/http-api/", status: 301)
   get "docs/api-reference", to: redirect("#{docs_base_url}/api-reference/", status: 301)
+  get "docs/cli", to: redirect("#{docs_base_url}/cli/", status: 301)
   get "docs/integrations/ruby", to: redirect("#{docs_base_url}/integrations/ruby/", status: 301)
   get "docs/integrations/javascript", to: redirect("#{docs_base_url}/integrations/javascript/", status: 301)
   get "docs/integrations/cfml", to: redirect("#{docs_base_url}/integrations/cfml/", status: 301)

@@ -379,6 +379,7 @@ preferred_paths = [
   "/github-app/source-lookup/",
   "/clickhouse/",
   "/http-api/",
+  "/cli/",
   "/troubleshooting/",
   "/integrations/ruby/",
   "/integrations/dotnet/",

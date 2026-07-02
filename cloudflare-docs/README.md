@@ -5,6 +5,7 @@ This directory contains a standalone static version of the Logister documentatio
 ## Structure
 
 - `index.html` and subdirectory `index.html` files provide the static documentation pages.
+- `cli/index.html` documents CLI install, browser-approved login, read commands, and current server capability support.
 - `assets/site.css` contains the docs-specific theme and layout styles.
 - `assets/site.js` provides mobile navigation, collapsible sidebar sections, Pagefind search loading, analytics loading, and copy-to-clipboard behavior for code blocks.
 - `functions/assets/analytics-config.js/index.js` serves runtime analytics and Probo Cookie Banner configuration from Cloudflare Pages secrets.

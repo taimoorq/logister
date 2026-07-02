@@ -23,7 +23,10 @@ RSpec.describe "Home", type: :request do
         expect(response.body).to include("Self-host error monitoring and bug triage with Logister.")
         expect(response.body).to include("forkable Rails app for grouped production errors")
         expect(response.body).to include("Versioned registry images")
+        expect(response.body).to include("CLI read tools")
+        expect(response.body).to include("npm install -g logister-cli")
         expect(response.body).to include("MIT-licensed source, versioned Docker images, public SDK packages")
+        expect(response.body).to include("CLI docs")
         expect(response.body).to include("logister-ruby")
         expect(response.body).to include("logister-dotnet")
         expect(response.body).to include("logister-python")
@@ -125,6 +128,15 @@ RSpec.describe "Home", type: :request do
     end
   end
 
+  describe "GET /docs/cli" do
+    it "redirects to the external CLI docs page" do
+      get "/docs/cli"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://logister.org/docs/cli/")
+    end
+  end
+
   describe "GET /docs/integrations/javascript" do
     it "redirects to the external JavaScript integration docs page" do
       get "/docs/integrations/javascript"
@@ -205,6 +217,11 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("https://logister.org/docs/integrations/dotnet/")
       expect(response.body).to include("https://pypi.org/project/logister-python/")
       expect(response.body).to include("JavaScript and TypeScript apps via the `logister-js` package")
+      expect(response.body).to include("Logister CLI")
+      expect(response.body).to include("https://logister.org/docs/cli/")
+      expect(response.body).to include("https://www.npmjs.com/package/logister-cli")
+      expect(response.body).to include("https://github.com/taimoorq/homebrew-logister")
+      expect(response.body).to include("https://github.com/taimoorq/scoop-logister")
       expect(response.body).to include("CFML apps running on Lucee or Adobe ColdFusion")
       expect(response.body).to include("https://logister.org/docs/integrations/javascript/")
       expect(response.body).to include("https://logister.org/docs/integrations/cfml/")
@@ -223,6 +240,10 @@ RSpec.describe "Home", type: :request do
       expect(response.body).to include("Docker, GHCR, Docker Hub, and optional Quay self-hosting")
       expect(response.body).to include("Error assignment and team triage")
       expect(response.body).to include("Amazon SES project notifications")
+      expect(response.body).to include("Logister CLI")
+      expect(response.body).to include("https://logister.org/docs/cli/")
+      expect(response.body).to include("brew tap taimoorq/logister")
+      expect(response.body).to include("scoop bucket add logister")
       expect(response.body).to include("ghcr.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("docker.io/taimoorq/logister:#{current_release_tag}")
       expect(response.body).to include("quay.io/taimoorq/logister")

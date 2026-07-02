@@ -17,6 +17,7 @@ module ApplicationHelper
     clickhouse: "/clickhouse/",
     http_api: "/http-api/",
     api_reference: "/api-reference/",
+    cli: "/cli/",
     metrics: "/metrics/",
     ruby_integration: "/integrations/ruby/",
     cfml_integration: "/integrations/cfml/",

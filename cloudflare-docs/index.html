@@ -4,20 +4,20 @@
     <meta charset="utf-8">
     <title>Logister Documentation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.">
+    <meta name="description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, use the CLI, configure notifications, run Docker images, and troubleshoot ingestion.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://logister.org/docs/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Logister Documentation">
-    <meta property="og:description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.">
+    <meta property="og:description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, use the CLI, configure notifications, run Docker images, and troubleshoot ingestion.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://logister.org/docs/">
     <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Logister Documentation">
-    <meta name="twitter:description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.">
+    <meta name="twitter:description" content="Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, use the CLI, configure notifications, run Docker images, and troubleshoot ingestion.">
     <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js","https://github.com/taimoorq/logister-android","https://github.com/taimoorq/logister-ios"]},{"@type":"WebSite","@id":"https://logister.org/docs/#website","name":"Logister Documentation","url":"https://logister.org/docs/","publisher":{"@id":"https://logister.org/docs/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://logister.org/docs/#webpage","url":"https://logister.org/docs/","name":"Logister Documentation","description":"Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, configure notifications, run Docker images, and troubleshoot ingestion.","isPartOf":{"@id":"https://logister.org/docs/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Error assignment"},{"@type":"Thing","name":"Application telemetry"},{"@type":"Thing","name":"HTTP API"},{"@type":"Thing","name":"Troubleshooting"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-cli","https://github.com/taimoorq/logister-ruby","https://github.com/taimoorq/logister-dotnet","https://github.com/taimoorq/logister-python","https://github.com/taimoorq/logister-js","https://github.com/taimoorq/logister-android","https://github.com/taimoorq/logister-ios"]},{"@type":"WebSite","@id":"https://logister.org/docs/#website","name":"Logister Documentation","url":"https://logister.org/docs/","publisher":{"@id":"https://logister.org/docs/#organization"},"inLanguage":"en-US"},{"@type":"CollectionPage","@id":"https://logister.org/docs/#webpage","url":"https://logister.org/docs/","name":"Logister Documentation","description":"Operator and developer docs for self-hosted Logister: install the Rails app, connect integrations, use the CLI, configure notifications, run Docker images, and troubleshoot ingestion.","isPartOf":{"@id":"https://logister.org/docs/#website"},"about":[{"@type":"Thing","name":"Open source error monitoring"},{"@type":"Thing","name":"Self-hosted bug triage"},{"@type":"Thing","name":"Self-hosted deployment"},{"@type":"Thing","name":"Error assignment"},{"@type":"Thing","name":"Application telemetry"},{"@type":"Thing","name":"HTTP API"},{"@type":"Thing","name":"Command line tools"},{"@type":"Thing","name":"Troubleshooting"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
     <link rel="alternate" type="text/plain" href="/docs/llms-full.txt" title="LLMs full context">
     <link rel="icon" href="/docs/assets/icon.png" type="image/png">
@@ -52,7 +52,7 @@
           <span class="hero-kicker">Documentation</span>
           <h1>Logister documentation</h1>
           <p>
-            Use these docs as the operator and developer manual for Logister. Start with the self-hosted app, confirm what the product does, connect one application, and then add the optional services your instance actually needs.
+            Use these docs as the operator and developer manual for Logister. Start with the self-hosted app, confirm what the product does, connect one application, inspect project data in the app or CLI, and then add the optional services your instance actually needs.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/docs/self-hosting/">Install Logister</a>
@@ -111,6 +111,7 @@
               <p class="sidebar-label">API and help</p>
               <a href="/docs/http-api/">HTTP API</a>
               <a href="/docs/api-reference/">API reference</a>
+              <a href="/docs/cli/">CLI</a>
               <a href="/docs/troubleshooting/">Troubleshooting</a>
             </div>
             <hr>
@@ -133,7 +134,7 @@
                   <p class="eyebrow">How to use the docs</p>
                   <h2>Pick the section that matches the work in front of you.</h2>
                   <p class="lead">
-                    Logister docs are organized around the lifecycle of a self-hosted install: understand the product, install the app, configure the instance, use the product, connect runtimes, and debug problems.
+                    Logister docs are organized around the lifecycle of a self-hosted install: understand the product, install the app, configure the instance, connect runtimes, inspect data in the product or CLI, and debug problems.
                   </p>
                 </section>
                 <aside class="outline-card chapter-links">
@@ -141,6 +142,7 @@
                   <a href="/docs/self-hosting/"><span>Install Logister</span><span class="kbd">ops</span></a>
                   <a href="/docs/getting-started/"><span>Create a project</span><span class="kbd">setup</span></a>
                   <a href="/docs/http-api/"><span>Send JSON directly</span><span class="kbd">api</span></a>
+                  <a href="/docs/cli/"><span>Inspect from terminal</span><span class="kbd">cli</span></a>
                   <a href="/docs/troubleshooting/"><span>Debug ingestion</span><span class="kbd">help</span></a>
                 </aside>
               </div>
@@ -247,6 +249,11 @@
                     <td><a href="/docs/getting-started/#api-key">Generate an API key</a></td>
                   </tr>
                   <tr>
+                    <td>CLI access token</td>
+                    <td>A user-scoped, project-limited read token used by the Logister CLI to inspect telemetry without exposing ingest keys.</td>
+                    <td><a href="/docs/cli/">Use the CLI</a></td>
+                  </tr>
+                  <tr>
                     <td>Error group</td>
                     <td>A grouped issue made from repeated error events so the inbox stays focused on problems, not every occurrence.</td>
                     <td><a href="/docs/product/#triage">Triage errors</a></td>
@@ -295,10 +302,10 @@
             </section>
 
             <section id="api" class="section doc-index-section">
-              <p class="eyebrow">API reference</p>
-              <h2>Use direct HTTP when no SDK is the right fit.</h2>
+              <p class="eyebrow">API and CLI</p>
+              <h2>Use direct HTTP to send telemetry and the CLI to read it back.</h2>
               <p>
-                The ingestion API accepts project-token JSON payloads for errors, logs, metrics, transactions, spans, and check-ins. Use the written HTTP guide for semantics, Swagger for schema inspection, and Postman for request testing.
+                The ingestion API accepts project-token JSON payloads for errors, logs, metrics, transactions, spans, and check-ins. The CLI uses user-scoped access tokens for terminal reads after project data exists. Use the written HTTP guide for ingestion semantics, Swagger for schema inspection, Postman for request testing, and the CLI guide for install and login.
               </p>
               <div class="doc-link-list">
                 <a class="doc-link" href="/docs/http-api/">
@@ -308,6 +315,10 @@
                 <a class="doc-link" href="/docs/api-reference/">
                   <strong>Swagger and API artifacts</strong>
                   <span>OpenAPI YAML, Swagger UI, and the Postman collection for direct client work.</span>
+                </a>
+                <a class="doc-link" href="/docs/cli/">
+                  <strong>Logister CLI</strong>
+                  <span>Install with npm, Homebrew, or Scoop, then read projects, summaries, events, logs, grouped issues, and AI context bundles.</span>
                 </a>
               </div>
             </section>
@@ -363,6 +374,7 @@
               <a href="/docs/local-development/">Local development</a>
               <a href="/docs/deployment/">Deployment config</a>
               <a href="/docs/github-app/">GitHub App</a>
+              <a href="/docs/cli/">CLI</a>
               <a href="/docs/troubleshooting/">Troubleshooting</a>
             </div>
             <div class="footer-column">
