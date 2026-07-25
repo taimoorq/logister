@@ -43,6 +43,15 @@ RSpec.describe InstanceConfiguration, type: :model do
     expect(entry).to be_environment_override
   end
 
+  it "falls back to defaults when the configuration database is unavailable" do
+    allow(InstanceSetting).to receive(:find_by).and_raise(
+      ActiveRecord::ConnectionNotEstablished,
+      "database unavailable"
+    )
+
+    expect(described_class.value("clickhouse.mode")).to eq("disabled")
+  end
+
   it "leaves a saved secret unchanged when a blank secret field is submitted" do
     described_class.save_section!(
       "background_jobs",

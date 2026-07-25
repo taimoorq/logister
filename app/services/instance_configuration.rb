@@ -153,7 +153,7 @@ module InstanceConfiguration
 
   def saved_value_for(key)
     InstanceSetting.find_by(key: key)&.value
-  rescue ActiveRecord::StatementInvalid, ActiveSupport::MessageEncryptor::InvalidMessage
+  rescue ActiveRecord::AdapterError, ActiveSupport::MessageEncryptor::InvalidMessage
     nil
   end
   private_class_method :saved_value_for
