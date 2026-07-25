@@ -964,7 +964,8 @@ CREATE TABLE public.installations (
     setup_version integer DEFAULT 1 NOT NULL,
     lock_version integer DEFAULT 0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    onboarding_required boolean DEFAULT false NOT NULL
 );
 
 
@@ -10429,6 +10430,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260725120000'),
 ('20260724130000'),
 ('20260724120000'),
 ('20260701193000'),

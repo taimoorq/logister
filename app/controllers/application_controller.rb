@@ -34,7 +34,7 @@ class ApplicationController < ActionController::Base
     return if devise_controller?
 
     installation = Installation.current_if_available
-    return unless installation&.claimed? && !installation.complete?
+    return unless installation&.claimed? && installation.onboarding_required? && !installation.complete?
 
     redirect_to admin_installation_path, alert: "Finish the required installation checks before continuing."
   end

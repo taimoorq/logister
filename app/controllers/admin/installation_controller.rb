@@ -48,7 +48,7 @@ class Admin::InstallationController < Admin::BaseController
 
   def complete
     if @installation.required_steps_verified?
-      @installation.update!(completed_at: Time.current)
+      @installation.complete!
       redirect_to dashboard_path, notice: "Installation checks completed. You can return to Admin → Installation whenever the stack changes."
     else
       redirect_to admin_installation_path, alert: "Verify the required General and Redis & jobs sections before completing setup."

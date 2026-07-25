@@ -53,6 +53,6 @@ class Installation < ApplicationRecord
   def complete!
     raise ActiveRecord::RecordInvalid, self unless required_steps_verified?
 
-    update!(completed_at: Time.current)
+    update!(completed_at: Time.current, onboarding_required: false)
   end
 end

@@ -30,6 +30,7 @@ RSpec.describe "Instance setup", type: :request do
     expect(operator).to be_confirmed
     expect(operator).to be_application_admin
     expect(installation).to be_claimed
+    expect(installation).to be_onboarding_required
     expect(installation.claimed_by_user).to eq(operator)
     expect(response).to redirect_to(admin_installation_section_path("general"))
 

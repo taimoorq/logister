@@ -35,6 +35,31 @@ RSpec.describe "Admin installation", type: :request do
     end
   end
 
+  it "does not lock an upgraded instance when an administrator opens installation maintenance" do
+    installation.destroy!
+
+    get admin_installation_path
+    expect(response).to have_http_status(:ok)
+    expect(Installation.current).to have_attributes(
+      claimed_by_user: admin,
+      completed_at: nil,
+      onboarding_required: false
+    )
+
+    get dashboard_path
+
+    expect(response).to have_http_status(:ok)
+  end
+
+  it "keeps fresh first-administrator onboarding inside the required checks" do
+    installation.update!(completed_at: nil, onboarding_required: true)
+
+    get dashboard_path
+
+    expect(response).to redirect_to(admin_installation_path)
+    expect(flash[:alert]).to eq("Finish the required installation checks before continuing.")
+  end
+
   it "accepts legacy underscore section URLs while advertising hyphenated paths" do
     get admin_installation_section_path("background_jobs")
 
@@ -204,5 +229,6 @@ RSpec.describe "Admin installation", type: :request do
 
     expect(response).to redirect_to(dashboard_path)
     expect(installation.reload).to be_complete
+    expect(installation).not_to be_onboarding_required
   end
 end

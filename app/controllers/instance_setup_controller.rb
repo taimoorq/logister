@@ -34,7 +34,11 @@ class InstanceSetupController < ApplicationController
       @user.application_admin = true
       @user.skip_confirmation!
       @user.save!
-      installation.update!(claimed_by_user: @user, claimed_at: Time.current)
+      installation.update!(
+        claimed_by_user: @user,
+        claimed_at: Time.current,
+        onboarding_required: true
+      )
     end
 
     sign_in(@user)

@@ -21,6 +21,7 @@ All notable changes to Logister will be documented in this file.
 
 ### Fixed
 
+- Prevented upgraded instances from being trapped in fresh-install checks when an existing administrator opens Admin → Installation; the navigation gate now applies only to administrators created through the one-time `/setup` flow.
 - Prevented ClickHouse read-preferred mode until the enabled effective configuration passes schema and stable-window coverage checks.
 - Required SMTP settings to be saved before direct and queued delivery tests, and kept sensitive runtime values out of parameter filters, logs, diagnostics, and audit history.
 - Validated positive public API rate limits and nonnegative self-observability thresholds before applying configuration.
