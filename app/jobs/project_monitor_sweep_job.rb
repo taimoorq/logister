@@ -12,7 +12,7 @@ class ProjectMonitorSweepJob < ApplicationJob
     now = Time.zone.parse(now_iso8601.to_s)
     bucket = now.utc.strftime("%Y%m%d%H")
 
-    CheckInMonitor.includes(:project).find_each do |monitor|
+    CheckInMonitor.monitoring.includes(:project).find_each do |monitor|
       next if monitor.project.archived?
       next unless monitor.status(at: now) == "missed"
 

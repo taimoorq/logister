@@ -43,5 +43,18 @@ RSpec.describe CheckInMonitor, type: :model do
 
       expect(monitor.status).to eq("error")
     end
+
+    it "returns paused and does not become missed while monitoring is paused" do
+      monitor = build(:check_in_monitor,
+        project: projects(:one),
+        slug: "retired-job",
+        expected_interval_seconds: 60,
+        last_check_in_at: 1.day.ago,
+        last_status: "ok",
+        monitoring_paused_at: 1.hour.ago)
+
+      expect(monitor.status).to eq("paused")
+      expect(monitor.missed?).to be false
+    end
   end
 end

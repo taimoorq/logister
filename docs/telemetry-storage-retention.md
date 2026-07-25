@@ -6,14 +6,24 @@ Logister uses PostgreSQL for app data and hot event detail, Redis for cache and 
 
 `/health/clickhouse` now checks that the required analytics tables and materialized views exist, not only that ClickHouse answers `SELECT 1`.
 
-Use the idempotent schema loader after provisioning a self-hosted ClickHouse database:
+Use the idempotent schema repair task after provisioning ClickHouse or upgrading an existing Logister installation:
 
 ```sh
-bin/rails logister:clickhouse:schema:load
+bin/rails logister:clickhouse:schema:repair
 bin/rails logister:clickhouse:schema:status
 ```
 
-The schema lives in `docs/clickhouse_schema.sql` and includes raw event/span tables plus one-minute rollups.
+The repair task creates missing objects, updates compatible event-type enum drift, rebuilds the dependent materialized view when required, and fails if the final schema is not ready. `bin/release` runs it automatically when `LOGISTER_CLICKHOUSE_ENABLED=true`. Set `LOGISTER_CLICKHOUSE_MIGRATION_USERNAME` and `LOGISTER_CLICKHOUSE_MIGRATION_PASSWORD` when schema DDL should use a separate operator account from normal inserts and analytics queries.
+
+The canonical schema lives in `docs/clickhouse_schema.sql` and includes raw event/span tables plus one-minute rollups. The existing `logister:clickhouse:schema:load` task remains an alias for the same create-and-repair behavior.
+
+Use `LOGISTER_CLICKHOUSE_MODE=dual_write` or **Admin → Installation → ClickHouse** while the analytics copy is being populated. Retained PostgreSQL events can be copied with an idempotent, bounded backfill:
+
+```sh
+CONFIRM=backfill bin/rails 'logister:clickhouse:events:backfill[2026-01-01,2026-07-01]'
+```
+
+The admin diagnostic compares distinct event IDs over a stable window that excludes the newest five minutes. It blocks `read_preferred` until the current connection fingerprint has passing schema and coverage results. Supported ClickHouse dashboard reads still fall back to PostgreSQL when a query fails.
 
 ## S3 Archives
 

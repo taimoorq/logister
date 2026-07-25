@@ -14,7 +14,11 @@ module Logister
       return unless @clickhouse_client.enabled?
       return if clickhouse_monitoring_event?
 
-      @clickhouse_client.insert_event!(clickhouse_attributes)
+      @clickhouse_client.insert_event!(attributes)
+    end
+
+    def attributes
+      clickhouse_attributes
     end
 
     private
@@ -78,7 +82,7 @@ module Logister
       explicit_id = context_value("event_id", "")
       return explicit_id if explicit_id.present?
 
-      SecureRandom.uuid
+      @event.uuid
     end
 
     def fallback_fingerprint

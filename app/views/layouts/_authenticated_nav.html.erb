@@ -139,7 +139,7 @@
                 <span class="inline-flex items-center gap-2"><%= app_icon(:account, css: "w-4 h-4") %><span>Account</span></span>
               <% end %>
               <% if admin_user? %>
-                <%= link_to admin_users_path, class: "nav-link block px-3 py-2.5 text-sm font-medium #{request.path.start_with?('/admin') ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}" do %>
+                <%= link_to admin_installation_path, class: "nav-link block px-3 py-2.5 text-sm font-medium #{request.path.start_with?('/admin') ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'}" do %>
                   <span class="inline-flex items-center gap-2"><%= app_icon(:shield, css: "w-4 h-4") %><span>Admin</span></span>
                 <% end %>
               <% end %>

@@ -90,6 +90,7 @@
             <div class="sidebar-group">
               <p class="sidebar-label">On this page</p>
               <a href="#production-quickstart">Production quickstart</a>
+              <a href="#admin-setup">Admin setup flow</a>
               <a href="#prerequisites">Prerequisites</a>
               <a href="#infrastructure">Infrastructure plan</a>
               <a href="#docker">Docker option</a>
@@ -129,14 +130,37 @@
               <ol>
                 <li>Provision PostgreSQL, Redis, and a host that can run one web container plus one worker container.</li>
                 <li>Pull a versioned image from <code>ghcr.io/taimoorq/logister</code> or <code>docker.io/taimoorq/logister</code>.</li>
-                <li>Copy <code>.env.sample</code> to your deploy provider's secret/config store and set <code>RAILS_ENV</code>, <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>LOGISTER_PUBLIC_URL</code>, and <code>LOGISTER_ADMIN_EMAILS</code>.</li>
+                <li>Copy <code>.env.sample</code> to your deploy provider's secret/config store. Set <code>RAILS_ENV</code>, <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, and a long random <code>LOGISTER_SETUP_TOKEN</code>. These are the only values needed before the first administrator can use the interface.</li>
                 <li>Run <code>./bin/release</code> before the new web container receives traffic.</li>
                 <li>Run the web process with <code>./bin/thrust ./bin/rails server</code>.</li>
-                <li>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>.</li>
-                <li>Verify <code>/up</code>, sign-in, project creation, API key generation, Sidekiq startup, and one test event in the inbox.</li>
-                <li>Add SMTP, ClickHouse, S3-compatible archive storage, Turnstile, or analytics only after the baseline install works.</li>
+                <li>Open <code>/setup</code>, enter the one-time token, and create the first administrator. Remove <code>LOGISTER_SETUP_TOKEN</code> from the environment after the claim succeeds.</li>
+                <li>Follow <strong>Admin → Installation</strong> through General and Redis &amp; jobs. Save the Redis URL, restart web and worker processes when prompted, start Sidekiq with <code>bundle exec sidekiq -C config/sidekiq.yml</code>, then rerun the check until both Redis and a registered worker pass.</li>
+                <li>Complete onboarding, verify <code>/up</code>, create a project and API key, and send one test event to the inbox.</li>
+                <li>Add SMTP, ClickHouse, S3-compatible archive storage, GitHub App access, Turnstile, public analytics, or self-observability from the remaining Installation pages only when the install needs them.</li>
               </ol>
               <div class="note tip"><h4>Keep it boring first</h4><p>A first production install does not need every optional service. Start with web, worker, PostgreSQL, Redis, HTTPS, and backups; add the rest when your operating model actually needs them.</p></div>
+            </section>
+
+            <section id="admin-setup" class="section">
+              <p class="eyebrow">Admin setup flow</p>
+              <h2>Claim the instance once, then manage the stack from the same pages.</h2>
+              <p>The first administrator flow is durable rather than a one-time wizard. Progress, skipped optional services, the last successful check, and a redacted change history are stored in PostgreSQL. After onboarding, every page remains available under <strong>Admin → Installation</strong>.</p>
+              <table>
+                <thead><tr><th>Path</th><th>What it configures</th><th>How to verify it</th></tr></thead>
+                <tbody>
+                  <tr><td><code>/admin/installation/general</code></td><td>Canonical app/docs URLs, sender address, and new API key prefix.</td><td>Validate the URL and sender formats.</td></tr>
+                  <tr><td><code>/admin/installation/background_jobs</code></td><td>Redis connection and Sidekiq concurrency.</td><td>Ping Redis and require at least one registered Sidekiq process.</td></tr>
+                  <tr><td><code>/admin/installation/email</code></td><td>SMTP/SES connection and delivery metadata.</td><td>Authenticate to SMTP; optionally submit one direct and one queued message.</td></tr>
+                  <tr><td><code>/admin/installation/clickhouse</code></td><td>ClickHouse connection, schema account, and disabled/dual-write/read-preferred mode.</td><td>Check connectivity and schema, then compare a stable 24-hour event window before reads can switch.</td></tr>
+                  <tr><td><code>/admin/installation/archive_storage</code></td><td>Local or S3-compatible archive destination.</td><td>Write, read, and delete a temporary object.</td></tr>
+                  <tr><td><code>/admin/installation/github</code></td><td>GitHub App identity, private key, webhook secret, and API endpoints.</td><td>Sign an App JWT and ask GitHub for the App identity.</td></tr>
+                  <tr><td><code>/admin/installation/authentication</code></td><td>Cloudflare Turnstile keys and activation.</td><td>Check required keys, then complete a real browser challenge after restart.</td></tr>
+                  <tr><td><code>/admin/installation/public_site</code></td><td>Consent banner, Google Analytics, and Cloudflare Web Analytics.</td><td>Validate public URLs and consent prerequisites.</td></tr>
+                  <tr><td><code>/admin/installation/observability</code></td><td>Logister self-monitoring and release update checks.</td><td>Validate endpoints, sampling values, and restart requirements.</td></tr>
+                </tbody>
+              </table>
+              <div class="note tip"><h4>Environment values stay authoritative</h4><p>For each field, Logister resolves a nonblank environment variable first, then the encrypted database fallback, then the application default. The admin page names the active environment variable and still lets you edit the fallback. Secret values are never rendered, and the audit trail never stores setting values.</p></div>
+              <div class="note warn"><h4>The UI does not provision external services</h4><p>Provision Redis, Sidekiq processes, SMTP, ClickHouse, object storage, and GitHub outside Logister. The Installation pages store connection settings, test access, and control activation; they do not create provider accounts, databases, buckets, or worker machines.</p></div>
             </section>
 
             <section id="prerequisites" class="section">
@@ -164,12 +188,12 @@
                 <tbody>
                   <tr><td><span class="infra-cell-title">Web app process</span><span class="infra-label">Required</span></td><td>Serves the Logister UI, auth screens, project pages, public pages, and ingest endpoints.</td><td>Runs Rails on Puma, usually from the provided Docker image. Put it behind HTTPS through your platform, load balancer, or reverse proxy.</td></tr>
                   <tr><td><span class="infra-cell-title">PostgreSQL</span><span class="infra-label">Required</span></td><td>Stores accounts, active and archived projects, API keys, events, error groups, occurrences, monitors, project sharing, and notification preferences.</td><td>Set <code>DATABASE_URL</code>. Start with managed PostgreSQL if you want backups, upgrades, and point-in-time recovery handled for you.</td></tr>
-                  <tr><td><span class="infra-cell-title">Redis</span><span class="infra-label">Required</span></td><td>Powers the Rails cache and Sidekiq job queue.</td><td>Set <code>REDIS_URL</code>. TLS Redis URLs such as <code>rediss://...</code> are supported by the Redis client.</td></tr>
-                  <tr><td><span class="infra-cell-title">Sidekiq worker process</span><span class="infra-label">Required</span></td><td>Runs asynchronous jobs, including optional ClickHouse event/span writes, Action Mailer delivery, project notifications, digest scheduling, monitor and health sweeps, and retention/archive sweeps.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
+                  <tr><td><span class="infra-cell-title">Redis</span><span class="infra-label">Required</span></td><td>Powers the Rails cache and Sidekiq job queue.</td><td>Enter the connection under <strong>Admin → Installation → Redis &amp; jobs</strong> or set <code>REDIS_URL</code>. TLS Redis URLs such as <code>rediss://...</code> are supported.</td></tr>
+                  <tr><td><span class="infra-cell-title">Sidekiq worker process</span><span class="infra-label">Required</span></td><td>Runs asynchronous jobs, including optional ClickHouse event/span writes, Action Mailer delivery, project notifications, digest scheduling, monitor and health sweeps, and retention/archive sweeps.</td><td>Run a separate worker process with <code>bundle exec sidekiq -C config/sidekiq.yml</code>. Tune concurrency in the admin setup or with <code>SIDEKIQ_CONCURRENCY</code>.</td></tr>
                   <tr><td><span class="infra-cell-title">Persistent app storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Keeps any local Active Storage files if your deployment uses local disk storage.</td><td>Normal event data lives in PostgreSQL. If you rely on local Active Storage, mount and back up <code>/rails/storage</code>.</td></tr>
-                  <tr><td><span class="infra-cell-title">S3-compatible archive storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Stores compressed JSONL archive exports for older hot telemetry before you prune high-volume non-error events from PostgreSQL.</td><td>Set <code>ACTIVE_STORAGE_SERVICE=amazon</code> plus the AWS/S3 variables from the deployment guide. Any S3-compatible provider can be used with endpoint/path-style overrides.</td></tr>
+                  <tr><td><span class="infra-cell-title">S3-compatible archive storage</span><span class="infra-label infra-label-optional">Optional</span></td><td>Stores compressed JSONL archive exports for older hot telemetry before you prune high-volume non-error events from PostgreSQL.</td><td>Use <strong>Admin → Installation → Archive storage</strong> or the AWS/S3 variables from the deployment guide. Any S3-compatible provider can use endpoint and path-style overrides.</td></tr>
                   <tr><td><span class="infra-cell-title">Outbound email / SMTP</span><span class="infra-label infra-label-recommended">Recommended</span></td><td>Enables confirmation, password reset, system mail, immediate project alerts, digest summaries, monitor alerts, and operational notices.</td><td>The documented path uses Amazon SES SMTP variables, but any compatible SMTP endpoint can be provided through the same settings. Verify the sender domain, keep Sidekiq running, and use the <a href="/docs/product/notifications/">notification guide</a> for project settings.</td></tr>
-                  <tr><td><span class="infra-cell-title">ClickHouse</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds a dedicated analytics store for higher-volume event and span analysis.</td><td>Keep it disabled until PostgreSQL-only operation is not enough. When enabled, load the schema, run the worker, and verify <code>/health/clickhouse</code> reports ready.</td></tr>
+                  <tr><td><span class="infra-cell-title">ClickHouse</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds a dedicated analytics store for higher-volume event and span analysis.</td><td>Use the staged mode under <strong>Admin → Installation → ClickHouse</strong>: dual write, schema repair, idempotent backfill, coverage check, then read preferred.</td></tr>
                   <tr><td><span class="infra-cell-title">Cloudflare Turnstile</span><span class="infra-label infra-label-optional">Optional</span></td><td>Adds bot protection to auth flows.</td><td>Enable when your public sign-in, sign-up, password, or confirmation forms need extra protection.</td></tr>
                   <tr><td><span class="infra-cell-title">Cookie consent and analytics</span><span class="infra-label infra-label-optional">Optional</span></td><td>Lets operators add consent-gated Google Analytics or Cloudflare Web Analytics.</td><td>Useful for public product pages. It is not required for the app to monitor your services.</td></tr>
                   <tr><td><span class="infra-cell-title">Static docs hosting</span><span class="infra-label infra-label-optional">Optional</span></td><td>Hosts your fork of these public docs separately from the app.</td><td>The repo includes Cloudflare Pages docs, but your self-hosted app can also point to the canonical public docs URL.</td></tr>
@@ -181,7 +205,7 @@
             <section id="docker" class="section">
               <p class="eyebrow">Docker option</p>
               <h2>Run the app image with managed services or a Compose-backed single-host stack.</h2>
-              <p>Release images are published to GitHub Container Registry at <code>ghcr.io/taimoorq/logister</code> and Docker Hub at <code>docker.io/taimoorq/logister</code>, with optional Quay mirrors when the release workflow is configured with Quay credentials. Self-hosters can pull a versioned image from any available registry and run separate web and worker containers against PostgreSQL and Redis. ClickHouse, S3-compatible archive storage, SMTP, Turnstile, and analytics remain external provider services configured through environment variables.</p>
+              <p>Release images are published to GitHub Container Registry at <code>ghcr.io/taimoorq/logister</code> and Docker Hub at <code>docker.io/taimoorq/logister</code>, with optional Quay mirrors when the release workflow is configured with Quay credentials. Self-hosters can pull a versioned image from any available registry and run separate web and worker containers against PostgreSQL and Redis. Configure ClickHouse, S3-compatible archive storage, SMTP, GitHub App access, Turnstile, and analytics through <strong>Admin → Installation</strong> or equivalent environment variables after provisioning those external services.</p>
               <div class="code-block">
                 <div class="code-head">
                   <span class="code-language">shell</span>

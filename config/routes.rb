@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
-  docs_base_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
-  docs_base_url = "https://logister.org/docs" if docs_base_url.empty?
-  docs_base_url = docs_base_url.chomp("/")
+  docs_redirect = lambda do |path|
+    redirect(status: 301) do |_params, _request|
+      "#{InstanceConfiguration.value('general.docs_url').to_s.chomp('/')}#{path}"
+    end
+  end
 
   devise_for :users, controllers: {
     sessions: "users/sessions",
@@ -10,23 +12,25 @@ Rails.application.routes.draw do
     confirmations: "users/confirmations"
   }
   root "home#show"
-  get "docs", to: redirect("#{docs_base_url}/", status: 301)
-  get "docs/getting-started", to: redirect("#{docs_base_url}/getting-started/", status: 301)
-  get "docs/product", to: redirect("#{docs_base_url}/product/", status: 301)
-  get "docs/metrics", to: redirect("#{docs_base_url}/metrics/", status: 301)
-  get "docs/self-hosting", to: redirect("#{docs_base_url}/self-hosting/", status: 301)
-  get "docs/local-development", to: redirect("#{docs_base_url}/local-development/", status: 301)
-  get "docs/deployment", to: redirect("#{docs_base_url}/deployment/", status: 301)
-  get "docs/github-app", to: redirect("#{docs_base_url}/github-app/", status: 301)
-  get "docs/clickhouse", to: redirect("#{docs_base_url}/clickhouse/", status: 301)
-  get "docs/http-api", to: redirect("#{docs_base_url}/http-api/", status: 301)
-  get "docs/api-reference", to: redirect("#{docs_base_url}/api-reference/", status: 301)
-  get "docs/cli", to: redirect("#{docs_base_url}/cli/", status: 301)
-  get "docs/integrations/ruby", to: redirect("#{docs_base_url}/integrations/ruby/", status: 301)
-  get "docs/integrations/javascript", to: redirect("#{docs_base_url}/integrations/javascript/", status: 301)
-  get "docs/integrations/cfml", to: redirect("#{docs_base_url}/integrations/cfml/", status: 301)
-  get "docs/integrations/python", to: redirect("#{docs_base_url}/integrations/python/", status: 301)
-  get "docs/integrations/dotnet", to: redirect("#{docs_base_url}/integrations/dotnet/", status: 301)
+  get "setup", to: "instance_setup#new", as: :instance_setup
+  post "setup", to: "instance_setup#create"
+  get "docs", to: docs_redirect.call("/")
+  get "docs/getting-started", to: docs_redirect.call("/getting-started/")
+  get "docs/product", to: docs_redirect.call("/product/")
+  get "docs/metrics", to: docs_redirect.call("/metrics/")
+  get "docs/self-hosting", to: docs_redirect.call("/self-hosting/")
+  get "docs/local-development", to: docs_redirect.call("/local-development/")
+  get "docs/deployment", to: docs_redirect.call("/deployment/")
+  get "docs/github-app", to: docs_redirect.call("/github-app/")
+  get "docs/clickhouse", to: docs_redirect.call("/clickhouse/")
+  get "docs/http-api", to: docs_redirect.call("/http-api/")
+  get "docs/api-reference", to: docs_redirect.call("/api-reference/")
+  get "docs/cli", to: docs_redirect.call("/cli/")
+  get "docs/integrations/ruby", to: docs_redirect.call("/integrations/ruby/")
+  get "docs/integrations/javascript", to: docs_redirect.call("/integrations/javascript/")
+  get "docs/integrations/cfml", to: docs_redirect.call("/integrations/cfml/")
+  get "docs/integrations/python", to: docs_redirect.call("/integrations/python/")
+  get "docs/integrations/dotnet", to: docs_redirect.call("/integrations/dotnet/")
   get "robots.txt", to: "home#robots", defaults: { format: :text }
   get "sitemap.xml", to: "home#sitemap", defaults: { format: :xml }
   get "about", to: "home#about"
@@ -55,6 +59,15 @@ Rails.application.routes.draw do
         as: :cookie_banner_proxy
 
   namespace :admin do
+    resource :installation, only: :show, controller: "installation" do
+      post :complete
+    end
+    get "installation/:section", to: "installation/settings#show", as: :installation_section
+    patch "installation/:section", to: "installation/settings#update"
+    match "installation/:section/test", to: "installation/settings#test", via: [ :post, :patch ], as: :test_installation_section
+    post "installation/:section/repair", to: "installation/settings#repair", as: :repair_installation_section
+    post "installation/:section/skip", to: "installation/settings#skip", as: :skip_installation_section
+
     resources :users, only: [ :index, :show, :destroy ], param: :uuid do
       member do
         patch :confirm
@@ -90,6 +103,7 @@ Rails.application.routes.draw do
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
     resource :rate_limit, only: [ :update ], controller: "project_rate_limits", as: :rate_limit
+    resources :check_in_monitors, only: [ :update ], controller: "project_monitors", path: "monitors"
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
 
     resources :error_groups, only: [], param: :uuid do

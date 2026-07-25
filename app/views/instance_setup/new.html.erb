@@ -1,0 +1,71 @@
+<% content_for :title, "Set up this Logister instance" %>
+<% content_for :meta_description, "Claim a new self-hosted Logister instance and create its first administrator." %>
+<% content_for :meta_robots, "noindex, nofollow" %>
+
+<section class="auth-shell">
+  <div class="auth-panel">
+    <aside class="auth-brand-panel">
+      <div class="auth-brand-badge">
+        <span class="auth-brand-dot" aria-hidden="true"></span>
+        <span>Self-hosted installation</span>
+      </div>
+      <h1 class="auth-brand-title">Claim this Logister instance</h1>
+      <p class="auth-brand-copy">Create the first administrator, then verify Redis and the rest of the stack from a resumable setup checklist.</p>
+      <ul class="auth-brand-list">
+        <li>PostgreSQL and the Rails web process are already running</li>
+        <li>Redis and Sidekiq are verified before setup completes</li>
+        <li>Email, ClickHouse, S3, GitHub, and other add-ons stay optional</li>
+        <li>Every setup page remains available under Admin → Installation</li>
+      </ul>
+    </aside>
+
+    <div class="auth-form-panel">
+      <h2 class="auth-form-title">Create the first administrator</h2>
+
+      <% if @user.errors.any? %>
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+          <p class="font-semibold">The account could not be created.</p>
+          <ul class="mt-1 list-disc pl-5">
+            <% @user.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <% unless @setup_token_available %>
+        <div class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+          <p class="font-semibold">A setup token is required.</p>
+          <p class="mt-1">Set <code>LOGISTER_SETUP_TOKEN</code> to a long, random one-time value and restart the web process. Remove it after this instance is claimed.</p>
+        </div>
+      <% else %>
+        <%= form_with model: @user, url: instance_setup_path, method: :post, local: true, data: { turbo: false } do |form| %>
+          <div class="space-y-4">
+            <div>
+              <%= form.label :name, class: "form-label" %>
+              <%= form.text_field :name, autocomplete: "name", autofocus: true, class: "form-input" %>
+            </div>
+            <div>
+              <%= form.label :email, class: "form-label" %>
+              <%= form.email_field :email, autocomplete: "email", required: true, class: "form-input" %>
+            </div>
+            <div>
+              <%= form.label :password, class: "form-label" %>
+              <%= form.password_field :password, autocomplete: "new-password", required: true, minlength: 6, class: "form-input" %>
+            </div>
+            <div>
+              <%= form.label :password_confirmation, class: "form-label" %>
+              <%= form.password_field :password_confirmation, autocomplete: "new-password", required: true, class: "form-input" %>
+            </div>
+            <div>
+              <%= label_tag :setup_token, "One-time setup token", class: "form-label" %>
+              <%= password_field_tag :setup_token, nil, required: true, autocomplete: "off", class: "form-input", aria: { describedby: "setup-token-help" } %>
+              <p id="setup-token-help" class="mt-1 text-xs leading-5 text-slate-500">This must match <code>LOGISTER_SETUP_TOKEN</code>. It is never stored in Logister.</p>
+            </div>
+            <%= form.submit "Create administrator and continue", class: "btn-primary w-full" %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</section>

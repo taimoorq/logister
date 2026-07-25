@@ -1,7 +1,7 @@
 RailsCloudflareTurnstile.configure do |config|
-  site_key = ENV["LOGISTER_TURNSTILE_SITE_KEY"]
-  secret_key = ENV["LOGISTER_TURNSTILE_SECRET_KEY"]
-  enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_TURNSTILE_ENABLED", Rails.env.production?.to_s))
+  site_key = InstanceConfiguration.value("authentication.turnstile_site_key")
+  secret_key = InstanceConfiguration.value("authentication.turnstile_secret_key")
+  enabled = InstanceConfiguration.value("authentication.turnstile_enabled")
 
   config.site_key = site_key
   config.secret_key = secret_key

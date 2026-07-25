@@ -60,6 +60,37 @@ RSpec.describe Logister::ClickhouseClient do
         client.insert_event!({ event_id: "abc123" })
       }.to raise_error(Logister::ClickhouseClient::Error, /Unsafe ClickHouse identifier/)
     end
+
+    it "inserts event batches in one JSONEachRow request" do
+      client = described_class.new(config: config)
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
+      allow(client).to receive(:post_query).and_return(response)
+
+      client.insert_events!([ { event_id: "one" }, { event_id: "two" } ])
+
+      expect(client).to have_received(:post_query).with(
+        /INSERT INTO logister\.events FORMAT JSONEachRow/,
+        "{\"event_id\":\"one\"}\n{\"event_id\":\"two\"}\n"
+      )
+    end
+  end
+
+  describe "activation modes" do
+    it "writes but does not read in dual-write mode" do
+      config.clickhouse_mode = "dual_write"
+      client = described_class.new(config: config)
+
+      expect(client).to be_write_enabled
+      expect(client).not_to be_read_enabled
+    end
+
+    it "allows analytics reads only in read-preferred mode" do
+      config.clickhouse_mode = "read_preferred"
+      client = described_class.new(config: config)
+
+      expect(client).to be_write_enabled
+      expect(client).to be_read_enabled
+    end
   end
 
   describe "#insert_span!" do
@@ -187,11 +218,14 @@ RSpec.describe Logister::ClickhouseClient do
     it "reports missing ClickHouse tables" do
       client = described_class.new(config: config)
       allow(client).to receive(:healthy?).and_return(true)
-      allow(client).to receive(:select_rows!).and_return([
-        { "name" => "events" },
-        { "name" => "events_1m" },
-        { "name" => "mv_events_1m" }
-      ])
+      allow(client).to receive(:select_rows!).and_return(
+        [
+          { "name" => "events" },
+          { "name" => "events_1m" },
+          { "name" => "mv_events_1m" }
+        ],
+        []
+      )
 
       status = client.schema_status
 
@@ -204,6 +238,27 @@ RSpec.describe Logister::ClickhouseClient do
       expect(status[:missing_tables]).to include("spans")
     end
 
+    it "reports event type enum drift even when all objects exist" do
+      client = described_class.new(config: config)
+      allow(client).to receive(:healthy?).and_return(true)
+      allow(client).to receive(:select_rows!).and_return(
+        described_class::REQUIRED_TABLES.map do |name|
+          configured_name = { "events_raw" => "events", "spans_raw" => "spans" }.fetch(name, name)
+          { "name" => configured_name }
+        end,
+        [
+          { "table" => "events", "type" => "Enum8('error' = 1, 'metric' = 2)" },
+          { "table" => "events_1m", "type" => described_class::CANONICAL_EVENT_TYPE },
+          { "table" => "mv_events_1m", "type" => described_class::CANONICAL_EVENT_TYPE }
+        ]
+      )
+
+      status = client.schema_status
+
+      expect(status).to include(healthy: true, ready: false, missing_tables: [])
+      expect(status[:schema_issues]).to contain_exactly(/events\.event_type uses Enum8/)
+    end
+
     it "reports disabled status without probing ClickHouse" do
       disabled_config = config.dup
       disabled_config.clickhouse_enabled = false
@@ -214,7 +269,8 @@ RSpec.describe Logister::ClickhouseClient do
         enabled: false,
         healthy: false,
         ready: false,
-        missing_tables: []
+        missing_tables: [],
+        schema_issues: []
       )
     end
   end

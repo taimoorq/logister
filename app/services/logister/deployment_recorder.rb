@@ -49,7 +49,7 @@ module Logister
         if configuration.respond_to?(:deployment_endpoint)
           configuration.deployment_endpoint
         else
-          ENV["LOGISTER_DEPLOYMENT_ENDPOINT"].presence ||
+          InstanceConfiguration.value("observability.deployment_endpoint").presence ||
             configuration.endpoint.to_s.sub(%r{/ingest_events\z}, "/deployments")
         end
       end

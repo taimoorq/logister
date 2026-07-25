@@ -104,7 +104,7 @@ module Logister
     end
 
     def throttle_window
-      seconds = Integer(ENV.fetch("LOGISTER_CLICKHOUSE_FAILURE_THROTTLE_SECONDS", DEFAULT_THROTTLE_SECONDS), exception: false)
+      seconds = Integer(InstanceConfiguration.value("clickhouse.failure_throttle_seconds"), exception: false)
       [ seconds || DEFAULT_THROTTLE_SECONDS, 1 ].max.seconds
     end
   end

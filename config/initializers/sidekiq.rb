@@ -1,7 +1,8 @@
-redis_url = ENV.fetch("REDIS_URL", "redis://127.0.0.1:6379/0")
+redis_url = InstanceConfiguration.value("background_jobs.redis_url")
 
 Sidekiq.configure_server do |config|
   config.redis = { url: redis_url }
+  config.concurrency = InstanceConfiguration.value("background_jobs.sidekiq_concurrency")
 
   config.on(:startup) do
     Logister::SidekiqRecurringScheduler.install! if Rails.env.production?

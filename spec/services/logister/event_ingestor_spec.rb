@@ -78,4 +78,12 @@ RSpec.describe Logister::EventIngestor, type: :model do
     expect(fake_client.payload[:fingerprint]).to be_present
     expect(fake_client.payload[:fingerprint].length).to eq(32)
   end
+
+  it "uses the persisted event UUID when the sender did not provide an event ID" do
+    event.update!(context: {})
+
+    described_class.new(event: event, request_context: {}, clickhouse_client: fake_client).call
+
+    expect(fake_client.payload[:event_id]).to eq(event.uuid)
+  end
 end

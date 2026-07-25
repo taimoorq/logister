@@ -46,7 +46,7 @@ class ProjectPerformance
 
     def request_breakdown_from_clickhouse(project, since:, limit:)
       client = Logister::ClickhouseClient.new
-      return unless client.enabled?
+      return unless client.read_enabled?
 
       config = Rails.configuration.x.logister
       table = "#{config.clickhouse_database}.#{config.clickhouse_spans_table}"

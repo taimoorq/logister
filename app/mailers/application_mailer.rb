@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: ENV.fetch("LOGISTER_EMAIL_FROM", "support@logister.org")
+  default from: -> { InstanceConfiguration.value("general.email_from") }
   layout "mailer"
 end

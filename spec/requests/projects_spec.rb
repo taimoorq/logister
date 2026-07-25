@@ -774,6 +774,22 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://logister.org/docs/integrations/ruby/")
       end
 
+      it "shows pause and resume controls for a project manager" do
+        project = projects(:one)
+        monitor = create(:check_in_monitor, project: project, slug: "billing-sync")
+
+        get monitors_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("billing-sync", "Pause alerts")
+
+        monitor.pause_monitoring!
+        get monitors_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("paused", "Resume alerts")
+      end
+
       it "shows primary project paths directly and secondary paths in a menu" do
         project = projects(:one)
 
@@ -831,6 +847,25 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("https://logister.org/docs/integrations/python/")
       end
 
+      it "lets a project owner pause and resume one monitor" do
+        project = projects(:one)
+        monitor = create(:check_in_monitor, project: project, slug: "android-widget-rotation")
+
+        patch project_check_in_monitor_path(project, monitor), params: {
+          check_in_monitor: { monitoring_state: "paused" }
+        }
+
+        expect(response).to redirect_to(monitors_project_path(project))
+        expect(monitor.reload).to be_monitoring_paused
+
+        patch project_check_in_monitor_path(project, monitor), params: {
+          check_in_monitor: { monitoring_state: "active" }
+        }
+
+        expect(response).to redirect_to(monitors_project_path(project))
+        expect(monitor.reload).not_to be_monitoring_paused
+      end
+
       it "returns 404 for project user cannot access" do
         get monitors_project_path(projects(:two))
         expect(response).to have_http_status(:not_found)
@@ -841,10 +876,25 @@ RSpec.describe "Projects", type: :request do
       before { sign_in users(:two) }
 
       it "returns success and shows monitors page" do
+        create(:check_in_monitor, project: projects(:one), slug: "viewer-monitor")
+
         get monitors_project_path(projects(:one))
         expect(response).to have_http_status(:success)
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Cron and uptime monitors")
+        expect(response.body).not_to include("Pause alerts", "Resume alerts")
+      end
+
+      it "does not allow a viewer to change monitor state" do
+        project = projects(:one)
+        monitor = create(:check_in_monitor, project: project)
+
+        patch project_check_in_monitor_path(project, monitor), params: {
+          check_in_monitor: { monitoring_state: "paused" }
+        }
+
+        expect(response).to have_http_status(:not_found)
+        expect(monitor.reload).not_to be_monitoring_paused
       end
     end
   end

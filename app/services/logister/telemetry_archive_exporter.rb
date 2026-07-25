@@ -15,7 +15,7 @@ module Logister
     DEFAULT_BATCH_SIZE = 1_000
     ACTIVE_STORAGE_CHECKSUM_DIGEST = %w[M D 5].join
 
-    def initialize(record_type:, before:, after: nil, project: nil, event_types: nil, batch_size: DEFAULT_BATCH_SIZE, prefix: ENV.fetch("LOGISTER_ARCHIVE_PREFIX", "telemetry"), storage_service: nil, dry_run: false)
+    def initialize(record_type:, before:, after: nil, project: nil, event_types: nil, batch_size: DEFAULT_BATCH_SIZE, prefix: InstanceConfiguration.value("archive_storage.prefix"), storage_service: nil, dry_run: false)
       @record_type = record_type.to_s
       @before = before
       @after = after
@@ -95,12 +95,7 @@ module Logister
     end
 
     def archive_storage_service
-      service_name = ENV["LOGISTER_ARCHIVE_STORAGE_SERVICE"].to_s.presence
-      return ActiveStorage::Blob.service if service_name.blank?
-
-      ActiveStorage::Blob.services.fetch(service_name.to_sym)
-    rescue KeyError
-      raise Error, "Unknown telemetry archive storage service: #{service_name.inspect}"
+      InstanceConfiguration::ArchiveService.build
     end
 
     def upload_payload(key, payload, checksum)

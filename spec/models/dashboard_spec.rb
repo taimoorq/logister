@@ -67,6 +67,17 @@ RSpec.describe Dashboard, type: :model do
       expect(summary[:unassigned_error_groups_count]).to be >= 1
       expect(summary[:projects_with_unassigned_errors_count]).to eq(1)
     end
+
+    it "excludes paused monitors from dashboard health totals" do
+      project = projects(:one)
+      create(:check_in_monitor, project: project, last_status: "ok")
+      create(:check_in_monitor, project: project, monitoring_paused_at: Time.current)
+
+      summary = described_class.summary_for([ project.id ])
+
+      expect(summary[:monitors_count]).to eq(1)
+      expect(summary[:monitor_status_counts]).to eq({ ok: 1, missed: 0, error: 0 })
+    end
   end
 
   describe ".explorer_for" do

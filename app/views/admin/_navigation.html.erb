@@ -1,0 +1,12 @@
+<nav class="mb-6 rounded-xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Admin sections">
+  <div class="flex flex-wrap gap-1">
+    <%= link_to admin_installation_path,
+                class: "rounded-lg px-3 py-2 text-sm font-semibold no-underline #{request.path.start_with?('/admin/installation') ? 'bg-blue-50 text-blue-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" do %>
+      Installation
+    <% end %>
+    <%= link_to admin_users_path,
+                class: "rounded-lg px-3 py-2 text-sm font-semibold no-underline #{request.path.start_with?('/admin/users') ? 'bg-blue-50 text-blue-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}" do %>
+      Users
+    <% end %>
+  </div>
+</nav>

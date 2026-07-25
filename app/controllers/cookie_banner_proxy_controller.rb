@@ -81,10 +81,10 @@ class CookieBannerProxyController < ApplicationController
   end
 
   def probo_upstream_base_url
-    ENV["PROBO_COOKIE_BANNER_BASE_URL"].to_s.strip
+    InstanceConfiguration.value("public_site.cookie_banner_base_url").to_s.strip
   end
 
   def probo_cookie_banner_id
-    ENV["PROBO_COOKIE_BANNER_ID"].to_s.strip
+    InstanceConfiguration.value("public_site.cookie_banner_id").to_s.strip
   end
 end

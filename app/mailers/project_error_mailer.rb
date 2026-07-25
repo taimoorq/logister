@@ -100,7 +100,8 @@ class ProjectErrorMailer < ApplicationMailer
 
     headers["List-Unsubscribe"] = "<#{unsubscribe_url}>"
     headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
-    headers["X-SES-CONFIGURATION-SET"] = ENV["SES_CONFIGURATION_SET"] if ENV["SES_CONFIGURATION_SET"].present?
+    configuration_set = InstanceConfiguration.value("email.configuration_set")
+    headers["X-SES-CONFIGURATION-SET"] = configuration_set if configuration_set.present?
     headers["X-SES-MESSAGE-TAGS"] = "kind=#{tag_value(kind)}, project=project_#{project.id}"
   end
 

@@ -63,7 +63,7 @@ class ApiKey < ApplicationRecord
   end
 
   def token_prefix
-    ENV.fetch("LOGISTER_API_KEY_PREFIX", DEFAULT_TOKEN_PREFIX)
+    InstanceConfiguration.value("general.api_key_prefix").presence || DEFAULT_TOKEN_PREFIX
   end
 
   def project_must_be_active

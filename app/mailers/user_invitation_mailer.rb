@@ -20,6 +20,6 @@ class UserInvitationMailer < ApplicationMailer
   private
 
   def fallback_recipient
-    ENV.fetch("LOGISTER_EMAIL_FROM", "support@logister.org")
+    InstanceConfiguration.value("general.email_from")
   end
 end

@@ -6,6 +6,8 @@ The public hosted app at logister.org is a secondary option. The primary goal is
 
 The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, CLI read workflows, API reference, and Troubleshooting.
 
+Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SETUP_TOKEN`. The first confirmed administrator then follows persistent Admin → Installation pages for General, Redis/Sidekiq, SMTP, ClickHouse, archive storage, GitHub App, Turnstile, public-site settings, and self-observability. Environment variables override encrypted UI fallbacks and are labeled on each field.
+
 ## Start here
 - Docs home: https://logister.org/docs/
 - Getting started: https://logister.org/docs/getting-started/

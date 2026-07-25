@@ -5,6 +5,8 @@ class ProjectMonitorNotificationJob < ApplicationJob
 
   def perform(check_in_monitor_id, kind, metadata = {})
     monitor = CheckInMonitor.includes(:project).find(check_in_monitor_id)
+    return if monitor.monitoring_paused?
+
     metadata = metadata.stringify_keys
 
     ProjectEmailNotificationDispatcher.call(

@@ -79,6 +79,15 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(policy.reload.last_retention_run_at.to_i).to eq(now.to_i)
   end
 
+  it "chunks partition-reference deletes below the recursive Arel limit" do
+    old_events = create_list(:ingest_event, 205, :log, project: project, occurred_at: now - 45.days)
+
+    result = described_class.new(project: project, policy: policy, batch_size: 205, now: now).call
+
+    expect(result[:deleted][:hot_events]).to eq(205)
+    expect(IngestEvent.where(id: old_events.map(&:id)).count).to eq(0)
+  end
+
   it "prunes closed error groups only after their retention window" do
     closed_group = create(
       :error_group,

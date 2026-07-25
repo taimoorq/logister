@@ -52,7 +52,9 @@ RSpec.describe "Health", type: :request do
             ready: false,
             database: "logister",
             missing_tables: [ "spans_raw" ],
-            present_tables: [ "events_raw" ]
+            present_tables: [ "events_raw" ],
+            event_type_columns: { "events_raw" => "Enum8('error' = 1, 'metric' = 2)" },
+            schema_issues: [ "events_raw.event_type uses an outdated enum" ]
           }
         )
         allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
@@ -66,6 +68,7 @@ RSpec.describe "Health", type: :request do
         expect(body["clickhouse_enabled"]).to eq(true)
         expect(body["clickhouse_ready"]).to eq(false)
         expect(body.dig("schema", "missing_tables")).to eq([ "spans_raw" ])
+        expect(body.dig("schema", "schema_issues")).to eq([ "events_raw.event_type uses an outdated enum" ])
       end
     end
   end

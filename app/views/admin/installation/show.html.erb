@@ -1,0 +1,77 @@
+<% content_for :title, "Installation" %>
+
+<%= render "admin/navigation" %>
+
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+  <div>
+    <p class="kicker">Admin</p>
+    <h1 class="mt-1 text-2xl font-bold text-slate-900">Installation</h1>
+    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Configure and verify the services around Rails and PostgreSQL. Progress is saved, optional sections can be skipped, and every page remains available after onboarding.</p>
+  </div>
+  <% if @installation.complete? %>
+    <span class="inline-flex shrink-0 items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800">Setup complete</span>
+  <% else %>
+    <span class="inline-flex shrink-0 items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-900">Setup in progress</span>
+  <% end %>
+</div>
+
+<div class="mb-6 grid gap-4 lg:grid-cols-3">
+  <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+    <h2 class="text-base font-semibold text-slate-900">How configuration is resolved</h2>
+    <ol class="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
+      <li class="rounded-lg border border-slate-200 bg-slate-50 p-3"><span class="block font-semibold text-slate-900">1. Environment</span>Nonblank environment values always win.</li>
+      <li class="rounded-lg border border-slate-200 bg-slate-50 p-3"><span class="block font-semibold text-slate-900">2. Saved fallback</span>Encrypted values entered here apply when the environment value is removed.</li>
+      <li class="rounded-lg border border-slate-200 bg-slate-50 p-3"><span class="block font-semibold text-slate-900">3. Default</span>Safe application defaults fill settings that are not configured.</li>
+    </ol>
+  </section>
+  <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-sm font-semibold text-slate-900">Environment overrides</p>
+    <p class="mt-2 text-3xl font-bold text-slate-900"><%= @environment_override_count %></p>
+    <p class="mt-1 text-sm leading-5 text-slate-600">Each overridden field is labeled on its settings page. Secret values are never rendered.</p>
+  </section>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+  <% @sections.each_with_index do |section, index| %>
+    <% step = @steps_by_key.fetch(section.key) %>
+    <% current_fingerprint = InstanceConfiguration.fingerprint(section.key) %>
+    <% stale = step.verified? && step.configuration_fingerprint != current_fingerprint %>
+    <% status = stale ? "changed" : step.status %>
+    <% status_classes = case status
+                        when "verified" then "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        when "skipped" then "border-slate-200 bg-slate-100 text-slate-700"
+                        when "changed" then "border-amber-200 bg-amber-50 text-amber-900"
+                        else "border-blue-200 bg-blue-50 text-blue-800"
+                        end %>
+    <section class="flex min-h-56 flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Step <%= index + 1 %></p>
+          <h2 class="mt-1 text-lg font-semibold text-slate-900"><%= section.label %></h2>
+        </div>
+        <span class="rounded-full border px-2.5 py-1 text-xs font-semibold <%= status_classes %>"><%= status.humanize %></span>
+      </div>
+      <p class="mt-3 flex-1 text-sm leading-6 text-slate-600"><%= section.description %></p>
+      <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+        <span class="text-xs font-semibold text-slate-500"><%= section.required? ? "Required" : "Optional" %></span>
+        <%= link_to "View settings", admin_installation_section_path(section.key), class: "inline-link" %>
+      </div>
+    </section>
+  <% end %>
+</div>
+
+<section class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 class="text-base font-semibold text-slate-900"><%= @installation.complete? ? "Installation maintenance" : "Finish onboarding" %></h2>
+      <p class="mt-1 text-sm leading-5 text-slate-600">General and Redis & jobs must have current passing checks. Optional integrations can be configured now or later.</p>
+    </div>
+    <% unless @installation.complete? %>
+      <%= button_to "Complete installation",
+                    complete_admin_installation_path,
+                    method: :post,
+                    disabled: !@installation.required_steps_verified?,
+                    class: "btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-50" %>
+    <% end %>
+  </div>
+</section>

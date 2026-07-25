@@ -6,4 +6,8 @@ elif [[ -n "${DIRECT_URL:-}" ]]; then
   export DATABASE_URL="${DIRECT_URL}"
 fi
 
-exec ./bin/rails db:prepare
+./bin/rails db:prepare
+
+# This is a no-op when ClickHouse is disabled. Running the task unconditionally
+# also supports installations whose ClickHouse mode is stored in PostgreSQL.
+./bin/rails logister:clickhouse:schema:repair

@@ -1,11 +1,6 @@
 module ApplicationHelper
   include ProjectEvents::PayloadSupport
 
-  DOCS_BASE_URL = begin
-    docs_url = ENV["LOGISTER_DOCS_URL"].to_s.strip
-    docs_url = "https://logister.org/docs" if docs_url.empty?
-    docs_url.chomp("/")
-  end.freeze
   DOCS_PATHS = {
     overview: "/",
     getting_started: "/getting-started/",
@@ -168,35 +163,35 @@ module ApplicationHelper
   end
 
   def google_tag_id
-    ENV["GOOGLE_TAG_ID"].to_s.strip.presence
+    InstanceConfiguration.value("public_site.google_tag_id").to_s.strip.presence
   end
 
   def cloudflare_web_analytics_token
-    ENV["CLOUDFLARE_WEB_ANALYTICS_TOKEN"].to_s.strip.presence
+    InstanceConfiguration.value("public_site.cloudflare_analytics_token").to_s.strip.presence
   end
 
   def analytics_enabled?
-    Rails.env.production? || ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_ANALYTICS_ENABLED", "false"))
+    Rails.env.production? || InstanceConfiguration.value("public_site.analytics_enabled")
   end
 
   def probo_cookie_banner_script_url
-    ENV["PROBO_COOKIE_BANNER_SCRIPT_URL"].to_s.strip.presence || "https://cdn.jsdelivr.net/npm/@probo/cookie-banner/dist/cookie-banner.iife.js"
+    InstanceConfiguration.value("public_site.cookie_banner_script_url").to_s.strip.presence
   end
 
   def probo_cookie_banner_id
-    ENV["PROBO_COOKIE_BANNER_ID"].to_s.strip.presence
+    InstanceConfiguration.value("public_site.cookie_banner_id").to_s.strip.presence
   end
 
   def probo_cookie_banner_upstream_base_url
-    ENV["PROBO_COOKIE_BANNER_BASE_URL"].to_s.strip.presence
+    InstanceConfiguration.value("public_site.cookie_banner_base_url").to_s.strip.presence
   end
 
   def probo_cookie_banner_position
-    ENV["PROBO_COOKIE_BANNER_POSITION"].to_s.strip.presence || "bottom-left"
+    InstanceConfiguration.value("public_site.cookie_banner_position").to_s.strip.presence
   end
 
   def probo_cookie_banner_proxy_enabled?
-    ActiveModel::Type::Boolean.new.cast(ENV.fetch("PROBO_COOKIE_BANNER_PROXY_ENABLED", "true"))
+    InstanceConfiguration.value("public_site.cookie_banner_proxy_enabled")
   end
 
   def probo_cookie_banner_base_url
@@ -208,12 +203,12 @@ module ApplicationHelper
   end
 
   def analytics_cookie_consent_category
-    ENV["LOGISTER_ANALYTICS_COOKIE_CATEGORY"].to_s.strip.presence || "analytics"
+    InstanceConfiguration.value("public_site.analytics_cookie_category").to_s.strip.presence
   end
 
   def cookie_consent_enabled?
     !Rails.env.test? &&
-      ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_COOKIE_CONSENT_ENABLED", "true")) &&
+      InstanceConfiguration.value("public_site.cookie_consent_enabled") &&
       probo_cookie_banner_id.present? &&
       probo_cookie_banner_api_configured?
   end
@@ -593,11 +588,11 @@ module ApplicationHelper
 
   def docs_site_url(section = :overview)
     path = DOCS_PATHS.fetch(section.to_sym)
-    "#{DOCS_BASE_URL}#{path}"
+    "#{docs_site_host}#{path}"
   end
 
   def docs_site_host
-    DOCS_BASE_URL
+    InstanceConfiguration.value("general.docs_url").to_s.chomp("/")
   end
 
   def cookie_banner_proxy_base_url

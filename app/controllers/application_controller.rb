@@ -5,6 +5,8 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
+  before_action :continue_incomplete_installation
+
   helper_method :admin_user?, :nav_active_projects, :nav_notifications
 
   def default_url_options
@@ -15,6 +17,7 @@ class ApplicationController < ActionController::Base
 
   def admin_user?
     return false unless user_signed_in?
+    return true if current_user.application_admin?
 
     admin_emails = ENV.fetch("LOGISTER_ADMIN_EMAILS", "")
                       .split(",")
@@ -23,6 +26,17 @@ class ApplicationController < ActionController::Base
     return false if admin_emails.empty?
 
     admin_emails.include?(current_user.email.to_s.downcase)
+  end
+
+  def continue_incomplete_installation
+    return unless user_signed_in? && admin_user?
+    return if controller_path.start_with?("admin/installation") || controller_path == "instance_setup"
+    return if devise_controller?
+
+    installation = Installation.current_if_available
+    return unless installation&.claimed? && !installation.complete?
+
+    redirect_to admin_installation_path, alert: "Finish the required installation checks before continuing."
   end
 
   def nav_active_projects

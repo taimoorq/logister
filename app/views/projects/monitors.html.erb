@@ -24,6 +24,7 @@
               <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
               <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Last check-in</th>
               <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Expected interval</th>
+              <th class="px-3 py-2 text-right text-xs font-semibold text-slate-500 uppercase">Monitoring</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 bg-white">
@@ -33,12 +34,36 @@
                 <td class="px-3 py-2 text-sm text-slate-900"><%= monitor.slug %></td>
                 <td class="px-3 py-2 text-sm text-slate-700"><%= monitor.environment %></td>
                 <td class="px-3 py-2 text-sm">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold <%= monitor_status == "ok" ? "bg-blue-50 text-blue-800 border border-blue-200" : "bg-red-50 text-red-800 border border-red-200" %>">
+                  <% status_class = case monitor_status
+                                    when "ok" then "bg-blue-50 text-blue-800 border border-blue-200"
+                                    when "paused" then "bg-slate-100 text-slate-700 border border-slate-200"
+                                    else "bg-red-50 text-red-800 border border-red-200"
+                                    end %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold <%= status_class %>">
                     <%= monitor_status %>
                   </span>
                 </td>
                 <td class="px-3 py-2 text-sm text-slate-700"><%= monitor.last_check_in_at ? local_time_tag(monitor.last_check_in_at, format: :long) : "never" %></td>
                 <td class="px-3 py-2 text-sm text-slate-700"><%= monitor.expected_interval_seconds %>s</td>
+                <td class="px-3 py-2 text-sm text-right">
+                  <% if @can_manage_monitors %>
+                    <% if monitor.monitoring_paused? %>
+                      <%= button_to "Resume alerts",
+                                    project_check_in_monitor_path(@project, monitor),
+                                    method: :patch,
+                                    params: { check_in_monitor: { monitoring_state: "active" } },
+                                    class: "text-blue-700 font-semibold hover:underline" %>
+                    <% else %>
+                      <%= button_to "Pause alerts",
+                                    project_check_in_monitor_path(@project, monitor),
+                                    method: :patch,
+                                    params: { check_in_monitor: { monitoring_state: "paused" } },
+                                    class: "text-slate-700 font-semibold hover:underline" %>
+                    <% end %>
+                  <% else %>
+                    <span class="text-slate-400">—</span>
+                  <% end %>
+                </td>
               </tr>
             <% end %>
           </tbody>

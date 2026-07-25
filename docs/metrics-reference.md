@@ -13,6 +13,12 @@ Logister collects telemetry as raw events and spans, then derives chartable metr
 | Spans | `event_type: "span"` through `POST /api/v1/ingest_events` | `trace_id`, `span_id`, `parent_span_id`, `name`, `kind`, `status`, `duration_ms`, `started_at`, `ended_at`, `environment`, `release`, `service`, `route`, `request_id`, tags | Building request waterfalls and performance breakdowns. Root `server` and `browser` spans represent top-level requests or page loads; child spans explain where the time went. |
 | Check-ins | `event_type: "check_in"` through `POST /api/v1/ingest_events` or `POST /api/v1/check_ins` | `check_in_slug`, `check_in_status`, `expected_interval_seconds`, optional `duration_ms`, `environment`, `release`, `trace_id`, `request_id` | Watching scheduled jobs, workers, cron tasks, and heartbeat-style monitors. Logister derives `ok`, `error`, and `missed` monitor states from these events. |
 
+Use check-ins only when the sender can reasonably meet the declared interval. Mobile background
+schedulers are often inexact, so transactions and error events are a better fit unless a missed
+mobile run is genuinely actionable. Project owners and admins can pause an obsolete or noisy
+monitor from the project Monitors page; its check-ins remain visible, but monitor alerts and
+dashboard health tracking stop until monitoring is resumed.
+
 Common normalized context fields include `environment`, `release`, `trace_id`, `request_id`, `session_id`, `user_id`, `transaction_name`, and `duration_ms`. CamelCase aliases such as `traceId`, `requestId`, `transactionName`, and `durationMs` are accepted and normalized where the app reads them.
 
 ## App And Add-on Support

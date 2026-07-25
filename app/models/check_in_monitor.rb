@@ -11,8 +11,10 @@ class CheckInMonitor < ApplicationRecord
   before_validation :sync_last_event_occurred_at
 
   scope :recent_first, -> { order(last_check_in_at: :desc) }
+  scope :monitoring, -> { where(monitoring_paused_at: nil) }
 
   def missed?(at: Time.current)
+    return false if monitoring_paused?
     return true if last_check_in_at.blank?
     return false if last_status == "error"
 
@@ -21,10 +23,23 @@ class CheckInMonitor < ApplicationRecord
   end
 
   def status(at: Time.current)
+    return "paused" if monitoring_paused?
     return "error" if last_status == "error"
     return "missed" if missed?(at: at)
 
     "ok"
+  end
+
+  def monitoring_paused?
+    monitoring_paused_at.present?
+  end
+
+  def pause_monitoring!
+    update!(monitoring_paused_at: Time.current)
+  end
+
+  def resume_monitoring!
+    update!(monitoring_paused_at: nil)
   end
 
   def last_event_record

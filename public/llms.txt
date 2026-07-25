@@ -6,6 +6,8 @@ The primary goal is helping teams run Logister themselves. The public hosted app
 
 The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, CLI read workflows, API reference, and Troubleshooting.
 
+Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SETUP_TOKEN`, then configured through persistent Admin → Installation pages. Environment variables override encrypted UI fallbacks and are labeled without displaying secret values.
+
 It supports:
 - Ruby and Rails apps via the `logister-ruby` gem
 - .NET and ASP.NET Core apps via the `logister-dotnet` SDK

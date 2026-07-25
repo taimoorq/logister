@@ -178,7 +178,7 @@ module Logister
         end
         ids = references.pluck(:id)
         clear_event_references(ids)
-        deleted += IngestEvent.for_partition_references(references, id_key: :id, occurred_at_key: :occurred_at).delete_all
+        deleted += delete_partitioned_events(references)
       end
       deleted
     end
@@ -222,9 +222,15 @@ module Logister
 
       clear_event_references(event_ids)
       ErrorOccurrence.where(ingest_event_id: event_ids).delete_all
-      IngestEvent.for_partition_references(event_references, id_key: :id, occurred_at_key: :occurred_at)
-                 .where(project_id: @project.id)
-                 .delete_all
+      delete_partitioned_events(event_references)
+    end
+
+    def delete_partitioned_events(references)
+      Array(references).each_slice(IngestEvent::PARTITION_REFERENCE_BATCH_SIZE).sum do |reference_batch|
+        IngestEvent.for_partition_references(reference_batch, id_key: :id, occurred_at_key: :occurred_at)
+                   .where(project_id: @project.id)
+                   .delete_all
+      end
     end
 
     def clear_event_references(ids)

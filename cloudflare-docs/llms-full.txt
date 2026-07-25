@@ -6,6 +6,8 @@ Canonical product and integration documentation lives on https://logister.org/do
 
 The docs are organized as a practical self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, CLI read workflows, API reference, and Troubleshooting. Feature explanations should define the concept, explain why it exists, show how users interact with it, name common failure modes, and point to the next guide.
 
+Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SETUP_TOKEN`. The created account is confirmed and receives a durable database-backed administrator role. The persistent Admin → Installation workflow configures and verifies General, Redis/Sidekiq, SMTP, ClickHouse, archive storage, GitHub App, Turnstile, public-site settings, and self-observability. Nonblank environment variables take precedence over encrypted database fallbacks, and the UI labels overrides without displaying secrets.
+
 ## What Logister Does
 
 - Captures application errors, logs, metrics, transactions, spans, and check-ins.

@@ -9,9 +9,16 @@ class Users::RegistrationsController < Devise::RegistrationsController
   rate_limit_devise_create to: 3, within: 1.hour, by: :devise_rate_limit_email, name: "email-hour"
 
   before_action :configure_permitted_parameters
+  before_action :redirect_to_instance_setup, only: [ :new, :create ]
   rescue_from RailsCloudflareTurnstile::Forbidden, with: :turnstile_failed
 
   private
+
+  def redirect_to_instance_setup
+    return unless Installation.first_admin_setup_available?
+
+    redirect_to instance_setup_path, notice: "Create the first administrator to continue this self-hosted installation."
+  end
 
   def registration_layout
     %w[new create].include?(action_name) ? "auth" : "application"

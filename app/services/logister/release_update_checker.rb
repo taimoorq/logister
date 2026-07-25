@@ -45,8 +45,9 @@ module Logister
     private
 
     def enabled?
-      default = Rails.env.test? ? "false" : "true"
-      ActiveModel::Type::Boolean.new.cast(ENV.fetch("LOGISTER_UPDATE_CHECKS_ENABLED", default))
+      return false if Rails.env.test? && InstanceConfiguration.entry("observability.update_checks_enabled").source == :default
+
+      InstanceConfiguration.value("observability.update_checks_enabled")
     end
 
     def current_version
@@ -66,7 +67,8 @@ module Logister
       request = Net::HTTP::Get.new(uri)
       request["Accept"] = "application/vnd.github+json"
       request["User-Agent"] = "Logister release checker"
-      request["Authorization"] = "Bearer #{ENV["LOGISTER_GITHUB_TOKEN"]}" if ENV["LOGISTER_GITHUB_TOKEN"].present?
+      github_token = InstanceConfiguration.value("observability.github_token")
+      request["Authorization"] = "Bearer #{github_token}" if github_token.present?
 
       response = Logister::HttpClient.request(
         uri,
@@ -81,7 +83,7 @@ module Logister
     end
 
     def repository
-      ENV["LOGISTER_RELEASE_REPOSITORY"].to_s.strip.presence || DEFAULT_REPOSITORY
+      InstanceConfiguration.value("observability.release_repository").to_s.strip.presence || DEFAULT_REPOSITORY
     end
 
     def cache_key
