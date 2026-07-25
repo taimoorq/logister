@@ -48,7 +48,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 - Python apps use `logister-python` for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
 - JavaScript and TypeScript apps use `logister-js`: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - Developers and operators can use the Logister CLI for read-only project investigation: https://github.com/taimoorq/logister-cli, https://www.npmjs.com/package/logister-cli, https://github.com/taimoorq/homebrew-logister, https://github.com/taimoorq/scoop-logister, and https://logister.org/docs/cli/
-- Android apps use `logister-android`: https://github.com/taimoorq/logister-android with Maven Central coordinates `org.logister:logister-android:0.1.2` at https://central.sonatype.com/artifact/org.logister/logister-android
+- Android apps use `logister-android`: https://github.com/taimoorq/logister-android with Maven Central coordinates `org.logister:logister-android:0.1.3` at https://central.sonatype.com/artifact/org.logister/logister-android
 - iOS apps use the `Logister` Swift package from https://github.com/taimoorq/logister-ios.git with release tags such as https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
 - CFML apps running on Lucee or Adobe ColdFusion use direct HTTP ingestion.
 - Unsupported runtimes, scripts, workers, and custom clients can use the Manual / HTTP API project type and send JSON directly.

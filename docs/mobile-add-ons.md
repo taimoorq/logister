@@ -76,7 +76,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.1.2")
+    implementation("org.logister:logister-android:0.1.3")
 }
 ```
 
@@ -306,14 +306,14 @@ request bodies, raw local variables, or other sensitive user data.
 Android releases are tag-driven:
 
 ```bash
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The Android GitHub Actions release workflow builds, tests, signs, and uploads
 the artifact to Sonatype Central Portal with automatic Maven Central release.
 The workflow also creates the matching GitHub Release after the package version
-matches the tag. Version `0.1.2` is public at `org.logister:logister-android`.
+matches the tag. Version `0.1.3` is public at `org.logister:logister-android`.
 
 iOS releases are also tag-driven:
 
@@ -332,7 +332,7 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.1.2/logister-android-0.1.2.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.1.3/logister-android-0.1.3.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
