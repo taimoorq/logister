@@ -3,9 +3,20 @@
 require "rails_helper"
 
 RSpec.describe "Health", type: :request do
+  around do |example|
+    config = Rails.configuration.x.logister
+    original_mode = config.clickhouse_mode
+    original_enabled = config.clickhouse_enabled
+    example.run
+  ensure
+    config.clickhouse_mode = original_mode
+    config.clickhouse_enabled = original_enabled
+  end
+
   describe "GET /health/clickhouse" do
     context "when ClickHouse is disabled" do
       before do
+        Rails.configuration.x.logister.clickhouse_mode = "disabled"
         Rails.configuration.x.logister.clickhouse_enabled = false
       end
 
@@ -20,6 +31,7 @@ RSpec.describe "Health", type: :request do
 
     context "when ClickHouse is enabled and healthy" do
       before do
+        Rails.configuration.x.logister.clickhouse_mode = "dual_write"
         Rails.configuration.x.logister.clickhouse_enabled = true
         client = instance_double(
           Logister::ClickhouseClient,
@@ -43,6 +55,7 @@ RSpec.describe "Health", type: :request do
 
     context "when ClickHouse is enabled but unhealthy" do
       before do
+        Rails.configuration.x.logister.clickhouse_mode = "dual_write"
         Rails.configuration.x.logister.clickhouse_enabled = true
         client = instance_double(
           Logister::ClickhouseClient,

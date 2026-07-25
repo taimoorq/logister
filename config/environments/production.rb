@@ -56,7 +56,7 @@ Rails.application.configure do
     write_timeout: 2,
     reconnect_attempts: 2,
     error_handler: ->(method:, returning:, exception:) do
-      Rails.logger.warn("Redis cache error in production: #{method} => #{returning.inspect} (#{exception.class}: #{exception.message})")
+      Rails.logger.warn("Redis cache error in production: #{method} => #{returning.inspect} (#{exception.class})")
     end
   }
   config.active_job.queue_adapter = :sidekiq

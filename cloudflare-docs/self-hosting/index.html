@@ -64,6 +64,7 @@
               <a href="/docs/getting-started/">Getting started</a>
               <a href="/docs/product/">Product guide</a>
               <a class="active" href="/docs/self-hosting/">Self-hosting</a>
+              <a href="/docs/self-hosting/onboarding/">Onboarding and add-ons</a>
             </div>
             <div class="sidebar-group">
               <p class="sidebar-label">Operations</p>
@@ -145,21 +146,16 @@
               <p class="eyebrow">Admin setup flow</p>
               <h2>Claim the instance once, then manage the stack from the same pages.</h2>
               <p>The first administrator flow is durable rather than a one-time wizard. Progress, skipped optional services, the last successful check, and a redacted change history are stored in PostgreSQL. After onboarding, every page remains available under <strong>Admin → Installation</strong>.</p>
+              <p>Choose the path that matches the work in front of you:</p>
               <table>
-                <thead><tr><th>Path</th><th>What it configures</th><th>How to verify it</th></tr></thead>
+                <thead><tr><th>When you are...</th><th>Use this path</th><th>Stop when...</th></tr></thead>
                 <tbody>
-                  <tr><td><code>/admin/installation/general</code></td><td>Canonical app/docs URLs, sender address, and new API key prefix.</td><td>Validate the URL and sender formats.</td></tr>
-                  <tr><td><code>/admin/installation/background_jobs</code></td><td>Redis connection and Sidekiq concurrency.</td><td>Ping Redis and require at least one registered Sidekiq process.</td></tr>
-                  <tr><td><code>/admin/installation/email</code></td><td>SMTP/SES connection and delivery metadata.</td><td>Authenticate to SMTP; optionally submit one direct and one queued message.</td></tr>
-                  <tr><td><code>/admin/installation/clickhouse</code></td><td>ClickHouse connection, schema account, and disabled/dual-write/read-preferred mode.</td><td>Check connectivity and schema, then compare a stable 24-hour event window before reads can switch.</td></tr>
-                  <tr><td><code>/admin/installation/archive_storage</code></td><td>Local or S3-compatible archive destination.</td><td>Write, read, and delete a temporary object.</td></tr>
-                  <tr><td><code>/admin/installation/github</code></td><td>GitHub App identity, private key, webhook secret, and API endpoints.</td><td>Sign an App JWT and ask GitHub for the App identity.</td></tr>
-                  <tr><td><code>/admin/installation/authentication</code></td><td>Cloudflare Turnstile keys and activation.</td><td>Check required keys, then complete a real browser challenge after restart.</td></tr>
-                  <tr><td><code>/admin/installation/public_site</code></td><td>Consent banner, Google Analytics, and Cloudflare Web Analytics.</td><td>Validate public URLs and consent prerequisites.</td></tr>
-                  <tr><td><code>/admin/installation/observability</code></td><td>Logister self-monitoring and release update checks.</td><td>Validate endpoints, sampling values, and restart requirements.</td></tr>
+                  <tr><td>Finishing a fresh install</td><td><a href="/docs/self-hosting/onboarding/#quick-path">Core onboarding path</a></td><td>General and Redis &amp; jobs pass, and one test event reaches a project.</td></tr>
+                  <tr><td>Adding one optional service</td><td><a href="/docs/self-hosting/onboarding/#add-ons">Add-on chooser</a></td><td>The selected service's own check passes. Other optional pages can stay skipped.</td></tr>
+                  <tr><td>Managing config through deploy tooling</td><td><a href="/docs/deployment/#env-reference">Environment reference</a></td><td>The admin page identifies the active override and its current check is still valid.</td></tr>
+                  <tr><td>Rotating or removing an override</td><td><a href="/docs/self-hosting/onboarding/#maintenance">Maintenance path</a></td><td>The intended fallback is saved, processes are restarted, and the check passes again.</td></tr>
                 </tbody>
               </table>
-              <div class="note tip"><h4>Environment values stay authoritative</h4><p>For each field, Logister resolves a nonblank environment variable first, then the encrypted database fallback, then the application default. The admin page names the active environment variable and still lets you edit the fallback. Secret values are never rendered, and the audit trail never stores setting values.</p></div>
               <div class="note warn"><h4>The UI does not provision external services</h4><p>Provision Redis, Sidekiq processes, SMTP, ClickHouse, object storage, and GitHub outside Logister. The Installation pages store connection settings, test access, and control activation; they do not create provider accounts, databases, buckets, or worker machines.</p></div>
             </section>
 
@@ -211,12 +207,12 @@
                   <span class="code-language">shell</span>
                   <button class="copy-button" data-copy-button data-copy-target="#docker-build-code">Copy</button>
                 </div>
-                <pre><code id="docker-build-code">docker pull ghcr.io/taimoorq/logister:v2.9
-docker pull docker.io/taimoorq/logister:v2.9
+                <pre><code id="docker-build-code">docker pull ghcr.io/taimoorq/logister:v3.0
+docker pull docker.io/taimoorq/logister:v3.0
 cp .env.sample .env.production
 # Edit .env.production with production URLs and secrets before starting containers.</code></pre>
               </div>
-              <p>Each release publishes three image tags to the configured registries: the version tag such as <code>v2.9</code>, <code>latest</code>, and the short commit SHA. GHCR and Docker Hub are the default public registries; Quay can be enabled as an additional mirror. If you prefer to build from source, the repository still includes a production <code>Dockerfile</code>.</p>
+              <p>Each release publishes three image tags to the configured registries: the version tag such as <code>v3.0</code>, <code>latest</code>, and the short commit SHA. GHCR and Docker Hub are the default public registries; Quay can be enabled as an additional mirror. If you prefer to build from source, the repository still includes a production <code>Dockerfile</code>.</p>
               <table>
                 <thead><tr><th>Docker shape</th><th>Use when</th><th>Notes</th></tr></thead>
                 <tbody>
@@ -233,7 +229,7 @@ cp .env.sample .env.production
                 </div>
                 <pre><code id="docker-compose-selfhost-code">services:
   web:
-    image: ghcr.io/taimoorq/logister:v2.9
+    image: ghcr.io/taimoorq/logister:v3.0
     env_file: .env.production
     command: ./bin/thrust ./bin/rails server -b 0.0.0.0 -p 80
     ports:
@@ -243,7 +239,7 @@ cp .env.sample .env.production
       - redis
 
   worker:
-    image: ghcr.io/taimoorq/logister:v2.9
+    image: ghcr.io/taimoorq/logister:v3.0
     env_file: .env.production
     command: bundle exec sidekiq -C config/sidekiq.yml
     depends_on:
@@ -283,9 +279,9 @@ volumes:
                 </div>
                 <pre><code id="docker-compose-env-code">DATABASE_URL=postgresql://logister:replace-me@postgres:5432/logister_production
 REDIS_URL=redis://redis:6379/0
-LOGISTER_CLICKHOUSE_ENABLED=false
+LOGISTER_CLICKHOUSE_MODE=disabled
 # When using the analytics profile:
-# LOGISTER_CLICKHOUSE_ENABLED=true
+# LOGISTER_CLICKHOUSE_MODE=dual_write
 # LOGISTER_CLICKHOUSE_URL=http://clickhouse:8123</code></pre>
               </div>
               <div class="code-block">

@@ -126,9 +126,9 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v2.9
+   docker pull ghcr.io/taimoorq/logister:v3.0
    # or
-   docker pull docker.io/taimoorq/logister:v2.9
+   docker pull docker.io/taimoorq/logister:v3.0
    ```
 
 3. Create production config from the sample.
@@ -144,12 +144,9 @@ This is the shortest production path. Use the public docs when you need provider
    | `RAILS_ENV` | `production` |
    | `RAILS_MASTER_KEY` | Rails credentials key for this deployment |
    | `DATABASE_URL` | PostgreSQL runtime URL |
-   | `REDIS_URL` | Redis URL |
-   | `LOGISTER_PUBLIC_URL` | Canonical HTTPS app URL |
-   | `LOGISTER_ADMIN_EMAILS` | Comma-separated operator emails |
-   | `LOGISTER_UPDATE_CHECKS_ENABLED` | Optional, set `false` to disable daily GitHub release checks |
+   | `LOGISTER_SETUP_TOKEN` | Long random value used once at `/setup`, then removed |
 
-   Public ingestion endpoints are rate limited by default. `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Self-hosters can tune those defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can also set project-level overrides from project settings.
+   After the first administrator is created, configure Redis, the canonical URL, release checks, and optional services under **Admin → Installation** or with the equivalent environment variables. Public ingestion endpoints are rate limited by default. `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Self-hosters can tune those defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. Database-backed app administrators and optional break-glass admins from `LOGISTER_ADMIN_EMAILS` can also set project-level overrides from project settings.
 
    Public auth forms are also rate limited by default. Devise sign-in, sign-up, password reset, and confirmation resend submissions use Rails cache-backed IP and hashed-email limits and return `429 Too Many Requests` with `Retry-After` when exceeded. See [Authentication Rate Limiting](docs/auth-rate-limiting.md) for the current limits and implementation rules.
 
@@ -290,10 +287,10 @@ For a fresh install, the pre-UI minimum is the Rails web process, PostgreSQL, `R
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v2.9`
+- `ghcr.io/taimoorq/logister:v3.0`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v2.9`
+- `docker.io/taimoorq/logister:v3.0`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 

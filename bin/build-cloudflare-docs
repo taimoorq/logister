@@ -373,6 +373,7 @@ preferred_paths = [
   "/use-cases/error-assignment-team-triage/",
   "/use-cases/amazon-ses-error-alerts/",
   "/self-hosting/",
+  "/self-hosting/onboarding/",
   "/local-development/",
   "/deployment/",
   "/github-app/",

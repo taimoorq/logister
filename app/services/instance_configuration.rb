@@ -59,7 +59,9 @@ module InstanceConfiguration
 
   def fingerprint(section, overrides: {})
     values = values_for(section, overrides: overrides)
-    values["clickhouse.mode"] = "connection" if section.to_s == "clickhouse"
+    if section.to_s.tr("-", "_") == "clickhouse"
+      values["clickhouse.mode"] = values["clickhouse.mode"] == "disabled" ? "disabled" : "enabled_connection"
+    end
     canonical = values.sort.to_h.transform_values { |value| Digest::SHA256.hexdigest(value.to_s) }
     Digest::SHA256.hexdigest(canonical.to_json)
   end
@@ -142,7 +144,8 @@ module InstanceConfiguration
       Integer(value, exception: false) || definition.default.to_i
     when :select
       allowed = Array(definition.options).map(&:last).map(&:to_s)
-      allowed.include?(value.to_s) ? value.to_s : definition.default.to_s
+      normalized = value.to_s.strip
+      allowed.find { |option| option.casecmp?(normalized) } || definition.default.to_s
     else
       value.to_s
     end

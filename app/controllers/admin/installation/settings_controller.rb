@@ -13,9 +13,9 @@ class Admin::Installation::SettingsController < Admin::BaseController
     overrides = InstanceConfiguration.candidate_overrides(@section.key, values)
     candidate_fingerprint = InstanceConfiguration.fingerprint(@section.key, overrides: overrides)
 
-    if requesting_clickhouse_reads?(values) && !verified_for?(candidate_fingerprint)
+    if requesting_clickhouse_reads?(values) && !verified_for_clickhouse_reads?(candidate_fingerprint)
       prepare_view(form_values: values)
-      flash.now[:alert] = "Test this ClickHouse configuration successfully before switching reads to ClickHouse."
+      flash.now[:alert] = "Test an enabled ClickHouse configuration with complete coverage before switching reads to ClickHouse. An environment override that keeps ClickHouse disabled must be removed first."
       render :show, status: :unprocessable_content
       return
     end
@@ -36,21 +36,29 @@ class Admin::Installation::SettingsController < Admin::BaseController
     restart = @definitions.any?(&:restart_required?)
     notice = "#{@section.label} settings saved."
     notice += " Restart web and worker processes to apply boot-time changes." if restart
-    redirect_to admin_installation_section_path(@section.key), notice: notice
+    redirect_to admin_installation_section_path(@section.slug), notice: notice
   rescue ActiveRecord::StaleObjectError
-    redirect_to admin_installation_section_path(@section.key), alert: "These settings changed in another session. Review the current values and try again."
+    redirect_to admin_installation_section_path(@section.slug), alert: "These settings changed in another session. Review the current values and try again."
   end
 
   def test
     values = setting_values
     overrides = InstanceConfiguration.candidate_overrides(@section.key, values)
     effective_values = InstanceConfiguration.values_for(@section.key, overrides: overrides)
-    @diagnostic = InstanceConfiguration::Diagnostics.call(
-      @section.key,
-      values: effective_values,
-      test_recipient: params[:test_recipient]
-    )
     fingerprint = InstanceConfiguration.fingerprint(@section.key, overrides: overrides)
+    @diagnostic = if unsaved_email_delivery_test?(fingerprint)
+      InstanceConfiguration::Diagnostics::Result.new(
+        success: false,
+        summary: "Save these SMTP settings before sending direct and queued test messages.",
+        details: { "saved_configuration_required" => true }
+      )
+    else
+      InstanceConfiguration::Diagnostics.call(
+        @section.key,
+        values: effective_values,
+        test_recipient: params[:test_recipient]
+      )
+    end
 
     if @diagnostic.success?
       @step.mark_verified!(fingerprint: fingerprint, user: current_user, details: @diagnostic.details)
@@ -72,7 +80,7 @@ class Admin::Installation::SettingsController < Admin::BaseController
 
   def skip
     if @section.required?
-      redirect_to admin_installation_section_path(@section.key), alert: "This section is required and cannot be skipped."
+      redirect_to admin_installation_section_path(@section.slug), alert: "This section is required and cannot be skipped."
       return
     end
 
@@ -133,6 +141,12 @@ class Admin::Installation::SettingsController < Admin::BaseController
 
   def prepare_view(form_values: nil)
     @entries = InstanceConfiguration.entries_for(@section.key)
+    current_fingerprint = InstanceConfiguration.fingerprint(@section.key)
+    @step_status = if @step.verified? && @step.configuration_fingerprint != current_fingerprint
+      "changed"
+    else
+      @step.status
+    end
     @form_values = form_values || @entries.to_h do |entry|
       value = if entry.secret?
         nil
@@ -163,5 +177,13 @@ class Admin::Installation::SettingsController < Admin::BaseController
 
   def verified_for?(fingerprint)
     @step.verified? && @step.configuration_fingerprint == fingerprint
+  end
+
+  def verified_for_clickhouse_reads?(fingerprint)
+    verified_for?(fingerprint) && @step.details["ready_for_reads"] == true
+  end
+
+  def unsaved_email_delivery_test?(fingerprint)
+    @section.key == "email" && params[:test_recipient].to_s.strip.present? && fingerprint != InstanceConfiguration.fingerprint("email")
   end
 end

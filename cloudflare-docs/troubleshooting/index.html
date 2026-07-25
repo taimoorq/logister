@@ -119,7 +119,7 @@
               <h2>Confirm the baseline before chasing optional services.</h2>
               <ol>
                 <li>Open <code>/up</code>. If it fails, fix the web process, database connection, or deploy health first.</li>
-                <li>Confirm the app has <code>RAILS_ENV</code>, <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>LOGISTER_PUBLIC_URL</code>, and <code>LOGISTER_ADMIN_EMAILS</code>.</li>
+                <li>For an unclaimed instance, confirm <code>RAILS_ENV</code>, <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, and <code>LOGISTER_SETUP_TOKEN</code>. After claim, inspect effective values and environment overrides under <strong>Admin → Installation</strong>.</li>
                 <li>Confirm one web process and one Sidekiq worker process are running from the same release image or source revision.</li>
                 <li>Create a project, generate a fresh API key, and keep the token available for one direct test request.</li>
                 <li>Look at Rails and worker logs for request IDs, validation errors, authentication failures, and job errors around the same timestamp.</li>
@@ -189,7 +189,7 @@
                   <tr>
                     <td><code>429</code></td>
                     <td>The API token or authentication-failure source exceeded a public API rate limit.</td>
-                    <td>Honor <code>Retry-After</code>. Admins listed in <code>LOGISTER_ADMIN_EMAILS</code> can tune project overrides or global rate-limit environment variables.</td>
+                    <td>Honor <code>Retry-After</code>. Database-backed app administrators and break-glass admins from <code>LOGISTER_ADMIN_EMAILS</code> can tune project overrides or global rate-limit environment variables.</td>
                   </tr>
                 </tbody>
               </table>
@@ -249,7 +249,7 @@
               <p class="eyebrow">ClickHouse</p>
               <h2>Only debug ClickHouse after PostgreSQL ingestion works.</h2>
               <p>
-                ClickHouse is optional. The product UI still uses PostgreSQL as the primary system of record. If events are accepted but ClickHouse-backed analytics are missing, first verify that ClickHouse is enabled, reachable, schema-ready, and that the worker is processing ClickHouse jobs.
+                ClickHouse is optional. PostgreSQL remains the durable system of record. If events are accepted but ClickHouse-backed analytics are missing, keep <code>dual_write</code> active and verify the connection, schema, worker, idempotent backfill, and coverage check under <strong>Admin → Installation → ClickHouse</strong> before selecting <code>read_preferred</code>.
               </p>
               <div class="output-block">
                 <div class="output-head"><span class="output-label">Readiness endpoint</span></div>

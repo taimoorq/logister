@@ -11,9 +11,26 @@
   </div>
   <div class="flex shrink-0 items-center gap-2">
     <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"><%= @section.required? ? "Required" : "Optional" %></span>
-    <span class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800"><%= @step.status.humanize %></span>
+    <span class="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800"><%= @step_status.humanize %></span>
   </div>
 </div>
+
+<section class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+  <div class="grid gap-3 text-sm md:grid-cols-3">
+    <div>
+      <p class="font-semibold text-blue-950">1. Configure</p>
+      <p class="mt-1 leading-5 text-blue-900">Enter a saved fallback here or set the environment variable named beside each field.</p>
+    </div>
+    <div>
+      <p class="font-semibold text-blue-950">2. Apply</p>
+      <p class="mt-1 leading-5 text-blue-900">Save changes and restart the processes named by any restart badge.</p>
+    </div>
+    <div>
+      <p class="font-semibold text-blue-950"><%= @section.required? ? "3. Verify" : "3. Verify or skip" %></p>
+      <p class="mt-1 leading-5 text-blue-900"><%= @section.required? ? "Run the candidate check before completing installation." : "Run the check when enabling this service, or skip it until you need it." %></p>
+    </div>
+  </div>
+</section>
 
 <% if @diagnostic %>
   <section class="mb-6 rounded-xl border p-4 <%= @diagnostic.success? ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50' %>" role="status">
@@ -38,7 +55,7 @@
     <p class="mt-1 leading-6">Start with dual write, repair the ClickHouse schema, backfill retained PostgreSQL events, then run the check below. Logister blocks read preferred until the stable 24-hour coverage window passes.</p>
     <div class="mt-3">
       <%= button_to "Repair ClickHouse schema",
-                    admin_repair_installation_section_path(@section.key),
+                    admin_repair_installation_section_path(@section.slug),
                     method: :post,
                     class: "btn-ghost cursor-pointer border-amber-300 bg-white text-amber-950 hover:bg-amber-100",
                     form: { data: { turbo_confirm: "Run the idempotent ClickHouse schema repair with the saved effective credentials?" } } %>
@@ -46,7 +63,7 @@
   </section>
 <% end %>
 
-<%= form_with url: admin_installation_section_path(@section.key), method: :patch, local: true, class: "space-y-6" do %>
+<%= form_with url: admin_installation_section_path(@section.slug), method: :patch, local: true, data: { turbo: false }, class: "space-y-6" do %>
   <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
     <div class="border-b border-slate-200 px-5 py-4">
       <h2 class="text-base font-semibold text-slate-900">Settings</h2>
@@ -118,23 +135,23 @@
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <%= label_tag :test_recipient, "Test recipient", class: "form-label" %>
       <%= email_field_tag :test_recipient, params[:test_recipient], placeholder: current_user.email, class: "form-input max-w-xl", aria: { describedby: "test-recipient-help" } %>
-      <p id="test-recipient-help" class="mt-2 text-xs leading-5 text-slate-500">Optional. After saving SMTP settings, a check with a recipient submits one direct message and one queued message.</p>
+      <p id="test-recipient-help" class="mt-2 text-xs leading-5 text-slate-500">Optional. Save SMTP changes first; a check with a recipient then submits one direct message and one queued message using the saved effective configuration.</p>
     </section>
   <% end %>
 
   <div class="flex flex-wrap items-center gap-3">
     <%= submit_tag "Save settings", class: "btn-primary" %>
     <%= submit_tag "Test candidate values",
-                   formaction: admin_test_installation_section_path(@section.key),
+                   formaction: admin_test_installation_section_path(@section.slug),
                    class: "btn-ghost cursor-pointer" %>
     <% unless @section.required? %>
       <%= link_to "Skip for now",
-                  admin_skip_installation_section_path(@section.key),
+                  admin_skip_installation_section_path(@section.slug),
                   data: { turbo_method: :post },
                   class: "text-sm font-semibold text-slate-600 hover:text-slate-900" %>
     <% end %>
     <% if @next_section %>
-      <%= link_to "Next: #{@next_section.label}", admin_installation_section_path(@next_section.key), class: "text-sm font-semibold text-blue-700 hover:text-blue-900" %>
+      <%= link_to "Next: #{@next_section.label}", admin_installation_section_path(@next_section.slug), class: "text-sm font-semibold text-blue-700 hover:text-blue-900" %>
     <% end %>
     <%= link_to "Installation overview", admin_installation_path, class: "text-sm font-semibold text-slate-600 hover:text-slate-900" %>
   </div>
@@ -148,8 +165,9 @@
   <% if @changes.any? %>
     <ul class="divide-y divide-slate-100">
       <% @changes.each do |change| %>
+        <% item_label = change.key.start_with?("section.") ? "Configuration check" : change.key.delete_prefix(@section.key + ".").humanize %>
         <li class="flex flex-col gap-1 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <span class="text-slate-800"><strong><%= change.action.humanize %></strong> · <%= change.key.delete_prefix(@section.key + ".").humanize %> · <%= change.actor&.email || "system" %></span>
+          <span class="text-slate-800"><strong><%= change.action.humanize %></strong> · <%= item_label %> · <%= change.actor&.email || "system" %></span>
           <span class="text-xs text-slate-500"><%= local_time_tag(change.created_at, format: :long) %></span>
         </li>
       <% end %>

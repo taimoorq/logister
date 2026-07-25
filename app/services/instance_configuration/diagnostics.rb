@@ -146,11 +146,27 @@ module InstanceConfiguration
 
     def test_authentication
       enabled = fetch("authentication.turnstile_enabled")
-      valid = !enabled || (fetch("authentication.turnstile_site_key").present? && fetch("authentication.turnstile_secret_key").present?)
+      keys_valid = !enabled || (fetch("authentication.turnstile_site_key").present? && fetch("authentication.turnstile_secret_key").present?)
+      limits = %w[
+        authentication.public_api_rate_limit_requests
+        authentication.public_api_rate_limit_period_seconds
+        authentication.public_api_auth_failure_rate_limit_requests
+      ].to_h { |key| [ key, fetch(key).to_i ] }
+      limits_valid = limits.values.all?(&:positive?)
+      valid = keys_valid && limits_valid
+      summary = if !keys_valid
+        "Both Turnstile keys are required when protection is enabled."
+      elsif !limits_valid
+        "Public API rate limits and the window must be positive integers."
+      elsif enabled
+        "Turnstile keys and public API limits are valid. Complete a browser challenge after activation."
+      else
+        "Turnstile is disabled and public API limits are valid."
+      end
       Result.new(
         success: valid,
-        summary: valid ? (enabled ? "Turnstile keys are present. Complete a browser challenge after activation." : "Turnstile is disabled.") : "Both Turnstile keys are required when protection is enabled.",
-        details: { "enabled" => enabled, "keys_present" => valid }
+        summary: summary,
+        details: { "turnstile_enabled" => enabled, "keys_present" => keys_valid, "api_limits_valid" => limits_valid }
       )
     end
 
@@ -170,6 +186,8 @@ module InstanceConfiguration
       parse_http_uri(fetch("observability.deployment_endpoint"), required: false)
       sample_rate = Float(fetch("observability.db_metric_sample_rate"))
       raise ArgumentError, "Sample rate out of range" unless sample_rate.between?(0.0, 1.0)
+      raise ArgumentError, "Web request threshold out of range" if fetch("observability.web_request_min_duration_ms").to_i.negative?
+      raise ArgumentError, "Slow request threshold out of range" if fetch("observability.web_request_log_min_duration_ms").to_i.negative?
 
       configured = fetch("observability.api_key").present?
       Result.new(

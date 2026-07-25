@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Self-hosted onboarding and add-ons | Logister</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Claim a fresh self-hosted Logister instance, complete the persistent admin onboarding flow, and configure Redis, email, ClickHouse, S3, GitHub, Turnstile, analytics, and observability through the UI or environment variables.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://logister.org/docs/self-hosting/onboarding/">
+    <meta property="og:site_name" content="Logister">
+    <meta property="og:title" content="Self-hosted onboarding and add-ons | Logister">
+    <meta property="og:description" content="Claim a fresh self-hosted Logister instance, complete the persistent admin onboarding flow, and configure add-ons through the UI or environment variables.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://logister.org/docs/self-hosting/onboarding/">
+    <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Self-hosted onboarding and add-ons | Logister">
+    <meta name="twitter:description" content="Claim a fresh self-hosted Logister instance, complete required checks, and configure optional services from persistent admin pages.">
+    <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/self-hosting/onboarding/#article","headline":"Finish a fresh Logister install from the admin UI.","name":"Self-hosted onboarding and add-ons | Logister","url":"https://logister.org/docs/self-hosting/onboarding/","description":"Claim a fresh self-hosted Logister instance, complete the persistent admin onboarding flow, and configure Redis, email, ClickHouse, S3, GitHub, Turnstile, analytics, and observability through the UI or environment variables.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"audience":{"@type":"Audience","audienceType":"Developers and operators"},"inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Self Hosting","item":"https://logister.org/docs/self-hosting/"},{"@type":"ListItem","position":3,"name":"Onboarding","item":"https://logister.org/docs/self-hosting/onboarding/"}]}]}</script>
+    <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
+    <link rel="alternate" type="text/plain" href="/docs/llms-full.txt" title="LLMs full context">
+    <link rel="icon" href="/docs/assets/icon.png" type="image/png">
+    <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/docs/assets/icon.png">
+    <link rel="stylesheet" href="/docs/assets/site.css">
+    <script defer src="/docs/assets/analytics-config.js"></script>
+    <script defer src="/docs/assets/site.js"></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/docs/">
+            <img src="/docs/assets/logister-logo.svg" alt="Logister">
+            <span class="brand-copy">
+              <span class="brand-kicker">Documentation</span>
+              <span class="brand-title">Onboarding and add-ons</span>
+            </span>
+          </a>
+          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
+          <nav class="topnav" data-nav-panel>
+            <a href="/docs/">Docs home</a>
+            <a href="https://logister.org/">Hosted app</a>
+            <a href="https://github.com/taimoorq/logister">GitHub</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero">
+          <span class="hero-kicker">Documentation / Self-hosting / Onboarding</span>
+          <h1>Finish a fresh Logister install from the admin UI.</h1>
+          <p>
+            Claim the first administrator, verify Redis and Sidekiq, then configure each optional service from persistent
+            Installation pages or equivalent environment variables.
+          </p>
+        </section>
+
+        <div class="docs-layout">
+          <aside class="sidebar">
+            <div class="sidebar-group">
+              <p class="sidebar-label">Start here</p>
+              <a href="/docs/">Overview</a>
+              <a href="/docs/getting-started/">Getting started</a>
+              <a href="/docs/product/">Product guide</a>
+              <a href="/docs/self-hosting/">Self-hosting</a>
+              <a class="active" href="/docs/self-hosting/onboarding/">Onboarding and add-ons</a>
+            </div>
+            <div class="sidebar-group">
+              <p class="sidebar-label">Operations</p>
+              <a href="/docs/deployment/">Deployment config</a>
+              <a href="/docs/clickhouse/">ClickHouse</a>
+              <a href="/docs/github-app/">GitHub App</a>
+              <a href="/docs/product/data-retention/archive-storage/">Archive storage</a>
+              <a href="/docs/troubleshooting/">Troubleshooting</a>
+            </div>
+            <hr>
+            <div class="sidebar-group">
+              <p class="sidebar-label">On this page</p>
+              <a href="#quick-path">Quick path</a>
+              <a href="#before">Before you start</a>
+              <a href="#claim">Claim the instance</a>
+              <a href="#workflow">Persistent workflow</a>
+              <a href="#sources">UI and environment values</a>
+              <a href="#required">Required checks</a>
+              <a href="#add-ons">Optional add-ons</a>
+              <a href="#clickhouse">ClickHouse cutover</a>
+              <a href="#maintenance">Later maintenance</a>
+              <a href="#verify">Verify the install</a>
+            </div>
+          </aside>
+
+          <article class="article" data-pagefind-body>
+            <section class="article-header">
+              <div class="outline-grid">
+                <section class="outline-card">
+                  <p class="eyebrow">Choose your path</p>
+                  <h2>Start with the job you need to finish.</h2>
+                  <div class="doc-flow-panel">
+                    <ul class="doc-flow-list">
+                      <li><strong>Fresh install</strong>Follow the <a href="#quick-path">core onboarding path</a>, then stop when the instance can receive an event.</li>
+                      <li><strong>Add a service</strong>Use the <a href="#add-ons">optional add-on chooser</a> to open only the settings and detailed guide you need.</li>
+                      <li><strong>Change settings later</strong>Use the <a href="#maintenance">maintenance path</a> to rotate credentials or move between environment and UI values safely.</li>
+                    </ul>
+                  </div>
+                </section>
+                <aside class="outline-card">
+                  <h3>What remains outside the UI</h3>
+                  <ul>
+                    <li>Provisioning provider accounts, servers, databases, buckets, and workers.</li>
+                    <li>Bootstrap values needed before the app starts, including <code>RAILS_MASTER_KEY</code> and <code>DATABASE_URL</code>.</li>
+                    <li>The one-time <code>LOGISTER_SETUP_TOKEN</code> used to claim the first administrator.</li>
+                  </ul>
+                </aside>
+              </div>
+            </section>
+
+            <section id="quick-path" class="section">
+              <p class="eyebrow">Quick path</p>
+              <h2>Go from a booted app to a usable install.</h2>
+              <ol>
+                <li>Run release migrations and start Rails with PostgreSQL connected.</li>
+                <li>Claim the first administrator at <code>/setup</code>, then remove the one-time setup token.</li>
+                <li>Complete the General and Redis &amp; jobs checks. Restart web and worker processes when prompted.</li>
+                <li>Skip every optional service you do not need yet, then complete installation.</li>
+                <li>Create a project and API key, send one test event, and confirm it appears in the inbox.</li>
+              </ol>
+              <div class="note tip"><h4>Progress survives restarts</h4><p>Logister stores onboarding progress, skipped sections, successful check fingerprints, and a redacted change history in PostgreSQL. A restart or interrupted setup does not force the administrator to begin again.</p></div>
+            </section>
+
+            <section id="before" class="section">
+              <p class="eyebrow">Before you start</p>
+              <h2>Have the baseline running before opening setup.</h2>
+              <ul>
+                <li>A reachable PostgreSQL database and completed Rails migrations.</li>
+                <li>A Rails web process serving the instance over its final HTTPS hostname, or a temporary local hostname for evaluation.</li>
+                <li>A provider secret store for the Rails master key, database URL, one-time setup token, and any add-on credentials you keep in the environment.</li>
+                <li>A provisioned Redis or Valkey service plus a separately running Sidekiq worker before the required worker check can pass.</li>
+              </ul>
+              <p>You may provision optional providers now or return to them later. The Logister UI stores and tests connection settings; it does not create Redis, SMTP, ClickHouse, S3, GitHub, Turnstile, or analytics accounts.</p>
+            </section>
+
+            <section id="claim" class="section">
+              <p class="eyebrow">Claim the instance</p>
+              <h2>Create one confirmed, database-backed administrator.</h2>
+              <ol>
+                <li>Generate a long random token and set it as <code>LOGISTER_SETUP_TOKEN</code> on the Rails web process.</li>
+                <li>Restart the web process and open <code>https://your-logister-host.example/setup</code>.</li>
+                <li>Enter the administrator name, email, password, and the same one-time setup token.</li>
+                <li>Select <strong>Create administrator and continue</strong>. The new account is confirmed and receives the application administrator role.</li>
+                <li>Remove <code>LOGISTER_SETUP_TOKEN</code> from the deployment environment and restart the web process again.</li>
+              </ol>
+              <figure class="screenshot-figure">
+                <img src="/docs/assets/screenshots/installation-first-admin.webp" alt="Fresh Logister setup screen with an explanation of required and optional services beside the form for the first administrator and one-time setup token." width="1280" height="800" loading="lazy" decoding="async">
+                <figcaption>The one-time claim creates the first administrator and sends that user directly into the resumable Installation checklist.</figcaption>
+              </figure>
+              <div class="note warn"><h4>Remove the token after the claim</h4><p>Logister never stores the setup token, and later visits to <code>/setup</code> redirect to sign-in after the instance is claimed. Removing the environment value closes the bootstrap path at the deployment layer too.</p></div>
+            </section>
+
+            <section id="workflow" class="section">
+              <p class="eyebrow">Persistent workflow</p>
+              <h2>Use the same pages during onboarding and later operations.</h2>
+              <p><strong>Admin → Installation</strong> is both the first-run checklist and the permanent configuration area. Required and optional sections show Pending, Verified, Skipped, or Changed. A previously verified section becomes Changed when its effective configuration no longer matches the saved successful-check fingerprint.</p>
+              <figure class="screenshot-figure">
+                <img src="/docs/assets/screenshots/installation-overview.webp" alt="Logister Installation overview showing environment, saved fallback, and default precedence followed by required General and Redis steps and optional add-on cards." width="1280" height="800" loading="lazy" decoding="async">
+                <figcaption>The overview keeps configuration precedence, required checks, optional add-ons, and resumable progress in one permanent admin area.</figcaption>
+              </figure>
+              <p>Optional sections can be marked <strong>Skip for now</strong>. Skipping does not delete saved values, so an administrator can return, configure the provider, run the check, and enable it later.</p>
+            </section>
+
+            <section id="sources" class="section">
+              <p class="eyebrow">UI and environment values</p>
+              <h2>Choose the configuration path that fits your operations.</h2>
+              <table>
+                <thead><tr><th>Path</th><th>Use it when</th><th>What Logister does</th></tr></thead>
+                <tbody>
+                  <tr><td>Admin UI</td><td>A small operator team wants to configure and test services without changing deploy manifests.</td><td>Stores values as encrypted database fallbacks. Secret fields are never displayed again, and audit entries omit values.</td></tr>
+                  <tr><td>Environment variables</td><td>Your platform, GitOps workflow, or secret manager owns production configuration.</td><td>A nonblank environment value overrides the saved fallback. The page names the active variable, but never renders a secret value.</td></tr>
+                  <tr><td>Environment plus fallback</td><td>You may remove a deploy-time override later or need a safe transition between providers.</td><td>The environment value remains effective while the administrator can edit the saved fallback that will take over after the variable is removed.</td></tr>
+                </tbody>
+              </table>
+              <p>Resolution order is <strong>nonblank environment variable → encrypted saved fallback → application default</strong>. Blank environment variables do not mask a saved value. Restart every process named by the page after changing a setting marked <strong>Restart required</strong>.</p>
+              <figure class="screenshot-figure">
+                <img src="/docs/assets/screenshots/installation-general-environment-override.webp" alt="General installation settings showing LOGISTER_PUBLIC_URL as an active environment override, its visible effective non-secret value, and editable fallback fields for the documentation URL and sender." width="1280" height="800" loading="lazy" decoding="async">
+                <figcaption>An active override is labeled next to its field. Non-secret effective values are visible; secret effective values remain redacted.</figcaption>
+              </figure>
+              <div class="note tip"><h4>Test the effective configuration</h4><p><strong>Test candidate values</strong> combines the values entered on the page with any active environment overrides. Save first when a check must exercise the running process or send mail, restart when prompted, then rerun the check.</p></div>
+            </section>
+
+            <section id="required" class="section">
+              <p class="eyebrow">Required checks</p>
+              <h2>General and Redis &amp; jobs must pass before onboarding completes.</h2>
+              <table>
+                <thead><tr><th>Admin path</th><th>Settings</th><th>Passing check</th></tr></thead>
+                <tbody>
+                  <tr><td><code>/admin/installation/general</code></td><td><code>LOGISTER_PUBLIC_URL</code>, <code>LOGISTER_DOCS_URL</code>, <code>LOGISTER_EMAIL_FROM</code>, and <code>LOGISTER_API_KEY_PREFIX</code>.</td><td>Canonical URLs, email sender, and API key prefix are valid.</td></tr>
+                  <tr><td><code>/admin/installation/background-jobs</code></td><td><code>REDIS_URL</code> and <code>SIDEKIQ_CONCURRENCY</code>.</td><td>Redis answers <code>PING</code> and at least one Sidekiq process is registered against the same Redis service.</td></tr>
+                </tbody>
+              </table>
+              <ol>
+                <li>Save the General values and run <strong>Test candidate values</strong>.</li>
+                <li>Save Redis and concurrency, then restart both web and worker processes because booted clients keep their existing connection settings.</li>
+                <li>Start the worker with <code>bundle exec sidekiq -C config/sidekiq.yml</code>.</li>
+                <li>Run the Redis &amp; jobs check. A reachable Redis server without a registered worker is not enough.</li>
+                <li>Return to the overview and select <strong>Complete installation</strong> after both required cards show Verified.</li>
+              </ol>
+            </section>
+
+            <section id="add-ons" class="section">
+              <p class="eyebrow">Optional add-ons</p>
+              <h2>Choose an add-on by the outcome you need.</h2>
+              <p>You do not need to learn every setting before choosing. Open one admin page, read the variable name beside each field, and use the linked guide only when that service needs provider-side work.</p>
+              <div class="doc-link-list">
+                <a class="doc-link" href="/docs/product/notifications/setup/"><strong>Send account and project mail</strong><span>Open <code>/admin/installation/email</code>. Stop when one direct and one queued test message arrive.</span></a>
+                <a class="doc-link" href="/docs/clickhouse/"><strong>Move analytics work off PostgreSQL</strong><span>Open <code>/admin/installation/clickhouse</code>. Keep dual write until schema and stable event coverage pass.</span></a>
+                <a class="doc-link" href="/docs/product/data-retention/archive-storage/"><strong>Archive telemetry before pruning it</strong><span>Open <code>/admin/installation/archive-storage</code>. Stop when a temporary object can be written, read, and deleted.</span></a>
+                <a class="doc-link" href="/docs/github-app/"><strong>Show private source during triage</strong><span>Open <code>/admin/installation/github</code>. Verify the App identity, then link repositories from project settings.</span></a>
+                <a class="doc-link" href="/docs/deployment/#env-reference"><strong>Protect public auth and tune ingest limits</strong><span>Open <code>/admin/installation/authentication</code>. Validate keys and limits, restart, then complete a real Turnstile challenge.</span></a>
+                <a class="doc-link" href="/docs/deployment/#consent-banners"><strong>Add consent-aware public analytics</strong><span>Open <code>/admin/installation/public-site</code>. Stop when the public URLs and consent prerequisites validate.</span></a>
+                <a class="doc-link" href="/docs/deployment/#env-reference"><strong>Monitor Logister itself</strong><span>Open <code>/admin/installation/observability</code>. Validate the endpoint and sampling ranges, then send sample telemetry.</span></a>
+              </div>
+              <p>For a GitOps or secret-manager deployment, use the variable names shown on the selected admin page. The complete list remains in <a href="/docs/deployment/#env-reference">Deployment configuration</a> and the repository's <a href="https://github.com/taimoorq/logister/blob/main/.env.sample"><code>.env.sample</code></a>.</p>
+            </section>
+
+            <section id="clickhouse" class="section">
+              <p class="eyebrow">ClickHouse cutover</p>
+              <h2>Keep ClickHouse optional and switch reads only after coverage passes.</h2>
+              <ol>
+                <li>Provision ClickHouse, keep PostgreSQL as the durable product database, and select <code>dual_write</code>.</li>
+                <li>Save settings, restart web and worker processes, and keep Sidekiq draining new writes.</li>
+                <li>Run <strong>Repair ClickHouse schema</strong> with an account allowed to create or repair the required objects.</li>
+                <li>Backfill retained PostgreSQL events with the idempotent command in the <a href="/docs/clickhouse/#backfill">ClickHouse backfill guide</a>.</li>
+                <li>Run <strong>Test candidate values</strong>. The check compares distinct event IDs in a stable window that excludes the newest five minutes.</li>
+                <li>Select <code>read_preferred</code> only after the current connection fingerprint has passed schema and coverage checks.</li>
+              </ol>
+              <figure class="screenshot-figure">
+                <img src="/docs/assets/screenshots/installation-clickhouse-cutover.webp" alt="ClickHouse installation page showing the staged cutover warning, schema repair action, activation mode, and an active LOGISTER_CLICKHOUSE_MODE environment override." width="1280" height="800" loading="lazy" decoding="async">
+                <figcaption>The ClickHouse page keeps schema repair, the activation mode, environment precedence, and the read-coverage gate together.</figcaption>
+              </figure>
+            </section>
+
+            <section id="maintenance" class="section">
+              <p class="eyebrow">Later maintenance</p>
+              <h2>Return to Admin → Installation whenever configuration changes.</h2>
+              <ul>
+                <li>Rotate saved secrets by entering a replacement and saving. Secret fields never reveal the existing value.</li>
+                <li>Use <strong>Remove the saved fallback</strong> only when the environment or default should become the next source.</li>
+                <li>When removing an environment override, save the intended fallback first, remove the variable from every applicable process, restart when required, and rerun the check.</li>
+                <li>Rerun a section check after credentials, URLs, provider permissions, schema, or worker topology changes. A Changed status blocks required setup completion until the current fingerprint passes again.</li>
+                <li>Use Recent history to see who saved, cleared, skipped, repaired, or tested a section. Values and secrets are deliberately absent from the audit trail.</li>
+              </ul>
+            </section>
+
+            <section id="verify" class="section">
+              <p class="eyebrow">Verification</p>
+              <h2>Prove the install works beyond the settings pages.</h2>
+              <ol>
+                <li>Confirm <code>GET /up</code> returns <code>200</code>.</li>
+                <li>Confirm General and Redis &amp; jobs remain Verified after the final restart.</li>
+                <li>Create one project and one project API key.</li>
+                <li>Send a test event from an SDK or the <a href="/docs/http-api/">HTTP API</a> and confirm it appears in the project inbox.</li>
+                <li>If email is configured, confirm both the direct and queued test messages arrive.</li>
+                <li>If archive storage is configured, verify its temporary-object check and then configure a project retention policy.</li>
+                <li>If ClickHouse is configured, confirm <code>/health/clickhouse</code> reports ready and that the coverage gate has passed before relying on read-preferred analytics.</li>
+              </ol>
+              <p>If a check fails, use the exact failure summary on its Installation page, then continue with <a href="/docs/troubleshooting/">Troubleshooting</a>. For all production variables and restart behavior, use <a href="/docs/deployment/">Deployment configuration</a>.</p>
+            </section>
+          </article>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

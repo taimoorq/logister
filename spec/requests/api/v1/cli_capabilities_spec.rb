@@ -13,10 +13,10 @@ RSpec.describe "Api::V1::Cli::Capabilities", type: :request do
       body = response.parsed_body
       expect(body).to include(
         "server" => "logister",
-        "server_version" => "2.9",
-        "api_contract_version" => "2.9",
+        "server_version" => "3.0",
+        "api_contract_version" => "3.0",
         "minimum_cli_version" => "0.1.0",
-        "recommended_cli_version" => "0.1.0"
+        "recommended_cli_version" => "0.1.2"
       )
       expect(body["api_contract_sha256"]).to match(/\A[0-9a-f]{64}\z/)
       expect(body["features"]).to include(

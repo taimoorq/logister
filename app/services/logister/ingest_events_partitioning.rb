@@ -83,7 +83,10 @@ module Logister
     end
 
     def validate
-      validate_tables(source_table: SOURCE_TABLE, shadow_table: SHADOW_TABLE)
+      return validate_tables(source_table: SOURCE_TABLE, shadow_table: SHADOW_TABLE) if table_exists?(SHADOW_TABLE)
+      return validate_cutover_copy if table_exists?(BACKUP_TABLE) && partitioned_table?(SOURCE_TABLE)
+
+      raise CutoverError, "Partition validation requires either a pre-cutover shadow table or a post-cutover backup table"
     end
 
     def cutover_preflight
@@ -110,6 +113,10 @@ module Logister
     end
 
     def cutover(validate_before: true, lock_timeout: "30s")
+      if partitioned_table?(SOURCE_TABLE) && !table_exists?(SHADOW_TABLE)
+        raise CutoverError, "Partition cutover is already complete"
+      end
+
       preflight = validate_before ? cutover_preflight : nil
       if preflight && !preflight.fetch(:ready)
         raise CutoverError, "Partition cutover preflight failed: #{preflight.fetch(:checks).inspect}"
@@ -175,6 +182,8 @@ module Logister
     end
 
     def backfill(from: nil, to: nil, batch_size: DEFAULT_BATCH_SIZE, dry_run: true)
+      raise CutoverError, "Partition backfill is unavailable after cutover" unless table_exists?(SHADOW_TABLE)
+
       from = parse_time(from)
       to = parse_time(to)
       batch_size = normalized_batch_size(batch_size)

@@ -56,34 +56,42 @@ RSpec.describe IngestEvent, type: :model do
     end
   end
 
-  describe "partition shadow mirror trigger" do
-    it "mirrors inserts, updates, and deletes into ingest_events_partitioned" do
-      event = create(:ingest_event, :log, message: "Initial mirror event")
+  describe "partitioned storage" do
+    it "preserves inserts, updates, and deletes in the active partition" do
+      event = create(:ingest_event, :log, message: "Initial partitioned event")
 
-      expect(shadow_row_for(event)).to include("message" => "Initial mirror event")
+      expect(partition_row_for(event)).to include("message" => "Initial partitioned event")
+      expect(partition_name_for(event)).to start_with("ingest_events_partitioned_")
 
-      old_occurred_at = event.occurred_at
-      event.update!(message: "Updated mirror event", occurred_at: old_occurred_at + 1.second)
+      event.update!(message: "Updated partitioned event")
       event.reload
 
-      expect(shadow_row(event.id, old_occurred_at)).to be_nil
-      expect(shadow_row_for(event)).to include("message" => "Updated mirror event")
+      expect(partition_row_for(event)).to include("message" => "Updated partitioned event")
 
       event.destroy!
 
-      expect(shadow_row(event.id, event.occurred_at)).to be_nil
+      expect(partition_row(event.id, event.occurred_at)).to be_nil
     end
 
-    def shadow_row_for(event)
-      shadow_row(event.id, event.occurred_at)
+    def partition_row_for(event)
+      partition_row(event.id, event.occurred_at)
     end
 
-    def shadow_row(id, occurred_at)
+    def partition_row(id, occurred_at)
       ActiveRecord::Base.connection.select_one(<<~SQL.squish)
         SELECT id, message
-        FROM public.ingest_events_partitioned
+        FROM public.ingest_events
         WHERE id = #{Integer(id)}
           AND occurred_at = #{ActiveRecord::Base.connection.quote(occurred_at)}
+      SQL
+    end
+
+    def partition_name_for(event)
+      ActiveRecord::Base.connection.select_value(<<~SQL.squish)
+        SELECT tableoid::regclass::text
+        FROM public.ingest_events
+        WHERE id = #{Integer(event.id)}
+          AND occurred_at = #{ActiveRecord::Base.connection.quote(event.occurred_at)}
       SQL
     end
   end

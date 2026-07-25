@@ -8,6 +8,8 @@ The docs are organized as a practical self-hosted product manual: Documentation,
 
 Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SETUP_TOKEN`. The created account is confirmed and receives a durable database-backed administrator role. The persistent Admin → Installation workflow configures and verifies General, Redis/Sidekiq, SMTP, ClickHouse, archive storage, GitHub App, Turnstile, public-site settings, and self-observability. Nonblank environment variables take precedence over encrypted database fallbacks, and the UI labels overrides without displaying secrets.
 
+The screenshot-backed onboarding and add-on guide is https://logister.org/docs/self-hosting/onboarding/. It covers the first-admin claim, required General and Redis/Sidekiq checks, UI/environment/default precedence, every optional Installation page, the guarded ClickHouse cutover, and later maintenance.
+
 ## What Logister Does
 
 - Captures application errors, logs, metrics, transactions, spans, and check-ins.
@@ -53,7 +55,7 @@ Logister is independent and is not affiliated with Sentry, Bugsnag, Bugzilla, or
 
 All maintained add-ons send the same core telemetry families into the main app: errors, logs/messages, metrics, transactions, spans, check-ins, and custom ingest events. Runtime-specific helpers add framework context: Ruby/Rails request spans and DB timing, ASP.NET Core exception/request middleware, Python FastAPI/Django/Flask/Celery/logging instrumentation, JavaScript Express/browser/console instrumentation, Android app/release/device metadata, iOS app/release/device metadata, and CFML direct HTTP payloads. Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 
-Public ingestion endpoints `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments` accept 1,200 requests per minute per API token per endpoint by default. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Rate-limited responses return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Self-hosters can tune the global defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides from project settings; project owners and shared project members cannot.
+Public ingestion endpoints `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments` accept 1,200 requests per minute per API token per endpoint by default. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Rate-limited responses return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Self-hosters can tune the global defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. Database-backed app administrators and break-glass admins from `LOGISTER_ADMIN_EMAILS` can set project-level overrides from project settings; project owners and shared project members cannot.
 
 Source-linked debugging works best when SDKs and custom clients send `repository`, `commit_sha`, `branch`, `release`, and `environment` on error events. CI/CD can also POST a `deployment` envelope to `/api/v1/deployments` with `release`, `repository`, `commit_sha`, optional `branch`, `deployed_at`, `pull_request_number`, `release_tag`, and GitHub URLs so Logister can show source excerpts, PR/release links, and "this started after deploy X" context.
 
@@ -104,7 +106,8 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - Optional Cloudflare Pages for static docs hosting.
 - Optional Cloudflare Pages project integration for manual HTTP telemetry today and importer settings ahead of automatic account fetching.
 - Optional Logister self-observability through `logister-ruby`; configure `LOGISTER_API_KEY`, `LOGISTER_ENDPOINT`, source fields such as `LOGISTER_REPOSITORY`, `LOGISTER_COMMIT_SHA`, and `LOGISTER_BRANCH`, then run `bin/rails logister:sample_telemetry` to emit a sample error, log, metric, transaction, span set, check-in, and deployment record.
-- Recommended setup order: provision PostgreSQL and Redis; set `RAILS_ENV`, `RAILS_MASTER_KEY`, `DATABASE_URL`, `REDIS_URL`, `LOGISTER_PUBLIC_URL`, and `LOGISTER_ADMIN_EMAILS`; run `./bin/release`; start one Rails web process and one Sidekiq worker; verify `/up`, sign-in, project creation, API key generation, and one test inbox event; then enable optional services.
+- Recommended setup order: provision PostgreSQL and a Rails web process; set `RAILS_ENV`, `RAILS_MASTER_KEY`, `DATABASE_URL`, and a one-time `LOGISTER_SETUP_TOKEN`; run `./bin/release`; claim `/setup`; remove the token; configure and verify Redis plus a registered Sidekiq process under Admin → Installation; complete onboarding; then add optional services.
+- Admin onboarding and add-on configuration: https://logister.org/docs/self-hosting/onboarding/
 
 ## Storage And Retention
 
@@ -123,7 +126,7 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - GHCR package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
-- Current versioned images: `ghcr.io/taimoorq/logister:v2.9` or `docker.io/taimoorq/logister:v2.9`
+- Current versioned images: `ghcr.io/taimoorq/logister:v3.0` or `docker.io/taimoorq/logister:v3.0`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
 
@@ -168,6 +171,7 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - Amazon SES project notifications: https://logister.org/docs/use-cases/amazon-ses-error-alerts/
 - Getting started: https://logister.org/docs/getting-started/
 - Self-hosting: https://logister.org/docs/self-hosting/
+- Fresh-install onboarding and add-ons: https://logister.org/docs/self-hosting/onboarding/
 - Deployment config: https://logister.org/docs/deployment/
 - GitHub App source integration: https://logister.org/docs/github-app/
 - GitHub source lookup diagnostics: https://logister.org/docs/github-app/source-lookup/

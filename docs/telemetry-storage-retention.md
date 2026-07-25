@@ -13,7 +13,7 @@ bin/rails logister:clickhouse:schema:repair
 bin/rails logister:clickhouse:schema:status
 ```
 
-The repair task creates missing objects, updates compatible event-type enum drift, rebuilds the dependent materialized view when required, and fails if the final schema is not ready. `bin/release` runs it automatically when `LOGISTER_CLICKHOUSE_ENABLED=true`. Set `LOGISTER_CLICKHOUSE_MIGRATION_USERNAME` and `LOGISTER_CLICKHOUSE_MIGRATION_PASSWORD` when schema DDL should use a separate operator account from normal inserts and analytics queries.
+The repair task creates missing objects, updates compatible event-type enum drift, rebuilds the dependent materialized view when required, and fails if the final schema is not ready. `bin/release` always invokes it and receives a no-op result when ClickHouse is disabled. Set `LOGISTER_CLICKHOUSE_MIGRATION_USERNAME` and `LOGISTER_CLICKHOUSE_MIGRATION_PASSWORD` when schema DDL should use a separate operator account from normal inserts and analytics queries.
 
 The canonical schema lives in `docs/clickhouse_schema.sql` and includes raw event/span tables plus one-minute rollups. The existing `logister:clickhouse:schema:load` task remains an alias for the same create-and-repair behavior.
 

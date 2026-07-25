@@ -36,6 +36,7 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - OpenAPI YAML: https://logister.org/docs/openapi.yaml
 - Postman collection: https://logister.org/docs/postman/logister-api.postman_collection.json
 - Self-hosting: https://logister.org/docs/self-hosting/
+- Fresh-install onboarding and add-on configuration: https://logister.org/docs/self-hosting/onboarding/
 - GitHub App source integration: https://logister.org/docs/github-app/
 - GitHub source lookup diagnostics: https://logister.org/docs/github-app/source-lookup/
 - Full AI context: https://logister.org/docs/llms-full.txt
@@ -53,6 +54,7 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 ## Operations
 - Local development: https://logister.org/docs/local-development/
 - Deployment config and `.env.sample` reference: https://logister.org/docs/deployment/
+- Persistent admin onboarding, UI/environment precedence, required Redis/Sidekiq checks, and optional add-ons: https://logister.org/docs/self-hosting/onboarding/
 - GitHub App setup for project-scoped source repository connections, private repository source excerpts, repository sync, CODEOWNERS hints, deployment links, and optional issue creation: https://logister.org/docs/github-app/
 - GitHub source lookup diagnostics for file-not-found and path/ref mapping problems: https://logister.org/docs/github-app/source-lookup/
 - Product notification paths: https://logister.org/docs/product/notifications/
@@ -69,10 +71,10 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v2.9` or `docker.io/taimoorq/logister:v2.9`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.0` or `docker.io/taimoorq/logister:v3.0`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, and optional ClickHouse
-- Production setup order: provision PostgreSQL and Redis, set required secrets from `.env.sample`, run `./bin/release`, start one web process and one Sidekiq worker, verify `/up`, sign-in, project creation, API key generation, and a test inbox event, then enable optional services.
+- Production setup order: provision PostgreSQL and a Rails web process, set the bootstrap secrets from `.env.sample`, run `./bin/release`, claim `/setup`, remove the setup token, configure and verify Redis plus a registered Sidekiq process under Admin → Installation, complete onboarding, and then add optional services.
 - Release and discovery runbooks: https://github.com/taimoorq/logister/tree/main/docs
 
 ## Audience
@@ -95,7 +97,7 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - Supported telemetry: Logister accepts errors, logs, metrics, transactions, spans, check-ins, and deployment records. Span payloads feed request load waterfall charts when they include trace IDs, span IDs, parent span IDs, kind, duration, and route or service context.
 - Notifications: Project notification settings are split into purpose-based paths for setup requirements, error triage alerts, project health alerts, workflow routing, digest summaries, delivery controls, and operational notices. Start at https://logister.org/docs/product/notifications/.
 - Metrics reference: https://logister.org/docs/metrics/ lists supported telemetry families, built-in Insights metric keys, custom metric series, span timing segments, add-on support by runtime, accepted reporting fields, and data collection boundaries.
-- Public API limits: `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments` accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. App admins listed in `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
+- Public API limits: `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments` accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. Database-backed app administrators and break-glass admins from `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
 - Insights: project-level dashboard workspace that combines Inbox, Activity, and Performance signals with ECharts, time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, and recent matching events. Best results come from consistent `environment`, `release`, stable custom context attributes, and numeric custom metric values in `context.value`.
 - Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry. Retention docs start at https://logister.org/docs/product/data-retention/.
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby

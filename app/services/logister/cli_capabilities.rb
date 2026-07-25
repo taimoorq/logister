@@ -6,7 +6,7 @@ require "yaml"
 module Logister
   class CliCapabilities
     MINIMUM_CLI_VERSION = "0.1.0"
-    RECOMMENDED_CLI_VERSION = "0.1.0"
+    RECOMMENDED_CLI_VERSION = "0.1.2"
 
     FEATURES = {
       capabilities: true,

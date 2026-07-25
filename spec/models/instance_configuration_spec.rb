@@ -60,4 +60,13 @@ RSpec.describe InstanceConfiguration, type: :model do
 
     expect(described_class.value("background_jobs.redis_url")).to eq("redis://saved.example/0")
   end
+
+  it "separates disabled ClickHouse verification from enabled cutover verification" do
+    disabled = described_class.fingerprint("clickhouse", overrides: { "clickhouse.mode" => "disabled" })
+    dual_write = described_class.fingerprint("clickhouse", overrides: { "clickhouse.mode" => "dual_write" })
+    read_preferred = described_class.fingerprint("clickhouse", overrides: { "clickhouse.mode" => "read_preferred" })
+
+    expect(disabled).not_to eq(dual_write)
+    expect(dual_write).to eq(read_preferred)
+  end
 end

@@ -2,6 +2,36 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.0 - 2026-07-25
+
+### Added
+
+- Added a one-time `/setup` claim flow that creates the first confirmed application administrator and continues into a durable, resumable Admin → Installation workflow.
+- Added encrypted database-backed configuration fallbacks, environment-variable precedence indicators, redacted audit history, and diagnostics for Redis/Sidekiq, SMTP, ClickHouse, archive storage, GitHub App, Turnstile, public-site analytics, and self-observability.
+- Added browser-approved Logister CLI authentication with user-scoped access tokens, capability discovery, project and event reads, error-group exports, and AI context bundles.
+- Added ClickHouse schema repair, idempotent backfill, one-minute analytics rollups, and a coverage gate before read-preferred cutover.
+
+### Changed
+
+- Reworked installation around two required core checks, outcome-based optional add-ons, and a consistent Configure → Apply → Verify or skip path that remains available after onboarding.
+- Made public API limits and self-observability thresholds configurable through Admin → Installation or their existing environment variables.
+- Added a screenshot-backed self-hosted onboarding guide with separate paths for fresh installs, optional services, and later configuration maintenance.
+- Updated PostgreSQL ingest-event partition operations to recognize the deployed post-cutover state and reject unsafe repeated cutover or backfill commands.
+- Updated public release references, OpenAPI metadata, structured data, and container examples for the stable `v3.0` release.
+
+### Fixed
+
+- Prevented ClickHouse read-preferred mode until the enabled effective configuration passes schema and stable-window coverage checks.
+- Required SMTP settings to be saved before direct and queued delivery tests, and kept sensitive runtime values out of parameter filters, logs, diagnostics, and audit history.
+- Validated positive public API rate limits and nonnegative self-observability thresholds before applying configuration.
+
+### Upgrade Notes
+
+- Run the Rails database migrations before starting this release. Version 3.0 adds CLI access-token and device-authorization tables, persistent installation settings and history, and monitor pause state.
+- Restart both Rails web and Sidekiq worker processes after changing settings marked Restart required. Existing nonblank environment variables continue to override encrypted UI fallbacks.
+- Rebuild the public docs after updating the app so OpenAPI metadata, AI-readable files, screenshots, and `v3.0` image references stay aligned.
+- Because this is a stable release, the main-branch release workflow publishes `v3.0`, `latest`, and short-SHA container tags after CI, deployment, and health checks pass.
+
 ## v2.9 - 2026-06-27
 
 ### Changed

@@ -10,17 +10,37 @@ RSpec.describe "Admin installation", type: :request do
     admin.update!(application_admin: true)
     installation.claim!(admin)
     sign_in admin
+    allow(InstanceConfiguration::Runtime).to receive(:apply!)
   end
 
   it "keeps every installation section available as a permanent admin path" do
     installation.update!(completed_at: Time.current)
 
     InstanceConfiguration::Registry.sections.each do |section|
-      get admin_installation_section_path(section.key)
+      get admin_installation_section_path(section.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(ERB::Util.html_escape(section.label), section.description)
     end
+  end
+
+  it "guides administrators through core setup before optional add-ons" do
+    get admin_installation_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Continue with General", "1. Finish the core install", "2. Add only what you need")
+    expect(response.body).to include("Invite and notify people", "Scale and retain telemetry", "Connect source and protect access", "Operate the public instance")
+    InstanceConfiguration::Registry.sections.each do |section|
+      expect(response.body).to include(admin_installation_section_path(section.slug))
+    end
+  end
+
+  it "accepts legacy underscore section URLs while advertising hyphenated paths" do
+    get admin_installation_section_path("background_jobs")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include('/admin/installation/background-jobs')
+    expect(response.body).to include('data-turbo="false"')
   end
 
   it "shows an environment override without exposing a secret value" do
@@ -33,13 +53,31 @@ RSpec.describe "Admin installation", type: :request do
       actor: admin
     )
 
-    get admin_installation_section_path("background_jobs")
+    get admin_installation_section_path("background-jobs")
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Environment override active", "REDIS_URL", "encrypted fallback is saved")
     expect(response.body).not_to include("environment-secret", "saved-fallback")
   ensure
     ENV["REDIS_URL"] = original
+  end
+
+  it "marks a previously verified section as changed when an environment override changes" do
+    original = ENV["LOGISTER_PUBLIC_URL"]
+    ENV.delete("LOGISTER_PUBLIC_URL")
+    installation.step_for("general").mark_verified!(
+      fingerprint: InstanceConfiguration.fingerprint("general"),
+      user: admin,
+      details: {}
+    )
+    ENV["LOGISTER_PUBLIC_URL"] = "https://changed.example.com"
+
+    get admin_installation_section_path("general")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Environment override active", "LOGISTER_PUBLIC_URL", "Changed")
+  ensure
+    ENV["LOGISTER_PUBLIC_URL"] = original
   end
 
   it "saves editable fallback settings and records a redacted audit event" do
@@ -66,7 +104,7 @@ RSpec.describe "Admin installation", type: :request do
     )
     allow(InstanceConfiguration::Diagnostics).to receive(:call).and_return(result)
 
-    patch admin_test_installation_section_path("background_jobs"), params: {
+    patch admin_test_installation_section_path("background-jobs"), params: {
       settings: {
         "background_jobs.redis_url" => "redis://candidate.example/0",
         "background_jobs.sidekiq_concurrency" => "7"
@@ -88,7 +126,25 @@ RSpec.describe "Admin installation", type: :request do
     )
   end
 
+  it "requires SMTP changes to be saved before sending delivery tests" do
+    expect(InstanceConfiguration::Diagnostics).not_to receive(:call)
+
+    patch admin_test_installation_section_path("email"), params: {
+      settings: { "email.smtp_address" => "smtp.candidate.example.com" },
+      test_recipient: "operator@example.com"
+    }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("Save these SMTP settings")
+  end
+
   it "blocks ClickHouse reads until the connection and coverage fingerprint is verified" do
+    installation.step_for("clickhouse").mark_verified!(
+      fingerprint: InstanceConfiguration.fingerprint("clickhouse"),
+      user: admin,
+      details: { "mode" => "disabled" }
+    )
+
     patch admin_installation_section_path("clickhouse"), params: {
       settings: {
         "clickhouse.mode" => "read_preferred",
@@ -99,6 +155,25 @@ RSpec.describe "Admin installation", type: :request do
     expect(response).to have_http_status(:unprocessable_content)
     expect(response.body).to include("before switching reads to ClickHouse")
     expect(InstanceSetting.find_by(key: "clickhouse.mode")).to be_nil
+  end
+
+  it "allows read preferred after an enabled coverage check passes" do
+    overrides = {
+      "clickhouse.mode" => "dual_write",
+      "clickhouse.url" => "https://clickhouse.example.com"
+    }
+    installation.step_for("clickhouse").mark_verified!(
+      fingerprint: InstanceConfiguration.fingerprint("clickhouse", overrides: overrides),
+      user: admin,
+      details: { "ready_for_reads" => true }
+    )
+
+    patch admin_installation_section_path("clickhouse"), params: {
+      settings: overrides.merge("clickhouse.mode" => "read_preferred")
+    }
+
+    expect(response).to redirect_to(admin_installation_section_path("clickhouse"))
+    expect(InstanceConfiguration.value("clickhouse.mode")).to eq("read_preferred")
   end
 
   it "runs an explicit idempotent ClickHouse schema repair from the admin path" do

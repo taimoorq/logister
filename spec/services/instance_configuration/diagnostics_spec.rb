@@ -54,4 +54,16 @@ RSpec.describe InstanceConfiguration::Diagnostics, type: :model do
     expect(result.details).to include("ready_for_reads" => false)
     expect(client).to have_received(:select_rows!).with(a_string_including("uniqExact(event_id)"))
   end
+
+  it "rejects nonpositive public API limits" do
+    values = InstanceConfiguration.values_for(
+      "authentication",
+      overrides: { "authentication.public_api_rate_limit_requests" => "0" }
+    )
+
+    result = described_class.call("authentication", values: values)
+
+    expect(result).not_to be_success
+    expect(result.summary).to include("positive integers")
+  end
 end

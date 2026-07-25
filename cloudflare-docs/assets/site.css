@@ -448,6 +448,7 @@ code, pre {
 }
 .doc-link {
   display: grid;
+  min-width: 0;
   gap: 0.3rem;
   padding: 0.9rem 1rem;
   border: 1px solid var(--border);
@@ -473,6 +474,7 @@ code, pre {
   background: #eef2f7;
   padding: 0.12rem 0.32rem;
   border-radius: 0.35rem;
+  overflow-wrap: anywhere;
 }
 
 .eyebrow {

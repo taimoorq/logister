@@ -1,11 +1,24 @@
-<nav class="mb-6 overflow-x-auto rounded-xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Installation sections">
-  <div class="flex min-w-max gap-1">
-    <% InstanceConfiguration::Registry.sections.each do |section| %>
-      <% active = defined?(@section) && @section.key == section.key %>
-      <%= link_to section.label,
-                  admin_installation_section_path(section.key),
-                  class: "rounded-lg px-3 py-2 text-sm font-medium no-underline #{active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}",
-                  aria: (active ? { current: "page" } : {}) %>
-    <% end %>
+<% sections = InstanceConfiguration::Registry.sections %>
+<% section_index = sections.index(@section) %>
+<% previous_section = section_index&.positive? ? sections[section_index - 1] : nil %>
+<% following_section = section_index && section_index < sections.length - 1 ? sections[section_index + 1] : nil %>
+
+<nav class="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm" aria-label="Installation workflow">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex min-w-0 items-center gap-3">
+      <%= link_to "Installation overview", admin_installation_path, class: "shrink-0 text-sm font-semibold text-blue-700 no-underline hover:text-blue-900" %>
+      <span class="hidden h-5 w-px bg-slate-200 sm:block" aria-hidden="true"></span>
+      <p class="truncate text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <%= @section.required? ? "Core setup" : "Optional add-on" %> · Step <%= section_index + 1 %> of <%= sections.length %>
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <% if previous_section %>
+        <%= link_to "← #{previous_section.label}", admin_installation_section_path(previous_section.slug), class: "rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 no-underline hover:bg-slate-50 hover:text-slate-900" %>
+      <% end %>
+      <% if following_section %>
+        <%= link_to "#{following_section.label} →", admin_installation_section_path(following_section.slug), class: "rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 no-underline hover:bg-slate-50 hover:text-slate-900" %>
+      <% end %>
+    </div>
   </div>
 </nav>
