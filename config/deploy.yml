@@ -81,7 +81,7 @@ builder:
   #
   # # Pass arguments and secrets to the Docker build process
   # args:
-  #   RUBY_VERSION: 4.0.5
+  #   RUBY_VERSION: 4.0.6
   #   RUBY_IMAGE_FLAVOR: slim-bookworm
   # secrets:
   #   - GITHUB_TOKEN

@@ -10,7 +10,7 @@
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version.
 # The bookworm slim image keeps the production image small while pinning the
 # Debian base to a stable release with the apt packages this app needs.
-ARG RUBY_VERSION=4.0.5
+ARG RUBY_VERSION=4.0.6
 ARG RUBY_IMAGE_FLAVOR=slim-bookworm
 FROM docker.io/library/ruby:$RUBY_VERSION-$RUBY_IMAGE_FLAVOR AS base
 

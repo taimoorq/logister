@@ -251,7 +251,7 @@ Use this when you are working on the app itself. For a production deployment, us
 
 Prerequisites:
 
-- Ruby `4.0.5`
+- Ruby `4.0.6`
 - PostgreSQL
 - Redis for production-like cache and job behavior
 - Node/npm for npm-backed assets
