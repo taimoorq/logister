@@ -2,6 +2,19 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.0.1 - 2026-07-25
+
+### Fixed
+
+- Fixed the Installation candidate-check button under per-form CSRF protection by keeping verification submissions on the settings form's token-scoped URL.
+- Prevented upgraded instances from being trapped in fresh-install checks when an existing administrator opens Admin → Installation; the navigation gate now applies only to administrators created through the one-time `/setup` flow.
+
+### Upgrade Notes
+
+- No database migrations are required for this release.
+- Existing installations can upgrade directly; the patch preserves their current settings and removes the accidental onboarding lock.
+- Because this is a stable release, the main-branch release workflow publishes `v3.0.1`, `latest`, and short-SHA container tags after CI, deployment, and health checks pass.
+
 ## v3.0 - 2026-07-25
 
 ### Added
@@ -21,7 +34,6 @@ All notable changes to Logister will be documented in this file.
 
 ### Fixed
 
-- Prevented upgraded instances from being trapped in fresh-install checks when an existing administrator opens Admin → Installation; the navigation gate now applies only to administrators created through the one-time `/setup` flow.
 - Prevented ClickHouse read-preferred mode until the enabled effective configuration passes schema and stable-window coverage checks.
 - Required SMTP settings to be saved before direct and queued delivery tests, and kept sensitive runtime values out of parameter filters, logs, diagnostics, and audit history.
 - Validated positive public API rate limits and nonnegative self-observability thresholds before applying configuration.

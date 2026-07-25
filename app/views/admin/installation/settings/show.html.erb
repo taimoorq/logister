@@ -141,8 +141,10 @@
 
   <div class="flex flex-wrap items-center gap-3">
     <%= submit_tag "Save settings", class: "btn-primary" %>
-    <%= submit_tag "Test candidate values",
-                   formaction: admin_test_installation_section_path(@section.slug),
+    <%= button_tag "Test candidate values",
+                   type: "submit",
+                   name: "operation",
+                   value: "test",
                    class: "btn-ghost cursor-pointer" %>
     <% unless @section.required? %>
       <%= link_to "Skip for now",

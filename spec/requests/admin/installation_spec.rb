@@ -151,6 +151,42 @@ RSpec.describe "Admin installation", type: :request do
     )
   end
 
+  it "submits candidate checks through the form's CSRF-scoped settings URL" do
+    result = InstanceConfiguration::Diagnostics::Result.new(
+      success: true,
+      summary: "Canonical URLs and sender identity are valid.",
+      details: {}
+    )
+    allow(InstanceConfiguration::Diagnostics).to receive(:call).and_return(result)
+    original_forgery_protection = ActionController::Base.allow_forgery_protection
+    ActionController::Base.allow_forgery_protection = true
+
+    get admin_installation_section_path("general")
+
+    document = Nokogiri::HTML(response.body)
+    form = document.at_css("form[action='#{admin_installation_section_path('general')}']")
+    token = form.at_css("input[name='authenticity_token']")["value"]
+    test_button = form.at_css("button[name='operation'][value='test']")
+    expect(test_button).to be_present
+    expect(test_button["formaction"]).to be_nil
+
+    patch admin_installation_section_path("general"), params: {
+      authenticity_token: token,
+      operation: "test",
+      settings: {
+        "general.public_url" => "https://errors.example.com",
+        "general.docs_url" => "https://errors.example.com/docs",
+        "general.email_from" => "logister@example.com",
+        "general.api_key_prefix" => "logister"
+      }
+    }
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Check passed", "Canonical URLs and sender identity are valid.")
+  ensure
+    ActionController::Base.allow_forgery_protection = original_forgery_protection
+  end
+
   it "requires SMTP changes to be saved before sending delivery tests" do
     expect(InstanceConfiguration::Diagnostics).not_to receive(:call)
 

@@ -9,6 +9,8 @@ class Admin::Installation::SettingsController < Admin::BaseController
   end
 
   def update
+    return test if params[:operation] == "test"
+
     values = setting_values
     overrides = InstanceConfiguration.candidate_overrides(@section.key, values)
     candidate_fingerprint = InstanceConfiguration.fingerprint(@section.key, overrides: overrides)
