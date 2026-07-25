@@ -1,6 +1,16 @@
 # Cloudflare Docs Proxy
 
-This Worker owns the public `https://logister.org/docs` route and proxies it to the Cloudflare Pages docs origin in `cloudflare-docs/`. It also redirects old `https://docs.logister.org` URLs to the matching `https://logister.org/docs` URL with `301 Moved Permanently`.
+This Cloudflare Worker makes the standalone Pages documentation appear at [logister.org/docs](https://logister.org/docs/). It strips the public `/docs` prefix before fetching the Pages origin and permanently redirects legacy `docs.logister.org` URLs to the canonical path.
+
+## Request examples
+
+| Public request | Worker result |
+|---|---|
+| `https://logister.org/docs/` | Proxies `/` from the Pages origin |
+| `https://logister.org/docs/getting-started/` | Proxies `/getting-started/` |
+| `https://docs.logister.org/getting-started/?q=api` | Returns `301` to `https://logister.org/docs/getting-started/?q=api` |
+
+Requests outside the configured docs mount path return `404`; the Rails app owns the rest of the main domain.
 
 ## Configuration
 
@@ -36,3 +46,19 @@ wrangler deploy --config cloudflare-docs-proxy/wrangler.toml
 ```
 
 Build the docs with `LOGISTER_DOCS_URL=https://logister.org/docs` before deploying the Pages origin so links, metadata, sitemap, robots, and Pagefind results point at the public route.
+
+For a local Worker check:
+
+```bash
+npx --yes wrangler@4.84.0 dev --config cloudflare-docs-proxy/wrangler.toml
+curl --fail --head http://localhost:8787/docs/
+```
+
+After production deployment, verify both proxying and the legacy redirect:
+
+```bash
+curl --fail --head https://logister.org/docs/getting-started/
+curl --head https://docs.logister.org/getting-started/?q=api
+```
+
+The first request should return `200`. The second should return `301` with `Location: https://logister.org/docs/getting-started/?q=api`.

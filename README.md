@@ -1,16 +1,28 @@
 # Logister
 
-Logister is an open source, self-hosted error monitoring and bug triage app for teams that want a forkable alternative to Bugsnag, Sentry, and Bugzilla-style workflows. It gives teams one place to collect application errors, logs, metrics, transactions, spans, and check-ins so they can see what is going wrong, assign ownership, investigate faster, and ship with more confidence.
+Logister is an open-source, self-hosted error monitoring and bug-triage app. It collects errors, logs, metrics, transactions, spans, and scheduled-job check-ins, then gives your team one inbox for investigation and ownership.
 
-Use this repository when you want to run Logister yourself or fork it for your own needs. It provides the web UI, project/API key management, ingest endpoints, background jobs, release automation, GHCR and Docker Hub images, and operational docs for your own self-hosted instance. `logister.org` is a secondary hosted/public instance of the same product direction, not the primary deployment model.
+Use this repository to run Logister on your own infrastructure, contribute to the Rails app, or build a branded fork. It contains the web UI, ingest API, background jobs, project and API-key management, deployment configuration, and container build. The public `logister.org` instance is secondary to the self-hosted product.
+
+## Choose your path
+
+| You want to… | Start here |
+|---|---|
+| Run Logister in production | [Self-host quickstart](#self-host-quickstart) |
+| Send telemetry from an app | [Integrating apps with Logister](#integrating-apps-with-logister) |
+| Test the ingest API directly | [Send your first event](#send-your-first-event) |
+| Work on Logister itself | [Running the app locally](#running-the-app-locally) |
+| Read the complete operator guide | [Logister documentation](https://logister.org/docs/) |
 
 ## Table Of Contents
 
+- [Choose your path](#choose-your-path)
 - [What this repo is for](#what-this-repo-is-for)
 - [Public docs](#public-docs)
 - [Product functionality](#product-functionality)
 - [Self-hosted runtime](#self-hosted-runtime)
 - [Self-host quickstart](#self-host-quickstart)
+- [Send your first event](#send-your-first-event)
 - [Integrating apps with Logister](#integrating-apps-with-logister)
 - [Metrics reference](#metrics-reference)
 - [Running the app locally](#running-the-app-locally)
@@ -22,14 +34,14 @@ Use this repository when you want to run Logister yourself or fork it for your o
 
 ## What this repo is for
 
-This app is the self-hosted and self-hostable analytics dashboard for Logister:
+This repository is the Logister server and web app. It includes:
 
 - user authentication and project management
 - project API keys
 - event ingestion over HTTP
 - cross-app dashboard overview with server-backed explorer charts
 - inbox and error-group triage UI with team assignment
-- Bugzilla-style issue ownership paired with Bugsnag/Sentry-style application error monitoring
+- issue ownership alongside application error monitoring
 - monitor/check-in visibility
 - project lifecycle controls for active, archived, restored, and deleted projects
 - project email notifications for first occurrences and daily or weekly digests
@@ -37,14 +49,15 @@ This app is the self-hosted and self-hostable analytics dashboard for Logister:
 - optional S3-compatible archive exports for older hot telemetry
 - release versions published as GitHub Releases and Docker images in GitHub Container Registry and Docker Hub
 
-If you are trying to instrument an application, the language integrations live in separate packages and guides:
+If you only need to instrument an application, install the matching SDK instead of adding this Rails app as a dependency:
 
 - Ruby package for Ruby apps and Rails services: https://github.com/taimoorq/logister-ruby and https://rubygems.org/gems/logister-ruby
 - Python package for FastAPI, Django, Flask, Celery, workers, and Python logging: https://github.com/taimoorq/logister-python and https://pypi.org/project/logister-python/
 - JavaScript package for Node, TypeScript, Express, workers, and console capture: https://github.com/taimoorq/logister-js and https://www.npmjs.com/package/logister-js
 - .NET package for .NET 8+ apps, ASP.NET Core services, workers, and C# services: https://github.com/taimoorq/logister-dotnet, https://www.nuget.org/packages/Logister, and https://www.nuget.org/packages/Logister.AspNetCore
 - Android package for Kotlin and Java Android apps: https://github.com/taimoorq/logister-android and https://central.sonatype.com/artifact/org.logister/logister-android
-- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git and https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
+- iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git
+- CLI for reading project telemetry from a terminal or coding agent: https://github.com/taimoorq/logister-cli
 
 ## Public docs
 
@@ -116,7 +129,7 @@ Use the optional services only when you need them. A practical first production 
 
 ## Self-host quickstart
 
-This is the shortest production path. Use the public docs when you need provider-specific detail, but follow these steps in order.
+This is the shortest production path. Use the [self-hosting guide](https://logister.org/docs/self-hosting/) for provider-specific deployment details.
 
 1. Provision required services.
    - PostgreSQL for app data and hot telemetry.
@@ -126,10 +139,12 @@ This is the shortest production path. Use the public docs when you need provider
 2. Choose an app image.
 
    ```bash
-   docker pull ghcr.io/taimoorq/logister:v3.0.1
-   # or
-   docker pull docker.io/taimoorq/logister:v3.0.1
+   docker pull ghcr.io/taimoorq/logister:latest
+   # Docker Hub mirror
+   docker pull docker.io/taimoorq/logister:latest
    ```
+
+   For reproducible deploys, replace `latest` with a version from [GitHub Releases](https://github.com/taimoorq/logister/releases).
 
 3. Create production config from the sample.
 
@@ -191,12 +206,40 @@ This is the shortest production path. Use the public docs when you need provider
    A test event appears in the project inbox
    ```
 
-After the baseline is deployed, the day-one product flow is:
+After the baseline is deployed, the first-use flow is:
 
 1. Create a project in Logister.
 2. Generate an API key for that project.
 3. Connect an app using one of the supported integrations or direct HTTP ingestion.
 4. Verify errors appear in the inbox and non-error telemetry appears in activity, performance, or monitors.
+
+## Send your first event
+
+Create a project, generate a project API key under **Project settings → API keys**, and keep the key in your shell rather than the command itself:
+
+```bash
+export LOGISTER_URL="https://logister.example.com"
+export LOGISTER_API_KEY="<project-api-key>"
+
+curl --fail-with-body --request POST \
+  "$LOGISTER_URL/api/v1/ingest_events" \
+  --header "Authorization: Bearer $LOGISTER_API_KEY" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "event": {
+      "event_type": "error",
+      "level": "error",
+      "message": "README test error",
+      "fingerprint": "readme-test-error",
+      "context": {
+        "environment": "development",
+        "service": "example-api"
+      }
+    }
+  }'
+```
+
+A working server returns HTTP `201` with `"status":"accepted"`. Open the project inbox and confirm that **README test error** appears. A `401` response usually means the project key is missing, invalid, revoked, or belongs to an archived project; see the [troubleshooting guide](https://logister.org/docs/troubleshooting/).
 
 ## Integrating apps with Logister
 
@@ -287,14 +330,14 @@ For a fresh install, the pre-UI minimum is the Rails web process, PostgreSQL, `R
 
 Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
-- `ghcr.io/taimoorq/logister:v3.0.1`
+- `ghcr.io/taimoorq/logister:<version>`
 - `ghcr.io/taimoorq/logister:latest`
 - `ghcr.io/taimoorq/logister:<short-sha>`
-- `docker.io/taimoorq/logister:v3.0.1`
+- `docker.io/taimoorq/logister:<version>`
 - `docker.io/taimoorq/logister:latest`
 - `docker.io/taimoorq/logister:<short-sha>`
 
-The release workflow also supports an optional Quay.io mirror. Add `QUAY_USERNAME` and `QUAY_TOKEN` as GitHub Actions secrets to publish `quay.io/<namespace>/logister` with the same version, `latest`, and short-SHA tags. If the Quay login is a robot account such as `namespace+robot`, the workflow derives the image namespace automatically; set `QUAY_NAMESPACE` if you want to override it.
+The release workflow also supports an optional Quay.io mirror. Add `QUAY_USERNAME` and `QUAY_TOKEN` as GitHub Actions secrets to publish `quay.io/<namespace>/logister` with the same version, `latest`, and short-SHA tags. If the Quay login is a robot account such as `namespace+robot`, the workflow derives the image namespace automatically; set `QUAY_NAMESPACE` to override it.
 
 The self-hosting guide includes a Docker option for either managed PostgreSQL/Redis or a single-host Compose-style stack with optional ClickHouse:
 
@@ -366,6 +409,9 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 ## Source and related repos
 
 - Logister app: https://github.com/taimoorq/logister
+- Logister CLI: https://github.com/taimoorq/logister-cli
+- Homebrew tap: https://github.com/taimoorq/homebrew-logister
+- Scoop bucket: https://github.com/taimoorq/scoop-logister
 - Ruby package: https://github.com/taimoorq/logister-ruby
 - .NET package: https://github.com/taimoorq/logister-dotnet
 - Python package: https://github.com/taimoorq/logister-python
@@ -378,4 +424,4 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - PyPI: https://pypi.org/project/logister-python/
 - npm: https://www.npmjs.com/package/logister-js
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
-- Swift Package Manager release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
+- Swift Package Manager releases: https://github.com/taimoorq/logister-ios/releases
