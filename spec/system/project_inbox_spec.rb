@@ -6,18 +6,17 @@ RSpec.describe "Project inbox", type: :system do
   include ActionView::RecordIdentifier
 
   def sign_in_user
+    visit rails_health_check_path
+    page.execute_script(<<~JS)
+      window.localStorage.setItem("tg_tours_complete", "project-errors");
+    JS
     sign_in users(:one)
-  end
-
-  def dismiss_product_tour
-    find("#tg-dialog-close-btn").click if page.has_css?("#tg-dialog-close-btn", wait: 1)
   end
 
   it "updates the detail pane through Turbo when opening a different inbox row" do
     sign_in_user
 
     visit inbox_project_path(projects(:system_inbox))
-    dismiss_product_tour
     expect(page).to have_current_path(inbox_project_path(projects(:system_inbox)))
     expect(page).to have_css("turbo-frame#error_detail")
 
@@ -28,8 +27,8 @@ RSpec.describe "Project inbox", type: :system do
     click_link "Secondary inbox error"
 
     within("turbo-frame#error_detail") do
-      expect(page).to have_content("Secondary inbox error")
-      expect(page).to have_content("OrdersController#create")
+      expect(page).to have_css(".detail-title", text: "Secondary inbox error", wait: 10)
+      expect(page).to have_css(".better-errors-runtime", text: "OrdersController#create")
     end
 
     expect(page).to have_css("tr##{dom_id(error_groups(:system_secondary_group))}[aria-selected='true']")
@@ -40,7 +39,6 @@ RSpec.describe "Project inbox", type: :system do
     sign_in_user
 
     visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
-    dismiss_product_tour
 
     expect(page).to have_css(".inbox-workbench > .inbox-workbench-filters .inbox-filter-bar")
     expect(page).to have_no_css(".inbox-workbench-sidebar")
@@ -76,7 +74,6 @@ RSpec.describe "Project inbox", type: :system do
     sign_in_user
 
     visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
-    dismiss_product_tour
     expect(page).to have_current_path(inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid))
     expect(page).to have_css("turbo-frame#error_detail")
 
@@ -112,7 +109,6 @@ RSpec.describe "Project inbox", type: :system do
     ErrorGroupingService.call(event)
 
     visit inbox_project_path(project)
-    dismiss_product_tour
     select "1.4.0+42", from: "Release"
 
     expect(page).to have_select("Release", selected: "1.4.0+42")
@@ -130,7 +126,6 @@ RSpec.describe "Project inbox", type: :system do
     sign_in_user
 
     visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
-    dismiss_product_tour
 
     within("turbo-frame#error_detail") do
       form = find("form.detail-export-form", visible: :all)
@@ -152,11 +147,10 @@ RSpec.describe "Project inbox", type: :system do
     project = projects(:system_inbox)
     group = error_groups(:system_primary_group)
     visit inbox_project_path(project, group_uuid: group.uuid)
-    dismiss_product_tour
     original_url = page.current_url
 
     Capybara.using_wait_time(10) do
-      page.document.synchronize do
+      page.document.synchronize(errors: [ Capybara::ExpectationNotMet ]) do
         ready = page.evaluate_script(<<~JS)
           (() => {
             const form = document.querySelector("turbo-frame#error_detail form.detail-export-form");
@@ -190,6 +184,8 @@ RSpec.describe "Project inbox", type: :system do
       controller.saveBlob = function(blob, filename) {
         window.__logisterExportDownload.filename = filename;
         window.__logisterExportDownload.contentType = blob.type;
+        form.dataset.exportTestFilename = filename;
+        form.dataset.exportTestContentType = blob.type;
       };
     JS
 
@@ -198,13 +194,12 @@ RSpec.describe "Project inbox", type: :system do
       click_button "Export JSON"
     end
 
-    download = nil
-    Capybara.using_wait_time(10) do
-      page.document.synchronize do
-        download = page.evaluate_script("window.__logisterExportDownload")
-        raise Capybara::ExpectationNotMet, "expected JSON export download to finish" unless download["filename"].present?
-      end
-    end
+    expect(page).to have_css(
+      "form.detail-export-form[data-export-test-filename='spec-export.json'][data-export-test-content-type='application/json']",
+      visible: :all,
+      wait: 10
+    )
+    download = page.evaluate_script("window.__logisterExportDownload")
 
     expect(page.current_url).to eq(original_url)
     expect(page).to have_css("turbo-frame#error_detail", text: "Primary inbox error")
@@ -228,7 +223,6 @@ RSpec.describe "Project inbox", type: :system do
     }))
 
     visit inbox_project_path(projects(:system_inbox), group_uuid: error_groups(:system_primary_group).uuid)
-    dismiss_product_tour
 
     expect(page).to have_css("turbo-frame#error_detail turbo-frame#stack_frame_source")
     expect(page).to have_css(".frame-list .frame-link", minimum: 18)
