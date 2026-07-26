@@ -103,6 +103,9 @@ Rails.application.routes.draw do
     resource :integration_setting, only: [ :update ], controller: "project_integration_settings", as: :integration_setting
     post "integration_setting/import", to: "project_integration_settings#import", as: :integration_setting_import
     resources :android_mapping_files, only: [ :create, :destroy ], param: :uuid
+    resources :apple_symbol_artifacts, only: [ :create, :destroy ], param: :uuid do
+      post :process_artifact, on: :member, path: "process"
+    end
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
     resource :rate_limit, only: [ :update ], controller: "project_rate_limits", as: :rate_limit

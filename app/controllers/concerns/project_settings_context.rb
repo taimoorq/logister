@@ -81,6 +81,10 @@ module ProjectSettingsContext
       project: @project,
       provider: ProjectIntegrationSetting::PROVIDERS[:app_store_connect]
     ) if @project.integration_ios?
+    if @project.integration_ios?
+      @apple_symbol_artifacts = @project.apple_symbol_artifacts.recent_first.to_a
+      @apple_symbol_artifact = @project.apple_symbol_artifacts.new
+    end
     @source_repositories = @project.source_repositories
                                    .includes(:github_installation, github_repository: :github_installation)
                                    .order(:provider, :full_name)

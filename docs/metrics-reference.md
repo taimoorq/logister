@@ -48,7 +48,7 @@ package managers and platform context differ:
 | Platform | Package | Package manager | Current support |
 | --- | --- | --- | --- |
 | Android | `org.logister:logister-android` | Maven Central / Gradle | Kotlin-first helpers with Java interop for manual errors, logs, metrics, transactions, spans, and check-ins. |
-| iOS | `Logister` from `https://github.com/taimoorq/logister-ios.git` | Swift Package Manager | Async Swift client for manual errors, logs, metrics, transactions, spans, and check-ins. |
+| iOS | `Logister` from `https://github.com/taimoorq/logister-ios.git` | Swift Package Manager | Async Swift client with Apple app/build/device context, handled reports, bounded breadcrumbs/retries, and opt-in MetricKit crash, hang, CPU, and disk-write diagnostics. |
 
 Mobile SDKs should send `platform`, `service`, `release`, `environment`,
 `session_id`, and safe device/app metadata. Android should use the package name

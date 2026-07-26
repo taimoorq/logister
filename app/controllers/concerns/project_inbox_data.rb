@@ -35,8 +35,14 @@ module ProjectInboxData
     project_inbox_query(groups.first.project).latest_events(groups)
   end
 
-  def inbox_group_trends(project, groups, days: 7)
-    project_inbox_query(project).group_trends(groups, days: days)
+  def inbox_group_trends(project, groups, days: nil, profile_filters: {})
+    range = profile_filters.to_h.stringify_keys["time_range"]
+    days ||= { "24h" => 1, "7d" => 7, "30d" => 30, "90d" => 90 }[range]
+    if days.nil? && range == "all"
+      first = ErrorOccurrence.joins(:error_group).where(error_groups: { project_id: project.id }).minimum(:occurred_at)
+      days = first ? [ (Date.current - first.to_date).to_i + 1, 1 ].max : 1
+    end
+    project_inbox_query(project).group_trends(groups, days: days || 7)
   end
 
   def inbox_counts(project, assignee: "all", viewer: nil)
@@ -47,10 +53,13 @@ module ProjectInboxData
     project_inbox_query(project).has_activity_events?
   end
 
-  def inbox_impact_summaries(project, groups)
+  def inbox_impact_summaries(project, groups, profile_filters: {})
     return {} unless ProjectExperience.for(project).supports?(:mobile)
 
-    ErrorGroupImpactSummary.for_groups(groups)
+    range = profile_filters.to_h.stringify_keys["time_range"]
+    duration = { "24h" => 24.hours, "7d" => 7.days, "30d" => 30.days, "90d" => 90.days }[range]
+    since = range == "all" ? nil : (duration || 30.days).ago
+    ErrorGroupImpactSummary.for_groups(groups, since: since)
   end
 
   def normalize_inbox_assignee_filter(project, assignee, viewer: nil)

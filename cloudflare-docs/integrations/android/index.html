@@ -51,7 +51,7 @@
         mavenCentral()
     }
 }</code></pre></div><div class="code-block"><div class="code-head"><span class="code-language">kotlin</span><button class="copy-button" data-copy-button data-copy-target="#android-install">Copy</button></div><pre><code id="android-install">dependencies {
-    implementation("org.logister:logister-android:0.1.3")
+    implementation("org.logister:logister-android:0.2.0")
 }</code></pre></div><ul><li><a href="https://central.sonatype.com/artifact/org.logister/logister-android">View the Maven Central package page</a> for artifact metadata and available versions.</li><li><a href="https://repo1.maven.org/maven2/org/logister/logister-android/">Open the Maven repository path</a> when you need to verify synced versions directly.</li><li><a href="https://github.com/taimoorq/logister-android">Use GitHub</a> for source, examples, releases, and issue tracking.</li></ul></section>
             <section id="configure" class="section"><p class="eyebrow">Configure</p><h2>Create one client with app and release defaults.</h2><p>Use the Kotlin facade with a <code>LogisterTokenProvider</code>. Do not compile a long-lived Logister project API key into the app; your backend should mint short-lived mobile ingest tokens with <code>POST /api/v1/mobile_ingest_tokens</code>.</p><div class="code-block"><div class="code-head"><span class="code-language">kotlin</span><button class="copy-button" data-copy-button data-copy-target="#android-client">Copy</button></div><pre><code id="android-client">import org.logister.android.LogisterToken
 import org.logister.android.LogisterTokenProvider

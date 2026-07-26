@@ -2,22 +2,26 @@
 
 All notable changes to Logister will be documented in this file.
 
-## v3.2 - 2026-07-26
+## v3.3 - 2026-07-26
 
 ### Added
 
 - Added reusable project-experience profiles with Android and iOS mobile inboxes, typed detail sections, mobile impact summaries, profile filters/sorts, and signed keyset pagination.
 - Added release-scoped private R8 mapping uploads and Android deobfuscation status, plus optional Google Play Developer Reporting imports with explicit metric provenance and freshness.
+- Added an Apple diagnostics inbox and event workbench with reported/crash/hang/termination semantics, triggered-thread and binary-image evidence, symbol coverage, Apple release/device filters, and profile-specific setup health.
+- Added opt-in MetricKit ingestion with replay-safe event IDs, private dSYM artifact validation and lifecycle states, and App Store Connect power/performance imports with explicit provenance and freshness.
+- Added a recurring 15-minute App Store Connect import sweep while retaining manual sync and visible last-attempt, last-success, freshness, and bounded error states.
 
 ### Changed
 
 - Versioned the mobile ingest vocabulary and added stable Android failure-point grouping, queryable occurrence dimensions, honest handled/fatal/ANR classification, and completeness states for installation and session impact.
+- Versioned the iOS telemetry vocabulary, kept manual captures truthful as handled reports, added Apple-native grouping evidence, and made client-supplied event UUIDs idempotent at the partitioned ingest boundary.
 
 ### Upgrade Notes
 
-- Run the database migrations before restarting web and worker processes. This release adds mobile impact/grouping fields to error occurrences and groups, plus private Android mapping-file storage.
-- Existing installations can upgrade directly. Rebuild the application or pull the `v3.2` container so the mobile project profiles, refreshed assets, and Android mapping support are included.
-- Because this is a stable release, the main-branch release workflow publishes `v3.2`, `latest`, and short-SHA container tags after CI, deployment, and health checks pass.
+- Run the database migrations before restarting web and worker processes. This release adds mobile impact/grouping fields to error occurrences and groups, private Android mapping-file storage, and private Apple symbol-artifact metadata.
+- Existing installations can upgrade directly. Rebuild the application or pull the `v3.3` container so the mobile project profiles, refreshed assets, and Android and Apple production integrations are included.
+- Because this is a stable release, the main-branch release workflow publishes `v3.3`, `latest`, and short-SHA container tags after CI, deployment, and health checks pass.
 
 ## v3.1 - 2026-07-26
 

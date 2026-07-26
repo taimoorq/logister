@@ -16,7 +16,7 @@ module ProjectEventDetailData
       group: resolved_group,
       occurrences: occurrences,
       related_logs: IngestEvent.related_logs(project: project, event: event, window: 5.minutes, limit: 50),
-      impact_summary: resolved_group && ProjectExperience.for(project).supports?(:mobile) ? ErrorGroupImpactSummary.for_group(resolved_group) : nil
+      impact_summary: resolved_group && ProjectExperience.for(project).supports?(:mobile) ? ErrorGroupImpactSummary.for_group(resolved_group, since: detail_impact_since) : nil
     }
   end
 
@@ -30,5 +30,12 @@ module ProjectEventDetailData
     occurrences.each do |occurrence|
       occurrence.ingest_event_record = events_by_id[occurrence.ingest_event_id]
     end
+  end
+
+  def detail_impact_since
+    range = params[:time_range].to_s
+    return nil if range == "all"
+
+    ({ "24h" => 24.hours, "7d" => 7.days, "30d" => 30.days, "90d" => 90.days }[range] || 30.days).ago
   end
 end

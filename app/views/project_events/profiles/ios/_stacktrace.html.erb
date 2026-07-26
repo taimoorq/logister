@@ -1,41 +1,163 @@
 <% presenter = event_presenter(project, event, exception_data) %>
-<% stack_text = presenter.frames.map { |frame| frame[:raw] }.join("\n") %>
+<% top_in_app_frame = presenter.top_in_app_frame %>
+<% selected_frame ||= top_in_app_frame || visible_frames.first %>
+<% app = presenter.app_details %>
+<% os = presenter.os_details %>
+<% termination = presenter.termination_details %>
+<% stack_text = presenter.stacktrace_text %>
 
 <div class="better-errors-shell ios-error-shell">
-  <header class="better-errors-header">
-    <p class="better-errors-runtime"><span class="android-mechanism-badge"><%= presenter.mechanism_label %></span><strong><%= presenter.exception_type %></strong></p>
-    <h3 class="better-errors-message"><%= presenter.exception_message %></h3>
+  <header class="better-errors-header ios-incident-header">
+    <div class="ios-incident-badges">
+      <span class="mobile-mechanism-badge mechanism-<%= presenter.mechanism %>"><%= presenter.mechanism_label %></span>
+      <span class="ios-source-badge"><%= presenter.diagnostic_source_label %></span>
+      <% if presenter.fatal? %><span class="ios-severity-label">Fatal</span><% elsif presenter.handled? %><span class="ios-severity-label">Handled</span><% end %>
+    </div>
+    <p class="better-errors-runtime"><strong><%= presenter.exception_type %></strong></p>
+    <h3 class="better-errors-message"><%= presenter.exception_message.presence || termination[:reason].presence || "No diagnostic message was reported." %></h3>
+    <% if top_in_app_frame.present? %>
+      <p class="ios-culprit">
+        <code><%= top_in_app_frame[:method_name].presence || top_in_app_frame[:address].presence || "Unknown application frame" %></code>
+        <span><%= [top_in_app_frame[:image], top_in_app_frame[:file], top_in_app_frame[:line_number]].compact.join(" · ") %></span>
+      </p>
+    <% end %>
+    <dl class="ios-incident-facts">
+      <div><dt>Build</dt><dd><%= [app[:version_name], app[:version_code].presence && "(#{app[:version_code]})"].compact.join(" ").presence || "Not captured" %></dd></div>
+      <div><dt>Distribution</dt><dd><%= app[:distribution_channel].presence || "Not reported" %></dd></div>
+      <div><dt>Platform</dt><dd><%= [os[:platform], os[:name], os[:version]].compact_blank.join(" · ").presence || "Not captured" %></dd></div>
+      <div><dt>App state</dt><dd><%= app.key?(:in_foreground) ? (app[:in_foreground] ? "Foreground" : "Background") : "Not captured" %></dd></div>
+    </dl>
   </header>
 
-  <div class="android-mapping-status" role="status">
-    <strong>Symbols as reported</strong>
-    <span>dSYM coverage is not configured in this project yet. Address-only production frames need a matching build UUID for symbolication.</span>
+  <div class="mobile-evidence-status symbolication-<%= presenter.symbolication_status %>" role="status">
+    <strong><%= presenter.symbolication_label %></strong>
+    <span>
+      <% case presenter.symbolication_status %>
+      <% when "missing" %>
+        Upload the matching dSYM for <%= presenter.missing_symbol_uuids.any? ? presenter.missing_symbol_uuids.join(", ") : "this app build" %>. Raw addresses remain available.
+      <% when "pending" %>
+        The matching symbols are queued for processing. This issue keeps its current grouping while symbols improve.
+      <% when "partial" %>
+        Some binary images are symbolicated; unmatched UUIDs remain address-only.
+      <% when "failed" %>
+        Symbol processing failed. Review the artifact status in iOS integration settings.
+      <% when "symbolicated" %>
+        Application frames were resolved with a matching binary UUID and architecture.
+      <% when "not_required" %>
+        This SDK report already included callable symbols; no server-side dSYM pass was required.
+      <% else %>
+        This event did not report symbol coverage. Address-only frames require an exact UUID and architecture match.
+      <% end %>
+    </span>
+    <%= link_to "Review symbol coverage", settings_project_path(project, section: "integrations", anchor: "apple-symbols"), class: "inline-link", data: { turbo_frame: "_top" } %>
   </div>
 
+  <% if termination.any? %>
+    <section class="ios-diagnostic-facts" aria-labelledby="ios-termination-title">
+      <h4 id="ios-termination-title">Termination evidence</h4>
+      <dl>
+        <% termination.each do |key, value| %>
+          <div><dt><%= key.to_s.humanize %></dt><dd><code><%= value %></code></dd></div>
+        <% end %>
+      </dl>
+    </section>
+  <% end %>
+
   <div class="better-errors-workbench">
-    <aside class="better-errors-frames">
+    <aside class="better-errors-frames" aria-label="Triggered thread frames">
+      <div class="ios-thread-heading">
+        <span>Triggered thread</span>
+        <strong><%= presenter.triggered_thread&.dig(:name).presence || "Not identified" %></strong>
+      </div>
+      <div class="better-errors-frame-scope">
+        <%= link_to "Application Frames",
+                    partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "application", frame: 0),
+                    class: "frame-scope-pill #{'is-active' if frame_scope == 'application'}",
+                    data: { turbo_frame: "error_detail" } %>
+        <%= link_to "All Frames",
+                    partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "all", frame: 0),
+                    class: "frame-scope-pill #{'is-active' if frame_scope == 'all'}",
+                    data: { turbo_frame: "error_detail" } %>
+      </div>
+
       <% if visible_frames.any? %>
         <ol class="frame-list">
-          <% visible_frames.each do |frame| %>
-            <li class="frame-item">
-              <div class="frame-link">
-                <span class="frame-method"><%= frame[:method_name].presence || frame[:address].presence || "Unknown symbol" %></span>
-                <span class="frame-file"><%= [frame[:image] || frame[:file], frame[:address]].compact.join(" · ") %></span>
-              </div>
+          <% visible_frames.each_with_index do |frame_data, index| %>
+            <li class="frame-item <%= 'is-active' if index == selected_frame_index %>">
+              <%= link_to partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: frame_scope, frame: index),
+                          class: "frame-link",
+                          aria: { current: ("true" if index == selected_frame_index) },
+                          data: { turbo_frame: "error_detail" } do %>
+                <span class="frame-method"><%= frame_data[:method_name].presence || frame_data[:address].presence || "Unknown symbol" %></span>
+                <span class="frame-file"><%= [frame_data[:image] || frame_data[:file], frame_data[:address] || frame_data[:relative_address]].compact.join(" · ") %></span>
+                <span class="frame-origin"><%= frame_data[:application_frame] ? "App" : "Apple framework" %></span>
+              <% end %>
             </li>
           <% end %>
         </ol>
       <% else %>
-        <p class="muted">No Apple stack frames were captured for this event.</p>
+        <p class="muted">No frames were captured for the triggered thread. Check the raw diagnostic for termination-only evidence.</p>
       <% end %>
     </aside>
+
     <div class="better-errors-main">
       <section class="better-errors-code card">
+        <% if source_excerpt.present? %>
+          <%= render "project_events/source_excerpt",
+                     source_excerpt: source_excerpt,
+                     project: project,
+                     event: event,
+                     group: group,
+                     filter_param: filter_param,
+                     query_param: query_param,
+                     assignee_param: assignee_param,
+                     active_tab: "stacktrace",
+                     frame_scope: frame_scope,
+                     selected_frame_index: selected_frame_index %>
+        <% elsif selected_frame.present? %>
+          <div class="ios-frame-evidence">
+            <p class="dashboard-kicker">Selected frame</p>
+            <strong><%= selected_frame[:method_name].presence || "Address-only frame" %></strong>
+            <dl>
+              <% { image: selected_frame[:image], image_uuid: selected_frame[:image_uuid], address: selected_frame[:address], relative_address: selected_frame[:relative_address], file: selected_frame[:file], line: selected_frame[:line_number] }.compact.each do |key, value| %>
+                <div><dt><%= key.to_s.humanize %></dt><dd><code><%= value %></code></dd></div>
+              <% end %>
+            </dl>
+          </div>
+        <% end %>
+
         <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= stack_text %>">
-          <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy iOS stack trace"><%= app_icon(:clipboard, css: "w-3.5 h-3.5") %><span data-copy-target="buttonLabel">Copy</span></button>
+          <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy Apple diagnostic stack trace"><%= app_icon(:clipboard, css: "w-3.5 h-3.5") %><span data-copy-target="buttonLabel">Copy stack</span></button>
           <pre class="stacktrace" data-copy-target="source"><code><%= stack_text.presence || event.message %></code></pre>
         </div>
       </section>
+
+      <% if presenter.other_threads.any? %>
+        <details class="ios-thread-disclosure">
+          <summary>Other threads <span><%= presenter.other_threads.size %></span></summary>
+          <div class="ios-other-threads">
+            <% presenter.other_threads.each do |thread| %>
+              <section>
+                <h4><%= thread[:name] %></h4>
+                <ol>
+                  <% thread[:frames].each do |frame_data| %><li><code><%= presenter.frame_text(frame_data) %></code></li><% end %>
+                </ol>
+              </section>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+      <% if presenter.binary_images.any? %>
+        <details class="ios-thread-disclosure">
+          <summary>Binary images <span><%= presenter.binary_images.size %></span></summary>
+          <div class="ios-binary-images">
+            <% presenter.binary_images.each do |image| %>
+              <dl><% image.each do |key, value| %><div><dt><%= key.to_s.humanize %></dt><dd><code><%= value %></code></dd></div><% end %></dl>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
     </div>
   </div>
 </div>

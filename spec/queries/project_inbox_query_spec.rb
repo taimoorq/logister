@@ -27,6 +27,20 @@ RSpec.describe ProjectInboxQuery do
     expect(groups.map(&:id)).to eq([ hot.error_group_id, cold.error_group_id ])
   end
 
+  it "includes today in the displayed occurrence trend" do
+    current = grouped_android_event(
+      message: "Current failure",
+      release: "3.0.0+30",
+      mechanism: "handled_exception",
+      device: "Pixel",
+      occurred_at: Time.current
+    )
+
+    trend = described_class.new(project: project).group_trends([ current.error_group ], days: 7)
+
+    expect(trend.fetch(current.error_group_id)).to eq([ 0, 0, 0, 0, 0, 0, 1 ])
+  end
+
   it "uses a signed keyset cursor without repeating issues" do
     newest = grouped_android_event(message: "Newest", release: "3.0.0+30", mechanism: "handled_exception", device: "Pixel 9", fingerprint: "newest")
     older = grouped_android_event(message: "Older", release: "2.0.0+20", mechanism: "handled_exception", device: "Pixel 8", fingerprint: "older")
@@ -79,5 +93,43 @@ RSpec.describe ProjectInboxQuery do
 
     expect(query.groups(filter: "all", dimensions: { release: "2.0.0+50" }).map(&:title)).to contain_exactly("Build fifty")
     expect(query.groups(filter: "all", dimensions: { release: "1.0.0+10" }).map(&:title)).to contain_exactly("Build ten")
+  end
+
+  it "uses Apple diagnostic priority for the iOS recommended view" do
+    ios_project = create(:project, :ios)
+    ios_key = create(:api_key, project: ios_project, user: ios_project.user)
+    base = JSON.parse(Rails.root.join("spec/fixtures/files/ios_error_payload.json").read).fetch("context")
+    reported = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Recent report", fingerprint: "reported", context: base, occurred_at: Time.current)
+    watchdog_context = base.deep_dup
+    watchdog_context["error"]["mechanism"] = "watchdog_termination"
+    watchdog_context["diagnostic"]["kind"] = "watchdog_termination"
+    watchdog = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Older watchdog", fingerprint: "watchdog", context: watchdog_context, occurred_at: 1.hour.ago)
+    ErrorGroupingService.call(reported)
+    ErrorGroupingService.call(watchdog)
+
+    groups = described_class.new(project: ios_project).groups(filter: "all")
+
+    expect(groups.map(&:id)).to eq([ watchdog.error_group_id, reported.error_group_id ])
+  end
+
+  it "filters and searches materialized iOS source, channel, symbol, and platform fields" do
+    ios_project = create(:project, :ios)
+    ios_key = create(:api_key, project: ios_project, user: ios_project.user)
+    matching_context = JSON.parse(Rails.root.join("spec/fixtures/files/ios_error_payload.json").read).fetch("context")
+    matching_context["distribution"] = { "channel" => "testflight" }
+    matching = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Dynamic checkout failure", fingerprint: "ios-match", context: matching_context)
+    other_context = matching_context.deep_dup
+    other_context["diagnostic"]["source"] = "metrickit"
+    other_context["distribution"]["channel"] = "app_store"
+    other = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Other failure", fingerprint: "ios-other", context: other_context)
+    ErrorGroupingService.call(matching)
+    ErrorGroupingService.call(other)
+    query = described_class.new(project: ios_project)
+
+    expect(query.groups(
+      filter: "all",
+      query: "CheckoutViewModel.submit",
+      dimensions: { diagnostic_source: "sdk", distribution_channel: "testflight", apple_platform: "ios" }
+    ).map(&:id)).to eq([ matching.error_group_id ])
   end
 end

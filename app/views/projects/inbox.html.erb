@@ -45,13 +45,13 @@
 
       <% if experience.supports?(:mobile) %>
         <%= form_with url: inbox_project_path(@project), method: :get,
-                      class: "android-inbox-controls",
+                      class: "mobile-inbox-controls",
                       data: { turbo_frame: "project_inbox", turbo_action: "advance" } do |f| %>
           <%= f.hidden_field :filter, value: @filter %>
           <%= f.hidden_field :q, value: @query %>
           <%= f.hidden_field :assignee, value: @assignee_filter %>
 
-          <label class="android-control-field">
+          <label class="mobile-control-field">
             <span>Release</span>
             <%= f.select :release,
                          [["All releases", ""], *@profile_filter_options.fetch("release", []).map { |release| [release, release] }],
@@ -60,14 +60,14 @@
                          data: { action: "change->inbox#submitForm" } %>
           </label>
 
-          <label class="android-control-field">
+          <label class="mobile-control-field">
             <span>Sort</span>
             <%= f.select :sort, experience.sort_options, { selected: @sort }, class: "form-input", data: { action: "change->inbox#submitForm" } %>
           </label>
 
-          <details class="android-filter-drawer">
+          <details class="mobile-filter-drawer">
             <summary>Filters <span><%= @profile_filters.except("release").size %></span></summary>
-            <div class="android-filter-grid">
+            <div class="mobile-filter-grid">
               <% experience.filters.reject { |definition| definition.key == :release }.each do |definition| %>
                 <% values = definition.options.presence || @profile_filter_options.fetch(definition.key.to_s, []) %>
                 <label>
@@ -82,7 +82,7 @@
                   <% end %>
                 </label>
               <% end %>
-              <div class="android-filter-actions">
+              <div class="mobile-filter-actions">
                 <%= f.submit "Apply filters", class: "btn btn-primary" %>
                 <%= link_to "Clear mobile filters",
                             inbox_project_path(@project, filter: @filter, q: @query, assignee: @assignee_filter, sort: @sort),

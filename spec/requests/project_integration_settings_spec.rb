@@ -4,6 +4,7 @@ require "rails_helper"
 require "cgi"
 
 RSpec.describe "Project integration settings", type: :request do
+  include ActiveJob::TestHelper
   describe "PATCH /projects/:uuid/integration_setting" do
     it "updates an owned Cloudflare Pages project setting" do
       project = create(:project, :cloudflare_pages, user: users(:one))
@@ -128,6 +129,29 @@ RSpec.describe "Project integration settings", type: :request do
     end
   end
 
+  describe "POST /projects/:uuid/integration_setting/import" do
+    it "queues the source-specific App Store Connect importer" do
+      project = create(:project, :ios, user: users(:one))
+      setting = create(
+        :project_integration_setting,
+        project: project,
+        provider: "app_store_connect",
+        enabled: true,
+        external_project_id: "com.acme.shop",
+        account_id: "issuer-123",
+        external_project_name: "KEY123",
+        credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      )
+      sign_in users(:one)
+
+      expect do
+        post project_integration_setting_import_path(project, provider: "app_store_connect")
+      end.to have_enqueued_job(AppStoreConnectImportJob).with(setting.id)
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "app-store-connect-integration"))
+    end
+  end
+
   describe "GET /projects/:uuid/settings" do
     it "shows the Cloudflare Pages connection form for owned Cloudflare projects" do
       project = create(:project, :cloudflare_pages, user: users(:one))
@@ -174,7 +198,7 @@ RSpec.describe "Project integration settings", type: :request do
       get settings_project_path(project, section: "integrations")
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include("App Store Connect", "APP_STORE_CONNECT_PRIVATE_KEY", "dSYM coverage is not configured")
+      expect(response.body).to include("App Store Connect", "APP_STORE_CONNECT_PRIVATE_KEY", "dSYM coverage", "No dSYM artifacts uploaded", "No App Store metrics imported")
     end
   end
 end

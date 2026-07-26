@@ -134,6 +134,55 @@ ALTER SEQUENCE public.api_keys_id_seq OWNED BY public.api_keys.id;
 
 
 --
+-- Name: apple_symbol_artifacts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.apple_symbol_artifacts (
+    id bigint NOT NULL,
+    uuid character varying NOT NULL,
+    project_id bigint NOT NULL,
+    uploaded_by_id bigint,
+    app_identifier character varying NOT NULL,
+    version_name character varying,
+    version_code character varying NOT NULL,
+    release character varying,
+    binary_uuid character varying NOT NULL,
+    architecture character varying NOT NULL,
+    checksum_sha256 character varying NOT NULL,
+    byte_size bigint NOT NULL,
+    filename character varying NOT NULL,
+    content_type character varying,
+    storage_key character varying NOT NULL,
+    status character varying DEFAULT 'uploaded'::character varying NOT NULL,
+    processing_error text,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    processed_at timestamp(6) without time zone,
+    expires_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: apple_symbol_artifacts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.apple_symbol_artifacts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: apple_symbol_artifacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.apple_symbol_artifacts_id_seq OWNED BY public.apple_symbol_artifacts.id;
+
+
+--
 -- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1811,6 +1860,13 @@ ALTER TABLE ONLY public.api_keys ALTER COLUMN id SET DEFAULT nextval('public.api
 
 
 --
+-- Name: apple_symbol_artifacts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apple_symbol_artifacts ALTER COLUMN id SET DEFAULT nextval('public.apple_symbol_artifacts_id_seq'::regclass);
+
+
+--
 -- Name: check_in_monitors id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2013,6 +2069,14 @@ ALTER TABLE ONLY public.android_mapping_files
 
 ALTER TABLE ONLY public.api_keys
     ADD CONSTRAINT api_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: apple_symbol_artifacts apple_symbol_artifacts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apple_symbol_artifacts
+    ADD CONSTRAINT apple_symbol_artifacts_pkey PRIMARY KEY (id);
 
 
 --
@@ -2418,6 +2482,27 @@ CREATE INDEX idx_api_keys_project_created_at ON public.api_keys USING btree (pro
 --
 
 CREATE INDEX idx_api_keys_project_updated_at ON public.api_keys USING btree (project_id, updated_at DESC);
+
+
+--
+-- Name: idx_apple_symbols_build_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_apple_symbols_build_status ON public.apple_symbol_artifacts USING btree (project_id, version_code, status);
+
+
+--
+-- Name: idx_apple_symbols_identity_checksum; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_apple_symbols_identity_checksum ON public.apple_symbol_artifacts USING btree (project_id, binary_uuid, architecture, checksum_sha256);
+
+
+--
+-- Name: idx_apple_symbols_status_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_apple_symbols_status_created ON public.apple_symbol_artifacts USING btree (project_id, status, created_at);
 
 
 --
@@ -3153,6 +3238,27 @@ CREATE INDEX index_api_keys_on_user_id ON public.api_keys USING btree (user_id);
 --
 
 CREATE UNIQUE INDEX index_api_keys_on_uuid ON public.api_keys USING btree (uuid);
+
+
+--
+-- Name: index_apple_symbol_artifacts_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_apple_symbol_artifacts_on_project_id ON public.apple_symbol_artifacts USING btree (project_id);
+
+
+--
+-- Name: index_apple_symbol_artifacts_on_uploaded_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_apple_symbol_artifacts_on_uploaded_by_id ON public.apple_symbol_artifacts USING btree (uploaded_by_id);
+
+
+--
+-- Name: index_apple_symbol_artifacts_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_apple_symbol_artifacts_on_uuid ON public.apple_symbol_artifacts USING btree (uuid);
 
 
 --
@@ -10197,6 +10303,14 @@ ALTER TABLE public.ingest_events
 
 
 --
+-- Name: apple_symbol_artifacts fk_rails_01cd0f3d1e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apple_symbol_artifacts
+    ADD CONSTRAINT fk_rails_01cd0f3d1e FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
 -- Name: instance_setting_changes fk_rails_03b8207dda; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10429,6 +10543,14 @@ ALTER TABLE ONLY public.project_memberships
 
 
 --
+-- Name: apple_symbol_artifacts fk_rails_8d97b5a7f9; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.apple_symbol_artifacts
+    ADD CONSTRAINT fk_rails_8d97b5a7f9 FOREIGN KEY (uploaded_by_id) REFERENCES public.users(id);
+
+
+--
 -- Name: error_group_external_links fk_rails_8e4514ec2a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10603,6 +10725,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260726174000'),
 ('20260726173000'),
 ('20260726170000'),
 ('20260725120000'),

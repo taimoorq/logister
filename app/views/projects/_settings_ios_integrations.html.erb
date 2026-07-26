@@ -1,12 +1,20 @@
+<% reporting = @app_store_connect_integration_setting.metadata.to_h["reporting"].to_h %>
+<% import_error = @app_store_connect_integration_setting.metadata.to_h["last_error"].to_h %>
+<% import_fresh = @app_store_connect_integration_setting.last_imported_at.present? && @app_store_connect_integration_setting.last_imported_at >= 7.days.ago %>
+
 <article class="settings-panel lg:col-span-2" id="app-store-connect-integration">
   <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
     <div>
-      <p class="dashboard-kicker">Apple distribution</p>
+      <p class="dashboard-kicker">Apple distribution source</p>
       <h2 class="text-base font-bold text-slate-900 mb-2">App Store Connect</h2>
-      <p class="text-slate-600 text-sm">Register least-privilege App Store Connect API credentials for future release, TestFlight, and diagnostics imports. iOS issue rendering works without this optional connection.</p>
+      <p class="text-slate-600 text-sm">Import Apple power and performance aggregates for the configured app every 15 minutes, with a manual sync available below. Store reports remain separate from SDK and MetricKit event counts because availability, delay, sampling, and denominators differ.</p>
     </div>
-    <% if @app_store_connect_integration_setting.configured? %>
-      <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">Configured</span>
+    <% if import_error.present? %>
+      <span class="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-800">Sync failed</span>
+    <% elsif import_fresh %>
+      <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">Current</span>
+    <% elsif @app_store_connect_integration_setting.configured? %>
+      <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800"><%= @app_store_connect_integration_setting.last_imported_at? ? "Stale" : "Ready to sync" %></span>
     <% else %>
       <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">Not configured</span>
     <% end %>
@@ -19,7 +27,7 @@
     <%= form.hidden_field :provider, value: ProjectIntegrationSetting::PROVIDERS[:app_store_connect] %>
     <label class="flex items-start gap-3">
       <%= form.check_box :enabled, class: "form-checkbox mt-1", disabled: !@project_manager %>
-      <span><span class="block text-sm font-semibold text-slate-900">Enable App Store Connect</span><span class="block text-sm text-slate-600">Credentials stay in the host secret store; Logister saves references only.</span></span>
+      <span><span class="block text-sm font-semibold text-slate-900">Enable App Store Connect reporting</span><span class="block text-sm text-slate-600">Credentials stay in the host secret store; Logister saves references only.</span></span>
     </label>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div><%= form.label :external_project_id, "Bundle identifier", class: "form-label" %><%= form.text_field :external_project_id, placeholder: "com.acme.shop", class: "form-input", disabled: !@project_manager %></div>
@@ -30,8 +38,75 @@
     <% if @project_manager %><div class="flex justify-end"><%= form.submit "Save App Store Connect settings", class: "btn btn-primary" %></div><% end %>
   <% end %>
 
-  <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-    <strong class="block text-sm text-slate-900">Import boundary</strong>
-    <p class="mt-1 text-sm text-slate-600">This release records and validates the provider boundary but does not start App Store imports. Symbols remain exactly as reported by the SDK; address-only frames say that dSYM coverage is not configured.</p>
+  <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4" aria-label="App Store Connect sync health">
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><span class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Source</span><strong class="mt-1 block text-sm text-slate-900">Store aggregate</strong></div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><span class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Last success</span><strong class="mt-1 block text-sm text-slate-900"><%= @app_store_connect_integration_setting.last_imported_at? ? local_time_tag(@app_store_connect_integration_setting.last_imported_at, format: :long) : "Never" %></strong></div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><span class="block text-xs font-semibold uppercase tracking-wide text-slate-500">App</span><strong class="mt-1 block text-sm text-slate-900"><%= reporting.dig("app", "name").presence || reporting.dig("app", "bundle_id").presence || "Not resolved" %></strong></div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><span class="block text-xs font-semibold uppercase tracking-wide text-slate-500">Report</span><strong class="mt-1 block text-sm text-slate-900"><%= reporting["metrics"].present? ? "Available" : "No metrics imported" %></strong></div>
+  </div>
+
+  <% if import_error.present? %>
+    <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4" role="alert"><strong class="block text-sm text-red-800">Last sync failed</strong><p class="mt-1 text-sm text-red-800"><%= import_error["message"] %></p></div>
+  <% elsif reporting.present? %>
+    <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4"><strong class="block text-sm text-blue-900">Freshness and provenance</strong><p class="mt-1 text-sm text-blue-900"><%= reporting["freshness_note"] %> These values are not added to SDK events or crash-free metrics.</p></div>
+  <% else %>
+    <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4"><strong class="block text-sm text-slate-900">No App Store metrics imported</strong><p class="mt-1 text-sm text-slate-600">Save valid credentials, then run the first sync. Apple may return no report until the app has sufficient opted-in production usage.</p></div>
+  <% end %>
+
+  <% if @project_manager && @app_store_connect_integration_setting.persisted? %>
+    <div class="mt-4 flex justify-end">
+      <%= button_to "Sync App Store metrics",
+                    project_integration_setting_import_path(@project, provider: "app_store_connect"),
+                    method: :post,
+                    class: "btn btn-ghost",
+                    disabled: !@app_store_connect_integration_setting.configured? %>
+    </div>
+  <% end %>
+</article>
+
+<article class="settings-panel lg:col-span-2" id="apple-symbols">
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <p class="dashboard-kicker">Private build artifacts</p>
+      <h2 class="text-base font-bold text-slate-900 mb-2">dSYM coverage</h2>
+      <p class="text-slate-600 text-sm">Upload a zipped dSYM with its binary UUID and architecture. Archives use the configured private archive-storage service; raw files never receive a public URL.</p>
+    </div>
+    <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600"><%= pluralize(@apple_symbol_artifacts.size, "artifact") %></span>
+  </div>
+
+  <% if @project_manager %>
+    <%= form_with model: [@project, @apple_symbol_artifact], multipart: true, class: "mt-5 grid grid-cols-1 gap-4 md:grid-cols-3" do |form| %>
+      <div><%= form.label :app_identifier, "Bundle identifier", class: "form-label" %><%= form.text_field :app_identifier, placeholder: "com.acme.shop", class: "form-input", required: true %></div>
+      <div><%= form.label :version_name, "Version", class: "form-label" %><%= form.text_field :version_name, placeholder: "4.2.0", class: "form-input" %></div>
+      <div><%= form.label :version_code, "Build", class: "form-label" %><%= form.text_field :version_code, placeholder: "310", class: "form-input", required: true %></div>
+      <div class="md:col-span-2"><%= form.label :binary_uuid, "Binary UUID", class: "form-label" %><%= form.text_field :binary_uuid, placeholder: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE", class: "form-input", required: true %></div>
+      <div><%= form.label :architecture, "Architecture", class: "form-label" %><%= form.select :architecture, AppleSymbolArtifact::ARCHITECTURES.map { |value| [value, value] }, {}, class: "form-input" %></div>
+      <div class="md:col-span-2"><%= form.label :upload, "Zipped dSYM", class: "form-label" %><%= form.file_field :upload, accept: ".zip,application/zip", class: "form-input", required: true %><p class="mt-1 text-xs text-slate-500">Maximum <%= AppleSymbolArtifact::MAX_BYTES / 1.megabyte %> MB. Upload immediately after archive/export so UUIDs stay tied to the exact build.</p></div>
+      <div class="flex items-end justify-end"><%= form.submit "Upload dSYM", class: "btn btn-primary" %></div>
+    <% end %>
+  <% end %>
+
+  <div class="mt-5 space-y-3">
+    <% if @apple_symbol_artifacts.any? %>
+      <% @apple_symbol_artifacts.each do |artifact| %>
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2"><strong class="text-sm text-slate-900"><%= artifact.filename %></strong><span class="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-700"><%= artifact.status.humanize %></span></div>
+              <p class="mt-1 text-xs text-slate-600"><code><%= artifact.binary_uuid %></code> · <%= artifact.architecture %> · build <%= artifact.version_code %> · <%= number_to_human_size(artifact.byte_size) %></p>
+              <% if artifact.processing_error.present? %><p class="mt-2 text-xs text-slate-600"><%= artifact.processing_error %></p><% end %>
+            </div>
+            <% if @project_manager %>
+              <div class="flex shrink-0 gap-2">
+                <% if artifact.processable? %><%= button_to "Retry verification", process_artifact_project_apple_symbol_artifact_path(@project, artifact), method: :post, class: "btn btn-ghost" %><% end %>
+                <%= button_to "Remove", project_apple_symbol_artifact_path(@project, artifact), method: :delete, class: "btn btn-ghost", data: { turbo_confirm: "Remove this private dSYM archive?" } %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-4"><strong class="block text-sm text-slate-900">No dSYM artifacts uploaded</strong><p class="mt-1 text-sm text-slate-600">SDK reports with callable symbols remain readable. Address-only production frames show explicit missing/unknown coverage until an exact UUID and architecture match is ready.</p></div>
+    <% end %>
   </div>
 </article>

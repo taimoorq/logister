@@ -1,27 +1,9 @@
 <% tour_group = "project-setup" %>
+<% experience = project_experience(@project) %>
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
 
 <%= render "projects/header", tour_group: tour_group %>
-
-<% setup_steps = [
-  [ "API key", :key, @setup_active_api_key_count.positive?, @project.managed_by?(current_user) ? "Create a token for the app." : "Ask an admin for a token." ],
-  [ "First event", :events, @setup_has_events, "Send one error, log, metric, or transaction." ],
-  [ "Source repo", :source_code, @setup_has_source_repository, "Connect GitHub for source-aware frames." ],
-  [ "Deployments", :deployments, @setup_has_deployments, "Record deploys from CI/CD." ]
-] %>
-<% if @project.integration_android? %>
-  <% setup_steps = [
-    [ "Mobile token", :key, @setup_has_mobile_token, @project.managed_by?(current_user) ? "Issue a short-lived mobile ingest token." : "Ask an admin to configure the token issuer." ],
-    [ "First event", :events, @setup_has_events, "Send an Android event from the app." ],
-    [ "Release/build", :deployments, @setup_has_release_metadata, "Capture version name and version code." ],
-    [ "Sessions", :account, @setup_android_sdk["session_tracking"] == true, "Enable lifecycle session tracking when consent permits." ],
-    [ "Automatic handler", :warning, @setup_android_sdk["automatic_crash_capture"] == true, "Enable the uncaught-exception handler if appropriate." ],
-    [ "Source repo", :source_code, @setup_has_source_repository, "Connect GitHub for source-aware frames." ],
-    [ "R8 mapping", :source_code, @setup_has_mapping, "Upload mapping.txt for the current release build." ],
-    [ "Google Play", :external, @setup_has_google_play, "Connect Play reporting for store-side vitals." ]
-  ] %>
-<% end %>
 
 <section class="settings-page">
   <%= render "projects/settings_nav" %>
@@ -32,7 +14,7 @@
       <div>
         <p class="dashboard-kicker">Setup</p>
         <h2 class="text-lg font-bold text-slate-900">Connect this project</h2>
-        <p class="mt-1 text-sm text-slate-600">Start with a token, send one event, then add source and release context when the basics are flowing.</p>
+        <p class="mt-1 text-sm text-slate-600"><%= experience.setup_intro %></p>
       </div>
       <%= link_to project_integration_docs_label(@project),
                   project_integration_docs_path(@project),
@@ -42,7 +24,8 @@
     </div>
 
     <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
-      <% setup_steps.each do |label, icon, complete, detail| %>
+      <% @setup_steps.each do |step| %>
+        <% label, icon, complete, detail = step.label, step.icon, step.complete, step.detail %>
         <div class="rounded-lg border <%= complete ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50' %> p-4">
           <div class="flex items-start justify-between gap-3">
             <div class="flex min-w-0 items-center gap-2">

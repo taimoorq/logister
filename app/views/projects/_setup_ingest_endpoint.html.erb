@@ -43,14 +43,5 @@
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">span_id</code>, and
         <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800">duration_ms</code>.
       </p>
-      <pre class="<%= project_setup_code_block_class %>"><code>{
-  "event": {
-    "event_type": "error",
-    "level": "error",
-    "message": "NoMethodError in CheckoutService",
-    "fingerprint": "checkout-nomethoderror",
-    "occurred_at": "2026-02-14T12:00:00Z",
-    "context": { "environment": "production" }
-  }
-}</code></pre>
+      <pre class="<%= project_setup_code_block_class %>"><code><%= JSON.pretty_generate(project_experience(@project).setup_ingest_example) %></code></pre>
     </article>

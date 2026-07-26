@@ -33,7 +33,9 @@
               <% last_seen_words = time_ago_in_words(group.last_seen_at) %>
               <% trend_points = group_trends.fetch(group.id) { group.trend } %>
               <% trend_total = trend_points.sum %>
-              <% trend_tooltip = "7 day trend: #{trend_points.join(", ")} occurrences. #{trend_total} total in the last 7 days." %>
+              <% trend_window = local_assigns.fetch(:profile_filters, {}).to_h.stringify_keys["time_range"].presence || "7d" %>
+              <% trend_window_label = { "24h" => "24 hour", "7d" => "7 day", "30d" => "30 day", "90d" => "90 day", "all" => "all-time" }.fetch(trend_window, "#{trend_points.size} day") %>
+              <% trend_tooltip = "#{trend_window_label} trend: #{trend_points.join(", ")} occurrences. #{trend_total} total in this window." %>
               <% stage = group.stage.presence || "production" %>
               <% severity = group.severity.presence || "error" %>
               <% row_presenter = ProjectInbox::RowPresenter.new(project: project, group: group, event: latest_event, trend: trend_points, impact: impact_summaries[group.id]) %>
@@ -73,12 +75,12 @@
                   <% end %>
                   <div class="error-meta-row">
                     <% if row_presenter.mobile? %>
-                      <span class="android-row-signals" aria-label="Issue signals: <%= row_presenter.signal_labels.join(', ') %>">
+                      <span class="mobile-row-signals" aria-label="Issue signals: <%= row_presenter.signal_labels.join(', ') %>">
                         <% row_presenter.signal_labels.each do |label| %><strong><%= label %></strong><% end %>
                       </span>
                       <% if row_presenter.impact_label.present? %><span class="error-meta-chip"><strong><%= row_presenter.impact_label %></strong></span><% end %>
                       <% if row_presenter.culprit.present? %>
-                        <span class="android-row-culprit"><%= row_presenter.culprit %></span>
+                        <span class="mobile-row-culprit"><%= row_presenter.culprit %></span>
                       <% end %>
                     <% end %>
                     <span class="error-meta-chip"

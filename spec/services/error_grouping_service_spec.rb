@@ -206,6 +206,44 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(described_class.call(first)).not_to eq(described_class.call(second))
     end
 
+    it "groups iOS reports by stable application symbols instead of dynamic messages and line data" do
+      ios_project = create(:project, :ios)
+      ios_key = create(:api_key, project: ios_project, user: ios_project.user)
+      context = JSON.parse(Rails.root.join("spec/fixtures/files/ios_error_payload.json").read).fetch("context")
+      first = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Order 123 failed", context: context)
+      changed = context.deep_dup
+      changed["exception"]["message"] = "Order 987 failed"
+      changed["exception"]["threads"][0]["frames"][0]["line"] = 999
+      changed["exception"]["threads"][0]["frames"][0]["symbol"] = "CheckoutViewModel.submit(_:) + 140"
+      second = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Order 987 failed", context: changed)
+
+      first_group = described_class.call(first)
+      second_group = described_class.call(second)
+
+      expect(second_group).to eq(first_group)
+      expect(first_group.reload.grouping_algorithm_version).to eq(IosErrorGroupingEvidence::VERSION)
+      expect(first_group.grouping_evidence).to include(
+        "mechanism" => "handled_exception",
+        "exception_type" => "CheckoutError",
+        "top_in_app_symbol" => "CheckoutViewModel.submit(_:)"
+      )
+    end
+
+    it "keeps an iOS group stable when matching UUID-relative frames gain symbols" do
+      ios_project = create(:project, :ios)
+      ios_key = create(:api_key, project: ios_project, user: ios_project.user)
+      context = JSON.parse(Rails.root.join("spec/fixtures/files/ios_error_payload.json").read).fetch("context")
+      frame = context["exception"]["threads"][0]["frames"][0]
+      frame.merge!("image_uuid" => "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE", "relative_address" => "0x1290")
+      frame.delete("symbol")
+      first = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Unresolved frame", context: context)
+      enriched = context.deep_dup
+      enriched["exception"]["threads"][0]["frames"][0]["symbol"] = "CheckoutViewModel.submit(_:)"
+      second = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Symbolicated frame", context: enriched)
+
+      expect(described_class.call(second)).to eq(described_class.call(first))
+    end
+
     it "materializes mobile occurrence impact dimensions idempotently" do
       android_project = create(:project, :android)
       android_key = create(:api_key, project: android_project, user: android_project.user)

@@ -26,13 +26,22 @@ class ProjectIntegrationSettingsController < ApplicationController
   end
 
   def import
-    setting = @project.integration_settings.find_by!(provider: ProjectIntegrationSetting::PROVIDERS[:google_play])
-    if setting.configured?
-      GooglePlayImportJob.perform_later(setting.id)
-      redirect_to settings_project_path(@project, section: "integrations", anchor: "google-play-integration"), notice: "Google Play import queued."
-    else
-      redirect_to settings_project_path(@project, section: "integrations", anchor: "google-play-integration"), alert: "Configure the package and credential reference before importing."
+    provider = params[:provider].to_s.presence_in(%w[google_play app_store_connect]) || "google_play"
+    setting = @project.integration_settings.find_by!(provider: provider)
+    anchor = provider == "app_store_connect" ? "app-store-connect-integration" : "google-play-integration"
+    label = provider == "app_store_connect" ? "App Store Connect" : "Google Play"
+
+    unless setting.configured?
+      redirect_to settings_project_path(@project, section: "integrations", anchor: anchor), alert: "Configure #{label} credentials before importing."
+      return
     end
+
+    if provider == "app_store_connect"
+      AppStoreConnectImportJob.perform_later(setting.id)
+    else
+      GooglePlayImportJob.perform_later(setting.id)
+    end
+    redirect_to settings_project_path(@project, section: "integrations", anchor: anchor), notice: "#{label} import queued."
   end
 
   private

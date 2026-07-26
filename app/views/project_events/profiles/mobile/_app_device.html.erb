@@ -5,6 +5,10 @@
   "Operating system" => presenter.os_details,
   "Correlation & completeness" => presenter.correlation_details
 } %>
+<% if experience.key == :ios %>
+  <% sections["Diagnostic source"] = presenter.diagnostic_details.merge(symbolication: presenter.symbolication_label) %>
+  <% sections["Termination"] = presenter.termination_details if presenter.termination_details.any? %>
+<% end %>
 
 <div class="mobile-context-grid">
   <% sections.each do |title, details| %>
@@ -25,3 +29,18 @@
     </section>
   <% end %>
 </div>
+
+<% if experience.supports?(:mobile) %>
+  <% missing = [] %>
+  <% missing << "Sessions are not collected, so affected-session and crash-free-session metrics are unavailable." if presenter.correlation_details[:session].blank? %>
+  <% missing << "Installation identity is not collected, so affected-installation metrics are unavailable." if presenter.correlation_details[:installation].blank? %>
+  <% missing << "No breadcrumbs were captured for this occurrence." if presenter.respond_to?(:breadcrumbs) && presenter.breadcrumbs.empty? %>
+  <% if missing.any? %>
+    <section class="mobile-context-section mt-4" aria-labelledby="telemetry-completeness-title">
+      <h3 id="telemetry-completeness-title">Telemetry completeness</h3>
+      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
+        <% missing.each do |message| %><li><%= message %></li><% end %>
+      </ul>
+    </section>
+  <% end %>
+<% end %>

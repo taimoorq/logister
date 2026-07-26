@@ -9,8 +9,11 @@ class ProjectInboxQuery
 
   MECHANISM_PRIORITY_SQL = <<~SQL.squish.freeze
     MAX(CASE error_occurrences.mechanism
-      WHEN 'anr' THEN 5 WHEN 'native_crash' THEN 4 WHEN 'unhandled_exception' THEN 3
-      WHEN 'low_memory_kill' THEN 2 WHEN 'handled_exception' THEN 1 ELSE 0 END)
+      WHEN 'watchdog_termination' THEN 7 WHEN 'hang' THEN 6 WHEN 'anr' THEN 6
+      WHEN 'native_crash' THEN 5 WHEN 'unhandled_exception' THEN 5
+      WHEN 'memory_termination' THEN 4 WHEN 'low_memory_kill' THEN 4
+      WHEN 'launch_failure' THEN 3 WHEN 'disk_write_exception' THEN 2
+      WHEN 'handled_exception' THEN 1 ELSE 0 END)
   SQL
   VELOCITY_SQL = <<~SQL.squish.freeze
     (COUNT(error_occurrences.id) FILTER (
@@ -70,7 +73,7 @@ class ProjectInboxQuery
       scope = apply_assignee(scope, normalized_assignee)
       scope = apply_query(scope, normalized_query) if normalized_query.present?
       scope = apply_dimensions(scope, normalized_dimensions)
-      scope = apply_sort(scope, normalized_sort)
+      scope = apply_sort(scope, normalized_sort, normalized_dimensions)
       scope = apply_cursor(scope, normalized_sort, cursor_values) if cursor_values
       ranked_groups = select_cursor_values(scope, normalized_sort).limit(page_size + 1).to_a
       has_more = ranked_groups.size > page_size
@@ -114,7 +117,7 @@ class ProjectInboxQuery
     ]
 
     cache_fetch(key, expires_in: 20.seconds) do
-      start_date = days.days.ago.to_date
+      start_date = (days - 1).days.ago.to_date
       dates = (0...days).map { |offset| start_date + offset }
       trends = group_ids.index_with { Array.new(days, 0) }
 
@@ -212,8 +215,11 @@ class ProjectInboxQuery
 
   def apply_query(scope, query)
     term = "%#{ActiveRecord::Base.sanitize_sql_like(query.downcase)}%"
+    dimension_matches = ErrorOccurrence.where(error_group_id: scope.select(:id))
+                                       .where("LOWER(error_occurrences.dimensions::text) LIKE ?", term)
+                                       .select(:error_group_id)
     scope.where(
-      "LOWER(title) LIKE :term OR LOWER(COALESCE(subtitle,'')) LIKE :term OR LOWER(fingerprint) LIKE :term OR LOWER(stage) LIKE :term",
+      "LOWER(title) LIKE :term OR LOWER(COALESCE(subtitle,'')) LIKE :term OR LOWER(fingerprint) LIKE :term OR LOWER(stage) LIKE :term OR error_groups.id IN (#{dimension_matches.to_sql})",
       term: term
     )
   end
@@ -250,17 +256,15 @@ class ProjectInboxQuery
     sort.to_s.presence_in(allowed) || profile.default_sort
   end
 
-  def apply_sort(scope, sort)
+  def apply_sort(scope, sort, dimensions = {})
     return scope.recent_first unless ErrorOccurrence.column_names.include?("installation_hash")
 
     case sort
     when "impact"
-      scope.left_joins(:error_occurrences)
-           .group("error_groups.id")
+      join_scoped_occurrences(scope, dimensions).group("error_groups.id")
            .order(Arel.sql("COUNT(DISTINCT error_occurrences.installation_hash) DESC NULLS LAST, error_groups.last_seen_at DESC, error_groups.id DESC"))
     when "recommended"
-      scope.left_joins(:error_occurrences)
-           .group("error_groups.id")
+      join_scoped_occurrences(scope, dimensions).group("error_groups.id")
            .order(Arel.sql(<<~SQL.squish))
              #{MECHANISM_PRIORITY_SQL} DESC,
              error_groups.regression_count DESC,
@@ -269,12 +273,27 @@ class ProjectInboxQuery
              error_groups.id DESC
            SQL
     when "velocity"
-      scope.left_joins(:error_occurrences)
-           .group("error_groups.id")
+      join_scoped_occurrences(scope, dimensions).group("error_groups.id")
            .order(Arel.sql("#{VELOCITY_SQL} DESC, error_groups.last_seen_at DESC, error_groups.id DESC"))
     else
       scope.recent_first
     end
+  end
+
+  def join_scoped_occurrences(scope, dimensions)
+    since = time_range_since(dimensions["time_range"])
+    return scope.left_joins(:error_occurrences) unless since
+
+    join = ActiveRecord::Base.sanitize_sql_array([
+      "LEFT JOIN error_occurrences ON error_occurrences.error_group_id = error_groups.id AND error_occurrences.occurred_at >= ?",
+      since
+    ])
+    scope.joins(join)
+  end
+
+  def time_range_since(value)
+    duration = { "24h" => 24.hours, "7d" => 7.days, "30d" => 30.days, "90d" => 90.days }[value]
+    duration&.ago
   end
 
   def select_cursor_values(scope, sort)

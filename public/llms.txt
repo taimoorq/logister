@@ -80,7 +80,7 @@ Canonical documentation lives at the public docs URL:
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.2` or `docker.io/taimoorq/logister:v3.2`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.3` or `docker.io/taimoorq/logister:v3.3`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://logister.org/docs/self-hosting/#docker
 - Persistent admin onboarding, UI/environment precedence, and optional add-ons: https://logister.org/docs/self-hosting/onboarding/
@@ -133,10 +133,11 @@ Canonical documentation lives at the public docs URL:
 - Logister CLI docs: https://logister.org/docs/cli/
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
 - Android source: https://github.com/taimoorq/logister-android
-- Android coordinates: `org.logister:logister-android:0.1.3`
+- Android coordinates: `org.logister:logister-android:0.2.0`
 - Android projects use a stability inbox with failure/release/device filters, impact completeness, private release-scoped R8 mappings, and an optional provenance-separated Google Play reporting import.
 - Swift Package Manager source: https://github.com/taimoorq/logister-ios.git
-- iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
+- iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.2.0
+- iOS projects use an Apple diagnostics inbox with handled-report, crash, hang, termination, release/device, triggered-thread, and symbol-coverage evidence. The Swift SDK emits privacy-filtered Apple context and supports opt-in replay-safe MetricKit delivery; private dSYMs and provenance-separated App Store Connect health are managed under project integrations.
 - Cloudflare Pages integration docs: https://logister.org/docs/integrations/cloudflare-pages/
 - Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.
 

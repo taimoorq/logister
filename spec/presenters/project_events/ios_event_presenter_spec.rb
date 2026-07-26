@@ -10,7 +10,11 @@ RSpec.describe ProjectEvents::IosEventPresenter do
 
   it "reads Apple symbols and canonical mobile context" do
     expect(presenter.exception_type).to eq("CheckoutError")
-    expect(presenter.mechanism_label).to eq("Reported exception")
+    expect(presenter.mechanism_label).to eq("Reported error")
+    expect(presenter.diagnostic_source_label).to eq("Logister SDK")
+    expect(presenter.fatal?).to be(false)
+    expect(presenter.symbolication_label).to eq("Symbols included")
+    expect(presenter.triggered_thread).to include(name: "Reporting thread", triggered: true)
     expect(presenter.top_in_app_frame).to include(
       image: "AcmeShop",
       method_name: "CheckoutViewModel.submit(_:)",

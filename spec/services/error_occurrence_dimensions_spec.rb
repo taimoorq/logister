@@ -44,4 +44,24 @@ RSpec.describe ErrorOccurrenceDimensions do
     expect(attributes.values_at(:session_hash, :installation_hash, :user_hash)).to all(match(/\A[0-9a-f]{64}\z/))
     expect(attributes.to_json).not_to include("session-raw", "sdk-pseudonym", "user-raw")
   end
+
+
+  it "materializes searchable Apple diagnostic and cohort dimensions" do
+    ios_project = create(:project, :ios)
+    payload = JSON.parse(Rails.root.join("spec/fixtures/files/ios_error_payload.json").read)
+    ios_event = build(:ingest_event, project: ios_project, context: payload.fetch("context"))
+
+    dimensions = described_class.new(ios_event).attributes.fetch(:dimensions)
+
+    expect(dimensions).to include(
+      "app_identifier" => "com.acme.shop",
+      "apple_platform" => "ios",
+      "architecture" => "arm64",
+      "diagnostic_source" => "sdk",
+      "diagnostic_kind" => "reported_error",
+      "symbolication_status" => "not_required",
+      "exception_type" => "CheckoutError",
+      "culprit" => "CheckoutViewModel.submit(_:)"
+    )
+  end
 end

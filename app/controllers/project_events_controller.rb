@@ -17,8 +17,8 @@ class ProjectEventsController < ApplicationController
     @groups        = @inbox_page.groups
     @next_cursor   = @inbox_page.next_cursor
     @latest_events = inbox_latest_events(@groups)
-    @group_trends  = inbox_group_trends(@project, @groups)
-    @impact_summaries = inbox_impact_summaries(@project, @groups)
+    @group_trends  = inbox_group_trends(@project, @groups, profile_filters: @profile_filters)
+    @impact_summaries = inbox_impact_summaries(@project, @groups, profile_filters: @profile_filters)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
     @selected_uuid = params[:group_uuid]
 

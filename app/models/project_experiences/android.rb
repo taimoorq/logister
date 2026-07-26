@@ -78,6 +78,23 @@ module ProjectExperiences
       ProjectEvents::AndroidEventPresenter.new(event)
     end
 
+    def setup_intro
+      "Verify mobile authentication and one real app event, then add release, session, mapping, and Google Play evidence as your monitoring matures."
+    end
+
+    def setup_steps(status:, manager:)
+      [
+        setup_step(:mobile_token, "Mobile token", :key, status[:mobile_token], manager ? "Issue a short-lived mobile ingest token." : "Ask an admin to configure the token issuer."),
+        setup_step(:first_event, "First event", :events, status[:has_events], "Send an Android event from the app."),
+        setup_step(:release, "Release/build", :deployments, status[:release_metadata], "Capture version name and version code."),
+        setup_step(:sessions, "Sessions", :account, status[:sessions], "Enable lifecycle session tracking when consent permits."),
+        setup_step(:automatic_handler, "Automatic handler", :warning, status[:automatic_capture], "Enable the uncaught-exception handler if appropriate."),
+        setup_step(:source_repo, "Source repo", :source_code, status[:source_repository], "Connect GitHub for source-aware frames."),
+        setup_step(:mapping, "R8 mapping", :source_code, status[:android_mapping], "Upload mapping.txt for the current release build."),
+        setup_step(:google_play, "Google Play", :external, status[:google_play], "Connect Play reporting for store-side vitals.")
+      ]
+    end
+
     private
 
     def google_play_setting

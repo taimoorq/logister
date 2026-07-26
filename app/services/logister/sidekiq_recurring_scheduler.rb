@@ -6,7 +6,8 @@ module Logister
       ProjectErrorDigestSchedulerJob,
       ProjectRetentionSweepJob,
       ProjectMonitorSweepJob,
-      ProjectHealthNotificationSweepJob
+      ProjectHealthNotificationSweepJob,
+      AppStoreConnectImportSweepJob
     ].freeze
 
     def self.install!(now = Time.current)

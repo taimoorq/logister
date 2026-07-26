@@ -71,7 +71,7 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.2` or `docker.io/taimoorq/logister:v3.2`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.3` or `docker.io/taimoorq/logister:v3.3`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, and optional ClickHouse
 - Production setup order: provision PostgreSQL and a Rails web process, set the bootstrap secrets from `.env.sample`, run `./bin/release`, claim `/setup`, remove the setup token, configure and verify Redis plus a registered Sidekiq process under Admin → Installation, complete onboarding, and then add optional services.
@@ -116,10 +116,11 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - Logister CLI docs: https://logister.org/docs/cli/
 - Android SDK source: https://github.com/taimoorq/logister-android
 - Android SDK package: https://central.sonatype.com/artifact/org.logister/logister-android
-- Android Maven coordinates: `org.logister:logister-android:0.1.3`
+- Android Maven coordinates: `org.logister:logister-android:0.2.0`
 - Android projects use a stability inbox with failure/release/device filters, impact completeness, release-scoped R8 mappings, and an optional provenance-separated Google Play reporting import.
 - iOS SDK source and Swift Package Manager URL: https://github.com/taimoorq/logister-ios.git
-- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.1.3
+- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.2.0
+- iOS projects use an Apple diagnostics inbox with handled-report, crash, hang, termination, release/device, triggered-thread, and symbol-coverage evidence. The Swift SDK emits privacy-filtered Apple context and supports opt-in replay-safe MetricKit delivery; private dSYMs and provenance-separated App Store Connect health are managed under project integrations.
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://logister.org/docs/integrations/cfml/
 - Cloudflare Pages projects can send manual HTTP telemetry today and store importer settings for a future Rails-side Cloudflare API fetcher. Start at https://logister.org/docs/integrations/cloudflare-pages/.
 - Manual / HTTP API projects are for custom clients, scripts, workers, unsupported runtimes, direct JSON reporters, and CI/CD deployment records. Send `repository`, `commit_sha`, `branch`, `release`, and `environment` on events; POST `/api/v1/deployments` when CI knows the exact deployed commit.

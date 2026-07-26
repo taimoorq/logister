@@ -3,17 +3,24 @@
   "message": "CheckoutViewModel.submit(_:): The operation could not be completed",
   "context": {
     "platform": "ios",
+    "apple_platform": "ios",
     "telemetry_schema_version": 2,
     "release": "com.acme.shop@4.2.0+310",
+    "diagnostic": {
+      "source": "sdk",
+      "kind": "reported_error"
+    },
     "app": {
-      "package_name": "com.acme.shop",
+      "identifier": "com.acme.shop",
       "version_name": "4.2.0",
       "version_code": "310",
+      "process": "AcmeShop",
       "screen": "CheckoutView"
     },
     "device": {
       "model": "iPhone17,1",
       "family": "iPhone",
+      "architecture": "arm64",
       "locale": "en_US"
     },
     "os": {
@@ -22,16 +29,57 @@
     },
     "error": {
       "mechanism": "handled_exception",
-      "handled": true
+      "handled": true,
+      "fatal": false
     },
+    "symbolication": { "status": "not_required" },
     "session": { "id": "session-ios-1" },
     "installation": { "id_hash": "installation-ios-1" },
     "exception": {
       "type": "CheckoutError",
       "message": "The operation could not be completed",
       "stacktrace": [
-        "0 AcmeShop 0x00000001004a1290 CheckoutViewModel.submit(_:) + 84",
-        "1 UIKitCore 0x0000000181045ab0 -[UIApplication sendAction:to:from:forEvent:] + 96"
+        {
+          "index": 0,
+          "raw": "0 AcmeShop 0x00000001004a1290 CheckoutViewModel.submit(_:) + 84",
+          "image": "AcmeShop",
+          "address": "0x00000001004a1290",
+          "symbol": "CheckoutViewModel.submit(_:) + 84",
+          "application_frame": true
+        },
+        {
+          "index": 1,
+          "raw": "1 UIKitCore 0x0000000181045ab0 -[UIApplication sendAction:to:from:forEvent:] + 96",
+          "image": "UIKitCore",
+          "address": "0x0000000181045ab0",
+          "symbol": "-[UIApplication sendAction:to:from:forEvent:] + 96",
+          "application_frame": false
+        }
+      ],
+      "threads": [
+        {
+          "id": "reporting-thread",
+          "name": "Reporting thread",
+          "triggered": true,
+          "frames": [
+            {
+              "index": 0,
+              "raw": "0 AcmeShop 0x00000001004a1290 CheckoutViewModel.submit(_:) + 84",
+              "image": "AcmeShop",
+              "address": "0x00000001004a1290",
+              "symbol": "CheckoutViewModel.submit(_:) + 84",
+              "application_frame": true
+            },
+            {
+              "index": 1,
+              "raw": "1 UIKitCore 0x0000000181045ab0 -[UIApplication sendAction:to:from:forEvent:] + 96",
+              "image": "UIKitCore",
+              "address": "0x0000000181045ab0",
+              "symbol": "-[UIApplication sendAction:to:from:forEvent:] + 96",
+              "application_frame": false
+            }
+          ]
+        }
       ]
     },
     "breadcrumbs": [

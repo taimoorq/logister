@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: 3.2
+  version: 3.3
   summary: Send application telemetry and scheduled-work check-ins to Logister.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
@@ -56,8 +56,8 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.2"
-                    api_contract_version: "3.2"
+                    server_version: "3.3"
+                    api_contract_version: "3.3"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "0.1.2"
@@ -421,7 +421,9 @@ paths:
         Accepts an `event` envelope. Use this endpoint for errors, logs,
         custom metrics, transactions, spans, and check-ins when you want the
         full event shape. Uppercase `EVENT` envelopes are also accepted for
-        runtimes that serialize keys that way.
+        runtimes that serialize keys that way. A client-supplied event `uuid`
+        is an idempotency key within the project: a retry returns the original
+        accepted event without creating another occurrence.
       requestBody:
         required: true
         content:
@@ -515,6 +517,17 @@ paths:
                       environment: production
                       release: "2026.05.23"
       responses:
+        "200":
+          description: A client UUID was already accepted; the existing event is returned idempotently.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedEventResponse"
+              example:
+                id: 018fe6a8-d40e-7c50-a283-e989feadbeef
+                legacy_id: 123
+                status: accepted
+                duplicate: true
         "201":
           description: Event or span accepted.
           headers:
@@ -1248,6 +1261,14 @@ components:
       required:
         - event_type
       properties:
+        uuid:
+          type: string
+          format: uuid
+          description: Optional client idempotency key. Reusing it in the same project returns the original event without increasing occurrence counts.
+        event_id:
+          type: string
+          format: uuid
+          description: Alias for `uuid`.
         event_type:
           type: string
           enum:
@@ -1691,6 +1712,9 @@ components:
         status:
           type: string
           const: accepted
+        duplicate:
+          type: boolean
+          description: True when a client UUID matched an event accepted earlier.
     AcceptedSpanResponse:
       allOf:
         - $ref: "#/components/schemas/AcceptedEventResponse"

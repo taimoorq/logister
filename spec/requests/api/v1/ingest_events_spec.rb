@@ -54,6 +54,39 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(created.context.dig("metadata", "feature_flags", 0) || created.context.dig(:metadata, :feature_flags, 0)).to eq("new-checkout")
     end
 
+    it "accepts a client UUID idempotently without inflating error impact" do
+      client_uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+      payload = valid_payload.deep_merge(event: { uuid: client_uuid })
+
+      expect do
+        post api_v1_ingest_events_path, params: payload, as: :json, headers: auth_headers
+      end.to change(IngestEvent, :count).by(1)
+
+      expect(response).to have_http_status(:created)
+      event = IngestEvent.find_by!(uuid: client_uuid)
+      group = event.error_group
+      expect(group.occurrence_count).to eq(1)
+
+      expect do
+        post api_v1_ingest_events_path, params: payload, as: :json, headers: auth_headers
+      end.not_to change(IngestEvent, :count)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("id" => client_uuid, "status" => "accepted", "duplicate" => true)
+      expect(group.reload.occurrence_count).to eq(1)
+    end
+
+    it "rejects a malformed client UUID without reaching PostgreSQL UUID lookup" do
+      payload = valid_payload.deep_merge(event: { uuid: "not-a-uuid" })
+
+      expect do
+        post api_v1_ingest_events_path, params: payload, as: :json, headers: auth_headers
+      end.not_to change(IngestEvent, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body.fetch("errors")).to include("Uuid is invalid")
+    end
+
     it "rejects unauthorized token" do
       post api_v1_ingest_events_path,
            params: { event: { event_type: "error", message: "NoMethodError", occurred_at: Time.current.iso8601 } },

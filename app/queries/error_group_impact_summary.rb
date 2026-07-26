@@ -74,7 +74,8 @@ class ErrorGroupImpactSummary
   private
 
   def scope
-    ErrorOccurrence.where(error_group_id: group_ids).where("occurred_at >= ?", since)
+    value = ErrorOccurrence.where(error_group_id: group_ids)
+    since ? value.where("occurred_at >= ?", since) : value
   end
 
   def aggregate_rows

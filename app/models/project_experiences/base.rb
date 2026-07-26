@@ -6,6 +6,7 @@ module ProjectExperiences
   class Base
     DetailSection = Data.define(:key, :label, :partial)
     FilterDefinition = Data.define(:key, :label, :kind, :options)
+    SetupStep = Data.define(:key, :label, :icon, :complete, :detail)
 
     DETAIL_PARTIALS = {
       context: "project_events/profiles/shared/context",
@@ -118,10 +119,40 @@ module ProjectExperiences
       nil
     end
 
+    def setup_intro
+      "Start with a token, send one event, then add source and release context when the basics are flowing."
+    end
+
+    def setup_steps(status:, manager:)
+      [
+        setup_step(:api_key, "API key", :key, status[:active_api_key], manager ? "Create a token for the app." : "Ask an admin for a token."),
+        setup_step(:first_event, "First event", :events, status[:has_events], "Send one error, log, metric, or transaction."),
+        setup_step(:source_repo, "Source repo", :source_code, status[:source_repository], "Connect GitHub for source-aware frames."),
+        setup_step(:deployments, "Deployments", :deployments, status[:deployments], "Record deploys from CI/CD.")
+      ]
+    end
+
+    def setup_ingest_example
+      {
+        event: {
+          event_type: "error",
+          level: "error",
+          message: "NoMethodError in CheckoutService",
+          fingerprint: "checkout-nomethoderror",
+          occurred_at: "2026-02-14T12:00:00Z",
+          context: { environment: "production" }
+        }
+      }
+    end
+
     private
 
     def section(key, label)
       DetailSection.new(key: key, label: label, partial: DETAIL_PARTIALS.fetch(key))
+    end
+
+    def setup_step(key, label, icon, complete, detail)
+      SetupStep.new(key: key, label: label, icon: icon, complete: !!complete, detail: detail)
     end
   end
 end

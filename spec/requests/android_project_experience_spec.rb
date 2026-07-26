@@ -40,7 +40,7 @@ RSpec.describe "Android project experience", type: :request do
       "App & device",
       "Raw"
     ])
-    expect(document.at_css(".android-mechanism-badge").text).to include("Reported exception")
+    expect(document.at_css(".mobile-mechanism-badge").text).to include("Reported exception")
     expect(document.text).to include(
       "java.lang.IllegalStateException",
       "com.acme.shop.checkout.CartRepository.save",

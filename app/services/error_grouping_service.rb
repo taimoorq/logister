@@ -57,7 +57,7 @@ class ErrorGroupingService
   private
 
   def derive_fingerprint
-    @grouping_evidence = android_grouping_evidence if @project.integration_android?
+    @grouping_evidence = grouping_evidence
 
     @event.fingerprint.presence ||
       @grouping_evidence&.fingerprint.presence ||
@@ -92,7 +92,7 @@ class ErrorGroupingService
         occurrence_count: 1
       )
       if @grouping_evidence&.usable?
-        group.grouping_algorithm_version = AndroidErrorGroupingEvidence::VERSION
+        group.grouping_algorithm_version = @grouping_evidence.class::VERSION
         group.grouping_evidence = @grouping_evidence.evidence
       end
       group.save!
@@ -120,6 +120,13 @@ class ErrorGroupingService
 
   def android_grouping_evidence
     AndroidErrorGroupingEvidence.new(@event)
+  end
+
+  def grouping_evidence
+    return android_grouping_evidence if @project.integration_android?
+    return IosErrorGroupingEvidence.new(@event) if @project.integration_ios?
+
+    nil
   end
 
   def occurrence_dimensions

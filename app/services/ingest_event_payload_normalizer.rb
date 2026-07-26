@@ -16,7 +16,8 @@ class IngestEventPayloadNormalizer
   end
 
   def event_params(event_hash)
-    safe = event_hash.slice("event_type", "level", "message", "fingerprint", "occurred_at")
+    safe = event_hash.slice("uuid", "event_type", "level", "message", "fingerprint", "occurred_at")
+    safe["uuid"] ||= event_hash["event_id"]
     raw_context = event_hash["context"] || {}
     safe["context"] = normalize_context_hash(raw_context)
     normalize_event_payload(safe, event_hash)

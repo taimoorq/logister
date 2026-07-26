@@ -52,7 +52,7 @@ module ProjectInbox
 
       app = event_presenter.app_details
       version = [ app[:version_name], app[:version_code].presence && "(#{app[:version_code]})" ].compact.join(" ")
-      [ version.presence, app[:track] ].compact_blank.join(" · ").presence
+      [ version.presence, app[:track] || app[:distribution_channel] ].compact_blank.join(" · ").presence
     end
 
     def cohort_label

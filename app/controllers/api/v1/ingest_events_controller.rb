@@ -16,11 +16,13 @@ class Api::V1::IngestEventsController < ApplicationController
       context: attrs["context"]
     )
 
-    event = @api_key.project.ingest_events.new(attrs)
-    event.api_key = @api_key
-    event.occurred_at ||= Time.current
+    result = IngestEventPersistence.new(project: @api_key.project, api_key: @api_key, attributes: attrs).call
+    event = result.event
 
-    if event.save
+    if result.duplicate?
+      touch_client_submission_credential!
+      render json: { id: event.uuid, legacy_id: event.id, status: "accepted", duplicate: true }, status: :ok
+    elsif event.persisted?
       ProjectDeploymentIndexer.from_event(event)
       ErrorGroupingService.call(event)
       CheckInMonitor.record!(project: @api_key.project, event: event) if event.check_in?

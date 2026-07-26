@@ -56,4 +56,33 @@ RSpec.describe MobileTelemetryNormalizer do
     expect(context.fetch("session")).to include("id" => "session-ios-1")
     expect(context.fetch("error")).to include("mechanism" => "handled_exception", "handled" => true)
   end
+
+  it "normalizes Apple v2 provenance, platform, channel, symbol, and legacy OS aliases" do
+    context = described_class.normalize(
+      "platform" => "ios",
+      "apple_platform" => "macos",
+      "ios_version" => "26.0",
+      "app" => { "identifier" => "com.acme.mac", "process" => "AcmeMac" },
+      "device" => { "architecture" => "arm64" },
+      "distribution" => { "channel" => "testflight" },
+      "diagnostic" => { "source" => "metrickit", "kind" => "hang" },
+      "symbolication" => { "status" => "missing" },
+      "idfv" => "never-store",
+      "nested" => {
+        "identifierForVendor" => "never-store-either",
+        "Advertising-Identifier" => "never-store-in-any-style"
+      }
+    )
+
+    expect(context.fetch("apple_platform")).to eq("macos")
+    expect(context.fetch("app")).to include("identifier" => "com.acme.mac", "package_name" => "com.acme.mac", "process" => "AcmeMac")
+    expect(context.fetch("os")).to include("version" => "26.0")
+    expect(context.fetch("distribution")).to include("channel" => "testflight")
+    expect(context.fetch("error")).to include("mechanism" => "hang")
+    expect(context.fetch("diagnostic")).to include("source" => "metrickit", "kind" => "hang")
+    expect(context.fetch("symbolication")).to include("status" => "missing")
+    expect(context).not_to have_key("idfv")
+    expect(context.fetch("nested")).not_to have_key("identifierForVendor")
+    expect(context.fetch("nested")).not_to have_key("Advertising-Identifier")
+  end
 end

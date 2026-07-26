@@ -45,7 +45,11 @@
           </span>
           <% if experience.supports?(:mobile) %>
             <% mobile_presenter = event_presenter(project, event, exception_data) %>
-            <span class="android-mechanism-badge mechanism-<%= mobile_presenter.mechanism %>"><%= mobile_presenter.mechanism_label %></span>
+            <span class="mobile-mechanism-badge mechanism-<%= mobile_presenter.mechanism %>"><%= mobile_presenter.mechanism_label %></span>
+            <% if experience.key == :ios %>
+              <span class="ios-source-badge"><%= mobile_presenter.diagnostic_source_label %></span>
+              <span class="ios-source-badge"><%= mobile_presenter.symbolication_label %></span>
+            <% end %>
           <% end %>
           <h2 class="detail-title"><%= detail_title %></h2>
         </div>
@@ -219,15 +223,17 @@
     <% app = mobile_presenter.app_details %>
     <% device = mobile_presenter.device_details %>
     <% os = mobile_presenter.os_details %>
-    <section class="android-impact-strip" aria-label="<%= experience.key.to_s.upcase_first %> issue context">
+    <% impact_window = inbox_profile_query_params(project)["time_range"].presence || "30d" %>
+    <% impact_window_label = { "24h" => "24 hours", "7d" => "7 days", "30d" => "30 days", "90d" => "90 days", "all" => "all time" }.fetch(impact_window, "30 days") %>
+    <section class="mobile-impact-strip" aria-label="<%= experience.key.to_s.upcase_first %> issue context">
       <% if impact_summary&.installations&.available? %><div><strong><%= number_with_delimiter(impact_summary.installations.value) %></strong><span>affected installations</span></div><% end %>
       <% if impact_summary&.sessions&.available? %><div><strong><%= number_with_delimiter(impact_summary.sessions.value) %></strong><span>affected sessions</span></div><% end %>
-      <div><strong><%= number_with_delimiter(impact_summary&.events || group&.occurrence_count || 1) %></strong><span>events in 30 days</span></div>
+      <div><strong><%= number_with_delimiter(impact_summary&.events || group&.occurrence_count || 1) %></strong><span>events in <%= impact_window_label %></span></div>
       <div><strong><%= [app[:version_name], app[:version_code].presence && "(#{app[:version_code]})"].compact.join(" ").presence || "Not captured" %></strong><span>latest app version</span></div>
       <div><strong><%= device[:model].presence || "Not captured" %></strong><span>device</span></div>
       <div><strong><%= [os[:version].presence && "#{os[:name].presence || experience.key.to_s.upcase_first} #{os[:version]}", os[:api_level].presence && "API #{os[:api_level]}"].compact.join(" · ").presence || "Not captured" %></strong><span>operating system</span></div>
       <% unless impact_summary&.installations&.available? && impact_summary&.sessions&.available? %>
-        <div class="android-impact-incomplete"><strong>Not collected</strong><span><%= [(!impact_summary&.installations&.available? && "installation ID"), (!impact_summary&.sessions&.available? && "session ID")].compact.join(" · ") %></span></div>
+        <div class="mobile-impact-incomplete"><strong>Not collected</strong><span><%= [(!impact_summary&.installations&.available? && "installation ID"), (!impact_summary&.sessions&.available? && "session ID")].compact.join(" · ") %></span></div>
       <% end %>
     </section>
   <% end %>

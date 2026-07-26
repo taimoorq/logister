@@ -18,7 +18,7 @@ module ProjectsControllerData
     @groups = @inbox_page.groups
     @next_cursor = @inbox_page.next_cursor
     @latest_events = inbox_latest_events(@groups)
-    @impact_summaries = inbox_impact_summaries(@project, @groups)
+    @impact_summaries = inbox_impact_summaries(@project, @groups, profile_filters: @profile_filters)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
 
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
@@ -27,7 +27,7 @@ module ProjectsControllerData
         project:       @project,
         groups:        @groups,
         latest_events: @latest_events,
-        group_trends:  inbox_group_trends(@project, @groups),
+        group_trends:  inbox_group_trends(@project, @groups, profile_filters: @profile_filters),
         impact_summaries: @impact_summaries,
         has_activity_events: @has_activity_events,
         selected_uuid: @selected_uuid,
@@ -41,7 +41,7 @@ module ProjectsControllerData
     end
 
     @counts  = inbox_counts(@project, assignee: @assignee_filter, viewer: current_user)
-    @group_trends = inbox_group_trends(@project, @groups)
+    @group_trends = inbox_group_trends(@project, @groups, profile_filters: @profile_filters)
     @selected_group = selected_inbox_group
     @selected_event = selected_inbox_event
     @selected_event = nil if selected_event_mismatches_group?

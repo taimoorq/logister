@@ -3,9 +3,10 @@
 class MobileTelemetryNormalizer
   MAX_BREADCRUMBS = 100
   MAX_FEATURE_FLAGS = 50
-  SENSITIVE_KEYS = %w[
-    advertising_id advertisingId android_id androidId device_serial deviceSerial
-    hardware_serial hardwareSerial imei meid serial subscriber_id subscriberId
+  SENSITIVE_KEY_IDENTITIES = %w[
+    advertisingid advertisingidentifier androidid deviceserial hardwareid
+    hardwareserial imei meid serial serialnumber subscriberid idfa idfv
+    identifierforvendor
   ].freeze
 
   class << self
@@ -28,6 +29,7 @@ class MobileTelemetryNormalizer
       context["telemetry_schema_version"] = positive_integer(context["telemetry_schema_version"]) || 1
 
       merge_object!(context, "app", {
+        "identifier" => first(context.dig("app", "identifier"), context.dig("app", "package_name"), context["package_name"], context["service"]),
         "package_name" => first(context.dig("app", "package_name"), context["package_name"], context["service"]),
         "version_name" => first(context.dig("app", "version_name"), context["app_version"]),
         "version_code" => first(context.dig("app", "version_code"), context["build_number"]),
@@ -73,30 +75,52 @@ class MobileTelemetryNormalizer
     def normalize_ios!(context)
       context["platform"] = "ios"
       context["telemetry_schema_version"] = positive_integer(context["telemetry_schema_version"]) || 1
+      context["apple_platform"] = first(context["apple_platform"], context["apple_os"], "ios").to_s.downcase
       merge_object!(context, "app", {
-        "package_name" => first(context.dig("app", "package_name"), context["bundle_identifier"], context["service"]),
+        "identifier" => first(context.dig("app", "identifier"), context.dig("app", "package_name"), context["bundle_identifier"], context["service"]),
+        "package_name" => first(context.dig("app", "package_name"), context.dig("app", "identifier"), context["bundle_identifier"], context["service"]),
         "version_name" => first(context.dig("app", "version_name"), context["app_version"]),
         "version_code" => first(context.dig("app", "version_code"), context["build_number"]),
+        "process" => first(context.dig("app", "process"), context["process_name"]),
         "screen" => first(context.dig("app", "screen"), context["screen_name"]),
         "in_foreground" => boolean(context.dig("app", "in_foreground"), context["in_foreground"])
       })
       merge_object!(context, "device", {
         "model" => first(context.dig("device", "model"), context["device_model"]),
         "family" => first(context.dig("device", "family"), context["device_family"]),
+        "architecture" => first(context.dig("device", "architecture"), context["architecture"], context["cpu_architecture"]),
         "locale" => first(context.dig("device", "locale"), context["locale"])
       })
       merge_object!(context, "os", {
         "name" => first(context.dig("os", "name"), context["os_name"], "iOS"),
-        "version" => first(context.dig("os", "version"), context["os_version"])
+        "version" => first(context.dig("os", "version"), context["ios_version"], context["os_version"]),
+        "build" => first(context.dig("os", "build"), context["os_build"])
+      })
+      merge_object!(context, "distribution", {
+        "channel" => first(context.dig("distribution", "channel"), context.dig("distribution", "track"), context["distribution_channel"], context["distribution_track"])
       })
       merge_object!(context, "session", { "id" => first(context.dig("session", "id"), context["session_id"]) })
       merge_object!(context, "installation", { "id_hash" => first(context.dig("installation", "id_hash"), context["installation_id_hash"]) })
 
       exception_present = context["exception"].is_a?(Hash)
+      mechanism = first(context.dig("error", "mechanism"), context["error_mechanism"], mechanism_for_diagnostic_kind(context.dig("diagnostic", "kind")), exception_present ? "handled_exception" : nil)
       merge_object!(context, "error", {
-        "mechanism" => first(context.dig("error", "mechanism"), context["error_mechanism"], exception_present ? "handled_exception" : nil),
+        "mechanism" => mechanism,
         "handled" => boolean(context.dig("error", "handled"), context["handled"], exception_present ? true : nil),
+        "fatal" => boolean(context.dig("error", "fatal"), context["fatal"]),
         "user_perceived" => boolean(context.dig("error", "user_perceived"), context["user_perceived"])
+      })
+      merge_object!(context, "diagnostic", {
+        "source" => first(context.dig("diagnostic", "source"), context["diagnostic_source"]),
+        "kind" => first(context.dig("diagnostic", "kind"), context["diagnostic_kind"]),
+        "external_id" => first(context.dig("diagnostic", "external_id"), context["diagnostic_external_id"]),
+        "signature" => first(context.dig("diagnostic", "signature"), context["diagnostic_signature"]),
+        "occurred_at" => first(context.dig("diagnostic", "occurred_at"), context["diagnostic_occurred_at"])
+      })
+      merge_object!(context, "symbolication", {
+        "status" => first(context.dig("symbolication", "status"), context["symbolication_status"]),
+        "artifact_id" => first(context.dig("symbolication", "artifact_id"), context["symbol_artifact_id"]),
+        "missing_uuids" => first(context.dig("symbolication", "missing_uuids"), context["missing_symbol_uuids"])
       })
 
       context["breadcrumbs"] = normalize_breadcrumbs(context["breadcrumbs"])
@@ -130,7 +154,7 @@ class MobileTelemetryNormalizer
     def strip_sensitive_keys!(value)
       case value
       when Hash
-        SENSITIVE_KEYS.each { |key| value.delete(key) }
+        value.delete_if { |key, _nested| SENSITIVE_KEY_IDENTITIES.include?(key.to_s.downcase.gsub(/[^a-z0-9]/, "")) }
         value.each_value { |nested| strip_sensitive_keys!(nested) }
       when Array
         value.each { |nested| strip_sensitive_keys!(nested) }
@@ -152,6 +176,19 @@ class MobileTelemetryNormalizer
     def positive_integer(value)
       integer = Integer(value, exception: false)
       integer if integer.to_i.positive?
+    end
+
+    def mechanism_for_diagnostic_kind(kind)
+      {
+        "reported_error" => "handled_exception",
+        "crash" => "native_crash",
+        "hang" => "hang",
+        "watchdog" => "watchdog_termination",
+        "watchdog_termination" => "watchdog_termination",
+        "memory_termination" => "memory_termination",
+        "disk_write_exception" => "disk_write_exception",
+        "launch_failure" => "launch_failure"
+      }[kind.to_s]
     end
   end
 end
