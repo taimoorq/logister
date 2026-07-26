@@ -25,7 +25,7 @@
       <% active = archive_catalog_scope.to_s == scope.to_s %>
       <%= link_to label,
                   settings_project_path(project, section: "data", archive_path: "catalog", archive_scope: scope, archive_status: archive_catalog_status, anchor: "archive-center"),
-                  class: "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}",
+                  class: "settings-filter-pill",
                   aria: { current: ("page" if active) } %>
     <% end %>
   </div>
@@ -35,7 +35,7 @@
       <% active = archive_catalog_status.to_s == status.to_s %>
       <%= link_to label,
                   settings_project_path(project, section: "data", archive_path: "catalog", archive_scope: archive_catalog_scope, archive_status: status, anchor: "archive-center"),
-                  class: "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}",
+                  class: "settings-filter-pill",
                   aria: { current: ("page" if active) } %>
     <% end %>
   </div>

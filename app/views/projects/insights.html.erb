@@ -65,6 +65,10 @@
         <%= app_icon(:chart, css: "w-4 h-4") %>
         <span>Refresh</span>
       </button>
+      <%= render "projects/feature_settings_action",
+                 label: "Telemetry setup",
+                 path: setup_project_path(@project),
+                 description: "Configure the telemetry that powers insights" %>
     </div>
   </div>
 

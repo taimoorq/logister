@@ -55,6 +55,26 @@ RSpec.describe InstanceConfiguration::Diagnostics, type: :model do
     expect(client).to have_received(:select_rows!).with(a_string_including("uniqExact(event_id)"))
   end
 
+  it "tells an operator to finish the read cutover when dual-write coverage passes" do
+    values = InstanceConfiguration.values_for(
+      "clickhouse",
+      overrides: { "clickhouse.mode" => "dual_write", "clickhouse.url" => "https://clickhouse.example" }
+    )
+    client = instance_double(
+      Logister::ClickhouseClient,
+      schema_status: { ready: true, healthy: true, database: "logister", missing_tables: [], schema_issues: [] },
+      events_table_name: "logister.events_raw"
+    )
+    allow(client).to receive(:select_rows!).and_return([ { "count" => 1 } ])
+    allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
+    create(:ingest_event, occurred_at: 1.hour.ago)
+
+    result = described_class.call("clickhouse", values: values)
+
+    expect(result).to be_success
+    expect(result.summary).to include("Switch to read preferred", "dashboard reads off PostgreSQL")
+  end
+
   it "rejects nonpositive public API limits" do
     values = InstanceConfiguration.values_for(
       "authentication",

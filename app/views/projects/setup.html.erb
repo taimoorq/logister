@@ -11,8 +11,10 @@
   [ "Deployments", :deployments, @setup_has_deployments, "Record deploys from CI/CD." ]
 ] %>
 
-<section class="space-y-6">
-  <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
+<section class="settings-page">
+  <%= render "projects/settings_nav" %>
+
+  <section class="settings-panel"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :checklist)) %>>
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div>

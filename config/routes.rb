@@ -93,6 +93,7 @@ Rails.application.routes.draw do
       get :monitors, to: "project_monitors#show"
       get :deployments, to: "project_deployments#index"
       get :activity, to: "project_activity#show"
+      get :archives, to: "project_archives#show"
     end
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :update, :destroy ], param: :uuid

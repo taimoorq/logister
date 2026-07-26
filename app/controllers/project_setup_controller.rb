@@ -7,6 +7,7 @@ class ProjectSetupController < ApplicationController
 
   def show
     load_project_settings_context(include: :setup)
+    @settings_section = "setup"
     @setup_active_api_key_count = @api_keys.count(&:active?)
     @setup_has_events = @project.ingest_events.exists?
     @setup_has_deployments = @project.deployments.exists?

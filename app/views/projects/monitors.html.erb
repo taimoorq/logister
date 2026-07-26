@@ -9,10 +9,16 @@
            <%= tag.attributes(data: product_tour_step_data(tour_group, :status)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
       <h2 class="text-lg font-bold text-slate-900">Cron and uptime monitors</h2>
-      <p class="text-slate-500 text-sm">
-        <%= @missed_check_ins_count %> missed.
-        <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
-      </p>
+      <div class="flex flex-col items-start gap-2 sm:items-end">
+        <p class="text-slate-500 text-sm">
+          <%= @missed_check_ins_count %> missed.
+          <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
+        </p>
+        <%= render "projects/feature_settings_action",
+                   label: "Monitor alerts",
+                   path: settings_project_path(@project, section: "notifications", notification_path: "health", anchor: "monitor-alerts"),
+                   description: "Configure missed and recovered monitor notifications" %>
+      </div>
     </div>
     <% if @check_in_monitors.any? %>
       <%= responsive_scroll_region do %>

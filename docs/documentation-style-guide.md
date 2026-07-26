@@ -158,6 +158,7 @@ Troubleshooting pages should be symptom-driven:
 - Missing email
 - Worker not processing jobs
 - ClickHouse not ready
+- ClickHouse healthy but overview graphs still slow because the read mode remains on dual write
 - Archive export missing
 
 For each symptom, list the likely cause, the specific check, and the page that contains the full reference.

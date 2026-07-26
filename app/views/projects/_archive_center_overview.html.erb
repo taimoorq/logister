@@ -109,7 +109,7 @@
         </span>
       <% end %>
 
-      <%= link_to settings_project_path(project, section: "data", archive_path: "search_archives", anchor: "archive-center"),
+      <%= link_to archives_project_path(project),
                   class: "rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-700 no-underline hover:bg-white" do %>
         <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
           <%= app_icon(:search, css: "h-4 w-4") %>

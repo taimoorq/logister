@@ -73,7 +73,7 @@ RSpec.describe "Project retention policies", type: :request do
       expect(response.body).to include("Review coverage")
       expect(response.body).to include("View catalog")
       expect(response.body).to include("Search archives")
-      expect(response.body).to include("archive_path=search_archives")
+      expect(response.body).to include(archives_project_path(project))
       expect(response.body).to include("Archive retained data")
       expect(response.body).to include("Require archive before deletion")
     end
@@ -138,7 +138,7 @@ RSpec.describe "Project retention policies", type: :request do
       expect(response.body).to include("storage unavailable")
     end
 
-    it "searches hot telemetry and candidate archive runs on the Search Archives path" do
+    it "searches hot telemetry and candidate archive runs outside settings" do
       project = projects(:one)
       setup_archive_center_state(project)
       event = create(
@@ -159,10 +159,8 @@ RSpec.describe "Project retention policies", type: :request do
       )
       sign_in users(:one)
 
-      get settings_project_path(
+      get archives_project_path(
         project,
-        section: "data",
-        archive_path: "search_archives",
         archive_search: {
           q: "Checkout",
           request_id: "req-archive-1"
@@ -170,12 +168,34 @@ RSpec.describe "Project retention policies", type: :request do
       )
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include("Search Archives")
+      expect(response.body).to include("Search telemetry and archives")
       expect(response.body).to include("Hot event matches")
       expect(response.body).to include("Hot span matches")
       expect(response.body).to include("Candidate archive runs")
       expect(response.body).to include(event.message)
       expect(response.body).to include("GET /checkout")
+      expect(response.body).to include("Archive settings")
+      expect(response.body).to include(settings_project_path(project, section: "data"))
+    end
+
+    it "redirects the former settings search path to Archive search" do
+      project = projects(:one)
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "data", archive_path: "search_archives")
+
+      expect(response).to redirect_to(archives_project_path(project))
+    end
+
+    it "lets project viewers search archives without exposing archive settings" do
+      project = projects(:one)
+      sign_in users(:two)
+
+      get archives_project_path(project)
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("Search telemetry and archives")
+      expect(response.body).not_to include("Archive settings")
     end
   end
 

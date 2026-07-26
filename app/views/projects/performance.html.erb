@@ -15,7 +15,13 @@
           <%= @project.integration_label %> integration.
         </p>
       </div>
-      <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+      <div class="flex flex-wrap items-center gap-2">
+        <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+        <%= render "projects/feature_settings_action",
+                   label: "Performance alerts",
+                   path: settings_project_path(@project, section: "notifications", notification_path: "health", anchor: "performance-alerts"),
+                   description: "Configure project performance alert thresholds" %>
+      </div>
     </div>
   </section>
 

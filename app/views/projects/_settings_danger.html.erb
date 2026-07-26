@@ -1,4 +1,4 @@
-      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+      <article class="settings-panel settings-panel-danger lg:col-span-2"
                <%= tag.attributes(data: product_tour_step_data(tour_group, :lifecycle)) %>>
         <h2 class="text-base font-bold text-slate-900 mb-2">Project lifecycle</h2>
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -35,7 +35,7 @@
             <%= button_to "Delete project",
                           project_path(@project),
                           method: :delete,
-                          class: "btn-ghost text-red-700 border-red-300 hover:bg-red-100",
+                          class: "btn-ghost border-red-700 text-red-700 hover:bg-red-100",
                           form: { data: { turbo_confirm: "Delete this project permanently?" } } %>
           </div>
         </div>

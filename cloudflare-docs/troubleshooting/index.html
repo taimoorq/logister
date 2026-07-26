@@ -247,19 +247,13 @@
 
             <section id="clickhouse" class="section">
               <p class="eyebrow">ClickHouse</p>
-              <h2>Only debug ClickHouse after PostgreSQL ingestion works.</h2>
-              <p>
-                ClickHouse is optional. PostgreSQL remains the durable system of record. If events are accepted but ClickHouse-backed analytics are missing, keep <code>dual_write</code> active and verify the connection, schema, worker, idempotent backfill, and coverage check under <strong>Admin → Installation → ClickHouse</strong> before selecting <code>read_preferred</code>.
-              </p>
+              <h2>Separate ClickHouse health from the active dashboard read mode.</h2>
+              <p>ClickHouse is optional, and PostgreSQL remains the durable system of record. A healthy ClickHouse connection does not prove supported dashboard reads moved away from PostgreSQL.</p>
               <div class="output-block">
                 <div class="output-head"><span class="output-label">Readiness endpoint</span></div>
                 <pre><code>GET /health/clickhouse</code></pre>
               </div>
-              <ul>
-                <li>If ClickHouse is disabled, the endpoint should not be treated as a production failure.</li>
-                <li>If the endpoint reports missing tables, load the schema from <code>docs/clickhouse_schema.sql</code>.</li>
-                <li>If writes are failing, check worker logs and the ClickHouse connection variables in the deployment guide.</li>
-              </ul>
+              <table><thead><tr><th>Symptom</th><th>Likely cause and check</th></tr></thead><tbody><tr><td>Overview graphs take tens of seconds or minutes while the health endpoint returns <code>200</code>.</td><td>Inspect <code>clickhouse_mode</code> in the response. <code>dual_write</code> intentionally keeps supported dashboard reads on PostgreSQL. Pass the stable-window coverage check, then switch to <code>read_preferred</code>.</td></tr><tr><td>The mode stays on <code>dual_write</code> after changing the admin setting.</td><td>Check the environment override named beside the field. <code>LOGISTER_CLICKHOUSE_ENABLED=true</code> is a legacy dual-write-only setting. Remove it or replace it with <code>LOGISTER_CLICKHOUSE_MODE=read_preferred</code>, then restart web and worker processes.</td></tr><tr><td>The mode is <code>read_preferred</code>, but a graph request is still slow.</td><td>Look for <code>clickhouse dashboard explorer failed</code> or <code>clickhouse dashboard rollup failed</code> in web logs. A failed ClickHouse query falls back to PostgreSQL, which can be slow at high event volume. Fix reachability, credentials, schema, or query errors before retrying.</td></tr><tr><td>The endpoint reports missing tables or schema issues.</td><td>Run the idempotent schema repair or load <code>docs/clickhouse_schema.sql</code>, then rerun the health and coverage checks.</td></tr><tr><td>ClickHouse receives no new events.</td><td>Check Sidekiq, worker credentials, and retry logs. The web process accepts PostgreSQL events before the queued ClickHouse copy is written.</td></tr></tbody></table>
             </section>
 
             <section id="archives" class="section">

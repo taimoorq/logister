@@ -3,7 +3,7 @@ module ProjectSettingsContext
 
   NOTIFICATION_PATHS = %w[overview errors health workflow reports delivery operations].freeze
   DEFAULT_NOTIFICATION_PATH = "overview"
-  ARCHIVE_PATHS = %w[overview coverage catalog search_archives].freeze
+  ARCHIVE_PATHS = %w[overview coverage catalog].freeze
   DEFAULT_ARCHIVE_PATH = "overview"
 
   private
@@ -122,15 +122,9 @@ module ProjectSettingsContext
                        )
                        .recent_first
                        .limit(50)
-    @archive_investigation_search = ProjectArchiveInvestigationSearch.new(
-      project: @project,
-      params: params.fetch(:archive_search, {})
-    )
   end
 
   def normalized_archive_path
-    return "search_archives" if params[:archive_path] == "investigations"
-
     params[:archive_path].presence_in(ARCHIVE_PATHS) || DEFAULT_ARCHIVE_PATH
   end
 

@@ -458,6 +458,23 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).not_to include("Public API rate limits")
       end
 
+      it "keeps More collapsed while indicating Settings is active" do
+        project = projects(:one)
+
+        get settings_project_path(project)
+
+        document = Nokogiri::HTML.parse(response.body)
+        more_menu = document.at_css("nav[aria-label='Project sections'] details.project-nav-menu")
+        active_settings_link = document.at_css("nav[aria-label='Project settings sections'] a[aria-current='page']")
+
+        expect(more_menu["open"]).to be_nil
+        expect(more_menu.at_css("summary")["class"]).to include("is-active")
+        expect(more_menu.at_css("a[aria-current='page']")["href"]).to eq(settings_project_path(project))
+        expect(active_settings_link.text.strip).to eq("General")
+        expect(active_settings_link["class"]).to include("settings-section-nav-link")
+        expect(document.at_css(".settings-content .settings-panel")).to be_present
+      end
+
       it "shows archived state on setup without allowing new API keys" do
         project = create(:project, :archived, user: users(:one), name: "Archived Settings App")
 
@@ -472,6 +489,11 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css("input[name='api_key[name]']")).to be_nil
         expect(document.at_css("a[href='#{settings_project_path(project, section: 'danger')}']")).to be_present
         expect(document.at_css(".sidebar-action-link")["href"]).to eq(projects_path(filter: "archived"))
+
+        project_navigation = document.at_css("nav[aria-label='Project sections']")
+        settings_navigation = document.at_css("nav[aria-label='Project settings sections']")
+        expect(project_navigation.at_css("a[aria-current='page']").text.strip).to eq("Settings")
+        expect(settings_navigation.at_css("a[aria-current='page']").text.strip).to eq("Setup")
       end
 
       it "shows assignment workload counts for project members" do
@@ -624,7 +646,7 @@ RSpec.describe "Projects", type: :request do
         expect(document.at_css("turbo-frame#performance_transactions")["src"]).to eq(performance_transactions_project_path(project))
       end
 
-      it "keeps insights top-level and tucks performance into the secondary project menu" do
+      it "keeps daily monitoring destinations top-level and project tools in More" do
         project = projects(:one)
 
         get performance_project_path(project)
@@ -636,13 +658,20 @@ RSpec.describe "Projects", type: :request do
         secondary_links = secondary_menu.css("a")
         active_link = nav.at_css("a[aria-current='page']")
 
-        expect(links.map { |link| link["href"] }).to include(insights_project_path(project))
-        expect(links.map { |link| link["href"] }).not_to include(performance_project_path(project))
-        expect(links.map { |link| link.text.strip }).to include("Insights")
-        expect(links.map { |link| link.text.strip }).not_to include("Performance")
-        expect(secondary_menu["open"]).not_to be_nil
-        expect(secondary_links.map { |link| link.text.strip }).to eq(%w[Events Performance Monitors])
-        expect(secondary_links.map { |link| link["href"] }).to include(performance_project_path(project))
+        expect(links.map { |link| link.text.strip }).to eq(%w[Overview Inbox Events Insights Performance Monitors])
+        expect(links.map { |link| link["href"] }).to include(
+          activity_project_path(project),
+          insights_project_path(project),
+          performance_project_path(project),
+          monitors_project_path(project)
+        )
+        expect(secondary_menu["open"]).to be_nil
+        expect(secondary_links.map { |link| link.text.strip }).to eq([ "Deployments", "Archive search", "Settings" ])
+        expect(secondary_links.map { |link| link["href"] }).to include(
+          deployments_project_path(project),
+          archives_project_path(project),
+          settings_project_path(project)
+        )
         expect(nav.at_css(".project-nav-insights")).to be_nil
         expect(active_link["href"]).to eq(performance_project_path(project))
       end
@@ -790,7 +819,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include("paused", "Resume alerts")
       end
 
-      it "shows primary project paths directly and secondary paths in a menu" do
+      it "shows monitoring paths directly and lower-frequency project tools in More" do
         project = projects(:one)
 
         get monitors_project_path(project)
@@ -802,26 +831,27 @@ RSpec.describe "Projects", type: :request do
         secondary_links = secondary_menu.css("a")
         active_link = nav.at_css("a[aria-current='page']")
 
-        expect(links.map { |link| link.text.strip }).to eq(%w[Home Inbox Insights Deployments Setup Settings])
+        expect(links.map { |link| link.text.strip }).to eq(%w[Overview Inbox Events Insights Performance Monitors])
         expect(links.map { |link| link["href"] }).to include(
           project_path(project),
           inbox_project_path(project),
+          activity_project_path(project),
           insights_project_path(project),
+          performance_project_path(project),
+          monitors_project_path(project)
+        )
+        expect(links.map { |link| link["href"] }).not_to include(
           deployments_project_path(project),
+          archives_project_path(project),
           setup_project_path(project),
           settings_project_path(project)
         )
-        expect(links.map { |link| link["href"] }).not_to include(
-          activity_project_path(project),
-          performance_project_path(project),
-          monitors_project_path(project)
-        )
-        expect(secondary_menu["open"]).not_to be_nil
-        expect(secondary_links.map { |link| link.text.strip }).to eq(%w[Events Performance Monitors])
+        expect(secondary_menu["open"]).to be_nil
+        expect(secondary_links.map { |link| link.text.strip }).to eq([ "Deployments", "Archive search", "Settings" ])
         expect(secondary_links.map { |link| link["href"] }).to include(
-          activity_project_path(project),
-          performance_project_path(project),
-          monitors_project_path(project)
+          deployments_project_path(project),
+          archives_project_path(project),
+          settings_project_path(project)
         )
         expect(nav.at_css(".project-nav-activity")).to be_nil
         expect(active_link["href"]).to eq(monitors_project_path(project))
@@ -1342,6 +1372,69 @@ RSpec.describe "Projects", type: :request do
         }
       }
       expect(response).to have_http_status(:unprocessable_content)
+    end
+  end
+
+  describe "feature settings links" do
+    let(:project) { projects(:one) }
+
+    context "when signed in as the project owner" do
+      before { sign_in users(:one) }
+
+      it "links each browse surface to the settings that configure it" do
+        expectations = [
+          [ project_path(project), "Project settings", settings_project_path(project, section: "general") ],
+          [ inbox_project_path(project), "Inbox notifications", settings_project_path(project, section: "notifications", notification_path: "errors", anchor: "error-triage-alerts") ],
+          [ activity_project_path(project), "Telemetry setup", setup_project_path(project) ],
+          [ insights_project_path(project), "Telemetry setup", setup_project_path(project) ],
+          [ performance_project_path(project), "Performance alerts", settings_project_path(project, section: "notifications", notification_path: "health", anchor: "performance-alerts") ],
+          [ monitors_project_path(project), "Monitor alerts", settings_project_path(project, section: "notifications", notification_path: "health", anchor: "monitor-alerts") ],
+          [ deployments_project_path(project), "Deployment settings", settings_project_path(project, section: "integrations", anchor: "source-repositories") ],
+          [ archives_project_path(project), "Archive settings", settings_project_path(project, section: "data", anchor: "archive-center") ]
+        ]
+
+        expectations.each do |page_path, label, settings_path|
+          get page_path
+
+          expect(response).to have_http_status(:success)
+          document = Nokogiri::HTML.parse(response.body)
+          link = document.at_css("[data-project-feature-settings='true']")
+          expect(link).to be_present
+          expect(link.text.strip).to eq(label)
+          expect(link["href"]).to eq(settings_path)
+          expect(document.at_css(".project-command-panel [data-project-feature-settings='true']")).to be_nil
+        end
+      end
+
+      it "provides stable deep-link targets for feature alert settings" do
+        get settings_project_path(project, section: "notifications", notification_path: "errors")
+        expect(Nokogiri::HTML.parse(response.body).at_css("#error-triage-alerts")).to be_present
+
+        get settings_project_path(project, section: "notifications", notification_path: "health")
+        document = Nokogiri::HTML.parse(response.body)
+        expect(document.at_css("#performance-alerts")).to be_present
+        expect(document.at_css("#monitor-alerts")).to be_present
+      end
+    end
+
+    context "when signed in as a project viewer" do
+      before { sign_in users(:two) }
+
+      it "hides manager-only deployment and archive settings links" do
+        get deployments_project_path(project)
+        expect(Nokogiri::HTML.parse(response.body).at_css("[data-project-feature-settings='true']")).to be_nil
+
+        get archives_project_path(project)
+        expect(Nokogiri::HTML.parse(response.body).at_css("[data-project-feature-settings='true']")).to be_nil
+      end
+
+      it "keeps personal inbox notification settings accessible" do
+        get inbox_project_path(project)
+
+        link = Nokogiri::HTML.parse(response.body).at_css("[data-project-feature-settings='true']")
+        expect(link.text.strip).to eq("Inbox notifications")
+        expect(link["href"]).to eq(settings_project_path(project, section: "notifications", notification_path: "errors", anchor: "error-triage-alerts"))
+      end
     end
   end
 

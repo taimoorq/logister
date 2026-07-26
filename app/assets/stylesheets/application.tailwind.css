@@ -87,8 +87,16 @@
     --app-page-bg: var(--app-neutral-100);
     --app-text: var(--app-neutral-900);
     --app-muted: var(--app-neutral-600);
+    --app-placeholder: var(--app-neutral-600);
     --app-border: var(--app-neutral-200);
     --app-border-strong: var(--app-neutral-300);
+    --app-control-border: #7c8ba1;
+    --app-focus: var(--app-primary-700);
+    --app-selection: var(--app-primary-700);
+    --app-selection-hover: var(--app-primary-800);
+    --app-selection-contrast: var(--app-primary-contrast);
+    --app-attention-surface: var(--app-primary-50);
+    --app-attention-border: var(--app-primary-700);
     --app-code-bg: #07132f;
     --app-code-text: #deebff;
     --app-danger-50: #fef2f2;
@@ -142,7 +150,8 @@
     @apply rounded-xl bg-white border border-slate-200 shadow-sm p-5;
   }
   .btn-ghost {
-    @apply inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 no-underline;
+    @apply inline-flex items-center rounded-lg border bg-white px-4 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2;
+    border-color: var(--app-control-border);
   }
   .btn-primary {
     @apply inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 border border-transparent cursor-pointer;
@@ -208,7 +217,20 @@
     @apply block text-sm font-medium text-slate-700 mb-1;
   }
   .form-input {
-    @apply block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500;
+    @apply block w-full rounded-lg border px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-1;
+    border-color: var(--app-control-border);
+  }
+  .form-input:focus {
+    border-color: var(--app-focus);
+    --tw-ring-color: var(--app-focus);
+  }
+  .form-checkbox {
+    @apply h-4 w-4 rounded text-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1;
+    accent-color: var(--app-selection);
+    border-color: var(--app-control-border);
+  }
+  .form-checkbox:focus {
+    --tw-ring-color: var(--app-focus);
   }
   .integration-picker {
     @apply min-w-0;
@@ -407,7 +429,8 @@
     @apply transition-transform;
   }
   .project-nav-menu[open] .project-nav-menu-summary {
-    @apply border-blue-200 bg-blue-50 text-blue-700;
+    @apply border-transparent text-white shadow-sm;
+    background-color: var(--app-selection-hover);
   }
   .project-nav-menu[open] .project-nav-menu-summary svg {
     @apply rotate-180;
@@ -1375,11 +1398,73 @@
     @apply flex min-w-0 w-full flex-wrap gap-2 text-sm lg:w-auto lg:justify-end;
   }
   .project-section-nav-link {
-    @apply inline-flex h-10 shrink-0 cursor-pointer list-none items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 no-underline hover:border-slate-300 hover:bg-slate-50;
+    @apply inline-flex h-10 shrink-0 cursor-pointer list-none items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 no-underline hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2;
   }
   .project-section-nav-link.is-active,
   .project-section-nav-link[aria-current="page"] {
-    @apply border-blue-200 bg-blue-50 text-blue-700;
+    @apply border-transparent text-white shadow-sm hover:text-white;
+    background-color: var(--app-selection);
+    box-shadow: inset 0 -3px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(15 23 42 / 0.16);
+  }
+  .project-section-nav-link.is-active:hover,
+  .project-section-nav-link[aria-current="page"]:hover {
+    background-color: var(--app-selection-hover);
+  }
+  .settings-page {
+    @apply space-y-6;
+  }
+  .settings-section-nav {
+    @apply flex w-full max-w-full flex-nowrap gap-2 rounded-lg border border-slate-300 bg-slate-50 p-2 shadow-sm;
+  }
+  .settings-section-nav-link {
+    @apply inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border bg-white px-3 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2;
+    border-color: var(--app-control-border);
+  }
+  .settings-section-nav-link[aria-current="page"] {
+    @apply border-transparent text-white shadow-sm hover:text-white;
+    background-color: var(--app-selection);
+    box-shadow: inset 0 -3px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(15 23 42 / 0.18);
+  }
+  .settings-section-nav-link[aria-current="page"]:hover {
+    background-color: var(--app-selection-hover);
+  }
+  .settings-filter-pill {
+    @apply inline-flex items-center rounded-full border bg-white px-3 py-1 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2;
+    border-color: var(--app-control-border);
+  }
+  .settings-filter-pill[aria-current="page"] {
+    @apply border-transparent text-white shadow-sm hover:text-white;
+    background-color: var(--app-selection);
+  }
+  .settings-filter-pill[aria-current="page"]:hover {
+    background-color: var(--app-selection-hover);
+  }
+  .settings-content {
+    @apply space-y-6;
+  }
+  .settings-panel {
+    @apply rounded-xl border border-slate-300 bg-white p-5 shadow-sm;
+    border-top-color: var(--app-attention-border);
+    border-top-width: 3px;
+  }
+  .settings-panel-danger {
+    border-top-color: var(--app-danger-700);
+  }
+  .settings-section-intro {
+    @apply rounded-lg border border-blue-200 px-4 py-3;
+    background-color: var(--app-attention-surface);
+    border-left-color: var(--app-attention-border);
+    border-left-width: 4px;
+  }
+  .settings-choice-card {
+    @apply flex min-h-40 flex-col rounded-lg border bg-white p-5 text-left no-underline shadow-sm transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2;
+    border-color: var(--app-control-border);
+  }
+  .settings-choice-card:hover {
+    border-color: var(--app-attention-border);
+  }
+  .settings-choice-icon {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-slate-50 text-slate-700 group-hover:border-blue-700 group-hover:bg-white group-hover:text-blue-700;
   }
   .projects-overview-strip {
     @apply mb-4 grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50 lg:grid-cols-4;

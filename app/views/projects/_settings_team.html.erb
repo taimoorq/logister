@@ -1,4 +1,4 @@
-      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
+      <article class="settings-panel"
                <%= tag.attributes(data: product_tour_step_data(tour_group, :access)) %>>
         <h2 class="text-base font-bold text-slate-900 mb-3">Project access</h2>
         <%= form_with model: [@project, ProjectMembership.new] do |f| %>

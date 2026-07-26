@@ -110,8 +110,10 @@ module InstanceConfiguration
 
       coverage = clickhouse_coverage(client)
       success = coverage.fetch("ready_for_reads")
-      summary = if success
-        "ClickHouse schema and stable-window event coverage are ready."
+      summary = if success && mode == "read_preferred"
+        "ClickHouse schema and stable-window event coverage are ready; supported dashboard reads can use ClickHouse."
+      elsif success
+        "ClickHouse schema and stable-window event coverage are ready. Switch to read preferred to move supported dashboard reads off PostgreSQL."
       else
         "ClickHouse writes are available, but event coverage is incomplete. Keep dual write enabled and run the backfill before switching reads."
       end

@@ -54,7 +54,7 @@
 <section id="notifications"
          class="space-y-5"
          <%= tag.attributes(data: product_tour_step_data(tour_group, :email_notifications)) %>>
-  <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+  <div class="settings-section-intro flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
     <div>
       <h2 class="text-lg font-bold text-slate-900">Email notifications</h2>
       <p class="mt-1 text-sm text-slate-600">
@@ -63,10 +63,10 @@
     </div>
   </div>
 
-  <nav class="mobile-x-scroll flex max-w-full flex-nowrap gap-2 pb-1" aria-label="Notification settings paths">
+  <nav class="settings-section-nav mobile-x-scroll" aria-label="Notification settings paths">
     <% overview_active = active_notification_path == "overview" %>
     <%= link_to(notification_settings_path.call("overview"),
-                class: "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold no-underline #{overview_active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}",
+                class: "settings-section-nav-link",
                 aria: { current: ("page" if overview_active) }) do %>
       <%= app_icon(:notifications, css: "h-3.5 w-3.5 shrink-0") %>
       <span>Start</span>
@@ -75,7 +75,7 @@
     <% notification_purposes.each do |purpose| %>
       <% active = purpose[:key] == active_notification_path %>
       <%= link_to(notification_settings_path.call(purpose[:key]),
-                  class: "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold no-underline #{active ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}",
+                  class: "settings-section-nav-link",
                   aria: { current: ("page" if active) }) do %>
         <%= app_icon(purpose[:icon], css: "h-3.5 w-3.5 shrink-0") %>
         <span><%= purpose[:title] %></span>
@@ -87,8 +87,8 @@
     <section class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3" aria-label="Notification purposes">
       <% notification_purposes.each do |purpose| %>
         <%= link_to(notification_settings_path.call(purpose[:key]),
-                    class: "group flex min-h-40 flex-col rounded-lg border border-slate-200 bg-white p-5 text-left no-underline shadow-sm transition hover:border-blue-200 hover:bg-blue-50/60") do %>
-          <span class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-600 group-hover:border-blue-200 group-hover:bg-white group-hover:text-blue-700">
+                    class: "settings-choice-card group") do %>
+          <span class="settings-choice-icon">
             <%= app_icon(purpose[:icon], css: "h-5 w-5") %>
           </span>
           <span class="mt-4 text-base font-semibold text-slate-900"><%= purpose[:title] %></span>
@@ -105,7 +105,7 @@
                   data: { turbo: false } do |f| %>
       <%= hidden_field_tag :notification_path, active_notification_path %>
 
-      <section class="card">
+      <section class="settings-panel">
         <div class="mb-5 flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p class="text-xs font-bold uppercase tracking-wider text-blue-700">Notification path</p>
@@ -114,14 +114,14 @@
           </div>
           <%= link_to "Change purpose",
                       notification_settings_path.call("overview"),
-                      class: "inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 no-underline hover:bg-slate-50" %>
+                      class: "btn-ghost h-9 shrink-0 justify-center px-3 text-xs font-semibold" %>
         </div>
 
         <% case active_notification_path %>
         <% when "errors" %>
-          <div class="divide-y divide-slate-200 border-y border-slate-200">
+          <div id="error-triage-alerts" class="divide-y divide-slate-200 border-y border-slate-200 scroll-mt-24">
             <label class="flex gap-3 py-4">
-              <%= f.check_box :first_occurrence_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :first_occurrence_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">New error groups</span>
                 <span class="block text-sm text-slate-600">Send once when Logister creates a new error group.</span>
@@ -129,7 +129,7 @@
             </label>
 
             <label class="flex gap-3 py-4">
-              <%= f.check_box :regression_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :regression_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Reopened error groups</span>
                 <span class="block text-sm text-slate-600">Send when a resolved, ignored, or archived error group receives a new event.</span>
@@ -137,7 +137,7 @@
             </label>
 
             <label class="flex gap-3 py-4">
-              <%= f.check_box :milestone_alerts_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :milestone_alerts_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Lifetime count milestones</span>
                 <span class="block text-sm text-slate-600">Send when one error group's lifetime count reaches 10, 100, 1,000, or another 1,000.</span>
@@ -146,7 +146,7 @@
 
             <div class="py-4">
               <label class="flex gap-3">
-                <%= f.check_box :frequent_error_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <%= f.check_box :frequent_error_enabled, class: "form-checkbox mt-1" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Single-error volume threshold</span>
                   <span class="block text-sm text-slate-600">Send when one error group crosses the count and window below.</span>
@@ -176,7 +176,7 @@
           <div class="divide-y divide-slate-200 border-y border-slate-200">
             <div class="py-4">
               <label class="flex gap-3">
-                <%= f.check_box :project_spike_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <%= f.check_box :project_spike_enabled, class: "form-checkbox mt-1" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Project-wide error spike</span>
                   <span class="block text-sm text-slate-600">Send when the project crosses the count and window below.</span>
@@ -197,9 +197,9 @@
               </div>
             </div>
 
-            <div class="py-4">
+            <div id="performance-alerts" class="scroll-mt-24 py-4">
               <label class="flex gap-3">
-                <%= f.check_box :performance_alerts_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                <%= f.check_box :performance_alerts_enabled, class: "form-checkbox mt-1" %>
                 <span>
                   <span class="block text-sm font-semibold text-slate-900">Project p95 latency</span>
                   <span class="block text-sm text-slate-600">Send when project p95 latency over 15 minutes exceeds the limit below.</span>
@@ -213,8 +213,8 @@
               </div>
             </div>
 
-            <label class="flex gap-3 py-4">
-              <%= f.check_box :monitor_alerts_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+            <label id="monitor-alerts" class="flex scroll-mt-24 gap-3 py-4">
+              <%= f.check_box :monitor_alerts_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Check-in monitors</span>
                 <span class="block text-sm text-slate-600">Send when a check-in monitor is missed or later recovers.</span>
@@ -296,7 +296,7 @@
 
           <div class="mt-5 border-t border-slate-200 pt-5">
             <label class="flex gap-3">
-              <%= f.check_box :quiet_hours_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :quiet_hours_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Pause immediate email during quiet hours</span>
                 <span class="block text-sm text-slate-600">Digest emails still use the schedule in Digest summaries.</span>
@@ -325,7 +325,7 @@
         <% when "operations" %>
           <div class="divide-y divide-slate-200 border-y border-slate-200">
             <label class="flex gap-3 py-4">
-              <%= f.check_box :release_notifications_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :release_notifications_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Deployment summary emails</span>
                 <span class="block text-sm text-slate-600">Send after a deployment is recorded for this project.</span>
@@ -333,7 +333,7 @@
             </label>
 
             <label class="flex gap-3 py-4">
-              <%= f.check_box :usage_notifications_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :usage_notifications_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Intake and quota warnings</span>
                 <span class="block text-sm text-slate-600">Send when event intake, rate limits, or quota checks need attention.</span>
@@ -341,7 +341,7 @@
             </label>
 
             <label class="flex gap-3 py-4">
-              <%= f.check_box :retention_notifications_enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :retention_notifications_enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Retention and archive failures</span>
                 <span class="block text-sm text-slate-600">Send when retention cleanup or archive export fails.</span>

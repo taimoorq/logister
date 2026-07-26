@@ -213,7 +213,7 @@
               <p>You do not need to learn every setting before choosing. Open one admin page, read the variable name beside each field, and use the linked guide only when that service needs provider-side work.</p>
               <div class="doc-link-list">
                 <a class="doc-link" href="/docs/product/notifications/setup/"><strong>Send account and project mail</strong><span>Open <code>/admin/installation/email</code>. Stop when one direct and one queued test message arrive.</span></a>
-                <a class="doc-link" href="/docs/clickhouse/"><strong>Move analytics work off PostgreSQL</strong><span>Open <code>/admin/installation/clickhouse</code>. Keep dual write until schema and stable event coverage pass.</span></a>
+                <a class="doc-link" href="/docs/clickhouse/"><strong>Move analytics work off PostgreSQL</strong><span>Open <code>/admin/installation/clickhouse</code>. Use dual write for backfill and verification, then switch to read preferred; dual write alone does not move dashboard reads.</span></a>
                 <a class="doc-link" href="/docs/product/data-retention/archive-storage/"><strong>Archive telemetry before pruning it</strong><span>Open <code>/admin/installation/archive-storage</code>. Stop when a temporary object can be written, read, and deleted.</span></a>
                 <a class="doc-link" href="/docs/github-app/"><strong>Show private source during triage</strong><span>Open <code>/admin/installation/github</code>. Verify the App identity, then link repositories from project settings.</span></a>
                 <a class="doc-link" href="/docs/deployment/#env-reference"><strong>Protect public auth and tune ingest limits</strong><span>Open <code>/admin/installation/authentication</code>. Validate keys and limits, restart, then complete a real Turnstile challenge.</span></a>
@@ -225,14 +225,16 @@
 
             <section id="clickhouse" class="section">
               <p class="eyebrow">ClickHouse cutover</p>
-              <h2>Keep ClickHouse optional and switch reads only after coverage passes.</h2>
+              <h2>Use dual write for verification, then finish the dashboard-read cutover.</h2>
               <ol>
-                <li>Provision ClickHouse, keep PostgreSQL as the durable product database, and select <code>dual_write</code>.</li>
+                <li>Provision ClickHouse, keep PostgreSQL as the durable product database, and select <code>dual_write</code>. This temporary mode copies telemetry but keeps supported dashboard reads on PostgreSQL.</li>
                 <li>Save settings, restart web and worker processes, and keep Sidekiq draining new writes.</li>
                 <li>Run <strong>Repair ClickHouse schema</strong> with an account allowed to create or repair the required objects.</li>
                 <li>Backfill retained PostgreSQL events with the idempotent command in the <a href="/docs/clickhouse/#backfill">ClickHouse backfill guide</a>.</li>
                 <li>Run <strong>Test candidate values</strong>. The check compares distinct event IDs in a stable window that excludes the newest five minutes.</li>
-                <li>Select <code>read_preferred</code> only after the current connection fingerprint has passed schema and coverage checks.</li>
+                <li>Select <code>read_preferred</code> only after the current connection fingerprint has passed schema and coverage checks. This is the step that moves supported analytics reads to ClickHouse.</li>
+                <li>If your deployment uses environment variables, set <code>LOGISTER_CLICKHOUSE_MODE=read_preferred</code> and remove the legacy <code>LOGISTER_CLICKHOUSE_ENABLED</code> override. Restart web and worker processes.</li>
+                <li>Call <code>/health/clickhouse</code> and confirm <code>clickhouse_mode</code> is <code>read_preferred</code>, not only that the endpoint returns <code>200</code>.</li>
               </ol>
               <figure class="screenshot-figure">
                 <img src="/docs/assets/screenshots/installation-clickhouse-cutover.webp" alt="ClickHouse installation page showing the staged cutover warning, schema repair action, activation mode, and an active LOGISTER_CLICKHOUSE_MODE environment override." width="1280" height="800" loading="lazy" decoding="async">
@@ -262,7 +264,7 @@
                 <li>Send a test event from an SDK or the <a href="/docs/http-api/">HTTP API</a> and confirm it appears in the project inbox.</li>
                 <li>If email is configured, confirm both the direct and queued test messages arrive.</li>
                 <li>If archive storage is configured, verify its temporary-object check and then configure a project retention policy.</li>
-                <li>If ClickHouse is configured, confirm <code>/health/clickhouse</code> reports ready and that the coverage gate has passed before relying on read-preferred analytics.</li>
+                <li>If ClickHouse is configured, confirm <code>/health/clickhouse</code> reports ready, <code>clickhouse_mode</code> is <code>read_preferred</code>, and the coverage gate has passed before relying on ClickHouse-backed dashboard analytics.</li>
               </ol>
               <p>If a check fails, use the exact failure summary on its Installation page, then continue with <a href="/docs/troubleshooting/">Troubleshooting</a>. For all production variables and restart behavior, use <a href="/docs/deployment/">Deployment configuration</a>.</p>
             </section>

@@ -146,6 +146,13 @@ Used when one action should update several DOM regions:
 - **Classify npm browser bundles before wiring them.** ES module builds belong in `config/importmap.rb` and Stimulus imports. UMD/IIFE browser bundles belong in the shared layout helper with `javascript_include_tag`, then Stimulus should read the package's `window` global.
 - **When debugging rendering, separate HTML issues from CSS issues.** First confirm the expected classes are present in the rendered HTML. Then confirm the final compiled CSS actually contains selectors for those classes. This prevents wasting time changing views when the real problem is stale or missing assets.
 
+### Color and contrast
+
+- **Use semantic color roles from `:root`.** Canvas, surface, text, muted text, placeholder, decorative border, control border, focus, selection, and status colors live in `app/assets/stylesheets/application.tailwind.css`. Reuse those roles through shared component classes instead of adding page-specific color literals.
+- **Meet WCAG 2.2 AA for approved pairs.** Normal text needs at least 4.5:1 contrast; meaningful controls, boundaries, and focus indicators need at least 3:1. Active and status states also need a written label, selected attribute, outline, weight, or another cue beyond hue alone.
+- **Keep control and decorative borders separate.** Use `--app-control-border` for form controls and other boundaries users must perceive. Keep `--app-border` and `--app-border-strong` for cards and decorative dividers.
+- **Update the contrast contract with new roles.** Add every new approved foreground/background pair to `spec/stylesheets/ui_contrast_spec.rb`, then run `bundle exec rspec spec/stylesheets/ui_contrast_spec.rb` and rebuild Tailwind before browser review.
+
 ### Working habits that helped
 
 - **Inspect the actual asset URL rendered in HTML.** It quickly answers whether the browser is loading fresh CSS or an old digested file.

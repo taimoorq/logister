@@ -17,13 +17,13 @@ The repair task creates missing objects, updates compatible event-type enum drif
 
 The canonical schema lives in `docs/clickhouse_schema.sql` and includes raw event/span tables plus one-minute rollups. The existing `logister:clickhouse:schema:load` task remains an alias for the same create-and-repair behavior.
 
-Use `LOGISTER_CLICKHOUSE_MODE=dual_write` or **Admin → Installation → ClickHouse** while the analytics copy is being populated. Retained PostgreSQL events can be copied with an idempotent, bounded backfill:
+Use `LOGISTER_CLICKHOUSE_MODE=dual_write` or **Admin → Installation → ClickHouse** only while the analytics copy is being populated and verified. Dual write continues serving supported dashboard analytics from PostgreSQL, so it does not improve slow overview graphs by itself. Retained PostgreSQL events can be copied with an idempotent, bounded backfill:
 
 ```sh
 CONFIRM=backfill bin/rails 'logister:clickhouse:events:backfill[2026-01-01,2026-07-01]'
 ```
 
-The admin diagnostic compares distinct event IDs over a stable window that excludes the newest five minutes. It blocks `read_preferred` until the current connection fingerprint has passing schema and coverage results. Supported ClickHouse dashboard reads still fall back to PostgreSQL when a query fails.
+The admin diagnostic compares distinct event IDs over a stable window that excludes the newest five minutes. It blocks `read_preferred` until the current connection fingerprint has passing schema and coverage results. After the check passes, switch to `read_preferred` and restart web and worker processes; otherwise dashboards remain on PostgreSQL. The legacy `LOGISTER_CLICKHOUSE_ENABLED=true` setting selects only `dual_write`, so remove it when using `LOGISTER_CLICKHOUSE_MODE` or UI-managed settings. Supported ClickHouse dashboard reads still fall back to PostgreSQL when a query fails.
 
 ## S3 Archives
 

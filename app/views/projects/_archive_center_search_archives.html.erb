@@ -1,15 +1,17 @@
-<%# locals: (project:, archive_investigation_search:) %>
+<%# locals: (project:, archive_investigation_search:, show_heading: true) %>
 <% search = archive_investigation_search %>
+<% show_heading = local_assigns.fetch(:show_heading, true) %>
 
-<section class="mt-5 space-y-5" aria-labelledby="archive-search-archives-heading">
-  <div>
-    <h3 id="archive-search-archives-heading" class="text-sm font-semibold text-slate-900">Search Archives</h3>
-    <p class="mt-1 text-xs text-slate-500">Search hot telemetry first, then narrow candidate archive runs for older evidence.</p>
-  </div>
+<section class="mt-5 space-y-5"
+         <%= tag.attributes(aria: show_heading ? { labelledby: "archive-search-archives-heading" } : { label: "Archive search" }) %>>
+  <% if show_heading %>
+    <div>
+      <h3 id="archive-search-archives-heading" class="text-sm font-semibold text-slate-900">Search Archives</h3>
+      <p class="mt-1 text-xs text-slate-500">Search hot telemetry first, then narrow candidate archive runs for older evidence.</p>
+    </div>
+  <% end %>
 
-  <%= form_with url: settings_project_path(project), method: :get, local: true, class: "rounded-lg border border-slate-200 bg-slate-50 p-4" do %>
-    <%= hidden_field_tag :section, "data" %>
-    <%= hidden_field_tag :archive_path, "search_archives" %>
+  <%= form_with url: archives_project_path(project), method: :get, local: true, class: "rounded-lg border border-slate-200 bg-slate-50 p-4" do %>
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
       <div class="xl:col-span-2">
         <%= label_tag "archive_search_q", "Event ID, UUID, message, fingerprint, or object key", class: "form-label" %>
@@ -80,7 +82,7 @@
         <%= app_icon(:search, css: "h-4 w-4") %>
         <span>Search</span>
       <% end %>
-      <%= link_to "Clear", settings_project_path(project, section: "data", archive_path: "search_archives", anchor: "archive-center"), class: "btn-ghost" %>
+      <%= link_to "Clear", archives_project_path(project), class: "btn-ghost" %>
     </div>
   <% end %>
 
@@ -189,9 +191,13 @@
                   </td>
                   <td class="px-3 py-2 text-right text-slate-600"><%= number_with_delimiter(archive.rows) %></td>
                   <td class="px-3 py-2 text-slate-600">
-                    <%= link_to "Catalog",
-                                settings_project_path(project, section: "data", archive_path: "catalog", archive_scope: archive.scope, anchor: "archive-center"),
-                                class: "text-sm font-semibold text-blue-700 hover:text-blue-800" %>
+                    <% if project.managed_by?(current_user) %>
+                      <%= link_to "Catalog",
+                                  settings_project_path(project, section: "data", archive_path: "catalog", archive_scope: archive.scope, anchor: "archive-center"),
+                                  class: "text-sm font-semibold text-blue-700 hover:text-blue-800" %>
+                    <% else %>
+                      <span class="text-xs text-slate-500">Managed by project admins</span>
+                    <% end %>
                   </td>
                 </tr>
               <% end %>

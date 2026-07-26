@@ -80,7 +80,7 @@ Canonical documentation lives at the public docs URL:
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.0.1` or `docker.io/taimoorq/logister:v3.0.1`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.1` or `docker.io/taimoorq/logister:v3.1`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Docker self-hosting docs: https://logister.org/docs/self-hosting/#docker
 - Persistent admin onboarding, UI/environment precedence, and optional add-ons: https://logister.org/docs/self-hosting/onboarding/
@@ -102,7 +102,7 @@ Canonical documentation lives at the public docs URL:
 - Archived projects remain accessible from archived/all project views, are hidden from active dashboards and top navigation, and have active API tokens revoked.
 - Includes a public docs site with product, setup, deployment, API, infrastructure planning, and integration guides.
 - Supports self-hosting with Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, optional ClickHouse, GHCR and Docker Hub release images, and optional Quay mirrors.
-- Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores raw events/spans and one-minute rollups for analytics; project retention settings can keep hot telemetry bounded; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.
+- Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores a secondary event/span analytics copy and one-minute rollups. `dual_write` keeps supported dashboard reads on PostgreSQL during backfill and verification; `read_preferred` moves supported analytics reads to ClickHouse after coverage passes. Project retention settings can keep hot telemetry bounded; optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry.
 
 ## Primary audience
 - Teams who want one self-hosted dashboard for seeing app issues, investigating them, and fixing them faster.

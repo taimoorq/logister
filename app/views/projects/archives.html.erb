@@ -1,0 +1,28 @@
+<% tour_group = "project-archives" %>
+
+<%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
+  <%= render "projects/header", tour_group: tour_group %>
+
+  <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
+      <div class="max-w-3xl">
+        <p class="dashboard-kicker">Project history</p>
+        <h2 class="text-lg font-bold text-slate-900">Search telemetry and archives</h2>
+        <p class="mt-1 text-sm leading-6 text-slate-600">
+          Search recent project data first, then identify archive runs that may contain older evidence.
+        </p>
+      </div>
+      <% if @project.managed_by?(current_user) %>
+        <%= render "projects/feature_settings_action",
+                   label: "Archive settings",
+                   path: settings_project_path(@project, section: "data", anchor: "archive-center"),
+                   description: "Configure retention and archive policy" %>
+      <% end %>
+    </div>
+
+    <%= render "projects/archive_center_search_archives",
+               project: @project,
+               archive_investigation_search: @archive_investigation_search,
+               show_heading: false %>
+  </section>
+<% end %>

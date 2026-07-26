@@ -2,6 +2,27 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.1 - 2026-07-26
+
+### Added
+
+- Added a dedicated project Archive search page for finding recent telemetry first and identifying archive runs that may contain older evidence, with legacy settings URLs redirected to the new location.
+- Added a WCAG 2.2 AA contrast contract for semantic text, control, focus, selection, and status colors so accessibility regressions fail in the test suite.
+
+### Changed
+
+- Reorganized project navigation and settings around clearer task-based sections, stronger selected states, more visible setup and archive entry points, and direct links back to the settings that control each feature.
+- Updated the application runtime to Ruby 4.0.6 and refreshed Bundler and frontend build dependencies.
+- Reworked the repository and self-hosting guidance around shorter setup paths, direct ingest verification, current package links, and version-independent container examples.
+- Clarified ClickHouse activation throughout Admin → Installation and the operator docs: `dual_write` continues serving dashboard analytics from PostgreSQL, while `read_preferred` moves supported reads to ClickHouse with PostgreSQL fallback.
+
+### Upgrade Notes
+
+- No database migrations are required for this release.
+- Existing installations can upgrade directly. Rebuild the application or pull the `v3.1` container so the Ruby 4.0.6 runtime and refreshed assets are included.
+- ClickHouse operators should keep `dual_write` only for backfill and coverage verification, remove the legacy `LOGISTER_CLICKHOUSE_ENABLED` override, and select `read_preferred` before expecting supported overview graphs to read from ClickHouse.
+- Because this is a stable release, the main-branch release workflow publishes `v3.1`, `latest`, and short-SHA container tags after CI, deployment, and health checks pass.
+
 ## v3.0.1 - 2026-07-25
 
 ### Fixed

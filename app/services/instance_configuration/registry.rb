@@ -29,7 +29,7 @@ module InstanceConfiguration
       Section.new(key: "general", label: "General", description: "Canonical URLs and instance identity.", required: true),
       Section.new(key: "background_jobs", label: "Redis & jobs", description: "Redis cache, Sidekiq queues, and worker readiness.", required: true),
       Section.new(key: "email", label: "Email", description: "SMTP for confirmations, password resets, invitations, and alerts; optional for a single-operator install.", required: false),
-      Section.new(key: "clickhouse", label: "ClickHouse", description: "Optional analytics writes, schema, backfill, and read cutover.", required: false),
+      Section.new(key: "clickhouse", label: "ClickHouse", description: "Optional analytics copy with a guarded dashboard-read cutover.", required: false),
       Section.new(key: "archive_storage", label: "Archive storage", description: "Local or S3-compatible telemetry archives.", required: false),
       Section.new(key: "github", label: "GitHub App", description: "Private source lookup, repository sync, and issue creation.", required: false),
       Section.new(key: "authentication", label: "Authentication", description: "Bot protection and global public API rate limits.", required: false),
@@ -57,7 +57,7 @@ module InstanceConfiguration
       Definition.new(key: "email.read_timeout", section: "email", label: "Read timeout (seconds)", env_key: "SES_SMTP_READ_TIMEOUT", type: :integer, default: 5, help: "Maximum time allowed for an SMTP response.", placeholder: "5"),
       Definition.new(key: "email.configuration_set", section: "email", label: "SES configuration set", env_key: "SES_CONFIGURATION_SET", type: :string, default: nil, help: "Optional Amazon SES delivery metrics configuration set.", placeholder: "logister-production"),
 
-      Definition.new(key: "clickhouse.mode", section: "clickhouse", label: "Activation mode", env_key: "LOGISTER_CLICKHOUSE_MODE", type: :select, default: "disabled", restart_required: true, help: "Use dual write first. Read preferred is allowed only after schema and coverage verification.", options: [ [ "Disabled", "disabled" ], [ "Dual write", "dual_write" ], [ "Read preferred", "read_preferred" ] ]),
+      Definition.new(key: "clickhouse.mode", section: "clickhouse", label: "Activation mode", env_key: "LOGISTER_CLICKHOUSE_MODE", type: :select, default: "disabled", restart_required: true, help: "Dual write is a temporary backfill state; dashboards still read PostgreSQL. After schema and coverage verification, use read preferred to move supported analytics reads to ClickHouse.", options: [ [ "Disabled", "disabled" ], [ "Dual write", "dual_write" ], [ "Read preferred", "read_preferred" ] ]),
       Definition.new(key: "clickhouse.url", section: "clickhouse", label: "HTTP endpoint", env_key: "LOGISTER_CLICKHOUSE_URL", type: :url, default: "http://127.0.0.1:8123", help: "ClickHouse HTTP or ClickHouse Cloud query endpoint.", placeholder: "https://cluster.example:8443"),
       Definition.new(key: "clickhouse.database", section: "clickhouse", label: "Database", env_key: "LOGISTER_CLICKHOUSE_DATABASE", type: :string, default: "logister", help: "Database containing Logister analytics tables.", placeholder: "logister"),
       Definition.new(key: "clickhouse.events_table", section: "clickhouse", label: "Events table", env_key: "LOGISTER_CLICKHOUSE_EVENTS_TABLE", type: :string, default: "events_raw", help: "Raw event table name.", placeholder: "events_raw"),

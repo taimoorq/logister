@@ -352,6 +352,7 @@ A few things are worth knowing before you start changing the app locally:
 - For frontend behavior conventions, use [docs/stimulus-turbo-patterns.md](docs/stimulus-turbo-patterns.md).
 - Redis-backed behavior matters. Sidekiq, caching, and some operational flows behave more realistically when Redis is available.
 - PostgreSQL is the primary system of record. ClickHouse is optional and only needed when you want the higher-scale analytics path; S3-compatible archive storage is optional and only needed when you want compressed exports of older hot telemetry before pruning.
+- ClickHouse `dual_write` is a temporary backfill and coverage-verification mode; supported dashboard analytics still read PostgreSQL until the operator switches to `read_preferred`. The legacy `LOGISTER_CLICKHOUSE_ENABLED=true` variable selects only dual write.
 - The public docs are served from the separately deployed Cloudflare docs site at `logister.org/docs`, so app links intentionally leave the Rails app.
 - On Fly, database preparation should run in the release phase rather than on every web boot. If your database provider gives you separate runtime and migration URLs, set `DATABASE_URL` to the runtime URL and `DATABASE_MIGRATION_URL` to the direct migration/admin URL.
 - On Fly and other production hosts, keep one Sidekiq worker running. It handles ClickHouse writes, Action Mailer delivery, first-occurrence error alerts, digest scheduling, monitor and health sweeps, and retention/archive sweeps; no separate cron service is required for the built-in scheduler jobs.

@@ -199,6 +199,17 @@ RSpec.describe "Admin installation", type: :request do
     expect(response.body).to include("Save these SMTP settings")
   end
 
+  it "explains that dual write does not move dashboard reads to ClickHouse" do
+    get admin_installation_section_path("clickhouse")
+
+    expect(response).to have_http_status(:success)
+    expect(response.body).to include(
+      "Dual write still serves dashboard analytics from PostgreSQL",
+      "LOGISTER_CLICKHOUSE_ENABLED",
+      "cannot enable ClickHouse reads"
+    )
+  end
+
   it "blocks ClickHouse reads until the connection and coverage fingerprint is verified" do
     installation.step_for("clickhouse").mark_verified!(
       fingerprint: InstanceConfiguration.fingerprint("clickhouse"),

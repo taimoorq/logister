@@ -2,7 +2,7 @@
 <% highlight_header = local_assigns.fetch(:highlight_header, false) %>
 <% highlight_navigation = local_assigns.fetch(:highlight_navigation, false) %>
 <% section_label = [
-  [ project_path(@project), "Project home" ],
+  [ project_path(@project), "Project overview" ],
   [ inbox_project_path(@project), "Project inbox" ],
   [ insights_project_path(@project), "Project insights" ],
   [ deployments_project_path(@project), "Project deployments" ],
@@ -11,7 +11,8 @@
   [ edit_project_path(@project), "Project settings" ],
   [ activity_project_path(@project), "Project events" ],
   [ performance_project_path(@project), "Project performance" ],
-  [ monitors_project_path(@project), "Project monitors" ]
+  [ monitors_project_path(@project), "Project monitors" ],
+  [ archives_project_path(@project), "Project archive search" ]
 ].find { |path, _label| request.path == path }&.second || "Project" %>
 
 <header class="project-command-panel"

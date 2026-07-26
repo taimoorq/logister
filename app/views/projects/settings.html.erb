@@ -4,24 +4,26 @@
 
 <%= render "projects/header", archived_notice_settings_link: false, tour_group: tour_group %>
 
-<section class="space-y-6">
+<section class="settings-page">
   <%= render "projects/settings_nav" %>
 
-  <% case @settings_section %>
-  <% when "notifications" %>
-    <%= render "projects/settings_notifications", tour_group: tour_group %>
-  <% when "team" %>
-    <%= render "projects/settings_team", tour_group: tour_group %>
-  <% when "integrations" %>
-    <%= render "projects/settings_integrations", tour_group: tour_group %>
-  <% when "data" %>
-    <%= render "projects/settings_data", tour_group: tour_group %>
-  <% when "danger" %>
-    <%= render "projects/settings_danger", tour_group: tour_group %>
-  <% when "admin" %>
-    <%= render "projects/settings_admin", tour_group: tour_group %>
-  <% else %>
-    <%= render "projects/settings_general", tour_group: tour_group %>
-  <% end %>
+  <div class="settings-content">
+    <% case @settings_section %>
+    <% when "notifications" %>
+      <%= render "projects/settings_notifications", tour_group: tour_group %>
+    <% when "team" %>
+      <%= render "projects/settings_team", tour_group: tour_group %>
+    <% when "integrations" %>
+      <%= render "projects/settings_integrations", tour_group: tour_group %>
+    <% when "data" %>
+      <%= render "projects/settings_data", tour_group: tour_group %>
+    <% when "danger" %>
+      <%= render "projects/settings_danger", tour_group: tour_group %>
+    <% when "admin" %>
+      <%= render "projects/settings_admin", tour_group: tour_group %>
+    <% else %>
+      <%= render "projects/settings_general", tour_group: tour_group %>
+    <% end %>
+  </div>
 </section>
 <% end %>

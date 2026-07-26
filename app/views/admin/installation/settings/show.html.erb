@@ -52,7 +52,8 @@
 <% if @section.key == "clickhouse" %>
   <section class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
     <h2 class="font-semibold">Use a staged cutover</h2>
-    <p class="mt-1 leading-6">Start with dual write, repair the ClickHouse schema, backfill retained PostgreSQL events, then run the check below. Logister blocks read preferred until the stable 24-hour coverage window passes.</p>
+    <p class="mt-1 leading-6">Start with dual write, repair the ClickHouse schema, backfill retained PostgreSQL events, then run the check below. Dual write still serves dashboard analytics from PostgreSQL, so it does not speed up slow overview graphs. After the stable 24-hour coverage window passes, switch to read preferred.</p>
+    <p class="mt-2 leading-6">If an environment override names <code>LOGISTER_CLICKHOUSE_ENABLED</code>, replace that legacy boolean with <code>LOGISTER_CLICKHOUSE_MODE</code>. The legacy <code>true</code> value can enable dual write, but it cannot enable ClickHouse reads.</p>
     <div class="mt-3">
       <%= button_to "Repair ClickHouse schema",
                     admin_repair_installation_section_path(@section.slug),

@@ -39,6 +39,11 @@
       <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query, assignee: @assignee_filter %>
 
       <%= link_to "All projects", project_collection_path(@project), class: "inbox-filter-projects-link" %>
+      <%= render "projects/feature_settings_action",
+                 label: "Inbox notifications",
+                 path: settings_project_path(@project, section: "notifications", notification_path: "errors", anchor: "error-triage-alerts"),
+                 description: "Configure error triage notifications",
+                 css: "md:ml-auto" %>
     </div>
   </section>
 

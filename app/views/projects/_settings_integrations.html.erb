@@ -1,5 +1,5 @@
 <% if @project.integration_cloudflare_pages? %>
-        <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+        <article class="settings-panel lg:col-span-2"
                  id="platform-integration">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -28,7 +28,7 @@
             <% end %>
 
             <label class="flex items-start gap-3">
-              <%= f.check_box :enabled, class: "mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+              <%= f.check_box :enabled, class: "form-checkbox mt-1" %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Enable Cloudflare imports</span>
                 <span class="block text-sm text-slate-600">Marks this project eligible for future importer jobs.</span>
@@ -85,7 +85,7 @@
       <% github_connection_tone = @github_integration_state.app_connection_tone %>
       <% github_connection_classes = github_integration_status_classes(github_connection_tone) %>
 
-      <article class="rounded-xl bg-white border border-slate-200 shadow-sm p-5 lg:col-span-2"
+      <article class="settings-panel lg:col-span-2"
                id="source-repositories">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -372,7 +372,7 @@
                   </div>
                   <div class="flex items-end justify-between gap-3">
                     <label class="flex items-center gap-2 pb-2">
-                      <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                      <%= f.check_box :enabled, class: "form-checkbox" %>
                       <span class="text-sm font-semibold text-slate-900">Enabled</span>
                     </label>
                     <%= f.submit "Save", class: "inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" %>
@@ -467,7 +467,7 @@
                                      class: "form-input" %>
                   </div>
                   <label class="flex items-center gap-2 pt-6">
-                    <%= f.check_box :enabled, class: "h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" %>
+                    <%= f.check_box :enabled, class: "form-checkbox" %>
                     <span class="text-sm font-semibold text-slate-900">Enabled</span>
                   </label>
                   <div class="md:col-span-2">
