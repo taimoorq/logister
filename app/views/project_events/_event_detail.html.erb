@@ -1,7 +1,11 @@
-<turbo-frame id="error_detail" target="error_detail" style="view-transition-name: error-detail-pane; view-transition-class: error-detail-pane;">
+<turbo-frame id="error_detail"
+             target="error_detail"
+             data-project-integration="<%= project.integration_kind %>"
+             style="view-transition-name: error-detail-pane; view-transition-class: error-detail-pane;">
   <% exception_data = event_exception_data(event) %>
   <% backtrace = event_backtrace(exception_data) %>
-  <% parsed_frames = parse_backtrace_frames(backtrace) %>
+  <% experience = project_experience(project) %>
+  <% parsed_frames = event_frames(project, event, exception_data) %>
   <% app_frames = parsed_frames.select { |frame| frame[:application_frame] } %>
   <% frame_scope = local_assigns[:frame_scope].presence_in(%w[application all]) || "application" %>
   <% visible_frames = (frame_scope == "application" && app_frames.any?) ? app_frames : parsed_frames %>
@@ -17,9 +21,10 @@
   <% filter_param = local_assigns[:filter] || "unresolved" %>
   <% query_param  = local_assigns[:query]  || "" %>
   <% assignee_param = local_assigns[:assignee].presence || "all" %>
+  <% profile_query_params = inbox_profile_query_params(project) %>
   <% assignable_users = local_assigns[:assignable_users] || project.assignable_users.to_a %>
   <% related_logs = local_assigns[:related_logs] || [] %>
-  <% active_tab   = local_assigns[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
+  <% active_tab   = experience.normalize_detail_tab(local_assigns[:tab], event: event, occurrences_count: occurrences.size, related_logs_count: related_logs.size) %>
   <% stacktrace_tab_label = event_stacktrace_tab_label(project, event) %>
   <% stacktrace_partial = event_stacktrace_partial(project, event) %>
   <% detail_title = truncate(group&.title || event.message.to_s.lines.first, length: 120) %>
@@ -38,6 +43,10 @@
           <span class="detail-status-badge status-<%= detail_status %>">
             <%= detail_status.upcase %>
           </span>
+          <% if experience.supports?(:mobile) %>
+            <% mobile_presenter = event_presenter(project, event, exception_data) %>
+            <span class="android-mechanism-badge mechanism-<%= mobile_presenter.mechanism %>"><%= mobile_presenter.mechanism_label %></span>
+          <% end %>
           <h2 class="detail-title"><%= detail_title %></h2>
         </div>
         <% if group&.subtitle.present? %>
@@ -47,47 +56,52 @@
 
       <% if group %>
         <div class="detail-actionbar-actions">
-          <%= form_with url: export_project_error_group_path(project, group),
-                        method: :get,
-                        local: true,
-                        data: {
-                          controller: "error-export",
-                          action: "submit->error-export#download",
-                          turbo: false,
-                          error_export_filename: "logister-error-#{group.uuid}.json"
-                        },
-                        html: { target: "_top" },
-                        class: "detail-export-form" do %>
-            <label class="detail-export-checkbox">
-              <%= check_box_tag :include_occurrences, "1", false %>
-              <span>Include latest 50 occurrences</span>
-            </label>
-            <%= button_tag "Export JSON",
-                           type: :submit,
-                           name: nil,
-                           class: "btn btn-ghost",
-                           data: { error_export_target: "button" } %>
-          <% end %>
+          <details class="detail-export-menu">
+            <summary class="btn btn-ghost">Export</summary>
+            <div class="detail-export-popover">
+              <%= form_with url: export_project_error_group_path(project, group),
+                            method: :get,
+                            local: true,
+                            data: {
+                              controller: "error-export",
+                              action: "submit->error-export#download",
+                              turbo: false,
+                              error_export_filename: "logister-error-#{group.uuid}.json"
+                            },
+                            html: { target: "_top" },
+                            class: "detail-export-form" do %>
+                <label class="detail-export-checkbox">
+                  <%= check_box_tag :include_occurrences, "1", false %>
+                  <span>Include latest 50 occurrences</span>
+                </label>
+                <%= button_tag "Export JSON",
+                               type: :submit,
+                               name: nil,
+                               class: "btn btn-primary",
+                               data: { error_export_target: "button" } %>
+              <% end %>
+            </div>
+          </details>
 
           <% if group.unresolved? %>
             <%= button_to "Mark as fixed",
-                          resolve_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          resolve_project_error_group_path(project, group, profile_query_params.merge(filter: filter_param, q: query_param, assignee: assignee_param)),
                           method: :patch,
                           class: "btn btn-resolve",
                           data: { turbo_stream: true } %>
             <%= button_to "Ignore",
-                          ignore_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          ignore_project_error_group_path(project, group, profile_query_params.merge(filter: filter_param, q: query_param, assignee: assignee_param)),
                           method: :patch,
                           class: "btn btn-ghost",
                           data: { turbo_stream: true } %>
             <%= button_to "Archive",
-                          archive_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          archive_project_error_group_path(project, group, profile_query_params.merge(filter: filter_param, q: query_param, assignee: assignee_param)),
                           method: :patch,
                           class: "btn btn-ghost",
                           data: { turbo_stream: true } %>
           <% else %>
             <%= button_to "Reopen",
-                          reopen_project_error_group_path(project, group, filter: filter_param, q: query_param, assignee: assignee_param),
+                          reopen_project_error_group_path(project, group, profile_query_params.merge(filter: filter_param, q: query_param, assignee: assignee_param)),
                           method: :patch,
                           class: "btn btn-reopen",
                           data: { turbo_stream: true } %>
@@ -199,6 +213,25 @@
     <% end %>
   </header>
 
+  <% if experience.supports?(:mobile) %>
+    <% mobile_presenter ||= event_presenter(project, event, exception_data) %>
+    <% impact_summary = local_assigns[:impact_summary] %>
+    <% app = mobile_presenter.app_details %>
+    <% device = mobile_presenter.device_details %>
+    <% os = mobile_presenter.os_details %>
+    <section class="android-impact-strip" aria-label="<%= experience.key.to_s.upcase_first %> issue context">
+      <% if impact_summary&.installations&.available? %><div><strong><%= number_with_delimiter(impact_summary.installations.value) %></strong><span>affected installations</span></div><% end %>
+      <% if impact_summary&.sessions&.available? %><div><strong><%= number_with_delimiter(impact_summary.sessions.value) %></strong><span>affected sessions</span></div><% end %>
+      <div><strong><%= number_with_delimiter(impact_summary&.events || group&.occurrence_count || 1) %></strong><span>events in 30 days</span></div>
+      <div><strong><%= [app[:version_name], app[:version_code].presence && "(#{app[:version_code]})"].compact.join(" ").presence || "Not captured" %></strong><span>latest app version</span></div>
+      <div><strong><%= device[:model].presence || "Not captured" %></strong><span>device</span></div>
+      <div><strong><%= [os[:version].presence && "#{os[:name].presence || experience.key.to_s.upcase_first} #{os[:version]}", os[:api_level].presence && "API #{os[:api_level]}"].compact.join(" · ").presence || "Not captured" %></strong><span>operating system</span></div>
+      <% unless impact_summary&.installations&.available? && impact_summary&.sessions&.available? %>
+        <div class="android-impact-incomplete"><strong>Not collected</strong><span><%= [(!impact_summary&.installations&.available? && "installation ID"), (!impact_summary&.sessions&.available? && "session ID")].compact.join(" · ") %></span></div>
+      <% end %>
+    </section>
+  <% end %>
+
   <%= render "project_events/event_detail_tabs",
              project: project,
              event: event,
@@ -223,5 +256,5 @@
              local_variables: local_variables,
              instance_variables: instance_variables,
              turbo_frame_id: "error_detail",
-             wrapper_classes: "detail-tabs-wrap card" %>
+             wrapper_classes: "detail-tabs-wrap detail-workspace card" %>
 </turbo-frame>

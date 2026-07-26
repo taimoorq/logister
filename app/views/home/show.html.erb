@@ -20,7 +20,7 @@
         "https://github.com/taimoorq/logister/pkgs/container/logister",
         "https://hub.docker.com/r/taimoorq/logister"
       ],
-      "softwareVersion" => "3.1",
+      "softwareVersion" => "3.2",
       "keywords" => "open source error monitoring, self-hosted bug tracking, Bugsnag alternative, Bugzilla alternative, Sentry alternative, application observability, Rails error tracking, Docker self hosting",
       "sameAs" => [
         "https://github.com/taimoorq/logister",
@@ -82,47 +82,56 @@
   notifications_path = "screenshots/public/project-notifications.webp"
   retention_path = "screenshots/public/project-data-retention.webp"
   full_size_screenshot_label = ->(label) { "Open full-size #{label} screenshot" }
+  responsive_screenshot_srcset = lambda do |path, width|
+    narrow_path = path.sub(/\.webp\z/, "-360.webp")
+    small_path = path.sub(/\.webp\z/, "-480.webp")
+    compact_path = path.sub(/\.webp\z/, "-720.webp")
+    medium_path = path.sub(/\.webp\z/, "-960.webp")
+    "#{asset_path(narrow_path)} 360w, #{asset_path(small_path)} 480w, #{asset_path(compact_path)} 720w, #{asset_path(medium_path)} 960w, #{asset_path(path)} #{width}w"
+  end
+  hero_screenshot_sizes = "(max-width: 900px) calc(100vw - 2rem), 50vw"
+  showcase_screenshot_sizes = "(max-width: 768px) calc(100vw - 2rem), (max-width: 1280px) calc(100vw - 6rem), 1200px"
   screenshots = [
     {
       path: dashboard_path,
       alt: "Logister overview dashboard showing cross-app event flow, assignments, and errors that need attention",
-      width: 3600,
-      height: 2213,
+      width: 1800,
+      height: 900,
       label: "overview"
     },
     {
       path: project_home_path,
       alt: "Logister project home showing a telemetry timeline and project health summaries",
-      width: 3586,
-      height: 1454,
+      width: 1800,
+      height: 730,
       label: "project home"
     },
     {
       path: inbox_path,
       alt: "Logister project inbox with search, assignee filters, and stacktrace detail",
-      width: 3600,
-      height: 1660,
+      width: 1800,
+      height: 950,
       label: "inbox"
     },
     {
       path: insights_path,
       alt: "Logister project insights timeline and recent event stream",
-      width: 3600,
-      height: 2795,
+      width: 1800,
+      height: 1000,
       label: "insights"
     },
     {
       path: notifications_path,
       alt: "Logister notification settings organized by alert purpose",
-      width: 3600,
-      height: 1754,
+      width: 1800,
+      height: 920,
       label: "notifications"
     },
     {
       path: retention_path,
       alt: "Logister Data settings showing a saved retention summary and Archive Center overview",
-      width: 3600,
-      height: 2093,
+      width: 1800,
+      height: 1000,
       label: "retention"
     }
   ]
@@ -164,8 +173,10 @@
               <%= image_tag dashboard_path,
                             alt: "Logister overview dashboard showing cross-app event flow",
                             class: "hero-shot",
-                            width: 3600,
-                            height: 2213,
+                            width: 1800,
+                            height: 900,
+                            srcset: responsive_screenshot_srcset.call(dashboard_path, 1800),
+                            sizes: hero_screenshot_sizes,
                             loading: "eager",
                             fetchpriority: "high",
                             decoding: "async" %>
@@ -180,8 +191,10 @@
               <%= image_tag project_home_path,
                             alt: "",
                             class: "hero-shot",
-                            width: 3586,
-                            height: 1454,
+                            width: 1800,
+                            height: 730,
+                            srcset: responsive_screenshot_srcset.call(project_home_path, 1800),
+                            sizes: "(max-width: 900px) 45vw, 22vw",
                             loading: "lazy",
                             fetchpriority: "low",
                             decoding: "async" %>
@@ -194,8 +207,10 @@
               <%= image_tag insights_path,
                             alt: "",
                             class: "hero-shot",
-                            width: 3600,
-                            height: 2795,
+                            width: 1800,
+                            height: 1000,
+                            srcset: responsive_screenshot_srcset.call(insights_path, 1800),
+                            sizes: "(max-width: 900px) 45vw, 22vw",
                             loading: "lazy",
                             fetchpriority: "low",
                             decoding: "async" %>
@@ -236,6 +251,8 @@
                               class: "hero-shot",
                               width: screenshot[:width],
                               height: screenshot[:height],
+                              srcset: responsive_screenshot_srcset.call(screenshot[:path], screenshot[:width]),
+                              sizes: showcase_screenshot_sizes,
                               loading: "lazy",
                               fetchpriority: "low",
                               decoding: "async" %>

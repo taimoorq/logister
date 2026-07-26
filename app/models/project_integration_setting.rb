@@ -16,6 +16,10 @@ class ProjectIntegrationSetting < ApplicationRecord
   validates :provider, presence: true, uniqueness: { scope: :project_id }
   validates :account_id, presence: true, if: :provider_cloudflare_pages?
   validates :external_project_name, presence: true, if: :provider_cloudflare_pages?
+  validates :external_project_id, :credential_reference, presence: true, if: -> { provider_google_play? && enabled? }
+  validates :account_id, :external_project_id, :external_project_name, :credential_reference,
+            presence: true,
+            if: -> { provider_app_store_connect? && enabled? }
   validate :provider_matches_project_integration
 
   scope :enabled, -> { where(enabled: true) }
@@ -36,6 +40,10 @@ class ProjectIntegrationSetting < ApplicationRecord
     case provider
     when PROVIDERS[:cloudflare_pages]
       enabled? && account_id.present? && external_project_name.present? && credential_reference.present?
+    when PROVIDERS[:google_play]
+      enabled? && external_project_id.present? && credential_reference.present?
+    when PROVIDERS[:app_store_connect]
+      enabled? && account_id.present? && external_project_id.present? && external_project_name.present? && credential_reference.present?
     else
       enabled?
     end

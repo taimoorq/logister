@@ -6,13 +6,13 @@ import { Controller } from "@hotwired/stimulus"
 //   - Row selection highlight
 export default class extends Controller {
   static get targets() {
-    return ["assigneeField", "assigneeForm", "detailPane", "filterLink", "filterField", "listPane", "searchForm", "searchInput"]
+    return ["assigneeField", "assigneeForm", "clearProfileLink", "detailPane", "filterLink", "filterField", "listPane", "searchForm", "searchInput"]
   }
 
   connect() {
     this._searchTimer = null
-    this.savedPageScrollY = null
     this.savedListScrollTop = null
+    this.previousSelectedRowId = null
     this.clearBusyState()
   }
 
@@ -41,6 +41,11 @@ export default class extends Controller {
     }
 
     form.requestSubmit()
+  }
+
+  submitForm(event) {
+    const form = event.currentTarget.form
+    if (form) form.requestSubmit()
   }
 
   // ── Filter tab switching ─────────────────────────────────────────────────
@@ -72,7 +77,7 @@ export default class extends Controller {
   openDetail(event) {
     const link = event.currentTarget
     const row = link && typeof link.closest === "function" ? link.closest("tr") : null
-    if (row) this.setSelectedRow(row)
+    if (row) this.selectRowOptimistically(row)
   }
 
   openRow(event) {
@@ -85,29 +90,12 @@ export default class extends Controller {
     const link = row && typeof row.querySelector === "function" ? row.querySelector("a.error-row-link") : null
     if (!link) return
 
-    this.setSelectedRow(row)
-    this.visitDetail(link.href)
+    link.click()
   }
 
   openRowKey(event) {
     event.preventDefault()
     this.openRow(event)
-  }
-
-  visitDetail(url) {
-    const frame = document.getElementById("error_detail")
-    if (frame) {
-      frame.setAttribute("src", url)
-      return
-    }
-
-    const turbo = window.Turbo
-    if (turbo && typeof turbo.visit === "function") {
-      turbo.visit(url)
-      return
-    }
-
-    window.location.assign(url)
   }
 
   onDetailLoaded(event) {
@@ -121,11 +109,16 @@ export default class extends Controller {
     })
   }
 
+  selectRowOptimistically(row) {
+    const selected = this.element.querySelector(".inbox-table tbody tr[aria-selected='true']")
+    if (this.previousSelectedRowId === null) this.previousSelectedRowId = selected ? selected.id : ""
+    this.setSelectedRow(row)
+  }
+
   onBeforeFetch(event) {
     const target = event.target
     if (!(target instanceof HTMLElement)) return
     if (target.id === "error_detail") {
-      this.savedPageScrollY = window.scrollY
       const list = this.findListScroller()
       this.savedListScrollTop = list ? list.scrollTop : null
       this.setBusy(this.hasDetailPaneTarget ? this.detailPaneTarget : null, true)
@@ -144,20 +137,97 @@ export default class extends Controller {
         if (list) list.scrollTop = this.savedListScrollTop
       }
 
-      if (typeof this.savedPageScrollY === "number") {
-        window.scrollTo({ top: this.savedPageScrollY, left: 0, behavior: "auto" })
-      }
-
       this.savedListScrollTop = null
-      this.savedPageScrollY = null
+      this.previousSelectedRowId = null
       this.setBusy(this.hasDetailPaneTarget ? this.detailPaneTarget : null, false)
     } else if (frame.id === "project_inbox") {
+      this.syncControlsFromFrame(frame)
       this.setBusy(this.hasListPaneTarget ? this.listPaneTarget : null, false)
+    }
+  }
+
+  onFetchError(event) {
+    if (!this.managesRequestTarget(event.target)) return
+
+    if (this.previousSelectedRowId) {
+      const previous = document.getElementById(this.previousSelectedRowId)
+      if (previous) this.setSelectedRow(previous)
+    } else if (this.previousSelectedRowId === "") {
+      this.element.querySelectorAll(".inbox-table tbody tr").forEach((row) => row.setAttribute("aria-selected", "false"))
+    }
+    this.previousSelectedRowId = null
+    this.savedListScrollTop = null
+    const inboxFrame = document.getElementById("project_inbox")
+    if (inboxFrame) this.syncControlsFromFrame(inboxFrame)
+    this.clearBusyState()
+  }
+
+  onSubmitStart(event) {
+    const form = event.target
+    if (!(form instanceof HTMLFormElement) || !form.closest("#error_detail")) return
+
+    this.setBusy(this.hasDetailPaneTarget ? this.detailPaneTarget : null, true)
+  }
+
+  onSubmitEnd(event) {
+    const form = event.target
+    if (!(form instanceof HTMLFormElement) || !form.closest("#error_detail")) return
+
+    this.setBusy(this.hasDetailPaneTarget ? this.detailPaneTarget : null, false)
+  }
+
+  syncControlsFromFrame(frame) {
+    const stateElement = frame.querySelector("[data-inbox-state-url]")
+    const stateUrl = stateElement ? stateElement.dataset.inboxStateUrl : null
+    if (!stateUrl) return
+
+    const url = new URL(stateUrl, window.location.origin)
+    const state = url.searchParams
+    this.element.querySelectorAll(".inbox-workbench-filters form [name]").forEach((control) => {
+      if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement)) return
+      if (["authenticity_token", "utf8", "_method"].includes(control.name)) return
+      if (control === document.activeElement && control.name === "q") return
+
+      if (control instanceof HTMLInputElement && ["checkbox", "radio"].includes(control.type)) {
+        control.checked = state.getAll(control.name).includes(control.value)
+      } else if (control instanceof HTMLSelectElement && control.multiple) {
+        const selectedValues = state.getAll(control.name)
+        Array.from(control.options).forEach((option) => { option.selected = selectedValues.includes(option.value) })
+      } else {
+        control.value = state.get(control.name) || ""
+      }
+    })
+
+    const filter = state.get("filter") || "unresolved"
+    this.filterLinkTargets.forEach((link) => {
+      const linkFilter = new URL(link.href, window.location.origin).searchParams.get("filter") || "unresolved"
+      const linkUrl = new URL(stateUrl, window.location.origin)
+      linkUrl.searchParams.set("filter", linkFilter)
+      link.href = `${linkUrl.pathname}${linkUrl.search}${linkUrl.hash}`
+      if (linkFilter === filter) {
+        link.setAttribute("aria-current", "page")
+      } else {
+        link.removeAttribute("aria-current")
+      }
+    })
+
+    if (this.hasClearProfileLinkTarget) {
+      const clearUrl = new URL(stateUrl, window.location.origin)
+      const profileKeys = (this.clearProfileLinkTarget.dataset.inboxProfileFilterKeys || "").split(",").filter(Boolean)
+      profileKeys.forEach((key) => clearUrl.searchParams.delete(key))
+      this.clearProfileLinkTarget.href = `${clearUrl.pathname}${clearUrl.search}${clearUrl.hash}`
     }
   }
 
   findListScroller() {
     return this.element.querySelector(".inbox-list-scroll")
+  }
+
+  managesRequestTarget(target) {
+    if (!(target instanceof Element)) return false
+
+    return ["error_detail", "project_inbox"].includes(target.id) ||
+      Boolean(target.closest("#error_detail, #project_inbox"))
   }
 
   clearBusyState() {

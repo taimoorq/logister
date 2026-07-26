@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: 3.1
+  version: 3.2
   summary: Send application telemetry and scheduled-work check-ins to Logister.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
@@ -56,8 +56,8 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.1"
-                    api_contract_version: "3.1"
+                    server_version: "3.2"
+                    api_contract_version: "3.2"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "0.1.2"

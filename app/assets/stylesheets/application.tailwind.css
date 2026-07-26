@@ -44,6 +44,193 @@
   --color-violet-800: var(--app-archived-800);
 }
 
+/* Project experience profiles */
+.android-mechanism-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--app-control-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.android-mechanism-badge.mechanism-unhandled_exception,
+.android-mechanism-badge.mechanism-anr,
+.android-mechanism-badge.mechanism-native_crash {
+  border-color: var(--app-danger-border, #b91c1c);
+  color: var(--app-danger-text, #991b1b);
+  background: var(--app-danger-surface, #fef2f2);
+}
+
+.android-impact-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+  background: var(--app-surface);
+}
+
+.android-impact-strip > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.android-impact-strip strong {
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.android-impact-strip span {
+  color: var(--app-muted-text);
+  font-size: 0.72rem;
+}
+
+.android-impact-incomplete strong,
+.android-mapping-status span {
+  color: var(--app-muted-text);
+}
+
+.android-error-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.android-culprit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: var(--app-muted-text);
+  font-size: 0.8rem;
+}
+
+.android-mapping-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  padding: 0.65rem 1rem;
+  border-block: 1px solid var(--app-border);
+  background: var(--app-canvas);
+  font-size: 0.76rem;
+}
+
+.frame-origin {
+  color: var(--app-muted-text);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.android-cause-chain,
+.mobile-trail-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.android-cause-chain li,
+.mobile-trail-list li {
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--app-border-strong);
+}
+
+.android-cause-chain li > span:first-child,
+.mobile-trail-time {
+  display: block;
+  color: var(--app-muted-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mobile-context-grid,
+.mobile-trail {
+  display: grid;
+  gap: 1rem;
+}
+
+.mobile-context-grid {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.mobile-context-section {
+  padding: 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+  background: var(--app-surface);
+}
+
+.mobile-context-section h3 {
+  margin: 0 0 0.75rem;
+  color: var(--app-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mobile-context-section dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.mobile-context-section dl > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.3fr);
+  gap: 0.65rem;
+}
+
+.mobile-context-section dt {
+  color: var(--app-muted-text);
+  font-size: 0.75rem;
+}
+
+.mobile-context-section dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+}
+
+.android-row-signals,
+.android-row-culprit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.android-row-signals strong {
+  color: var(--app-text);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.android-row-culprit {
+  min-width: min(100%, 18rem);
+  overflow: hidden;
+  color: var(--app-muted-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @layer base {
   :root {
     --app-neutral-50: #f8fafc;
@@ -1514,7 +1701,7 @@
   }
   .inbox-workbench {
     @apply grid grid-cols-1 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] gap-4 items-start;
-    --inbox-workbench-height: clamp(36rem, calc(100vh - 18rem), 56rem);
+    --inbox-workbench-height: clamp(38rem, calc(100dvh - 13rem), 64rem);
   }
   .inbox-workbench-filters {
     @apply min-w-0 lg:col-span-2;
@@ -1558,7 +1745,7 @@
     @apply min-h-0;
   }
   .inbox-workbench-detail turbo-frame#error_detail {
-    @apply flex min-h-0 flex-col gap-4 overflow-hidden;
+    @apply flex min-h-0 flex-col gap-2 overflow-hidden;
     height: var(--inbox-workbench-height);
   }
   .inbox-pane-header {
@@ -1607,14 +1794,12 @@
   .inbox-filter-link {
     @apply inline-flex h-8 shrink-0 items-center justify-between gap-2 rounded-md border border-transparent px-2.5 py-1.5 text-xs font-semibold no-underline text-slate-600 hover:bg-slate-100;
   }
-  .inbox-filter-link.is-active,
   .inbox-filter-link[aria-current="page"] {
     @apply bg-blue-50 text-blue-700 font-medium;
   }
   .filter-count {
     @apply inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-xs font-bold text-slate-500;
   }
-  .inbox-filter-link.is-active .filter-count,
   .inbox-filter-link[aria-current="page"] .filter-count {
     @apply bg-blue-100 border-blue-200 text-blue-700;
   }
@@ -1651,7 +1836,6 @@
   .inbox-table .inbox-row:hover {
     @apply bg-slate-50;
   }
-  .inbox-table .inbox-row.is-selected,
   .inbox-table .inbox-row[aria-selected="true"] {
     @apply bg-blue-50 border-l-4 border-l-blue-600;
   }
@@ -1758,7 +1942,7 @@
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200;
   }
   .detail-actionbar {
-    @apply shrink-0 rounded-xl bg-white border border-slate-200 shadow-sm p-4;
+    @apply shrink-0 rounded-xl bg-white border border-slate-200 shadow-sm p-3;
   }
   .detail-actionbar-main {
     @apply flex min-w-0 flex-wrap items-start justify-between gap-3;
@@ -1770,10 +1954,22 @@
     @apply flex min-w-0 flex-wrap items-center gap-2;
   }
   .detail-actionbar-actions {
-    @apply flex flex-wrap gap-2 shrink-0;
+    @apply flex flex-wrap items-center gap-2 shrink-0;
+  }
+  .detail-export-menu {
+    @apply relative;
+  }
+  .detail-export-menu > summary {
+    @apply list-none cursor-pointer;
+  }
+  .detail-export-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+  .detail-export-popover {
+    @apply absolute right-0 top-full z-30 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-lg;
   }
   .detail-export-form {
-    @apply flex flex-wrap items-center gap-2;
+    @apply flex flex-col gap-2;
   }
   .detail-export-checkbox {
     @apply inline-flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-600;
@@ -1782,10 +1978,10 @@
     @apply h-4 w-4 rounded border-slate-300 text-blue-600;
   }
   .detail-context-disclosure {
-    @apply mt-3 rounded-lg border border-slate-200 bg-slate-50;
+    @apply mt-2 rounded-lg border border-slate-200 bg-slate-50;
   }
   .detail-context-disclosure summary {
-    @apply flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm text-slate-600;
+    @apply flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-1.5 text-sm text-slate-600;
   }
   .detail-context-disclosure summary::-webkit-details-marker {
     display: none;
@@ -1938,6 +2134,19 @@
     @apply min-h-0 flex-1 overflow-y-auto rounded-xl bg-white border border-slate-200 shadow-sm p-3 sm:p-5;
     scrollbar-gutter: stable;
   }
+  .detail-workspace {
+    @apply flex flex-col overflow-hidden p-0;
+  }
+  .detail-workspace .detail-tabs {
+    @apply static m-0 shrink-0 gap-1 border-b border-slate-200 bg-white px-2 py-2 sm:flex-nowrap;
+  }
+  .detail-workspace .detail-tab {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+  .detail-workspace .detail-panel {
+    @apply min-h-0 flex-1 overflow-auto p-3;
+    scrollbar-gutter: stable;
+  }
   .detail-tabs {
     @apply sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-slate-200 bg-white pb-3 mb-4 flex-nowrap sm:flex-wrap;
     -webkit-overflow-scrolling: touch;
@@ -1995,16 +2204,35 @@
     @apply border-rose-300 text-rose-700 bg-rose-50;
   }
   .source-lookup-status {
-    @apply mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900;
+    @apply mb-2 overflow-hidden rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-900;
+  }
+  .source-lookup-status summary {
+    @apply flex cursor-pointer list-none items-center gap-2 px-3 py-2;
+  }
+  .source-lookup-status summary::-webkit-details-marker {
+    display: none;
+  }
+  .source-lookup-status summary > span:not(.source-lookup-status-action) {
+    @apply min-w-0 flex-1 truncate text-xs text-amber-800;
   }
   .source-lookup-status strong {
-    @apply block text-sm font-semibold;
+    @apply shrink-0 text-xs font-semibold;
   }
-  .source-lookup-status p {
-    @apply mt-1 text-sm text-amber-800;
+  .source-lookup-status-action {
+    @apply shrink-0 text-xs font-semibold text-amber-800;
+  }
+  .source-lookup-status[open] .source-lookup-status-action {
+    font-size: 0;
+  }
+  .source-lookup-status[open] .source-lookup-status-action::after {
+    @apply text-xs;
+    content: "Hide";
+  }
+  .source-lookup-status-body {
+    @apply border-t border-amber-200 px-3 py-3;
   }
   .source-lookup-status dl {
-    @apply mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3;
+    @apply grid grid-cols-1 gap-2 sm:grid-cols-3;
   }
   .source-lookup-status dt {
     @apply text-xs font-semibold uppercase text-amber-700;
@@ -2055,16 +2283,22 @@
     @apply inline-flex;
   }
   .better-errors-shell {
-    @apply rounded-xl border border-slate-300 overflow-hidden bg-slate-100;
+    @apply rounded-lg border border-slate-300 overflow-hidden bg-slate-100;
   }
   .better-errors-header {
-    @apply bg-slate-900 text-slate-100 px-5 py-4;
+    @apply flex flex-wrap items-center gap-x-4 gap-y-2 bg-slate-900 px-3 py-2 text-slate-100;
   }
-  .better-errors-kicker {
-    @apply text-sm text-slate-300 mb-1;
+  .better-errors-runtime {
+    @apply flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-slate-300;
   }
-  .better-errors-message {
-    @apply text-2xl font-semibold text-white leading-tight m-0;
+  .better-errors-runtime-kind {
+    @apply rounded border border-slate-600 bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-200;
+  }
+  .better-errors-runtime strong {
+    @apply text-slate-100;
+  }
+  .better-errors-header .request-highlight {
+    @apply m-0 min-w-0 flex-1;
   }
   .request-highlight {
     @apply mt-3 flex max-w-full flex-wrap items-center gap-2 text-sm;
@@ -2079,10 +2313,10 @@
     @apply min-w-0 max-w-full truncate text-xs font-medium text-slate-300;
   }
   .better-errors-workbench {
-    @apply grid grid-cols-1 xl:grid-cols-[22rem_1fr] gap-4 p-4;
+    @apply grid grid-cols-1 gap-2 p-2 xl:grid-cols-[minmax(15rem,19rem)_minmax(0,1fr)];
   }
   .better-errors-frames {
-    @apply bg-white border border-slate-300 rounded-lg overflow-hidden flex flex-col min-h-[26rem];
+    @apply bg-white border border-slate-300 rounded-md overflow-hidden flex flex-col min-h-[26rem];
   }
   .better-errors-frame-scope {
     @apply flex gap-2 px-3 py-2 border-b border-slate-200 bg-slate-50;
@@ -2118,13 +2352,22 @@
     @apply text-cyan-100;
   }
   .better-errors-main {
-    @apply min-w-0 flex flex-col gap-4;
+    @apply min-w-0 flex flex-col gap-3;
+  }
+  .better-errors-source-frame {
+    @apply block min-w-0;
+  }
+  .better-errors-source-frame[aria-busy="true"] {
+    @apply opacity-70;
   }
   .better-errors-code {
     @apply p-0 overflow-hidden border border-slate-300 shadow-none;
   }
   .better-errors-code-header {
     @apply flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm font-semibold border-b border-slate-200 bg-slate-50 text-slate-700;
+  }
+  .better-errors-code-location {
+    @apply shrink-0 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500;
   }
   .better-errors-source {
     @apply m-0 text-sm font-mono overflow-auto max-h-[26rem] bg-white text-slate-900;
@@ -2142,10 +2385,10 @@
     @apply px-3 py-0.5 whitespace-pre;
   }
   .better-errors-section {
-    @apply border-t border-slate-300 pt-4;
+    @apply border-t border-slate-300 pt-3;
   }
   .better-errors-section h4 {
-    @apply text-cyan-700 text-2xl font-semibold mb-2;
+    @apply mb-2 text-base font-semibold text-cyan-800;
   }
   .better-errors-dl {
     @apply grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[13rem_1fr];
@@ -2158,6 +2401,28 @@
   }
   .better-errors-dl dd code {
     @apply whitespace-pre-wrap;
+  }
+  @media (min-width: 1280px) {
+    .detail-workspace .event-workspace-ruby {
+      @apply overflow-hidden;
+    }
+    .detail-workspace .event-workspace-ruby .better-errors-shell {
+      @apply flex h-full min-h-0 flex-col;
+    }
+    .detail-workspace .event-workspace-ruby .better-errors-workbench {
+      @apply min-h-0 flex-1;
+      grid-template-rows: minmax(0, 1fr);
+    }
+    .detail-workspace .event-workspace-ruby .better-errors-frames {
+      @apply min-h-0;
+    }
+    .detail-workspace .event-workspace-ruby .frame-list {
+      @apply min-h-0 flex-1;
+    }
+    .detail-workspace .event-workspace-ruby .better-errors-main {
+      @apply min-h-0 overflow-y-auto pr-1;
+      scrollbar-gutter: stable;
+    }
   }
   .dotnet-dev-page {
     @apply overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-900;
@@ -2452,6 +2717,16 @@
 
     .detail-actionbar-actions {
       @apply w-full;
+    }
+
+    .detail-export-menu,
+    .detail-export-menu > summary,
+    .detail-export-popover {
+      @apply w-full;
+    }
+
+    .detail-export-popover {
+      @apply left-0 right-auto;
     }
 
     .detail-export-form {
@@ -4407,6 +4682,7 @@
   ::view-transition-group(.project-membership-message),
   ::view-transition-group(.project-membership-row),
   ::view-transition-group(.project-card),
+  ::view-transition-group(.project-inbox),
   ::view-transition-group(.inbox-row),
   ::view-transition-group(.error-detail-pane),
   ::view-transition-group(.dashboard-error-card) {
@@ -4432,5 +4708,101 @@
 
   ::view-transition-group(*) {
     animation-duration: 0.01ms !important;
+  }
+}
+
+.android-inbox-controls {
+  display: flex;
+  align-items: end;
+  gap: 0.65rem;
+}
+
+.android-control-field {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 9rem;
+}
+
+.android-control-field > span,
+.android-filter-grid label > span {
+  color: var(--app-muted-text);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.android-filter-drawer {
+  position: relative;
+}
+
+.android-filter-drawer > summary {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--app-control-border);
+  border-radius: 0.5rem;
+  background: var(--app-surface);
+  color: var(--app-text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.android-filter-drawer > summary span {
+  display: inline-grid;
+  width: 1.2rem;
+  height: 1.2rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--app-neutral-100);
+  font-size: 0.68rem;
+}
+
+.android-filter-grid {
+  position: absolute;
+  z-index: 25;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  display: grid;
+  width: min(42rem, calc(100vw - 2rem));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--app-border-strong);
+  border-radius: 0.75rem;
+  background: var(--app-surface);
+  box-shadow: 0 1rem 2.5rem rgb(15 23 42 / 0.16);
+}
+
+.android-filter-grid label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.android-filter-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .android-inbox-controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .android-control-field {
+    flex: 1 1 9rem;
+  }
+
+  .android-filter-grid {
+    right: auto;
+    left: 0;
+    grid-template-columns: 1fr;
   }
 }

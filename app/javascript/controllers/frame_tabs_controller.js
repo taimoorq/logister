@@ -13,6 +13,7 @@ export default class extends Controller {
   }
 
   connect() {
+    this.previousTabId = null
     this.syncStateFromMarkup()
     this.element.setAttribute("aria-busy", "false")
   }
@@ -21,8 +22,25 @@ export default class extends Controller {
     const tab = event.currentTarget
     if (!(tab instanceof HTMLElement)) return
 
+    const previous = this.tabTargets.find((candidate) => candidate.getAttribute("aria-selected") === "true")
+    this.previousTabId = previous ? previous.id : null
     this.applyActiveState(tab)
     if (this.hasTurboFrameValue) this.element.setAttribute("aria-busy", "true")
+  }
+
+  navigate(event) {
+    const currentIndex = this.tabTargets.indexOf(event.currentTarget)
+    if (currentIndex < 0) return
+
+    let nextIndex
+    if (["ArrowRight", "ArrowDown"].includes(event.key)) nextIndex = (currentIndex + 1) % this.tabTargets.length
+    if (["ArrowLeft", "ArrowUp"].includes(event.key)) nextIndex = (currentIndex - 1 + this.tabTargets.length) % this.tabTargets.length
+    if (event.key === "Home") nextIndex = 0
+    if (event.key === "End") nextIndex = this.tabTargets.length - 1
+    if (nextIndex === undefined) return
+
+    event.preventDefault()
+    this.tabTargets[nextIndex].focus()
   }
 
   onBeforeFetch(event) {
@@ -34,6 +52,16 @@ export default class extends Controller {
   onFrameLoad(event) {
     if (!this.matchesManagedFrame(event.target)) return
 
+    this.element.setAttribute("aria-busy", "false")
+    this.previousTabId = null
+  }
+
+  onFetchError(event) {
+    if (!this.matchesManagedFrame(event.target)) return
+
+    const previous = this.previousTabId ? document.getElementById(this.previousTabId) : null
+    if (previous) this.applyActiveState(previous)
+    this.previousTabId = null
     this.element.setAttribute("aria-busy", "false")
   }
 

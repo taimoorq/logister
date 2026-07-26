@@ -1,0 +1,90 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Encode the public documentation screenshots as small, responsive WebP files.
+#
+# This intentionally works from the screenshot source directory used by
+# bin/build-cloudflare-docs. Keeping the responsive variants next to the source
+# images means the docs builder can copy a complete srcset without any post-
+# deploy image processing.
+
+require "fileutils"
+require "open3"
+require "pathname"
+
+repo_root = Pathname.new(__dir__).join("..").expand_path
+source_root = Pathname.new(
+  ENV.fetch("SCREENSHOT_SOURCE", repo_root.join("app/assets/images/screenshots/public").to_s)
+).expand_path
+
+unless source_root.directory?
+  abort "Screenshot source directory does not exist: #{source_root}"
+end
+
+quality = Integer(ENV.fetch("SCREENSHOT_WEBP_QUALITY", "85"))
+unless quality.between?(0, 100)
+  abort "SCREENSHOT_WEBP_QUALITY must be between 0 and 100"
+end
+
+variant_widths = ENV.fetch("SCREENSHOT_VARIANT_WIDTHS", "360,480,720,960")
+  .split(",")
+  .map { |width| Integer(width.strip) }
+  .select(&:positive?)
+  .uniq
+  .sort
+abort "SCREENSHOT_VARIANT_WIDTHS must contain at least one positive width" if variant_widths.empty?
+
+def executable(name)
+  path, status = Open3.capture2("sh", "-lc", "command -v #{name}")
+  return path.strip if status.success? && !path.strip.empty?
+
+  nil
+end
+
+cwebp = ENV["CWEBP"].to_s.strip
+cwebp = executable("cwebp") if cwebp.empty?
+abort "cwebp is required (install libwebp or set CWEBP=/path/to/cwebp)" if cwebp.nil? || cwebp.empty?
+
+sources = Dir[source_root.join("*.webp").to_s]
+  .reject { |path| Pathname.new(path).basename.to_s.match?(/-\d+\.webp\z/) }
+  .sort
+abort "No base WebP screenshots found in #{source_root}" if sources.empty?
+
+def encode!(cwebp, input, output, quality:, resize: nil)
+  temporary = output.dirname.join(".#{output.basename}.tmp-#{Process.pid}-#{rand(1_000_000)}")
+  args = [cwebp, "-quiet", "-q", quality.to_s, "-m", "6", "-pass", "10", "-mt", "-metadata", "none"]
+  if resize
+    args.concat(["-resize", resize.to_s, "0", "-resize_mode", "down_only"])
+  end
+  args.concat([input.to_s, "-o", temporary.to_s])
+
+  _output, status = Open3.capture2e(*args)
+  abort "cwebp failed for #{input}" unless status.success? && temporary.file?
+
+  FileUtils.mv(temporary, output)
+end
+
+def image_width(path)
+  identify, status = Open3.capture2("identify", "-format", "%w", path.to_s)
+  return nil unless status.success?
+
+  width = Integer(identify.strip)
+  width.positive? ? width : nil
+rescue Errno::ENOENT, ArgumentError
+  nil
+end
+
+sources.each do |path|
+  input = Pathname.new(path)
+  base_width = image_width(input)
+  encode!(cwebp, input, input, quality: quality)
+
+  variant_widths.each do |width|
+    next if base_width && width >= base_width
+
+    output = input.sub_ext("-#{width}.webp")
+    encode!(cwebp, input, output, quality: quality, resize: width)
+  end
+
+  puts "optimized #{input.basename} (#{variant_widths.join(", ")}px variants)"
+end

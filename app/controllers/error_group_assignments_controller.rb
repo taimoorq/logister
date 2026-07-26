@@ -38,7 +38,10 @@ class ErrorGroupAssignmentsController < ApplicationController
     filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     query = params[:q].to_s.strip
     assignee = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
-    groups = inbox_groups(@project, filter: filter, query: query, assignee: assignee, viewer: current_user)
+    profile_filters = normalize_inbox_profile_filters(@project)
+    sort = normalize_inbox_sort(@project, params[:sort])
+    page = inbox_page(@project, filter: filter, query: query, assignee: assignee, viewer: current_user, dimensions: profile_filters, sort: sort)
+    groups = page.groups
     counts = inbox_counts(@project, assignee: assignee, viewer: current_user)
     selected_uuid = groups.any? { |group| group.id == @group.id } ? @group.uuid : nil
 
@@ -53,11 +56,15 @@ class ErrorGroupAssignmentsController < ApplicationController
               groups: groups,
               latest_events: inbox_latest_events(groups),
               group_trends: inbox_group_trends(@project, groups),
+              impact_summaries: inbox_impact_summaries(@project, groups),
               has_activity_events: groups.empty? && project_has_activity_events?(@project),
               selected_uuid: selected_uuid,
               filter: filter,
               query: query,
-              assignee: assignee
+              assignee: assignee,
+              sort: sort,
+              profile_filters: profile_filters,
+              next_cursor: page.next_cursor
             },
             method: :morph
           ),
@@ -71,7 +78,7 @@ class ErrorGroupAssignmentsController < ApplicationController
         ]
       end
 
-      redirect_params = { filter: filter, q: query, assignee: assignee }
+      redirect_params = inbox_profile_state_params(@project).merge(filter: filter, q: query, assignee: assignee)
       redirect_params[:group_uuid] = selected_uuid if selected_uuid.present?
       format.html { redirect_to inbox_project_path(@project, redirect_params), notice: "Assignment updated." }
     end
@@ -90,6 +97,7 @@ class ErrorGroupAssignmentsController < ApplicationController
           group: detail_data[:group],
           occurrences: detail_data[:occurrences],
           related_logs: detail_data[:related_logs],
+          impact_summary: detail_data[:impact_summary],
           filter: filter,
           query: query,
           assignee: assignee,

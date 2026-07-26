@@ -41,6 +41,21 @@ RSpec.describe ProjectIntegrationSetting, type: :model do
       expect(google_play).to be_valid
       expect(app_store).to be_valid
     end
+
+    it "requires a package and credential reference when Google Play imports are enabled" do
+      setting = build(
+        :project_integration_setting,
+        project: create(:project, :android),
+        provider: "google_play",
+        enabled: true,
+        external_project_id: nil,
+        credential_reference: nil
+      )
+
+      expect(setting).not_to be_valid
+      expect(setting.errors[:external_project_id]).to be_present
+      expect(setting.errors[:credential_reference]).to be_present
+    end
   end
 
   describe "#configured?" do

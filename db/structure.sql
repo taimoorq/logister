@@ -10,6 +10,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
 -- Name: pg_trgm; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -40,6 +54,47 @@ COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: android_mapping_files; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.android_mapping_files (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    uploaded_by_id bigint,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    package_name character varying NOT NULL,
+    version_name character varying,
+    version_code character varying NOT NULL,
+    release character varying,
+    checksum_sha256 character varying NOT NULL,
+    byte_size bigint NOT NULL,
+    content bytea NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: android_mapping_files_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.android_mapping_files_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: android_mapping_files_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.android_mapping_files_id_seq OWNED BY public.android_mapping_files.id;
+
 
 --
 -- Name: api_keys; Type: TABLE; Schema: public; Owner: -
@@ -333,7 +388,9 @@ CREATE TABLE public.error_groups (
     assigned_user_id bigint,
     assigned_by_user_id bigint,
     assigned_at timestamp(6) without time zone,
-    latest_event_occurred_at timestamp(6) without time zone
+    latest_event_occurred_at timestamp(6) without time zone,
+    grouping_algorithm_version integer DEFAULT 1 NOT NULL,
+    grouping_evidence jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -368,7 +425,15 @@ CREATE TABLE public.error_occurrences (
     occurred_at timestamp(6) without time zone NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    ingest_event_occurred_at timestamp(6) without time zone
+    ingest_event_occurred_at timestamp(6) without time zone,
+    mechanism character varying,
+    release character varying,
+    session_hash character varying,
+    installation_hash character varying,
+    user_hash character varying,
+    foreground boolean,
+    telemetry_schema_version integer,
+    dimensions jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -1732,6 +1797,13 @@ ALTER TABLE ONLY public.ingest_events ATTACH PARTITION public.ingest_events_part
 
 
 --
+-- Name: android_mapping_files id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.android_mapping_files ALTER COLUMN id SET DEFAULT nextval('public.android_mapping_files_id_seq'::regclass);
+
+
+--
 -- Name: api_keys id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1925,6 +1997,14 @@ ALTER TABLE ONLY public.user_notification_dismissals ALTER COLUMN id SET DEFAULT
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: android_mapping_files android_mapping_files_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.android_mapping_files
+    ADD CONSTRAINT android_mapping_files_pkey PRIMARY KEY (id);
 
 
 --
@@ -2320,6 +2400,13 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: idx_android_mappings_release_identity; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_android_mappings_release_identity ON public.android_mapping_files USING btree (project_id, package_name, version_code);
+
+
+--
 -- Name: idx_api_keys_project_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2457,6 +2544,13 @@ CREATE INDEX idx_error_groups_project_status_last_seen ON public.error_groups US
 --
 
 CREATE INDEX idx_error_groups_project_updated_at ON public.error_groups USING btree (project_id, updated_at DESC);
+
+
+--
+-- Name: idx_error_occurrences_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_error_occurrences_cursor ON public.error_occurrences USING btree (error_group_id, occurred_at, id);
 
 
 --
@@ -2845,6 +2939,13 @@ CREATE INDEX idx_on_enabled_last_imported_at_ae810e9f88 ON public.project_integr
 
 
 --
+-- Name: idx_on_error_group_id_installation_hash_65876378ac; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_on_error_group_id_installation_hash_65876378ac ON public.error_occurrences USING btree (error_group_id, installation_hash);
+
+
+--
 -- Name: idx_on_project_id_provider_full_name_6dea472798; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2982,6 +3083,34 @@ CREATE INDEX idx_trace_spans_trace_parent ON public.trace_spans USING btree (pro
 --
 
 CREATE UNIQUE INDEX idx_user_notification_dismissals_uniqueness ON public.user_notification_dismissals USING btree (user_id, notification_key);
+
+
+--
+-- Name: index_android_mapping_files_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_android_mapping_files_on_project_id ON public.android_mapping_files USING btree (project_id);
+
+
+--
+-- Name: index_android_mapping_files_on_project_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_android_mapping_files_on_project_id_and_created_at ON public.android_mapping_files USING btree (project_id, created_at);
+
+
+--
+-- Name: index_android_mapping_files_on_uploaded_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_android_mapping_files_on_uploaded_by_id ON public.android_mapping_files USING btree (uploaded_by_id);
+
+
+--
+-- Name: index_android_mapping_files_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_android_mapping_files_on_uuid ON public.android_mapping_files USING btree (uuid);
 
 
 --
@@ -3307,6 +3436,13 @@ CREATE UNIQUE INDEX index_error_groups_on_uuid ON public.error_groups USING btre
 
 
 --
+-- Name: index_error_occurrences_on_dimensions; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_occurrences_on_dimensions ON public.error_occurrences USING gin (dimensions);
+
+
+--
 -- Name: index_error_occurrences_on_error_group_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3321,10 +3457,31 @@ CREATE UNIQUE INDEX index_error_occurrences_on_error_group_id_and_ingest_event_i
 
 
 --
+-- Name: index_error_occurrences_on_error_group_id_and_mechanism; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_occurrences_on_error_group_id_and_mechanism ON public.error_occurrences USING btree (error_group_id, mechanism);
+
+
+--
 -- Name: index_error_occurrences_on_error_group_id_and_occurred_at; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_error_occurrences_on_error_group_id_and_occurred_at ON public.error_occurrences USING btree (error_group_id, occurred_at);
+
+
+--
+-- Name: index_error_occurrences_on_error_group_id_and_release; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_occurrences_on_error_group_id_and_release ON public.error_occurrences USING btree (error_group_id, release);
+
+
+--
+-- Name: index_error_occurrences_on_error_group_id_and_session_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_error_occurrences_on_error_group_id_and_session_hash ON public.error_occurrences USING btree (error_group_id, session_hash);
 
 
 --
@@ -10064,6 +10221,14 @@ ALTER TABLE ONLY public.api_keys
 
 
 --
+-- Name: android_mapping_files fk_rails_09c2aa1b48; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.android_mapping_files
+    ADD CONSTRAINT fk_rails_09c2aa1b48 FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
 -- Name: mobile_ingest_tokens fk_rails_0bc57896ad; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10400,6 +10565,14 @@ ALTER TABLE ONLY public.check_in_monitors
 
 
 --
+-- Name: android_mapping_files fk_rails_f45e32cf6f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.android_mapping_files
+    ADD CONSTRAINT fk_rails_f45e32cf6f FOREIGN KEY (uploaded_by_id) REFERENCES public.users(id);
+
+
+--
 -- Name: mobile_ingest_tokens fk_rails_f599113ac4; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10430,6 +10603,8 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260726173000'),
+('20260726170000'),
 ('20260725120000'),
 ('20260724130000'),
 ('20260724120000'),

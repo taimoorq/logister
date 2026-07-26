@@ -1,11 +1,12 @@
 <%# ── Standalone event detail page ──────────────────────────────────────── %>
 <% exception_data = event_exception_data(@event) %>
 <% backtrace = event_backtrace(exception_data) %>
-<% active_tab = @tab.presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
+<% experience = project_experience(@project) %>
+<% active_tab = experience.normalize_detail_tab(@tab, event: @event, occurrences_count: @occurrences.size, related_logs_count: @related_logs.size) %>
 <% stacktrace_tab_label = event_stacktrace_tab_label(@project, @event) %>
 <% stacktrace_partial = event_stacktrace_partial(@project, @event) %>
 <% request_details = request_context_details(@event) %>
-<% parsed_frames = parse_backtrace_frames(backtrace) %>
+<% parsed_frames = event_frames(@project, @event, exception_data) %>
 <% app_frames = parsed_frames.select { |frame| frame[:application_frame] } %>
 <% frame_scope = params[:frame_scope].presence_in(%w[application all]) || "application" %>
 <% visible_frames = (frame_scope == "application" && app_frames.any?) ? app_frames : parsed_frames %>

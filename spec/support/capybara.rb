@@ -27,5 +27,6 @@ end
 RSpec.configure do |config|
   config.before(:each, type: :system) do
     driven_by :logister_selenium_chrome_headless
+    page.current_window.resize_to(1400, 1400)
   end
 end

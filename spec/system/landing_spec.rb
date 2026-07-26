@@ -71,6 +71,34 @@ RSpec.describe "Landing and dashboard", type: :system do
     expect(slide_tab_stops.drop(1).map { |slide| slide.fetch("tabindex") }.uniq).to eq([ "-1" ])
   end
 
+  it "serves the compact WebP screenshot candidate on mobile" do
+    page.driver.browser.execute_cdp("Network.clearBrowserCache")
+    page.current_window.resize_to(390, 844)
+    visit root_path
+
+    image = find(".shot-main img.hero-shot")
+    intrinsic_size = page.evaluate_script(<<~JS)
+      (function() {
+        var image = document.querySelector(".shot-main img.hero-shot")
+        return { width: image.getAttribute("width"), height: image.getAttribute("height") }
+      })()
+    JS
+    expect(intrinsic_size).to eq("width" => "1800", "height" => "900")
+    expect(image[:srcset]).to include("dashboard-overview-360")
+    expect(image[:srcset]).to include("360w")
+    expect(image[:srcset]).to include("dashboard-overview-480")
+    expect(image[:srcset]).to include("480w")
+    expect(image[:srcset]).to include("dashboard-overview-720")
+    expect(image[:srcset]).to include("720w")
+    expect(image[:srcset]).to include("dashboard-overview-960")
+    expect(image[:srcset]).to include("960w")
+    expect(image[:srcset]).to include("1800w")
+    expect(image[:sizes]).to include("max-width: 900px")
+
+    current_source = page.evaluate_script("document.querySelector('.shot-main img.hero-shot').currentSrc")
+    expect(current_source).to match(%r{/assets/screenshots/public/dashboard-overview-(?:360|480|720|960)})
+  end
+
   it "redirects to dashboard when signed in" do
     sign_in users(:one)
     visit root_path

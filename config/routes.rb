@@ -101,6 +101,8 @@ Rails.application.routes.draw do
     post "github/installations/:uuid/sync", to: "github/installations#sync", as: :github_installation_sync
     resources :github_installation_links, only: [ :create, :destroy ], controller: "github/project_installations", param: :uuid
     resource :integration_setting, only: [ :update ], controller: "project_integration_settings", as: :integration_setting
+    post "integration_setting/import", to: "project_integration_settings#import", as: :integration_setting_import
+    resources :android_mapping_files, only: [ :create, :destroy ], param: :uuid
     resource :notification_preference, only: [ :update ], controller: "project_notification_preferences", as: :notification_preference
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
     resource :rate_limit, only: [ :update ], controller: "project_rate_limits", as: :rate_limit

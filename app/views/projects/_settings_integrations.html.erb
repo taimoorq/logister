@@ -1,3 +1,11 @@
+<% if @project.integration_android? %>
+  <%= render "projects/settings_android_integrations" %>
+<% end %>
+
+<% if @project.integration_ios? %>
+  <%= render "projects/settings_ios_integrations" %>
+<% end %>
+
 <% if @project.integration_cloudflare_pages? %>
         <article class="settings-panel lg:col-span-2"
                  id="platform-integration">

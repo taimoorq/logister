@@ -1,0 +1,51 @@
+{
+  "event_type": "error",
+  "level": "error",
+  "message": "java.lang.IllegalStateException: Checkout failed",
+  "context": {
+    "platform": "android",
+    "service": "com.acme.shop",
+    "package_name": "com.acme.shop",
+    "app_version": "1.4.0",
+    "build_number": "42",
+    "build_type": "release",
+    "release": "1.4.0+42",
+    "screen_name": "Checkout",
+    "device_manufacturer": "Google",
+    "device_model": "Pixel 8",
+    "device_brand": "google",
+    "os_name": "Android",
+    "os_version": "15",
+    "android_api_level": 35,
+    "exception": {
+      "type": "java.lang.IllegalStateException",
+      "message": "Checkout failed",
+      "stacktrace": [
+        {
+          "class": "com.acme.shop.checkout.CartRepository",
+          "method": "save",
+          "file": "CartRepository.kt",
+          "line": 84
+        },
+        {
+          "class": "android.app.Activity",
+          "method": "performCreate",
+          "file": "Activity.java",
+          "line": 9000
+        }
+      ],
+      "cause": {
+        "type": "java.io.IOException",
+        "message": "Disk full",
+        "stacktrace": [
+          {
+            "class": "com.acme.shop.storage.CartStore",
+            "method": "write",
+            "file": "CartStore.kt",
+            "line": 19
+          }
+        ]
+      }
+    }
+  }
+}

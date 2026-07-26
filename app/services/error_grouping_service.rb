@@ -57,7 +57,10 @@ class ErrorGroupingService
   private
 
   def derive_fingerprint
+    @grouping_evidence = android_grouping_evidence if @project.integration_android?
+
     @event.fingerprint.presence ||
+      @grouping_evidence&.fingerprint.presence ||
       @event.message.to_s.lines.first.to_s.strip.presence ||
       @event.uuid
   end
@@ -76,7 +79,7 @@ class ErrorGroupingService
 
       group.assign_attributes(
         title:           @event.message.to_s.lines.first.to_s.strip.presence || "Untitled error",
-        subtitle:        exc.is_a?(Hash) ? (exc["class"].presence || exc[:class].presence) : nil,
+        subtitle:        exc.is_a?(Hash) ? (exc["class"].presence || exc[:class].presence || exc["type"].presence || exc[:type].presence) : nil,
         stage:           ctx["environment"].presence || ctx[:environment].presence || "production",
         severity:        @event.level.presence || "error",
         introduced_in_release: IngestEvent.release(@event),
@@ -88,6 +91,10 @@ class ErrorGroupingService
         latest_event_occurred_at: @event.occurred_at,
         occurrence_count: 1
       )
+      if @grouping_evidence&.usable?
+        group.grouping_algorithm_version = AndroidErrorGroupingEvidence::VERSION
+        group.grouping_evidence = @grouping_evidence.evidence
+      end
       group.save!
     end
 
@@ -105,9 +112,20 @@ class ErrorGroupingService
       error_group: group,
       ingest_event: @event,
       occurred_at: @event.occurred_at,
-      ingest_event_occurred_at: @event.occurred_at
+      ingest_event_occurred_at: @event.occurred_at,
+      **occurrence_dimensions
     )
     [ occurrence, true ]
+  end
+
+  def android_grouping_evidence
+    AndroidErrorGroupingEvidence.new(@event)
+  end
+
+  def occurrence_dimensions
+    return {} unless ErrorOccurrence.column_names.include?("dimensions")
+
+    ErrorOccurrenceDimensions.new(@event).attributes
   end
 
   def milestone_reached?(count)

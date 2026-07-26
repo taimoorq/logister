@@ -9,10 +9,16 @@ module ProjectsControllerData
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
     @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
+    @profile_filters = normalize_inbox_profile_filters(@project)
+    @sort = normalize_inbox_sort(@project, params[:sort])
+    @profile_filter_options = inbox_filter_options(@project)
     @assignable_users = @project.assignable_users.to_a
-    @tab    = params[:tab].presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace"
-    @groups = inbox_groups(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user)
+    @tab    = ProjectExperience.for(@project).normalize_detail_tab(params[:tab])
+    @inbox_page = inbox_page(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user, dimensions: @profile_filters, sort: @sort, cursor: params[:cursor])
+    @groups = @inbox_page.groups
+    @next_cursor = @inbox_page.next_cursor
     @latest_events = inbox_latest_events(@groups)
+    @impact_summaries = inbox_impact_summaries(@project, @groups)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
 
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
@@ -22,11 +28,15 @@ module ProjectsControllerData
         groups:        @groups,
         latest_events: @latest_events,
         group_trends:  inbox_group_trends(@project, @groups),
+        impact_summaries: @impact_summaries,
         has_activity_events: @has_activity_events,
         selected_uuid: @selected_uuid,
         filter:        @filter,
         query:         @query,
-        assignee:      @assignee_filter
+        assignee:      @assignee_filter,
+        sort:          @sort,
+        profile_filters: @profile_filters,
+        next_cursor:   @next_cursor
       }
     end
 
@@ -151,5 +161,6 @@ module ProjectsControllerData
     @detail_group = detail_data[:group]
     @detail_occurrences = detail_data[:occurrences]
     @detail_related_logs = detail_data[:related_logs]
+    @detail_impact_summary = detail_data[:impact_summary]
   end
 end

@@ -1,11 +1,13 @@
-<div class="better-errors-shell">
+<div class="better-errors-shell"
+     data-controller="stacktrace"
+     data-action="turbo:before-fetch-request@document->stacktrace#onBeforeFetch turbo:frame-load@document->stacktrace#onFrameLoad">
   <% assignee_param = local_assigns[:assignee_param].presence || "all" %>
   <header class="better-errors-header">
-    <p class="better-errors-kicker">
+    <p class="better-errors-runtime">
+      <span class="better-errors-runtime-kind">Ruby</span>
       <strong><%= exception_data.is_a?(Hash) ? (exception_data["class"] || exception_data[:class] || "RuntimeError") : "RuntimeError" %></strong>
-      in <%= request_details[:rails_action].presence || "unknown#action" %>
+      <span>in <%= request_details[:rails_action].presence || "unknown#action" %></span>
     </p>
-    <h3 class="better-errors-message"><%= event.message.to_s.lines.first.to_s.strip.presence || "Error event" %></h3>
     <%= render "project_events/request_highlight",
                http_method: request_details[:http_method],
                target: request_highlight_target(request_details[:url], request_details[:path], query_string: request_details[:query_string]),
@@ -32,7 +34,12 @@
             <li class="frame-item <%= "is-active" if index == selected_frame_index %>">
               <%= link_to partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: frame_scope, frame: index),
                           class: "frame-link",
-                          data: { turbo_frame: "error_detail" } do %>
+                          aria: { current: ("true" if index == selected_frame_index) },
+                          data: {
+                            turbo_frame: "stack_frame_source",
+                            action: "click->stacktrace#selectFrame",
+                            stacktrace_target: "frame"
+                          } do %>
                 <span class="frame-method"><%= frame_label %></span>
                 <span class="frame-file"><%= frame_data[:file] %>, line <%= frame_data[:line_number] %></span>
               <% end %>
@@ -45,39 +52,21 @@
     </aside>
 
     <div class="better-errors-main">
-      <section class="better-errors-code card">
-        <% if source_excerpt.present? %>
-          <%= render "project_events/source_excerpt",
-                     source_excerpt: source_excerpt,
-                     project: project,
-                     event: event,
-                     group: group,
-                     filter_param: filter_param,
-                     query_param: query_param,
-                     assignee_param: assignee_param,
-                     active_tab: "stacktrace",
-                     frame_scope: frame_scope,
-                     selected_frame_index: selected_frame_index %>
-        <% elsif selected_frame.present? %>
-          <div class="better-errors-code-header"><%= selected_frame[:file] %></div>
-          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= selected_frame[:raw] %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy stack frame">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="stacktrace" data-copy-target="source"><code><%= selected_frame[:raw] %></code></pre>
-          </div>
-        <% else %>
-          <% fallback_stacktrace = Array(backtrace).presence&.join("\n") || event.message %>
-          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= fallback_stacktrace %>">
-            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy stacktrace">
-              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
-              <span data-copy-target="buttonLabel">Copy</span>
-            </button>
-            <pre class="stacktrace" data-copy-target="source"><code><%= fallback_stacktrace %></code></pre>
-          </div>
-        <% end %>
-      </section>
+      <%= render "project_events/ruby_stack_frame_source",
+                 project: project,
+                 event: event,
+                 group: group,
+                 exception_data: exception_data,
+                 filter_param: filter_param,
+                 query_param: query_param,
+                 assignee_param: assignee_param,
+                 source_excerpt: source_excerpt,
+                 source_lookup: local_assigns[:source_lookup],
+                 frame_scope: frame_scope,
+                 visible_frames: visible_frames,
+                 selected_frame_index: selected_frame_index,
+                 selected_frame: selected_frame,
+                 backtrace: backtrace %>
 
       <section class="better-errors-section">
         <h4>Request info</h4>

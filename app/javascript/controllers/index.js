@@ -16,6 +16,7 @@ import ProjectSearchController from "controllers/project_search_controller"
 import RevealController from "controllers/reveal_controller"
 import RetentionArchiveController from "controllers/retention_archive_controller"
 import ScreenshotsSliderController from "controllers/screenshots_slider_controller"
+import StacktraceController from "controllers/stacktrace_controller"
 import TabsController from "controllers/tabs_controller"
 
 application.register("copy", CopyController)
@@ -35,4 +36,5 @@ application.register("project-search", ProjectSearchController)
 application.register("reveal", RevealController)
 application.register("retention-archive", RetentionArchiveController)
 application.register("screenshots-slider", ScreenshotsSliderController)
+application.register("stacktrace", StacktraceController)
 application.register("tabs", TabsController)

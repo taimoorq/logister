@@ -9,7 +9,8 @@ class ErrorGroupEventDetails
     exception = event_context(event)["exception"] || event_context(event)[:exception]
     return unless exception.is_a?(Hash)
 
-    exception["class"].presence || exception[:class].presence
+    exception["class"].presence || exception[:class].presence ||
+      exception["type"].presence || exception[:type].presence
   end
 
   def self.stage(event)

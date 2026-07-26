@@ -139,6 +139,12 @@ Used when one action should update several DOM regions:
 
 ### Hotwire, Turbo, and Stimulus
 
+- **Treat the rendered server state as canonical and use optimistic attributes only as a temporary projection.** For fast feedback, Stimulus may toggle one semantic attribute such as `aria-selected`, `aria-current`, or `aria-busy`; a successful Turbo response must reconcile it from server-rendered HTML, and fetch/frame errors must restore the previous state. This follows the small-controller pattern in [Smooth UI animations on server-rendered HTML](https://blog.siami.fr/smooth-ui-animations-on-server-rendered-html).
+- **Keep frame-owned state inside the frame response.** Headers, pagination state, active sort labels, and state metadata that change with a Turbo Frame request must render inside that frame. When controls intentionally live outside the frame, return a state URL/data contract and let a small Stimulus reconciliation method update those controls after `turbo:frame-load` and browser-history restoration.
+- **Use stable, unique transition identities.** Give durable records `dom_id`-based `view-transition-name` values and group them with `view-transition-class`; give each persistent pane one stable name. Let Turbo wrap morphs and navigations through the layout meta tag—do not call `document.startViewTransition()` from feature controllers.
+- **Prefer native Turbo navigation over programmatic frame mutation.** Keep a real link or form as the accessible action and trigger that element when a larger row is clickable. This preserves frame targeting, `data-turbo-action`, history, fallback navigation, and Turbo lifecycle events.
+- **Respect motion and focus.** Keep `prefers-reduced-motion` coverage for transition groups, use roving tab focus for `role="tab"` navigation, and avoid forced page scrolling during ordinary frame replacement when Turbo morphing and scroll preservation already own it.
+
 - **Cloudflare docs are plain static pages.** The Rails app links to the configured `LOGISTER_DOCS_URL`; do not assume the static docs have the Rails importmap, Turbo, or Stimulus runtime.
 - **Keep JS boot standard.** Turbo is loaded in `app/javascript/application.js`, Stimulus controllers are registered in `app/javascript/controllers/index.js`, and layouts should use `app_javascript_tags` so importmap and npm-backed classic scripts share one path.
 - **Use Stimulus for small behavior only.** Existing docs behavior such as copy buttons and nav toggles should remain Stimulus-driven or simple DOM behavior, not custom page-specific JS frameworks.

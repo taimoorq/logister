@@ -56,6 +56,7 @@ class Project < ApplicationRecord
   has_many :project_memberships, dependent: :destroy
   has_many :project_notification_preferences, dependent: :destroy
   has_many :integration_settings, class_name: "ProjectIntegrationSetting", dependent: :destroy
+  has_many :android_mapping_files, dependent: :destroy
   has_many :source_repositories, class_name: "ProjectSourceRepository", dependent: :destroy
   has_many :project_github_installations, dependent: :destroy
   has_many :github_installations, through: :project_github_installations

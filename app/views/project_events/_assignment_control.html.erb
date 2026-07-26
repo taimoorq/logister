@@ -2,12 +2,14 @@
 <% assignment_path = project_error_group_assignment_path(
   project,
   group,
+  inbox_profile_query_params(project).merge(
   filter: filter_param,
   q: query_param,
   assignee: assignee_param,
   tab: active_tab,
   frame_scope: frame_scope,
   frame: selected_frame_index
+  )
 ) %>
 
 <div class="detail-assignment-control" id="<%= dom_id(group, :assignment) %>">

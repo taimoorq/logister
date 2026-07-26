@@ -1,0 +1,41 @@
+<% presenter = event_presenter(project, event, exception_data) %>
+<% stack_text = presenter.frames.map { |frame| frame[:raw] }.join("\n") %>
+
+<div class="better-errors-shell ios-error-shell">
+  <header class="better-errors-header">
+    <p class="better-errors-runtime"><span class="android-mechanism-badge"><%= presenter.mechanism_label %></span><strong><%= presenter.exception_type %></strong></p>
+    <h3 class="better-errors-message"><%= presenter.exception_message %></h3>
+  </header>
+
+  <div class="android-mapping-status" role="status">
+    <strong>Symbols as reported</strong>
+    <span>dSYM coverage is not configured in this project yet. Address-only production frames need a matching build UUID for symbolication.</span>
+  </div>
+
+  <div class="better-errors-workbench">
+    <aside class="better-errors-frames">
+      <% if visible_frames.any? %>
+        <ol class="frame-list">
+          <% visible_frames.each do |frame| %>
+            <li class="frame-item">
+              <div class="frame-link">
+                <span class="frame-method"><%= frame[:method_name].presence || frame[:address].presence || "Unknown symbol" %></span>
+                <span class="frame-file"><%= [frame[:image] || frame[:file], frame[:address]].compact.join(" · ") %></span>
+              </div>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="muted">No Apple stack frames were captured for this event.</p>
+      <% end %>
+    </aside>
+    <div class="better-errors-main">
+      <section class="better-errors-code card">
+        <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= stack_text %>">
+          <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy iOS stack trace"><%= app_icon(:clipboard, css: "w-3.5 h-3.5") %><span data-copy-target="buttonLabel">Copy</span></button>
+          <pre class="stacktrace" data-copy-target="source"><code><%= stack_text.presence || event.message %></code></pre>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

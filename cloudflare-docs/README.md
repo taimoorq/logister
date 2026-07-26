@@ -21,7 +21,8 @@ The build must finish with fresh `sitemap.xml`, `robots.txt`, API artifacts, and
 - `index.html` and subdirectory `index.html` files provide the static documentation pages.
 - `cli/index.html` documents CLI install, browser-approved login, read commands, and current server capability support.
 - `assets/site.css` contains the docs-specific theme and layout styles.
-- `assets/site.js` provides mobile navigation, collapsible sidebar sections, Pagefind search loading, analytics loading, and copy-to-clipboard behavior for code blocks.
+- `assets/site.js` provides mobile navigation, collapsible sidebar sections, search loading, analytics loading, and copy-to-clipboard behavior for code blocks.
+- `assets/docs-search.js` provides the keyboard-accessible autocomplete interface backed by the generated Pagefind index.
 - `functions/assets/analytics-config.js/index.js` serves runtime analytics and Probo Cookie Banner configuration from Cloudflare Pages secrets.
 - `assets/logister-logo.svg` is copied locally so the docs do not depend on the app asset pipeline.
 - `openapi.yaml` and `postman/logister-api.postman_collection.json` are copied from `docs/` by `bin/build-cloudflare-docs`.
@@ -124,7 +125,7 @@ The static site contains these public documentation areas:
 - HTTP API
 - API reference with Swagger UI, OpenAPI YAML, and a Postman collection
 - Troubleshooting for ingestion, workers, email, ClickHouse, archives, and support context
-- Pagefind text search across article content
+- Pagefind autocomplete search across article content, with page and section suggestions plus keyboard navigation
 - Ruby integration
 - .NET integration
 - Python integration
@@ -156,5 +157,6 @@ After deployment, verify the public surface rather than only the Pages origin:
 curl --fail --head https://logister.org/docs/
 curl --fail --head https://logister.org/docs/getting-started/
 curl --fail --head https://logister.org/docs/sitemap.xml
-curl --fail --head https://logister.org/docs/pagefind/pagefind-ui.js
+curl --fail --head https://logister.org/docs/assets/docs-search.js
+curl --fail --head https://logister.org/docs/pagefind/pagefind.js
 ```

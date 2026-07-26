@@ -1,176 +1,85 @@
-require "digest"
+# frozen_string_literal: true
 
 module ProjectInboxData
   extend ActiveSupport::Concern
 
-  INBOX_FILTERS = %w[unresolved introduced_today resolved ignored archived all].freeze
-  INBOX_LIMIT = 100
+  INBOX_FILTERS = ProjectInboxQuery::FILTERS
+  INBOX_LIMIT = ProjectInboxQuery::LIMIT
 
   private
 
-  # Returns error groups filtered by tab + assignment + query.
-  def inbox_groups(project, filter:, query: nil, assignee: "all", viewer: nil)
-    normalized_filter = filter.to_s.presence_in(INBOX_FILTERS) || "unresolved"
-    normalized_query = query.to_s.strip.downcase
-    normalized_assignee = normalize_inbox_assignee_filter(project, assignee, viewer: viewer)
-
-    cache_key = [
-      "project",
-      project.id,
-      "inbox_groups",
-      normalized_filter,
-      normalized_assignee,
-      Digest::SHA256.hexdigest(normalized_query),
-      inbox_cache_version(project)
-    ]
-
-    group_ids = safe_cache_fetch(cache_key, expires_in: 20.seconds) do
-      scope = base_inbox_scope(project, normalized_filter)
-      scope = apply_inbox_assignee(scope, project, normalized_assignee, viewer: viewer)
-      scope = apply_inbox_query(scope, normalized_query) if normalized_query.present?
-      scope.recent_first.limit(INBOX_LIMIT).pluck(:id)
-    end
-
-    return [] if group_ids.empty?
-
-    groups_by_id = project.error_groups.where(id: group_ids).includes(:assignee).index_by(&:id)
-    group_ids.filter_map { |id| groups_by_id[id] }
-  end
-
-  def inbox_latest_events(groups)
-    IngestEvent.for_partition_references(
-               groups,
-               id_key: :latest_event_id,
-               occurred_at_key: :latest_event_occurred_at
-               )
-               .select(:id, :project_id, :uuid, :occurred_at)
-               .index_by(&:id)
-  end
-
-  def inbox_group_trends(project, groups, days: 7)
-    group_ids = groups.map(&:id)
-    return {} if group_ids.empty?
-
-    cache_key = [
-      "project",
-      project.id,
-      "inbox_group_trends",
-      days,
-      Digest::SHA256.hexdigest(group_ids.join(",")),
-      inbox_cache_version(project)
-    ]
-
-    safe_cache_fetch(cache_key, expires_in: 20.seconds) do
-      start_date = days.days.ago.to_date
-      trend_dates = inbox_trend_dates(start_date, days)
-      trends = group_ids.index_with { Array.new(days, 0) }
-
-      ErrorOccurrence.where(error_group_id: group_ids)
-                     .where("occurred_at >= ?", start_date.beginning_of_day)
-                     .group(:error_group_id, "DATE(occurred_at)")
-                     .count
-                     .each do |(group_id, date), count|
-        idx = trend_dates.index(date.to_date)
-        trends[group_id][idx] = count if idx
-      end
-
-      trends
-    end
-  end
-
-  # Per-status counts for the sidebar navigation.
-  def inbox_counts(project, assignee: "all", viewer: nil)
-    normalized_assignee = normalize_inbox_assignee_filter(project, assignee, viewer: viewer)
-    cache_key = [ "project", project.id, "inbox_counts", normalized_assignee, inbox_cache_version(project) ]
-    safe_cache_fetch(cache_key, expires_in: 30.seconds) do
-      groups = apply_inbox_assignee(project.error_groups, project, normalized_assignee, viewer: viewer)
-      status_counts = groups.group(:status).count
-
-      {
-        unresolved:       inbox_status_count(status_counts, "unresolved"),
-        introduced_today: groups.introduced_today.count,
-        resolved:         inbox_status_count(status_counts, "resolved"),
-        ignored:          inbox_status_count(status_counts, "ignored"),
-        archived:         inbox_status_count(status_counts, "archived"),
-        all:              status_counts.values.sum
-      }
-    end
-  end
-
-  def project_has_activity_events?(project)
-    safe_cache_fetch(
-      [ "project", project.id, "has_activity_events", cache_time_bucket(30.seconds) ],
-      expires_in: 30.seconds
-    ) do
-      project.ingest_events.where.not(event_type: IngestEvent.event_types[:error]).exists?
-    end
-  end
-
-  private
-
-  def inbox_status_count(counts, status)
-    counts[status].to_i + counts[status.to_sym].to_i + counts[ErrorGroup.statuses.fetch(status)].to_i
-  end
-
-  def inbox_trend_dates(start_date, days)
-    (0...days).map { |offset| start_date + offset }
-  end
-
-  def base_inbox_scope(project, filter)
-    groups = project.error_groups
-    case filter
-    when "introduced_today" then groups.introduced_today
-    when "resolved"         then groups.resolved
-    when "ignored"          then groups.ignored
-    when "archived"         then groups.archived
-    when "all"              then groups
-    else                         groups.unresolved
-    end
-  end
-
-  def normalize_inbox_assignee_filter(project, assignee, viewer: nil)
-    user = inbox_viewer(viewer)
-    raw = assignee.to_s.strip
-
-    return "all" if raw.blank? || raw == "all"
-    return "me" if raw == "me" && user.present?
-    return "unassigned" if raw == "unassigned"
-    return raw if project.assignable_users.exists?(uuid: raw)
-
-    "all"
-  end
-
-  def apply_inbox_assignee(scope, project, assignee, viewer: nil)
-    case assignee
-    when "me"
-      user = inbox_viewer(viewer)
-      user.present? ? scope.assigned_to(user) : scope
-    when "unassigned"
-      scope.unassigned
-    when "all"
-      scope
-    else
-      assignable = project.assignable_users.find_by(uuid: assignee)
-      assignable.present? ? scope.assigned_to(assignable) : scope
-    end
-  end
-
-  def apply_inbox_query(scope, query)
-    term = "%#{ActiveRecord::Base.sanitize_sql_like(query.downcase)}%"
-    scope.where(
-      "LOWER(title) LIKE :t OR LOWER(COALESCE(subtitle,'')) LIKE :t OR LOWER(fingerprint) LIKE :t OR LOWER(stage) LIKE :t",
-      t: term
+  def inbox_groups(project, filter:, query: nil, assignee: "all", viewer: nil, dimensions: {}, sort: nil)
+    project_inbox_query(project, viewer: viewer).groups(
+      filter: filter,
+      query: query,
+      assignee: assignee,
+      dimensions: dimensions,
+      sort: sort
     )
   end
 
-  def inbox_cache_version(project)
-    project.error_groups.maximum(:updated_at)&.utc&.to_i || 0
+  def inbox_page(project, filter:, query: nil, assignee: "all", viewer: nil, dimensions: {}, sort: nil, cursor: nil)
+    project_inbox_query(project, viewer: viewer).page(
+      filter: filter,
+      query: query,
+      assignee: assignee,
+      dimensions: dimensions,
+      sort: sort,
+      cursor: cursor
+    )
   end
 
-  def inbox_viewer(viewer)
-    return viewer if viewer.present?
-    return current_user if respond_to?(:current_user, true)
+  def inbox_latest_events(groups)
+    return {} if groups.empty?
 
-    nil
+    project_inbox_query(groups.first.project).latest_events(groups)
+  end
+
+  def inbox_group_trends(project, groups, days: 7)
+    project_inbox_query(project).group_trends(groups, days: days)
+  end
+
+  def inbox_counts(project, assignee: "all", viewer: nil)
+    project_inbox_query(project, viewer: viewer).counts(assignee: assignee)
+  end
+
+  def project_has_activity_events?(project)
+    project_inbox_query(project).has_activity_events?
+  end
+
+  def inbox_impact_summaries(project, groups)
+    return {} unless ProjectExperience.for(project).supports?(:mobile)
+
+    ErrorGroupImpactSummary.for_groups(groups)
+  end
+
+  def normalize_inbox_assignee_filter(project, assignee, viewer: nil)
+    project_inbox_query(project, viewer: viewer).normalize_assignee(assignee)
+  end
+
+  def normalize_inbox_profile_filters(project, source = params)
+    allowed = ProjectExperience.for(project).filters.map { |definition| definition.key.to_s }
+    values = source.respond_to?(:to_unsafe_h) ? source.to_unsafe_h : source.to_h
+    values.stringify_keys.slice(*allowed).transform_values { |value| value.to_s.strip }.compact_blank
+  end
+
+  def normalize_inbox_sort(project, value)
+    profile = ProjectExperience.for(project)
+    value.to_s.presence_in(profile.sort_options.map(&:last)) || profile.default_sort
+  end
+
+  def inbox_profile_state_params(project, source = params)
+    state = normalize_inbox_profile_filters(project, source)
+    raw_sort = source.respond_to?(:[]) ? (source[:sort] || source["sort"]) : nil
+    state["sort"] = normalize_inbox_sort(project, raw_sort) if raw_sort.present?
+    state
+  end
+
+  def inbox_filter_options(project)
+    project_inbox_query(project).filter_options
+  end
+
+  def project_inbox_query(project, viewer: nil)
+    ProjectInboxQuery.new(project: project, viewer: viewer)
   end
 end

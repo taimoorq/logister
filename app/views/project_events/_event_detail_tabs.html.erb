@@ -2,7 +2,9 @@
 <% filter_param = filter_param.presence || "unresolved" %>
 <% query_param = query_param.to_s %>
 <% assignee_param = assignee_param.presence || "all" %>
-<% active_tab = active_tab.presence_in(%w[context stacktrace occurrences related_logs]) || "stacktrace" %>
+<% experience = project_experience(project) %>
+<% sections = experience.detail_sections(event: event, occurrences_count: occurrences.size, related_logs_count: related_logs.size) %>
+<% active_tab = experience.normalize_detail_tab(active_tab, event: event, occurrences_count: occurrences.size, related_logs_count: related_logs.size) %>
 <% turbo_frame_id = turbo_frame_id.presence %>
 <% wrapper_classes = wrapper_classes.presence || "detail-tabs-wrap" %>
 <% link_data = turbo_frame_id.present? ? { turbo_frame: turbo_frame_id } : {} %>
@@ -10,155 +12,55 @@
 <div class="<%= wrapper_classes %>"
      data-controller="frame-tabs"
      data-frame-tabs-turbo-frame-value="<%= turbo_frame_id %>"
-     data-action="turbo:before-fetch-request@document->frame-tabs#onBeforeFetch turbo:frame-load@document->frame-tabs#onFrameLoad"
+     data-action="turbo:before-fetch-request@document->frame-tabs#onBeforeFetch turbo:frame-load@document->frame-tabs#onFrameLoad turbo:fetch-request-error@document->frame-tabs#onFetchError turbo:frame-missing@document->frame-tabs#onFetchError"
+     data-project-experience="<%= experience.key %>"
      <%= tag.attributes(data: product_tour_step_data(tour_group, :tabs)) if tour_group.present? %>
      aria-busy="false">
-  <nav class="detail-tabs" role="tablist" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
-    <%= link_to "Context",
-                partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "context"),
-                class: "detail-tab",
-                role: "tab",
-                aria: { controls: "tab-context", selected: (active_tab == "context").to_s, current: ("page" if active_tab == "context") },
-                tabindex: (active_tab == "context" ? 0 : -1),
-                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
-    <%= link_to stacktrace_tab_label,
-                partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace"),
-                class: "detail-tab",
-                role: "tab",
-                aria: { controls: "tab-stacktrace", selected: (active_tab == "stacktrace").to_s, current: ("page" if active_tab == "stacktrace") },
-                tabindex: (active_tab == "stacktrace" ? 0 : -1),
-                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
-    <%= link_to "Occurrences (#{occurrences.size})",
-                partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "occurrences"),
-                class: "detail-tab",
-                role: "tab",
-                aria: { controls: "tab-occurrences", selected: (active_tab == "occurrences").to_s, current: ("page" if active_tab == "occurrences") },
-                tabindex: (active_tab == "occurrences" ? 0 : -1),
-                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
-    <%= link_to "Related logs (#{related_logs.size})",
-                partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "related_logs"),
-                class: "detail-tab",
-                role: "tab",
-                aria: { controls: "tab-related-logs", selected: (active_tab == "related_logs").to_s, current: ("page" if active_tab == "related_logs") },
-                tabindex: (active_tab == "related_logs" ? 0 : -1),
-                data: link_data.merge(action: "click->frame-tabs#activate", frame_tabs_target: "tab") %>
+  <nav class="detail-tabs" role="tablist" aria-label="Issue details" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
+    <% sections.each do |section| %>
+      <%= link_to section.label,
+                  partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: section.key),
+                  id: "detail-tab-#{section.key}",
+                  class: "detail-tab",
+                  role: "tab",
+                  aria: { controls: "tab-#{section.key.to_s.dasherize}", selected: (active_tab == section.key.to_s).to_s, current: ("page" if active_tab == section.key.to_s) },
+                  tabindex: (active_tab == section.key.to_s ? 0 : -1),
+                  data: link_data.merge(action: "click->frame-tabs#activate keydown->frame-tabs#navigate", frame_tabs_target: "tab") %>
+    <% end %>
   </nav>
 
-  <section id="tab-context"
-           class="detail-panel"
-           role="tabpanel"
-           aria-hidden="<%= active_tab == 'context' ? 'false' : 'true' %>"
-           <%= 'hidden' unless active_tab == 'context' %>
-           data-frame-tabs-target="panel">
-    <%= render "project_events/context_panel", event: event %>
-  </section>
-
-  <section id="tab-stacktrace"
-           class="detail-panel"
-           role="tabpanel"
-           aria-hidden="<%= active_tab == 'stacktrace' ? 'false' : 'true' %>"
-           <%= 'hidden' unless active_tab == 'stacktrace' %>
-           data-frame-tabs-target="panel">
-    <% if source_excerpt.blank? && local_assigns[:source_lookup]&.diagnostics&.dig(:message).present? %>
-      <%= render "project_events/source_lookup_status", source_lookup: local_assigns[:source_lookup] %>
-    <% end %>
-
-    <%= render stacktrace_partial,
-               project: project,
-               event: event,
-               group: group,
-               exception_data: exception_data,
-               request_details: request_details,
-               filter_param: filter_param,
-               query_param: query_param,
-               assignee_param: assignee_param,
-               source_excerpt: source_excerpt,
-               source_lookup: local_assigns[:source_lookup],
-               frame_scope: frame_scope,
-               visible_frames: visible_frames,
-               selected_frame_index: selected_frame_index,
-               selected_frame: selected_frame,
-               backtrace: backtrace,
-               local_variables: local_variables,
-               instance_variables: instance_variables %>
-  </section>
-
-  <section id="tab-occurrences"
-           class="detail-panel"
-           role="tabpanel"
-           aria-hidden="<%= active_tab == 'occurrences' ? 'false' : 'true' %>"
-           <%= 'hidden' unless active_tab == 'occurrences' %>
-           data-frame-tabs-target="panel">
-    <% if occurrences.any? %>
-      <%= responsive_scroll_region do %>
-        <table class="occurrences-table">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Message</th>
-              <th>Severity</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% occurrences.each do |occ| %>
-              <% occurrence_event = occ.ingest_event_record %>
-              <tr>
-                <td><%= local_time_tag(occurrence_event.occurred_at, format: :long) %></td>
-                <td><%= truncate(occurrence_event.message.to_s.lines.first, length: 80) %></td>
-                <td><%= render "shared/widgets/severity_badge", level: occurrence_event.level.presence || "error" %></td>
-                <td>
-                  <%= link_to "View",
-                              partitioned_project_event_path(project, occurrence_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
-                              class: "inline-link",
-                              data: link_data %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% end %>
-    <% else %>
-      <p class="muted">No occurrences recorded yet.</p>
-    <% end %>
-  </section>
-
-  <section id="tab-related-logs"
-           class="detail-panel"
-           role="tabpanel"
-           aria-hidden="<%= active_tab == 'related_logs' ? 'false' : 'true' %>"
-           <%= 'hidden' unless active_tab == 'related_logs' %>
-           data-frame-tabs-target="panel">
-    <% if related_logs.any? %>
-      <%= responsive_scroll_region do %>
-        <table class="occurrences-table">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Level</th>
-              <th>Message</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% related_logs.each do |log_event| %>
-              <tr>
-                <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
-                <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
-                <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
-                <td>
-                  <%= link_to "View",
-                              partitioned_project_event_path(project, log_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
-                              class: "inline-link",
-                              data: link_data %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% end %>
-    <% else %>
-      <p class="muted">No logs found in the correlation window.</p>
-    <% end %>
-  </section>
+  <% sections.each do |section| %>
+    <% section_key = section.key.to_s %>
+    <section id="tab-<%= section_key.dasherize %>"
+             class="detail-panel<%= " event-workspace event-workspace-#{project.integration_kind}" if section.key == :stacktrace %>"
+             role="tabpanel"
+             data-project-integration="<%= project.integration_kind if section.key == :stacktrace %>"
+             aria-hidden="<%= active_tab == section_key ? 'false' : 'true' %>"
+             <%= 'hidden' unless active_tab == section_key %>
+             data-frame-tabs-target="panel">
+      <%= render section.partial,
+                 project: project,
+                 event: event,
+                 group: group,
+                 occurrences: occurrences,
+                 related_logs: related_logs,
+                 stacktrace_partial: stacktrace_partial,
+                 exception_data: exception_data,
+                 request_details: request_details,
+                 filter_param: filter_param,
+                 query_param: query_param,
+                 assignee_param: assignee_param,
+                 source_excerpt: source_excerpt,
+                 source_lookup: local_assigns[:source_lookup],
+                 frame_scope: frame_scope,
+                 visible_frames: visible_frames,
+                 selected_frame_index: selected_frame_index,
+                 selected_frame: selected_frame,
+                 backtrace: backtrace,
+                 local_variables: local_variables,
+                 instance_variables: instance_variables,
+                 link_data: link_data,
+                 experience: experience %>
+    </section>
+  <% end %>
 </div>

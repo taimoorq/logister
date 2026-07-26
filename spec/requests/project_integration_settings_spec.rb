@@ -85,6 +85,47 @@ RSpec.describe "Project integration settings", type: :request do
       expect(response).to have_http_status(:not_found)
       expect(ProjectIntegrationSetting.where(project: project)).to be_empty
     end
+
+    it "configures Google Play only for an Android project and preserves allowed tracks" do
+      project = create(:project, :android, user: users(:one))
+      sign_in users(:one)
+
+      patch project_integration_setting_path(project), params: {
+        project_integration_setting: {
+          provider: "google_play",
+          enabled: "1",
+          external_project_id: "com.acme.shop",
+          credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+          metadata: { track_allowlist: %w[internal production] }
+        }
+      }
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "google-play-integration"))
+      setting = project.integration_settings.find_by!(provider: "google_play")
+      expect(setting).to be_configured
+      expect(setting.metadata["track_allowlist"]).to eq(%w[internal production])
+    end
+
+    it "stores App Store Connect secret references only for an iOS project" do
+      project = create(:project, :ios, user: users(:one))
+      sign_in users(:one)
+
+      patch project_integration_setting_path(project), params: {
+        project_integration_setting: {
+          provider: "app_store_connect",
+          enabled: "1",
+          external_project_id: "com.acme.shop",
+          account_id: "issuer-123",
+          external_project_name: "KEY123",
+          credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+        }
+      }
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "app-store-connect-integration"))
+      setting = project.integration_settings.find_by!(provider: "app_store_connect")
+      expect(setting).to be_configured
+      expect(setting.credential_reference).to eq("APP_STORE_CONNECT_PRIVATE_KEY")
+    end
   end
 
   describe "GET /projects/:uuid/settings" do
@@ -108,6 +149,32 @@ RSpec.describe "Project integration settings", type: :request do
 
       expect(response).to have_http_status(:success)
       expect(response.body).to include("Cloudflare Pages connection")
+    end
+
+    it "shows explicit Google Play provenance and R8 mapping states for Android projects" do
+      project = create(:project, :android, user: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include(
+        "Google Play Developer Reporting",
+        "Play metrics remain separate from Logister SDK impact",
+        "No external metrics have been imported",
+        "R8 / ProGuard mappings",
+        "No R8 mappings uploaded"
+      )
+    end
+
+    it "shows the reusable App Store Connect boundary for iOS projects" do
+      project = create(:project, :ios, user: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("App Store Connect", "APP_STORE_CONNECT_PRIVATE_KEY", "dSYM coverage is not configured")
     end
   end
 end

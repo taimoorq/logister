@@ -69,6 +69,18 @@ module ProjectSettingsContext
       project: @project,
       provider: ProjectIntegrationSetting::PROVIDERS[:cloudflare_pages]
     ) if @project.integration_cloudflare_pages?
+    if @project.integration_android?
+      @google_play_integration_setting ||= ProjectIntegrationSetting.for(
+        project: @project,
+        provider: ProjectIntegrationSetting::PROVIDERS[:google_play]
+      )
+      @android_mapping_files = @project.android_mapping_files.recent_first.to_a
+      @android_mapping_file = @project.android_mapping_files.new
+    end
+    @app_store_connect_integration_setting ||= ProjectIntegrationSetting.for(
+      project: @project,
+      provider: ProjectIntegrationSetting::PROVIDERS[:app_store_connect]
+    ) if @project.integration_ios?
     @source_repositories = @project.source_repositories
                                    .includes(:github_installation, github_repository: :github_installation)
                                    .order(:provider, :full_name)

@@ -232,7 +232,15 @@ module ApplicationHelper
   end
 
   def partitioned_project_event_path(project, event, options = {})
-    project_event_path(project, event, event_partition_params(event).merge(options))
+    project_event_path(project, event, inbox_profile_query_params(project).merge(event_partition_params(event)).merge(options))
+  end
+
+  def inbox_profile_query_params(project)
+    return {} unless respond_to?(:request) && request
+
+    profile = project_experience(project)
+    allowed = profile.filters.map { |definition| definition.key.to_s } + [ "sort" ]
+    request.query_parameters.slice(*allowed).compact_blank
   end
 
   def responsive_scroll_classes(*classes)
@@ -316,7 +324,40 @@ module ApplicationHelper
 
   def event_backtrace(exception_data)
     exception_hash = normalize_hash(exception_data)
-    exception_hash["backtrace"] || exception_hash[:backtrace]
+    exception_hash["backtrace"] || exception_hash[:backtrace] ||
+      exception_hash["stacktrace"] || exception_hash[:stacktrace]
+  end
+
+  def project_experience(project)
+    ProjectExperience.for(project)
+  end
+
+  def event_presenter(project, event, exception_data = nil)
+    profile = project_experience(project)
+    return ProjectEvents::AndroidEventPresenter.new(event, exception_data) if profile.key == :android
+    return ProjectEvents::IosEventPresenter.new(event, exception_data) if profile.key == :ios
+
+    profile.event_presenter(event)
+  end
+
+  def event_frames(project, event, exception_data)
+    presenter = event_presenter(project, event, exception_data)
+    return AndroidMappingResolution.call(project: project, event: event, presenter: presenter).frames if presenter.is_a?(ProjectEvents::AndroidEventPresenter)
+    return presenter.frames if presenter.respond_to?(:frames)
+
+    parse_backtrace_frames(event_backtrace(exception_data))
+  end
+
+  def android_event_presenter(event, exception_data = nil)
+    ProjectEvents::AndroidEventPresenter.new(event, exception_data)
+  end
+
+  def android_mapping_resolution(project, event, exception_data = nil)
+    AndroidMappingResolution.call(
+      project: project,
+      event: event,
+      presenter: android_event_presenter(event, exception_data)
+    )
   end
 
   def event_local_variables(exception_data)
@@ -335,31 +376,11 @@ module ApplicationHelper
   end
 
   def event_stacktrace_tab_label(project, event)
-    if (project.integration_python? || project.integration_javascript? || project.integration_dotnet?) && event.log?
-      "Details"
-    else
-      "Stacktrace"
-    end
+    project_experience(project).stacktrace_tab_label(event)
   end
 
   def event_stacktrace_partial(project, event)
-    if project.integration_python? && event.log?
-      "project_events/python_log_event"
-    elsif project.integration_javascript? && event.log?
-      "project_events/javascript_log_event"
-    elsif project.integration_dotnet? && event.log?
-      "project_events/dotnet_log_event"
-    elsif project.integration_cfml?
-      "project_events/cfml_stacktrace"
-    elsif project.integration_javascript?
-      "project_events/javascript_stacktrace"
-    elsif project.integration_python?
-      "project_events/python_stacktrace"
-    elsif project.integration_dotnet?
-      "project_events/dotnet_stacktrace"
-    else
-      "project_events/ruby_stacktrace"
-    end
+    project_experience(project).stacktrace_partial(event)
   end
 
   def python_activity_summary(event)

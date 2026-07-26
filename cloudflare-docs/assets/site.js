@@ -122,35 +122,16 @@ function loadDocsSearch() {
   const navToggle = topbar.querySelector("[data-nav-toggle]");
   topbar.insertBefore(search, navToggle || topbar.querySelector("[data-nav-panel]"));
 
-  if (!document.querySelector('[data-logister-docs-search-style="pagefind"]')) {
-    const stylesheet = document.createElement("link");
-    stylesheet.rel = "stylesheet";
-    stylesheet.href = docsPath("/pagefind/pagefind-ui.css");
-    stylesheet.setAttribute("data-logister-docs-search-style", "pagefind");
-    document.head.appendChild(stylesheet);
-  }
-
-  const script = document.createElement("script");
-  script.src = docsPath("/pagefind/pagefind-ui.js");
-  script.defer = true;
-  script.setAttribute("data-logister-docs-search-script", "pagefind");
-  script.addEventListener("load", () => {
-    if (!window.PagefindUI) return;
-
-    new window.PagefindUI({
-      element: "#docs-search",
-      showImages: false,
-      showSubResults: true,
-      excerptLength: 24,
-      translations: {
-        placeholder: "Search docs"
-      }
+  import(docsPath("/assets/docs-search.js"))
+    .then(({ initDocsSearch }) => {
+      initDocsSearch({
+        element: search,
+        pagefindUrl: docsPath("/pagefind/pagefind.js")
+      });
+    })
+    .catch(() => {
+      search.remove();
     });
-  });
-  script.addEventListener("error", () => {
-    search.remove();
-  });
-  document.head.appendChild(script);
 }
 
 function enhanceSidebarSections(sidebar) {

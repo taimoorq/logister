@@ -1,9 +1,26 @@
-<turbo-frame id="project_inbox" target="error_detail">
+<% state_params = {
+  filter: filter,
+  q: query,
+  assignee: local_assigns[:assignee].presence || "all",
+  sort: local_assigns[:sort]
+}.merge(local_assigns.fetch(:profile_filters, {})).compact_blank %>
+<turbo-frame id="project_inbox"
+             target="error_detail"
+             style="view-transition-name: project-inbox; view-transition-class: project-inbox;">
+  <span hidden data-inbox-state-url="<%= inbox_project_path(project, state_params) %>"></span>
   <% group_trends = local_assigns.fetch(:group_trends, {}) %>
   <% latest_events = local_assigns[:latest_events] ||
     IngestEvent.for_partition_references(groups, id_key: :latest_event_id, occurred_at_key: :latest_event_occurred_at).select(:id, :project_id, :uuid, :occurred_at).index_by(&:id) %>
   <% has_activity_events = local_assigns.fetch(:has_activity_events, false) %>
   <% assignee_param = local_assigns[:assignee].presence || "all" %>
+  <% experience = project_experience(project) %>
+  <% impact_summaries = local_assigns.fetch(:impact_summaries, {}) %>
+  <% next_cursor = local_assigns[:next_cursor] %>
+  <% active_sort = local_assigns[:sort].presence || experience.default_sort %>
+  <header class="inbox-pane-header">
+    <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]"><%= experience.inbox_title %></h2>
+    <p class="text-xs text-slate-500"><%= groups.size %> shown · <%= experience.sort_options.to_h.key(active_sort).to_s.downcase %></p>
+  </header>
   <div class="inbox-table-wrap">
     <% if groups.any? %>
       <div class="inbox-list-scroll">
@@ -19,8 +36,9 @@
               <% trend_tooltip = "7 day trend: #{trend_points.join(", ")} occurrences. #{trend_total} total in the last 7 days." %>
               <% stage = group.stage.presence || "production" %>
               <% severity = group.severity.presence || "error" %>
+              <% row_presenter = ProjectInbox::RowPresenter.new(project: project, group: group, event: latest_event, trend: trend_points, impact: impact_summaries[group.id]) %>
               <tr id="<%= dom_id(group) %>"
-                  class="inbox-row<%= " is-selected" if selected_uuid.present? && selected_uuid == group.uuid %><%= " is-clickable" if row_clickable %>"
+                  class="inbox-row<%= " is-clickable" if row_clickable %>"
                   data-action="<%= row_clickable ? 'click->inbox#openRow keydown.enter->inbox#openRowKey keydown.space->inbox#openRowKey' : '' %>"
                   tabindex="<%= row_clickable ? 0 : -1 %>"
                   aria-selected="<%= selected_uuid.present? && selected_uuid == group.uuid ? "true" : "false" %>"
@@ -33,7 +51,8 @@
                                 class: "error-row-link",
                                 data: {
                                   turbo_frame: "error_detail",
-                                  action: "click->inbox#openDetail"
+                                  action: "click->inbox#openDetail",
+                                  turbo_action: "advance"
                                 } do %>
                       <span class="error-row-primary">
                         <span class="error-title"><%= group.title %></span>
@@ -53,6 +72,15 @@
                     </span>
                   <% end %>
                   <div class="error-meta-row">
+                    <% if row_presenter.mobile? %>
+                      <span class="android-row-signals" aria-label="Issue signals: <%= row_presenter.signal_labels.join(', ') %>">
+                        <% row_presenter.signal_labels.each do |label| %><strong><%= label %></strong><% end %>
+                      </span>
+                      <% if row_presenter.impact_label.present? %><span class="error-meta-chip"><strong><%= row_presenter.impact_label %></strong></span><% end %>
+                      <% if row_presenter.culprit.present? %>
+                        <span class="android-row-culprit"><%= row_presenter.culprit %></span>
+                      <% end %>
+                    <% end %>
                     <span class="error-meta-chip"
                           title="<%= pluralize(group.occurrence_count, "event") %>"
                           aria-label="<%= pluralize(group.occurrence_count, "event") %>">
@@ -86,6 +114,10 @@
                       <%= app_icon(:info, css: "inbox-info-icon") %>
                       <span>last <%= last_seen_words %> ago</span>
                     </span>
+                    <% if row_presenter.mobile? %>
+                      <% if row_presenter.release_label.present? %><span class="error-meta-chip"><%= row_presenter.release_label %></span><% end %>
+                      <% if row_presenter.cohort_label.present? %><span class="error-meta-chip"><%= row_presenter.cohort_label %></span><% end %>
+                    <% end %>
                   </div>
                 </td>
               </tr>
@@ -93,9 +125,25 @@
           </tbody>
         </table>
       </div>
+      <% if next_cursor.present? %>
+        <% next_page_params = {
+          filter: filter,
+          q: query,
+          assignee: assignee_param,
+          sort: local_assigns[:sort],
+          cursor: next_cursor
+        }.merge(local_assigns.fetch(:profile_filters, {})).compact_blank %>
+        <nav class="inbox-pagination" aria-label="Issue pages">
+          <%= link_to "Next #{ProjectInboxQuery::LIMIT} issues",
+                      inbox_project_path(project, next_page_params),
+                      class: "btn btn-ghost",
+                      rel: "next",
+                      data: { turbo_frame: "project_inbox", turbo_action: "advance" } %>
+        </nav>
+      <% end %>
     <% else %>
       <div class="inbox-empty">
-        <p class="muted">No errors matching this filter.</p>
+        <p class="muted"><%= experience.inbox_empty_message %></p>
         <% if has_activity_events %>
           <p class="muted mt-2">
             This project has logs, metrics, transactions, or check-ins. Those live in

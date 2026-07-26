@@ -1,0 +1,115 @@
+<% presenter = android_event_presenter(event, exception_data) %>
+<% mapping_resolution = android_mapping_resolution(project, event, exception_data) %>
+<% cause_chain = mapping_resolution.cause_chain %>
+<% stack_text = cause_chain.flat_map do |entry|
+     ["#{entry[:type]}: #{entry[:message]}".strip, *entry[:frames].map { |frame| "  at #{frame[:qualified_method].presence || frame[:method_name]}(#{frame[:file]}#{":#{frame[:line_number]}" if frame[:line_number]})" }]
+   end.join("\n") %>
+<% top_in_app_frame = mapping_resolution.frames.find { |frame| frame[:application_frame] } %>
+<% selected_frame ||= top_in_app_frame %>
+
+<div class="better-errors-shell android-error-shell">
+  <header class="better-errors-header android-error-header">
+    <p class="better-errors-runtime">
+      <span class="android-mechanism-badge mechanism-<%= presenter.mechanism %>"><%= presenter.mechanism_label %></span>
+      <strong><%= presenter.exception_type %></strong>
+      <% if presenter.handled? %><span>handled</span><% end %>
+    </p>
+    <h3 class="better-errors-message"><%= presenter.exception_message %></h3>
+    <% if top_in_app_frame %>
+      <p class="android-culprit">
+        <code><%= top_in_app_frame[:qualified_method] %></code>
+        <% if top_in_app_frame[:file].present? %>
+          <span><%= top_in_app_frame[:file] %><%= ":#{top_in_app_frame[:line_number]}" if top_in_app_frame[:line_number] %></span>
+        <% end %>
+      </p>
+    <% end %>
+  </header>
+
+  <div class="android-mapping-status" role="status">
+    <strong><%= mapping_resolution.label %></strong>
+    <% if mapping_resolution.mapped? %>
+      <span>R8 mapping <code><%= mapping_resolution.mapping_file.filename %></code> matched build <%= mapping_resolution.mapping_file.version_code %>.</span>
+    <% elsif mapping_resolution.status == :missing %>
+      <span>No R8 mapping matches this package and version code. Source names may be obfuscated.</span>
+    <% else %>
+      <span>The SDK did not capture a version code, so mapping coverage cannot be checked.</span>
+    <% end %>
+  </div>
+
+  <div class="better-errors-workbench">
+    <aside class="better-errors-frames">
+      <div class="better-errors-frame-scope">
+        <%= link_to "Application Frames",
+                    partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "application", frame: 0),
+                    class: "frame-scope-pill #{'is-active' if frame_scope == 'application'}",
+                    data: { turbo_frame: "error_detail" } %>
+        <%= link_to "All Frames",
+                    partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: "all", frame: 0),
+                    class: "frame-scope-pill #{'is-active' if frame_scope == 'all'}",
+                    data: { turbo_frame: "error_detail" } %>
+      </div>
+
+      <% if visible_frames.any? %>
+        <ol class="frame-list">
+          <% visible_frames.each_with_index do |frame_data, index| %>
+            <li class="frame-item <%= 'is-active' if index == selected_frame_index %>">
+              <%= link_to partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: "stacktrace", frame_scope: frame_scope, frame: index),
+                          class: "frame-link",
+                          aria: { current: ("true" if index == selected_frame_index) },
+                          data: { turbo_frame: "error_detail" } do %>
+                <span class="frame-method"><%= frame_data[:qualified_method].presence || frame_data[:method_name].presence || "unknown" %></span>
+                <span class="frame-file"><%= frame_data[:file] %><%= ", line #{frame_data[:line_number]}" if frame_data[:line_number] %></span>
+                <span class="frame-origin"><%= frame_data[:application_frame] ? "App" : "Framework" %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="muted">No Java or Kotlin stack frames were captured for this event.</p>
+      <% end %>
+    </aside>
+
+    <div class="better-errors-main">
+      <section class="better-errors-code card">
+        <% if source_excerpt.present? %>
+          <%= render "project_events/source_excerpt",
+                     source_excerpt: source_excerpt,
+                     project: project,
+                     event: event,
+                     group: group,
+                     filter_param: filter_param,
+                     query_param: query_param,
+                     assignee_param: assignee_param,
+                     active_tab: "stacktrace",
+                     frame_scope: frame_scope,
+                     selected_frame_index: selected_frame_index %>
+        <% else %>
+          <div class="copy-block copy-block-tight" data-controller="copy" data-copy-text-value="<%= stack_text %>">
+            <button type="button" class="copy-block-btn" data-action="copy#copy" aria-label="Copy Android stack trace">
+              <%= app_icon(:clipboard, css: "w-3.5 h-3.5") %>
+              <span data-copy-target="buttonLabel">Copy</span>
+            </button>
+            <pre class="stacktrace" data-copy-target="source"><code><%= stack_text.presence || event.message %></code></pre>
+          </div>
+        <% end %>
+      </section>
+
+      <section class="better-errors-section">
+        <h4>Cause chain</h4>
+        <% if cause_chain.any? %>
+          <ol class="android-cause-chain">
+            <% cause_chain.each_with_index do |entry, index| %>
+              <li>
+                <span><%= index.zero? ? "Exception" : "Caused by" %></span>
+                <strong><%= entry[:type] %></strong>
+                <% if entry[:message].present? %><p><%= entry[:message] %></p><% end %>
+              </li>
+            <% end %>
+          </ol>
+        <% else %>
+          <p class="muted">No exception cause data was captured.</p>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</div>

@@ -381,6 +381,7 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "dotnet"), log_event)).to eq("project_events/dotnet_log_event")
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "cfml"), error_event)).to eq("project_events/cfml_stacktrace")
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "dotnet"), error_event)).to eq("project_events/dotnet_stacktrace")
+      expect(helper.event_stacktrace_partial(Project.new(integration_kind: "android"), error_event)).to eq("project_events/profiles/android/stacktrace")
       expect(helper.event_stacktrace_partial(Project.new(integration_kind: "ruby"), error_event)).to eq("project_events/ruby_stacktrace")
     end
   end

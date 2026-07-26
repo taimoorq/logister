@@ -35,6 +35,18 @@ class ErrorOccurrence < ApplicationRecord
     @ingest_event_record = event
   end
 
+  def materialize_dimensions!(event = ingest_event_record)
+    return false unless event
+
+    attributes = ErrorOccurrenceDimensions.new(event).attributes
+    return false if attributes.empty?
+
+    with_lock do
+      update!(attributes)
+    end
+    true
+  end
+
   private
 
   def ensure_uuid

@@ -1,0 +1,38 @@
+<% presenter = event_presenter(project, event, exception_data) %>
+<% breadcrumbs = presenter.respond_to?(:breadcrumbs) ? presenter.breadcrumbs : [] %>
+
+<div class="mobile-trail">
+  <section class="mobile-context-section">
+    <h3>Breadcrumbs</h3>
+    <% if breadcrumbs.any? %>
+      <ol class="mobile-trail-list">
+        <% breadcrumbs.each do |breadcrumb| %>
+          <li>
+            <span class="mobile-trail-time"><%= breadcrumb[:timestamp].presence || "Time not captured" %></span>
+            <strong><%= breadcrumb[:category].to_s.humanize %></strong>
+            <span><%= breadcrumb[:message].presence || "No message" %></span>
+          </li>
+        <% end %>
+      </ol>
+    <% else %>
+      <p class="muted">No trail was captured by this SDK event. Enable bounded breadcrumbs to see app activity before a failure.</p>
+    <% end %>
+  </section>
+
+  <section class="mobile-context-section">
+    <h3>Related logs</h3>
+    <% if related_logs.any? %>
+      <%= render "project_events/profiles/shared/related_logs",
+                 project: project,
+                 event: event,
+                 group: group,
+                 related_logs: related_logs,
+                 filter_param: filter_param,
+                 query_param: query_param,
+                 assignee_param: assignee_param,
+                 link_data: link_data %>
+    <% else %>
+      <p class="muted">No matching logs were found for the captured session, trace, or time window.</p>
+    <% end %>
+  </section>
+</div>

@@ -60,6 +60,23 @@ RSpec.describe "Project events", type: :request do
         expect(response.body).to include('aria-selected="true"')
       end
 
+      it "renders only the selected Ruby source pane for stack frame navigation" do
+        event = ingest_events(:system_primary_error)
+
+        get project_event_path(
+          projects(:system_inbox),
+          event,
+          frame_scope: "application",
+          frame: 0
+        ), headers: { "Turbo-Frame" => "stack_frame_source" }
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('<turbo-frame id="stack_frame_source"')
+        expect(response.body).to include("app/services/orders/charge.rb")
+        expect(response.body).not_to include('<turbo-frame id="error_detail"')
+        expect(response.body).not_to include("Error groups")
+      end
+
       it "shows CODEOWNERS hints and assignment actions for resolved GitHub source" do
         event = ingest_events(:system_primary_error)
         project = projects(:system_inbox)

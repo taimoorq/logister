@@ -10,6 +10,18 @@
   [ "Source repo", :source_code, @setup_has_source_repository, "Connect GitHub for source-aware frames." ],
   [ "Deployments", :deployments, @setup_has_deployments, "Record deploys from CI/CD." ]
 ] %>
+<% if @project.integration_android? %>
+  <% setup_steps = [
+    [ "Mobile token", :key, @setup_has_mobile_token, @project.managed_by?(current_user) ? "Issue a short-lived mobile ingest token." : "Ask an admin to configure the token issuer." ],
+    [ "First event", :events, @setup_has_events, "Send an Android event from the app." ],
+    [ "Release/build", :deployments, @setup_has_release_metadata, "Capture version name and version code." ],
+    [ "Sessions", :account, @setup_android_sdk["session_tracking"] == true, "Enable lifecycle session tracking when consent permits." ],
+    [ "Automatic handler", :warning, @setup_android_sdk["automatic_crash_capture"] == true, "Enable the uncaught-exception handler if appropriate." ],
+    [ "Source repo", :source_code, @setup_has_source_repository, "Connect GitHub for source-aware frames." ],
+    [ "R8 mapping", :source_code, @setup_has_mapping, "Upload mapping.txt for the current release build." ],
+    [ "Google Play", :external, @setup_has_google_play, "Connect Play reporting for store-side vitals." ]
+  ] %>
+<% end %>
 
 <section class="settings-page">
   <%= render "projects/settings_nav" %>

@@ -1,0 +1,37 @@
+<article class="settings-panel lg:col-span-2" id="app-store-connect-integration">
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <p class="dashboard-kicker">Apple distribution</p>
+      <h2 class="text-base font-bold text-slate-900 mb-2">App Store Connect</h2>
+      <p class="text-slate-600 text-sm">Register least-privilege App Store Connect API credentials for future release, TestFlight, and diagnostics imports. iOS issue rendering works without this optional connection.</p>
+    </div>
+    <% if @app_store_connect_integration_setting.configured? %>
+      <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">Configured</span>
+    <% else %>
+      <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">Not configured</span>
+    <% end %>
+  </div>
+
+  <%= form_with model: @app_store_connect_integration_setting,
+                url: project_integration_setting_path(@project),
+                method: :patch,
+                class: "mt-5 space-y-5" do |form| %>
+    <%= form.hidden_field :provider, value: ProjectIntegrationSetting::PROVIDERS[:app_store_connect] %>
+    <label class="flex items-start gap-3">
+      <%= form.check_box :enabled, class: "form-checkbox mt-1", disabled: !@project_manager %>
+      <span><span class="block text-sm font-semibold text-slate-900">Enable App Store Connect</span><span class="block text-sm text-slate-600">Credentials stay in the host secret store; Logister saves references only.</span></span>
+    </label>
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div><%= form.label :external_project_id, "Bundle identifier", class: "form-label" %><%= form.text_field :external_project_id, placeholder: "com.acme.shop", class: "form-input", disabled: !@project_manager %></div>
+      <div><%= form.label :account_id, "Issuer ID", class: "form-label" %><%= form.text_field :account_id, placeholder: "69a6de7e-...", class: "form-input", disabled: !@project_manager %></div>
+      <div><%= form.label :external_project_name, "Key ID", class: "form-label" %><%= form.text_field :external_project_name, placeholder: "ABC123DEFG", class: "form-input", disabled: !@project_manager %></div>
+      <div><%= form.label :credential_reference, "Private-key environment variable", class: "form-label" %><%= form.text_field :credential_reference, placeholder: "APP_STORE_CONNECT_PRIVATE_KEY", class: "form-input", disabled: !@project_manager %><p class="mt-1 text-xs text-slate-500">Store the <code>.p8</code> contents in this environment variable. Never paste the key into Logister.</p></div>
+    </div>
+    <% if @project_manager %><div class="flex justify-end"><%= form.submit "Save App Store Connect settings", class: "btn btn-primary" %></div><% end %>
+  <% end %>
+
+  <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+    <strong class="block text-sm text-slate-900">Import boundary</strong>
+    <p class="mt-1 text-sm text-slate-600">This release records and validates the provider boundary but does not start App Store imports. Symbols remain exactly as reported by the SDK; address-only frames say that dSYM coverage is not configured.</p>
+  </div>
+</article>

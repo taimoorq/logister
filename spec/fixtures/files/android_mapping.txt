@@ -1,0 +1,4 @@
+com.acme.shop.storage.CartStore -> a:
+    1:10:void write(java.lang.String):19:28 -> b
+com.acme.shop.checkout.CartRepository -> c:
+    80:90:void save():84:94 -> d

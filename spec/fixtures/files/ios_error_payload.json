@@ -1,0 +1,41 @@
+{
+  "level": "error",
+  "message": "CheckoutViewModel.submit(_:): The operation could not be completed",
+  "context": {
+    "platform": "ios",
+    "telemetry_schema_version": 2,
+    "release": "com.acme.shop@4.2.0+310",
+    "app": {
+      "package_name": "com.acme.shop",
+      "version_name": "4.2.0",
+      "version_code": "310",
+      "screen": "CheckoutView"
+    },
+    "device": {
+      "model": "iPhone17,1",
+      "family": "iPhone",
+      "locale": "en_US"
+    },
+    "os": {
+      "name": "iOS",
+      "version": "19.0"
+    },
+    "error": {
+      "mechanism": "handled_exception",
+      "handled": true
+    },
+    "session": { "id": "session-ios-1" },
+    "installation": { "id_hash": "installation-ios-1" },
+    "exception": {
+      "type": "CheckoutError",
+      "message": "The operation could not be completed",
+      "stacktrace": [
+        "0 AcmeShop 0x00000001004a1290 CheckoutViewModel.submit(_:) + 84",
+        "1 UIKitCore 0x0000000181045ab0 -[UIApplication sendAction:to:from:forEvent:] + 96"
+      ]
+    },
+    "breadcrumbs": [
+      { "timestamp": "2026-07-26T12:00:00Z", "category": "navigation", "message": "Opened CheckoutView" }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+<% if related_logs.any? %>
+  <%= responsive_scroll_region do %>
+    <table class="occurrences-table">
+      <thead>
+        <tr><th>When</th><th>Level</th><th>Message</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% related_logs.each do |log_event| %>
+          <tr>
+            <td><%= local_time_tag(log_event.occurred_at, format: :long) %></td>
+            <td><%= render "shared/widgets/severity_badge", level: log_event.level.presence || "info" %></td>
+            <td><%= truncate(log_event.message.to_s.lines.first, length: 120) %></td>
+            <td>
+              <%= link_to "View",
+                          partitioned_project_event_path(project, log_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
+                          class: "inline-link",
+                          data: link_data %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% else %>
+  <p class="muted">No logs found in the correlation window.</p>
+<% end %>

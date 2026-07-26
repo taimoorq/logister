@@ -1,0 +1,27 @@
+<% presenter = event_presenter(project, event, exception_data) %>
+<% sections = {
+  "App & release" => presenter.app_details,
+  "Device" => presenter.device_details,
+  "Operating system" => presenter.os_details,
+  "Correlation & completeness" => presenter.correlation_details
+} %>
+
+<div class="mobile-context-grid">
+  <% sections.each do |title, details| %>
+    <section class="mobile-context-section">
+      <h3><%= title %></h3>
+      <% if details.any? %>
+        <dl>
+          <% details.each do |key, value| %>
+            <div>
+              <dt><%= key.to_s.humanize %></dt>
+              <dd><code><%= value.to_s %></code></dd>
+            </div>
+          <% end %>
+        </dl>
+      <% else %>
+        <p class="muted">Not captured for this occurrence.</p>
+      <% end %>
+    </section>
+  <% end %>
+</div>

@@ -1,4 +1,5 @@
 <% tour_group = "project-errors" %>
+<% experience = project_experience(@project) %>
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
 
@@ -6,8 +7,10 @@
 
 <div class="inbox-workbench min-w-0"
      data-controller="inbox"
+     data-project-integration="<%= @project.integration_kind %>"
+     data-project-experience="<%= experience.key %>"
      data-inbox-project-uuid-value="<%= @project.uuid %>"
-     data-action="turbo:frame-load@document->inbox#onFrameLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch">
+     data-action="turbo:frame-load@document->inbox#onFrameLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch turbo:fetch-request-error@document->inbox#onFetchError turbo:frame-missing@document->inbox#onFetchError turbo:submit-start@document->inbox#onSubmitStart turbo:submit-end@document->inbox#onSubmitEnd">
   <section class="inbox-workbench-filters"
            aria-label="Inbox filters"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :filters)) %>>
@@ -17,8 +20,10 @@
                     data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "searchForm", action: "submit->inbox#onSearchSubmit" } do |f| %>
         <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
         <%= f.hidden_field :assignee, value: @assignee_filter, data: { inbox_target: "assigneeField" } %>
+        <%= f.hidden_field :sort, value: @sort %>
+        <% @profile_filters.each do |key, value| %><%= f.hidden_field key, value: value %><% end %>
         <%= f.label :q, "Search inbox", class: "kicker inbox-filter-search-label" %>
-        <%= f.search_field :q, value: @query, placeholder: "Search errors...",
+        <%= f.search_field :q, value: @query, placeholder: experience.search_placeholder,
                            class: "form-input inbox-filter-search-input",
                            data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
       <% end %>
@@ -28,12 +33,70 @@
                     data: { turbo_frame: "project_inbox", turbo_action: "advance", inbox_target: "assigneeForm" } do |f| %>
         <%= f.hidden_field :filter, value: @filter %>
         <%= f.hidden_field :q, value: @query %>
+        <%= f.hidden_field :sort, value: @sort %>
+        <% @profile_filters.each do |key, value| %><%= f.hidden_field key, value: value %><% end %>
         <%= f.label :assignee, "Assignee", class: "kicker inbox-filter-search-label" %>
         <%= f.select :assignee,
                      inbox_assignee_options(@project, current_user, @assignable_users),
                      { selected: @assignee_filter },
                      class: "form-input inbox-assignee-select",
                      data: { action: "change->inbox#submitAssigneeFilter" } %>
+      <% end %>
+
+      <% if experience.supports?(:mobile) %>
+        <%= form_with url: inbox_project_path(@project), method: :get,
+                      class: "android-inbox-controls",
+                      data: { turbo_frame: "project_inbox", turbo_action: "advance" } do |f| %>
+          <%= f.hidden_field :filter, value: @filter %>
+          <%= f.hidden_field :q, value: @query %>
+          <%= f.hidden_field :assignee, value: @assignee_filter %>
+
+          <label class="android-control-field">
+            <span>Release</span>
+            <%= f.select :release,
+                         [["All releases", ""], *@profile_filter_options.fetch("release", []).map { |release| [release, release] }],
+                         { selected: @profile_filters["release"] },
+                         class: "form-input",
+                         data: { action: "change->inbox#submitForm" } %>
+          </label>
+
+          <label class="android-control-field">
+            <span>Sort</span>
+            <%= f.select :sort, experience.sort_options, { selected: @sort }, class: "form-input", data: { action: "change->inbox#submitForm" } %>
+          </label>
+
+          <details class="android-filter-drawer">
+            <summary>Filters <span><%= @profile_filters.except("release").size %></span></summary>
+            <div class="android-filter-grid">
+              <% experience.filters.reject { |definition| definition.key == :release }.each do |definition| %>
+                <% values = definition.options.presence || @profile_filter_options.fetch(definition.key.to_s, []) %>
+                <label>
+                  <span><%= definition.label %></span>
+                  <% if values.any? %>
+                    <%= f.select definition.key,
+                                 [["Any", ""], *values.map { |value| [value.to_s.humanize, value] }],
+                                 { selected: @profile_filters[definition.key.to_s] },
+                                 class: "form-input" %>
+                  <% else %>
+                    <%= f.text_field definition.key, value: @profile_filters[definition.key.to_s], class: "form-input" %>
+                  <% end %>
+                </label>
+              <% end %>
+              <div class="android-filter-actions">
+                <%= f.submit "Apply filters", class: "btn btn-primary" %>
+                <%= link_to "Clear mobile filters",
+                            inbox_project_path(@project, filter: @filter, q: @query, assignee: @assignee_filter, sort: @sort),
+                            class: "inline-link",
+                            data: {
+                              turbo_frame: "project_inbox",
+                              turbo_action: "advance",
+                              inbox_target: "clearProfileLink",
+                              inbox_profile_filter_keys: experience.filters.map(&:key).join(",")
+                            } %>
+              </div>
+            </div>
+          </details>
+        <% end %>
       <% end %>
 
       <%= render "inbox_counts", project: @project, counts: @counts, filter: @filter, query: @query, assignee: @assignee_filter %>
@@ -51,20 +114,20 @@
            data-inbox-target="listPane"
            aria-busy="false"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :groups)) %>>
-    <header class="inbox-pane-header">
-      <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]">Error groups</h2>
-      <p class="text-xs text-slate-500"><%= @groups.size %> shown · newest first</p>
-    </header>
     <%= render "inbox_table",
                project:       @project,
                groups:        @groups,
                latest_events: @latest_events,
                group_trends:  @group_trends,
+               impact_summaries: @impact_summaries,
                has_activity_events: @has_activity_events,
                selected_uuid: @selected_group&.uuid,
                filter:        @filter,
                query:         @query,
-               assignee:      @assignee_filter %>
+               assignee:      @assignee_filter,
+               sort:          @sort,
+               profile_filters: @profile_filters,
+               next_cursor:   @next_cursor %>
   </section>
 
   <section class="inbox-workbench-detail"
@@ -78,6 +141,7 @@
                  group:       @detail_group,
                  occurrences: @detail_occurrences,
                  related_logs: @detail_related_logs,
+                 impact_summary: @detail_impact_summary,
                  filter:      @filter,
                  assignee:    @assignee_filter,
                  assignable_users: @assignable_users,

@@ -1,0 +1,51 @@
+<% if occurrences.any? %>
+  <%= responsive_scroll_region do %>
+    <table class="occurrences-table">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Message</th>
+          <% if experience.supports?(:mobile) %>
+            <th>Release</th>
+            <th>Device / OS</th>
+          <% else %>
+            <th>Severity</th>
+          <% end %>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% occurrences.each do |occurrence| %>
+          <% occurrence_event = occurrence.ingest_event_record %>
+          <% next unless occurrence_event %>
+          <% mobile_presenter = event_presenter(project, occurrence_event) if experience.supports?(:mobile) %>
+          <tr>
+            <td><%= local_time_tag(occurrence_event.occurred_at, format: :long) %></td>
+            <td><%= truncate(occurrence_event.message.to_s.lines.first, length: 80) %></td>
+            <% if mobile_presenter %>
+              <td>
+                <% app = mobile_presenter.app_details %>
+                <%= [app[:version_name], app[:version_code].presence && "(#{app[:version_code]})"].compact.join(" ").presence || "Not captured" %>
+              </td>
+              <td>
+                <% device = mobile_presenter.device_details %>
+                <% os = mobile_presenter.os_details %>
+                <%= [device[:model], os[:version].presence && "#{os[:name].presence || project.integration_kind.upcase_first} #{os[:version]}", os[:api_level].presence && "API #{os[:api_level]}"].compact.join(" · ").presence || "Not captured" %>
+              </td>
+            <% else %>
+              <td><%= render "shared/widgets/severity_badge", level: occurrence_event.level.presence || "error" %></td>
+            <% end %>
+            <td>
+              <%= link_to "View",
+                          partitioned_project_event_path(project, occurrence_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
+                          class: "inline-link",
+                          data: link_data %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% else %>
+  <p class="muted">No occurrences recorded yet.</p>
+<% end %>

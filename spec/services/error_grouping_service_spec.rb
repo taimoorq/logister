@@ -169,5 +169,62 @@ RSpec.describe ErrorGroupingService, type: :model do
       group = described_class.call(event)
       expect(group.fingerprint).to eq("UniqueMessageLine123")
     end
+
+    it "groups Android failures by mechanism, root type, and stable in-app failure point" do
+      android_project = create(:project, :android)
+      android_key = create(:api_key, project: android_project, user: android_project.user)
+      base_context = JSON.parse(Rails.root.join("spec/fixtures/files/android_error_payload.json").read).fetch("context")
+      first = create(:ingest_event, project: android_project, api_key: android_key, message: "Checkout 123 failed", context: base_context)
+      changed_context = base_context.deep_dup
+      changed_context["exception"]["message"] = "Checkout 987 failed"
+      changed_context["exception"]["stacktrace"][0]["line"] = 101
+      second = create(:ingest_event, project: android_project, api_key: android_key, message: "Checkout 987 failed", context: changed_context)
+
+      first_group = described_class.call(first)
+      second_group = described_class.call(second)
+
+      expect(second_group).to eq(first_group)
+      expect(first_group.reload.occurrence_count).to eq(2)
+      expect(first_group.grouping_algorithm_version).to eq(AndroidErrorGroupingEvidence::VERSION)
+      expect(first_group.grouping_evidence).to include(
+        "mechanism" => "handled_exception",
+        "root_exception_type" => "java.io.IOException",
+        "top_in_app_class" => "com.acme.shop.storage.CartStore",
+        "top_in_app_method" => "write"
+      )
+    end
+
+    it "keeps different Android in-app failure points in separate groups" do
+      android_project = create(:project, :android)
+      android_key = create(:api_key, project: android_project, user: android_project.user)
+      context = JSON.parse(Rails.root.join("spec/fixtures/files/android_error_payload.json").read).fetch("context")
+      first = create(:ingest_event, project: android_project, api_key: android_key, message: "Same dynamic message", context: context)
+      changed = context.deep_dup
+      changed["exception"]["cause"]["stacktrace"][0]["method"] = "replace"
+      second = create(:ingest_event, project: android_project, api_key: android_key, message: "Same dynamic message", context: changed)
+
+      expect(described_class.call(first)).not_to eq(described_class.call(second))
+    end
+
+    it "materializes mobile occurrence impact dimensions idempotently" do
+      android_project = create(:project, :android)
+      android_key = create(:api_key, project: android_project, user: android_project.user)
+      context = JSON.parse(Rails.root.join("spec/fixtures/files/android_error_payload.json").read).fetch("context").merge(
+        "session_id" => "session-123",
+        "installation_id_hash" => "rotating-pseudonym"
+      )
+      event = create(:ingest_event, project: android_project, api_key: android_key, message: "Impact event", context: context)
+
+      group = described_class.call(event)
+      occurrence = group.error_occurrences.sole
+
+      expect(occurrence).to have_attributes(mechanism: "handled_exception", release: "1.4.0+42", telemetry_schema_version: 1)
+      expect(occurrence.installation_hash).to match(/\A[0-9a-f]{64}\z/)
+      expect(occurrence.session_hash).to match(/\A[0-9a-f]{64}\z/)
+      expect(occurrence.dimensions).to include("device_model" => "Pixel 8", "api_level" => "35")
+
+      described_class.call(event.reload)
+      expect(group.reload.error_occurrences.count).to eq(1)
+    end
   end
 end

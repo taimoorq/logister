@@ -2,6 +2,23 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.2 - 2026-07-26
+
+### Added
+
+- Added reusable project-experience profiles with Android and iOS mobile inboxes, typed detail sections, mobile impact summaries, profile filters/sorts, and signed keyset pagination.
+- Added release-scoped private R8 mapping uploads and Android deobfuscation status, plus optional Google Play Developer Reporting imports with explicit metric provenance and freshness.
+
+### Changed
+
+- Versioned the mobile ingest vocabulary and added stable Android failure-point grouping, queryable occurrence dimensions, honest handled/fatal/ANR classification, and completeness states for installation and session impact.
+
+### Upgrade Notes
+
+- Run the database migrations before restarting web and worker processes. This release adds mobile impact/grouping fields to error occurrences and groups, plus private Android mapping-file storage.
+- Existing installations can upgrade directly. Rebuild the application or pull the `v3.2` container so the mobile project profiles, refreshed assets, and Android mapping support are included.
+- Because this is a stable release, the main-branch release workflow publishes `v3.2`, `latest`, and short-SHA container tags after CI, deployment, and health checks pass.
+
 ## v3.1 - 2026-07-26
 
 ### Added
@@ -370,8 +387,8 @@ All notable changes to Logister will be documented in this file.
 
 ### Changed
 
-- Updated the production runtime to Ruby 4.0.5 and Bundler 4.0.10.
-- Pinned the production Docker base to `ruby:4.0.5-slim-bookworm` for a small, stable Debian base with the app's PostgreSQL, libvips, and jemalloc runtime packages.
+- Updated the production runtime to Ruby 4.0.6 and Bundler 4.0.10.
+- Pinned the production Docker base to `ruby:4.0.6-slim-bookworm` for a small, stable Debian base with the app's PostgreSQL, libvips, and jemalloc runtime packages.
 - Updated self-hosting docs, Cloudflare-hosted docs, AI-readable docs, and homepage metadata so the public release surfaces point at Logister 2.0.
 
 ### Fixed

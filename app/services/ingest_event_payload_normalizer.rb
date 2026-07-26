@@ -152,9 +152,14 @@ class IngestEventPayloadNormalizer
     merge_context_value!(context, "expected_interval_seconds", raw_event[:expected_interval_seconds])
     merge_context_value!(context, "check_in_slug", raw_event[:check_in_slug] || raw_event[:monitor_slug])
     merge_context_value!(context, "check_in_status", raw_event[:check_in_status] || raw_event[:status])
+    merge_context_value!(context, "telemetry_schema_version", raw_event[:telemetry_schema_version] || raw_event[:telemetrySchemaVersion])
+    merge_context_value!(context, "error_mechanism", raw_event[:error_mechanism] || raw_event[:errorMechanism] || raw_event[:mechanism])
+    merge_context_value!(context, "handled", raw_event[:handled])
+    merge_context_value!(context, "in_foreground", raw_event[:in_foreground] || raw_event[:inForeground])
+    merge_context_value!(context, "installation_id_hash", raw_event[:installation_id_hash] || raw_event[:installationIdHash])
 
     context["environment"] ||= default_environment if default_environment.present?
-    attrs["context"] = context
+    attrs["context"] = MobileTelemetryNormalizer.normalize(context)
     attrs
   end
 

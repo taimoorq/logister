@@ -16,6 +16,15 @@
   inbox_path = "screenshots/public/project-error-inbox.webp"
   insights_path = "screenshots/public/project-insights.webp"
   full_size_screenshot_label = ->(label) { "Open full-size #{label} screenshot" }
+  responsive_screenshot_srcset = lambda do |path, width|
+    narrow_path = path.sub(/\.webp\z/, "-360.webp")
+    small_path = path.sub(/\.webp\z/, "-480.webp")
+    compact_path = path.sub(/\.webp\z/, "-720.webp")
+    medium_path = path.sub(/\.webp\z/, "-960.webp")
+    "#{asset_path(narrow_path)} 360w, #{asset_path(small_path)} 480w, #{asset_path(compact_path)} 720w, #{asset_path(medium_path)} 960w, #{asset_path(path)} #{width}w"
+  end
+  hero_screenshot_sizes = "(max-width: 900px) calc(100vw - 2rem), 50vw"
+  card_screenshot_sizes = "(max-width: 768px) calc(100vw - 2rem), (max-width: 1280px) 45vw, 620px"
 %>
 
 <div class="marketing-home about-page">
@@ -42,7 +51,16 @@
                       rel: "noopener noreferrer",
                       class: "screenshot-fullsize-link",
                       aria: { label: full_size_screenshot_label.call("overview dashboard") } do %>
-            <%= image_tag dashboard_path, alt: "Logister overview dashboard showing cross-app event flow", class: "hero-shot", width: 3600, height: 2213 %>
+            <%= image_tag dashboard_path,
+                          alt: "Logister overview dashboard showing cross-app event flow",
+                          class: "hero-shot",
+                          width: 1800,
+                          height: 900,
+                          srcset: responsive_screenshot_srcset.call(dashboard_path, 1800),
+                          sizes: hero_screenshot_sizes,
+                          loading: "eager",
+                          fetchpriority: "high",
+                          decoding: "async" %>
           <% end %>
         <% else %>
           <div class="shot-placeholder">Add <code>app/assets/images/<%= dashboard_path %></code></div>
@@ -81,7 +99,16 @@
                         rel: "noopener noreferrer",
                         class: "screenshot-fullsize-link",
                         aria: { label: full_size_screenshot_label.call("project inbox") } do %>
-              <%= image_tag inbox_path, alt: "Logister inbox detail view screenshot", class: "hero-shot", width: 3600, height: 1660 %>
+              <%= image_tag inbox_path,
+                            alt: "Logister inbox detail view screenshot",
+                            class: "hero-shot",
+                            width: 1800,
+                            height: 950,
+                            srcset: responsive_screenshot_srcset.call(inbox_path, 1800),
+                            sizes: card_screenshot_sizes,
+                            loading: "lazy",
+                            fetchpriority: "low",
+                            decoding: "async" %>
             <% end %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= inbox_path %></code></div>
@@ -97,7 +124,16 @@
                         rel: "noopener noreferrer",
                         class: "screenshot-fullsize-link",
                         aria: { label: full_size_screenshot_label.call("project insights") } do %>
-              <%= image_tag insights_path, alt: "Logister insights timeline screenshot", class: "hero-shot", width: 3600, height: 2795 %>
+              <%= image_tag insights_path,
+                            alt: "Logister insights timeline screenshot",
+                            class: "hero-shot",
+                            width: 1800,
+                            height: 1000,
+                            srcset: responsive_screenshot_srcset.call(insights_path, 1800),
+                            sizes: card_screenshot_sizes,
+                            loading: "lazy",
+                            fetchpriority: "low",
+                            decoding: "async" %>
             <% end %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= insights_path %></code></div>
@@ -113,7 +149,16 @@
                         rel: "noopener noreferrer",
                         class: "screenshot-fullsize-link",
                         aria: { label: full_size_screenshot_label.call("projects dashboard") } do %>
-              <%= image_tag projects_dashboard_path, alt: "Logister projects dashboard screenshot", class: "hero-shot", width: 3600, height: 3217 %>
+              <%= image_tag projects_dashboard_path,
+                            alt: "Logister projects dashboard screenshot",
+                            class: "hero-shot",
+                            width: 1800,
+                            height: 1000,
+                            srcset: responsive_screenshot_srcset.call(projects_dashboard_path, 1800),
+                            sizes: card_screenshot_sizes,
+                            loading: "lazy",
+                            fetchpriority: "low",
+                            decoding: "async" %>
             <% end %>
           <% else %>
             <div class="shot-placeholder">Add <code>app/assets/images/<%= projects_dashboard_path %></code></div>

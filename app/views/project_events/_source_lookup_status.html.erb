@@ -1,46 +1,49 @@
 <% diagnostics = source_lookup.diagnostics || {} %>
 <% attempts = Array(diagnostics[:attempts]).first(4) %>
 
-<div class="source-lookup-status">
-  <div>
+<details class="source-lookup-status">
+  <summary>
     <strong>Source lookup unavailable</strong>
-    <p><%= diagnostics[:message] %></p>
-  </div>
-  <% if diagnostics[:repository].present? || diagnostics[:source_path].present? || diagnostics[:ref].present? %>
-    <dl>
-      <% if diagnostics[:repository].present? %>
-        <dt>Repository</dt>
-        <dd><code><%= diagnostics[:repository] %></code></dd>
-      <% end %>
-      <% if diagnostics[:source_path].present? %>
-        <dt>Path</dt>
-        <dd><code><%= diagnostics[:source_path] %></code></dd>
-      <% end %>
-      <% if diagnostics[:ref].present? %>
-        <dt>Ref</dt>
-        <dd><code><%= diagnostics[:ref] %></code></dd>
-      <% end %>
-    </dl>
-  <% end %>
-  <% if attempts.any? %>
-    <div class="source-lookup-attempts">
-      <span>Attempted source lookups</span>
-      <ul>
-        <% attempts.each do |attempt| %>
-          <li>
-            <code><%= attempt[:repository] || attempt["repository"] %></code>
-            <% if (path = attempt[:path] || attempt["path"]).present? %>
-              <code><%= path %></code>
-            <% end %>
-            <% if (ref = attempt[:ref] || attempt["ref"]).present? %>
-              <code><%= ref %></code>
-            <% end %>
-            <% if (reason = attempt[:reason] || attempt["reason"]).present? %>
-              <span><%= reason.to_s.humanize.downcase %></span>
-            <% end %>
-          </li>
+    <span><%= diagnostics[:message] %></span>
+    <span class="source-lookup-status-action">Details</span>
+  </summary>
+  <div class="source-lookup-status-body">
+    <% if diagnostics[:repository].present? || diagnostics[:source_path].present? || diagnostics[:ref].present? %>
+      <dl>
+        <% if diagnostics[:repository].present? %>
+          <dt>Repository</dt>
+          <dd><code><%= diagnostics[:repository] %></code></dd>
         <% end %>
-      </ul>
-    </div>
-  <% end %>
-</div>
+        <% if diagnostics[:source_path].present? %>
+          <dt>Path</dt>
+          <dd><code><%= diagnostics[:source_path] %></code></dd>
+        <% end %>
+        <% if diagnostics[:ref].present? %>
+          <dt>Ref</dt>
+          <dd><code><%= diagnostics[:ref] %></code></dd>
+        <% end %>
+      </dl>
+    <% end %>
+    <% if attempts.any? %>
+      <div class="source-lookup-attempts">
+        <span>Attempted source lookups</span>
+        <ul>
+          <% attempts.each do |attempt| %>
+            <li>
+              <code><%= attempt[:repository] || attempt["repository"] %></code>
+              <% if (path = attempt[:path] || attempt["path"]).present? %>
+                <code><%= path %></code>
+              <% end %>
+              <% if (ref = attempt[:ref] || attempt["ref"]).present? %>
+                <code><%= ref %></code>
+              <% end %>
+              <% if (reason = attempt[:reason] || attempt["reason"]).present? %>
+                <span><%= reason.to_s.humanize.downcase %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</details>

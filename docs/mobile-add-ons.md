@@ -89,6 +89,7 @@ import org.logister.android.captureMessageAsync
 import org.logister.android.captureTransactionAsync
 import org.logister.android.LogisterToken
 import org.logister.android.LogisterTokenProvider
+import org.logister.android.LogisterBreadcrumb
 import org.logister.android.logisterClient
 
 class AppBackendTokenProvider : LogisterTokenProvider {
@@ -111,7 +112,21 @@ val client = logisterClient(
     appVersion(BuildConfig.VERSION_NAME)
     buildNumber(BuildConfig.VERSION_CODE.toString())
     buildType(BuildConfig.BUILD_TYPE)
+    application(myApplication)
+    sessionTracking(true)
+    installationTracking(true, rotationDays = 90)
+    breadcrumbs(capacity = 50)
+    offlineQueue(enabled = true, maxEvents = 30, maxBytes = 512 * 1024)
+    automaticCrashCapture(true)
+    applicationExitCapture(true)
 }
+
+client.addBreadcrumb(
+    LogisterBreadcrumb.builder("Checkout opened")
+        .category("navigation")
+        .data("screen", "Checkout")
+        .build()
+)
 
 client.captureMessageAsync("Checkout opened") {
     context("screen_name", "Checkout")
@@ -127,7 +142,10 @@ client.captureTransactionAsync("screen.load", 184.2) {
 try {
     runCheckout()
 } catch (exception: Exception) {
-    client.captureExceptionAsync(exception)
+    client.captureExceptionAsync(exception) {
+        mechanism("handled_exception")
+        handled(true)
+    }
 }
 ```
 
@@ -155,19 +173,50 @@ client.checkInAsync("daily-sync", "ok") {
 }
 ```
 
-Android telemetry should include:
+Version 0.2.0 sends a canonical, versioned mobile contract while retaining the
+older flat aliases. Android telemetry should include:
 
 - `platform: "android"`
-- package name as `service`
-- release as version name plus version code
+- `app.package_name`, `app.version_name`, and `app.version_code`
+- release as version name plus version code, such as `1.4.0+42`
+- `error.mechanism` and `error.handled`; a manual capture defaults to a
+  reported/handled exception, not a fatal crash
 - `repository`, `commit_sha`, and `branch` when the app build is tied to a
   GitHub repository
-- build type and app version
+- build type, foreground state, and screen/activity when available
 - Android API level, OS version, device model, locale, and session ID when safe
+- a rotating random installation pseudonym only when installation tracking is
+  enabled
 
-The first SDK milestone is manual capture. Automatic crash capture, network
-timing, retry, and offline queueing should remain opt-in until privacy and data
-retention expectations are explicit.
+Lifecycle sessions, installation tracking, breadcrumbs, the uncaught-exception
+handler, Android 11+ historical app-exit capture, and the disk retry queue are
+all opt-in. The installation pseudonym is random and rotated; the SDK does not
+read Android ID, advertising ID, IMEI, or a hardware serial. A queued response
+is not reported as accepted until a later server response succeeds.
+
+### Android inbox, R8 mappings, and Google Play
+
+Android projects use a stability-specific inbox. Owners can sort by recommended
+priority, impact, or newest and filter by mechanism, release/build, Play track,
+environment, build type, device, Android/API version, screen, foreground state,
+and time window. Affected installation and session counts appear only when the
+corresponding pseudonymous identifiers were collected; missing data is shown as
+not collected rather than zero.
+
+For minified builds, open **Project settings → Integrations → R8 mappings** and
+upload the build's `mapping.txt` with its package name and version code. Mapping
+files are private and project-scoped. The issue detail says **Mapping missing**
+when no matching build artifact exists.
+
+The optional Google Play panel is in **Project settings → Integrations → Google
+Play**. Store the service-account JSON in the host's secret store, enter only its
+environment-variable reference in Logister, and grant the reporting identity
+the least privilege required for the Play Developer Reporting API. Imported
+crash/ANR rates, anomalies, tracks, provenance, freshness, and time zone remain
+visually separate from SDK-derived occurrence and installation metrics. The
+Play rate metric sets are version-code scoped, so Logister resolves each
+permitted track to its active version codes from the release-filter options
+before filtering imported rate rows.
 
 ## iOS
 
@@ -306,14 +355,15 @@ request bodies, raw local variables, or other sensitive user data.
 Android releases are tag-driven:
 
 ```bash
-git tag v0.1.3
-git push origin v0.1.3
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 The Android GitHub Actions release workflow builds, tests, signs, and uploads
 the artifact to Sonatype Central Portal with automatic Maven Central release.
 The workflow also creates the matching GitHub Release after the package version
-matches the tag. Version `0.1.3` is public at `org.logister:logister-android`.
+matches the tag. Version `0.2.0` adds the canonical Android stability contract
+and app-backed collection controls.
 
 iOS releases are also tag-driven:
 

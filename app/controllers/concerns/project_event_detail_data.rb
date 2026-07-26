@@ -15,7 +15,8 @@ module ProjectEventDetailData
       event: event,
       group: resolved_group,
       occurrences: occurrences,
-      related_logs: IngestEvent.related_logs(project: project, event: event, window: 5.minutes, limit: 50)
+      related_logs: IngestEvent.related_logs(project: project, event: event, window: 5.minutes, limit: 50),
+      impact_summary: resolved_group && ProjectExperience.for(project).supports?(:mobile) ? ErrorGroupImpactSummary.for_group(resolved_group) : nil
     }
   end
 

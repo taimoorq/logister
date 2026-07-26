@@ -1,0 +1,22 @@
+<% if !project.integration_ruby? && source_excerpt.blank? && source_lookup&.diagnostics&.dig(:message).present? %>
+  <%= render "project_events/source_lookup_status", source_lookup: source_lookup %>
+<% end %>
+
+<%= render stacktrace_partial,
+           project: project,
+           event: event,
+           group: group,
+           exception_data: exception_data,
+           request_details: request_details,
+           filter_param: filter_param,
+           query_param: query_param,
+           assignee_param: assignee_param,
+           source_excerpt: source_excerpt,
+           source_lookup: source_lookup,
+           frame_scope: frame_scope,
+           visible_frames: visible_frames,
+           selected_frame_index: selected_frame_index,
+           selected_frame: selected_frame,
+           backtrace: backtrace,
+           local_variables: local_variables,
+           instance_variables: instance_variables %>

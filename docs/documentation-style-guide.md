@@ -61,7 +61,16 @@ Choose the format that matches the task:
 - Match screenshot layout to the job it does. Use full-width figures for broad scan views, dashboards, inboxes, and charts. Use a paired column layout for tall forms, narrow panels, settings cards, or focused controls so the visual can sit next to the explanation. Do not scale a screenshot larger than the UI would reasonably appear in the product.
 - Use diagrams only when a flow is hard to explain in text, such as token issuance, webhook callbacks, ingestion paths, or retention jobs.
 
-Screenshots need useful alt text, fixed width and height attributes, and a caption that explains what the reader should look for. After changing screenshots, run `bin/build-cloudflare-docs` so files from `app/assets/images/screenshots/public` are copied into `cloudflare-docs/assets/screenshots`, then check for missing local assets.
+Screenshots need useful alt text, fixed width and height attributes, and a caption that explains what the reader should look for. Keep the source captures in WebP format and generate the responsive variants before publishing:
+
+```sh
+DRY_RUN=true SEED=20260726 bin/rails logister:docs:sample_project_names
+SEED=20260726 bin/rails logister:docs:sample_project_names
+bin/optimize-screenshot-assets
+bin/build-cloudflare-docs
+```
+
+Run the first command against a restored database to review the proposed Faker project-name replacements, then run it without `DRY_RUN` before capturing. The task refuses to rewrite production without an explicit confirmation value. The optimizer writes the 360, 480, 720, and 960 pixel variants consumed by each `srcset`, strips metadata, and uses a high-efficiency WebP encode. After changing screenshots, run the final two commands so files from `app/assets/images/screenshots/public` are copied into `cloudflare-docs/assets/screenshots`, then check for missing local assets.
 
 ## Page Scope And Subpages
 

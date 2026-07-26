@@ -56,7 +56,12 @@ class ErrorGroupExternalLinksController < ApplicationController
         render turbo_stream: detail_stream(filter: filter, query: query, assignee: assignee)
       end
 
-      redirect_params = { filter: filter, q: query, assignee: assignee, group_uuid: @group.uuid }
+      redirect_params = inbox_profile_state_params(@project).merge(
+        filter: filter,
+        q: query,
+        assignee: assignee,
+        group_uuid: @group.uuid
+      )
       format.html do
         redirect_to inbox_project_path(@project, redirect_params),
                     notice: notice,
@@ -79,6 +84,7 @@ class ErrorGroupExternalLinksController < ApplicationController
         group: detail_data[:group],
         occurrences: detail_data[:occurrences],
         related_logs: detail_data[:related_logs],
+        impact_summary: detail_data[:impact_summary],
         filter: filter,
         query: query,
         assignee: assignee,
