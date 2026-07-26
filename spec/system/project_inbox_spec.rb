@@ -185,15 +185,11 @@ RSpec.describe "Project inbox", type: :system do
         });
       };
 
-      const originalAnchorClick = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function() {
-        if (this.download) {
-          window.__logisterExportDownload.filename = this.download;
-          window.__logisterExportDownload.href = this.href;
-          return;
-        }
-
-        return originalAnchorClick.call(this);
+      const form = document.querySelector("turbo-frame#error_detail form.detail-export-form");
+      const controller = window.Stimulus.getControllerForElementAndIdentifier(form, "error-export");
+      controller.saveBlob = function(blob, filename) {
+        window.__logisterExportDownload.filename = filename;
+        window.__logisterExportDownload.contentType = blob.type;
       };
     JS
 
@@ -215,6 +211,7 @@ RSpec.describe "Project inbox", type: :system do
     expect(download["url"]).to include(export_project_error_group_path(project, group))
     expect(download["accept"]).to eq("application/json")
     expect(download["filename"]).to eq("spec-export.json")
+    expect(download["contentType"]).to eq("application/json")
   end
 
   it "keeps the error workspace mounted while selecting Ruby stack frames" do

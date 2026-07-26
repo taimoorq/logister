@@ -9,7 +9,7 @@ RSpec.describe "Landing and dashboard", type: :system do
     expect(page).to have_content("forkable Rails app for grouped production errors")
     expect(page).to have_content("Versioned registry images")
     expect(page).to have_content("Read self-hosting docs")
-    expect(page).to have_content("Use hosted app")
+    expect(page).to have_link("Create hosted account", href: new_user_registration_path)
     expect(page).to have_link(href: /logister-ruby/)
   end
 
