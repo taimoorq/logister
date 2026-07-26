@@ -155,6 +155,22 @@ RSpec.describe "Project inbox", type: :system do
     dismiss_product_tour
     original_url = page.current_url
 
+    Capybara.using_wait_time(10) do
+      page.document.synchronize do
+        ready = page.evaluate_script(<<~JS)
+          (() => {
+            const form = document.querySelector("turbo-frame#error_detail form.detail-export-form");
+            return Boolean(
+              window.Stimulus &&
+              form &&
+              window.Stimulus.getControllerForElementAndIdentifier(form, "error-export")
+            );
+          })()
+        JS
+        raise Capybara::ExpectationNotMet, "expected error export controller to connect" unless ready
+      end
+    end
+
     page.execute_script(<<~JS)
       window.__logisterExportDownload = {};
       window.fetch = async (url, options) => {
@@ -186,11 +202,19 @@ RSpec.describe "Project inbox", type: :system do
       click_button "Export JSON"
     end
 
+    download = nil
+    Capybara.using_wait_time(10) do
+      page.document.synchronize do
+        download = page.evaluate_script("window.__logisterExportDownload")
+        raise Capybara::ExpectationNotMet, "expected JSON export download to finish" unless download["filename"].present?
+      end
+    end
+
     expect(page.current_url).to eq(original_url)
     expect(page).to have_css("turbo-frame#error_detail", text: "Primary inbox error")
-    expect(page.evaluate_script("window.__logisterExportDownload.url")).to include(export_project_error_group_path(project, group))
-    expect(page.evaluate_script("window.__logisterExportDownload.accept")).to eq("application/json")
-    expect(page.evaluate_script("window.__logisterExportDownload.filename")).to eq("spec-export.json")
+    expect(download["url"]).to include(export_project_error_group_path(project, group))
+    expect(download["accept"]).to eq("application/json")
+    expect(download["filename"]).to eq("spec-export.json")
   end
 
   it "keeps the error workspace mounted while selecting Ruby stack frames" do
