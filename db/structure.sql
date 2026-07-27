@@ -1079,7 +1079,9 @@ CREATE TABLE public.installations (
     lock_version integer DEFAULT 0 NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    onboarding_required boolean DEFAULT false NOT NULL
+    onboarding_required boolean DEFAULT false NOT NULL,
+    self_monitoring_project_id bigint,
+    self_monitoring_api_key_id bigint
 );
 
 
@@ -3770,6 +3772,20 @@ CREATE INDEX index_installation_steps_on_last_verified_by_user_id ON public.inst
 --
 
 CREATE INDEX index_installations_on_claimed_by_user_id ON public.installations USING btree (claimed_by_user_id);
+
+
+--
+-- Name: index_installations_on_self_monitoring_api_key_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_installations_on_self_monitoring_api_key_id ON public.installations USING btree (self_monitoring_api_key_id);
+
+
+--
+-- Name: index_installations_on_self_monitoring_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_installations_on_self_monitoring_project_id ON public.installations USING btree (self_monitoring_project_id);
 
 
 --
@@ -10463,6 +10479,14 @@ ALTER TABLE ONLY public.cli_device_authorizations
 
 
 --
+-- Name: installations fk_rails_5ce47cd5a3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.installations
+    ADD CONSTRAINT fk_rails_5ce47cd5a3 FOREIGN KEY (self_monitoring_api_key_id) REFERENCES public.api_keys(id) ON DELETE SET NULL;
+
+
+--
 -- Name: project_deployments fk_rails_5cf5091a89; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10492,6 +10516,14 @@ ALTER TABLE ONLY public.project_github_installations
 
 ALTER TABLE ONLY public.installation_steps
     ADD CONSTRAINT fk_rails_6c17023cc5 FOREIGN KEY (last_verified_by_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: installations fk_rails_6db8fdfa33; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.installations
+    ADD CONSTRAINT fk_rails_6db8fdfa33 FOREIGN KEY (self_monitoring_project_id) REFERENCES public.projects(id) ON DELETE SET NULL;
 
 
 --
@@ -10725,6 +10757,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260727010000'),
 ('20260726174000'),
 ('20260726173000'),
 ('20260726170000'),

@@ -4,11 +4,14 @@ class ClickhouseIngestJob < ApplicationJob
   discard_on ActiveRecord::RecordNotFound
 
   def perform(ingest_event_id, request_context = {}, occurred_at = nil)
-    event = IngestEvent.for_partition_reference(id: ingest_event_id, occurred_at: occurred_at).first
-    event ||= IngestEvent.find(ingest_event_id)
-    Logister::EventIngestor.new(event: event, request_context: request_context.symbolize_keys).call
+    event = nil
+    Logister::SelfReportingGuard.suppress do
+      event = IngestEvent.for_partition_reference(id: ingest_event_id, occurred_at: occurred_at).first
+      event ||= IngestEvent.find(ingest_event_id)
+      Logister::EventIngestor.new(event: event, request_context: request_context.symbolize_keys).call
+    end
   rescue Logister::ClickhouseClient::Error => e
     Rails.logger.error("clickhouse_ingest_error event_id=#{ingest_event_id} error=#{e.message}")
-    Logister::ClickhouseFailureReporter.report_event_failure(ingest_event_id, e)
+    Logister::ClickhouseFailureReporter.report_event_failure(event || ingest_event_id, e)
   end
 end

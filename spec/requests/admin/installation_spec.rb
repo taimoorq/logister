@@ -24,6 +24,20 @@ RSpec.describe "Admin installation", type: :request do
     end
   end
 
+  it "shows and updates the explicit local self-monitoring project" do
+    get admin_installation_section_path("observability")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Local self-monitoring project", "Connect self-monitoring project")
+
+    patch admin_installation_self_monitoring_path, params: { project_uuid: projects(:one).uuid }
+
+    expect(response).to redirect_to(admin_installation_section_path("observability"))
+    expect(flash[:notice]).to include("connected for local self-monitoring")
+    expect(installation.reload.self_monitoring_project).to eq(projects(:one))
+    expect(installation.self_monitoring_api_key.project).to eq(projects(:one))
+  end
+
   it "guides administrators through core setup before optional add-ons" do
     get admin_installation_path
 

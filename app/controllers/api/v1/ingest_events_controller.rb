@@ -23,10 +23,15 @@ class Api::V1::IngestEventsController < ApplicationController
       touch_client_submission_credential!
       render json: { id: event.uuid, legacy_id: event.id, status: "accepted", duplicate: true }, status: :ok
     elsif event.persisted?
-      ProjectDeploymentIndexer.from_event(event)
-      ErrorGroupingService.call(event)
-      CheckInMonitor.record!(project: @api_key.project, event: event) if event.check_in?
-      ClickhouseIngestJob.perform_later(event.id, request_context, event.occurred_at)
+      routing = Logister::SelfMonitoringPolicy.new(project: @api_key.project, event: event)
+      ProjectDeploymentIndexer.from_event(event) if routing.index_deployment?
+      ErrorGroupingService.call(event, notifications: routing.send_notifications?)
+      if event.check_in? && routing.update_check_in_monitor?
+        CheckInMonitor.record!(project: @api_key.project, event: event)
+      end
+      if routing.mirror_to_clickhouse?
+        ClickhouseIngestJob.perform_later(event.id, request_context, event.occurred_at)
+      end
 
       touch_client_submission_credential!
       render json: { id: event.uuid, legacy_id: event.id, status: "accepted" }, status: :created
@@ -53,7 +58,8 @@ class Api::V1::IngestEventsController < ApplicationController
     span.api_key = @api_key
 
     if span.save
-      ClickhouseSpanIngestJob.perform_later(span.id, request_context)
+      routing = Logister::SelfMonitoringPolicy.new(project: @api_key.project, event: span)
+      ClickhouseSpanIngestJob.perform_later(span.id, request_context) if routing.mirror_to_clickhouse?
       touch_client_submission_credential!
       render json: { id: span.uuid, legacy_id: span.id, status: "accepted", type: "span" }, status: :created
     else

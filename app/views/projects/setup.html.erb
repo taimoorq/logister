@@ -47,7 +47,11 @@
   <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     <%= render "projects/setup_api_keys", tour_group: tour_group %>
     <%= render "projects/setup_ingest_endpoint", tour_group: tour_group %>
-    <%= render "projects/setup_integration_guide", tour_group: tour_group %>
+    <% if @self_monitoring_status.linked? %>
+      <%= render "projects/setup_self_monitoring_guide", status: @self_monitoring_status, tour_group: tour_group %>
+    <% else %>
+      <%= render "projects/setup_integration_guide", tour_group: tour_group %>
+    <% end %>
   </section>
 </section>
 <% end %>

@@ -64,6 +64,10 @@
   </section>
 <% end %>
 
+<%= render "admin/installation/settings/self_monitoring",
+           status: @self_monitoring_status,
+           projects: @self_monitoring_projects if @section.key == "observability" %>
+
 <%= form_with url: admin_installation_section_path(@section.slug), method: :patch, local: true, data: { turbo: false }, class: "space-y-6" do %>
   <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
     <div class="border-b border-slate-200 px-5 py-4">

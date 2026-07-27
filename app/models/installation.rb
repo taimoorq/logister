@@ -4,9 +4,12 @@ class Installation < ApplicationRecord
   SINGLETON_KEY = "primary"
 
   belongs_to :claimed_by_user, class_name: "User", optional: true
+  belongs_to :self_monitoring_project, class_name: "Project", optional: true
+  belongs_to :self_monitoring_api_key, class_name: "ApiKey", optional: true
   has_many :installation_steps, dependent: :destroy
 
   validates :singleton_key, presence: true, uniqueness: true
+  validate :self_monitoring_destination_is_valid
 
   def self.current
     find_or_create_by!(singleton_key: SINGLETON_KEY)
@@ -54,5 +57,23 @@ class Installation < ApplicationRecord
     raise ActiveRecord::RecordInvalid, self unless required_steps_verified?
 
     update!(completed_at: Time.current, onboarding_required: false)
+  end
+
+  private
+
+  def self_monitoring_destination_is_valid
+    if self_monitoring_project
+      errors.add(:self_monitoring_project, "must use the Ruby integration") unless self_monitoring_project.integration_ruby?
+      errors.add(:self_monitoring_project, "must be active") if self_monitoring_project.archived?
+    end
+
+    return unless self_monitoring_api_key
+
+    errors.add(:self_monitoring_api_key, "must be active") unless self_monitoring_api_key.active?
+    if self_monitoring_project.nil?
+      errors.add(:self_monitoring_api_key, "requires a self-monitoring project")
+    elsif self_monitoring_api_key.project_id != self_monitoring_project_id
+      errors.add(:self_monitoring_api_key, "must belong to the self-monitoring project")
+    end
   end
 end

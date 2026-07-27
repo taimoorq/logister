@@ -10,13 +10,14 @@ class ErrorGroupingService
   RECORD_NOT_UNIQUE_RETRIES = 2
 
   # Returns the ErrorGroup that was created or updated.
-  def self.call(event)
-    new(event).call
+  def self.call(event, notifications: true)
+    new(event, notifications: notifications).call
   end
 
-  def initialize(event)
+  def initialize(event, notifications: true)
     @event   = event
     @project = event.project
+    @notifications = notifications
   end
 
   def call
@@ -47,10 +48,12 @@ class ErrorGroupingService
       retry
     end
 
-    ProjectErrorFirstOccurrenceAlertJob.perform_later(group.id) if created
-    ProjectErrorGroupNotificationJob.perform_later(group.id, "regression", regression_metadata(group)) if occurrence_created && regressed
-    ProjectErrorGroupNotificationJob.perform_later(group.id, "error_milestone", milestone_metadata(group)) if occurrence_created && milestone_reached?(group.occurrence_count)
-    ProjectErrorGroupNotificationJob.perform_later(group.id, "frequent_error", frequent_error_metadata) if occurrence_created && !created
+    if @notifications
+      ProjectErrorFirstOccurrenceAlertJob.perform_later(group.id) if created
+      ProjectErrorGroupNotificationJob.perform_later(group.id, "regression", regression_metadata(group)) if occurrence_created && regressed
+      ProjectErrorGroupNotificationJob.perform_later(group.id, "error_milestone", milestone_metadata(group)) if occurrence_created && milestone_reached?(group.occurrence_count)
+      ProjectErrorGroupNotificationJob.perform_later(group.id, "frequent_error", frequent_error_metadata) if occurrence_created && !created
+    end
     group
   end
 

@@ -1295,6 +1295,21 @@ RSpec.describe "Projects", type: :request do
       expect(response.body).to include("Require archive before deletion")
       expect(response.body.index('name="project[description]"')).to be < response.body.index("integration-picker")
       expect(response.body.index("integration-picker")).to be < response.body.index("Data retention")
+      expect(document.at_css("input[name='project[monitor_this_installation]']")).to be_nil
+    end
+
+    it "offers application admins a Ruby-only local self-monitoring destination" do
+      users(:one).update!(application_admin: true)
+
+      get new_project_path
+
+      document = Nokogiri::HTML.parse(response.body)
+      choice = document.at_css(".self-monitoring-destination")
+      expect(choice).to be_present
+      expect(choice.text).to include("Use this project to monitor this Logister installation")
+      expect(choice.at_css("input[name='project[monitor_this_installation]'][type='checkbox']")).to be_present
+      expect(response.body.index("integration-picker")).to be < response.body.index("self-monitoring-destination")
+      expect(response.body.index("self-monitoring-destination")).to be < response.body.index("Data retention")
     end
 
     it "creates project with the selected retention policy and redirects" do
@@ -1328,6 +1343,69 @@ RSpec.describe "Projects", type: :request do
       expect(response.body).to include("Send one representative event")
       expect(response.body).to include("Manual / HTTP API")
       expect(response.body).to include("HTTP API docs")
+    end
+
+    it "creates and connects a local self-monitoring project for an application admin" do
+      users(:one).update!(application_admin: true)
+      allow(InstanceConfiguration::Runtime).to receive(:apply!)
+
+      expect {
+        post projects_path, params: {
+          project: {
+            name: "Logister Self Monitoring",
+            integration_kind: "ruby",
+            monitor_this_installation: "1",
+            retention_policy_attributes: retention_policy_attributes
+          }
+        }
+      }.to change(Project, :count).by(1)
+        .and change(ApiKey, :count).by(1)
+
+      project = Project.find_by!(name: "Logister Self Monitoring")
+      installation = Installation.current.reload
+      expect(response).to redirect_to(setup_project_path(project))
+      expect(flash[:notice]).to include("connected for local self-monitoring")
+      expect(installation.self_monitoring_project).to eq(project)
+      expect(installation.self_monitoring_api_key.project).to eq(project)
+      expect(Logister::SelfMonitoringStatus.new(project: project, installation: installation)).to be_connected
+
+      follow_redirect!
+      expect(response.body).to include("Monitor this Logister installation safely", "Connected")
+      expect(response.body).not_to include("Install the <code>logister-ruby</code> gem")
+    end
+
+    it "rejects a forged self-monitoring choice from a non-admin" do
+      expect {
+        post projects_path, params: {
+          project: {
+            name: "Unauthorized Self Monitoring",
+            integration_kind: "ruby",
+            monitor_this_installation: "1",
+            retention_policy_attributes: retention_policy_attributes
+          }
+        }
+      }.not_to change(Project, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Application admin access is required")
+    end
+
+    it "rejects a non-Ruby project as the local self-monitoring destination" do
+      users(:one).update!(application_admin: true)
+
+      expect {
+        post projects_path, params: {
+          project: {
+            name: "Invalid Self Monitoring",
+            integration_kind: "python",
+            monitor_this_installation: "1",
+            retention_policy_attributes: retention_policy_attributes
+          }
+        }
+      }.not_to change(Project, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("must be Ruby when monitoring this Logister installation")
     end
 
     it "does not create an active project when retention settings are omitted" do

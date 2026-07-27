@@ -25,6 +25,19 @@ RSpec.describe ClickhouseIngestJob, type: :job do
     expect(ingestor).to have_received(:call)
   end
 
+  it "suppresses recursive self-reporting while loading and mirroring the event" do
+    event = ingest_events(:one)
+    ingestor = instance_double(Logister::EventIngestor)
+    allow(Logister::EventIngestor).to receive(:new).and_return(ingestor)
+    allow(ingestor).to receive(:call) do
+      expect(Logister::SelfReportingGuard.suppressed?).to be(true)
+    end
+
+    described_class.perform_now(event.id)
+
+    expect(Logister::SelfReportingGuard.suppressed?).to be(false)
+  end
+
   it "discards when IngestEvent is not found" do
     expect {
       perform_enqueued_jobs do
@@ -38,7 +51,9 @@ RSpec.describe ClickhouseIngestJob, type: :job do
     ingestor = instance_double(Logister::EventIngestor)
     allow(Logister::EventIngestor).to receive(:new).and_return(ingestor)
     allow(ingestor).to receive(:call).and_raise(Logister::ClickhouseClient::Error, "insert failed")
-    allow(Logister).to receive(:report_log)
+    allow(Logister).to receive(:report_log) do
+      expect(Logister::SelfReportingGuard.suppressed?).to be(false)
+    end
     allow(Logister).to receive(:report_metric)
 
     described_class.perform_now(event.id)
@@ -49,7 +64,13 @@ RSpec.describe ClickhouseIngestJob, type: :job do
         level: "error",
         fingerprint: "logister:clickhouse_ingest:failure",
         context: hash_including(
-          clickhouse_ingest: hash_including(ingest_event_id: event.id)
+          clickhouse_ingest: hash_including(ingest_event_id: event.id),
+          "logister_internal" => hash_including(
+            "component" => "clickhouse",
+            "operation" => "event_ingest_failure",
+            "feedback_depth" => 1,
+            "caused_by_uuid" => event.uuid
+          )
         )
       )
     )

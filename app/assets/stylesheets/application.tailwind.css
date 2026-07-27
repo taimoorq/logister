@@ -621,6 +621,14 @@
   .integration-picker {
     @apply min-w-0;
   }
+
+  .self-monitoring-destination {
+    display: none;
+  }
+
+  .integration-picker:has(.integration-choice-input[value="ruby"]:checked) + .self-monitoring-destination {
+    display: block;
+  }
   .integration-choice-grid {
     @apply grid grid-cols-1 gap-3 sm:grid-cols-2;
   }

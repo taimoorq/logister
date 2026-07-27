@@ -16,16 +16,27 @@ module Logister
     end
 
     def call(env)
-      previous = ActiveSupport::IsolatedExecutionState[STATE_KEY]
-      ActiveSupport::IsolatedExecutionState[STATE_KEY] = previous || self.class.reporting_path?(env["PATH_INFO"])
-      @app.call(env)
-    ensure
-      ActiveSupport::IsolatedExecutionState[STATE_KEY] = previous
+      return @app.call(env) unless self.class.reporting_path?(env["PATH_INFO"])
+
+      self.class.suppress { @app.call(env) }
     end
 
     class << self
+      def suppress
+        previous = ActiveSupport::IsolatedExecutionState[STATE_KEY]
+        ActiveSupport::IsolatedExecutionState[STATE_KEY] = true
+        if Logister.respond_to?(:suppress_reporting)
+          Logister.suppress_reporting { yield }
+        else
+          yield
+        end
+      ensure
+        ActiveSupport::IsolatedExecutionState[STATE_KEY] = previous
+      end
+
       def suppressed?
-        ActiveSupport::IsolatedExecutionState[STATE_KEY] == true
+        ActiveSupport::IsolatedExecutionState[STATE_KEY] == true ||
+          (Logister.respond_to?(:reporting_suppressed?) && Logister.reporting_suppressed?)
       end
 
       def reporting_path?(path)

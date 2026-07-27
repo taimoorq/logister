@@ -27,6 +27,15 @@ RSpec.describe Logister::ClickhouseClient do
       }.to raise_error(Logister::ClickhouseClient::Error, /500 boom/)
     end
 
+    it "normalizes transport failures for optional ingest handling" do
+      client = described_class.new(config: config)
+      allow(client).to receive(:with_http_connection).and_raise(Net::OpenTimeout, "connection timed out")
+
+      expect {
+        client.insert_event!({ event_id: "abc123" })
+      }.to raise_error(Logister::ClickhouseClient::Error, /Net::OpenTimeout: connection timed out/)
+    end
+
     it "uses query api request bodies for clickhouse cloud endpoints" do
       query_api_config = config.dup
       query_api_config.clickhouse_url = "https://queries.clickhouse.cloud/service/123/run"

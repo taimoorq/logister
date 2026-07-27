@@ -1,5 +1,6 @@
 require Rails.root.join("app/services/logister/rails_request_performance_reporter")
 require Rails.root.join("app/services/logister/source_context")
+require Rails.root.join("app/services/logister/internal_telemetry")
 require Rails.root.join("lib/logister/self_reporting_guard")
 
 Rails.application.config.middleware.insert_before(0, Logister::SelfReportingGuard)
@@ -45,6 +46,7 @@ Logister.configure do |config|
   config.before_notify = lambda do |payload|
     next false if Logister::SelfReportingGuard.suppressed?
 
+    payload = Logister::InternalTelemetry.enrich_payload(payload)
     Logister::SourceContext.enrich_payload(payload, source_context: source_context)
   end
 end

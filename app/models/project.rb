@@ -63,6 +63,11 @@ class Project < ApplicationRecord
   has_many :github_installations, through: :project_github_installations
   has_many :deployments, class_name: "ProjectDeployment", dependent: :destroy
   has_many :email_notification_deliveries, dependent: :destroy
+  has_one :self_monitoring_installation,
+          class_name: "Installation",
+          foreign_key: :self_monitoring_project_id,
+          dependent: :nullify,
+          inverse_of: :self_monitoring_project
   has_one :retention_policy, class_name: "ProjectRetentionPolicy", dependent: :destroy
   has_many :telemetry_archives, dependent: :destroy
   has_many :members, through: :project_memberships, source: :user
@@ -175,6 +180,10 @@ class Project < ApplicationRecord
 
   def integration_label
     INTEGRATION_LABELS.fetch(integration_kind, integration_kind.to_s.humanize)
+  end
+
+  def self_monitoring_for?(installation = Installation.current_if_available)
+    installation&.self_monitoring_project_id == id
   end
 
   private

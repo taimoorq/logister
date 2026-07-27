@@ -17,7 +17,7 @@ RSpec.describe Logister::ClickhouseFailureReporter do
     described_class.new(
       kind: "event",
       subject_key: :ingest_event_id,
-      subject_id: 123,
+      subject: 123,
       error: error,
       log_message: "ClickHouse ingest failed",
       log_fingerprint: "logister:clickhouse_ingest:failure",

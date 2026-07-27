@@ -71,7 +71,7 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - GHCR image package: https://github.com/taimoorq/logister/pkgs/container/logister
 - Docker Hub image package: https://hub.docker.com/r/taimoorq/logister
 - Optional Quay image mirror: `quay.io/taimoorq/logister` when Quay credentials are configured in the release workflow
-- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.3` or `docker.io/taimoorq/logister:v3.3`
+- Versioned Docker images: `ghcr.io/taimoorq/logister:v3.4` or `docker.io/taimoorq/logister:v3.4`
 - Latest Docker images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
 - Supported baseline infrastructure: Rails, PostgreSQL, Redis, Sidekiq, SMTP/Amazon SES, optional S3-compatible archive storage, and optional ClickHouse
 - Production setup order: provision PostgreSQL and a Rails web process, set the bootstrap secrets from `.env.sample`, run `./bin/release`, claim `/setup`, remove the setup token, configure and verify Redis plus a registered Sidekiq process under Admin → Installation, complete onboarding, and then add optional services.

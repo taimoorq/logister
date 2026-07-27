@@ -4,10 +4,13 @@ class ClickhouseSpanIngestJob < ApplicationJob
   discard_on ActiveRecord::RecordNotFound
 
   def perform(trace_span_id, request_context = {})
-    span = TraceSpan.find(trace_span_id)
-    Logister::SpanIngestor.new(span: span, request_context: request_context.symbolize_keys).call
+    span = nil
+    Logister::SelfReportingGuard.suppress do
+      span = TraceSpan.find(trace_span_id)
+      Logister::SpanIngestor.new(span: span, request_context: request_context.symbolize_keys).call
+    end
   rescue Logister::ClickhouseClient::Error => e
     Rails.logger.error("clickhouse_span_ingest_error trace_span_id=#{trace_span_id} error=#{e.message}")
-    Logister::ClickhouseFailureReporter.report_span_failure(trace_span_id, e)
+    Logister::ClickhouseFailureReporter.report_span_failure(span || trace_span_id, e)
   end
 end

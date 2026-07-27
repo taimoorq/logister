@@ -54,6 +54,77 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(created.context.dig("metadata", "feature_flags", 0) || created.context.dig(:metadata, :feature_flags, 0)).to eq("new-checkout")
     end
 
+    it "persists a local ClickHouse diagnostic without routing it back to ClickHouse" do
+      Installation.current.update!(
+        self_monitoring_project: api_keys(:one).project,
+        self_monitoring_api_key: api_keys(:one)
+      )
+      payload = valid_payload.deep_merge(event: {
+        fingerprint: "local-clickhouse-diagnostic",
+        context: {
+          logister_internal: {
+            component: "clickhouse",
+            operation: "event_ingest_failure",
+            feedback_depth: 1
+          }
+        }
+      })
+
+      expect {
+        post api_v1_ingest_events_path, params: payload, as: :json, headers: auth_headers
+      }.not_to have_enqueued_job(ClickhouseIngestJob)
+
+      expect(response).to have_http_status(:created)
+      event = IngestEvent.find_by!(uuid: response.parsed_body.fetch("id"))
+      expect(event.context.dig("logister_internal", "component")).to eq("clickhouse")
+    end
+
+    it "persists a local notification failure without scheduling another notification" do
+      Installation.current.update!(
+        self_monitoring_project: api_keys(:one).project,
+        self_monitoring_api_key: api_keys(:one)
+      )
+      payload = valid_payload.deep_merge(event: {
+        fingerprint: "local-notification-diagnostic",
+        context: {
+          logister_internal: {
+            component: "notifications",
+            operation: "job_failure",
+            feedback_depth: 1
+          }
+        }
+      })
+
+      expect {
+        post api_v1_ingest_events_path, params: payload, as: :json, headers: auth_headers
+      }.not_to have_enqueued_job(ProjectErrorFirstOccurrenceAlertJob)
+
+      expect(response).to have_http_status(:created)
+      expect(enqueued_jobs.map { |job| job.fetch(:job) }).to include(ClickhouseIngestJob)
+    end
+
+    it "persists over-budget local telemetry without downstream fan-out" do
+      Installation.current.update!(
+        self_monitoring_project: api_keys(:one).project,
+        self_monitoring_api_key: api_keys(:one)
+      )
+      payload = valid_payload.deep_merge(event: {
+        fingerprint: "over-budget-local-diagnostic",
+        context: {
+          logister_internal: {
+            component: "notifications",
+            feedback_depth: 2
+          }
+        }
+      })
+
+      post api_v1_ingest_events_path, params: payload, as: :json, headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      queued_classes = enqueued_jobs.map { |job| job.fetch(:job) }
+      expect(queued_classes).not_to include(ClickhouseIngestJob, ProjectErrorFirstOccurrenceAlertJob)
+    end
+
     it "accepts a client UUID idempotently without inflating error impact" do
       client_uuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
       payload = valid_payload.deep_merge(event: { uuid: client_uuid })

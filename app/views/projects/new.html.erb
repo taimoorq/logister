@@ -23,6 +23,10 @@
 
         <%= render "integration_picker", f: f, tour_group: tour_group %>
 
+        <% if admin_user? %>
+          <%= render "self_monitoring_destination", current_project: @current_self_monitoring_project %>
+        <% end %>
+
         <fieldset class="border-t border-slate-200 pt-5"
                   <%= tag.attributes(data: product_tour_step_data(tour_group, :retention_policy)) %>>
           <legend class="form-label">Data retention</legend>

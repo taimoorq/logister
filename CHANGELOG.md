@@ -2,6 +2,25 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.4 - 2026-07-26
+
+### Added
+
+- Added an explicit local self-monitoring project relationship for Ruby projects, configurable during project creation or from Admin → Installation → Observability, with a dedicated API key, encrypted fallback configuration, and tailored setup guidance.
+- Added internal telemetry provenance and a bounded feedback-depth policy so Logister can retain diagnostics about its own delivery failures without recursively re-triggering the same downstream systems.
+
+### Fixed
+
+- Prevented ClickHouse-originated failures from being mirrored back to ClickHouse and notification-originated failures from creating repeated notifications, deployment indexing, or check-in alerts.
+- Normalized ClickHouse connection, timeout, TLS, and URI failures into the application error contract while suppressing automatic SDK reporting inside ClickHouse ingest jobs.
+
+### Upgrade Notes
+
+- Run the database migrations before restarting web and worker processes. This release adds the installation's self-monitoring project and API-key relationships.
+- Existing installations remain unlinked by default. An application administrator can opt in by selecting an active Ruby project under Admin → Installation → Observability.
+- Upgrade `logister-ruby` to `v0.3.1` when it is available to use the public scoped reporting-suppression API in other Ruby applications.
+- Because this is a stable release, the main-branch release workflow publishes `v3.4`, `latest`, and short-SHA container tags after CI, deployment, and health checks pass.
+
 ## v3.3 - 2026-07-26
 
 ### Added

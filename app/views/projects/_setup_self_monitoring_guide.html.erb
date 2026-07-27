@@ -1,0 +1,61 @@
+<article id="integration-guide"
+         class="settings-panel scroll-mt-24 lg:col-span-2"
+         <%= tag.attributes(data: product_tour_step_data(tour_group, :integration_guide)) %>>
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <p class="dashboard-kicker">Local self-monitoring</p>
+      <h2 class="mt-1 text-base font-bold text-slate-900">Monitor this Logister installation safely</h2>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+        The Ruby integration is already bundled with Logister. Telemetry write requests and mirror jobs are excluded from automatic reporting so processing an event cannot create another copy of itself.
+      </p>
+    </div>
+    <span class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold <%= status.connected? ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950' %>">
+      <%= app_icon(status.connected? ? :check : :pending, css: "h-3.5 w-3.5") %>
+      <%= status.connected? ? "Connected" : "Action required" %>
+    </span>
+  </div>
+
+  <% if status.connected? %>
+    <div class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950" role="status">
+      <strong>Project token and endpoint match.</strong>
+      Restart every worker process after changing this connection so background jobs use the same credentials as the web process.
+    </div>
+  <% else %>
+    <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+      <strong>Self-monitoring is linked but not fully connected.</strong>
+      <%= status.issues.to_sentence %>
+      <% if status.environment_override_keys.any? %>
+        Update <%= safe_join(status.environment_override_keys.map { |key| tag.code(key) }, ", ") %> in the deployment environment, then restart web and worker processes.
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="mt-5 grid gap-4 md:grid-cols-3">
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <strong class="text-sm font-semibold text-slate-900">1. Dedicated token</strong>
+      <p class="mt-1 text-xs leading-5 text-slate-600">The connection uses a project API key reserved for this installation.</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <strong class="text-sm font-semibold text-slate-900">2. Local endpoint</strong>
+      <p class="mt-1 break-all text-xs leading-5 text-slate-600"><code><%= status.local_ingest_endpoint %></code></p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <strong class="text-sm font-semibold text-slate-900">3. Independent uptime</strong>
+      <p class="mt-1 text-xs leading-5 text-slate-600">Use an external probe for full database, network, or process outages that Logister cannot report through itself.</p>
+    </div>
+  </div>
+
+  <div class="mt-5 flex flex-wrap items-center gap-3">
+    <% if admin_user? && !status.connected? %>
+      <%= button_to "Retry self-monitoring connection",
+                    admin_installation_self_monitoring_path,
+                    method: :patch,
+                    params: { project_uuid: @project.uuid },
+                    class: "btn-primary" %>
+    <% end %>
+    <% if admin_user? %>
+      <%= link_to "Review observability settings", admin_installation_section_path("observability"), class: "btn-ghost" %>
+    <% end %>
+    <%= link_to "Ruby integration docs", docs_site_url(:ruby_integration), target: "_blank", rel: "noopener noreferrer", class: "text-sm font-semibold text-blue-700 hover:text-blue-900" %>
+  </div>
+</article>

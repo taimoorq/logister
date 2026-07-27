@@ -161,6 +161,10 @@ class Admin::Installation::SettingsController < Admin::BaseController
     end
     keys = @definitions.map(&:key) + [ "section.#{@section.key}" ]
     @changes = InstanceSettingChange.where(key: keys).includes(:actor).order(created_at: :desc).limit(20)
+    if @section.key == "observability"
+      @self_monitoring_status = Logister::SelfMonitoringStatus.new
+      @self_monitoring_projects = Project.active.where(integration_kind: "ruby").order(:name).to_a
+    end
     section_index = InstanceConfiguration::Registry.sections.index(@section)
     @next_section = InstanceConfiguration::Registry.sections[section_index + 1]
   end

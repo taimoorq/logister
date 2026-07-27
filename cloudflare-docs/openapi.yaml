@@ -56,7 +56,7 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.3"
+                    server_version: "3.4"
                     api_contract_version: "3.3"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"

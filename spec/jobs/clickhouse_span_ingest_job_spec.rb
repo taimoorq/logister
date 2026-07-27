@@ -25,6 +25,19 @@ RSpec.describe ClickhouseSpanIngestJob, type: :job do
     expect(ingestor).to have_received(:call)
   end
 
+  it "suppresses recursive self-reporting while loading and mirroring the span" do
+    span = create(:trace_span)
+    ingestor = instance_double(Logister::SpanIngestor)
+    allow(Logister::SpanIngestor).to receive(:new).and_return(ingestor)
+    allow(ingestor).to receive(:call) do
+      expect(Logister::SelfReportingGuard.suppressed?).to be(true)
+    end
+
+    described_class.perform_now(span.id)
+
+    expect(Logister::SelfReportingGuard.suppressed?).to be(false)
+  end
+
   it "discards when TraceSpan is not found" do
     expect {
       perform_enqueued_jobs do
@@ -38,7 +51,9 @@ RSpec.describe ClickhouseSpanIngestJob, type: :job do
     ingestor = instance_double(Logister::SpanIngestor)
     allow(Logister::SpanIngestor).to receive(:new).and_return(ingestor)
     allow(ingestor).to receive(:call).and_raise(Logister::ClickhouseClient::Error, "insert failed")
-    allow(Logister).to receive(:report_log)
+    allow(Logister).to receive(:report_log) do
+      expect(Logister::SelfReportingGuard.suppressed?).to be(false)
+    end
     allow(Logister).to receive(:report_metric)
 
     described_class.perform_now(span.id)
@@ -49,7 +64,13 @@ RSpec.describe ClickhouseSpanIngestJob, type: :job do
         level: "error",
         fingerprint: "logister:clickhouse_span_ingest:failure",
         context: hash_including(
-          clickhouse_ingest: hash_including(trace_span_id: span.id)
+          clickhouse_ingest: hash_including(trace_span_id: span.id),
+          "logister_internal" => hash_including(
+            "component" => "clickhouse",
+            "operation" => "span_ingest_failure",
+            "feedback_depth" => 1,
+            "caused_by_uuid" => span.uuid
+          )
         )
       )
     )

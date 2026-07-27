@@ -278,6 +278,8 @@ module Logister
       with_http_connection(uri) do |http|
         http.request(request)
       end
+    rescue Timeout::Error, SocketError, SystemCallError, IOError, OpenSSL::SSL::SSLError, URI::InvalidURIError => e
+      raise Error, "ClickHouse request failed: #{e.class}: #{e.message}"
     end
 
     def request_body(query, body)

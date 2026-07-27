@@ -28,6 +28,25 @@ RSpec.describe Logister::SelfReportingGuard do
     expect(observed).to be(false)
   end
 
+  it "suppresses reporting within an explicit block and restores the state" do
+    observed = described_class.suppress { described_class.suppressed? }
+
+    expect(observed).to be(true)
+    expect(described_class.suppressed?).to be(false)
+  end
+
+  it "restores an existing suppressed state after an explicit block raises" do
+    ActiveSupport::IsolatedExecutionState[described_class::STATE_KEY] = true
+
+    expect do
+      described_class.suppress { raise "boom" }
+    end.to raise_error("boom")
+
+    expect(described_class.suppressed?).to be(true)
+  ensure
+    ActiveSupport::IsolatedExecutionState[described_class::STATE_KEY] = nil
+  end
+
   it "restores the previous state when the application raises" do
     ActiveSupport::IsolatedExecutionState[described_class::STATE_KEY] = true
     app = ->(_env) { raise "boom" }

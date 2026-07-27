@@ -1,0 +1,46 @@
+<section class="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+  <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h2 class="text-base font-semibold text-slate-900">Local self-monitoring project</h2>
+      <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-600">Choose the Ruby project that receives telemetry from this installation. Logister applies recursion-safe routing only to this explicit local relationship.</p>
+    </div>
+    <span class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold <%= status.connected? ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950' %>">
+      <%= app_icon(status.connected? ? :check : :pending, css: "h-3.5 w-3.5") %>
+      <%= status.connected? ? "Connected" : "Not connected" %>
+    </span>
+  </div>
+
+  <div class="grid gap-5 px-5 py-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,1.25fr)] lg:gap-8">
+    <div class="text-sm leading-6 text-slate-600">
+      <% if status.linked? %>
+        <p>Current project: <%= link_to status.project.name, setup_project_path(status.project), class: "font-semibold text-blue-700 hover:text-blue-900" %>.</p>
+      <% else %>
+        <p>No project is currently designated for local self-monitoring.</p>
+      <% end %>
+      <% if status.issues.any? && status.linked? %>
+        <p class="mt-2 text-amber-900"><strong>Action required:</strong> <%= status.issues.to_sentence %></p>
+      <% end %>
+      <% if status.environment_override_keys.any? %>
+        <p class="mt-2 text-violet-900">Environment-managed values: <%= safe_join(status.environment_override_keys.map { |key| tag.code(key) }, ", ") %>.</p>
+      <% end %>
+    </div>
+
+    <% if projects.any? %>
+      <%= form_with url: admin_installation_self_monitoring_path, method: :patch, class: "space-y-3" do %>
+        <div>
+          <%= label_tag :project_uuid, "Ruby project", class: "form-label" %>
+          <%= select_tag :project_uuid,
+                         options_for_select(projects.map { |project| [ project.name, project.uuid ] }, status.project&.uuid),
+                         class: "form-input",
+                         required: true %>
+        </div>
+        <%= submit_tag status.linked? ? "Update self-monitoring project" : "Connect self-monitoring project", class: "btn-primary" %>
+      <% end %>
+    <% else %>
+      <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+        Create a Ruby project before connecting local self-monitoring.
+        <%= link_to "Create a project", new_project_path, class: "ml-1 font-semibold text-blue-700 hover:text-blue-900" %>
+      </div>
+    <% end %>
+  </div>
+</section>

@@ -1,0 +1,23 @@
+<fieldset class="self-monitoring-destination rounded-xl border border-blue-200 bg-blue-50 p-4"
+          aria-describedby="self-monitoring-destination-help">
+  <legend class="px-1 text-sm font-semibold text-blue-950">Monitoring destination</legend>
+  <label class="flex cursor-pointer items-start gap-3">
+    <%= hidden_field_tag "project[monitor_this_installation]", "0" %>
+    <%= check_box_tag "project[monitor_this_installation]",
+                      "1",
+                      @monitor_this_installation,
+                      id: "project_monitor_this_installation",
+                      class: "mt-0.5 h-4 w-4 rounded border-blue-300 text-blue-700 focus:ring-blue-600",
+                      aria: { describedby: "self-monitoring-destination-help" } %>
+    <span>
+      <strong class="block text-sm font-semibold text-blue-950">Use this project to monitor this Logister installation</strong>
+      <span id="self-monitoring-destination-help" class="mt-1 block text-xs leading-5 text-blue-900">
+        Logister will create a dedicated project token, use this installation's ingest endpoint, and enable recursion-safe processing.
+        <% if current_project %>
+          This replaces <strong><%= current_project.name %></strong> as the local self-monitoring project.
+        <% end %>
+        Worker processes must be restarted after the project is created.
+      </span>
+    </span>
+  </label>
+</fieldset>

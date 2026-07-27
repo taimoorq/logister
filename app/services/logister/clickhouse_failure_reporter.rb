@@ -21,19 +21,20 @@ module Logister
     }.freeze
 
     class << self
-      def report_event_failure(ingest_event_id, error)
-        new(**EVENT_FAILURE_OPTIONS, subject_id: ingest_event_id, error: error).call
+      def report_event_failure(event_or_id, error)
+        new(**EVENT_FAILURE_OPTIONS, subject: event_or_id, error: error).call
       end
 
-      def report_span_failure(trace_span_id, error)
-        new(**SPAN_FAILURE_OPTIONS, subject_id: trace_span_id, error: error).call
+      def report_span_failure(span_or_id, error)
+        new(**SPAN_FAILURE_OPTIONS, subject: span_or_id, error: error).call
       end
     end
 
-    def initialize(kind:, subject_key:, subject_id:, error:, log_message:, log_fingerprint:, metric_name:, metric_fingerprint:)
+    def initialize(kind:, subject_key:, subject:, error:, log_message:, log_fingerprint:, metric_name:, metric_fingerprint:)
       @kind = kind.to_s
       @subject_key = subject_key.to_sym
-      @subject_id = subject_id
+      @subject = subject
+      @subject_id = subject.respond_to?(:id) ? subject.id : subject
       @error = error
       @log_message = log_message
       @log_fingerprint = log_fingerprint
@@ -80,7 +81,7 @@ module Logister
     end
 
     def context
-      {
+      InternalTelemetry.with_origin({
         clickhouse_ingest: {
           @subject_key => @subject_id,
           error: {
@@ -92,7 +93,7 @@ module Logister
           window_seconds: throttle_window.to_i,
           signature: signature
         }
-      }
+      }, component: "clickhouse", operation: "#{@kind}_ingest_failure", caused_by: @subject)
     end
 
     def throttle_cache_key

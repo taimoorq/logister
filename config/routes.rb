@@ -67,6 +67,7 @@ Rails.application.routes.draw do
     match "installation/:section/test", to: "installation/settings#test", via: [ :post, :patch ], as: :test_installation_section
     post "installation/:section/repair", to: "installation/settings#repair", as: :repair_installation_section
     post "installation/:section/skip", to: "installation/settings#skip", as: :skip_installation_section
+    patch "installation/self-monitoring/project", to: "installation/self_monitoring#update", as: :installation_self_monitoring
 
     resources :users, only: [ :index, :show, :destroy ], param: :uuid do
       member do
