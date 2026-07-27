@@ -199,7 +199,7 @@ GEM
     language_server-protocol (3.17.0.6)
     lint_roller (1.1.0)
     logger (1.7.0)
-    logister-ruby (0.3.0)
+    logister-ruby (0.3.1)
       activesupport (>= 8.0.5, < 9)
     loofah (2.25.2)
       crass (~> 1.0.2)
@@ -567,7 +567,7 @@ CHECKSUMS
   language_server-protocol (3.17.0.6) sha256=5ef2c0c138f8267e1bc631d3328347d354f96724b0af22f2c79516120443b7f0
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
-  logister-ruby (0.3.0) sha256=eaedbfbee4e8e50cbf5fc9466afc85c11072e48a833605e75ffb1a8531b9c883
+  logister-ruby (0.3.1) sha256=50499a4b85cf328939e56d1a8303a383bb9ecb591325fcb8893f281202f4d943
   loofah (2.25.2) sha256=2007f746959ac65552456e04b433e83deb22759ab38c838b4445c70e43425918
   mail (2.9.1) sha256=06574eca475253d6c18145dd70af80d0eb970182d55053497c5f4d797ea160e8
   marcel (1.2.1) sha256=1678e9360e32f9eafa917c80029e2f6d10b2715c66a4b87b6d0da9b9cd1f859f
