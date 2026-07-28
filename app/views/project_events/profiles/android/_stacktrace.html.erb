@@ -1,9 +1,7 @@
 <% presenter = android_event_presenter(event, exception_data) %>
 <% mapping_resolution = android_mapping_resolution(project, event, exception_data) %>
 <% cause_chain = mapping_resolution.cause_chain %>
-<% stack_text = cause_chain.flat_map do |entry|
-     ["#{entry[:type]}: #{entry[:message]}".strip, *entry[:frames].map { |frame| "  at #{frame[:qualified_method].presence || frame[:method_name]}(#{frame[:file]}#{":#{frame[:line_number]}" if frame[:line_number]})" }]
-   end.join("\n") %>
+<% stack_text = android_stacktrace_text(cause_chain) %>
 <% top_in_app_frame = mapping_resolution.frames.find { |frame| frame[:application_frame] } %>
 <% selected_frame ||= top_in_app_frame %>
 

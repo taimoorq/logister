@@ -9,10 +9,10 @@ class InstanceSetting < ApplicationRecord
   self.filter_attributes += [ :encrypted_value ]
 
   def value
-    InstanceConfiguration::Cipher.decrypt(encrypted_value)
+    InstanceConfiguration::Cipher.unseal(encrypted_value)
   end
 
   def value=(plain_value)
-    self.encrypted_value = InstanceConfiguration::Cipher.encrypt(plain_value.to_s)
+    self.encrypted_value = InstanceConfiguration::Cipher.seal(plain_value.to_s)
   end
 end

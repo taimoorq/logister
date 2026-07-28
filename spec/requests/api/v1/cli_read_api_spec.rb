@@ -77,6 +77,7 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       body = response.parsed_body
       expect(body.dig("project", "uuid")).to eq(project.uuid)
       expect(body.dig("events_by_type", "log")).to eq(1)
+      expect(body["activity_events"]).to eq(1)
       expect(body.dig("errors", "unresolved")).to eq(1)
     end
   end

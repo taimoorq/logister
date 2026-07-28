@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "digest"
-require "digest/md5"
+require "openssl"
 
 module AppleSymbols
   class ArtifactUploader
@@ -58,13 +58,15 @@ module AppleSymbols
 
     def checksums_for(io)
       sha256 = Digest::SHA256.new
-      md5 = Digest::MD5.new
+      # S3's Content-MD5 transport-integrity header requires this legacy digest;
+      # the SHA-256 digest below remains the artifact's security checksum.
+      content_digest = OpenSSL::Digest.new("md5")
       while (chunk = io.read(1.megabyte))
         sha256.update(chunk)
-        md5.update(chunk)
+        content_digest.update(chunk)
       end
       io.rewind
-      { sha256: sha256.hexdigest, md5: md5.base64digest }
+      { sha256: sha256.hexdigest, md5: content_digest.base64digest }
     end
 
     def storage_key

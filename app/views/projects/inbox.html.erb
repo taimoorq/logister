@@ -21,7 +21,7 @@
         <%= f.hidden_field :filter, value: @filter, data: { inbox_target: "filterField" } %>
         <%= f.hidden_field :assignee, value: @assignee_filter, data: { inbox_target: "assigneeField" } %>
         <%= f.hidden_field :sort, value: @sort %>
-        <% @profile_filters.each do |key, value| %><%= f.hidden_field key, value: value %><% end %>
+        <%= profile_filter_hidden_fields(f, @profile_filters) %>
         <%= f.label :q, "Search inbox", class: "kicker inbox-filter-search-label" %>
         <%= f.search_field :q, value: @query, placeholder: experience.search_placeholder,
                            class: "form-input inbox-filter-search-input",
@@ -34,7 +34,7 @@
         <%= f.hidden_field :filter, value: @filter %>
         <%= f.hidden_field :q, value: @query %>
         <%= f.hidden_field :sort, value: @sort %>
-        <% @profile_filters.each do |key, value| %><%= f.hidden_field key, value: value %><% end %>
+        <%= profile_filter_hidden_fields(f, @profile_filters) %>
         <%= f.label :assignee, "Assignee", class: "kicker inbox-filter-search-label" %>
         <%= f.select :assignee,
                      inbox_assignee_options(@project, current_user, @assignable_users),
@@ -68,20 +68,10 @@
           <details class="mobile-filter-drawer">
             <summary>Filters <span><%= @profile_filters.except("release").size %></span></summary>
             <div class="mobile-filter-grid">
-              <% experience.filters.reject { |definition| definition.key == :release }.each do |definition| %>
-                <% values = definition.options.presence || @profile_filter_options.fetch(definition.key.to_s, []) %>
-                <label>
-                  <span><%= definition.label %></span>
-                  <% if values.any? %>
-                    <%= f.select definition.key,
-                                 [["Any", ""], *values.map { |value| [value.to_s.humanize, value] }],
-                                 { selected: @profile_filters[definition.key.to_s] },
-                                 class: "form-input" %>
-                  <% else %>
-                    <%= f.text_field definition.key, value: @profile_filters[definition.key.to_s], class: "form-input" %>
-                  <% end %>
-                </label>
-              <% end %>
+              <%= render partial: "projects/mobile_filter_field",
+                         collection: experience.filters.reject { |definition| definition.key == :release },
+                         as: :definition,
+                         locals: { form: f, profile_filter_options: @profile_filter_options, profile_filters: @profile_filters } %>
               <div class="mobile-filter-actions">
                 <%= f.submit "Apply filters", class: "btn btn-primary" %>
                 <%= link_to "Clear mobile filters",

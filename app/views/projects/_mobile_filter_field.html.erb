@@ -1,0 +1,12 @@
+<% values = definition.options.presence || profile_filter_options.fetch(definition.key.to_s, []) %>
+<label>
+  <span><%= definition.label %></span>
+  <% if values.any? %>
+    <%= form.select definition.key,
+                    [["Any", ""], *values.map { |value| [value.to_s.humanize, value] }],
+                    { selected: profile_filters[definition.key.to_s] },
+                    class: "form-input" %>
+  <% else %>
+    <%= form.text_field definition.key, value: profile_filters[definition.key.to_s], class: "form-input" %>
+  <% end %>
+</label>

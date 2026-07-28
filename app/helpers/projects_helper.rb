@@ -93,6 +93,10 @@ module ProjectsHelper
     ]
   end
 
+  def profile_filter_hidden_fields(form, filters)
+    safe_join(filters.filter_map { |key, value| form.hidden_field(key, value: value) })
+  end
+
   def inbox_assignee_label(project, viewer, user)
     label = user_display_name(user)
     suffixes = []

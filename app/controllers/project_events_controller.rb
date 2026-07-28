@@ -116,7 +116,7 @@ class ProjectEventsController < ApplicationController
 
   def inbox_profile_redirect_params
     profile = ProjectExperience.for(@project)
-    allowed = profile.filters.map { |definition| definition.key.to_s } + [ "sort" ]
+    allowed = profile.filters.filter_map { |definition| definition.key.to_s } + [ "sort" ]
     params.to_unsafe_h.slice(*allowed).compact_blank
   end
 

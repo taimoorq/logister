@@ -121,15 +121,7 @@
 
   <div class="mt-5 space-y-2">
     <% if @android_mapping_files.any? %>
-      <% @android_mapping_files.each do |mapping| %>
-        <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <strong class="block text-sm text-slate-900"><%= mapping.package_name %> · <%= mapping.version_name.presence || "version name unknown" %> (<%= mapping.version_code %>)</strong>
-            <span class="text-xs text-slate-500"><%= mapping.filename %> · <%= number_to_human_size(mapping.byte_size) %> · SHA-256 <code><%= mapping.checksum_sha256.first(12) %>…</code></span>
-          </div>
-          <% if @project_manager %><%= button_to "Remove", project_android_mapping_file_path(@project, mapping), method: :delete, class: "btn btn-ghost", form: { data: { turbo_confirm: "Remove the mapping for build #{mapping.version_code}?" } } %><% end %>
-        </div>
-      <% end %>
+      <%= render partial: "projects/android_mapping", collection: @android_mapping_files, as: :mapping %>
     <% else %>
       <p class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">No R8 mappings uploaded. Release-build issues will show Mapping missing until a matching artifact is available.</p>
     <% end %>

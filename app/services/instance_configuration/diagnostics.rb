@@ -140,7 +140,11 @@ module InstanceConfiguration
       request["Accept"] = "application/vnd.github+json"
       request["X-GitHub-Api-Version"] = fetch("github.api_version")
       request["Authorization"] = "Bearer #{github_jwt(app_id, private_key)}"
-      response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 3, read_timeout: 3) { |http| http.request(request) }
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.open_timeout = 3
+      http.read_timeout = 3
+      response = http.start { |connection| connection.request(request) }
       raise IOError, "GitHub rejected the App credentials" unless response.is_a?(Net::HTTPSuccess)
 
       Result.new(success: true, summary: "GitHub accepted the App credentials.", details: { "configured" => true, "api_host" => uri.host })

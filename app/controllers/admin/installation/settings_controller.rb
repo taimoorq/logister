@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Admin::Installation::SettingsController < Admin::BaseController
+  include Admin::Installation::SettingsSupport
+
   before_action :set_section
   before_action :set_installation
 
@@ -124,72 +126,5 @@ class Admin::Installation::SettingsController < Admin::BaseController
       details: { "section" => "clickhouse", "error_class" => error.class.name }
     )
     redirect_to admin_installation_section_path("clickhouse"), alert: "ClickHouse schema repair failed. Check the app logs, connection, and DDL permissions."
-  end
-
-  private
-
-  def set_section
-    @section = InstanceConfiguration::Registry.section!(params[:section])
-    @definitions = InstanceConfiguration::Registry.definitions_for(@section.key)
-  rescue KeyError
-    raise ActiveRecord::RecordNotFound
-  end
-
-  def set_installation
-    @installation = Installation.current
-    @installation.claim!(current_user)
-    @step = @installation.installation_steps.find_or_create_by!(key: @section.key)
-  end
-
-  def prepare_view(form_values: nil)
-    @entries = InstanceConfiguration.entries_for(@section.key)
-    current_fingerprint = InstanceConfiguration.fingerprint(@section.key)
-    @step_status = if @step.verified? && @step.configuration_fingerprint != current_fingerprint
-      "changed"
-    else
-      @step.status
-    end
-    @form_values = form_values || @entries.to_h do |entry|
-      value = if entry.secret?
-        nil
-      elsif entry.environment_override?
-        entry.saved_value
-      else
-        entry.saved_value.nil? ? entry.effective_value : entry.saved_value
-      end
-      [ entry.key, value ]
-    end
-    keys = @definitions.map(&:key) + [ "section.#{@section.key}" ]
-    @changes = InstanceSettingChange.where(key: keys).includes(:actor).order(created_at: :desc).limit(20)
-    if @section.key == "observability"
-      @self_monitoring_status = Logister::SelfMonitoringStatus.new
-      @self_monitoring_projects = Project.active.where(integration_kind: "ruby").order(:name).to_a
-    end
-    section_index = InstanceConfiguration::Registry.sections.index(@section)
-    @next_section = InstanceConfiguration::Registry.sections[section_index + 1]
-  end
-
-  def setting_values
-    raw_params = params[:settings].is_a?(ActionController::Parameters) ? params[:settings] : ActionController::Parameters.new
-    raw = raw_params.permit(@definitions.map(&:key)).to_h
-    @definitions.each_with_object({}) do |definition, values|
-      values[definition.key] = raw[definition.key] if raw.key?(definition.key)
-    end
-  end
-
-  def requesting_clickhouse_reads?(values)
-    @section.key == "clickhouse" && values["clickhouse.mode"] == "read_preferred"
-  end
-
-  def verified_for?(fingerprint)
-    @step.verified? && @step.configuration_fingerprint == fingerprint
-  end
-
-  def verified_for_clickhouse_reads?(fingerprint)
-    verified_for?(fingerprint) && @step.details["ready_for_reads"] == true
-  end
-
-  def unsaved_email_delivery_test?(fingerprint)
-    @section.key == "email" && params[:test_recipient].to_s.strip.present? && fingerprint != InstanceConfiguration.fingerprint("email")
   end
 end

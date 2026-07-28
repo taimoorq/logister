@@ -6,11 +6,11 @@ module InstanceConfiguration
 
     module_function
 
-    def encrypt(value)
+    def seal(value)
       encryptor.encrypt_and_sign(value.to_s, purpose: PURPOSE)
     end
 
-    def decrypt(value)
+    def unseal(value)
       encryptor.decrypt_and_verify(value.to_s, purpose: PURPOSE)
     end
 

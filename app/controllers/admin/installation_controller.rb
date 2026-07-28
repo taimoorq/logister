@@ -38,8 +38,9 @@ class Admin::InstallationController < Admin::BaseController
     @required_sections = @sections.select(&:required?)
     @required_verified_count = @required_sections.count { |section| @section_states.fetch(section.key).fetch(:status) == "verified" }
     @next_required_section = @required_sections.find { |section| @section_states.fetch(section.key).fetch(:status) != "verified" }
-    @optional_groups = OPTIONAL_GROUPS.map do |group|
-      group.merge(sections: group.fetch(:keys).map { |key| @sections.find { |section| section.key == key } })
+    sections_by_key = @sections.index_by(&:key)
+    @optional_groups = OPTIONAL_GROUPS.filter_map do |group|
+      group.merge(sections: group.fetch(:keys).filter_map { |key| sections_by_key[key] })
     end
     @environment_override_count = InstanceConfiguration::Registry.definitions.count do |definition|
       InstanceConfiguration.entry(definition.key).environment_override?
