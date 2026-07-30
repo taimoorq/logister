@@ -11,6 +11,8 @@
     <div class="ios-incident-badges">
       <span class="mobile-mechanism-badge mechanism-<%= presenter.mechanism %>"><%= presenter.mechanism_label %></span>
       <span class="ios-source-badge"><%= presenter.diagnostic_source_label %></span>
+      <% if presenter.capture_source_label.present? %><span class="ios-source-badge"><%= presenter.capture_source_label %></span><% end %>
+      <% if presenter.exception_detail_redacted? %><span class="ios-source-badge">Message redacted</span><% end %>
       <% if presenter.fatal? %><span class="ios-severity-label">Fatal</span><% elsif presenter.handled? %><span class="ios-severity-label">Handled</span><% end %>
     </div>
     <p class="better-errors-runtime"><strong><%= presenter.exception_type %></strong></p>

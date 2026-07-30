@@ -76,7 +76,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.2.0")
+    implementation("org.logister:logister-android:0.3.0")
 }
 ```
 
@@ -90,6 +90,7 @@ import org.logister.android.captureTransactionAsync
 import org.logister.android.LogisterToken
 import org.logister.android.LogisterTokenProvider
 import org.logister.android.LogisterBreadcrumb
+import org.logister.android.LogisterExceptionDataPolicy
 import org.logister.android.logisterClient
 
 class AppBackendTokenProvider : LogisterTokenProvider {
@@ -113,11 +114,12 @@ val client = logisterClient(
     buildNumber(BuildConfig.VERSION_CODE.toString())
     buildType(BuildConfig.BUILD_TYPE)
     application(myApplication)
+    exceptionDataPolicy(LogisterExceptionDataPolicy.TYPE_AND_STACKTRACE)
     sessionTracking(true)
     installationTracking(true, rotationDays = 90)
     breadcrumbs(capacity = 50)
-    offlineQueue(enabled = true, maxEvents = 30, maxBytes = 512 * 1024)
-    automaticCrashCapture(true)
+    offlineQueue(enabled = true, maxEvents = 30, maxBytes = 512 * 1024, maxAgeDays = 7)
+    automaticCrashCapture(true, LogisterExceptionDataPolicy.TYPE_AND_STACKTRACE)
     applicationExitCapture(true)
 }
 
@@ -173,7 +175,7 @@ client.checkInAsync("daily-sync", "ok") {
 }
 ```
 
-Version 0.2.0 sends a canonical, versioned mobile contract while retaining the
+Version 0.3.0 sends a canonical, versioned mobile contract while retaining the
 older flat aliases. Android telemetry should include:
 
 - `platform: "android"`
@@ -190,9 +192,19 @@ older flat aliases. Android telemetry should include:
 
 Lifecycle sessions, installation tracking, breadcrumbs, the uncaught-exception
 handler, Android 11+ historical app-exit capture, and the disk retry queue are
-all opt-in. The installation pseudonym is random and rotated; the SDK does not
-read Android ID, advertising ID, IMEI, or a hardware serial. A queued response
-is not reported as accepted until a later server response succeeds.
+all opt-in. Automatic crashes use the safe type-and-stacktrace policy by default:
+throwable messages and cause chains are omitted, and the sanitized envelope is
+written to the durable queue before Android's previous crash handler runs.
+Historical app exits also omit the raw platform description. The installation
+pseudonym is random and rotated; the SDK does not read Android ID, advertising
+ID, IMEI, or a hardware serial.
+
+Automatic crash and historical exit capture require the offline queue. Bound it
+by count, bytes, and age. Token-provider and transient delivery failures stay
+queued until an authenticated launch can call `flushQueuedEventsAsync()`. A
+queued response is not accepted until a later server response succeeds. Apps
+should call `clearSessionBoundQueuedEvents()` during logout or account
+replacement; anonymous automatic crashes remain available for later delivery.
 
 ### Android inbox, R8 mappings, and Google Play
 
@@ -224,7 +236,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.2.0")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.3.0")
 ]
 ```
 
@@ -258,7 +270,9 @@ let client = LogisterClient(
     repository: "acme/ios-app",
     commitSHA: "4f8c2d1",
     branch: "main",
-    service: Bundle.main.bundleIdentifier
+    service: Bundle.main.bundleIdentifier,
+    exceptionDataPolicy: .typeAndStacktrace,
+    platformContextPolicy: .minimized
 )
 
 try await client.captureMessage(
@@ -311,7 +325,7 @@ try await client.checkIn(
 )
 ```
 
-iOS v0.2.0 emits the versioned Apple telemetry contract automatically:
+iOS v0.3.0 emits the versioned Apple telemetry contract automatically:
 
 - `platform: "ios"`
 - bundle identifier, app version/build, inferred release, process, Apple
@@ -322,16 +336,24 @@ iOS v0.2.0 emits the versioned Apple telemetry contract automatically:
 - optional session ID, rotating random installation hash, distribution channel,
   foreground state, screen, and bounded breadcrumbs
 
+Use `platformContextPolicy: .minimized` to omit exact device model, locale,
+architecture, and OS build. `exceptionDataPolicy: .typeAndStacktrace` omits raw
+error messages and NSError domain/code metadata from handled reports.
+
 `captureException` is always a handled **Reported error**. It is not an
 automatic crash handler. To receive OS-delivered crash, hang, CPU-exception,
 and disk-write evidence, keep an opt-in collector alive for the app lifetime:
 
 ```swift
-let metricKitCollector = LogisterMetricKitCollector(client: client)
+let metricKitCollector = LogisterMetricKitCollector(
+    client: client,
+    dataPolicy: .typeAndStacktrace
+)
 metricKitCollector.start()
 ```
 
-MetricKit delivery is delayed. Each diagnostic receives a deterministic event
+MetricKit delivery is delayed. Safe mode omits the raw diagnostic payload and
+termination reason and bounds the normalized threads and frames. Each diagnostic receives a deterministic event
 UUID, and the Rails ingest boundary returns the existing event on redelivery so
 occurrence and impact counts remain unchanged. The SDK also makes bounded
 transient retries for network failures, HTTP 408/425/429, and 5xx responses.
@@ -388,21 +410,21 @@ request bodies, raw local variables, or other sensitive user data.
 Android releases are tag-driven:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 The Android GitHub Actions release workflow builds, tests, signs, and uploads
 the artifact to Sonatype Central Portal with automatic Maven Central release.
 The workflow also creates the matching GitHub Release after the package version
-matches the tag. Version `0.2.0` adds the canonical Android stability contract
-and app-backed collection controls.
+matches the tag. Version `0.3.0` adds privacy-safe automatic crash capture,
+durable pre-auth delivery, and session-bound queue cleanup.
 
 iOS releases are also tag-driven:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 Swift Package Manager resolves packages from the public Git repository and tag.
@@ -415,12 +437,12 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.2.0/logister-android-0.2.0.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.3.0/logister-android-0.3.0.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.2.0 --repo taimoorq/logister-ios
+gh release view v0.3.0 --repo taimoorq/logister-ios
 ```

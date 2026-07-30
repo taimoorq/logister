@@ -116,10 +116,10 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - Logister CLI docs: https://logister.org/docs/cli/
 - Android SDK source: https://github.com/taimoorq/logister-android
 - Android SDK package: https://central.sonatype.com/artifact/org.logister/logister-android
-- Android Maven coordinates: `org.logister:logister-android:0.2.0`
+- Android Maven coordinates: `org.logister:logister-android:0.3.0`
 - Android projects use a stability inbox with failure/release/device filters, impact completeness, release-scoped R8 mappings, and an optional provenance-separated Google Play reporting import.
 - iOS SDK source and Swift Package Manager URL: https://github.com/taimoorq/logister-ios.git
-- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.2.0
+- iOS Swift Package release: https://github.com/taimoorq/logister-ios/releases/tag/v0.3.0
 - iOS projects use an Apple diagnostics inbox with handled-report, crash, hang, termination, release/device, triggered-thread, and symbol-coverage evidence. The Swift SDK emits privacy-filtered Apple context and supports opt-in replay-safe MetricKit delivery; private dSYMs and provenance-separated App Store Connect health are managed under project integrations.
 - CFML integration: no separate add-on repo is required; use direct HTTP ingestion from https://logister.org/docs/integrations/cfml/
 - Cloudflare Pages projects can send manual HTTP telemetry today and store importer settings for a future Rails-side Cloudflare API fetcher. Start at https://logister.org/docs/integrations/cloudflare-pages/.

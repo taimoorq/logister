@@ -11,6 +11,8 @@
       <span class="mobile-mechanism-badge mechanism-<%= presenter.mechanism %>"><%= presenter.mechanism_label %></span>
       <strong><%= presenter.exception_type %></strong>
       <% if presenter.handled? %><span>handled</span><% end %>
+      <% if presenter.capture_source_label.present? %><span><%= presenter.capture_source_label %></span><% end %>
+      <% if presenter.exception_detail_redacted? %><span>message redacted</span><% end %>
     </p>
     <h3 class="better-errors-message"><%= presenter.exception_message %></h3>
     <% if top_in_app_frame %>

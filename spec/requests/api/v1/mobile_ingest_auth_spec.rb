@@ -53,6 +53,30 @@ RSpec.describe "Mobile ingest authentication", type: :request do
     expect(api_key.reload.last_used_at).to be_present
   end
 
+  it "accepts the privacy-safe automatic Android crash contract" do
+    payload = JSON.parse(Rails.root.join("spec/fixtures/files/android_safe_automatic_error_payload.json").read)
+
+    expect {
+      post api_v1_ingest_events_path,
+           params: { event: payload },
+           as: :json,
+           headers: mobile_headers
+    }.to change(IngestEvent, :count).by(1)
+
+    expect(response).to have_http_status(:created)
+    event = IngestEvent.find_by!(uuid: response.parsed_body.fetch("id"))
+    expect(event.context.dig("error", "capture_source")).to eq("automatic")
+    expect(event.context.dig("error", "data_policy")).to eq("type_and_stacktrace")
+    expect(event.context.dig("exception", "type")).to eq("java.lang.IllegalStateException")
+    expect(event.context.dig("exception", "message")).to be_nil
+    expect(event.context.dig("exception", "cause")).to be_nil
+    expect(event.error_group.grouping_evidence).to include(
+      "mechanism" => "unhandled_exception",
+      "root_exception_type" => "java.lang.IllegalStateException",
+      "top_in_app_method" => "load"
+    )
+  end
+
   it "rejects ingest events that conflict with token-bound context" do
     expect {
       post api_v1_ingest_events_path,

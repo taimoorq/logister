@@ -24,4 +24,27 @@ RSpec.describe ProjectEvents::IosEventPresenter do
     expect(presenter.device_details).to include(model: "iPhone17,1", family: "iPhone")
     expect(presenter.os_details).to include(name: "iOS", version: "19.0")
   end
+
+  it "labels privacy-safe MetricKit diagnostics without inventing a message" do
+    safe_event = Struct.new(:context, :message).new(
+      {
+        "diagnostic" => { "source" => "metrickit", "kind" => "crash" },
+        "error" => {
+          "mechanism" => "native_crash",
+          "handled" => false,
+          "fatal" => true,
+          "capture_source" => "metrickit",
+          "data_policy" => "type_and_stacktrace"
+        },
+        "exception" => { "type" => "MetricKit crash", "stacktrace" => [] }
+      },
+      nil
+    )
+    safe_presenter = described_class.new(safe_event)
+
+    expect(safe_presenter.capture_source_label).to eq("MetricKit capture")
+    expect(safe_presenter.exception_data_policy).to eq("type_and_stacktrace")
+    expect(safe_presenter.exception_detail_redacted?).to be(true)
+    expect(safe_presenter.exception_message).to be_nil
+  end
 end

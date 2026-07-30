@@ -133,10 +133,10 @@ Canonical documentation lives at the public docs URL:
 - Logister CLI docs: https://logister.org/docs/cli/
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
 - Android source: https://github.com/taimoorq/logister-android
-- Android coordinates: `org.logister:logister-android:0.2.0`
+- Android coordinates: `org.logister:logister-android:0.3.0`
 - Android projects use a stability inbox with failure/release/device filters, impact completeness, private release-scoped R8 mappings, and an optional provenance-separated Google Play reporting import.
 - Swift Package Manager source: https://github.com/taimoorq/logister-ios.git
-- iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.2.0
+- iOS release: https://github.com/taimoorq/logister-ios/releases/tag/v0.3.0
 - iOS projects use an Apple diagnostics inbox with handled-report, crash, hang, termination, release/device, triggered-thread, and symbol-coverage evidence. The Swift SDK emits privacy-filtered Apple context and supports opt-in replay-safe MetricKit delivery; private dSYMs and provenance-separated App Store Connect health are managed under project integrations.
 - Cloudflare Pages integration docs: https://logister.org/docs/integrations/cloudflare-pages/
 - Maintained SDKs can send source context (`repository`, `commit_sha`, and `branch`) on events. JavaScript, Python, .NET, and Ruby SDKs also expose deployment-record helpers; Android and iOS attach source context in-app and expect CI/CD to POST deployment records to `/api/v1/deployments`.

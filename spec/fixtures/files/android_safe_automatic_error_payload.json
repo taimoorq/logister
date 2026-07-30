@@ -1,0 +1,45 @@
+{
+  "event_type": "error",
+  "level": "error",
+  "message": "java.lang.IllegalStateException",
+  "context": {
+    "platform": "android",
+    "telemetry_schema_version": 2,
+    "service": "com.example.app",
+    "release": "1.4.0+42",
+    "app": {
+      "package_name": "com.example.app",
+      "version_name": "1.4.0",
+      "version_code": "42",
+      "build_type": "release",
+      "screen": "ReaderActivity",
+      "in_foreground": true
+    },
+    "error": {
+      "mechanism": "unhandled_exception",
+      "handled": false,
+      "user_perceived": true,
+      "capture_source": "automatic",
+      "data_policy": "type_and_stacktrace"
+    },
+    "capture_source": "automatic",
+    "exception_data_policy": "type_and_stacktrace",
+    "exception": {
+      "type": "java.lang.IllegalStateException",
+      "stacktrace": [
+        {
+          "class": "com.example.app.reader.ReaderRepository",
+          "method": "load",
+          "file": "ReaderRepository.kt",
+          "line": 84
+        },
+        {
+          "class": "android.app.Activity",
+          "method": "performCreate",
+          "file": "Activity.java",
+          "line": 9000
+        }
+      ]
+    }
+  }
+}

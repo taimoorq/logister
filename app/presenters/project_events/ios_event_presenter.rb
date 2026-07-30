@@ -36,6 +36,10 @@ module ProjectEvents
       "failed" => "Symbolication failed",
       "unknown" => "Symbol status unknown"
     }.freeze
+    CAPTURE_SOURCE_LABELS = {
+      "manual" => "Manual capture",
+      "metrickit" => "MetricKit capture"
+    }.freeze
 
     attr_reader :event, :context, :exception
 
@@ -69,6 +73,22 @@ module ProjectEvents
 
     def diagnostic_source_label
       { "sdk" => "Logister SDK", "metrickit" => "MetricKit", "app_store" => "App Store Connect" }.fetch(diagnostic_source, "Source not reported")
+    end
+
+    def capture_source
+      nested_scalar("error", "capture_source") || scalar(context, "capture_source")
+    end
+
+    def capture_source_label
+      CAPTURE_SOURCE_LABELS[capture_source]
+    end
+
+    def exception_data_policy
+      nested_scalar("error", "data_policy") || scalar(context, "exception_data_policy")
+    end
+
+    def exception_detail_redacted?
+      exception_data_policy == "type_and_stacktrace"
     end
 
     def diagnostic_kind

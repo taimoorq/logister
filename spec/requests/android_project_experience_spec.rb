@@ -69,6 +69,27 @@ RSpec.describe "Android project experience", type: :request do
     expect(document.text).to include("Reported exception", "App & device")
   end
 
+  it "labels privacy-safe automatic crashes without inventing missing exception detail" do
+    safe_payload = JSON.parse(Rails.root.join("spec/fixtures/files/android_safe_automatic_error_payload.json").read)
+    safe_event = create(
+      :ingest_event,
+      project: project,
+      api_key: api_key,
+      event_type: :error,
+      level: safe_payload.fetch("level"),
+      message: safe_payload.fetch("message"),
+      context: safe_payload.fetch("context")
+    )
+    ErrorGroupingService.call(safe_event)
+
+    get inbox_project_path(project, group_uuid: safe_event.error_group.uuid)
+
+    expect(response).to have_http_status(:success)
+    document = Nokogiri::HTML.parse(response.body)
+    expect(document.text).to include("Fatal", "Automatic capture", "message redacted")
+    expect(document.text).not_to include("private nested detail", "bearer secret-value")
+  end
+
   it "returns the server-owned list header and filter state inside the Turbo frame" do
     get inbox_project_path(project, filter: "all", sort: "velocity", release: "1.4.0+42"),
         headers: { "Turbo-Frame" => "project_inbox" }

@@ -13,6 +13,12 @@ module ProjectEvents
       "unknown" => "Reported exception"
     }.freeze
 
+    CAPTURE_SOURCE_LABELS = {
+      "automatic" => "Automatic capture",
+      "manual" => "Reported by app",
+      "historical_exit" => "Recovered after restart"
+    }.freeze
+
     attr_reader :event
 
     def initialize(event, exception_data = nil)
@@ -54,6 +60,22 @@ module ProjectEvents
     def user_perceived?
       value = nested_value("error", "user_perceived")
       value == true || value.to_s == "true"
+    end
+
+    def capture_source
+      nested_scalar("error", "capture_source") || scalar(@context, "capture_source")
+    end
+
+    def capture_source_label
+      CAPTURE_SOURCE_LABELS[capture_source]
+    end
+
+    def exception_data_policy
+      nested_scalar("error", "data_policy") || scalar(@context, "exception_data_policy")
+    end
+
+    def exception_detail_redacted?
+      %w[type_and_stacktrace metadata_only].include?(exception_data_policy)
     end
 
     def frames

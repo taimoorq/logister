@@ -42,4 +42,17 @@ RSpec.describe ProjectEvents::AndroidEventPresenter do
       line_number: 19
     )
   end
+
+  it "presents privacy-safe automatic capture metadata without requiring a message or cause" do
+    safe_payload = JSON.parse(Rails.root.join("spec/fixtures/files/android_safe_automatic_error_payload.json").read)
+    safe_event = Struct.new(:context, :message).new(safe_payload.fetch("context"), safe_payload.fetch("message"))
+    safe_presenter = described_class.new(safe_event)
+
+    expect(safe_presenter.mechanism_label).to eq("Fatal")
+    expect(safe_presenter.capture_source_label).to eq("Automatic capture")
+    expect(safe_presenter.exception_data_policy).to eq("type_and_stacktrace")
+    expect(safe_presenter).to be_exception_detail_redacted
+    expect(safe_presenter.exception_message).to eq("java.lang.IllegalStateException")
+    expect(safe_presenter.cause_chain.map { |entry| entry[:message] }).to eq([ nil ])
+  end
 end

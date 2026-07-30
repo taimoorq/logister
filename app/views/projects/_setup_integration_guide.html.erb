@@ -254,14 +254,14 @@ const client = new LogisterClient({
               <li>Issue short-lived mobile ingest tokens from your backend.</li>
               <li>Configure the SDK with a <code>LogisterTokenProvider</code>; never ship the project API key.</li>
               <li>Send one handled test error with release/build metadata, then verify its Java/Kotlin frames in the stability inbox.</li>
-              <li>Enable sessions, installation tracking, breadcrumbs, automatic crash capture, app exits, and offline delivery only after reviewing their privacy and retention behavior.</li>
+              <li>Use the safe type-and-stacktrace policy, a bounded durable queue, and session-bound queue cleanup before enabling automatic crash capture.</li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
             <pre class="<%= project_setup_code_block_class %>"><code>dependencies {
-    implementation("org.logister:logister-android:0.2.0")
+    implementation("org.logister:logister-android:0.3.0")
 }</code></pre>
           </div>
 
@@ -331,7 +331,7 @@ const client = new LogisterClient({
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Install</h3>
             <pre class="<%= project_setup_code_block_class %>"><code>dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.2.0")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.3.0")
 ]</code></pre>
           </div>
 
@@ -379,8 +379,8 @@ const client = new LogisterClient({
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
             Release:
-            <%= link_to "v0.2.0",
-                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.2.0",
+            <%= link_to "v0.3.0",
+                        "https://github.com/taimoorq/logister-ios/releases/tag/v0.3.0",
                         target: "_blank",
                         rel: "noopener noreferrer",
                         class: "text-blue-600 hover:text-blue-700 no-underline font-semibold" %>.
@@ -446,7 +446,7 @@ const client = new LogisterClient({
 
           <div>
             <h3 class="text-sm font-semibold text-slate-900 mb-2">Start with</h3>
-            <pre class="<%= project_setup_code_block_class %>"><code>gem "logister-ruby", "~> 0.3.0"
+            <pre class="<%= project_setup_code_block_class %>"><code>gem "logister-ruby", "~> 0.3.1"
 
 Logister.configure do |config|
   config.api_key = "your-project-api-token"
