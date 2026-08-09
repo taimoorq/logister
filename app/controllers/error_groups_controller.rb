@@ -17,7 +17,7 @@ class ErrorGroupsController < ApplicationController
     )
 
     send_data(
-      JSON.pretty_generate(payload),
+      JSON.generate(payload),
       filename: "logister-error-#{@group.uuid}.json",
       type: "application/json; charset=utf-8",
       disposition: preview ? "inline" : "attachment"

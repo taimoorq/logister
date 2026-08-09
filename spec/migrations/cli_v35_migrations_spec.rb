@@ -50,6 +50,15 @@ RSpec.describe "CLI v3.5 migrations" do
 
       migration.down
     end
+
+    it "bounds lock waits and restores the session setting when a resumable step fails" do
+      expect(migration).to receive(:execute).with("SET lock_timeout = '5s'").ordered
+      expect(migration).to receive(:execute).with("RESET lock_timeout").ordered
+
+      expect do
+        migration.send(:with_lock_timeout) { raise ActiveRecord::LockWaitTimeout, "busy partition" }
+      end.to raise_error(ActiveRecord::LockWaitTimeout, "busy partition")
+    end
   end
 
   describe AddUuidToCheckInMonitors do

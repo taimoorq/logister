@@ -98,13 +98,11 @@ class ProjectInboxQuery
   end
 
   def latest_events(groups)
-    Logister::CliEventQuery.summary(
-      IngestEvent.for_partition_references(
-        groups,
-        id_key: :latest_event_id,
-        occurred_at_key: :latest_event_occurred_at
-      )
-    ).index_by(&:id)
+    latest_event_scope(groups).index_by(&:id)
+  end
+
+  def cli_latest_events(groups)
+    Logister::CliEventQuery.summary(latest_event_scope(groups)).index_by(&:id)
   end
 
   def group_trends(groups, days: 7)
@@ -196,6 +194,14 @@ class ProjectInboxQuery
   end
 
   private
+
+  def latest_event_scope(groups)
+    IngestEvent.for_partition_references(
+      groups,
+      id_key: :latest_event_id,
+      occurred_at_key: :latest_event_occurred_at
+    )
+  end
 
   def base_scope(filter)
     scope = project.error_groups

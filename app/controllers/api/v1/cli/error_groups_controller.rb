@@ -19,7 +19,7 @@ class Api::V1::Cli::ErrorGroupsController < Api::V1::Cli::BaseController
       sort: issue_sort,
       cursor: params[:cursor]
     )
-    latest_events = query.latest_events(page.groups)
+    latest_events = query.cli_latest_events(page.groups)
 
     render json: cli_list_payload(
       items: page.groups.map { |group| Logister::CliSerializer.error_group(group, latest_event: latest_events[group.latest_event_id]) },
@@ -56,11 +56,18 @@ class Api::V1::Cli::ErrorGroupsController < Api::V1::Cli::BaseController
   end
 
   def context
+    token_budget = Logister::CliQuery.integer(
+      params[:token_budget],
+      parameter: "token_budget",
+      default: Logister::ErrorGroupAiContext::DEFAULT_TOKEN_BUDGET,
+      min: Logister::ErrorGroupAiContext::MIN_TOKEN_BUDGET,
+      max: Logister::ErrorGroupAiContext::MAX_TOKEN_BUDGET
+    )
     render json: Logister::ErrorGroupAiContext.call(
       project: cli_project,
       group: error_group,
       logister_url: nil,
-      token_budget: params[:token_budget]
+      token_budget:
     )
   end
 

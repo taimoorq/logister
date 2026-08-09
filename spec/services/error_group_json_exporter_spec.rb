@@ -140,6 +140,7 @@ RSpec.describe ErrorGroupJsonExporter do
     expect(payload.dig("export", "include_occurrence_records")).to be(false)
     expect(payload.dig("error_group", "fingerprint")).to eq("checkout-nomethod")
     expect(payload.dig("latest_event", "message")).to eq("Latest checkout failure")
+    expect(payload.fetch("latest_event")).not_to have_key("id")
     expect(payload.dig("latest_event", "api_key", "name")).to eq("production")
     expect(payload.dig("exception", "application_frames").first).to include(
       "file" => "app/models/order.rb",
@@ -188,6 +189,7 @@ RSpec.describe ErrorGroupJsonExporter do
       "Latest checkout failure"
     )
     expect(payload.dig("occurrences", "records").first.dig("ingest_event", "context", "exception", "class")).to eq("NoMethodError")
+    expect(payload.dig("occurrences", "records").first.fetch("ingest_event")).not_to have_key("id")
   end
 
   it "caps requested occurrence records to the latest 50" do
@@ -214,5 +216,51 @@ RSpec.describe ErrorGroupJsonExporter do
     expect(messages.first).to eq("Occurrence 54")
     expect(messages).to include("Occurrence 5")
     expect(messages).not_to include("Occurrence 0", "Occurrence 1", "Occurrence 2", "Occurrence 3", "Occurrence 4")
+  end
+
+  it "redacts sensitive event context without relying on a controller wrapper" do
+    event = grouped_error!(message: "Sensitive checkout failure", release: "v1.2.4", occurred_at: 5.minutes.ago)
+    event.update!(
+      context: event.context.merge(
+        "token" => "top-secret",
+        "request" => { "headers" => { "Authorization" => "Bearer hidden" } }
+      )
+    )
+
+    payload = described_class.call(project: project, group: event.error_group, generated_at: Time.current)
+
+    expect(payload.dig("latest_event", "context", "token")).to eq("[REDACTED]")
+    expect(payload.dig("latest_event", "context", "request", "headers", "Authorization")).to eq("[REDACTED]")
+    expect(JSON.generate(payload)).not_to include("top-secret", "Bearer hidden")
+  end
+
+  it "bounds individual event context and the complete export response" do
+    oversized_context = error_context(release: "v9").merge(
+      "safe_blob" => "x" * 100.kilobytes,
+      "nested" => Array.new(100) { { "value" => "y" * 10.kilobytes } }
+    )
+    group = build_group_with_occurrences(count: 20)
+    group.error_occurrences.find_each { |occurrence| occurrence.ingest_event_record.update!(context: oversized_context) }
+
+    payload = described_class.call(
+      project: project,
+      group: group.reload,
+      include_occurrences: true,
+      generated_at: Time.current,
+      logister_url: nil
+    )
+    encoded = JSON.generate(payload)
+    event_contexts = [ payload.dig("latest_event", "context") ] +
+      Array(payload.dig("occurrences", "records")).filter_map { |record| record.dig("ingest_event", "context") }
+
+    expect(encoded.bytesize).to be <= described_class::RESPONSE_BYTES_LIMIT
+    expect(JSON.parse(encoded)).to eq(payload)
+    expect(payload.dig("export", "response_truncated")).to be(true)
+    expect(event_contexts).to all(
+      satisfy { |context| JSON.generate(context).bytesize <= described_class::EVENT_CONTEXT_BYTES_LIMIT }
+    )
+    expect(Array(payload.dig("occurrences", "records"))).to all(
+      satisfy { |record| !record.fetch("ingest_event").key?("id") }
+    )
   end
 end

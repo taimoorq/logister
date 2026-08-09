@@ -75,6 +75,29 @@ RSpec.describe ProjectInboxQuery do
     expect(trend.fetch(current.error_group_id)).to eq([ 0, 0, 0, 0, 0, 0, 1 ])
   end
 
+  it "keeps complete mobile event context for the shared web row presenter" do
+    event = grouped_android_event(
+      message: "Fatal checkout",
+      release: "3.0.0+30",
+      mechanism: "unhandled_exception",
+      device: "Pixel 8"
+    )
+    query = described_class.new(project:)
+
+    latest_event = query.latest_events([ event.error_group ]).fetch(event.id)
+    row = ProjectInbox::RowPresenter.new(project:, group: event.error_group, event: latest_event)
+
+    expect(latest_event.context.dig("exception", "stacktrace")).to be_present
+    expect(row.signal_labels).to include("Fatal")
+    expect(row.release_label).to eq("3.0.0 (30)")
+    expect(row.cohort_label).to eq("Pixel 8 · Android 15 · API 35")
+    expect(row.culprit).to include("CartStore.write", "CartStore.kt:19")
+
+    cli_event = query.cli_latest_events([ event.error_group ]).fetch(event.id)
+    expect(cli_event.context).to include("release" => "3.0.0+30")
+    expect(cli_event.context).not_to have_key("exception")
+  end
+
   it "uses a signed keyset cursor without repeating issues" do
     newest = grouped_android_event(message: "Newest", release: "3.0.0+30", mechanism: "handled_exception", device: "Pixel 9", fingerprint: "newest")
     older = grouped_android_event(message: "Older", release: "2.0.0+20", mechanism: "handled_exception", device: "Pixel 8", fingerprint: "older")

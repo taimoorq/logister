@@ -7,6 +7,9 @@ class ErrorGroupJsonExporter
   OCCURRENCE_RECORD_LIMIT = 50
   RELATED_LOG_LIMIT = 50
   RELATED_LOG_WINDOW = 5.minutes
+  RESPONSE_BYTES_LIMIT = 900.kilobytes
+  RESPONSE_BUDGET_MARGIN = 4.kilobytes
+  EVENT_CONTEXT_BYTES_LIMIT = 64.kilobytes
 
   def self.call(project:, group:, include_occurrences: false, generated_at: Time.current, logister_url: nil)
     new(
@@ -27,7 +30,7 @@ class ErrorGroupJsonExporter
   end
 
   def call
-    {
+    payload = {
       "export" => export_payload,
       "project" => project_payload,
       "error_group" => group_payload,
@@ -41,6 +44,11 @@ class ErrorGroupJsonExporter
       "deployment_context" => deployment_context_payload(latest_event),
       "external_links" => external_links_payload
     }
+    bounded = Logister::BoundedJsonPayload.call(
+      payload,
+      max_bytes: RESPONSE_BYTES_LIMIT - RESPONSE_BUDGET_MARGIN
+    )
+    finalize_bounded_payload(bounded)
   end
 
   private
@@ -55,6 +63,8 @@ class ErrorGroupJsonExporter
       "include_all_occurrences" => false,
       "include_occurrence_records" => include_occurrences,
       "occurrence_record_limit" => include_occurrences ? OCCURRENCE_RECORD_LIMIT : nil,
+      "response_byte_limit" => RESPONSE_BYTES_LIMIT,
+      "response_truncated" => false,
       "logister_url" => logister_url
     }
   end
@@ -117,7 +127,6 @@ class ErrorGroupJsonExporter
     return nil unless event
 
     {
-      "id" => event.id,
       "uuid" => event.uuid,
       "event_type" => event.event_type,
       "level" => event.level,
@@ -134,8 +143,10 @@ class ErrorGroupJsonExporter
       "session_id" => IngestEvent.session_id(event),
       "user_identifier" => IngestEvent.user_identifier(event),
       "api_key" => api_key_payload(event.api_key),
-      "context" => json_value(event.context)
-    }
+      "context" => bounded_event_context(event.context).value
+    }.tap do |payload|
+      payload["context_truncated"] = true if bounded_event_context(event.context).truncated
+    end
   end
 
   def exception_payload(event)
@@ -429,6 +440,27 @@ class ErrorGroupJsonExporter
   end
 
   def json_value(value)
-    value.as_json
+    Logister::TelemetryRedactor.call(value.as_json)
+  end
+
+  def bounded_event_context(value)
+    @bounded_event_contexts ||= {}
+    @bounded_event_contexts[value.object_id] ||= Logister::BoundedJsonPayload.call(
+      json_value(value),
+      max_bytes: EVENT_CONTEXT_BYTES_LIMIT,
+      max_string_bytes: 8.kilobytes,
+      max_array_items: 50
+    )
+  end
+
+  def finalize_bounded_payload(result)
+    payload = result.value
+    export = payload["export"] ||= {}
+    export["response_truncated"] = result.truncated
+    if (occurrences = payload["occurrences"]).is_a?(Hash) && occurrences["records"].is_a?(Array)
+      occurrences["records_included"] = occurrences["records"].length
+      occurrences["truncated"] = true if result.truncated || occurrences["stored_count"].to_i > occurrences["records"].length
+    end
+    payload
   end
 end

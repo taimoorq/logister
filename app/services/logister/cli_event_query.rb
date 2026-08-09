@@ -65,32 +65,33 @@ module Logister
       ))
     SQL
 
+    SUMMARY_CONTEXT_PROJECTION_SQL = "#{SUMMARY_CONTEXT_SQL} AS context".freeze
+    SUMMARY_TRUNCATION_PROJECTION_SQL = "FALSE AS cli_context_truncated"
+    BOUNDED_CONTEXT_PROJECTION_SQL = <<~SQL.squish.freeze
+      CASE
+        WHEN octet_length(ingest_events.context::text) <= #{CONTEXT_BYTES_LIMIT}
+        THEN ingest_events.context
+        ELSE #{SUMMARY_CONTEXT_SQL}
+      END AS context
+    SQL
+    BOUNDED_TRUNCATION_PROJECTION_SQL = <<~SQL.squish.freeze
+      octet_length(ingest_events.context::text) > #{CONTEXT_BYTES_LIMIT} AS cli_context_truncated
+    SQL
+
     class << self
       def summary(scope)
-        projected(scope, context_sql: SUMMARY_CONTEXT_SQL, truncated_sql: "FALSE")
-      end
-
-      def bounded_context(scope)
-        projected(
-          scope,
-          context_sql: <<~SQL.squish,
-            CASE
-              WHEN octet_length(ingest_events.context::text) <= #{CONTEXT_BYTES_LIMIT}
-              THEN ingest_events.context
-              ELSE #{SUMMARY_CONTEXT_SQL}
-            END
-          SQL
-          truncated_sql: "octet_length(ingest_events.context::text) > #{CONTEXT_BYTES_LIMIT}"
+        scope.reselect(
+          Arel.sql(BASE_PROJECTION_SQL),
+          Arel.sql(SUMMARY_CONTEXT_PROJECTION_SQL),
+          Arel.sql(SUMMARY_TRUNCATION_PROJECTION_SQL)
         )
       end
 
-      private
-
-      def projected(scope, context_sql:, truncated_sql:)
+      def bounded_context(scope)
         scope.reselect(
           Arel.sql(BASE_PROJECTION_SQL),
-          Arel.sql("#{context_sql} AS context"),
-          Arel.sql("#{truncated_sql} AS cli_context_truncated")
+          Arel.sql(BOUNDED_CONTEXT_PROJECTION_SQL),
+          Arel.sql(BOUNDED_TRUNCATION_PROJECTION_SQL)
         )
       end
     end

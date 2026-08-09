@@ -23,3 +23,9 @@
     <% end %>
   </div>
 </section>
+
+<%= render "cli_access_tokens",
+           active_tokens: @active_cli_access_tokens,
+           active_tokens_truncated: @active_cli_access_tokens_truncated,
+           recent_tokens: @recent_cli_access_tokens,
+           recent_tokens_truncated: @recent_cli_access_tokens_truncated %>

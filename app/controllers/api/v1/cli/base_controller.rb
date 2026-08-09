@@ -16,14 +16,17 @@ class Api::V1::Cli::BaseController < ApplicationController
   skip_before_action :verify_authenticity_token
   skip_before_action :require_modern_browser, raise: false
 
+  before_action :enforce_cli_pre_auth_rate_limit!
   before_action :authenticate_cli_access_token!
   before_action :enforce_cli_read_rate_limit!
+  around_action :with_cli_postgres_statement_timeout
   after_action :touch_cli_access_token_last_used
 
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from AmbiguousProject, with: :render_ambiguous_project
   rescue_from Logister::CliCursor::InvalidCursor, with: :render_invalid_cursor
   rescue_from Logister::CliQuery::InvalidParameter, with: :render_invalid_parameter
+  rescue_from ActiveRecord::QueryCanceled, with: :render_query_timeout
 
   private
 
@@ -146,6 +149,18 @@ class Api::V1::Cli::BaseController < ApplicationController
       message: error.message,
       parameter: error.parameter
     }.compact, status: :unprocessable_content
+  end
+
+  def render_query_timeout
+    render json: {
+      error: "Query unavailable",
+      code: "query_timeout",
+      message: "The query exceeded the server time limit. Narrow the time range or filters and try again."
+    }, status: :service_unavailable
+  end
+
+  def with_cli_postgres_statement_timeout(&)
+    Logister::CliPostgresStatementTimeout.call(&)
   end
 
   def touch_cli_access_token_last_used
