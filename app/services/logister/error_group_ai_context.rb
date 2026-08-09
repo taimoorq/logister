@@ -4,6 +4,11 @@ module Logister
   class ErrorGroupAiContext
     RELATED_LOG_LIMIT = 20
     FRAME_LIMIT = 20
+    DEFAULT_TOKEN_BUDGET = 4_000
+    MIN_TOKEN_BUDGET = 256
+    MAX_TOKEN_BUDGET = 32_000
+    BYTES_PER_TOKEN = 4
+    MAX_RESPONSE_BYTES = 256.kilobytes
 
     def self.call(project:, group:, logister_url: nil, token_budget: nil)
       new(project: project, group: group, logister_url: logister_url, token_budget: token_budget).call
@@ -13,7 +18,8 @@ module Logister
       @project = project
       @group = group
       @logister_url = logister_url
-      @token_budget = token_budget.to_i.positive? ? token_budget.to_i : nil
+      parsed_budget = token_budget.to_i
+      @token_budget = parsed_budget.between?(MIN_TOKEN_BUDGET, MAX_TOKEN_BUDGET) ? parsed_budget : DEFAULT_TOKEN_BUDGET
     end
 
     def call
@@ -26,11 +32,13 @@ module Logister
         )
       )
 
-      {
+      payload = {
         format: "logister_ai_context",
         version: 1,
         generated_at: Time.current.utc.iso8601(6),
         token_budget: token_budget,
+        response_byte_limit: response_byte_limit,
+        truncated: false,
         project: export["project"],
         issue: export["error_group"],
         assignment: export["assignment"],
@@ -46,11 +54,23 @@ module Logister
           "Use timestamps, release, trace_id, request_id, and related logs as investigation anchors."
         ]
       }.compact
+      bounded = Logister::BoundedJsonPayload.call(
+        payload,
+        max_bytes: response_byte_limit,
+        max_string_bytes: 8.kilobytes,
+        max_array_items: RELATED_LOG_LIMIT
+      )
+      bounded.value["truncated"] = bounded.truncated
+      bounded.value
     end
 
     private
 
     attr_reader :project, :group, :logister_url, :token_budget
+
+    def response_byte_limit
+      [ token_budget * BYTES_PER_TOKEN, MAX_RESPONSE_BYTES ].min
+    end
 
     def minimized_event(event)
       return nil unless event

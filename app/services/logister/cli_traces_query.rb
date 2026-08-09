@@ -7,6 +7,8 @@ module Logister
     TRACE_LIMIT = 200
     RESPONSE_BYTES_LIMIT = 900.kilobytes
     CONTEXT_BYTES_LIMIT = 64.kilobytes
+    CURSOR_PRECISION = 3
+    POSTGRES_CURSOR_TIMESTAMP_SQL = "date_trunc('milliseconds', trace_spans.started_at)".freeze
 
     POSTGRES_BASE_PROJECTION_SQL = <<~SQL.squish.freeze
       trace_spans.uuid,
@@ -17,7 +19,7 @@ module Logister
       trace_spans.kind,
       LEFT(trace_spans.status, 32) AS status,
       trace_spans.duration_ms,
-      trace_spans.started_at,
+      date_trunc('milliseconds', trace_spans.started_at) AS started_at,
       trace_spans.ended_at
     SQL
     POSTGRES_SUMMARY_CONTEXT_SQL = <<~SQL.squish.freeze
@@ -73,9 +75,16 @@ module Logister
         scope = project.trace_spans.where(started_at: since...to)
                        .where(kind: TraceSpan::ROOT_KINDS, parent_span_id: [ nil, "" ])
         scope = apply_postgres_filters(scope, project:, filters:)
-        scope = scope.where("(trace_spans.started_at, trace_spans.uuid) < (?, ?::uuid)", cursor[:timestamp], cursor[:uuid]) if cursor
+        if cursor
+          scope = scope.where(
+            "(#{POSTGRES_CURSOR_TIMESTAMP_SQL}, trace_spans.uuid) < (?, ?::uuid)",
+            millisecond_time(cursor[:timestamp]),
+            cursor[:uuid]
+          )
+        end
         projected_postgres_scope(scope, include_context: false)
-          .order(started_at: :desc, uuid: :desc).limit(limit + 1).map do |span|
+          .order(Arel.sql("#{POSTGRES_CURSOR_TIMESTAMP_SQL} DESC, trace_spans.uuid DESC"))
+          .limit(limit + 1).map do |span|
           serialize_postgres_span(span, project:, include_context: false)
         end
       end
@@ -125,8 +134,8 @@ module Logister
         clauses << "kind IN ('server', 'browser')"
         if cursor
           clauses << <<~SQL.squish
-            (started_at < parseDateTime64BestEffort(#{quote(cursor[:timestamp].iso8601(6))}, 6)
-              OR (started_at = parseDateTime64BestEffort(#{quote(cursor[:timestamp].iso8601(6))}, 6)
+            (started_at < parseDateTime64BestEffort(#{quote(millisecond_time(cursor[:timestamp]).iso8601(CURSOR_PRECISION))}, #{CURSOR_PRECISION})
+              OR (started_at = parseDateTime64BestEffort(#{quote(millisecond_time(cursor[:timestamp]).iso8601(CURSOR_PRECISION))}, #{CURSOR_PRECISION})
                 AND span_id < toUUID(#{quote(cursor[:uuid])})))
           SQL
         end
@@ -222,7 +231,7 @@ module Logister
           kind: span.kind,
           status: normalized_status(span.status),
           duration_ms: span.duration_ms.to_f.round(3),
-          started_at: CliSerializer.timestamp(span.started_at),
+          started_at: millisecond_timestamp(span.started_at),
           ended_at: CliSerializer.timestamp(span.ended_at),
           environment: context["environment"].presence || context[:environment].presence || "production",
           release: context["release"].presence || context[:release].presence,
@@ -309,9 +318,20 @@ module Logister
       def normalized_timestamp(value)
         return if value.blank?
 
-        Time.zone.parse(value.to_s)&.utc&.iso8601(6)
+        millisecond_timestamp(Time.zone.parse(value.to_s))
       rescue ArgumentError
         nil
+      end
+
+      def millisecond_timestamp(value)
+        millisecond_time(value)&.iso8601(CURSOR_PRECISION)
+      end
+
+      def millisecond_time(value)
+        time = value&.to_time&.utc
+        return unless time
+
+        Time.at(time.to_i, (time.nsec / 1_000_000) * 1_000, :microsecond).utc
       end
 
       def parse_context(value)

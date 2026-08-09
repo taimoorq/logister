@@ -2,9 +2,13 @@
 
 module Logister
   class ClickhouseReadRouter
-    Result = Data.define(:payload, :source, :coverage, :fallback_reason, :reconciliation) do
+    Result = Data.define(:payload, :source, :coverage, :fallback_reason, :reconciliation, :postgres_coverage) do
       def clickhouse?
         source == "clickhouse"
+      end
+
+      def partial?
+        source == "postgresql" && postgres_coverage.present? && !postgres_coverage.complete?
       end
 
       def diagnostics
@@ -12,7 +16,9 @@ module Logister
           source: source,
           fallback_reason: fallback_reason,
           coverage: coverage&.to_h,
-          reconciliation: reconciliation&.to_h
+          reconciliation: reconciliation&.to_h,
+          partial: partial?,
+          fallback_coverage: postgres_coverage&.to_h
         }.compact
       end
     end
@@ -26,6 +32,7 @@ module Logister
     def initialize(project_ids:, signals:, from:, to:, clickhouse:, postgres:,
                    client: nil, coverage: nil,
                    coverage_service: ClickhouseCoverage,
+                   postgres_coverage_service: Logister::PostgresRetentionCoverage,
                    reconciler: ClickhouseDualReadReconciler.new)
       @project_ids = Array(project_ids).map(&:to_i).select(&:positive?).uniq.sort
       @signals = Array(signals).map(&:to_s).uniq.sort
@@ -37,6 +44,7 @@ module Logister
       @owns_client = client.nil?
       @coverage = coverage
       @coverage_service = coverage_service
+      @postgres_coverage_service = postgres_coverage_service
       @reconciler = reconciler
     end
 
@@ -59,7 +67,7 @@ module Logister
         return postgres_result("clickhouse_query_failed", coverage:, error:)
       end
       reconciliation = reconcile(payload)
-      Result.new(payload, "clickhouse", coverage, nil, reconciliation)
+      Result.new(payload, "clickhouse", coverage, nil, reconciliation, nil)
     ensure
       @client.close if @owns_client
     end
@@ -69,7 +77,13 @@ module Logister
     def postgres_result(reason, coverage: @coverage, error: nil)
       payload = @postgres.call
       reason = "#{reason}: #{error.class}" if error
-      Result.new(payload, "postgresql", coverage, reason, @reconciler.skipped)
+      postgres_coverage = @postgres_coverage_service.call(
+        project_ids: @project_ids,
+        signals: @signals,
+        from: @started_at,
+        to: @ended_at
+      )
+      Result.new(payload, "postgresql", coverage, reason, @reconciler.skipped, postgres_coverage)
     end
 
     def reconcile(primary)

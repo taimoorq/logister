@@ -138,4 +138,100 @@ RSpec.describe Logister::CliTracesQuery do
     expect(result.read.fallback_reason).to include("clickhouse_query_failed")
     expect(result.items.pluck(:uuid)).to include(span.uuid)
   end
+
+  it "keeps millisecond plus UUID ordering stable when pagination switches from ClickHouse to PostgreSQL" do
+    timestamp = Time.utc(2026, 8, 9, 12, 0, 0, 123_000)
+    uuids = %w[
+      00000000-0000-0000-0000-000000000003
+      00000000-0000-0000-0000-000000000002
+      00000000-0000-0000-0000-000000000001
+    ]
+    uuids.each_with_index do |uuid, index|
+      create(
+        :trace_span,
+        project:,
+        api_key:,
+        uuid:,
+        trace_id: "trace-#{index}",
+        started_at: timestamp + (900 - (index * 100)).fdiv(1_000_000)
+      )
+    end
+
+    clickhouse = client
+    allow(clickhouse).to receive(:select_rows!).and_return([
+      {
+        "uuid" => uuids.first,
+        "trace_id" => "trace-0",
+        "external_span_id" => "root",
+        "parent_span_id" => "",
+        "name" => "GET /checkout",
+        "route" => "GET /checkout",
+        "kind" => "server",
+        "status" => "ok",
+        "duration_ms" => "12.5",
+        "started_at" => "2026-08-09 12:00:00.123",
+        "ended_at" => "2026-08-09 12:00:00.135",
+        "environment" => "production",
+        "release" => "1.0.0",
+        "service" => "web",
+        "request_id" => "req-1"
+      }
+    ])
+    postgres = client(read_enabled: false)
+    allow(Logister::ClickhouseClient).to receive(:new).and_return(clickhouse, postgres)
+    allow(Logister::ClickhouseCoverage).to receive(:call).and_return(coverage(complete: true, reason: "complete"))
+
+    first_page = described_class.list(
+      project:,
+      since: timestamp - 1.minute,
+      to: timestamp + 1.minute,
+      filters: {},
+      cursor: nil,
+      limit: 1
+    )
+    cursor = {
+      timestamp: Time.zone.iso8601(first_page.items.sole.fetch(:started_at)),
+      uuid: first_page.items.sole.fetch(:uuid)
+    }
+    second_page = described_class.list(
+      project:,
+      since: timestamp - 1.minute,
+      to: timestamp + 1.minute,
+      filters: {},
+      cursor:,
+      limit: 10
+    )
+
+    expect(first_page.read.source).to eq("clickhouse")
+    expect(first_page.items.sole.fetch(:started_at)).to eq("2026-08-09T12:00:00.123Z")
+    expect(second_page.read.source).to eq("postgresql")
+    expect(second_page.items.pluck(:uuid)).to eq(uuids.drop(1))
+    expect(second_page.items.pluck(:started_at).uniq).to eq([ "2026-08-09T12:00:00.123Z" ])
+  end
+
+  it "uses ClickHouse DateTime64 millisecond precision for cursor comparisons" do
+    clickhouse = client
+    sql = nil
+    allow(clickhouse).to receive(:select_rows!) do |statement|
+      sql = statement
+      []
+    end
+    allow(Logister::ClickhouseClient).to receive(:new).and_return(clickhouse)
+    allow(Logister::ClickhouseCoverage).to receive(:call).and_return(coverage(complete: true, reason: "complete"))
+
+    described_class.list(
+      project:,
+      since: since_at,
+      to: until_at,
+      filters: {},
+      cursor: {
+        timestamp: Time.utc(2026, 8, 9, 12, 0, 0, 123_987),
+        uuid: "00000000-0000-0000-0000-000000000003"
+      },
+      limit: 10
+    )
+
+    expect(sql).to include("2026-08-09T12:00:00.123Z', 3")
+    expect(sql).not_to include(".123987")
+  end
 end

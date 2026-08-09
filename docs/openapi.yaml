@@ -493,9 +493,13 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 256
+            maximum: 32000
+            default: 4000
+          description: Approximate output-token budget. The server enforces a conservative response-byte ceiling and may omit lower-priority context.
       responses:
         "200":
-          description: Minimized redacted AI context payload.
+          description: Minimized redacted AI context payload, bounded by the requested token budget and a 256 KiB server maximum.
           content:
             application/json:
               schema:

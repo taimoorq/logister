@@ -1,0 +1,121 @@
+<section id="cli-sessions" class="rounded-xl bg-white border border-slate-200 shadow-sm p-6 mt-6" aria-labelledby="cli-sessions-heading">
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h2 id="cli-sessions-heading" class="text-lg font-bold text-slate-900 inline-flex items-center gap-2">
+        <%= app_icon(:key) %><span>CLI sessions</span>
+      </h2>
+      <p class="mt-1 max-w-3xl text-sm text-slate-600">
+        Each browser-approved terminal sign-in creates a session. Access tokens are never shown here.
+      </p>
+    </div>
+    <% if active_tokens.any? %>
+      <%= button_to profile_cli_access_tokens_path,
+                    method: :delete,
+                    class: "inline-flex shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2",
+                    form: { data: { turbo_confirm: "Revoke all active CLI sessions? Every terminal signed in to your account will lose access immediately. This cannot be undone." } } do %>
+        Revoke all active sessions
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if active_tokens.empty? && recent_tokens.empty? %>
+    <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+      <h3 class="text-sm font-semibold text-slate-900">No active or recently ended CLI sessions</h3>
+      <p class="mt-1 text-sm text-slate-600">
+        Run <code class="rounded bg-white px-1.5 py-0.5 text-xs text-slate-800">logister auth login</code> in a terminal, then approve the browser request to create one.
+      </p>
+    </div>
+  <% end %>
+
+  <% if active_tokens.any? %>
+    <div class="mt-6">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="text-sm font-semibold text-slate-900">Active sessions</h3>
+        <% if active_tokens_truncated %>
+          <p class="text-xs text-slate-500">Showing the 25 most recently created active sessions.</p>
+        <% end %>
+      </div>
+
+      <%= responsive_scroll_region(class: "mt-3 rounded-lg border border-slate-200") do %>
+        <table class="min-w-full divide-y divide-slate-200 text-left">
+          <thead class="bg-slate-50">
+            <tr>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Session</th>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Project access</th>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Last used</th>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Expires</th>
+              <th scope="col" class="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="active-cli-sessions" class="divide-y divide-slate-200 bg-white">
+            <% active_tokens.each do |token| %>
+              <tr data-cli-session-state="active">
+                <td class="px-3 py-3 align-top text-sm text-slate-900">
+                  <strong class="font-semibold"><%= token.name %></strong>
+                  <details class="mt-1 text-xs text-slate-600">
+                    <summary class="cursor-pointer font-medium text-slate-700"><%= pluralize(token.scopes.length, "permission") %></summary>
+                    <span class="mt-1 block max-w-md break-words"><%= token.scopes.join(", ") %></span>
+                  </details>
+                </td>
+                <td class="px-3 py-3 align-top text-sm text-slate-600"><%= token.all_projects? ? "All accessible projects" : "Selected projects" %></td>
+                <td class="px-3 py-3 align-top whitespace-nowrap text-sm text-slate-600"><%= token.last_used_at ? local_time_tag(token.last_used_at) : "Never used" %></td>
+                <td class="px-3 py-3 align-top whitespace-nowrap text-sm text-slate-600"><%= local_time_tag(token.expires_at) %></td>
+                <td class="px-3 py-3 align-top text-right">
+                  <%= button_to profile_cli_access_token_path(token.uuid),
+                                method: :delete,
+                                class: "text-sm font-semibold text-red-700 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2",
+                                form: { data: { turbo_confirm: "Revoke the CLI session ‘#{token.name}’? It will stop working immediately, and that terminal will need to sign in again." } } do %>
+                    Revoke<span class="sr-only"> <%= token.name %></span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <p class="mt-3 text-xs text-slate-500">
+        “Revoke all active sessions” also revokes active sessions outside the bounded list above.
+      </p>
+    </div>
+  <% end %>
+
+  <% if recent_tokens.any? %>
+    <div class="mt-6 border-t border-slate-200 pt-5">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 class="text-sm font-semibold text-slate-900">Recently ended</h3>
+        <p class="text-xs text-slate-500">
+          <% if recent_tokens_truncated %>
+            Showing the 10 most recent sessions ended in the last 30 days.
+          <% else %>
+            Sessions ended in the last 30 days.
+          <% end %>
+        </p>
+      </div>
+
+      <%= responsive_scroll_region(class: "mt-3 rounded-lg border border-slate-200") do %>
+        <table class="min-w-full divide-y divide-slate-200 text-left">
+          <thead class="bg-slate-50">
+            <tr>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Session</th>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Status</th>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Last used</th>
+              <th scope="col" class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Ended</th>
+            </tr>
+          </thead>
+          <tbody id="recent-cli-sessions" class="divide-y divide-slate-200 bg-white">
+            <% recent_tokens.each do |token| %>
+              <% revoked = token.revoked_at.present? %>
+              <tr data-cli-session-state="<%= revoked ? "revoked" : "expired" %>">
+                <td class="px-3 py-3 align-top text-sm font-semibold text-slate-900"><%= token.name %></td>
+                <td class="px-3 py-3 align-top text-sm text-slate-600"><%= revoked ? "Revoked" : "Expired" %></td>
+                <td class="px-3 py-3 align-top whitespace-nowrap text-sm text-slate-600"><%= token.last_used_at ? local_time_tag(token.last_used_at) : "Never used" %></td>
+                <td class="px-3 py-3 align-top whitespace-nowrap text-sm text-slate-600"><%= local_time_tag(token.revoked_at || token.expires_at) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  <% end %>
+</section>

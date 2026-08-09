@@ -4,17 +4,20 @@ class AddCliEventCursorIndexes < ActiveRecord::Migration[8.1]
   disable_ddl_transaction!
 
   TABLE = "public.ingest_events"
+  LOCK_TIMEOUT = "5s"
   INDEXES = {
     "idx_ie_cli_occurred_uuid" => "USING btree (project_id, occurred_at DESC, uuid DESC)",
     "idx_ie_cli_created_uuid" => "USING btree (project_id, created_at ASC, uuid ASC)"
   }.freeze
 
   def up
-    INDEXES.each do |parent_index, definition|
-      if partitioned_table?
-        create_partitioned_index(parent_index, definition)
-      else
-        create_regular_index(TABLE, parent_index, definition)
+    with_lock_timeout do
+      INDEXES.each do |parent_index, definition|
+        if partitioned_table?
+          create_partitioned_index(parent_index, definition)
+        else
+          create_regular_index(TABLE, parent_index, definition)
+        end
       end
     end
   end
@@ -27,6 +30,16 @@ class AddCliEventCursorIndexes < ActiveRecord::Migration[8.1]
   end
 
   private
+
+  # This migration is deliberately resumable. Bound every DDL lock wait for
+  # parent creation, concurrent child creation/drop, and partition attachment;
+  # a later deploy can retry from the valid indexes already completed.
+  def with_lock_timeout
+    execute "SET lock_timeout = #{quote(LOCK_TIMEOUT)}"
+    yield
+  ensure
+    execute "RESET lock_timeout"
+  end
 
   def create_partitioned_index(parent_index, definition)
     ensure_partitioned_parent_index!(parent_index, definition)

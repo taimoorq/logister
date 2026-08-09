@@ -31,6 +31,26 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it "rate limits invalid bearer attempts by IP before repeating the token lookup" do
+      cache = ActiveSupport::Cache::MemoryStore.new
+      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(cache)
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("LOGISTER_CLI_PRE_AUTH_RATE_LIMIT_REQUESTS", "1200").and_return("1")
+      expect(CliAccessToken).to receive(:authenticate).once.and_call_original
+
+      get "/api/v1/cli/projects", headers: { "Authorization" => "Bearer invalid-one" }
+      expect(response).to have_http_status(:unauthorized)
+
+      get "/api/v1/cli/projects", headers: { "Authorization" => "Bearer invalid-two" }
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.parsed_body).to include("code" => "rate_limited")
+      expect(response.headers["Retry-After"].to_i).to be_positive
+
+      keys = cache.instance_variable_get(:@data).keys.join
+      expect(keys).not_to include("invalid-one", "invalid-two")
+      expect(keys).not_to include(request.remote_ip.to_s)
+    end
+
     it "rejects requests missing the required scope" do
       limited = create(
         :cli_access_token,
@@ -81,6 +101,36 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       get "/api/v1/cli/projects", headers: headers
 
       expect(response).to have_http_status(:ok)
+    end
+
+    it "fails open before authentication when the CLI pre-auth cache is unavailable" do
+      cache = Class.new do
+        def increment(*)
+          raise "cache unavailable"
+        end
+      end.new
+      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(cache)
+      expect(CliAccessToken).to receive(:authenticate).once.and_call_original
+
+      get "/api/v1/cli/projects", headers: { "Authorization" => "Bearer invalid" }
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "returns a sanitized service-unavailable response when PostgreSQL cancels a CLI query" do
+      project
+      allow(Logister::CliSerializer).to receive(:project).and_raise(
+        ActiveRecord::QueryCanceled.new("SELECT private_column FROM private_table")
+      )
+
+      get "/api/v1/cli/projects", headers: headers
+
+      expect(response).to have_http_status(:service_unavailable)
+      expect(response.parsed_body).to include(
+        "error" => "Query unavailable",
+        "code" => "query_timeout"
+      )
+      expect(response.body).not_to include("private_column", "private_table", "SELECT")
     end
   end
 
@@ -190,6 +240,7 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
         context: {
           "request_id" => "req-123",
           "token" => "secret",
+          "safe_blob" => "x" * 20.kilobytes,
           "exception" => {
             "class" => "RuntimeError",
             "message" => "Checkout failed",
@@ -217,6 +268,32 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       expect(context["format"]).to eq("logister_ai_context")
       expect(context.dig("latest_event", "context", "token")).to eq("[REDACTED]")
       expect(context.dig("exception", "data", "locals", "api_key")).to eq("[REDACTED]")
+      expect(context.fetch("latest_event")).not_to have_key("id")
+
+      get "/api/v1/cli/projects/#{project.uuid}/error_groups/#{group.uuid}/context",
+          params: { token_budget: 512 },
+          headers: headers
+
+      expect(response).to have_http_status(:ok)
+      bounded_context = response.parsed_body
+      expect(response.body.bytesize).to be <= 512 * Logister::ErrorGroupAiContext::BYTES_PER_TOKEN
+      expect(bounded_context).to include(
+        "token_budget" => 512,
+        "response_byte_limit" => 512 * Logister::ErrorGroupAiContext::BYTES_PER_TOKEN,
+        "truncated" => true
+      )
+      expect(response.body).not_to include("secret")
+    end
+
+    it "rejects an AI context token budget outside the documented range" do
+      group = create(:error_group, project: project)
+
+      get "/api/v1/cli/projects/#{project.uuid}/error_groups/#{group.uuid}/context",
+          params: { token_budget: 10 },
+          headers: headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body).to include("code" => "invalid_parameter", "parameter" => "token_budget")
     end
   end
 end

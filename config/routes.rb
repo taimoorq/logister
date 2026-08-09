@@ -50,6 +50,8 @@ Rails.application.routes.draw do
   get "cli/device", to: "cli_device_authorizations#show", as: :cli_device_authorization
   post "cli/device", to: "cli_device_authorizations#update"
   resource :profile, only: [ :show, :edit, :update ], controller: "users/profiles"
+  delete "profile/cli-access-tokens", to: "users/cli_access_tokens#destroy_all", as: :profile_cli_access_tokens
+  delete "profile/cli-access-tokens/:uuid", to: "users/cli_access_tokens#destroy", as: :profile_cli_access_token
   get "account/security", to: redirect("/users/edit"), as: :account_security
 
   match "api/cookie-banner/v1/*proxy_path",
