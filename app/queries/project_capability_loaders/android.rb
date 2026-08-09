@@ -7,6 +7,7 @@ module ProjectCapabilityLoaders
       mapping_observed_at = project.android_mapping_files.maximum(:created_at)
       mapping_counts = dimension_counts("mapping_status")
       play_setting = project.integration_settings.find_by(provider: ProjectIntegrationSetting::PROVIDERS.fetch(:google_play))
+      check_in_observed_at = project.check_in_monitors.maximum(Arel.sql("COALESCE(last_check_in_at, created_at)"))
 
       {
         session_health: capability_status(
@@ -24,7 +25,14 @@ module ProjectCapabilityLoaders
           reason: mapping_reason(mapping_observed_at, mapping_counts),
           action_key: :upload_android_mapping
         ),
-        distribution_store: distribution_status(:distribution_store, play_setting, label: "Google Play")
+        distribution_store: distribution_status(:distribution_store, play_setting, label: "Google Play"),
+        check_ins: capability_status(
+          :check_ins,
+          check_in_observed_at ? :configured : :unconfigured,
+          observed_at: check_in_observed_at,
+          reason: check_in_observed_at ? "At least one app check-in has been observed." : "No app check-in has been observed.",
+          action_key: :configure_mobile_check_ins
+        )
       }.freeze
     end
 

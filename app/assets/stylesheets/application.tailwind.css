@@ -299,14 +299,16 @@
 }
 
 .ios-other-threads,
-.ios-binary-images {
+.ios-binary-images,
+.ios-call-tree {
   display: grid;
   gap: 0.75rem;
   padding: 0 0.9rem 0.9rem;
 }
 
 .ios-other-threads section,
-.ios-binary-images dl {
+.ios-binary-images dl,
+.ios-call-tree section {
   min-width: 0;
   padding: 0.75rem;
   border: 1px solid var(--app-border);
@@ -322,6 +324,54 @@
   overflow-x: auto;
   list-style: none;
   color: var(--app-muted-text);
+  font-size: 0.72rem;
+}
+
+.ios-call-tree > p {
+  margin: 0;
+}
+
+.ios-call-tree h4 {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.55rem;
+  color: var(--app-text);
+  font-size: 0.76rem;
+}
+
+.ios-call-tree h4 span,
+.ios-call-tree-frame span {
+  color: var(--app-muted-text);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.ios-call-tree ol {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1rem;
+  list-style: none;
+}
+
+.ios-call-tree ol ol {
+  margin-top: 0.35rem;
+  border-left: 1px solid var(--app-border-strong);
+}
+
+.ios-call-tree-frame {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ios-call-tree-frame code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--app-text);
   font-size: 0.72rem;
 }
 
@@ -406,6 +456,41 @@
   font-size: 0.78rem;
 }
 
+.mobile-variant-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mobile-variant-list li {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.55rem;
+  background: var(--app-surface-subtle);
+}
+
+.mobile-variant-list li > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobile-variant-list li > span,
+.mobile-variant-list li > div span {
+  color: var(--app-muted-text);
+  font-size: 0.7rem;
+}
+
+.mobile-variant-list code {
+  overflow-wrap: anywhere;
+  color: var(--app-text);
+  font-size: 0.74rem;
+}
+
 .mobile-row-signals,
 .mobile-row-culprit {
   display: inline-flex;
@@ -448,6 +533,13 @@
   border-color: var(--app-warning-700);
   background: var(--app-warning-50);
   color: var(--app-warning-700);
+}
+
+.mobile-row-attention-context {
+  color: var(--app-warning-700);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .mobile-row-type {

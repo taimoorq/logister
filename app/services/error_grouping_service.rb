@@ -75,6 +75,9 @@ class ErrorGroupingService
 
     notification_intents.each { |intent| NotificationIntent.kick(intent) }
     schedule_frequent_error_evaluation(evaluation_to_schedule) if evaluation_to_schedule
+    if occurrence_created && (@project.integration_android? || @project.integration_ios?)
+      schedule_mobile_event_enrichment
+    end
     group
   end
 
@@ -92,7 +95,9 @@ class ErrorGroupingService
   # find-or-create the ErrorGroup. Existing groups are counted only after a new
   # occurrence link is created, which keeps retries and duplicate workers idempotent.
   def upsert_group(fingerprint)
-    group = @project.error_groups.find_or_initialize_by(fingerprint: fingerprint)
+    aliases = @grouping_evidence&.respond_to?(:fingerprint_aliases) ? @grouping_evidence.fingerprint_aliases : []
+    group = @project.error_groups.where(fingerprint: [ fingerprint, *aliases ]).first
+    group ||= @project.error_groups.new(fingerprint: fingerprint)
 
     created = group.new_record?
 
@@ -222,6 +227,16 @@ class ErrorGroupingService
   rescue StandardError => error
     Rails.logger.warn(
       "notification_evaluation.schedule_failed evaluation_id=#{evaluation.id} " \
+      "error=#{error.class}: #{error.message}"
+    )
+    nil
+  end
+
+  def schedule_mobile_event_enrichment
+    MobileEventEnrichmentJob.perform_later(@project.id, @event.uuid, @event.occurred_at.utc.iso8601(6))
+  rescue StandardError => error
+    Rails.logger.warn(
+      "mobile_event_enrichment.schedule_failed project_id=#{@project.id} event_uuid=#{@event.uuid} " \
       "error=#{error.class}: #{error.message}"
     )
     nil

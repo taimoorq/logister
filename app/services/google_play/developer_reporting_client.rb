@@ -8,7 +8,19 @@ module GooglePlay
     BASE_URL = "https://playdeveloperreporting.googleapis.com"
     PAGE_SIZE = 1_000
     MAX_PAGES = 100
-    Error = Class.new(StandardError)
+    class Error < StandardError
+      attr_reader :status_code, :classification, :retry_after
+
+      def initialize(message, status_code: nil, classification: "provider", retryable: false, retry_after: nil)
+        super(message)
+        @status_code = status_code
+        @classification = classification
+        @retryable = retryable
+        @retry_after = retry_after
+      end
+
+      def retryable? = @retryable
+    end
 
     def initialize(credential_reference:, base_url: BASE_URL)
       @credential_reference = credential_reference
@@ -82,7 +94,7 @@ module GooglePlay
       http.open_timeout = 5
       http.read_timeout = 20
       request = method == :post ? Net::HTTP::Post.new(uri) : Net::HTTP::Get.new(uri)
-      request["Authorization"] = "Bearer #{CredentialResolver.new(credential_reference).access_token}"
+      request["Authorization"] = "Bearer #{access_token}"
       request["Accept"] = "application/json"
       if body
         request["Content-Type"] = "application/json"
@@ -90,11 +102,60 @@ module GooglePlay
       end
       response = http.request(request)
       payload = response.body.present? ? JSON.parse(response.body) : {}
-      raise Error, "Google Play reporting request failed (#{response.code}): #{payload.dig('error', 'message') || response.message}" unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        status = response.code.to_i
+        classification = case status
+        when 401, 403 then "credentials"
+        when 429 then "rate_limit"
+        when 500..599 then "provider"
+        else "request"
+        end
+        retryable = status == 429 || status >= 500
+        retry_after = parse_retry_after(response["Retry-After"])
+        message = payload.dig("error", "message").to_s.first(300).presence || response.message
+        raise Error.new(
+          "Google Play reporting request failed (#{status}): #{message}",
+          status_code: status,
+          classification: classification,
+          retryable: retryable,
+          retry_after: retry_after
+        )
+      end
 
       payload
     rescue JSON::ParserError => error
-      raise Error, "Google Play reporting returned invalid JSON: #{error.message}"
+      raise Error.new(
+        "Google Play reporting returned invalid JSON: #{error.message}",
+        classification: "provider_response",
+        retryable: true
+      )
+    rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, EOFError, Errno::ECONNRESET, Errno::ECONNREFUSED => error
+      raise Error.new(
+        "Google Play reporting network failure (#{error.class.name})",
+        classification: "network",
+        retryable: true
+      )
+    end
+
+    def access_token
+      CredentialResolver.new(credential_reference).access_token
+    rescue Error
+      raise
+    rescue StandardError => error
+      raise Error.new(
+        "Google Play credential resolution failed (#{error.class.name}): #{error.message.to_s.first(200)}",
+        classification: "credentials",
+        retryable: false
+      )
+    end
+
+    def parse_retry_after(value)
+      string = value.to_s.strip
+      return if string.blank?
+
+      seconds = Integer(string, exception: false)
+      seconds ||= [(Time.httpdate(string) - Time.current).ceil, 0].max rescue nil
+      seconds&.clamp(1, 1.hour.to_i)
     end
 
     def date_value(date)

@@ -60,7 +60,22 @@ module ProjectInboxData
     duration = { "24h" => 24.hours, "7d" => 7.days, "30d" => 30.days, "90d" => 90.days }[range]
     since = range == "all" ? nil : (duration || 30.days).ago
     occurrence_scope = project_inbox_query(project).occurrence_relation(profile_filters, group_ids: groups.map(&:id))
-    ErrorGroupImpactSummary.for_groups(groups, since: since, occurrence_scope: occurrence_scope)
+    baseline_scope = project_inbox_query(project).occurrence_relation(profile_filters)
+    ErrorGroupImpactSummary.for_groups(groups, since: since, occurrence_scope: occurrence_scope, baseline_scope: baseline_scope)
+  end
+
+  def inbox_evidence_signals(project, groups, profile_filters: {})
+    return {} unless ProjectExperience.for(project).supports?(:mobile)
+
+    dimensions = profile_filters.to_h.stringify_keys.except("time_range")
+    occurrence_scope = project_inbox_query(project).occurrence_relation(
+      dimensions,
+      group_ids: groups.map(&:id)
+    )
+    ProjectInbox::EvidenceSignalQuery.call(
+      occurrence_scope:,
+      group_ids: groups.map(&:id)
+    )
   end
 
   def inbox_android_mapping_resolutions(project, latest_events)
@@ -80,11 +95,20 @@ module ProjectInboxData
       end
       .to_a
       .index_by { |mapping| [ mapping.package_name, mapping.version_code.to_s ] }
+    enrichments = project.mobile_event_enrichments.android_mapping
+      .where(event_uuid: latest_events.values.compact.map(&:uuid))
+      .index_by(&:event_uuid)
 
     presenters.to_h do |event, presenter|
       app = presenter.app_details
       mapping = mappings[[ app[:package_name], app[:version_code].to_s ]]
-      resolution = AndroidMappingResolution.call(project:, event:, presenter:, mapping_file: mapping)
+      resolution = AndroidMappingResolution.call(
+        project:,
+        event:,
+        presenter:,
+        mapping_file: mapping,
+        enrichment: enrichments[event.uuid]
+      )
       [ event.id, resolution ]
     end
   end
@@ -92,7 +116,12 @@ module ProjectInboxData
   def inbox_ios_symbol_coverages(project, latest_events)
     return {} unless ProjectExperience.for(project).key == :ios
 
-    presenters = latest_events.values.compact.index_with { |event| ProjectEvents::IosEventPresenter.new(event) }
+    enrichments = project.mobile_event_enrichments.apple_symbolication
+      .where(event_uuid: latest_events.values.compact.map(&:uuid))
+      .index_by(&:event_uuid)
+    presenters = latest_events.values.compact.index_with do |event|
+      ProjectEvents::IosEventPresenter.new(event, enrichment: enrichments[event.uuid])
+    end
     build_keys = presenters.values.filter_map do |presenter|
       app = presenter.app_details
       next if app[:bundle_identifier].blank? || app[:version_code].blank?
@@ -113,7 +142,8 @@ module ProjectInboxData
         project:,
         event:,
         presenter:,
-        artifacts: artifacts.fetch([ app[:bundle_identifier], app[:version_code].to_s ], [])
+        artifacts: artifacts.fetch([ app[:bundle_identifier], app[:version_code].to_s ], []),
+        enrichment: enrichments[event.uuid]
       )
       [ event.id, coverage ]
     end

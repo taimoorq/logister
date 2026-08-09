@@ -55,4 +55,39 @@ RSpec.describe ErrorGroupImpactSummary do
     expect(summary.top_device).to eq(value: "Galaxy S24", events: 1)
     expect(summary.series.sum { |point| point[:events] }).to eq(1)
   end
+
+  it "calls a cohort over-indexed only with a material issue share and a sufficient project baseline" do
+    hotspot_group = create(:error_group, project: project, occurrence_count: 10)
+    baseline_group = create(:error_group, project: project, occurrence_count: 90)
+    10.times do |index|
+      occurred_at = (index + 1).minutes.ago
+      event = create(:ingest_event, project:, api_key:, occurred_at:)
+      create(:error_occurrence, error_group: hotspot_group, ingest_event: event, occurred_at:, dimensions: { "device_model" => "Pixel Fold", "os_version" => "16" })
+    end
+    90.times do |index|
+      occurred_at = (index + 1).minutes.ago
+      event = create(:ingest_event, project:, api_key:, occurred_at:)
+      create(:error_occurrence, error_group: baseline_group, ingest_event: event, occurred_at:, dimensions: { "device_model" => "Galaxy S24", "os_version" => "15" })
+    end
+    baseline_scope = ErrorOccurrence.joins(:error_group).where(error_groups: { project_id: project.id })
+
+    summary = described_class.for_group(
+      hotspot_group,
+      since: nil,
+      occurrence_scope: baseline_scope.where(error_group_id: hotspot_group.id),
+      baseline_scope:
+    )
+
+    expect(summary.device_over_index).to have_attributes(
+      value: "Pixel Fold",
+      issue_events: 10,
+      issue_observed_events: 10,
+      state: :over_indexed
+    )
+    expect(summary.device_over_index.issue_share).to eq(1.0)
+    expect(summary.device_over_index.baseline_observed_events).to eq(103)
+    expect(summary.device_over_index.baseline_share).to be_between(0.09, 0.10)
+    expect(summary.device_over_index.lift).to be > 10
+    expect(summary.os_over_index).to have_attributes(state: :over_indexed)
+  end
 end

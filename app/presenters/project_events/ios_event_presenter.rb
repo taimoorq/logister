@@ -10,6 +10,8 @@ module ProjectEvents
       "unhandled_exception" => "Unhandled exception",
       "native_crash" => "Native crash",
       "hang" => "Hang",
+      "resource_diagnostic" => "Resource diagnostic",
+      "performance_diagnostic" => "Performance diagnostic",
       "watchdog_termination" => "Watchdog termination",
       "memory_termination" => "Memory termination",
       "low_memory_kill" => "Memory termination",
@@ -49,12 +51,14 @@ module ProjectEvents
       "metrickit" => "MetricKit capture"
     }.freeze
 
-    attr_reader :event, :context, :exception
+    attr_reader :event, :context, :exception, :enrichment
 
-    def initialize(event, exception_data = nil)
+    def initialize(event, exception_data = nil, enrichment: nil)
       @event = event
       @context = MobileTelemetryNormalizer.normalize(event_context_hash(event))
       @exception = normalize_hash(exception_data.presence || @context["exception"])
+      @enrichment = enrichment
+      @derived_frames_by_identity = Array(enrichment&.data&.dig("frames")).index_by { |frame| frame_identity(frame) }
     end
 
     def exception_type
@@ -137,21 +141,51 @@ module ProjectEvents
       measurements = normalize_hash(diagnostic["measurements"] || context["measurements"])
       candidates = case diagnostic_kind
       when "hang"
-        [ [ measurements["duration_ms"] || diagnostic["duration_ms"], "ms hang" ], [ measurements["duration_seconds"] || diagnostic["duration_seconds"], "s hang" ] ]
+        typed = typed_measurement(measurements, "hang_duration")
+        typed ? [ "#{format_duration(typed[:value], typed[:unit])} hang" ] :
+          legacy_measurements([ [ measurements["duration_ms"] || diagnostic["duration_ms"], "ms hang" ], [ measurements["duration_seconds"] || diagnostic["duration_seconds"], "s hang" ] ])
       when "cpu_exception", "excessive_cpu"
-        [ [ measurements["total_cpu_time_seconds"] || diagnostic["total_cpu_time_seconds"], "s CPU" ], [ measurements["sampled_time_seconds"] || diagnostic["sampled_time_seconds"], "s sampled" ] ]
+        cpu = typed_measurement(measurements, "total_cpu_time")
+        sampled = typed_measurement(measurements, "sampled_time")
+        typed = [ cpu && "#{format_duration(cpu[:value], cpu[:unit])} CPU", sampled && "#{format_duration(sampled[:value], sampled[:unit])} sampled" ].compact
+        typed.presence || legacy_measurements([ [ measurements["total_cpu_time_seconds"] || diagnostic["total_cpu_time_seconds"], "s CPU" ], [ measurements["sampled_time_seconds"] || diagnostic["sampled_time_seconds"], "s sampled" ] ])
       when "disk_write_exception", "excessive_disk_writes"
-        [ [ measurements["total_bytes_written"] || diagnostic["total_bytes_written"], "bytes written" ] ]
+        typed = typed_measurement(measurements, "total_bytes_written")
+        typed ? [ "#{format_bytes(typed[:value], typed[:unit])} written" ] :
+          legacy_measurements([ [ measurements["total_bytes_written"] || diagnostic["total_bytes_written"], "bytes written" ] ])
       when "launch_failure", "slow_launch"
-        [ [ measurements["duration_ms"] || diagnostic["duration_ms"], "ms launch" ] ]
+        typed = typed_measurement(measurements, "launch_duration")
+        typed ? [ "#{format_duration(typed[:value], typed[:unit])} launch" ] :
+          legacy_measurements([ [ measurements["duration_ms"] || diagnostic["duration_ms"], "ms launch" ] ])
       else
         []
       end
-      candidates.filter_map do |value, suffix|
-        next if value.blank?
+      Array(candidates).compact_blank.join(" · ").presence
+    end
 
-        "#{value} #{suffix}"
-      end.join(" · ").presence
+    def measurement_details
+      summary = measurement_summary
+      summary.present? ? { summary: } : {}
+    end
+
+    def call_stack_tree
+      diagnostic = normalize_hash(context["diagnostic"])
+      tree = normalize_hash(diagnostic["call_stack_tree"])
+      stacks = Array(tree["stacks"]).filter_map.with_index do |stack, index|
+        next unless stack.is_a?(Hash)
+
+        {
+          id: scalar(stack, "id") || index.to_s,
+          name: scalar(stack, "name") || "Call path #{index + 1}",
+          role: scalar(stack, "role") || "sampled",
+          attributed: boolean_value(stack["attributed"] || stack[:attributed], default: false),
+          sample_count: positive_number(stack["sample_count"] || stack[:sample_count]),
+          root_frames: Array(stack["root_frames"] || stack[:root_frames]).first(100).filter_map { |frame| normalize_tree_frame(frame, depth: 0) }
+        }
+      end
+      return {} if stacks.empty?
+
+      { per_thread: boolean_value(tree["per_thread"] || tree[:per_thread], default: false), stacks: }
     end
 
     def handled?
@@ -254,6 +288,14 @@ module ProjectEvents
     end
 
     def symbolication_status
+      if enrichment&.status == "complete" && @derived_frames_by_identity.any?
+        return "symbolicated"
+      elsif enrichment&.status == "partial"
+        return "partial"
+      elsif enrichment&.status == "failed"
+        return "failed"
+      end
+
       value = nested_scalar("symbolication", "status") || "unknown"
       SYMBOLICATION_LABELS.key?(value) ? value : "unknown"
     end
@@ -347,6 +389,57 @@ module ProjectEvents
 
     private
 
+    def typed_measurement(measurements, key)
+      value = normalize_hash(measurements[key])
+      number = positive_number(value["value"])
+      unit = scalar(value, "unit")
+      return unless number && unit.present?
+
+      { value: number, unit: unit.downcase }
+    end
+
+    def legacy_measurements(values)
+      values.filter_map do |value, suffix|
+        next if value.blank?
+
+        "#{value} #{suffix}"
+      end
+    end
+
+    def format_duration(value, unit)
+      return "#{format_number(value)} #{unit}" unless unit == "seconds"
+      return "#{format_number(value * 1_000)} ms" if value.positive? && value < 1
+
+      "#{format_number(value)} s"
+    end
+
+    def format_bytes(value, unit)
+      return "#{format_number(value)} #{unit}" unless unit == "bytes"
+
+      ActiveSupport::NumberHelper.number_to_human_size(value, precision: 3, strip_insignificant_zeros: true)
+    end
+
+    def format_number(value)
+      value.to_i == value ? value.to_i.to_s : value.round(2).to_s
+    end
+
+    def positive_number(value)
+      number = Float(value, exception: false)
+      number if number&.finite? && number >= 0
+    end
+
+    def normalize_tree_frame(raw, depth:)
+      return unless raw.is_a?(Hash)
+
+      frame = parse_frame(raw, 0)
+      return unless frame
+
+      frame.merge(
+        sample_count: positive_number(raw["sample_count"] || raw[:sample_count]),
+        subframes: depth >= 64 ? [] : Array(raw["subframes"] || raw[:subframes]).first(100).filter_map { |child| normalize_tree_frame(child, depth: depth + 1) }
+      )
+    end
+
     def normalize_thread(raw, index)
       return unless raw.is_a?(Hash)
 
@@ -393,7 +486,7 @@ module ProjectEvents
       end
 
       symbol_identity = symbol.to_s.sub(/\s+\+\s+\d+\z/, "").presence
-      {
+      frame = {
         raw: raw,
         image: image,
         image_uuid: image_uuid,
@@ -411,6 +504,18 @@ module ProjectEvents
         absolute_path: nil,
         application_frame: application_frame?(image, explicit_in_app)
       }
+      derived = @derived_frames_by_identity[frame_identity(frame)]
+      return frame unless derived
+
+      frame.merge(
+        qualified_method: derived["qualified_method"].presence || frame[:qualified_method],
+        symbol_identity: derived["symbol_identity"].presence || frame[:symbol_identity],
+        method_name: derived["method_name"].presence || frame[:method_name],
+        file: derived["file"].presence || frame[:file],
+        line_number: derived["line_number"].to_i.positive? ? derived["line_number"].to_i : frame[:line_number],
+        application_frame: derived.key?("application_frame") ? derived["application_frame"] : frame[:application_frame],
+        symbolicated: derived["symbolicated"] == true
+      )
     end
 
     def fallback_frame(raw, index)
@@ -438,6 +543,15 @@ module ProjectEvents
       return boolean_value(explicit, default: false) unless explicit.nil?
 
       image.present? && !image.match?(FRAMEWORK_IMAGES)
+    end
+
+    def frame_identity(frame)
+      values = frame.respond_to?(:stringify_keys) ? frame.stringify_keys : {}
+      uuid = values["image_uuid"].to_s.delete("{}").upcase.presence
+      image = values["image"].to_s.presence
+      address = values["address"].to_s.downcase.presence
+      relative = values["relative_address"].to_s.downcase.presence
+      [ uuid || image, address || relative ].compact.join("@").presence
     end
 
     def nested_value(parent, child)

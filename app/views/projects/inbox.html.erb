@@ -9,6 +9,7 @@
      data-controller="inbox"
      data-project-integration="<%= @project.integration_kind %>"
      data-project-experience="<%= experience.key %>"
+     data-project-experience-version="<%= experience.version %>"
      data-inbox-project-uuid-value="<%= @project.uuid %>"
      data-action="turbo:frame-load@document->inbox#onFrameLoaded turbo:before-fetch-request@document->inbox#onBeforeFetch turbo:fetch-request-error@document->inbox#onFetchError turbo:frame-missing@document->inbox#onFetchError turbo:submit-start@document->inbox#onSubmitStart turbo:submit-end@document->inbox#onSubmitEnd">
   <section class="inbox-workbench-filters"
@@ -112,6 +113,7 @@
                ios_symbol_coverages: @ios_symbol_coverages,
                group_trends:  @group_trends,
                impact_summaries: @impact_summaries,
+               evidence_signals: @evidence_signals,
                has_activity_events: @has_activity_events,
                selected_uuid: @selected_group&.uuid,
                filter:        @filter,
@@ -134,6 +136,7 @@
                  occurrences: @detail_occurrences,
                  related_logs: @detail_related_logs,
                  impact_summary: @detail_impact_summary,
+                 variant_summary: @detail_variant_summary,
                  filter:      @filter,
                  assignee:    @assignee_filter,
                  assignable_users: @assignable_users,

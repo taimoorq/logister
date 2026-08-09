@@ -111,6 +111,7 @@ module Github
           occurrences: detail_data[:occurrences],
           related_logs: detail_data[:related_logs],
           impact_summary: detail_data[:impact_summary],
+          variant_summary: detail_data[:variant_summary],
           filter: filter,
           query: query,
           assignee: assignee,

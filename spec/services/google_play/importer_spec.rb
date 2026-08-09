@@ -71,4 +71,23 @@ RSpec.describe GooglePlay::Importer do
     expect { described_class.new(setting, client: client).call }.to raise_error(GooglePlay::DeveloperReportingClient::Error)
     expect(setting.reload.metadata.dig("last_error", "message")).to eq("permission denied")
   end
+
+  it "persists typed provider failure evidence for setup and source health" do
+    error = GooglePlay::DeveloperReportingClient::Error.new(
+      "quota reached",
+      status_code: 429,
+      classification: "rate_limit",
+      retryable: true,
+      retry_after: 120
+    )
+    allow(client).to receive(:release_filter_options).and_raise(error)
+
+    expect { described_class.new(setting, client: client).call }.to raise_error(error)
+    expect(setting.reload.metadata.fetch("last_error")).to include(
+      "classification" => "rate_limit",
+      "status_code" => 429,
+      "retryable" => true,
+      "retry_after_seconds" => 120
+    )
+  end
 end

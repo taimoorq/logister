@@ -94,6 +94,21 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
         }
       }
     )
+    enrichment = create(
+      :mobile_event_enrichment,
+      :apple_symbolication,
+      project:,
+      event_uuid: event.uuid,
+      event_occurred_at: event.occurred_at,
+      data: {
+        "schema_version" => 1,
+        "frames" => [ {
+          "image_uuid" => "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+          "address" => "0x100001234",
+          "qualified_method" => "CheckoutStore.commit()"
+        } ]
+      }
+    )
 
     described_class.new(
       record_type: "ingest_events",
@@ -115,6 +130,18 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     )
     expect(row.dig("export_policy", "evidence", "received_at")).to be_present
     expect(row.dig("export_policy", "original_evidence_included")).to be false
+    expect(row.dig("derived_evidence", 0)).to include(
+      "uuid" => enrichment.uuid,
+      "kind" => "apple_symbolication",
+      "tool_name" => "apple_atos",
+      "tool_version" => "adapter-1; Xcode test"
+    )
+    expect(row.dig("derived_evidence", 0, "data", "frames", 0)).to include(
+      "image_uuid" => "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+      "address" => "0x100001234",
+      "qualified_method" => "CheckoutStore.commit()"
+    )
+    expect(row.dig("derived_evidence", 0)).not_to have_key("processing_error")
     expect(event).to be_persisted
   end
 

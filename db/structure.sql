@@ -435,7 +435,8 @@ CREATE TABLE public.error_groups (
     assigned_at timestamp(6) without time zone,
     latest_event_occurred_at timestamp(6) without time zone,
     grouping_algorithm_version integer DEFAULT 1 NOT NULL,
-    grouping_evidence jsonb DEFAULT '{}'::jsonb NOT NULL
+    grouping_evidence jsonb DEFAULT '{}'::jsonb NOT NULL,
+    current_regression jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -1209,6 +1210,52 @@ ALTER SEQUENCE public.instance_settings_id_seq OWNED BY public.instance_settings
 
 
 --
+-- Name: mobile_event_enrichments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mobile_event_enrichments (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    project_id bigint NOT NULL,
+    event_uuid uuid NOT NULL,
+    event_occurred_at timestamp(6) without time zone NOT NULL,
+    platform character varying NOT NULL,
+    kind character varying NOT NULL,
+    status character varying NOT NULL,
+    input_sha256 character varying NOT NULL,
+    artifact_type character varying,
+    artifact_uuid uuid,
+    artifact_checksum_sha256 character varying,
+    tool_name character varying NOT NULL,
+    tool_version character varying NOT NULL,
+    data jsonb DEFAULT '{}'::jsonb NOT NULL,
+    processing_error text,
+    processed_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: mobile_event_enrichments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.mobile_event_enrichments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mobile_event_enrichments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.mobile_event_enrichments_id_seq OWNED BY public.mobile_event_enrichments.id;
+
+
+--
 -- Name: mobile_ingest_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1538,7 +1585,8 @@ CREATE TABLE public.project_notification_preferences (
     mobile_build_filter character varying DEFAULT 'all'::character varying NOT NULL,
     mobile_channel_filter character varying DEFAULT 'all'::character varying NOT NULL,
     mobile_artifact_state_filter character varying DEFAULT 'all'::character varying NOT NULL,
-    late_arrival_policy character varying DEFAULT 'notify_on_receipt'::character varying NOT NULL
+    late_arrival_policy character varying DEFAULT 'notify_on_receipt'::character varying NOT NULL,
+    mobile_health_notifications_enabled boolean DEFAULT false NOT NULL
 );
 
 
@@ -2489,6 +2537,13 @@ ALTER TABLE ONLY public.instance_settings ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: mobile_event_enrichments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mobile_event_enrichments ALTER COLUMN id SET DEFAULT nextval('public.mobile_event_enrichments_id_seq'::regclass);
+
+
+--
 -- Name: mobile_ingest_tokens id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2951,6 +3006,14 @@ ALTER TABLE ONLY public.instance_setting_changes
 
 ALTER TABLE ONLY public.instance_settings
     ADD CONSTRAINT instance_settings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mobile_event_enrichments mobile_event_enrichments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mobile_event_enrichments
+    ADD CONSTRAINT mobile_event_enrichments_pkey PRIMARY KEY (id);
 
 
 --
@@ -4140,6 +4203,27 @@ CREATE INDEX idx_ingest_events_retention_created_id ON public.ingest_events_unpa
 
 
 --
+-- Name: idx_mobile_enrichments_artifact; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mobile_enrichments_artifact ON public.mobile_event_enrichments USING btree (project_id, artifact_uuid);
+
+
+--
+-- Name: idx_mobile_enrichments_event_kind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_mobile_enrichments_event_kind ON public.mobile_event_enrichments USING btree (project_id, event_uuid, kind);
+
+
+--
+-- Name: idx_mobile_enrichments_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mobile_enrichments_status ON public.mobile_event_enrichments USING btree (project_id, platform, kind, status);
+
+
+--
 -- Name: idx_on_enabled_last_imported_at_ae810e9f88; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5131,6 +5215,20 @@ CREATE UNIQUE INDEX index_instance_settings_on_key ON public.instance_settings U
 --
 
 CREATE INDEX index_instance_settings_on_updated_by_user_id ON public.instance_settings USING btree (updated_by_user_id);
+
+
+--
+-- Name: index_mobile_event_enrichments_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_mobile_event_enrichments_on_project_id ON public.mobile_event_enrichments USING btree (project_id);
+
+
+--
+-- Name: index_mobile_event_enrichments_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_mobile_event_enrichments_on_uuid ON public.mobile_event_enrichments USING btree (uuid);
 
 
 --
@@ -12677,6 +12775,14 @@ ALTER TABLE ONLY public.telemetry_archives
 
 
 --
+-- Name: mobile_event_enrichments fk_rails_d93655f704; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mobile_event_enrichments
+    ADD CONSTRAINT fk_rails_d93655f704 FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
 -- Name: notification_evaluations fk_rails_dd24053c87; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12763,6 +12869,9 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260809230000'),
+('20260809220000'),
+('20260809210000'),
 ('20260809200000'),
 ('20260809180000'),
 ('20260809170000'),

@@ -5,6 +5,7 @@ require "rails_helper"
 RSpec.describe "telemetry v3 evidence contract" do
   FIXTURES = %w[
     telemetry_v3_android_exact.json
+    telemetry_v3_android_anr.json
     telemetry_v3_ios_reporting_interval.json
   ].freeze
 

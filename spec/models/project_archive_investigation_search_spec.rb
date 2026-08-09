@@ -58,4 +58,50 @@ RSpec.describe ProjectArchiveInvestigationSearch, type: :model do
     expect(search.hot_events).to be_empty
     expect(search.hot_spans).to contain_exactly(span)
   end
+
+  it "finds delayed mobile diagnostics by receipt clock and typed evidence facets" do
+    project = create(:project, :ios)
+    event = create(
+      :ingest_event,
+      project: project,
+      occurred_at: 5.days.ago,
+      created_at: 5.minutes.ago,
+      context: {
+        "app" => { "version_code" => "42" },
+        "distribution" => { "channel" => "TestFlight" },
+        "diagnostic" => { "kind" => "hang" },
+        "apple_platform" => "iOS",
+        "telemetry_evidence" => { "source" => "metrickit" }
+      }
+    )
+    group = create(:error_group, project: project)
+    create(
+      :error_occurrence,
+      error_group: group,
+      ingest_event: event,
+      occurred_at: event.occurred_at,
+      dimensions: { "symbolication_status" => "artifact_matched" }
+    )
+
+    search = described_class.new(
+      project: project,
+      params: {
+        "clock" => "receipt",
+        "from" => 1.hour.ago.iso8601,
+        "source" => "metrickit",
+        "diagnostic_kind" => "hang",
+        "build_number" => "42",
+        "distribution_channel" => "TestFlight",
+        "platform" => "iOS",
+        "artifact_state" => "artifact_matched"
+      }
+    )
+
+    expect(search.hot_events).to contain_exactly(event)
+    expect(search.clock_label).to eq("Receipt time")
+    expect(search.mobile_summary(event)).to include(source: "metrickit", kind: "hang", build: "42", artifact_state: "artifact_matched")
+
+    evidence_clock = described_class.new(project: project, params: search.params.merge("clock" => "evidence"))
+    expect(evidence_clock.hot_events).to be_empty
+  end
 end

@@ -60,6 +60,35 @@ RSpec.describe GooglePlay::DeveloperReportingClient do
     expect(result.fetch("anomalies").pluck("name")).to eq(%w[one two])
   end
 
+  it "classifies provider rate limits as retryable and preserves bounded retry timing" do
+    response = Net::HTTPTooManyRequests.new("1.1", "429", "Too Many Requests")
+    response["Retry-After"] = "90"
+    response.instance_variable_set(:@body, { error: { message: "Quota reached" } }.to_json)
+    response.instance_variable_set(:@read, true)
+    allow(http).to receive(:request).and_return(response)
+
+    expect {
+      described_class.new(credential_reference: "PLAY_CREDENTIALS").anomalies("com.acme.shop")
+    }.to raise_error(described_class::Error) { |error|
+      expect(error).to be_retryable
+      expect(error.classification).to eq("rate_limit")
+      expect(error.status_code).to eq(429)
+      expect(error.retry_after).to eq(90)
+    }
+  end
+
+  it "classifies credential failures as terminal without exposing credential values" do
+    allow(credential_resolver).to receive(:access_token).and_raise(ArgumentError, "PLAY_CREDENTIALS is not configured")
+
+    expect {
+      described_class.new(credential_reference: "PLAY_CREDENTIALS").anomalies("com.acme.shop")
+    }.to raise_error(described_class::Error) { |error|
+      expect(error).not_to be_retryable
+      expect(error.classification).to eq("credentials")
+      expect(error.message).not_to include("play-token")
+    }
+  end
+
   def metric_row(version_code)
     { "dimensions" => [ { "dimension" => "versionCode", "int64Value" => version_code } ] }
   end

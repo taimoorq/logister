@@ -167,6 +167,8 @@ Rails.application.routes.draw do
         get "projects/:project_uuid/insights", to: "insights#show"
         get "projects/:project_uuid/metrics/catalog", to: "metrics#catalog"
         get "projects/:project_uuid/metrics/query", to: "metrics#query"
+        post "projects/:project_uuid/artifacts/android-mapping", to: "artifacts#android_mapping"
+        post "projects/:project_uuid/artifacts/apple-dsym", to: "artifacts#apple_dsym"
       end
 
       resources :ingest_events, only: :create do

@@ -43,6 +43,52 @@ RSpec.describe ProjectEvents::IosEventPresenter do
     expect(cpu_presenter.fatal?).to be(false)
   end
 
+  it "formats canonical MetricKit measurements and preserves the sampled call tree" do
+    cpu_event = Struct.new(:context, :message).new(
+      {
+        "diagnostic" => {
+          "source" => "metrickit",
+          "kind" => "excessive_cpu",
+          "measurements" => {
+            "total_cpu_time" => { "value" => 98, "unit" => "seconds" },
+            "sampled_time" => { "value" => 60, "unit" => "seconds" }
+          },
+          "call_stack_tree" => {
+            "per_thread" => false,
+            "stacks" => [ {
+              "id" => "0",
+              "name" => "Thread 0",
+              "role" => "sampled",
+              "attributed" => true,
+              "sample_count" => 12,
+              "root_frames" => [ {
+                "image" => "AcmeShop",
+                "image_uuid" => "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+                "relative_address" => "0x1240",
+                "application_frame" => true,
+                "sample_count" => 9,
+                "subframes" => [ { "image" => "UIKitCore", "relative_address" => "0x28", "application_frame" => false } ]
+              } ]
+            } ]
+          }
+        },
+        "error" => { "mechanism" => "resource_diagnostic" },
+        "threads" => [ { "id" => "0", "role" => "sampled", "attributed" => true, "frames" => [] } ]
+      },
+      "CPU diagnostic"
+    )
+
+    cpu_presenter = described_class.new(cpu_event)
+    tree = cpu_presenter.call_stack_tree
+
+    expect(cpu_presenter.mechanism_label).to eq("Resource diagnostic")
+    expect(cpu_presenter.measurement_summary).to eq("98 s CPU · 60 s sampled")
+    expect(tree).to include(per_thread: false)
+    expect(tree.fetch(:stacks).sole).to include(role: "sampled", attributed: true, sample_count: 12.0)
+    expect(tree.dig(:stacks, 0, :root_frames, 0)).to include(relative_address: "0x1240", sample_count: 9.0)
+    expect(tree.dig(:stacks, 0, :root_frames, 0, :subframes, 0)).to include(relative_address: "0x28")
+  end
+
   it "does not infer fatality for measurement diagnostics when Apple did not supply it" do
     %w[hang cpu_exception disk_write_exception launch_failure].each do |kind|
       diagnostic = described_class.new(

@@ -15,6 +15,7 @@ class ProjectHealthNotificationSweepJob < ApplicationJob
     Project.active.find_each do |project|
       dispatch_project_spike(project, now: now, bucket: bucket)
       dispatch_performance_threshold(project, now: now, bucket: bucket)
+      dispatch_mobile_health(project, now: now)
     end
   ensure
     reschedule_sidekiq_recurring_job
@@ -51,5 +52,22 @@ class ProjectHealthNotificationSweepJob < ApplicationJob
       bucket: bucket,
       now: now
     )
+  end
+
+  def dispatch_mobile_health(project, now:)
+    return unless project.integration_android? || project.integration_ios?
+    return unless project.project_notification_preferences.where(mobile_health_notifications_enabled: true).exists?
+
+    daily_bucket = now.utc.strftime("%Y%m%d")
+    ProjectMobileHealthSignals.new(project, now: now).call.each do |signal|
+      ProjectEmailNotificationDispatcher.call(
+        project: project,
+        kind: signal.kind,
+        metadata: signal.metadata,
+        subject_key: signal.subject_key,
+        bucket: daily_bucket,
+        now: now
+      )
+    end
   end
 end

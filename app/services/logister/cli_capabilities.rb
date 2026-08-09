@@ -23,7 +23,8 @@ module Logister
       insights: false,
       metrics: false,
       ai_context_bundles: true,
-      error_group_mutations: false
+      error_group_mutations: false,
+      mobile_artifacts: true
     }.freeze
 
     def self.call

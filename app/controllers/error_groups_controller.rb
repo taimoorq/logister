@@ -102,6 +102,7 @@ class ErrorGroupsController < ApplicationController
               ios_symbol_coverages: symbol_coverages,
               group_trends: inbox_group_trends(@project, @groups, profile_filters: profile_filters),
               impact_summaries: inbox_impact_summaries(@project, @groups, profile_filters: profile_filters),
+              evidence_signals: inbox_evidence_signals(@project, @groups, profile_filters: profile_filters),
               has_activity_events: @groups.empty? && project_has_activity_events?(@project),
               selected_uuid: nil,
               filter: filter,

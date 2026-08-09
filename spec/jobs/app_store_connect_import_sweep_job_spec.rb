@@ -36,8 +36,37 @@ RSpec.describe AppStoreConnectImportSweepJob, type: :job do
 
     described_class.perform_now(Time.current.iso8601)
 
-    expect(AppStoreConnectImportJob).to have_been_enqueued.with(due.id)
+    expect(AppStoreConnectImportJob).to have_been_enqueued.with(due.id, due.reload.metadata.dig("import_schedule", "token"))
     expect(enqueued_jobs.count { |job| job[:job] == AppStoreConnectImportJob }).to eq(1)
+  end
+
+  it "does not enqueue archived projects or duplicate a live import lease" do
+    archived_setting = create(
+      :project_integration_setting,
+      project: create(:project, :ios, :archived),
+      provider: "app_store_connect",
+      enabled: true,
+      account_id: "issuer-archived",
+      external_project_id: "com.acme.archived",
+      external_project_name: "ARCHIVED",
+      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+    )
+    leased = create(
+      :project_integration_setting,
+      project: create(:project, :ios),
+      provider: "app_store_connect",
+      enabled: true,
+      account_id: "issuer-leased",
+      external_project_id: "com.acme.leased",
+      external_project_name: "LEASED",
+      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+    )
+    leased.claim_import_schedule!(now: Time.current)
+
+    described_class.perform_now(Time.current.iso8601)
+
+    queued_ids = enqueued_jobs.filter { |job| job[:job] == AppStoreConnectImportJob }.map { |job| job[:args].first }
+    expect(queued_ids).not_to include(archived_setting.id, leased.id)
   end
 
   it "does not enqueue disabled or incomplete settings" do

@@ -24,6 +24,7 @@ class ProjectEventsController < ApplicationController
     @ios_symbol_coverages = inbox_ios_symbol_coverages(@project, @latest_events)
     @group_trends  = inbox_group_trends(@project, @groups, profile_filters: @profile_filters)
     @impact_summaries = inbox_impact_summaries(@project, @groups, profile_filters: @profile_filters)
+    @evidence_signals = inbox_evidence_signals(@project, @groups, profile_filters: @profile_filters)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
     @selected_uuid = params[:group_uuid]
 
@@ -36,6 +37,7 @@ class ProjectEventsController < ApplicationController
         ios_symbol_coverages: @ios_symbol_coverages,
         group_trends:  @group_trends,
         impact_summaries: @impact_summaries,
+        evidence_signals: @evidence_signals,
         has_activity_events: @has_activity_events,
         selected_uuid: @selected_uuid,
         filter:        @filter,
@@ -58,11 +60,13 @@ class ProjectEventsController < ApplicationController
     occurrence_scope = if @event.error_group
       project_inbox_query(@project).occurrence_relation(@profile_filters, group_ids: [ @event.error_group_id ])
     end
-    detail_data = build_project_event_detail(@project, @event, occurrence_scope: occurrence_scope)
+    impact_baseline_scope = project_inbox_query(@project).occurrence_relation(@profile_filters) if occurrence_scope
+    detail_data = build_project_event_detail(@project, @event, occurrence_scope: occurrence_scope, impact_baseline_scope: impact_baseline_scope)
     @group = detail_data[:group]
     @occurrences = detail_data[:occurrences]
     @related_logs = detail_data[:related_logs]
     @impact_summary = detail_data[:impact_summary]
+    @variant_summary = detail_data[:variant_summary]
 
     @filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     @query  = params[:q].to_s.strip
@@ -96,6 +100,7 @@ class ProjectEventsController < ApplicationController
         occurrences: @occurrences,
         related_logs: @related_logs,
         impact_summary: @impact_summary,
+        variant_summary: @variant_summary,
         filter:      @filter,
         query:       @query,
         assignee:    @assignee_filter,

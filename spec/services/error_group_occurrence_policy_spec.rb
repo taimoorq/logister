@@ -131,5 +131,30 @@ RSpec.describe ErrorGroupOccurrencePolicy do
     expect(group.last_seen_at).to eq(reporting_end)
     expect(group.reopen_count).to eq(1)
     expect(group.regression_count).to eq(1)
+    expect(group.current_regression).to include(
+      "schema_version" => 1,
+      "reason" => "after_resolved",
+      "policy_reason" => "source_evidence_after_closure",
+      "time_precision" => "reporting_interval",
+      "proof_at" => reporting_start.utc.iso8601(6),
+      "closure_at" => closure_time.utc.iso8601(6),
+      "event_uuid" => event.uuid
+    )
+  end
+
+  it "clears automatic regression evidence when a closed group is manually reopened" do
+    group = create(
+      :error_group,
+      project: project,
+      status: :resolved,
+      resolved_at: 1.hour.ago,
+      regression_count: 1,
+      current_regression: { "reason" => "after_resolved", "proof_at" => 2.hours.ago.iso8601 }
+    )
+
+    group.reopen!
+
+    expect(group.reload.current_regression).to eq({})
+    expect(group.regression_count).to eq(1)
   end
 end

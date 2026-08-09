@@ -77,4 +77,42 @@ RSpec.describe AppleSymbolCoverage do
     artifact.update!(status: "failed")
     expect(described_class.call(project: project, event: event).status).to eq(:verification_failed)
   end
+
+  it "distinguishes completed server symbolication from artifact eligibility" do
+    event = event_with_frame
+    artifact = create(
+      :apple_symbol_artifact,
+      project: project,
+      app_identifier: "com.acme.shop",
+      version_code: "310",
+      binary_uuid: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+      architecture: "arm64",
+      status: "verified"
+    )
+    enrichment = create(
+      :mobile_event_enrichment,
+      :apple_symbolication,
+      project:,
+      event_uuid: event.uuid,
+      event_occurred_at: event.occurred_at,
+      artifact_type: "AppleSymbolArtifact",
+      artifact_uuid: artifact.uuid,
+      artifact_checksum_sha256: artifact.checksum_sha256,
+      data: {
+        "schema_version" => 1,
+        "artifacts" => [ {
+          "uuid" => artifact.uuid,
+          "binary_uuid" => artifact.binary_uuid,
+          "architecture" => artifact.architecture,
+          "checksum_sha256" => artifact.checksum_sha256
+        } ],
+        "frames" => [ { "image_uuid" => artifact.binary_uuid, "address" => "0x1004a1290", "method_name" => "CheckoutStore.commit()" } ],
+        "resolved_frame_count" => 1
+      }
+    )
+
+    coverage = described_class.call(project:, event:, artifacts: [ artifact ], enrichment:)
+
+    expect(coverage).to have_attributes(status: :symbolicated, label: "Frames symbolicated", enrichment:)
+  end
 end

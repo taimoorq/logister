@@ -22,13 +22,20 @@ class ProjectPageContext
     pages = ProjectPagePolicy.new(project: project, viewer: viewer, app_admin: app_admin)
                              .resolve(experience_definition.pages)
                              .sort_by(&:order)
-    current_page = if page_key
-      pages.find { |page| page.key == page_key.to_sym }
+    current_page_key = if page_key
+      page_key.to_sym
     else
       pages.find do |page|
         page.route_key && ProjectPageRoutes.path_for(page.route_key, project) == request_path
-      end
+      end&.key
     end
+    if project.persisted? && (project.integration_android? || project.integration_ios?)
+      @capability_snapshot = ProjectCapabilitySnapshot.for(project)
+      pages = ProjectNavigationProjection.new(project: project, capability_snapshot: @capability_snapshot)
+                                         .resolve(pages, current_page_key: current_page_key)
+                                         .sort_by(&:order)
+    end
+    current_page = pages.find { |page| page.key == current_page_key }
     @navigation = ResolvedNavigation.new(
       primary_pages: pages.select(&:primary?),
       secondary_pages: pages.select(&:secondary?),

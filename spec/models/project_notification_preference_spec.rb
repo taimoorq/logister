@@ -15,6 +15,7 @@ RSpec.describe ProjectNotificationPreference, type: :model do
       expect(preference.regression_enabled).to be true
       expect(preference.workflow_mode).to eq("assigned_to_me")
       expect(preference.monitor_alerts_enabled).to be true
+      expect(preference.mobile_health_notifications_enabled).to be false
       expect(preference.retention_notifications_enabled).to be true
     end
   end
@@ -62,6 +63,13 @@ RSpec.describe ProjectNotificationPreference, type: :model do
 
     expect(preference).not_to be_valid
     expect(preference.errors[:time_zone]).to include("is not supported")
+  end
+
+  it "does not enable mobile health alerts for non-mobile projects" do
+    preference = build(:project_notification_preference, mobile_health_notifications_enabled: true)
+
+    expect(preference).not_to be_valid
+    expect(preference.errors[:mobile_health_notifications_enabled]).to include("is available only for Android and iOS projects")
   end
 
   it "matches immediate error alerts against environment, severity, and status filters" do
@@ -154,7 +162,8 @@ RSpec.describe ProjectNotificationPreference, type: :model do
   end
 
   it "turns off every email category when unsubscribing from project email" do
-    preference = create(:project_notification_preference, :daily, frequent_error_enabled: true, milestone_alerts_enabled: true)
+    project = create(:project, :android)
+    preference = create(:project_notification_preference, :daily, project: project, user: project.user, frequent_error_enabled: true, milestone_alerts_enabled: true, mobile_health_notifications_enabled: true)
 
     preference.unsubscribe_from_project_email!
 
@@ -163,6 +172,7 @@ RSpec.describe ProjectNotificationPreference, type: :model do
     expect(preference.frequent_error_enabled).to be false
     expect(preference.workflow_mode).to eq("off")
     expect(preference.monitor_alerts_enabled).to be false
+    expect(preference.mobile_health_notifications_enabled).to be false
     expect(preference.retention_notifications_enabled).to be false
     expect(preference.digest_frequency).to eq("none")
   end

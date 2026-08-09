@@ -4,10 +4,13 @@ class AppleSymbolCoverage
   LOOKUP_ARTIFACTS = Object.new.freeze
 
   Requirement = Data.define(:image, :binary_uuid, :architecture)
-  Result = Data.define(:status, :requirements, :matched_artifacts, :missing_requirements) do
+  Result = Data.define(:status, :requirements, :matched_artifacts, :missing_requirements, :enrichment) do
     def label
       {
         symbols_included: "Symbols included",
+        symbolicated: "Frames symbolicated",
+        partial: "Partially symbolicated",
+        failed: "Symbolication failed",
         artifact_matched: "Verified dSYM matched",
         partial_coverage: "Partial dSYM coverage",
         verification_pending: "dSYM verification pending",
@@ -24,17 +27,18 @@ class AppleSymbolCoverage
   end
 
   class << self
-    def call(project:, event:, presenter: ProjectEvents::IosEventPresenter.new(event), artifacts: LOOKUP_ARTIFACTS)
-      new(project:, presenter:, artifacts:).call
+    def call(project:, event:, presenter: ProjectEvents::IosEventPresenter.new(event), artifacts: LOOKUP_ARTIFACTS, enrichment: nil)
+      new(project:, presenter:, artifacts:, enrichment:).call
     end
   end
 
-  attr_reader :project, :presenter, :artifacts
+  attr_reader :project, :presenter, :artifacts, :enrichment
 
-  def initialize(project:, presenter:, artifacts: LOOKUP_ARTIFACTS)
+  def initialize(project:, presenter:, artifacts: LOOKUP_ARTIFACTS, enrichment: nil)
     @project = project
     @presenter = presenter
     @artifacts = artifacts
+    @enrichment = enrichment
   end
 
   def call
@@ -55,6 +59,9 @@ class AppleSymbolCoverage
     else
       artifacts
     end
+    derived_status = current_enrichment_status(build_artifacts)
+    return result(derived_status, requirements:) if derived_status
+
     matched = requirements.filter_map do |requirement|
       build_artifacts.find do |artifact|
         artifact.verified? &&
@@ -85,7 +92,7 @@ class AppleSymbolCoverage
   private
 
   def result(status, requirements: [], matched_artifacts: [], missing_requirements: [])
-    Result.new(status:, requirements:, matched_artifacts:, missing_requirements:).freeze
+    Result.new(status:, requirements:, matched_artifacts:, missing_requirements:, enrichment:).freeze
   end
 
   def address_only_requirements
@@ -123,5 +130,25 @@ class AppleSymbolCoverage
 
   def normalize_uuid(value)
     value.to_s.delete("{}").upcase.presence
+  end
+
+  def current_enrichment_status(build_artifacts)
+    return unless enrichment&.kind == "apple_symbolication"
+
+    references = Array(enrichment.data&.dig("artifacts"))
+    current = references.all? do |reference|
+      build_artifacts.any? do |artifact|
+        artifact.verified? && artifact.uuid == reference["uuid"] &&
+          artifact.checksum_sha256 == reference["checksum_sha256"]
+      end
+    end
+    return unless current
+
+    case enrichment.status
+    when "complete"
+      "symbolicated" if enrichment.data.to_h["resolved_frame_count"].to_i.positive?
+    when "partial" then :partial
+    when "failed" then :failed
+    end&.to_sym
   end
 end

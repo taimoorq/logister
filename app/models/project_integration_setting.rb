@@ -82,6 +82,23 @@ class ProjectIntegrationSetting < ApplicationRecord
     end
   end
 
+  def renew_import_schedule!(token:, now: Time.current, lease_for: IMPORT_SCHEDULE_LEASE)
+    return false if token.blank?
+
+    with_lock do
+      schedule = metadata.fetch("import_schedule", {})
+      return false unless ActiveSupport::SecurityUtils.secure_compare(schedule["token"].to_s, token.to_s)
+
+      update!(metadata: metadata.merge(
+        "import_schedule" => schedule.merge(
+          "renewed_at" => now.utc.iso8601,
+          "expires_at" => (now + lease_for).utc.iso8601
+        )
+      ))
+      true
+    end
+  end
+
   private
 
   def ensure_uuid

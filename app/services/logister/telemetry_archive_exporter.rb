@@ -368,30 +368,60 @@ module Logister
 
     def gzip_records(records)
       io = StringIO.new
+      derived_by_event_uuid = derived_evidence_index(records)
       Zlib::GzipWriter.wrap(io) do |gzip|
         gzip.mtime = exported_at.to_i
         records.each do |record|
-          gzip.write(JSON.generate(archive_row(record)))
+          gzip.write(JSON.generate(archive_row(record, derived_evidence: derived_by_event_uuid[record.try(:uuid)])))
           gzip.write("\n")
         end
       end
       io.string
     end
 
-    def archive_row(record)
+    def archive_row(record, derived_evidence: nil)
       {
         archive_version: @archive ? 2 : 1,
         manifest_id: @archive&.id,
         record_type: @record_type,
         exported_at: exported_at.iso8601(6),
         source_identity: source_reference(record),
+        restore_references: restore_references(record),
         export_policy: export_policy(record),
+        derived_evidence: derived_evidence.presence,
         attributes: archive_attributes(record)
       }.compact
     end
 
     def archive_attributes(record)
       Logister::TelemetryRedactor.call(record.attributes.as_json)
+    end
+
+    def derived_evidence_index(records)
+      return {} unless @record_type == "ingest_events" && @project
+
+      uuids = records.filter_map { |record| record.try(:uuid) }
+      @project.mobile_event_enrichments.where(event_uuid: uuids).group_by(&:event_uuid).transform_values do |enrichments|
+        enrichments.map do |enrichment|
+          Logister::TelemetryRedactor.call(
+            {
+              "uuid" => enrichment.uuid,
+              "event_occurred_at" => enrichment.event_occurred_at&.utc&.iso8601(6),
+              "platform" => enrichment.platform,
+              "kind" => enrichment.kind,
+              "status" => enrichment.status,
+              "input_sha256" => enrichment.input_sha256,
+              "artifact_type" => enrichment.artifact_type,
+              "artifact_uuid" => enrichment.artifact_uuid,
+              "artifact_checksum_sha256" => enrichment.artifact_checksum_sha256,
+              "tool_name" => enrichment.tool_name,
+              "tool_version" => enrichment.tool_version,
+              "data" => enrichment.data,
+              "processed_at" => enrichment.processed_at&.utc&.iso8601(6)
+            }.compact
+          )
+        end
+      end
     end
 
     def export_policy(record)
@@ -424,6 +454,12 @@ module Logister
         "id" => record.id,
         "timestamp" => record.public_send(timestamp_column)&.utc&.iso8601(6)
       }
+    end
+
+    def restore_references(record)
+      return unless record.is_a?(IngestEvent)
+
+      { "api_key_id" => record.api_key_id }
     end
 
     def exported_at

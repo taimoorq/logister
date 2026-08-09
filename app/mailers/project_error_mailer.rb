@@ -125,7 +125,10 @@ class ProjectErrorMailer < ApplicationMailer
       "performance_threshold" => "Performance threshold",
       "release_summary" => "Release summary",
       "usage_alert" => "Usage alert",
-      "retention_failure" => "Retention archive failure"
+      "retention_failure" => "Retention archive failure",
+      "mobile_artifact_health" => "Mobile artifact coverage needs attention",
+      "mobile_source_health" => "Mobile reporting source needs attention",
+      "mobile_intake_health" => "Mobile intake needs attention"
     }.fetch(kind.to_s, kind.to_s.humanize)
   end
 end

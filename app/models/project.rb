@@ -46,6 +46,7 @@ class Project < ApplicationRecord
   has_many :integration_settings, class_name: "ProjectIntegrationSetting", dependent: :destroy
   has_many :android_mapping_files, dependent: :destroy
   has_many :apple_symbol_artifacts, dependent: :destroy
+  has_many :mobile_event_enrichments, dependent: :destroy
   has_many :evidence_access_audits, dependent: :delete_all
   has_many :source_repositories, class_name: "ProjectSourceRepository", dependent: :destroy
   has_many :project_github_installations, dependent: :destroy

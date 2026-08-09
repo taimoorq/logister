@@ -10,6 +10,9 @@ class ProjectArchiveInvestigationSearch
     request_id
     session_id
     user_id
+    session_hash
+    installation_hash
+    user_hash
     environment
     release
     service
@@ -44,8 +47,9 @@ class ProjectArchiveInvestigationSearch
 
   def hot_spans
     return TraceSpan.none unless query_present?
+    return TraceSpan.none if mobile? && mobile_event_filters_present?
 
-    @hot_spans ||= hot_span_scope.order(started_at: :desc, id: :desc).limit(HOT_RESULT_LIMIT)
+    @hot_spans ||= hot_span_scope.order(span_time_column => :desc, id: :desc).limit(HOT_RESULT_LIMIT)
   end
 
   def archive_runs
@@ -132,6 +136,7 @@ class ProjectArchiveInvestigationSearch
     scope = apply_context_filter(scope, "service", nil, value("service"))
     scope = apply_context_filter(scope, "route", nil, value("route"))
     scope = apply_mobile_event_filters(scope) if mobile?
+    scope = apply_mobile_correlation_filters(scope) if mobile?
     scope = apply_text_query(scope, value("q"))
     scope
   end
@@ -140,7 +145,7 @@ class ProjectArchiveInvestigationSearch
     return TraceSpan.none if value("event_type").present? && value("event_type") != "span"
 
     scope = project.trace_spans
-    scope = apply_time_range(scope, :started_at)
+    scope = apply_time_range(scope, span_time_column)
     scope = scope.where(trace_id: value("trace_id")) if value("trace_id").present?
     scope = apply_context_filter(scope, "request_id", "requestId", value("request_id"))
     scope = apply_context_filter(scope, "environment", nil, value("environment"))
@@ -210,10 +215,33 @@ class ProjectArchiveInvestigationSearch
     scope
   end
 
+  def mobile_event_filters_present?
+    %w[source diagnostic_kind build_number distribution_channel platform artifact_state session_hash installation_hash user_hash].any? do |key|
+      value(key).present?
+    end
+  end
+
   def apply_expression_filter(scope, expression, raw_value)
     return scope if raw_value.blank?
 
     scope.where("#{expression} = ?", raw_value)
+  end
+
+  def apply_mobile_correlation_filters(scope)
+    {
+      "session_hash" => :session_hash,
+      "installation_hash" => :installation_hash,
+      "user_hash" => :user_hash
+    }.each do |parameter, column|
+      next if value(parameter).blank?
+
+      occurrence_ids = ErrorOccurrence.joins(:error_group)
+        .where(error_groups: { project_id: project.id })
+        .where(column => value(parameter))
+        .select(:ingest_event_id)
+      scope = scope.where(id: occurrence_ids)
+    end
+    scope
   end
 
   def apply_text_query(scope, raw_query)
@@ -262,6 +290,10 @@ class ProjectArchiveInvestigationSearch
 
   def event_time_column
     clock == "receipt" ? :created_at : :occurred_at
+  end
+
+  def span_time_column
+    clock == "receipt" ? :created_at : :started_at
   end
 
   def artifact_states_by_event_id

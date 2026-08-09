@@ -276,6 +276,7 @@ RSpec.describe ErrorGroupingService, type: :model do
         "top_in_app_class" => "com.acme.shop.storage.CartStore",
         "top_in_app_method" => "write"
       )
+      expect(MobileEventEnrichmentJob).to have_been_enqueued.with(android_project.id, first.uuid, first.occurred_at.utc.iso8601(6))
     end
 
     it "keeps different Android in-app failure points in separate groups" do
@@ -326,6 +327,37 @@ RSpec.describe ErrorGroupingService, type: :model do
       second = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Symbolicated frame", context: enriched)
 
       expect(described_class.call(second)).to eq(described_class.call(first))
+    end
+
+    it "bridges legacy decimal and canonical hexadecimal MetricKit signature offsets" do
+      ios_project = create(:project, :ios)
+      ios_key = create(:api_key, project: ios_project, user: ios_project.user)
+      base = {
+        "platform" => "ios",
+        "diagnostic" => {
+          "source" => "metrickit",
+          "kind" => "crash",
+          "signature" => "metrickit:crash:AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE:4672.0"
+        },
+        "error" => { "mechanism" => "native_crash", "fatal" => true }
+      }
+      first = create(:ingest_event, project: ios_project, api_key: ios_key, message: "Legacy MetricKit crash", context: base)
+      second = create(
+        :ingest_event,
+        project: ios_project,
+        api_key: ios_key,
+        message: "Canonical MetricKit crash",
+        context: base.deep_merge("diagnostic" => { "signature" => "metrickit:crash:AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE:0x1240" })
+      )
+
+      first_group = described_class.call(first)
+      first_group.update!(fingerprint: IosErrorGroupingEvidence.new(first).fingerprint_aliases.sole)
+
+      expect(described_class.call(second)).to eq(first_group)
+      expect(first_group.reload.occurrence_count).to eq(2)
+      expect(first_group.grouping_evidence).to eq(
+        "diagnostic_signature" => "metrickit:crash:AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE:0x1240"
+      )
     end
 
     it "materializes mobile occurrence impact dimensions idempotently" do

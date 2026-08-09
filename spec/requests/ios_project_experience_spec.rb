@@ -27,6 +27,7 @@ RSpec.describe "iOS project experience", type: :request do
     expect(response).to have_http_status(:success)
     document = Nokogiri::HTML.parse(response.body)
     expect(document.at_css("[data-project-experience='ios']")).to be_present
+    expect(document.at_css("[data-project-experience='ios']")["data-project-experience-version"]).to eq("2")
     expect(document.css(".detail-tab").map { |tab| tab.text.strip }).to eq([
       "Reporting stack", "Trail", "Occurrences (1)", "App & device", "Raw"
     ])
@@ -79,7 +80,7 @@ RSpec.describe "iOS project experience", type: :request do
     )
   end
 
-  it "keeps delayed CPU diagnostics nonfatal and labels reporting versus receipt clocks" do
+  it "keeps delayed CPU diagnostic fatality unknown and labels reporting versus receipt clocks" do
     received_at = Time.current.change(usec: 0)
     report_start = 2.days.ago.change(usec: 0)
     report_end = 1.day.ago.change(usec: 0)
@@ -94,16 +95,48 @@ RSpec.describe "iOS project experience", type: :request do
       context: {
         "platform" => "ios",
         "telemetry_schema_version" => 3,
-        "diagnostic" => { "source" => "metrickit", "kind" => "cpu_exception", "measurements" => { "total_cpu_time_seconds" => 98 } },
-        "error" => { "mechanism" => "unhandled_exception", "fatal" => false, "handled" => false },
+        "diagnostic" => {
+          "source" => "metrickit",
+          "kind" => "excessive_cpu",
+          "measurements" => {
+            "total_cpu_time" => { "value" => 98, "unit" => "seconds" },
+            "sampled_time" => { "value" => 60, "unit" => "seconds" }
+          },
+          "call_stack_tree" => {
+            "per_thread" => false,
+            "stacks" => [ {
+              "id" => "0",
+              "name" => "Sampled path",
+              "role" => "sampled",
+              "attributed" => true,
+              "sample_count" => 12,
+              "root_frames" => [ {
+                "image" => "AcmeShop",
+                "relative_address" => "0x1240",
+                "application_frame" => true,
+                "sample_count" => 9,
+                "subframes" => [ { "image" => "UIKitCore", "relative_address" => "0x28", "application_frame" => false } ]
+              } ]
+            } ]
+          }
+        },
+        "error" => { "mechanism" => "resource_diagnostic", "handled" => false },
+        "threads" => [ {
+          "id" => "0",
+          "name" => "Sampled path",
+          "role" => "sampled",
+          "attributed" => true,
+          "triggered" => false,
+          "frames" => [ { "image" => "AcmeShop", "relative_address" => "0x1240", "application_frame" => true } ]
+        } ],
         "app" => { "identifier" => "com.acme.shop", "version_name" => "4.2.0", "version_code" => "310" },
         "telemetry_evidence" => {
           "schema_version" => 1,
           "source" => "metrickit",
-          "kind" => "cpu_exception",
+          "kind" => "excessive_cpu",
           "evidence_kind" => "sampled_call_tree",
           "identity_scope" => "occurrence",
-          "fatality" => "nonfatal",
+          "fatality" => "unknown",
           "time" => {
             "precision" => "reporting_interval",
             "reporting_start" => report_start.utc.iso8601,
@@ -120,14 +153,15 @@ RSpec.describe "iOS project experience", type: :request do
     document = Nokogiri::HTML.parse(response.body)
     cpu_row = document.at_css("##{ActionView::RecordIdentifier.dom_id(cpu_event.error_group)}")
     expect(cpu_row.at_css(".mobile-row-type").text).to eq("Excessive CPU")
-    expect(cpu_row.at_css(".mobile-row-headline").text).to include("Excessive CPU", "98 s CPU")
-    expect(cpu_row.at_css(".mobile-row-fatality").text).to eq("Nonfatal")
+    expect(cpu_row.at_css(".mobile-row-headline").text).to include("Excessive CPU", "98 s CPU", "60 s sampled")
+    expect(cpu_row.at_css(".mobile-row-fatality")).to be_nil
     expect(cpu_row.at_css(".error-meta-time").text).to include("reported through")
     expect(document.at_css(".detail-context-grid").text).to include("Reporting interval", "Received", "Time precision")
     expect(document.at_css(".detail-actionbar").text).not_to include("Fatal crash")
     expect(document.css(".detail-tab").map { |tab| tab.text.strip }).to include("Sampled call tree")
+    expect(document.text).to include("Diagnostic measurement", "Sampled call tree", "aggregate sample tree", "12 samples", "9 samples")
 
-    get inbox_project_path(project, diagnostic_kind: "cpu_exception", time_range: "all")
+    get inbox_project_path(project, diagnostic_kind: "excessive_cpu", time_range: "all")
     filtered = Nokogiri::HTML.parse(response.body)
     expect(filtered.css(".mobile-row-type").map { |node| node.text.strip }).to eq([ "Excessive CPU" ])
   end

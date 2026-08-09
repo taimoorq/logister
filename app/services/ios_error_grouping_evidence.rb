@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "digest"
+require "bigdecimal"
 
 class IosErrorGroupingEvidence
   VERSION = 1
@@ -16,7 +17,7 @@ class IosErrorGroupingEvidence
   def evidence
     frame = presenter.top_in_app_frame
     termination = context["termination"].is_a?(Hash) ? context["termination"].stringify_keys : {}
-    signature = context.dig("diagnostic", "signature").presence
+    signature = canonical_diagnostic_signature(context.dig("diagnostic", "signature").presence)
     return { "diagnostic_signature" => signature } if signature
 
     frame_identity = stable_frame_identity(frame)
@@ -45,7 +46,50 @@ class IosErrorGroupingEvidence
     "ios:v#{VERSION}:#{Digest::SHA256.hexdigest(evidence.to_json)}"
   end
 
+  def fingerprint_aliases
+    signature = evidence["diagnostic_signature"]
+    legacy = legacy_diagnostic_signature(signature)
+    return [] unless legacy && legacy != signature
+
+    [ fingerprint_for("diagnostic_signature" => legacy) ]
+  end
+
   private
+
+  def fingerprint_for(values)
+    "ios:v#{VERSION}:#{Digest::SHA256.hexdigest(values.to_json)}"
+  end
+
+  def canonical_diagnostic_signature(value)
+    match = /\A(metrickit:[^:]+:)([^:]+):([^:]+)\z/i.match(value.to_s)
+    return value unless match
+
+    offset = canonical_offset(match[3])
+    return value unless offset
+
+    "#{match[1]}#{match[2].delete('{}').upcase}:#{offset}"
+  end
+
+  def legacy_diagnostic_signature(value)
+    match = /\A(metrickit:[^:]+:[^:]+:)(0x[0-9a-f]+)\z/i.match(value.to_s)
+    return unless match
+
+    "#{match[1]}#{Integer(match[2]).to_f}"
+  rescue ArgumentError
+    nil
+  end
+
+  def canonical_offset(value)
+    string = value.to_s.strip
+    integer = if string.match?(/\A0x[0-9a-f]+\z/i)
+      Integer(string)
+    elsif string.match?(/\A\d+(?:\.0+)?\z/)
+      BigDecimal(string).to_i
+    end
+    "0x#{integer.to_s(16)}" if integer && integer >= 0
+  rescue ArgumentError
+    nil
+  end
 
   def known_exception_type
     value = presenter.exception_type

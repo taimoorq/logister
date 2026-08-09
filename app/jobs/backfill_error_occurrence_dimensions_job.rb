@@ -6,8 +6,18 @@ class BackfillErrorOccurrenceDimensionsJob < ApplicationJob
   BATCH_SIZE = 200
 
   def perform(project_id: nil)
-    scope = ErrorOccurrence.where(dimensions: {})
-    scope = scope.joins(:error_group).where(error_groups: { project_id: project_id }) if project_id.present?
+    project_ids = if project_id.present?
+      Project.where(id: project_id, integration_kind: %i[android ios]).select(:id)
+    else
+      Project.where(integration_kind: %i[android ios]).select(:id)
+    end
+    scope = ErrorOccurrence
+      .joins(:error_group)
+      .where(error_groups: { project_id: project_ids })
+      .where(
+        "COALESCE(error_occurrences.dimensions ->> 'materialization_version', '0') <> ?",
+        ErrorOccurrenceDimensions::MATERIALIZATION_VERSION.to_s
+      )
 
     scope.find_in_batches(batch_size: BATCH_SIZE) do |occurrences|
       events_by_id = IngestEvent.partition_reference_index(

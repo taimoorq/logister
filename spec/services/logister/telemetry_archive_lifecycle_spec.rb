@@ -287,6 +287,48 @@ RSpec.describe "Telemetry archive lifecycle", type: :model do
     expect(archive.reload.status).to eq("restored")
   end
 
+  it "restores versioned mobile derived evidence with its source event" do
+    mobile_project = create(:project, :ios)
+    event = create(:ingest_event, project: mobile_project, occurred_at: now - 45.days)
+    enrichment = create(
+      :mobile_event_enrichment,
+      :apple_symbolication,
+      project: mobile_project,
+      event_uuid: event.uuid,
+      event_occurred_at: event.occurred_at,
+      artifact_checksum_sha256: Digest::SHA256.hexdigest("artifact"),
+      data: {
+        "schema_version" => 1,
+        "frames" => [ { "address" => "0x100001234", "qualified_method" => "CheckoutStore.commit()" } ]
+      }
+    )
+    archive_result = Logister::TelemetryArchiveExporter.new(
+      record_type: "ingest_events",
+      scope: "hot_events",
+      project: mobile_project,
+      before: now - 30.days,
+      storage_service: storage
+    ).call
+    archive = TelemetryArchive.find(archive_result.fetch(:archive_id))
+    MobileEventEnrichment.where(id: enrichment.id).delete_all
+    IngestEvent.for_partition_reference(id: event.id, occurred_at: event.occurred_at).delete_all
+
+    result = Logister::TelemetryArchiveRestore.new(archive:, storage_service: storage).call
+
+    restored = mobile_project.mobile_event_enrichments.apple_symbolication.find_by!(event_uuid: event.uuid)
+    expect(result).to include(restored: 1, restored_derived: 1)
+    expect(restored).to have_attributes(
+      uuid: enrichment.uuid,
+      artifact_checksum_sha256: Digest::SHA256.hexdigest("artifact"),
+      tool_name: "apple_atos",
+      tool_version: "adapter-1; Xcode test"
+    )
+    expect(restored.data.dig("frames", 0)).to include(
+      "address" => "0x100001234",
+      "qualified_method" => "CheckoutStore.commit()"
+    )
+  end
+
   it "does not restore source rows after project purge is tombstoned" do
     event = create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
     archive_result = Logister::TelemetryArchiveExporter.new(

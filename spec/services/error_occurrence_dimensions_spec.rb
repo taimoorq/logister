@@ -65,6 +65,57 @@ RSpec.describe ErrorOccurrenceDimensions do
     )
   end
 
+  it "materializes one canonical iOS diagnostic measurement without changing its unit" do
+    ios_project = create(:project, :ios)
+    ios_event = build(
+      :ingest_event,
+      project: ios_project,
+      context: {
+        "platform" => "ios",
+        "diagnostic" => {
+          "source" => "metrickit",
+          "kind" => "excessive_disk_writes",
+          "measurements" => {
+            "total_bytes_written" => { "value" => 1_610_612_736, "unit" => "bytes" }
+          }
+        },
+        "error" => { "mechanism" => "resource_diagnostic" }
+      }
+    )
+
+    dimensions = described_class.new(ios_event).attributes.fetch(:dimensions)
+
+    expect(dimensions).to include(
+      "diagnostic_measurement" => "total_bytes_written",
+      "diagnostic_measurement_value" => "1610612736.0",
+      "diagnostic_measurement_unit" => "bytes"
+    )
+  end
+
+  it "materializes a bounded raw app call-path variant without derived symbols" do
+    ios_project = create(:project, :ios)
+    payload = JSON.parse(Rails.root.join("spec/fixtures/files/ios_error_payload.json").read)
+    frames = payload.dig("context", "exception", "threads", 0, "frames")
+    frames[0].merge!(
+      "image_uuid" => "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+      "relative_address" => "4672.0"
+    )
+    frames[1].merge!(
+      "image" => "AcmeCheckoutKit",
+      "image_uuid" => "FFFFFFFF-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+      "relative_address" => "0x28",
+      "symbol" => "CheckoutCoordinator.finish() + 12",
+      "application_frame" => true
+    )
+    ios_event = build(:ingest_event, project: ios_project, context: payload.fetch("context"))
+
+    dimensions = described_class.new(ios_event).attributes.fetch(:dimensions)
+
+    expect(dimensions.fetch("variant_key")).to match(/\A[0-9a-f]{64}\z/)
+    expect(dimensions.fetch("variant_label")).to eq("CheckoutViewModel.submit(_:) → CheckoutCoordinator.finish()")
+    expect(dimensions.fetch("variant_frame_count")).to eq("2")
+  end
+
   it "materializes server-owned evidence facets without copying receipt timestamps" do
     normalized = TelemetryEvidenceNormalizer.normalize(
       context: {
@@ -88,5 +139,34 @@ RSpec.describe ErrorOccurrenceDimensions do
       "fatality" => "nonfatal"
     )
     expect(dimensions.keys).not_to include("received_at")
+  end
+
+  it "derives bounded session age only from exact source timing" do
+    occurred_at = Time.zone.parse("2026-08-09 12:00:04")
+    exact = build(
+      :ingest_event,
+      project:,
+      occurred_at:,
+      context: {
+        "session" => { "id" => "session-1", "started_at" => "2026-08-09T12:00:00Z" },
+        "telemetry_evidence" => {
+          "time" => { "precision" => "exact", "occurred_at" => occurred_at.iso8601 }
+        }
+      }
+    )
+    interval = build(
+      :ingest_event,
+      project:,
+      occurred_at:,
+      context: exact.context.deep_merge(
+        "telemetry_evidence" => { "time" => { "precision" => "reporting_interval" } }
+      )
+    )
+
+    expect(described_class.new(exact).attributes.fetch(:dimensions)).to include(
+      "session_started_at" => "2026-08-09T12:00:00Z",
+      "session_age_ms" => "4000"
+    )
+    expect(described_class.new(interval).attributes.fetch(:dimensions)).not_to have_key("session_age_ms")
   end
 end

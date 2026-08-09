@@ -36,8 +36,18 @@ module GooglePlay
       )
       reporting
     rescue StandardError => error
+      error_details = {
+        "message" => error.message.to_s.first(500),
+        "at" => Time.current.utc.iso8601
+      }
+      if error.respond_to?(:classification)
+        error_details["classification"] = error.classification
+        error_details["status_code"] = error.status_code if error.status_code
+        error_details["retryable"] = error.retryable?
+        error_details["retry_after_seconds"] = error.retry_after if error.retry_after
+      end
       setting.update_columns(
-        metadata: setting.metadata.merge("last_error" => { "message" => error.message, "at" => Time.current.utc.iso8601 }),
+        metadata: setting.metadata.merge("last_error" => error_details),
         updated_at: Time.current
       ) if setting.persisted?
       raise

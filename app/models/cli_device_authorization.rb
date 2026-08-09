@@ -94,8 +94,8 @@ class CliDeviceAuthorization < ApplicationRecord
   end
 
   def requested_scopes_are_supported
-    unknown = requested_scopes - CliAccessToken::READ_SCOPES
-    errors.add(:requested_scopes, "contains unsupported CLI read scopes: #{unknown.join(', ')}") if unknown.any?
+    unknown = requested_scopes - CliAccessToken::DEVICE_SCOPES
+    errors.add(:requested_scopes, "contains unsupported CLI scopes: #{unknown.join(', ')}") if unknown.any?
     errors.add(:requested_scopes, "must include at least one scope") if requested_scopes.empty?
   end
 

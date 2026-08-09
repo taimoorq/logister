@@ -1,0 +1,69 @@
+{
+  "input": {
+    "uuid": "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff",
+    "event_type": "error",
+    "level": "error",
+    "message": "Android process exit: anr",
+    "occurred_at": "2026-08-08T10:30:00Z",
+    "context": {
+      "telemetry_schema_version": 3,
+      "platform": "android",
+      "sdk": { "name": "logister-android", "version": "0.5.0" },
+      "error": { "mechanism": "anr", "fatal": true, "capture_source": "historical_exit" },
+      "diagnostic": {
+        "source": "application_exit_info",
+        "kind": "anr",
+        "measurements": {
+          "last_pss": { "value": 2097152, "unit": "bytes", "source_field": "ApplicationExitInfo.pss", "precision": "last_system_sample" }
+        },
+        "thread_dump": {
+          "format": "android_anr_text_v1",
+          "truncated": false,
+          "threads": [
+            {
+              "name": "main",
+              "role": "main",
+              "attributed": true,
+              "frames": [
+                { "class_name": "com.acme.shop.CheckoutStore", "method_name": "commit", "file": "CheckoutStore.kt", "line_number": 84, "in_app": true }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "source": "application_exit_info",
+      "kind": "anr",
+      "capture_mode": "historical_exit",
+      "evidence_kind": "sampled_thread_dump",
+      "identity_scope": "occurrence",
+      "producer": { "sdk_name": "logister-android", "sdk_version": "0.5.0" }
+    }
+  },
+  "received_at": "2026-08-09T12:00:00Z",
+  "expected_evidence": {
+    "schema_version": 1,
+    "source": "application_exit_info",
+    "kind": "anr",
+    "capture_mode": "historical_exit",
+    "evidence_kind": "sampled_thread_dump",
+    "identity_scope": "occurrence",
+    "fatality": "fatal",
+    "time": {
+      "precision": "exact",
+      "occurred_at": "2026-08-08T10:30:00.000000Z",
+      "received_at": "2026-08-09T12:00:00.000000Z"
+    },
+    "producer": {
+      "sdk_name": "logister-android",
+      "sdk_version": "0.5.0",
+      "telemetry_schema_version": 3
+    },
+    "normalization": {
+      "owner": "server",
+      "normalizer": "TelemetryEvidenceNormalizer",
+      "sensitive_key_filter_applied": true
+    }
+  }
+}

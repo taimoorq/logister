@@ -21,6 +21,7 @@ module ProjectsControllerData
     @android_mapping_resolutions = inbox_android_mapping_resolutions(@project, @latest_events)
     @ios_symbol_coverages = inbox_ios_symbol_coverages(@project, @latest_events)
     @impact_summaries = inbox_impact_summaries(@project, @groups, profile_filters: @profile_filters)
+    @evidence_signals = inbox_evidence_signals(@project, @groups, profile_filters: @profile_filters)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
 
     if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
@@ -33,6 +34,7 @@ module ProjectsControllerData
         ios_symbol_coverages: @ios_symbol_coverages,
         group_trends:  inbox_group_trends(@project, @groups, profile_filters: @profile_filters),
         impact_summaries: @impact_summaries,
+        evidence_signals: @evidence_signals,
         has_activity_events: @has_activity_events,
         selected_uuid: @selected_uuid,
         filter:        @filter,
@@ -168,11 +170,20 @@ module ProjectsControllerData
     return if detail_event.blank?
 
     occurrence_scope = project_inbox_query(@project).occurrence_relation(@profile_filters, group_ids: [ @selected_group.id ])
-    detail_data = build_project_event_detail(@project, detail_event, group: @selected_group, occurrence_scope: occurrence_scope)
+    impact_baseline_scope = project_inbox_query(@project).occurrence_relation(@profile_filters)
+    detail_data = build_project_event_detail(
+      @project,
+      detail_event,
+      group: @selected_group,
+      occurrence_scope: occurrence_scope,
+      impact_baseline_scope: impact_baseline_scope,
+      preloaded_impact_summary: @impact_summaries[@selected_group.id]
+    )
     @detail_event = detail_data[:event]
     @detail_group = detail_data[:group]
     @detail_occurrences = detail_data[:occurrences]
     @detail_related_logs = detail_data[:related_logs]
     @detail_impact_summary = detail_data[:impact_summary]
+    @detail_variant_summary = detail_data[:variant_summary]
   end
 end

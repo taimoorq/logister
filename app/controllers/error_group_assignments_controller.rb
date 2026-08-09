@@ -62,6 +62,7 @@ class ErrorGroupAssignmentsController < ApplicationController
               ios_symbol_coverages: symbol_coverages,
               group_trends: inbox_group_trends(@project, groups, profile_filters: profile_filters),
               impact_summaries: inbox_impact_summaries(@project, groups, profile_filters: profile_filters),
+              evidence_signals: inbox_evidence_signals(@project, groups, profile_filters: profile_filters),
               has_activity_events: groups.empty? && project_has_activity_events?(@project),
               selected_uuid: selected_uuid,
               filter: filter,
@@ -93,7 +94,8 @@ class ErrorGroupAssignmentsController < ApplicationController
     latest_event = inbox_latest_events(@project, [ @group ], profile_filters: profile_filters)[@group.id]
     if selected_uuid.present? && latest_event.present?
       occurrence_scope = project_inbox_query(@project).occurrence_relation(profile_filters, group_ids: [ @group.id ])
-      detail_data = build_project_event_detail(@project, latest_event, group: @group, occurrence_scope: occurrence_scope)
+      impact_baseline_scope = project_inbox_query(@project).occurrence_relation(profile_filters)
+      detail_data = build_project_event_detail(@project, latest_event, group: @group, occurrence_scope: occurrence_scope, impact_baseline_scope: impact_baseline_scope)
       return turbo_stream.replace(
         "error_detail",
         partial: "project_events/event_detail",
@@ -104,6 +106,7 @@ class ErrorGroupAssignmentsController < ApplicationController
           occurrences: detail_data[:occurrences],
           related_logs: detail_data[:related_logs],
           impact_summary: detail_data[:impact_summary],
+          variant_summary: detail_data[:variant_summary],
           filter: filter,
           query: query,
           assignee: assignee,

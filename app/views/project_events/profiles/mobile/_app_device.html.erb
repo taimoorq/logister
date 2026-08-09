@@ -30,6 +30,23 @@
   <% end %>
 </div>
 
+<% variant_summary = local_assigns[:variant_summary] %>
+<% if variant_summary&.available? %>
+  <section class="mobile-context-section mt-4" aria-labelledby="mobile-variants-title">
+    <h3 id="mobile-variants-title">App call-path variants</h3>
+    <p class="muted"><%= variant_summary.classified_events %> of <%= variant_summary.total_events %> scoped events have a stable raw app-frame path. Variants do not change issue grouping.</p>
+    <ol class="mobile-variant-list">
+      <% variant_summary.variants.each_with_index do |variant, index| %>
+        <li>
+          <div><strong>Variant <%= index + 1 %></strong><span><%= number_to_percentage(variant.share * 100, precision: 0) %> of classified events</span></div>
+          <code><%= variant.label %></code>
+          <span><%= pluralize(variant.events, "event") %> · last observed <%= time_ago_in_words(variant.last_seen_at) %> ago</span>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+<% end %>
+
 <% if experience.supports?(:mobile) %>
   <% missing = [] %>
   <% missing << "Sessions are not collected, so affected-session and crash-free-session metrics are unavailable." if presenter.correlation_details[:session].blank? %>

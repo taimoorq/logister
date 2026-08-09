@@ -45,6 +45,7 @@ module Logister
           "ingest_events" => project.ingest_events.count,
           "trace_spans" => project.trace_spans.count,
           "error_groups" => project.error_groups.count,
+          "mobile_event_enrichments" => project.mobile_event_enrichments.count,
           "telemetry_archives" => project.telemetry_archives.count,
           "telemetry_idempotency_keys" => TelemetryIdempotencyKey.where(project_id: project.id).count,
           "telemetry_outbox_events" => TelemetryOutboxEvent.where(project_id: project.id).count,

@@ -169,6 +169,12 @@
                 <dd><code><%= group.regressed_in_release %></code></dd>
               </div>
             <% end %>
+            <% regression = ErrorGroupRegressionPresenter.new(group) %>
+            <% if regression.present? %>
+              <div><dt>Regression evidence</dt><dd title="<%= regression.title %>"><%= regression.concise_label.presence || "Previously reopened" %></dd></div>
+            <% elsif experience.supports?(:mobile) && group.created_at < 24.hours.ago && (attention = current_mobile_evidence_signal(project, group)) %>
+              <div><dt><%= attention.label %> evidence</dt><dd title="<%= attention.title %>"><%= attention.concise_label %></dd></div>
+            <% end %>
           </dl>
 
           <%= render "project_events/deployment_context",
@@ -242,8 +248,28 @@
       <div><strong><%= number_with_delimiter(impact_summary&.events || group&.occurrence_count || 1) %></strong><span>events in <%= impact_window_label %></span></div>
       <% if impact_summary&.first_release.present? %><div><strong><%= impact_summary.first_release %></strong><span>first affected release in scope</span></div><% end %>
       <% if impact_summary&.last_release.present? %><div><strong><%= impact_summary.last_release %></strong><span>last affected release in scope</span></div><% end %>
-      <% if impact_summary&.top_device.present? %><div><strong><%= impact_summary.top_device[:value] %></strong><span>top device in scope · <%= pluralize(impact_summary.top_device[:events], "event") %></span></div><% end %>
-      <% if impact_summary&.top_os.present? %><div><strong><%= impact_summary.top_os[:value] %></strong><span>top OS in scope · <%= pluralize(impact_summary.top_os[:events], "event") %></span></div><% end %>
+      <% if impact_summary&.top_device.present? %>
+        <% device_index = impact_summary.device_over_index %>
+        <div>
+          <strong><%= impact_summary.top_device[:value] %></strong>
+          <% if device_index&.over_indexed? %>
+            <span>device over-index · <%= number_to_percentage(device_index.issue_share * 100, precision: 0) %> of issue vs <%= number_to_percentage(device_index.baseline_share * 100, precision: 0) %> project baseline · <%= number_with_precision(device_index.lift, precision: 1) %>×</span>
+          <% else %>
+            <span>top device in scope · <%= pluralize(impact_summary.top_device[:events], "event") %></span>
+          <% end %>
+        </div>
+      <% end %>
+      <% if impact_summary&.top_os.present? %>
+        <% os_index = impact_summary.os_over_index %>
+        <div>
+          <strong><%= impact_summary.top_os[:value] %></strong>
+          <% if os_index&.over_indexed? %>
+            <span>OS over-index · <%= number_to_percentage(os_index.issue_share * 100, precision: 0) %> of issue vs <%= number_to_percentage(os_index.baseline_share * 100, precision: 0) %> project baseline · <%= number_with_precision(os_index.lift, precision: 1) %>×</span>
+          <% else %>
+            <span>top OS in scope · <%= pluralize(impact_summary.top_os[:events], "event") %></span>
+          <% end %>
+        </div>
+      <% end %>
       <% unless impact_summary&.installations&.available? && impact_summary&.sessions&.available? %>
         <div class="mobile-impact-incomplete"><strong>Not collected</strong><span><%= [(!impact_summary&.installations&.available? && "installation ID"), (!impact_summary&.sessions&.available? && "session ID")].compact.join(" · ") %></span></div>
       <% end %>
@@ -282,6 +308,7 @@
              backtrace: backtrace,
              local_variables: local_variables,
              instance_variables: instance_variables,
+             variant_summary: local_assigns[:variant_summary],
              turbo_frame_id: "error_detail",
              wrapper_classes: "detail-tabs-wrap detail-workspace card" %>
 </turbo-frame>

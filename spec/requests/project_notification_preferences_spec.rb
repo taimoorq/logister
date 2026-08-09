@@ -67,6 +67,22 @@ RSpec.describe "Project notification preferences", type: :request do
       expect(preference.time_zone).to eq("Eastern Time (US & Canada)")
     end
 
+
+    it "shows and saves mobile health signals only for mobile projects" do
+      android_project = create(:project, :android)
+      sign_in android_project.user
+
+      get settings_project_path(android_project, section: "notifications", notification_path: "health")
+      expect(response.body).to include("Mobile collection and artifact health", "Receipt gaps are evidence of silence")
+
+      patch project_notification_preference_path(android_project, notification_path: "health"), params: {
+        notification_path: "health",
+        project_notification_preference: { mobile_health_notifications_enabled: "1" }
+      }
+
+      expect(ProjectNotificationPreference.find_by!(project: android_project, user: android_project.user).mobile_health_notifications_enabled).to be true
+    end
+
     it "returns to the current notification path after saving" do
       sign_in users(:one)
 

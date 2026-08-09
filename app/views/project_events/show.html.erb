@@ -79,6 +79,18 @@
               <span><code><%= @group.regressed_in_release %></code></span>
             </div>
           <% end %>
+          <% regression = ErrorGroupRegressionPresenter.new(@group) %>
+          <% if regression.present? %>
+            <div>
+              <span class="kicker">Regression evidence</span>
+              <span title="<%= regression.title %>"><%= regression.concise_label.presence || "Previously reopened" %></span>
+            </div>
+          <% elsif experience.supports?(:mobile) && @group.created_at < 24.hours.ago && (attention = current_mobile_evidence_signal(@project, @group)) %>
+            <div>
+              <span class="kicker"><%= attention.label %> evidence</span>
+              <span title="<%= attention.title %>"><%= attention.concise_label %></span>
+            </div>
+          <% end %>
         </div>
 
         <div class="event-group-actions">
@@ -204,6 +216,7 @@
                backtrace: backtrace,
                local_variables: local_variables,
                instance_variables: instance_variables,
+               variant_summary: @variant_summary,
                tour_group: tour_group,
                wrapper_classes: "detail-tabs-wrap" %>
   </main>

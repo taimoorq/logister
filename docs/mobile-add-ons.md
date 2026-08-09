@@ -76,7 +76,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.3.0")
+    implementation("org.logister:logister-android:0.5.0")
 }
 ```
 
@@ -175,7 +175,7 @@ client.checkInAsync("daily-sync", "ok") {
 }
 ```
 
-Version 0.3.0 sends a canonical, versioned mobile contract while retaining the
+Version 0.4.0 sends a canonical, versioned mobile contract while retaining the
 older flat aliases. Android telemetry should include:
 
 - `platform: "android"`
@@ -215,10 +215,26 @@ and time window. Affected installation and session counts appear only when the
 corresponding pseudonymous identifiers were collected; missing data is shown as
 not collected rather than zero.
 
-For minified builds, open **Project settings → Integrations → R8 mappings** and
-upload the build's `mapping.txt` with its package name and version code. Mapping
-files are private and project-scoped. The issue detail says **Mapping missing**
-when no matching build artifact exists.
+For minified builds, upload the release variant's exact `mapping.txt` with its
+package name and version code. The paginated **Artifacts** page shows inventory,
+observed-build coverage, and recovery actions; Settings shows only the latest
+summary. Mapping files are private and project-scoped. The issue detail says
+**Mapping missing** when no matching build artifact exists.
+
+Trusted CI can automate the upload with a separate, expiring CLI token that has
+the additive `artifacts:write` scope:
+
+```bash
+logister artifacts upload-android \
+  --project "$LOGISTER_PROJECT" \
+  --file app/build/outputs/mapping/release/mapping.txt \
+  --package-name com.example.app \
+  --version-name "$VERSION_NAME" \
+  --version-code "$VERSION_CODE"
+```
+
+Do not use the app's mobile ingest token or embed the artifact token in the APK.
+Manual upload remains available as a recovery path.
 
 The optional Google Play panel is in **Project settings → Integrations → Google
 Play**. Store the service-account JSON in the host's secret store, enter only its
@@ -236,7 +252,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.3.0")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.5.0")
 ]
 ```
 
@@ -275,10 +291,12 @@ let client = LogisterClient(
     platformContextPolicy: .minimized
 )
 
+let sessionStartedAt = Date()
 try await client.captureMessage(
     "Checkout opened",
     options: LogisterEventOptions(
         sessionID: "session-123",
+        sessionStartedAt: sessionStartedAt,
         installationIDHash: "rotating-random-pseudonym",
         distributionChannel: "testflight",
         inForeground: true,
@@ -325,7 +343,7 @@ try await client.checkIn(
 )
 ```
 
-iOS v0.3.0 emits the versioned Apple telemetry contract automatically:
+iOS v0.5.0 emits the versioned Apple telemetry contract automatically:
 
 - `platform: "ios"`
 - bundle identifier, app version/build, inferred release, process, Apple
@@ -333,7 +351,7 @@ iOS v0.3.0 emits the versioned Apple telemetry contract automatically:
   SDK version
 - `repository`, `commit_sha`, and `branch` when the app build is tied to a
   GitHub repository
-- optional session ID, rotating random installation hash, distribution channel,
+- optional session ID with an explicit session-start time, rotating random installation hash, distribution channel,
   foreground state, screen, and bounded breadcrumbs
 
 Use `platformContextPolicy: .minimized` to omit exact device model, locale,
@@ -341,8 +359,9 @@ architecture, and OS build. `exceptionDataPolicy: .typeAndStacktrace` omits raw
 error messages and NSError domain/code metadata from handled reports.
 
 `captureException` is always a handled **Reported error**. It is not an
-automatic crash handler. To receive OS-delivered crash, hang, CPU-exception,
-and disk-write evidence, keep an opt-in collector alive for the app lifetime:
+automatic crash handler. To receive OS-delivered crash, hang, excessive-CPU,
+excessive-disk-write, and iOS 16+ slow-launch evidence, keep an opt-in collector
+alive for the app lifetime:
 
 ```swift
 let metricKitCollector = LogisterMetricKitCollector(
@@ -352,13 +371,17 @@ let metricKitCollector = LogisterMetricKitCollector(
 metricKitCollector.start()
 ```
 
-MetricKit delivery is delayed. Safe mode omits the raw diagnostic payload and
-termination reason and bounds the normalized threads and frames. Each diagnostic receives a deterministic event
-UUID, and the Rails ingest boundary returns the existing event on redelivery so
-occurrence and impact counts remain unchanged. The SDK also makes bounded
+MetricKit delivery is delayed. Safe mode omits private reason text, retains
+immutable reporting/build/device evidence, and bounds both a compatibility
+frame list and the hierarchical attributed/sample call tree. Measurements use
+canonical seconds or bytes with their source field recorded; addresses and
+relative offsets remain lossless hexadecimal strings. Resource and launch
+diagnostics do not claim fatality when Apple does not provide it. Each
+diagnostic receives a deterministic event UUID, and
+the Rails ingest boundary returns the existing event on redelivery so occurrence
+and impact counts remain unchanged. The actor-owned durable queue makes bounded
 transient retries for network failures, HTTP 408/425/429, and 5xx responses.
-Persistent offline queueing, automatic screen timing, and URLSession timing are
-not included.
+Automatic screen timing and URLSession timing are not included.
 
 Never send IDFA, raw IDFV, serial numbers, or another stable hardware
 identifier. Both the SDK and Rails normalizer recursively remove common
@@ -367,16 +390,33 @@ app-scoped random pseudonym before hashing it.
 
 ### iOS symbols and Apple reports
 
-Project Settings → Integrations has two independent production workflows:
+The project has two independent production workflows:
 
 | Workflow | What it does | What to verify |
 | --- | --- | --- |
-| dSYM coverage | Stores zipped dSYMs in private archive storage and verifies an exact binary UUID and architecture in a background job. | The artifact is `Ready`; `Awaiting tooling` means the worker lacks Apple `dwarfdump` support. Raw addresses remain visible in every state. |
+| dSYM coverage | Stores zipped dSYMs in private archive storage, verifies exact binary UUID/architecture manifests, and resolves eligible stored frames on an Apple-toolchain worker without mutating raw evidence. Inventory and coverage live on **Artifacts**. | `UUID verified` proves artifact eligibility. Per-event `Symbolicated`, `Partial`, or `Failed` states prove the separate address-resolution step. `Verification blocked` means the worker lacks Apple tooling. Raw addresses remain visible in every state. |
 | App Store Connect | Uses an issuer ID, key ID, bundle ID, and a private-key environment-variable reference to fetch Apple's iOS power/performance report on a 15-minute sweep or manual sync. | Last success, selected app, report availability, freshness, and the last bounded error appear in settings. |
 
 App Store aggregates remain separate from SDK and MetricKit event counts. Do
 not add them together or derive a crash-free percentage without a compatible
 numerator, denominator, and stated time window.
+
+Trusted CI can zip the release archive's exact dSYM and upload each declared
+binary UUID/architecture with a separate `artifacts:write` CLI token:
+
+```bash
+logister artifacts upload-ios \
+  --project "$LOGISTER_PROJECT" \
+  --file "$RUNNER_TEMP/App.dSYM.zip" \
+  --app-identifier com.example.app \
+  --version-name "$MARKETING_VERSION" \
+  --version-code "$CURRENT_PROJECT_VERSION" \
+  --binary-uuid AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE \
+  --architecture arm64
+```
+
+Never put the CLI artifact token in the application bundle. Manual upload on
+the Artifacts page remains the recovery path.
 
 ## What Logister Can Display
 
@@ -407,24 +447,26 @@ request bodies, raw local variables, or other sensitive user data.
 
 ## Package Release Notes
 
-Android releases are tag-driven:
+The 0.5 mobile evidence releases are tag-driven. Publish the package tags and
+verify their public registries before deploying setup copy that recommends
+them:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
 The Android GitHub Actions release workflow builds, tests, signs, and uploads
 the artifact to Sonatype Central Portal with automatic Maven Central release.
 The workflow also creates the matching GitHub Release after the package version
-matches the tag. Version `0.3.0` adds privacy-safe automatic crash capture,
-durable pre-auth delivery, and session-bound queue cleanup.
+matches the tag. Version `0.5.0` adds structured historical ANR threads and
+canonical last-sampled memory evidence on top of the 0.4 trust contract.
 
 iOS releases are also tag-driven:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
 Swift Package Manager resolves packages from the public Git repository and tag.
@@ -437,12 +479,12 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.3.0/logister-android-0.3.0.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.5.0/logister-android-0.5.0.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.3.0 --repo taimoorq/logister-ios
+gh release view v0.5.0 --repo taimoorq/logister-ios
 ```

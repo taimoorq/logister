@@ -1,7 +1,11 @@
 <% presenter = android_event_presenter(event, exception_data) %>
 <% mapping_resolution = android_mapping_resolution(project, event, exception_data) %>
 <% cause_chain = mapping_resolution.cause_chain %>
-<% stack_text = android_stacktrace_text(cause_chain) %>
+<% stack_text = if presenter.historical_thread_dump?
+                  android_sampled_thread_text(presenter.sampled_threads, mapping_resolution.frames)
+                else
+                  android_stacktrace_text(cause_chain)
+                end %>
 <% top_in_app_frame = mapping_resolution.frames.find { |frame| frame[:application_frame] } %>
 <% selected_frame ||= top_in_app_frame %>
 
@@ -12,6 +16,7 @@
       <strong><%= presenter.exception_type %></strong>
       <% if presenter.handled? %><span>handled</span><% end %>
       <% if presenter.capture_source_label.present? %><span><%= presenter.capture_source_label %></span><% end %>
+      <% if presenter.error_thread_name.present? %><span>thread <code><%= presenter.error_thread_name %></code></span><% end %>
       <% if presenter.exception_detail_redacted? %><span>message redacted</span><% end %>
     </p>
     <h3 class="better-errors-message"><%= presenter.exception_message %></h3>
@@ -44,6 +49,16 @@
       <dl>
         <% presenter.application_exit_details.each do |key, value| %><div><dt><%= key.to_s.humanize %></dt><dd><code><%= value %></code></dd></div><% end %>
       </dl>
+    </section>
+  <% end %>
+
+  <% if presenter.historical_thread_dump? %>
+    <section class="mobile-context-section" aria-labelledby="android-anr-thread-evidence-title">
+      <h3 id="android-anr-thread-evidence-title">System-sampled ANR threads</h3>
+      <p class="muted">
+        Android captured <%= pluralize(presenter.sampled_threads.size, "bounded thread") %> before the prior process exited.
+        This is sampled evidence, not a crash exception stack.<%= " The source trace exceeded the capture limit and was truncated." if presenter.thread_dump_truncated? %>
+      </p>
     </section>
   <% end %>
 
@@ -112,7 +127,19 @@
       </section>
 
       <section class="better-errors-section">
-        <h4>Cause chain</h4>
+        <% if presenter.historical_thread_dump? %>
+          <h4>Captured threads</h4>
+          <ol class="android-cause-chain">
+            <% presenter.sampled_threads.each do |thread| %>
+              <li>
+                <span><%= thread[:attributed] ? "Attributed" : "Sampled" %></span>
+                <strong><%= thread[:name] %></strong>
+                <p><%= pluralize(thread[:frames].size, "structured frame") %></p>
+              </li>
+            <% end %>
+          </ol>
+        <% else %>
+          <h4>Cause chain</h4>
         <% if cause_chain.any? %>
           <ol class="android-cause-chain">
             <% cause_chain.each_with_index do |entry, index| %>
@@ -125,6 +152,7 @@
           </ol>
         <% else %>
           <p class="muted">No exception cause data was captured.</p>
+        <% end %>
         <% end %>
       </section>
     </div>

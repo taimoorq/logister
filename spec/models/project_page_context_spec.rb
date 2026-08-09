@@ -7,7 +7,7 @@ RSpec.describe ProjectPageContext do
     Overview Inbox Events Insights Performance Monitors Deployments Archive\ search Settings
   ].freeze
   EXPECTED_MOBILE_NAVIGATION = %w[
-    Overview Stability Activity Insights App\ health Releases Check-ins Deployments Archive\ search Settings
+    Overview Stability Activity Insights App\ health Releases Check-ins Deployments Artifacts Archive\ search Settings
   ].freeze
 
   def navigation_labels(context)
@@ -40,8 +40,36 @@ RSpec.describe ProjectPageContext do
       expect(navigation_labels(context)).to eq(EXPECTED_MOBILE_NAVIGATION)
       expect(context.page.header_label).to eq("Project stability")
       expect(context.navigation.primary_pages.find { |page| page.key == :performance }.header_label).to eq("Project app health")
+      expect(context.navigation.secondary_pages.find { |page| page.key == :monitors }.label).to eq("Check-ins")
       expect(context.experience_definition.family_key).to eq(:mobile_application)
     end
+  end
+
+  it "projects Check-ins from observed capability state without making the direct page unreachable" do
+    project = create(:project, :android)
+
+    overview_context = described_class.for(
+      project: project,
+      viewer: project.user,
+      request_path: Rails.application.routes.url_helpers.project_path(project)
+    )
+    expect(navigation_labels(overview_context)).not_to include("Check-ins")
+
+    direct_context = described_class.for(
+      project: project,
+      viewer: project.user,
+      request_path: Rails.application.routes.url_helpers.monitors_project_path(project)
+    )
+    expect(navigation_labels(direct_context)).to include("Check-ins")
+    expect(direct_context.page.key).to eq(:monitors)
+
+    create(:check_in_monitor, project: project)
+    configured_context = described_class.for(
+      project: project,
+      viewer: project.user,
+      request_path: Rails.application.routes.url_helpers.project_path(project)
+    )
+    expect(navigation_labels(configured_context)).to include("Check-ins")
   end
 
   it "keeps a hidden setup route distinct while marking Settings as its active parent" do

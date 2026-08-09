@@ -78,7 +78,8 @@ class ErrorGroup < ApplicationRecord
       ignored_at:       nil,
       archived_at:      nil,
       last_reopened_at: Time.current,
-      reopen_count:     reopen_count + 1
+      reopen_count:     reopen_count + 1,
+      current_regression: {}
     )
   end
 
@@ -112,6 +113,8 @@ class ErrorGroup < ApplicationRecord
 
     with_lock do
       decision = ErrorGroupOccurrencePolicy.new(group: self, event: event).call
+      previous_status = status
+      closure_at = [ resolved_at, ignored_at, archived_at ].compact.max
       reopen! if decision.reopen_group?
 
       changes = { occurrence_count: occurrence_count + 1 }
@@ -135,6 +138,14 @@ class ErrorGroup < ApplicationRecord
       if decision.reopen_group?
         changes[:regressed_in_release] = event_release.presence || regressed_in_release
         changes[:regression_count] = regression_count + 1
+        changes[:current_regression] = regression_evidence(
+          event: event,
+          evidence: evidence,
+          decision: decision,
+          previous_status: previous_status,
+          closure_at: closure_at,
+          release: event_release
+        )
       end
       update!(changes)
     end
@@ -165,6 +176,29 @@ class ErrorGroup < ApplicationRecord
   end
 
   private
+
+  def regression_evidence(event:, evidence:, decision:, previous_status:, closure_at:, release:)
+    proof_at = if evidence.reporting_interval?
+      evidence.reporting_start
+    elsif evidence.exact_time? || decision.reason == :source_evidence_after_closure
+      evidence.occurred_at || event.occurred_at
+    end
+
+    {
+      "schema_version" => 1,
+      "reason" => "after_#{previous_status}",
+      "policy_reason" => decision.reason.to_s,
+      "time_precision" => evidence.time_precision,
+      "proof_at" => proof_at&.utc&.iso8601(6),
+      "closure_at" => closure_at&.utc&.iso8601(6),
+      "received_at" => (evidence.received_at || event.created_at)&.utc&.iso8601(6),
+      "detected_at" => Time.current.utc.iso8601(6),
+      "event_uuid" => event.uuid,
+      "source" => evidence.source,
+      "kind" => evidence.kind,
+      "release" => release
+    }.compact
+  end
 
   def ensure_uuid
     self.uuid ||= SecureRandom.uuid

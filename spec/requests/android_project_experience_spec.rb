@@ -29,6 +29,7 @@ RSpec.describe "Android project experience", type: :request do
 
     expect(document.at_css(".inbox-pane-header").text).to include("Stability issues", "impact")
     expect(document.at_css("[data-project-experience='android']")).to be_present
+    expect(document.at_css("[data-project-experience='android']")["data-project-experience-version"]).to eq("2")
     inbox_frame = document.at_css("turbo-frame#project_inbox")
     expect(inbox_frame["style"]).to include("view-transition-name: project-inbox")
     expect(inbox_frame.at_css("[data-inbox-state-url]")["data-inbox-state-url"]).to include("release=1.4.0%2B42", "sort=impact")
@@ -125,6 +126,66 @@ RSpec.describe "Android project experience", type: :request do
     expect(exit_row.at_css(".mobile-row-headline").text).to include("ANR", "6")
   end
 
+  it "renders a structured historical ANR thread dump as sampled evidence" do
+    exit_event = create(
+      :ingest_event,
+      project: project,
+      api_key: api_key,
+      event_type: :error,
+      level: "error",
+      message: "Android process exit: anr",
+      context: {
+        "platform" => "android",
+        "error_mechanism" => "anr",
+        "capture_source" => "historical_exit",
+        "application_exit_reason" => 6,
+        "application_exit_status" => 0,
+        "application_exit_importance" => 100,
+        "app" => { "package_name" => "com.acme.shop", "version_name" => "1.3.0", "version_code" => "41", "process" => "com.acme.shop" },
+        "diagnostic" => {
+          "source" => "application_exit_info",
+          "kind" => "anr",
+          "measurements" => {
+            "last_pss" => { "value" => 2_097_152, "unit" => "bytes", "precision" => "last_system_sample" }
+          },
+          "thread_dump" => {
+            "format" => "android_anr_text_v1",
+            "truncated" => false,
+            "threads" => [
+              {
+                "name" => "main",
+                "role" => "main",
+                "attributed" => true,
+                "frames" => [
+                  { "class_name" => "com.acme.shop.CheckoutStore", "method_name" => "commit", "file_name" => "CheckoutStore.kt", "line_number" => 84, "in_app" => true },
+                  { "class_name" => "android.app.ActivityThread", "method_name" => "main", "file_name" => "ActivityThread.java", "line_number" => 9000, "in_app" => false }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    )
+    ErrorGroupingService.call(exit_event)
+
+    get inbox_project_path(project, group_uuid: exit_event.error_group.uuid)
+
+    document = Nokogiri::HTML.parse(response.body)
+    detail = document.at_css("turbo-frame#error_detail")
+    expect(detail.text).to include(
+      "System-sampled ANR threads",
+      "sampled evidence, not a crash exception stack",
+      "CheckoutStore.commit",
+      "CheckoutStore.kt",
+      "Last pss",
+      "2 MB",
+      "Captured threads"
+    )
+    expect(detail.text).not_to include("No stack captured", "No exception cause data")
+    exit_row = document.at_css("##{ActionView::RecordIdentifier.dom_id(exit_event.error_group)}")
+    expect(exit_row.at_css(".mobile-row-headline").text).to include("ANR", "CheckoutStore.commit")
+  end
+
   it "server-redacts the standard Raw view, including mobile correlation identities" do
     event.update!(
       context: event.context.deep_merge(
@@ -199,5 +260,35 @@ RSpec.describe "Android project experience", type: :request do
     expect(inbox_row.text).not_to include("Frames deobfuscated")
     expect(document.text).to include("Frames deobfuscated", "com.acme.shop.storage.CartStore.write", "CartStore.java")
     expect(document.text).not_to include("a.b(SourceFile.java")
+  end
+
+  it "shows multiple stable raw app call paths as variants inside issue detail" do
+    [
+      [ "a" * 64, "CartStore.write → Disk.flush" ],
+      [ "b" * 64, "CartStore.write → Cache.evict" ]
+    ].each_with_index do |(key, label), index|
+      occurred_at = (index + 1).hours.ago
+      variant_event = create(:ingest_event, project:, api_key:, occurred_at:)
+      create(
+        :error_occurrence,
+        error_group: event.error_group,
+        ingest_event: variant_event,
+        occurred_at:,
+        dimensions: { "variant_key" => key, "variant_label" => label }
+      )
+    end
+
+    get inbox_project_path(project, group_uuid: event.error_group.uuid, tab: "app_device", time_range: "all")
+
+    document = Nokogiri::HTML.parse(response.body)
+    variants = document.at_css("#mobile-variants-title")&.parent
+    expect(variants).to be_present
+    expect(variants.text).to include(
+      "App call-path variants",
+      "3 of 3 scoped events",
+      "CartStore.write → Disk.flush",
+      "CartStore.write → Cache.evict",
+      "Variants do not change issue grouping"
+    )
   end
 end

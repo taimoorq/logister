@@ -4,6 +4,8 @@
 <% app = presenter.app_details %>
 <% os = presenter.os_details %>
 <% termination = presenter.termination_details %>
+<% measurements = presenter.measurement_details %>
+<% call_tree = presenter.call_stack_tree %>
 <% stack_text = presenter.stacktrace_text %>
 <% symbol_coverage = ios_symbol_coverage(project, event, exception_data) %>
 
@@ -36,6 +38,12 @@
     <strong><%= symbol_coverage.label %></strong>
     <span>
       <% case symbol_coverage.status %>
+      <% when :symbolicated %>
+        Stored raw addresses were resolved on a compatible worker with an exact verified UUID, architecture, and build match. Raw addresses remain preserved.
+      <% when :partial %>
+        Some stored application addresses were resolved. Unresolved frames retain their raw UUID and address evidence.
+      <% when :failed %>
+        The exact artifact matched, but server address resolution failed. Review the processing error and retry without replacing the raw report.
       <% when :missing %>
         Upload the exact dSYM UUID and architecture for this build. Raw addresses remain available.
       <% when :verification_pending %>
@@ -62,6 +70,17 @@
       <h4 id="ios-termination-title">Termination evidence</h4>
       <dl>
         <% termination.each do |key, value| %>
+          <div><dt><%= key.to_s.humanize %></dt><dd><code><%= value %></code></dd></div>
+        <% end %>
+      </dl>
+    </section>
+  <% end %>
+
+  <% if measurements.any? %>
+    <section class="ios-diagnostic-facts" aria-labelledby="ios-measurements-title">
+      <h4 id="ios-measurements-title">Diagnostic measurement</h4>
+      <dl>
+        <% measurements.each do |key, value| %>
           <div><dt><%= key.to_s.humanize %></dt><dd><code><%= value %></code></dd></div>
         <% end %>
       </dl>
@@ -152,6 +171,31 @@
                 <h4><%= thread[:name] %></h4>
                 <ol>
                   <% thread[:frames].each do |frame_data| %><li><code><%= presenter.frame_text(frame_data) %></code></li><% end %>
+                </ol>
+              </section>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+
+      <% if call_tree[:stacks].present? %>
+        <details class="ios-thread-disclosure">
+          <summary>
+            Sampled call tree
+            <span><%= call_tree[:stacks].size %> <%= "path".pluralize(call_tree[:stacks].size) %></span>
+          </summary>
+          <div class="ios-call-tree">
+            <p class="muted"><%= call_tree[:per_thread] ? "Stacks are separated by thread." : "Paths are an aggregate sample tree; they are not one linear stack trace." %></p>
+            <% call_tree[:stacks].each do |stack| %>
+              <section>
+                <h4>
+                  <%= stack[:name] %>
+                  <span><%= stack[:role].to_s.humanize %><%= " · #{stack[:sample_count].to_i} samples" if stack[:sample_count] %></span>
+                </h4>
+                <ol>
+                  <% stack[:root_frames].each do |frame_data| %>
+                    <%= render "project_events/profiles/ios/call_tree_frame", presenter:, frame_data: %>
+                  <% end %>
                 </ol>
               </section>
             <% end %>

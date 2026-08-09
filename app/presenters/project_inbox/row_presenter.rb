@@ -2,9 +2,9 @@
 
 module ProjectInbox
   class RowPresenter
-    attr_reader :project, :group, :event, :trend, :impact, :mapping_resolution, :symbol_coverage
+    attr_reader :project, :group, :event, :trend, :impact, :mapping_resolution, :symbol_coverage, :evidence_signal
 
-    def initialize(project:, group:, event:, trend: [], impact: nil, mapping_resolution: nil, symbol_coverage: nil)
+    def initialize(project:, group:, event:, trend: [], impact: nil, mapping_resolution: nil, symbol_coverage: nil, evidence_signal: nil)
       @project = project
       @group = group
       @event = event
@@ -12,6 +12,7 @@ module ProjectInbox
       @impact = impact
       @mapping_resolution = mapping_resolution
       @symbol_coverage = symbol_coverage
+      @evidence_signal = evidence_signal
     end
 
     def profile
@@ -27,7 +28,11 @@ module ProjectInbox
     end
 
     def event_presenter
-      @event_presenter ||= profile.event_presenter(event)
+      @event_presenter ||= if profile.key == :ios
+        ProjectEvents::IosEventPresenter.new(event, enrichment: symbol_coverage&.enrichment)
+      else
+        profile.event_presenter(event)
+      end
     end
 
     def evidence
@@ -35,8 +40,22 @@ module ProjectInbox
     end
 
     def attention_signal
-      return "Regressed" if group.regression_count.to_i.positive?
-      "New" if group.created_at && group.created_at >= 24.hours.ago
+      return "Regressed" if regression_presenter.present?
+      return "New" if group.created_at && group.created_at >= 24.hours.ago
+
+      evidence_signal&.label
+    end
+
+    def attention_detail_label
+      return regression_presenter.concise_label if attention_signal == "Regressed"
+
+      evidence_signal&.concise_label
+    end
+
+    def attention_title
+      return regression_presenter.title if attention_signal == "Regressed"
+
+      evidence_signal&.title
     end
 
     def failure_type_label
@@ -108,7 +127,7 @@ module ProjectInbox
 
         mapping_resolution.label
       elsif profile.key == :ios && symbol_coverage
-        return if %i[symbols_included artifact_matched not_applicable].include?(symbol_coverage.status)
+        return if %i[symbolicated symbols_included artifact_matched not_applicable].include?(symbol_coverage.status)
 
         symbol_coverage.label
       end
@@ -212,6 +231,7 @@ module ProjectInbox
 
       [
         attention_signal,
+        attention_detail_label,
         failure_type_label,
         fatality_label,
         headline,
@@ -224,6 +244,10 @@ module ProjectInbox
     end
 
     private
+
+    def regression_presenter
+      @regression_presenter ||= ErrorGroupRegressionPresenter.new(group)
+    end
 
     def formatted_release(value)
       release = value.to_s.split("@").last.to_s

@@ -38,10 +38,13 @@ class ProjectNotificationEvidence
       event_id = Integer(metadata["event_id"], exception: false)
       return unless event_id
 
-      scope = error_group.error_occurrences.where(ingest_event_id: event_id)
+      candidates = error_group.error_occurrences.where(ingest_event_id: event_id).order(created_at: :desc, id: :desc).to_a
+      return candidates.first if candidates.one?
+
       occurred_at = parse_time(metadata["occurred_at"])
-      scope = scope.where(ingest_event_occurred_at: occurred_at) if occurred_at
-      scope.order(created_at: :desc, id: :desc).first
+      return candidates.first unless occurred_at
+
+      candidates.min_by { |candidate| (candidate.ingest_event_occurred_at.to_f - occurred_at.to_f).abs }
     end
 
     def parse_time(value)

@@ -32,6 +32,7 @@ class ProjectNotificationPreference < ApplicationRecord
             numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 23 }
   validates :time_zone, presence: true
   validate :time_zone_is_known
+  validate :mobile_health_requires_mobile_project
 
   scope :digest_enabled, -> { where(digest_frequency: %w[daily weekly]) }
   scope :for_active_projects, -> { joins(:project).merge(Project.active) }
@@ -116,6 +117,7 @@ class ProjectNotificationPreference < ApplicationRecord
       monitor_alerts_enabled: false,
       project_spike_enabled: false,
       performance_alerts_enabled: false,
+      mobile_health_notifications_enabled: false,
       release_notifications_enabled: false,
       usage_notifications_enabled: false,
       retention_notifications_enabled: false,
@@ -157,6 +159,13 @@ class ProjectNotificationPreference < ApplicationRecord
     return if ActiveSupport::TimeZone[time_zone]
 
     errors.add(:time_zone, "is not supported")
+  end
+
+  def mobile_health_requires_mobile_project
+    return unless mobile_health_notifications_enabled?
+    return if project&.integration_android? || project&.integration_ios?
+
+    errors.add(:mobile_health_notifications_enabled, "is available only for Android and iOS projects")
   end
 
   def normalized_filter(value)

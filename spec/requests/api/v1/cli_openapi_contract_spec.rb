@@ -53,6 +53,27 @@ RSpec.describe "CLI OpenAPI route contract" do
     end
   end
 
+  it "documents opt-in, manager-only mobile artifact uploads" do
+    expected = {
+      "/api/v1/cli/projects/{project_uuid}/artifacts/android-mapping" => [
+        "uploadCliAndroidMapping",
+        "#/components/schemas/CliAndroidMappingUpload"
+      ],
+      "/api/v1/cli/projects/{project_uuid}/artifacts/apple-dsym" => [
+        "uploadCliAppleDsym",
+        "#/components/schemas/CliAppleDsymUpload"
+      ]
+    }
+
+    expected.each do |path, (operation_id, schema)|
+      operation = contract.dig("paths", path, "post")
+      expect(operation.fetch("operationId")).to eq(operation_id)
+      expect(operation.fetch("x-logister-required-scopes")).to eq([ "artifacts:write" ])
+      expect(operation.dig("requestBody", "content", "multipart/form-data", "schema", "$ref")).to eq(schema)
+      expect(operation.fetch("responses").keys).to include("201", "401", "403", "404", "422", "429")
+    end
+  end
+
   it "documents authenticated CLI throttling, query timeouts, and bounded cursors on every GET read" do
     contract.fetch("paths").each do |path, operations|
       get = operations["get"]

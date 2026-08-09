@@ -23,8 +23,26 @@ class ErrorGroupImpactSummary
     :last_release,
     :top_device,
     :top_os,
+    :device_over_index,
+    :os_over_index,
     :series
   )
+
+  CohortIndex = Data.define(
+    :value,
+    :issue_events,
+    :issue_observed_events,
+    :baseline_events,
+    :baseline_observed_events,
+    :issue_share,
+    :baseline_share,
+    :lift,
+    :state
+  ) do
+    def over_indexed?
+      state == :over_indexed
+    end
+  end
 
   COHORT_DIMENSIONS = {
     top_device: "device_model",
@@ -32,30 +50,32 @@ class ErrorGroupImpactSummary
   }.freeze
 
   class << self
-    def for_group(group, since: 30.days.ago, occurrence_scope: nil)
-      for_groups([ group ], since: since, occurrence_scope: occurrence_scope).fetch(group.id)
+    def for_group(group, since: 30.days.ago, occurrence_scope: nil, baseline_scope: nil)
+      for_groups([ group ], since: since, occurrence_scope: occurrence_scope, baseline_scope: baseline_scope).fetch(group.id)
     end
 
-    def for_groups(groups, since: 30.days.ago, occurrence_scope: nil)
+    def for_groups(groups, since: 30.days.ago, occurrence_scope: nil, baseline_scope: nil)
       group_ids = Array(groups).map(&:id).compact
       return {} if group_ids.empty?
 
-      new(group_ids: group_ids, since: since, occurrence_scope: occurrence_scope).call
+      new(group_ids: group_ids, since: since, occurrence_scope: occurrence_scope, baseline_scope: baseline_scope).call
     end
   end
 
-  attr_reader :group_ids, :since, :occurrence_scope
+  attr_reader :group_ids, :since, :occurrence_scope, :baseline_scope
 
-  def initialize(group_ids:, since:, occurrence_scope: nil)
+  def initialize(group_ids:, since:, occurrence_scope: nil, baseline_scope: nil)
     @group_ids = group_ids
     @since = since
     @occurrence_scope = occurrence_scope
+    @baseline_scope = baseline_scope
   end
 
   def call
     aggregates = aggregate_rows
     releases = release_rows
     cohorts = cohort_rows
+    cohort_indexes = cohort_index_rows
     trends = trend_rows
 
     group_ids.index_with do |group_id|
@@ -75,6 +95,8 @@ class ErrorGroupImpactSummary
         last_release: release_values.last,
         top_device: cohorts.dig(group_id, :top_device),
         top_os: cohorts.dig(group_id, :top_os),
+        device_over_index: cohort_indexes.dig(group_id, :top_device),
+        os_over_index: cohort_indexes.dig(group_id, :top_os),
         series: trends.fetch(group_id, [])
       )
     end
@@ -127,13 +149,60 @@ class ErrorGroupImpactSummary
 
   def cohort_rows
     result = Hash.new { |hash, key| hash[key] = {} }
+    @cohort_counts = Hash.new { |hash, name| hash[name] = Hash.new { |groups, group_id| groups[group_id] = {} } }
     COHORT_DIMENSIONS.each do |name, dimension|
       rows = scope.where("COALESCE(dimensions ->> ?, '') <> ''", dimension)
                   .group(:error_group_id, Arel.sql("dimensions ->> #{ActiveRecord::Base.connection.quote(dimension)}"))
                   .order(Arel.sql("COUNT(*) DESC"))
                   .count
       rows.each do |(group_id, value), count|
+        @cohort_counts[name][group_id][value] = count.to_i
         result[group_id][name] ||= { value: value, events: count }
+      end
+    end
+    result
+  end
+
+  def cohort_index_rows
+    return {} unless baseline_scope
+
+    result = Hash.new { |hash, group_id| hash[group_id] = {} }
+    COHORT_DIMENSIONS.each do |name, dimension|
+      baseline_counts = baseline_scope
+        .where("COALESCE(dimensions ->> ?, '') <> ''", dimension)
+        .group(Arel.sql("dimensions ->> #{ActiveRecord::Base.connection.quote(dimension)}"))
+        .count
+        .transform_values(&:to_i)
+      baseline_total = baseline_counts.values.sum
+      next if baseline_total.zero?
+
+      group_ids.each do |group_id|
+        issue_counts = @cohort_counts.fetch(name, {}).fetch(group_id, {})
+        issue_total = issue_counts.values.sum
+        value, issue_events = issue_counts.max_by { |cohort_value, count| [ count, cohort_value.to_s ] }
+        next unless value && issue_total.positive?
+
+        baseline_events = baseline_counts.fetch(value, 0)
+        issue_share = issue_events.fdiv(issue_total)
+        baseline_share = baseline_events.fdiv(baseline_total)
+        lift = baseline_share.positive? ? issue_share.fdiv(baseline_share) : nil
+        state = if issue_total >= 10 && baseline_total >= 100 && issue_share >= 0.5 &&
+            baseline_share.positive? && lift >= 2.0 && issue_share - baseline_share >= 0.2
+          :over_indexed
+        else
+          :top_only
+        end
+        result[group_id][name] = CohortIndex.new(
+          value:,
+          issue_events:,
+          issue_observed_events: issue_total,
+          baseline_events:,
+          baseline_observed_events: baseline_total,
+          issue_share: issue_share.round(4),
+          baseline_share: baseline_share.round(4),
+          lift: lift&.round(2),
+          state:
+        )
       end
     end
     result

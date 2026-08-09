@@ -53,6 +53,7 @@ class ProjectNotificationPreferencesController < ApplicationController
       :project_spike_window_minutes,
       :performance_alerts_enabled,
       :performance_p95_threshold_ms,
+      :mobile_health_notifications_enabled,
       :release_notifications_enabled,
       :usage_notifications_enabled,
       :retention_notifications_enabled,

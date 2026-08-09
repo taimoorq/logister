@@ -213,6 +213,19 @@
               </div>
             </div>
 
+            <% if @project.integration_android? || @project.integration_ios? %>
+              <div id="mobile-health-alerts" class="scroll-mt-24 py-4">
+                <label class="flex gap-3">
+                  <%= f.check_box :mobile_health_notifications_enabled, class: "form-checkbox mt-1" %>
+                  <span>
+                    <span class="block text-sm font-semibold text-slate-900">Mobile collection and artifact health</span>
+                    <span class="block text-sm text-slate-600">Send a daily deduplicated alert for observed missing build artifacts, failed or stale distribution reporting, or a conservative receipt gap after sustained activity.</span>
+                  </span>
+                </label>
+                <p class="mt-2 pl-7 text-xs leading-5 text-slate-500">Receipt gaps are evidence of silence, not proof of SDK queue loss. Each email includes the observed reason and a recovery checklist.</p>
+              </div>
+            <% end %>
+
             <label id="monitor-alerts" class="flex scroll-mt-24 gap-3 py-4">
               <%= f.check_box :monitor_alerts_enabled, class: "form-checkbox mt-1" %>
               <span>

@@ -26,6 +26,17 @@
                        class: "form-input" %>
       </div>
 
+      <% if search.mobile? %>
+        <div>
+          <%= label_tag "archive_search_clock", "Time boundary", class: "form-label" %>
+          <%= select_tag "archive_search[clock]",
+                         options_for_select([ [ "Receipt time", "receipt" ], [ "Evidence time", "evidence" ] ], search.clock),
+                         id: "archive_search_clock",
+                         class: "form-input" %>
+          <p class="mt-1 text-xs text-slate-500">Receipt time finds delayed diagnostics; evidence time follows the source timeline.</p>
+        </div>
+      <% end %>
+
       <div>
         <%= label_tag "archive_search_trace_id", "Trace ID", class: "form-label" %>
         <%= text_field_tag "archive_search[trace_id]", search.value("trace_id"), id: "archive_search_trace_id", class: "form-input" %>
@@ -36,15 +47,31 @@
         <%= text_field_tag "archive_search[request_id]", search.value("request_id"), id: "archive_search_request_id", class: "form-input" %>
       </div>
 
-      <div>
-        <%= label_tag "archive_search_session_id", "Session ID", class: "form-label" %>
-        <%= text_field_tag "archive_search[session_id]", search.value("session_id"), id: "archive_search_session_id", class: "form-input" %>
-      </div>
+      <% if search.mobile? %>
+        <div>
+          <%= label_tag "archive_search_session_hash", "Session correlation hash", class: "form-label" %>
+          <%= text_field_tag "archive_search[session_hash]", search.value("session_hash"), id: "archive_search_session_hash", class: "form-input", autocomplete: "off" %>
+        </div>
+        <div>
+          <%= label_tag "archive_search_installation_hash", "Installation correlation hash", class: "form-label" %>
+          <%= text_field_tag "archive_search[installation_hash]", search.value("installation_hash"), id: "archive_search_installation_hash", class: "form-input", autocomplete: "off" %>
+        </div>
+        <div>
+          <%= label_tag "archive_search_user_hash", "User correlation hash", class: "form-label" %>
+          <%= text_field_tag "archive_search[user_hash]", search.value("user_hash"), id: "archive_search_user_hash", class: "form-input", autocomplete: "off" %>
+          <p class="mt-1 text-xs text-slate-500">Mobile identity searches accept server correlation hashes only; raw identifiers are not exposed here.</p>
+        </div>
+      <% else %>
+        <div>
+          <%= label_tag "archive_search_session_id", "Session ID", class: "form-label" %>
+          <%= text_field_tag "archive_search[session_id]", search.value("session_id"), id: "archive_search_session_id", class: "form-input" %>
+        </div>
 
-      <div>
-        <%= label_tag "archive_search_user_id", "User ID", class: "form-label" %>
-        <%= text_field_tag "archive_search[user_id]", search.value("user_id"), id: "archive_search_user_id", class: "form-input" %>
-      </div>
+        <div>
+          <%= label_tag "archive_search_user_id", "User ID", class: "form-label" %>
+          <%= text_field_tag "archive_search[user_id]", search.value("user_id"), id: "archive_search_user_id", class: "form-input" %>
+        </div>
+      <% end %>
 
       <div>
         <%= label_tag "archive_search_environment", "Environment", class: "form-label" %>
@@ -55,6 +82,33 @@
         <%= label_tag "archive_search_release", "Release", class: "form-label" %>
         <%= text_field_tag "archive_search[release]", search.value("release"), id: "archive_search_release", class: "form-input" %>
       </div>
+
+      <% if search.mobile? %>
+        <div>
+          <%= label_tag "archive_search_source", "Evidence source", class: "form-label" %>
+          <%= text_field_tag "archive_search[source]", search.value("source"), id: "archive_search_source", placeholder: "metrickit", class: "form-input" %>
+        </div>
+        <div>
+          <%= label_tag "archive_search_diagnostic_kind", "Diagnostic kind", class: "form-label" %>
+          <%= text_field_tag "archive_search[diagnostic_kind]", search.value("diagnostic_kind"), id: "archive_search_diagnostic_kind", placeholder: "hang", class: "form-input" %>
+        </div>
+        <div>
+          <%= label_tag "archive_search_build_number", "Build number", class: "form-label" %>
+          <%= text_field_tag "archive_search[build_number]", search.value("build_number"), id: "archive_search_build_number", class: "form-input" %>
+        </div>
+        <div>
+          <%= label_tag "archive_search_distribution_channel", "Distribution channel", class: "form-label" %>
+          <%= text_field_tag "archive_search[distribution_channel]", search.value("distribution_channel"), id: "archive_search_distribution_channel", placeholder: "TestFlight", class: "form-input" %>
+        </div>
+        <div>
+          <%= label_tag "archive_search_platform", "Platform / OS", class: "form-label" %>
+          <%= text_field_tag "archive_search[platform]", search.value("platform"), id: "archive_search_platform", placeholder: "iOS", class: "form-input" %>
+        </div>
+        <div>
+          <%= label_tag "archive_search_artifact_state", "Artifact coverage", class: "form-label" %>
+          <%= text_field_tag "archive_search[artifact_state]", search.value("artifact_state"), id: "archive_search_artifact_state", placeholder: "artifact_matched", class: "form-input" %>
+        </div>
+      <% end %>
 
       <div>
         <%= label_tag "archive_search_service", "Service", class: "form-label" %>
@@ -111,7 +165,8 @@
               <tr>
                 <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Type</th>
                 <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Message</th>
-                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Occurred</th>
+                <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500"><%= search.clock_label %></th>
+                <% if search.mobile? %><th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Evidence</th><% end %>
                 <th class="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-500">Path</th>
               </tr>
             </thead>
@@ -120,7 +175,14 @@
                 <tr>
                   <td class="px-3 py-2 text-slate-600"><%= event.event_type.humanize %></td>
                   <td class="px-3 py-2 text-slate-900"><%= event.message %></td>
-                  <td class="px-3 py-2 text-slate-600"><%= local_time_tag(event.occurred_at, format: :long) %></td>
+                  <td class="px-3 py-2 text-slate-600"><%= local_time_tag(search.event_time(event), format: :long) %></td>
+                  <% if search.mobile? %>
+                    <% summary = search.mobile_summary(event) %>
+                    <td class="px-3 py-2 text-slate-600">
+                      <span class="block"><%= [ summary[:source], summary[:kind] ].compact_blank.join(" · ").presence || "Not captured" %></span>
+                      <span class="block text-xs text-slate-500"><%= [ summary[:build].presence && "build #{summary[:build]}", summary[:channel], summary[:platform], summary[:artifact_state] ].compact_blank.join(" · ") %></span>
+                    </td>
+                  <% end %>
                   <td class="px-3 py-2 text-slate-600">
                     <%= link_to "Open", partitioned_project_event_path(project, event), class: "text-sm font-semibold text-blue-700 hover:text-blue-800" %>
                   </td>
@@ -170,6 +232,7 @@
 
     <section aria-labelledby="archive-search-archives-archives-heading">
       <h4 id="archive-search-archives-archives-heading" class="text-sm font-semibold text-slate-900">Candidate archive runs</h4>
+      <% if search.mobile? %><p class="mt-1 text-xs text-slate-500">Archive manifests are partitioned by evidence time, even when hot rows use receipt time. Typed mobile facets apply to hot rows; archived JSONL keeps server-redacted evidence provenance for deeper investigation.</p><% end %>
       <% if search.archive_runs.any? %>
         <%= responsive_scroll_region(class: "mt-2") do %>
           <table class="min-w-full divide-y divide-slate-200 text-sm">

@@ -187,6 +187,9 @@ class MobileTelemetryNormalizer
         "watchdog" => "watchdog_termination",
         "watchdog_termination" => "watchdog_termination",
         "memory_termination" => "memory_termination",
+        "excessive_cpu" => "resource_diagnostic",
+        "excessive_disk_writes" => "resource_diagnostic",
+        "slow_launch" => "performance_diagnostic",
         "disk_write_exception" => "disk_write_exception",
         "launch_failure" => "launch_failure"
       }[kind.to_s]

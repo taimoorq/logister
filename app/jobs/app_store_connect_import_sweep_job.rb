@@ -14,10 +14,20 @@ class AppStoreConnectImportSweepJob < ApplicationJob
     now = Time.zone.parse(now_iso8601.to_s)
 
     ProjectIntegrationSetting
+      .joins(:project)
+      .merge(Project.active)
       .where(provider: ProjectIntegrationSetting::PROVIDERS.fetch(:app_store_connect))
       .due_for_import(before: now - 15.minutes)
       .find_each do |setting|
-        AppStoreConnectImportJob.perform_later(setting.id) if setting.configured?
+        next unless setting.configured?
+
+        token = setting.claim_import_schedule!(now: now)
+        next unless token
+
+        AppStoreConnectImportJob.perform_later(setting.id, token)
+      rescue StandardError
+        setting.release_import_schedule!(token: token) if token
+        raise
       end
   ensure
     reschedule_sidekiq_recurring_job

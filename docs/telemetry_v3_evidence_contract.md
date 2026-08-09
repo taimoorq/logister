@@ -23,6 +23,23 @@ Required client rules:
   retained and render through a safe fallback.
 - Never claim server symbolication/deobfuscation status. Send immutable raw
   frame/binary evidence; Logister derives artifact verification and coverage.
+- When session timing is enabled, send `context.session.started_at` from the
+  same session owner as `context.session.id`. The server derives early-session
+  age only for an exact compatible event clock.
+- Apple sampled diagnostics may send `context.diagnostic.call_stack_tree` with
+  bounded stacks, nested frames, roles, attribution, and sample counts. Typed
+  measurements use `{ value, unit, source_field }` with canonical `seconds` or
+  `bytes`. Keep raw addresses and relative offsets as hexadecimal strings.
+- Fatality is evidence, not a default: omit it for excessive CPU, disk-write,
+  and slow-launch diagnostics unless the source explicitly proves termination.
+- Android historical exits may send canonical `last_pss`/`last_rss` byte
+  measurements labeled `last_system_sample`. ANRs may include a bounded
+  `context.diagnostic.thread_dump` containing only structured thread names and
+  Java/Kotlin frames; raw trace text, command lines, and lock annotations are
+  not part of the ordinary event contract.
+- Android live uncaught exceptions may send a bounded
+  `context.error.thread_name` with `thread_role: crashed`. Manual reports use
+  `reporting`; historical ANR thread dumps use sampled/attributed roles.
 
 The accepted client envelope is defined in
 [`telemetry_v3_evidence.schema.json`](telemetry_v3_evidence.schema.json).
@@ -36,4 +53,3 @@ Canonical server evidence is written to `context.telemetry_evidence` with:
 
 Routine UI, email, and exports use redacted canonical evidence. Original raw
 evidence is not part of the normal Raw tab or routine issue export.
-

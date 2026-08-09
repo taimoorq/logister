@@ -88,6 +88,21 @@ module ProjectsHelper
     }.fetch(tone.to_sym, "bg-slate-100 text-slate-600 border-slate-200")
   end
 
+  def capability_status_badge(status)
+    case status.state
+    when :configured
+      { label: "Current", classes: "border-emerald-200 bg-emerald-50 text-emerald-800" }
+    when :failed
+      { label: "Sync failed", classes: "border-red-200 bg-red-50 text-red-800" }
+    when :stale
+      { label: "Stale", classes: "border-amber-200 bg-amber-50 text-amber-800" }
+    when :partial
+      { label: "Ready to sync", classes: "border-amber-200 bg-amber-50 text-amber-800" }
+    else
+      { label: status.state.to_s.humanize, classes: "border-slate-200 bg-slate-50 text-slate-600" }
+    end
+  end
+
   def archive_boolean_label(value, enabled:, disabled:)
     value ? enabled : disabled
   end

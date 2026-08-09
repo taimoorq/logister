@@ -25,7 +25,7 @@ module ProjectEventDetailData
 
   private
 
-  def build_project_event_detail(project, event, group: nil, occurrence_scope: nil)
+  def build_project_event_detail(project, event, group: nil, occurrence_scope: nil, impact_baseline_scope: nil, preloaded_impact_summary: nil)
     resolved_group = group || event.error_group
     occurrences = if resolved_group
       scope = occurrence_scope || resolved_group.error_occurrences
@@ -39,7 +39,8 @@ module ProjectEventDetailData
       group: resolved_group,
       occurrences: occurrences,
       related_logs: IngestEvent.related_logs(project: project, event: event, window: 5.minutes, limit: 50),
-      impact_summary: resolved_group && ProjectExperience.for(project).supports?(:mobile) ? ErrorGroupImpactSummary.for_group(resolved_group, since: occurrence_scope ? nil : detail_impact_since, occurrence_scope: occurrence_scope) : nil
+      impact_summary: preloaded_impact_summary || (resolved_group && ProjectExperience.for(project).supports?(:mobile) ? ErrorGroupImpactSummary.for_group(resolved_group, since: occurrence_scope ? nil : detail_impact_since, occurrence_scope: occurrence_scope, baseline_scope: impact_baseline_scope) : nil),
+      variant_summary: resolved_group && ProjectExperience.for(project).supports?(:mobile) ? ErrorGroupVariantSummary.call(group: resolved_group, occurrence_scope: occurrence_scope) : nil
     }
   end
 

@@ -14,6 +14,9 @@ class EmailNotificationDelivery < ApplicationRecord
     release_summary
     usage_alert
     retention_failure
+    mobile_artifact_health
+    mobile_source_health
+    mobile_intake_health
     daily_digest
     weekly_digest
   ].freeze

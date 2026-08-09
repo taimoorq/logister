@@ -192,7 +192,10 @@ class ProjectPageCatalog
     monitors: {
       label: "Check-ins",
       header_label: "Project check-ins",
-      description: "Background work and heartbeat status"
+      description: "Background work and heartbeat status",
+      navigation_group: :secondary,
+      menu_group: "Project tools",
+      order: 65
     }.freeze
   }.freeze
 
@@ -216,7 +219,7 @@ class ProjectPageCatalog
       active_parent_key: nil,
       label: "Artifacts",
       header_label: "Project artifacts",
-      description: "R8 mappings or dSYMs and observed-build coverage",
+      description: "Build artifacts and observed-build coverage",
       icon_key: :source_code,
       navigation_group: :secondary,
       menu_group: "Build & source",

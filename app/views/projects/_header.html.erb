@@ -6,6 +6,7 @@
 <% header_data = {
   project_kind: page_context.integration_definition.key,
   project_experience: page_context.experience_definition.key,
+  project_experience_version: page_context.experience_definition.version,
   project_page: page_context.page&.key
 }.compact %>
 <% header_data.merge!(product_tour_step_data(tour_group, :project_header)) if tour_group.present? && highlight_header %>

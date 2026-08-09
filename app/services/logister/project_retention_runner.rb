@@ -503,6 +503,10 @@ module Logister
 
         clear_event_references(deletable_ids)
         ErrorOccurrence.where(ingest_event_id: deletable_ids).delete_all
+        MobileEventEnrichment.where(
+          project_id: @project.id,
+          event_uuid: event_uuids_for_references(deletable_references)
+        ).delete_all
         deleted = delete_partitioned_events(deletable_references)
         ensure_exact_source_deletion!("IngestEvent", deletable_references.length, deleted)
         retire_source_keys!(keys, deletable_references, recorded_at_key: :occurred_at)
@@ -531,6 +535,14 @@ module Logister
                    .where(project_id: @project.id)
                    .then { |relation| TelemetryRetentionProtection.without_incomplete_deliveries(relation) }
                    .delete_all
+      end
+    end
+
+    def event_uuids_for_references(references)
+      Array(references).each_slice(IngestEvent::PARTITION_REFERENCE_BATCH_SIZE).flat_map do |reference_batch|
+        IngestEvent.for_partition_references(reference_batch, id_key: :id, occurred_at_key: :occurred_at)
+          .where(project_id: @project.id)
+          .pluck(:uuid)
       end
     end
 

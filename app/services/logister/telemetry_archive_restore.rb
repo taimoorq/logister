@@ -41,18 +41,20 @@ module Logister
         persist: false
       ).call
 
-      result = { archive_id: @archive.id, restored: 0, skipped: 0, dry_run: @dry_run }
+      result = { archive_id: @archive.id, restored: 0, skipped: 0, restored_derived: 0, dry_run: @dry_run }
       @archive.update!(status: "restoring", error_message: nil) unless @dry_run
 
       replay.each_row do |row, _object_record|
         attributes = restore_attributes(row)
         if source_exists?(attributes)
+          result[:restored_derived] += restore_derived_evidence(row, attributes)
           result[:skipped] += 1
           next
         end
 
         validate_references!(attributes)
         model.create!(attributes) unless @dry_run
+        result[:restored_derived] += restore_derived_evidence(row, attributes)
         result[:restored] += 1
       end
 
@@ -75,6 +77,9 @@ module Logister
     def restore_attributes(row)
       attributes = row.fetch("attributes").slice(*model.column_names)
       attributes["project_id"] = @archive.project_id
+      if model == IngestEvent
+        attributes["api_key_id"] = row.dig("restore_references", "api_key_id") || attributes["api_key_id"]
+      end
 
       if model == IngestEvent && attributes["error_group_id"].present? &&
           !ErrorGroup.exists?(id: attributes["error_group_id"], project_id: @archive.project_id)
@@ -106,6 +111,32 @@ module Logister
       return if ApiKey.exists?(id: api_key_id, project_id: @archive.project_id)
 
       raise RestoreError, "Archive row references missing API key #{api_key_id.inspect}"
+    end
+
+    def restore_derived_evidence(row, source_attributes)
+      return 0 unless model == IngestEvent
+
+      Array(row["derived_evidence"]).count do |derived|
+        next false unless derived.is_a?(Hash)
+        next true if @dry_run
+
+        enrichment = @archive.project.mobile_event_enrichments.find_or_initialize_by(
+          event_uuid: source_attributes.fetch("uuid"),
+          kind: derived.fetch("kind")
+        )
+        enrichment.assign_attributes(
+          derived.slice(
+            "uuid", "event_occurred_at", "platform", "status", "input_sha256",
+            "artifact_type", "artifact_uuid", "artifact_checksum_sha256",
+            "tool_name", "tool_version", "data", "processed_at"
+          )
+        )
+        enrichment.event_occurred_at ||= source_attributes.fetch("occurred_at")
+        enrichment.save!
+        true
+      end
+    rescue KeyError => error
+      raise RestoreError, "Archive derived evidence is incomplete: #{error.message}"
     end
 
     def complete_restore!(result)

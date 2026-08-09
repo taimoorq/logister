@@ -27,6 +27,8 @@ class ProjectNotificationPreferenceRules
       preference.project_spike_enabled?
     when "performance_threshold"
       preference.performance_alerts_enabled?
+    when "mobile_artifact_health", "mobile_source_health", "mobile_intake_health"
+      preference.mobile_health_notifications_enabled?
     when "release_summary"
       preference.release_notifications_enabled?
     when "usage_alert"

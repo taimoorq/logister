@@ -30,22 +30,22 @@ class ProjectExperienceDefinition < Data.define(
     new(
       key: :android,
       family_key: :mobile_application,
-      version: 1,
+      version: 2,
       profile_class_name: "ProjectExperiences::Android",
       product_capabilities: Set.new(%i[
         mobile release_aware device_context structured_stacktrace
-        session_health stack_mapping distribution_store
+        session_health stack_mapping distribution_store check_ins
       ]).freeze,
       capability_loader_class_name: "ProjectCapabilityLoaders::Android"
     ).freeze,
     new(
       key: :ios,
       family_key: :mobile_application,
-      version: 1,
+      version: 2,
       profile_class_name: "ProjectExperiences::Ios",
       product_capabilities: Set.new(%i[
         mobile release_aware device_context structured_stacktrace
-        apple_diagnostics session_health symbol_artifacts distribution_store
+        apple_diagnostics session_health symbol_artifacts distribution_store check_ins
       ]).freeze,
       capability_loader_class_name: "ProjectCapabilityLoaders::Ios"
     ).freeze,

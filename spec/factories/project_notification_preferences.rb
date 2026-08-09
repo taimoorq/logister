@@ -17,6 +17,7 @@ FactoryBot.define do
     project_spike_window_minutes { 15 }
     performance_alerts_enabled { false }
     performance_p95_threshold_ms { 1_000 }
+    mobile_health_notifications_enabled { false }
     release_notifications_enabled { false }
     usage_notifications_enabled { true }
     retention_notifications_enabled { true }

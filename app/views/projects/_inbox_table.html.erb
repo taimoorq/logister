@@ -16,6 +16,7 @@
   <% impact_summaries = local_assigns.fetch(:impact_summaries, {}) %>
   <% android_mapping_resolutions = local_assigns.fetch(:android_mapping_resolutions, {}) %>
   <% ios_symbol_coverages = local_assigns.fetch(:ios_symbol_coverages, {}) %>
+  <% evidence_signals = local_assigns.fetch(:evidence_signals, {}) %>
   <% next_cursor = local_assigns[:next_cursor] %>
   <% active_sort = local_assigns[:sort].presence || experience.default_sort %>
   <header class="inbox-pane-header">
@@ -43,7 +44,7 @@
               <% trend_tooltip = "#{trend_window_label} trend: #{trend_points.join(", ")} occurrences. #{trend_total} total in this window." %>
               <% stage = group.stage.presence || "production" %>
               <% severity = group.severity.presence || "error" %>
-              <% row_presenter = ProjectInbox::RowPresenter.new(project: project, group: group, event: latest_event, trend: trend_points, impact: row_impact, mapping_resolution: android_mapping_resolutions[latest_event&.id], symbol_coverage: ios_symbol_coverages[latest_event&.id]) %>
+              <% row_presenter = ProjectInbox::RowPresenter.new(project: project, group: group, event: latest_event, trend: trend_points, impact: row_impact, mapping_resolution: android_mapping_resolutions[latest_event&.id], symbol_coverage: ios_symbol_coverages[latest_event&.id], evidence_signal: evidence_signals[group.id]) %>
               <tr id="<%= dom_id(group) %>"
                   class="inbox-row<%= " is-clickable" if row_clickable %>"
                   data-action="<%= row_clickable ? 'click->inbox#openRow keydown.enter->inbox#openRowKey keydown.space->inbox#openRowKey' : '' %>"
@@ -67,7 +68,8 @@
                       <% if row_presenter.mobile? %>
                         <span class="mobile-row-primary">
                           <span class="mobile-row-overline">
-                            <% if row_presenter.attention_signal.present? %><strong class="mobile-row-attention"><%= row_presenter.attention_signal %></strong><% end %>
+                            <% if row_presenter.attention_signal.present? %><strong class="mobile-row-attention" title="<%= row_presenter.attention_title %>"><%= row_presenter.attention_signal %></strong><% end %>
+                            <% if row_presenter.attention_detail_label.present? %><span class="mobile-row-attention-context"><%= row_presenter.attention_detail_label %></span><% end %>
                             <span class="mobile-row-type"><%= row_presenter.failure_type_label %></span>
                             <% if row_presenter.fatality_label.present? %><span class="mobile-row-fatality"><%= row_presenter.fatality_label %></span><% end %>
                           </span>

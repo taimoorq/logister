@@ -1,0 +1,16 @@
+<li>
+  <div class="ios-call-tree-frame">
+    <code><%= frame_data[:method_name].presence || presenter.frame_text(frame_data).presence || "Unknown frame" %></code>
+    <span>
+      <%= frame_data[:application_frame] ? "App" : "System" %>
+      <%= " · #{frame_data[:sample_count].to_i} samples" if frame_data[:sample_count] %>
+    </span>
+  </div>
+  <% if frame_data[:subframes].present? %>
+    <ol>
+      <% frame_data[:subframes].each do |child| %>
+        <%= render "project_events/profiles/ios/call_tree_frame", presenter:, frame_data: child %>
+      <% end %>
+    </ol>
+  <% end %>
+</li>

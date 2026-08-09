@@ -7,6 +7,16 @@ module ProjectEventsHelper
     end.join("\n")
   end
 
+  def android_sampled_thread_text(threads, mapped_frames)
+    frame_index = 0
+    threads.flat_map do |thread|
+      count = thread[:frames].size
+      frames = mapped_frames.slice(frame_index, count) || thread[:frames]
+      frame_index += count
+      [ "\"#{thread[:name]}\" (#{thread[:role]})", *android_stacktrace_frames(frames) ]
+    end.join("\n")
+  end
+
   private
 
   def android_stacktrace_frames(frames)

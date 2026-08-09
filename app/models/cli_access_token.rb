@@ -19,7 +19,11 @@ class CliAccessToken < ApplicationRecord
     metrics:read
   ].freeze
 
-  SCOPES = (READ_SCOPES + %w[
+  DEVICE_SCOPES = (READ_SCOPES + %w[
+    artifacts:write
+  ]).freeze
+
+  SCOPES = (DEVICE_SCOPES + %w[
     errors:write
   ]).freeze
 

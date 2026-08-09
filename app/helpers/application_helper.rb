@@ -231,6 +231,24 @@ module ApplicationHelper
     request.query_parameters.slice(*allowed).compact_blank
   end
 
+  def current_mobile_evidence_signal(project, group)
+    return unless group && project_experience(project).supports?(:mobile)
+    if defined?(@evidence_signals) && @evidence_signals.respond_to?(:key?) && @evidence_signals.key?(group.id)
+      return @evidence_signals[group.id]
+    end
+
+    @current_mobile_evidence_signals ||= {}
+    dimensions = inbox_profile_query_params(project).except("sort", "time_range")
+    key = [ project.id, group.id, dimensions ]
+    return @current_mobile_evidence_signals[key] if @current_mobile_evidence_signals.key?(key)
+
+    scope = ProjectInboxOccurrenceScope.new(project:, dimensions:).relation(group_ids: [ group.id ])
+    @current_mobile_evidence_signals[key] = ProjectInbox::EvidenceSignalQuery.call(
+      occurrence_scope: scope,
+      group_ids: [ group.id ]
+    )[group.id]
+  end
+
   def responsive_scroll_classes(*classes)
     class_names("mobile-x-scroll", classes)
   end
@@ -323,14 +341,21 @@ module ApplicationHelper
   def event_presenter(project, event, exception_data = nil)
     profile = project_experience(project)
     return ProjectEvents::AndroidEventPresenter.new(event, exception_data) if profile.key == :android
-    return ProjectEvents::IosEventPresenter.new(event, exception_data) if profile.key == :ios
+    return ProjectEvents::IosEventPresenter.new(event, exception_data, enrichment: ios_event_enrichment(project, event)) if profile.key == :ios
 
     profile.event_presenter(event)
   end
 
   def event_frames(project, event, exception_data)
     presenter = event_presenter(project, event, exception_data)
-    return AndroidMappingResolution.call(project: project, event: event, presenter: presenter).frames if presenter.is_a?(ProjectEvents::AndroidEventPresenter)
+    if presenter.is_a?(ProjectEvents::AndroidEventPresenter)
+      return AndroidMappingResolution.call(
+        project: project,
+        event: event,
+        presenter: presenter,
+        enrichment: android_event_enrichment(project, event)
+      ).frames
+    end
     return presenter.frames if presenter.respond_to?(:frames)
 
     parse_backtrace_frames(event_backtrace(exception_data))
@@ -344,8 +369,17 @@ module ApplicationHelper
     AndroidMappingResolution.call(
       project: project,
       event: event,
-      presenter: android_event_presenter(event, exception_data)
+      presenter: android_event_presenter(event, exception_data),
+      enrichment: android_event_enrichment(project, event)
     )
+  end
+
+  def android_event_enrichment(project, event)
+    @android_event_enrichments ||= {}
+    key = [ project.id, event.uuid || event.object_id ]
+    return @android_event_enrichments[key] if @android_event_enrichments.key?(key)
+
+    @android_event_enrichments[key] = project.mobile_event_enrichments.android_mapping.find_by(event_uuid: event.uuid)
   end
 
   def ios_symbol_coverage(project, event, exception_data = nil)
@@ -354,8 +388,17 @@ module ApplicationHelper
     @ios_symbol_coverage[key] ||= AppleSymbolCoverage.call(
       project: project,
       event: event,
-      presenter: ProjectEvents::IosEventPresenter.new(event, exception_data)
+      presenter: event_presenter(project, event, exception_data),
+      enrichment: ios_event_enrichment(project, event)
     )
+  end
+
+  def ios_event_enrichment(project, event)
+    @ios_event_enrichments ||= {}
+    key = [ project.id, event.uuid || event.object_id ]
+    return @ios_event_enrichments[key] if @ios_event_enrichments.key?(key)
+
+    @ios_event_enrichments[key] = project.mobile_event_enrichments.apple_symbolication.find_by(event_uuid: event.uuid)
   end
 
   def event_local_variables(exception_data)

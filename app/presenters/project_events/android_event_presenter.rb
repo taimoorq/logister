@@ -25,6 +25,7 @@ module ProjectEvents
       @event = event
       @context = event_context_hash(event)
       @exception = normalize_hash(exception_data.presence || @context["exception"] || @context[:exception])
+      @diagnostic = normalize_hash(@context["diagnostic"] || @context[:diagnostic])
     end
 
     def exception
@@ -32,6 +33,8 @@ module ProjectEvents
     end
 
     def exception_type
+      return failure_type_label if exception.blank? && historical_exit?
+
       scalar(exception, "type") || scalar(exception, "class") || "Unknown exception"
     end
 
@@ -56,6 +59,9 @@ module ProjectEvents
 
     def technical_signature
       if exception.blank? && capture_source == "historical_exit"
+        method = top_in_app_frame&.dig(:qualified_method).presence || top_in_app_frame&.dig(:method_name).presence
+        return [ mechanism_label, method ].compact_blank.join(" · ") if method.present?
+
         reason = scalar(@context, "application_exit_description") || scalar(@context, "application_exit_reason")
         return [ mechanism_label, reason ].compact_blank.join(" · ")
       end
@@ -89,8 +95,14 @@ module ProjectEvents
         description: scalar(@context, "application_exit_description"),
         status: scalar(@context, "application_exit_status"),
         importance: scalar(@context, "application_exit_importance"),
-        process: nested_scalar("app", "process") || scalar(@context, "process_name")
+        process: nested_scalar("app", "process") || scalar(@context, "process_name"),
+        last_pss: measurement_label("last_pss"),
+        last_rss: measurement_label("last_rss")
       )
+    end
+
+    def measurement_summary
+      [ measurement_label("last_pss", prefix: "Last PSS"), measurement_label("last_rss", prefix: "Last RSS") ].compact_blank.join(" · ").presence
     end
 
     def handled?
@@ -113,20 +125,60 @@ module ProjectEvents
       CAPTURE_SOURCE_LABELS[capture_source]
     end
 
+    def error_thread_name
+      nested_scalar("error", "thread_name") || scalar(@context, "error_thread_name")
+    end
+
     def exception_data_policy
       nested_scalar("error", "data_policy") || scalar(@context, "exception_data_policy")
     end
 
     def exception_detail_redacted?
+      return false if exception.blank?
+
       %w[type_and_stacktrace metadata_only].include?(exception_data_policy)
     end
 
     def frames
-      normalize_frames(exception["stacktrace"] || exception[:stacktrace] || exception["backtrace"] || exception[:backtrace])
+      exception_frames = normalize_frames(exception["stacktrace"] || exception[:stacktrace] || exception["backtrace"] || exception[:backtrace])
+      return exception_frames if exception_frames.any?
+
+      sampled_threads.find { |thread| thread[:attributed] }&.dig(:frames) || sampled_threads.first&.dig(:frames) || []
     end
 
     def all_frames
+      return sampled_threads.flat_map { |thread| thread[:frames] } if exception.blank? && sampled_threads.any?
+
       cause_chain.reverse.flat_map { |entry| entry[:frames] }
+    end
+
+    def sampled_threads
+      @sampled_threads ||= begin
+        dump = normalize_hash(@diagnostic["thread_dump"] || @diagnostic[:thread_dump])
+        Array(dump["threads"] || dump[:threads]).filter_map do |raw|
+          next unless raw.is_a?(Hash)
+
+          thread = normalize_hash(raw)
+          frames = normalize_frames(thread["frames"] || thread[:frames])
+          next if frames.empty?
+
+          {
+            name: scalar(thread, "name") || "sampled thread",
+            role: scalar(thread, "role") || "sampled",
+            attributed: truthy?(thread["attributed"] || thread[:attributed]),
+            frames: frames
+          }
+        end.sort_by { |thread| thread[:attributed] ? 0 : 1 }
+      end
+    end
+
+    def historical_thread_dump?
+      historical_exit? && sampled_threads.any?
+    end
+
+    def thread_dump_truncated?
+      dump = normalize_hash(@diagnostic["thread_dump"] || @diagnostic[:thread_dump])
+      truthy?(dump["truncated"] || dump[:truncated])
     end
 
     def cause_chain
@@ -157,7 +209,7 @@ module ProjectEvents
         frame = entry[:frames].find { |candidate| candidate[:application_frame] }
         return frame if frame
       end
-      frames.first
+      all_frames.find { |candidate| candidate[:application_frame] } || frames.first
     end
 
     def package_name
@@ -226,12 +278,39 @@ module ProjectEvents
 
     private
 
+    def measurement_label(key, prefix: nil)
+      measurements = normalize_hash(@diagnostic["measurements"] || @diagnostic[:measurements])
+      measurement = normalize_hash(measurements[key] || measurements[key.to_sym])
+      value = Float(measurement["value"] || measurement[:value], exception: false)
+      unit = scalar(measurement, "unit")
+      return unless value&.finite? && value >= 0 && unit == "bytes"
+
+      label = format_bytes(value)
+      prefix.present? ? "#{prefix} #{label}" : label
+    end
+
+    def format_bytes(value)
+      units = %w[B KB MB GB TB]
+      amount = value.to_f
+      index = 0
+      while amount >= 1024 && index < units.length - 1
+        amount /= 1024
+        index += 1
+      end
+      precision = amount >= 10 || amount == amount.round ? 0 : 1
+      "#{amount.round(precision)} #{units[index]}"
+    end
+
+    def truthy?(value)
+      value == true || value.to_s == "true"
+    end
+
     def normalize_frames(value)
       Array(value).filter_map do |raw|
         if raw.is_a?(Hash)
           class_name = scalar(raw, "class") || scalar(raw, "class_name") || scalar(raw, "module")
           method_name = scalar(raw, "method") || scalar(raw, "method_name") || scalar(raw, "function")
-          file = scalar(raw, "file") || scalar(raw, "filename") || class_name
+          file = scalar(raw, "file") || scalar(raw, "file_name") || scalar(raw, "filename") || class_name
           line = scalar(raw, "line") || scalar(raw, "line_number") || scalar(raw, "lineno")
           next if class_name.blank? && method_name.blank? && file.blank?
 

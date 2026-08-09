@@ -52,8 +52,19 @@ class Api::V1::Cli::BaseController < ApplicationController
     render json: {
       error: "Forbidden",
       code: "insufficient_scope",
-      message: "Log in again to grant the required read scopes.",
+      message: "Log in again to grant the required scopes.",
       required_scopes: scopes
+    }, status: :forbidden
+  end
+
+  def require_cli_project_manager!
+    return if performed?
+    return if cli_project.managed_by?(current_cli_access_token.user)
+
+    render json: {
+      error: "Forbidden",
+      code: "project_manager_required",
+      message: "Artifact uploads require project owner or admin access."
     }, status: :forbidden
   end
 

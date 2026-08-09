@@ -23,6 +23,7 @@ RSpec.describe "Project experience contract", type: :request do
 
       expect(header["data-project-kind"]).to eq(kind)
       expect(header["data-project-experience"]).to eq(expected_experience)
+      expect(header["data-project-experience-version"]).to eq(ProjectExperience.definition_for(kind).version.to_s)
       expect(header["data-project-page"]).to eq("inbox")
       expect(active_links.size).to eq(1)
       expect(active_links.first.text.strip).to eq(%w[android ios].include?(kind) ? "Stability" : "Inbox")
