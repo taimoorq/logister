@@ -441,8 +441,10 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                 <li>CLI read access uses user-scoped CLI access tokens.</li>
                 <li>Tokens are scope-limited, project-limited, expiring, revocable, and audited by the Logister server.</li>
                 <li>Browser-approved login issues a CLI token through the signed-in Logister web session.</li>
+                <li>Signed-in users can review active and recently ended CLI sessions under their profile, revoke one session, or revoke every active session.</li>
                 <li>Project ingest API keys are not accepted for CLI reads.</li>
                 <li>The server always redacts sensitive-looking telemetry fields and bounds list/detail payloads.</li>
+                <li>PostgreSQL fallback responses identify retained-range gaps with <code>partial</code> and <code>fallback_coverage</code> metadata instead of claiming a complete result.</li>
                 <li><code>--no-redact</code> disables only the CLI's additional local redaction; it cannot restore values removed by the server.</li>
               </ul>
               <div class="note warn"><h4>Do not paste secrets into issues</h4><p>When reporting CLI bugs, include the CLI version, install method, OS, shell, server version from <code>logister doctor</code>, command shape, and error message. Do not include tokens, authorization headers, cookies, private telemetry, customer payloads, local config files, or exploit details.</p></div>
@@ -466,6 +468,10 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                   <tr>
                     <td>Device login expired</td>
                     <td>Start a fresh <code>auth login</code>. Device authorization requests are short-lived by design.</td>
+                  </tr>
+                  <tr>
+                    <td><code>503 query_timeout</code></td>
+                    <td>The server stopped a PostgreSQL read at its configured safety limit. Narrow the time range or filters before retrying; database SQL and error details are never returned.</td>
                   </tr>
                   <tr>
                     <td><code>401 Unauthorized</code></td>

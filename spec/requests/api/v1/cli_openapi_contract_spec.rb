@@ -53,16 +53,44 @@ RSpec.describe "CLI OpenAPI route contract" do
     end
   end
 
-  it "documents authenticated CLI throttling and bounded cursors on every GET read" do
+  it "documents authenticated CLI throttling, query timeouts, and bounded cursors on every GET read" do
     contract.fetch("paths").each do |path, operations|
       get = operations["get"]
       next unless path.start_with?("/api/v1/cli/") && get&.fetch("security", [])&.any? { |entry| entry.key?("cliBearerAuth") }
 
       expect(get.fetch("responses")).to include("429"), "expected #{path} to document 429"
+      expect(get.fetch("responses")).to include("503"), "expected #{path} to document 503"
+      expect(get.dig("responses", "503", "$ref")).to eq("#/components/responses/CliQueryUnavailable")
     end
 
     expect(contract.dig("components", "parameters", "Cursor", "schema", "maxLength")).to eq(8192)
     expect(contract.dig("components", "parameters", "AfterCursor", "schema", "maxLength")).to eq(8192)
+  end
+
+  it "contracts retention-aware analytics and bounded AI context metadata" do
+    analytics = contract.dig("components", "schemas", "CliAnalytics")
+    fallback = analytics.dig("properties", "fallback_coverage")
+    ai_context = contract.dig("components", "schemas", "CliAiContext")
+    token_budget = contract.dig(
+      "paths",
+      "/api/v1/cli/projects/{project_uuid}/error_groups/{uuid}/context",
+      "get",
+      "parameters"
+    ).find { |parameter| parameter["name"] == "token_budget" }
+
+    expect(analytics.fetch("required")).to include("source", "partial")
+    expect(fallback.fetch("required")).to contain_exactly("complete", "reason", "requested_from", "requested_to")
+    expect(fallback.dig("properties", "retained_from", "format")).to eq("date-time")
+    expect(ai_context.fetch("required")).to include("token_budget", "response_byte_limit", "truncated")
+    expect(ai_context.dig("properties", "response_byte_limit")).to include(
+      "minimum" => 1024,
+      "maximum" => 262_144
+    )
+    expect(token_budget.fetch("schema")).to include(
+      "minimum" => 256,
+      "maximum" => 32_000,
+      "default" => 4_000
+    )
   end
 
   it "documents repeatable Insights arrays without changing the scalar metric query" do

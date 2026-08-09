@@ -151,6 +151,7 @@ module Logister
 
       def analytics(read)
         coverage = read.respond_to?(:coverage) ? read.coverage : nil
+        fallback_coverage = read.respond_to?(:postgres_coverage) ? read.postgres_coverage : nil
         {
           source: read.respond_to?(:source) ? read.source : nil,
           coverage: coverage && {
@@ -158,7 +159,8 @@ module Logister
             ratio: coverage.coverage_ratio,
             fresh_through: timestamp(coverage.fresh_through)
           },
-          partial: false
+          partial: read.respond_to?(:partial?) ? read.partial? : false,
+          fallback_coverage: fallback_coverage && postgres_coverage(fallback_coverage)
         }.compact
       end
 
@@ -194,6 +196,16 @@ module Logister
 
       def normalized_trace_status(value)
         value.to_s.presence_in(%w[ok error]) || "unset"
+      end
+
+      def postgres_coverage(coverage)
+        {
+          complete: coverage.complete?,
+          reason: coverage.reason,
+          requested_from: timestamp(coverage.requested_from),
+          requested_to: timestamp(coverage.requested_to),
+          retained_from: timestamp(coverage.retained_from)
+        }.compact
       end
 
       def context_value(event, key)

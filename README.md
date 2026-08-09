@@ -66,7 +66,9 @@ The read-only CLI API exposes projects, summaries, events, logs, issues, traces,
 
 Deploy API 3.5 with the five new discovery flags set to `false`: `LOGISTER_CLI_FEATURE_TRACES`, `LOGISTER_CLI_FEATURE_MONITORS`, `LOGISTER_CLI_FEATURE_DEPLOYMENTS`, `LOGISTER_CLI_FEATURE_INSIGHTS`, and `LOGISTER_CLI_FEATURE_METRICS`. Keep `LOGISTER_CLI_RECOMMENDED_VERSION=0.1.2` until the immutable CLI `v1.0.0` artifact is verified in npm, GitHub Releases, Homebrew, and Scoop. Then enable the flags and advertise `1.0.0` without another app deploy. Unknown flag values fail closed.
 
-Authenticated CLI reads default to 600 requests per 60 seconds per token through `LOGISTER_CLI_READ_RATE_LIMIT_REQUESTS` and `LOGISTER_CLI_READ_RATE_LIMIT_PERIOD_SECONDS`. Rate-limit state uses the configured cache/Redis layer, never the raw token, and fails open if that operational dependency is unavailable.
+Authenticated CLI reads default to 600 requests per 60 seconds per token through `LOGISTER_CLI_READ_RATE_LIMIT_REQUESTS` and `LOGISTER_CLI_READ_RATE_LIMIT_PERIOD_SECONDS`. Invalid bearer credentials are separately capped at 1,200 attempts per source IP and window, before token lookup, through `LOGISTER_CLI_PRE_AUTH_RATE_LIMIT_REQUESTS`. Rate-limit state uses the configured cache/Redis layer, stores only hashed source/token identities, and fails open if that operational dependency is unavailable.
+
+Every authenticated CLI response is also built under a request-wide PostgreSQL statement timeout. `LOGISTER_CLI_POSTGRES_STATEMENT_TIMEOUT_MS` defaults to `15000` and accepts `100` through `120000`; invalid configuration falls back to the default. A timed-out query returns a sanitized `503` with code `query_timeout`, never the database error or SQL. Clients should narrow the requested time range or filters before retrying. PostgreSQL fallback analytics additionally report `partial` and `fallback_coverage` when the requested range begins before retained PostgreSQL data.
 
 ## Public docs
 

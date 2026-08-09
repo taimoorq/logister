@@ -168,6 +168,25 @@ RSpec.describe "Api::V1::Cli v3.5 read API", type: :request do
         "operation" => "POST /checkout"
       )
       expect(response.parsed_body.dig("analytics", "source")).to eq("postgresql")
+      expect(response.parsed_body.fetch("analytics")).to include(
+        "partial" => false,
+        "fallback_coverage" => include(
+          "complete" => true,
+          "reason" => "within_postgres_retention"
+        )
+      )
+
+      get "/api/v1/cli/projects/#{project.uuid}/traces", params: { since: "60d" }, headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.fetch("analytics")).to include(
+        "source" => "postgresql",
+        "partial" => true,
+        "fallback_coverage" => include(
+          "complete" => false,
+          "reason" => "postgres_retention_window"
+        )
+      )
 
       get "/api/v1/cli/projects/#{project.uuid}/traces/#{root.trace_id}", headers: headers
 
@@ -349,6 +368,14 @@ RSpec.describe "Api::V1::Cli v3.5 read API", type: :request do
       expect(response.parsed_body).not_to have_key("recent_events")
       expect(response.parsed_body.fetch("attributes").pluck("key")).to include("tenant")
       expect(response.parsed_body.fetch("attributes").pluck("key")).not_to include("customer_email")
+      expect(response.parsed_body.fetch("analytics")).to include(
+        "source" => "postgresql",
+        "partial" => false,
+        "fallback_coverage" => include(
+          "complete" => true,
+          "reason" => "within_postgres_retention"
+        )
+      )
 
       get "/api/v1/cli/projects/#{project.uuid}/metrics/query",
           params: { window: "1h", metric: "metric_value:queue.depth" },

@@ -115,6 +115,8 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/device_authorizations:
     post:
       operationId: createCliDeviceAuthorization
@@ -207,6 +209,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}:
     get:
       operationId: getCliProject
@@ -232,6 +236,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/summary:
     get:
       operationId: getCliProjectSummary
@@ -259,6 +265,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/events:
     get:
       operationId: listCliEvents
@@ -335,6 +343,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/events/{uuid}:
     get:
       operationId: getCliEvent
@@ -361,6 +371,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/error_groups:
     get:
       operationId: listCliErrorGroups
@@ -426,6 +438,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}:
     get:
       operationId: getCliErrorGroup
@@ -452,12 +466,15 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}/export:
     get:
       operationId: exportCliErrorGroup
       tags:
         - CLI
       summary: Export a server-redacted error group investigation bundle.
+      description: The response never includes internal numeric event IDs. Event context is capped at 64 KiB, occurrence records are capped at 50, and the complete compact JSON response is capped at 900 KiB with explicit truncation metadata.
       security:
         - cliBearerAuth: []
       parameters:
@@ -469,7 +486,7 @@ paths:
             type: boolean
       responses:
         "200":
-          description: Redacted error group export.
+          description: Redacted error group export, bounded to 900 KiB.
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -478,6 +495,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}/context:
     get:
       operationId: getCliErrorGroupAiContext
@@ -496,7 +515,7 @@ paths:
             minimum: 256
             maximum: 32000
             default: 4000
-          description: Approximate output-token budget. The server enforces a conservative response-byte ceiling and may omit lower-priority context.
+          description: Approximate output-token budget. The server enforces an exact four-bytes-per-token response ceiling, up to 256 KiB, and may omit lower-priority context.
       responses:
         "200":
           description: Minimized redacted AI context payload, bounded by the requested token budget and a 256 KiB server maximum.
@@ -510,8 +529,12 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableContent"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
   /api/v1/cli/projects/{project_uuid}/traces:
     get:
       operationId: listCliTraces
@@ -565,6 +588,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableContent" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/traces/{trace_id}:
     get:
       operationId: getCliTrace
@@ -590,6 +614,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableContent" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/monitors:
     get:
       operationId: listCliMonitors
@@ -630,6 +655,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableContent" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/monitors/{uuid}:
     get:
       operationId: getCliMonitor
@@ -651,6 +677,7 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/deployments:
     get:
       operationId: listCliDeployments
@@ -697,6 +724,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableContent" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/deployments/{uuid}:
     get:
       operationId: getCliDeployment
@@ -718,6 +746,7 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/insights:
     get:
       operationId: getCliInsights
@@ -745,6 +774,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableContent" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/metrics/catalog:
     get:
       operationId: getCliMetricCatalog
@@ -774,6 +804,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableContent" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/cli/projects/{project_uuid}/metrics/query:
     get:
       operationId: queryCliMetric
@@ -804,6 +835,7 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/UnprocessableContent" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/CliQueryUnavailable" }
   /api/v1/ingest_events:
     post:
       operationId: createIngestEvent
@@ -1478,6 +1510,18 @@ components:
                 code: rate_limited
                 message: Too many requests. Retry after the current window.
                 retry_after: 42
+    CliQueryUnavailable:
+      description: PostgreSQL canceled the authenticated CLI read at the configured server safety limit. Database errors and SQL are never returned; narrow the requested time range or filters before retrying.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            queryTimeout:
+              value:
+                error: Query unavailable
+                code: query_timeout
+                message: The query exceeded the server time limit. Narrow the time range or filters and try again.
   schemas:
     CliListEnvelope:
       type: object
@@ -1538,6 +1582,7 @@ components:
         generated_at: { type: string, format: date-time }
     CliAnalytics:
       type: object
+      required: [source, partial]
       properties:
         source:
           type: string
@@ -1548,7 +1593,30 @@ components:
             complete: { type: boolean }
             ratio: { type: number, minimum: 0, maximum: 1 }
             fresh_through: { type: string, format: date-time }
-        partial: { type: boolean }
+        partial:
+          type: boolean
+          description: True only when PostgreSQL fallback cannot cover the complete requested retention range.
+        fallback_coverage:
+          type: object
+          description: Present for PostgreSQL fallback and limited to retention-range facts safe for CLI clients.
+          required: [complete, reason, requested_from, requested_to]
+          properties:
+            complete: { type: boolean }
+            reason:
+              type: string
+              enum:
+                - within_postgres_retention
+                - postgres_retention_window
+                - invalid_range
+                - invalid_scope
+                - unsupported_signals
+                - missing_projects
+            requested_from: { type: string, format: date-time }
+            requested_to: { type: string, format: date-time }
+            retained_from:
+              type: string
+              format: date-time
+              description: Oldest range boundary guaranteed by current PostgreSQL retention; omitted when the requested error data is retained forever.
     CliTraceSpan:
       type: object
       required: [uuid, trace_id, span_id, name, operation, kind, status, duration_ms, started_at]
@@ -2010,6 +2078,7 @@ components:
           $ref: "#/components/schemas/CliAnalytics"
     CliAiContext:
       type: object
+      required: [format, version, generated_at, token_budget, response_byte_limit, truncated]
       properties:
         format:
           type: string
@@ -2021,6 +2090,16 @@ components:
           format: date-time
         token_budget:
           type: integer
+          minimum: 256
+          maximum: 32000
+        response_byte_limit:
+          type: integer
+          minimum: 1024
+          maximum: 262144
+          description: Exact serialized response ceiling, conservatively derived as four bytes per requested token.
+        truncated:
+          type: boolean
+          description: True when lower-priority context was omitted to satisfy the requested token budget.
         project:
           $ref: "#/components/schemas/CliProject"
         issue:

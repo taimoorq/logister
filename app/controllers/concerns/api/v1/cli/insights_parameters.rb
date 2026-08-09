@@ -89,14 +89,22 @@ module Api::V1::Cli::InsightsParameters
   def safe_cli_analytics(value)
     analytics = value.to_h.stringify_keys
     coverage = analytics["coverage"].to_h.stringify_keys
+    fallback_coverage = analytics["fallback_coverage"].to_h.stringify_keys
     {
       source: analytics["source"],
-      coverage: coverage.present? && {
+      coverage: coverage.present? ? {
         complete: coverage["complete"],
         ratio: coverage["coverage_ratio"],
         fresh_through: coverage["fresh_through"]
-      },
-      partial: false
+      } : nil,
+      partial: analytics["partial"] == true,
+      fallback_coverage: fallback_coverage.present? ? {
+        complete: fallback_coverage["complete"],
+        reason: fallback_coverage["reason"],
+        requested_from: fallback_coverage["requested_from"],
+        requested_to: fallback_coverage["requested_to"],
+        retained_from: fallback_coverage["retained_from"]
+      }.compact : nil
     }.compact
   end
 end
