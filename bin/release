@@ -1,13 +1,21 @@
 #!/bin/bash -e
 
+release_log() {
+  printf '[release] %s %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$1"
+}
+
 if [[ -n "${DATABASE_MIGRATION_URL:-}" ]]; then
   export DATABASE_URL="${DATABASE_MIGRATION_URL}"
 elif [[ -n "${DIRECT_URL:-}" ]]; then
   export DATABASE_URL="${DIRECT_URL}"
 fi
 
+release_log "starting PostgreSQL preparation"
 ./bin/rails db:prepare
+release_log "completed PostgreSQL preparation"
 
 # This is a no-op when ClickHouse is disabled. Running the task unconditionally
 # also supports installations whose ClickHouse mode is stored in PostgreSQL.
+release_log "starting ClickHouse schema repair"
 ./bin/rails logister:clickhouse:schema:repair
+release_log "completed ClickHouse schema repair"

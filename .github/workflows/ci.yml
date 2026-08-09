@@ -330,7 +330,7 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Deploy app
-        run: flyctl deploy --remote-only --max-concurrent 1 --wait-timeout 10m --deploy-retries 3
+        run: flyctl deploy --remote-only --max-concurrent 1 --wait-timeout 10m --release-command-timeout 30m --deploy-retries 3
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
