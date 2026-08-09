@@ -3,6 +3,13 @@
 class ProjectArchiveInvestigationSearch
   HOT_RESULT_LIMIT = 25
   ARCHIVE_RESULT_LIMIT = 25
+  MOBILE_EVENT_FILTER_EXPRESSIONS = {
+    source: Arel.sql("COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,source}', ''), NULLIF(ingest_events.context #>> '{diagnostic,source}', ''))"),
+    diagnostic_kind: Arel.sql("ingest_events.context #>> '{diagnostic,kind}'"),
+    build_number: Arel.sql("COALESCE(NULLIF(ingest_events.context #>> '{app,version_code}', ''), NULLIF(ingest_events.context ->> 'build_number', ''))"),
+    distribution_channel: Arel.sql("COALESCE(NULLIF(ingest_events.context #>> '{distribution,channel}', ''), NULLIF(ingest_events.context #>> '{distribution,track}', ''))"),
+    platform: Arel.sql("COALESCE(NULLIF(ingest_events.context ->> 'apple_platform', ''), NULLIF(ingest_events.context #>> '{os,name}', ''))")
+  }.freeze
   SEARCH_FIELDS = %w[
     q
     event_type
@@ -197,11 +204,11 @@ class ProjectArchiveInvestigationSearch
   end
 
   def apply_mobile_event_filters(scope)
-    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context #>> '{telemetry_evidence,source}', ''), NULLIF(context #>> '{diagnostic,source}', ''))", value("source"))
-    scope = apply_expression_filter(scope, "context #>> '{diagnostic,kind}'", value("diagnostic_kind"))
-    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context #>> '{app,version_code}', ''), NULLIF(context ->> 'build_number', ''))", value("build_number"))
-    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context #>> '{distribution,channel}', ''), NULLIF(context #>> '{distribution,track}', ''))", value("distribution_channel"))
-    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context ->> 'apple_platform', ''), NULLIF(context #>> '{os,name}', ''))", value("platform"))
+    scope = apply_expression_filter(scope, MOBILE_EVENT_FILTER_EXPRESSIONS.fetch(:source), value("source"))
+    scope = apply_expression_filter(scope, MOBILE_EVENT_FILTER_EXPRESSIONS.fetch(:diagnostic_kind), value("diagnostic_kind"))
+    scope = apply_expression_filter(scope, MOBILE_EVENT_FILTER_EXPRESSIONS.fetch(:build_number), value("build_number"))
+    scope = apply_expression_filter(scope, MOBILE_EVENT_FILTER_EXPRESSIONS.fetch(:distribution_channel), value("distribution_channel"))
+    scope = apply_expression_filter(scope, MOBILE_EVENT_FILTER_EXPRESSIONS.fetch(:platform), value("platform"))
     if value("artifact_state").present?
       occurrence_ids = ErrorOccurrence.joins(:error_group)
         .where(error_groups: { project_id: project.id })
@@ -221,10 +228,10 @@ class ProjectArchiveInvestigationSearch
     end
   end
 
-  def apply_expression_filter(scope, expression, raw_value)
+  def apply_expression_filter(scope, expression_node, raw_value)
     return scope if raw_value.blank?
 
-    scope.where("#{expression} = ?", raw_value)
+    scope.where(expression_node.eq(raw_value))
   end
 
   def apply_mobile_correlation_filters(scope)

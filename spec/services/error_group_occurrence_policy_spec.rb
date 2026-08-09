@@ -40,7 +40,7 @@ RSpec.describe ErrorGroupOccurrencePolicy do
       first_seen_at: original_latest.occurred_at,
       last_seen_at: original_latest.occurred_at
     )
-    historical_time = 2.days.ago
+    historical_time = 2.days.ago.round(6)
     event = create(
       :ingest_event,
       project: project,
@@ -108,8 +108,8 @@ RSpec.describe ErrorGroupOccurrencePolicy do
       first_seen_at: original_latest.occurred_at,
       last_seen_at: original_latest.occurred_at
     )
-    reporting_start = 1.hour.ago
-    reporting_end = 30.minutes.ago
+    reporting_start = 1.hour.ago.round(6)
+    reporting_end = 30.minutes.ago.round(6)
     event = create(
       :ingest_event,
       project: project,

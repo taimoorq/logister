@@ -154,7 +154,7 @@ module GooglePlay
       return if string.blank?
 
       seconds = Integer(string, exception: false)
-      seconds ||= [(Time.httpdate(string) - Time.current).ceil, 0].max rescue nil
+      seconds ||= [ (Time.httpdate(string) - Time.current).ceil, 0 ].max rescue nil
       seconds&.clamp(1, 1.hour.to_i)
     end
 

@@ -3,6 +3,7 @@
 require "digest"
 require "open3"
 require "pathname"
+require "shellwords"
 require "yaml"
 
 module Logister
@@ -13,6 +14,7 @@ module Logister
     IMPACT_ID_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
     ADDON_ID_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
     CONTRACT_ID_PATTERN = /\A[a-z][a-z0-9_]*\z/
+    GIT_REF_PATTERN = /\A(?!-)[A-Za-z0-9][A-Za-z0-9._\/-]{0,254}\z/
     SENSITIVE_KEYS = %w[
       api_key credential credentials password private_key secret secrets token tokens
     ].freeze
@@ -39,12 +41,22 @@ module Logister
 
     class << self
       def changed_files(repo_root:, base:, head: "HEAD")
+        base_ref = validated_git_ref(base)
+        head_ref = validated_git_ref(head)
+        revision_range = "#{Shellwords.escape(base_ref)}...#{Shellwords.escape(head_ref)}"
         output, error, status = Open3.capture3(
-          "git", "-C", repo_root.to_s, "diff", "--name-only", "--diff-filter=ACMRT", "#{base}...#{head}"
+          "git", "-C", repo_root.to_s, "diff", "--name-only", "--diff-filter=ACMRT", revision_range, "--"
         )
         raise ValidationError, [ "Unable to read changed files: #{error.strip}" ] unless status.success?
 
         output.lines(chomp: true).reject(&:empty?)
+      end
+
+      def validated_git_ref(value)
+        reference = value.to_s
+        return reference if reference.match?(GIT_REF_PATTERN)
+
+        raise ValidationError, [ "Git references must use a bounded branch, tag, or commit name." ]
       end
 
       def contract_digest(repo_root:, paths:)

@@ -141,4 +141,12 @@ RSpec.describe Logister::ReleaseImpact do
 
     expect(result.triggered_contracts).to be_empty
   end
+
+  it "rejects revision arguments that could be interpreted as Git options or shell input" do
+    expect(Open3).not_to receive(:capture3)
+
+    expect do
+      described_class.changed_files(repo_root: Rails.root, base: "--output=/tmp/changed", head: "HEAD; touch /tmp/pwned")
+    end.to raise_error(described_class::ValidationError, /Git references must use/)
+  end
 end

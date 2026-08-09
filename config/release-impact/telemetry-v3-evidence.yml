@@ -1,6 +1,6 @@
 schema_version: 1
 id: telemetry-v3-evidence
-summary: Additive mobile evidence metadata and integration discovery capabilities.
+summary: Add mobile evidence, artifact workflows, and capability-negotiated CLI artifact APIs.
 backend:
   bump: minor
   compatibility: expand
@@ -10,9 +10,9 @@ contracts:
   - telemetry_ingest
   - integration_discovery
 contract_sha256:
-  cli_api: 17bcd4b2611b5b5cac38dfa8a5e201c869b3ca2525601ad9d3b60ea07c1887af
-  telemetry_ingest: 955dfe2ae495f12659387d08c8741033294a3d4091ce9234f740f45f318fe3ae
-  integration_discovery: f9100789f002c9490434d30e4ca54e2b7ea337222b146e66f3035a86720189cc
+  cli_api: 3f3b845193a72e2462a7db193c4cae1c7fdfd1f6eb5ee80bf46f6f711129e556
+  telemetry_ingest: cf9691ad647d46d12afa3010b4c9dac9bbe90a65a77a0b7a963da9c637ad2b3e
+  integration_discovery: 0d18ab3c7bc49f395ba7cc147f5765dbc6d04dcc09455d905a18ed6e0dfe95ad
 consumers:
   logister-ruby:
     bump: none
@@ -34,4 +34,4 @@ consumers:
     reason: iOS gains additive evidence for crash and reporting-interval diagnostics.
   logister-cli:
     bump: none
-    reason: CLI read operations remain compatible and expose no new required fields.
+    reason: CLI artifact commands are capability-negotiated, and existing read-only CLI versions remain compatible.

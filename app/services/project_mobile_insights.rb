@@ -27,11 +27,11 @@ class ProjectMobileInsights
   ].freeze
 
   ATTRIBUTE_EXPRESSIONS = {
-    "evidence_source" => "COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,source}', ''), NULLIF(ingest_events.context #>> '{diagnostic,source}', ''), 'sdk')",
-    "time_precision" => "COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,time,precision}', ''), 'unknown')",
-    "build_number" => "COALESCE(NULLIF(ingest_events.context #>> '{app,version_code}', ''), 'not_captured')",
-    "distribution_channel" => "COALESCE(NULLIF(ingest_events.context #>> '{distribution,channel}', ''), NULLIF(ingest_events.context #>> '{distribution,track}', ''), 'not_captured')",
-    "platform" => "COALESCE(NULLIF(ingest_events.context->>'apple_platform', ''), NULLIF(ingest_events.context->>'platform', ''), 'unknown')"
+    "evidence_source" => Arel.sql("COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,source}', ''), NULLIF(ingest_events.context #>> '{diagnostic,source}', ''), 'sdk')"),
+    "time_precision" => Arel.sql("COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,time,precision}', ''), 'unknown')"),
+    "build_number" => Arel.sql("COALESCE(NULLIF(ingest_events.context #>> '{app,version_code}', ''), 'not_captured')"),
+    "distribution_channel" => Arel.sql("COALESCE(NULLIF(ingest_events.context #>> '{distribution,channel}', ''), NULLIF(ingest_events.context #>> '{distribution,track}', ''), 'not_captured')"),
+    "platform" => Arel.sql("COALESCE(NULLIF(ingest_events.context->>'apple_platform', ''), NULLIF(ingest_events.context->>'platform', ''), 'unknown')")
   }.freeze
   ATTRIBUTE_LABELS = {
     "evidence_source" => "Source",
@@ -91,9 +91,9 @@ class ProjectMobileInsights
       filter_options ||= self.filter_options(project, window: window_key)
       filters = normalized_attribute_filters(attribute_filters, filter_options.fetch(:attributes))
       scope = project.ingest_events.where(created_at: since..)
-      scope = scope.where("#{environment_expression} = ?", environment) if environment.to_s.present?
+      scope = scope.where(environment_expression.eq(environment)) if environment.to_s.present?
       scope = scope.where("ingest_events.context->>'release' = ?", release) if release.to_s.present?
-      filters.each { |key, value| scope = scope.where("#{ATTRIBUTE_EXPRESSIONS.fetch(key)} = ?", value) }
+      filters.each { |key, value| scope = scope.where(ATTRIBUTE_EXPRESSIONS.fetch(key).eq(value)) }
 
       bucket = ProjectInsights::WINDOW_OPTIONS.fetch(window_key).fetch(:bucket)
       buckets = buckets_for(since, bucket)
@@ -143,7 +143,7 @@ class ProjectMobileInsights
     end
 
     def environment_expression
-      "COALESCE(NULLIF(ingest_events.context->>'environment', ''), 'unknown')"
+      Arel.sql("COALESCE(NULLIF(ingest_events.context->>'environment', ''), 'unknown')")
     end
 
     def ranked_options(counts)
@@ -152,7 +152,7 @@ class ProjectMobileInsights
 
     def attribute_catalog(scope)
       ATTRIBUTE_EXPRESSIONS.map do |key, expression|
-        counts = scope.group(Arel.sql(expression)).count
+        counts = scope.group(expression).count
         {
           key:,
           label: ATTRIBUTE_LABELS.fetch(key),
