@@ -21,6 +21,14 @@ RSpec.describe "Project events", type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Stacktrace")
         expect(response.body).to include(ingest_events(:one).message)
+
+        document = Nokogiri::HTML.parse(response.body)
+        header = document.at_css(".project-command-panel")
+        navigation = document.at_css("nav[aria-label='Project sections']")
+
+        expect(header["data-project-kind"]).to eq(projects(:one).integration_kind)
+        expect(header["data-project-page"]).to eq("error_event")
+        expect(navigation.at_css("a[aria-current='page']").text.strip).to eq("Inbox")
       end
 
       it "uses the event timestamp hint when present" do
@@ -47,6 +55,105 @@ RSpec.describe "Project events", type: :request do
         expect(document.at_css(".project-archived-notice").text).to include("Archived project")
         expect(document.at_css(".event-breadcrumb a[href='#{projects_path(filter: 'archived')}']")).to be_present
         expect(response.body).to include("Archived project event")
+      end
+
+      it "renders Android activity families as events rather than unresolved exceptions" do
+        project = create(:project, :android, user: users(:one), name: "Android activity app")
+        api_key = create(:api_key, project:, user: users(:one))
+
+        %i[log metric transaction check_in].each do |event_type|
+          event = create(
+            :ingest_event,
+            event_type,
+            project:,
+            api_key:,
+            message: "Android #{event_type} sample",
+            context: {
+              "platform" => "android",
+              "app" => { "package_name" => "com.acme.shop", "version_name" => "1.4.0", "version_code" => "42" }
+            }
+          )
+
+          get project_event_path(project, event)
+
+          expect(response).to have_http_status(:success)
+          document = Nokogiri::HTML.parse(response.body)
+          expect(document.at_css(".project-command-panel")["data-project-page"]).to eq("activity_event")
+          expect(document.at_css("nav[aria-label='Project sections'] a[aria-current='page']").text.strip).to eq("Activity")
+          expect(document.at_css("nav[aria-label='Event details']")).to be_present
+          expect(document.at_css(".event-group-card")).to be_nil
+          expect(document.text).to include("Activity event", "Back to activity", "#{event_type.to_s.humanize} data")
+          expect(document.text).not_to include("UNRESOLVED", "Stack trace")
+        end
+      end
+
+      it "does not add issue status or failure badges to a mobile activity Turbo detail" do
+        project = create(:project, :ios, user: users(:one), name: "iOS activity app")
+        event = create(
+          :ingest_event,
+          :metric,
+          project:,
+          api_key: create(:api_key, project:, user: users(:one)),
+          message: "iOS launch gauge",
+          context: { "platform" => "ios", "app" => { "identifier" => "com.acme.shop" } }
+        )
+
+        get project_event_path(project, event), headers: { "Turbo-Frame" => "error_detail" }
+
+        expect(response).to have_http_status(:success)
+        document = Nokogiri::HTML.parse(response.body)
+        expect(document.at_css("turbo-frame#error_detail nav[aria-label='Event details']")).to be_present
+        expect(document.at_css(".detail-status-badge")).to be_nil
+        expect(document.at_css(".mobile-mechanism-badge")).to be_nil
+        expect(document.text).to include("iOS launch gauge", "Metric data", "App & device")
+        expect(document.text).not_to include("UNRESOLVED", "Crash stack")
+      end
+
+      it "uses a context-first event-family detail for a generic metric" do
+        project = create(:project, user: users(:one), name: "Service metrics")
+        event = create(:ingest_event, :metric, project:, api_key: create(:api_key, project:, user: users(:one)))
+
+        get project_event_path(project, event)
+
+        expect(response).to have_http_status(:success)
+        document = Nokogiri::HTML.parse(response.body)
+        expect(document.at_css("nav[aria-label='Event details'] a[aria-current='page']").text.strip).to eq("Metric data")
+        expect(document.text).not_to include("Stacktrace", "UNRESOLVED")
+      end
+
+      it "paginates the full scoped occurrence set and labels selected scope boundaries" do
+        project = create(:project, :android, user: users(:one), name: "Android occurrence app")
+        api_key = create(:api_key, project:, user: users(:one))
+        group = create(:error_group, project:, first_seen_at: 2.hours.ago, last_seen_at: Time.current)
+        events = 52.times.map do |index|
+          event = create(
+            :ingest_event,
+            project:,
+            api_key:,
+            error_group: group,
+            fingerprint: group.fingerprint,
+            message: "Occurrence #{index}",
+            occurred_at: Time.current - index.minutes,
+            context: { "platform" => "android", "error" => { "mechanism" => "handled_exception" } }
+          )
+          create(:error_occurrence, error_group: group, ingest_event: event, occurred_at: event.occurred_at)
+          event
+        end
+
+        get project_event_path(project, events.first, tab: "occurrences")
+
+        expect(response).to have_http_status(:success)
+        first_page = Nokogiri::HTML.parse(response.body)
+        expect(first_page.text).to include("Showing 50 of 52 scoped occurrences", "Selected · Latest in scope")
+        next_link = first_page.at_css("nav[aria-label='Occurrence pages'] a[rel='next']")
+        expect(next_link).to be_present
+
+        get next_link["href"]
+
+        expect(response).to have_http_status(:success)
+        final_page = Nokogiri::HTML.parse(response.body)
+        expect(final_page.text).to include("Showing 2 of 52 scoped occurrences", "First in scope")
+        expect(final_page.at_css("nav[aria-label='Occurrence pages'] a[rel='next']")).to be_nil
       end
 
       it "renders the Turbo detail frame when requested from the inbox" do
@@ -764,6 +871,73 @@ RSpec.describe "Project events", type: :request do
       expect(response.body).to include("GET")
       expect(response.body).to include("https://example.com/content/slug")
       expect(response.body).to include("blogs#show")
+    end
+  end
+
+  describe "POST /projects/:project_uuid/events/:uuid/original_evidence" do
+    let(:project) { create(:project, :ios, user: users(:one)) }
+    let(:api_key) { create(:api_key, project: project, user: users(:one)) }
+    let(:event) do
+      create(
+        :ingest_event,
+        project: project,
+        api_key: api_key,
+        context: { "token" => "unredacted-secret", "session" => { "id" => "session-sensitive" } }
+      )
+    end
+
+    it "lets a manager download stored unredacted evidence through a no-store audited action" do
+      sign_in users(:one)
+
+      expect do
+        post original_evidence_project_event_path(project, event), params: {
+          event_occurred_at: event.occurred_at.utc.iso8601(6),
+          reason: "Investigating a production crash with customer approval"
+        }
+      end.to change(EvidenceAccessAudit, :count).by(1)
+
+      expect(response).to have_http_status(:success)
+      expect(response.media_type).to eq("application/json")
+      expect(response.headers["Cache-Control"]).to include("no-store")
+      expect(response.headers["Content-Disposition"]).to include("attachment")
+      payload = JSON.parse(response.body)
+      expect(payload.dig("evidence_access", "representation")).to eq("stored_unredacted_context")
+      expect(payload.dig("evidence_access", "wire_original")).to be(false)
+      expect(payload.dig("context", "token")).to eq("unredacted-secret")
+      expect(payload.dig("context", "session", "id")).to eq("session-sensitive")
+
+      audit = EvidenceAccessAudit.sole
+      expect(audit).to have_attributes(project: project, user: users(:one), ingest_event_uuid: event.uuid)
+      expect(audit.request_metadata["ip_hmac"]).to match(/\A[0-9a-f]{64}\z/)
+      expect(audit.attributes.to_json).not_to include("unredacted-secret", "session-sensitive")
+    end
+
+    it "returns not found to viewers and creates no audit" do
+      viewer = create(:user)
+      create(:project_membership, project: project, user: viewer, role: :viewer)
+      sign_in viewer
+
+      expect do
+        post original_evidence_project_event_path(project, event), params: {
+          event_occurred_at: event.occurred_at.utc.iso8601(6),
+          reason: "Viewer should not access unredacted evidence"
+        }
+      end.not_to change(EvidenceAccessAudit, :count)
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "requires an auditable reason" do
+      sign_in users(:one)
+
+      expect do
+        post original_evidence_project_event_path(project, event), params: {
+          event_occurred_at: event.occurred_at.utc.iso8601(6),
+          reason: "short"
+        }
+      end.not_to change(EvidenceAccessAudit, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 end

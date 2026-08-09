@@ -14,6 +14,7 @@ class AndroidMappingFilesController < ApplicationController
     mapping.upload = mapping_file_params[:upload]
 
     if mapping.save
+      MobileArtifactCoverageRefreshJob.perform_later(@project.id, "android")
       redirect_to settings_project_path(@project, section: "integrations", anchor: "android-mappings"), notice: "R8 mapping uploaded for build #{mapping.version_code}."
     else
       redirect_to settings_project_path(@project, section: "integrations", anchor: "android-mappings"), alert: mapping.errors.full_messages.to_sentence
@@ -23,7 +24,8 @@ class AndroidMappingFilesController < ApplicationController
   def destroy
     version_code = @mapping_file.version_code
     @mapping_file.destroy!
-    redirect_to settings_project_path(@project, section: "integrations", anchor: "android-mappings"), notice: "R8 mapping removed for build #{version_code}."
+    MobileArtifactCoverageRefreshJob.perform_later(@project.id, "android")
+    redirect_to artifact_return_path, notice: "R8 mapping removed for build #{version_code}."
   end
 
   private
@@ -38,5 +40,11 @@ class AndroidMappingFilesController < ApplicationController
 
   def require_android_project
     head :not_found unless @project.integration_android?
+  end
+
+  def artifact_return_path
+    return artifacts_project_path(@project) if params[:return_to] == "artifacts"
+
+    settings_project_path(@project, section: "integrations", anchor: "android-mappings")
   end
 end

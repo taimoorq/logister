@@ -28,6 +28,12 @@ class ProjectInsights
     environment
     exception
     expected_interval_seconds
+    installation_hash
+    installation_id
+    installation_id_hash
+    installationHash
+    installationId
+    installationIdHash
     params
     query
     release
@@ -36,6 +42,7 @@ class ProjectInsights
     requestId
     response
     session_id
+    session_hash
     sessionId
     sql
     stacktrace
@@ -44,6 +51,7 @@ class ProjectInsights
     transaction_name
     transactionName
     user_id
+    user_hash
     userId
     value
   ].freeze
@@ -1010,6 +1018,7 @@ class ProjectInsights
         {
           key: metric_key,
           label: definition.fetch(:label),
+          description: definition.fetch(:description),
           unit: definition.fetch(:unit),
           kind: definition.fetch(:kind),
           source: definition.fetch(:source),

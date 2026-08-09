@@ -1,0 +1,92 @@
+<%# locals: (overview:) %>
+<% release = overview.current_release %>
+<% artifact_key = @project.integration_android? ? :stack_mapping : :symbol_artifacts %>
+<% health_items = [
+  ["Session evidence", overview.capability_snapshot.status(:session_health)],
+  [@project.integration_android? ? "R8 coverage" : "dSYM coverage", overview.capability_snapshot.status(artifact_key)],
+  [@project.integration_android? ? "Google Play" : "App Store Connect", overview.capability_snapshot.status(:distribution_store)]
+] %>
+
+<section class="space-y-6" aria-label="Mobile project overview">
+  <section class="grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Current stability">
+    <%= link_to inbox_project_path(@project, filter: "unresolved"), class: "dashboard-panel no-underline" do %>
+      <p class="dashboard-kicker">Stability</p>
+      <strong class="mt-2 block text-3xl font-bold text-slate-900"><%= number_with_delimiter(overview.open_issues) %></strong>
+      <span class="mt-1 block text-sm text-slate-600">Open <%= "issue".pluralize(overview.open_issues) %></span>
+    <% end %>
+
+    <div class="dashboard-panel">
+      <p class="dashboard-kicker">Newly received</p>
+      <strong class="mt-2 block text-3xl font-bold text-slate-900"><%= number_with_delimiter(overview.newly_received_issues) %></strong>
+      <span class="mt-1 block text-sm text-slate-600">Issues first represented in receipts from the last 24 hours</span>
+    </div>
+
+    <%= link_to releases_project_path(@project), class: "dashboard-panel no-underline" do %>
+      <p class="dashboard-kicker">Observed builds</p>
+      <strong class="mt-2 block text-3xl font-bold text-slate-900"><%= number_with_delimiter(overview.release_count) %></strong>
+      <span class="mt-1 block text-sm text-slate-600"><%= release ? "Latest receipt: #{release.label}" : "No build evidence received" %></span>
+    <% end %>
+  </section>
+
+  <section class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
+    <section class="dashboard-panel" aria-labelledby="current-mobile-build-title">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="dashboard-kicker">Current evidence</p>
+          <h2 id="current-mobile-build-title" class="text-lg font-bold text-slate-900"><%= release ? release.label : "Waiting for the first diagnostic" %></h2>
+        </div>
+        <%= link_to "All releases", releases_project_path(@project), class: "btn-ghost" %>
+      </div>
+
+      <% if release %>
+        <dl class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><dt class="text-xs font-semibold uppercase text-slate-500">Channel</dt><dd class="mt-1 font-bold text-slate-900"><%= release.channel_label %></dd></div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><dt class="text-xs font-semibold uppercase text-slate-500">Open context</dt><dd class="mt-1 font-bold text-slate-900"><%= pluralize(release.issue_count, "issue") %></dd></div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><dt class="text-xs font-semibold uppercase text-slate-500">Diagnostics</dt><dd class="mt-1 font-bold text-slate-900"><%= number_with_delimiter(release.occurrence_count) %></dd></div>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3"><dt class="text-xs font-semibold uppercase text-slate-500">Artifact evidence</dt><dd class="mt-1 font-bold text-slate-900"><%= release.artifact_state.to_s.humanize %></dd></div>
+        </dl>
+        <p class="mt-4 text-sm text-slate-600">
+          Latest diagnostic receipt <time datetime="<%= release.last_received_at&.iso8601 %>"><%= time_ago_in_words(release.last_received_at) %> ago</time>.
+          Source time precision: <%= release.time_precisions.presence&.map(&:humanize)&.join(", ") || "not labelled" %>.
+        </p>
+      <% else %>
+        <p class="mt-4 text-sm text-slate-600">Connect the SDK and send one real diagnostic with source app/build metadata. Logister will not substitute the uploader's current build for delayed platform evidence.</p>
+        <%= link_to "Open setup", setup_project_path(@project), class: "btn-primary mt-4 inline-flex" %>
+      <% end %>
+    </section>
+
+    <aside class="dashboard-panel" aria-labelledby="mobile-source-health-title">
+      <p class="dashboard-kicker">Evidence health</p>
+      <h2 id="mobile-source-health-title" class="text-lg font-bold text-slate-900">Collection and coverage</h2>
+      <ul class="mt-4 divide-y divide-slate-200">
+        <% health_items.each do |label, status| %>
+          <li class="py-3 first:pt-0 last:pb-0">
+            <div class="flex items-center justify-between gap-3"><strong class="text-sm text-slate-900"><%= label %></strong><span class="text-xs font-semibold uppercase text-slate-500"><%= status.state.to_s.humanize %></span></div>
+            <p class="mt-1 text-xs text-slate-600"><%= status.reason %></p>
+          </li>
+        <% end %>
+      </ul>
+      <%= link_to "Review setup", setup_project_path(@project), class: "btn-ghost mt-4 inline-flex" %>
+    </aside>
+  </section>
+
+  <section class="dashboard-panel" aria-labelledby="mobile-impact-coverage-title">
+    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="dashboard-kicker">Impact coverage</p>
+        <h2 id="mobile-impact-coverage-title" class="text-lg font-bold text-slate-900">Denominators are explicit</h2>
+        <p class="mt-1 text-sm text-slate-600">Counts describe only diagnostics that supplied a scoped pseudonymous identity. No crash-free or session-health rate is inferred without a valid session denominator.</p>
+      </div>
+      <%= link_to "Open app health", performance_project_path(@project), class: "btn-ghost" %>
+    </div>
+    <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <% [["Installation identity", overview.installation_coverage], ["Session identity", overview.session_coverage]].each do |label, coverage| %>
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <dt class="text-xs font-semibold uppercase text-slate-500"><%= label %></dt>
+          <dd class="mt-1 font-bold text-slate-900"><%= coverage.state.to_s.humanize %></dd>
+          <p class="mt-1 text-xs text-slate-600"><%= number_with_delimiter(coverage.observed) %> of <%= number_with_delimiter(coverage.total) %> diagnostics supplied this identity.</p>
+        </div>
+      <% end %>
+    </dl>
+  </section>
+</section>

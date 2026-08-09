@@ -149,8 +149,27 @@ module Logister
         "legacy_id" => record.id,
         "record_type" => record.class.base_class.name,
         "recorded_at" => recorded_at.utc.iso8601(6),
-        "accepted_at" => (record.created_at || Time.current).utc.iso8601(6)
-      }
+        "accepted_at" => (record.created_at || Time.current).utc.iso8601(6),
+        "evidence" => evidence_metadata
+      }.compact
+    end
+
+    def evidence_metadata
+      return if record.is_a?(TraceSpan)
+
+      evidence = TelemetryEvidence.for(record)
+      {
+        "schema_version" => evidence.schema_version,
+        "source" => evidence.source,
+        "kind" => evidence.kind,
+        "evidence_kind" => evidence.evidence_kind,
+        "identity_scope" => evidence.identity_scope,
+        "time_precision" => evidence.time_precision,
+        "occurred_at" => evidence.occurred_at&.utc&.iso8601(6),
+        "reporting_start" => evidence.reporting_start&.utc&.iso8601(6),
+        "reporting_end" => evidence.reporting_end&.utc&.iso8601(6),
+        "received_at" => evidence.received_at&.utc&.iso8601(6)
+      }.compact
     end
 
     def recorded_at

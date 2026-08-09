@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "optparse"
+require "pathname"
+require_relative "../lib/logister/release_identity"
+
+begin
+  options = {}
+  OptionParser.new do |parser|
+    parser.banner = "Usage: bin/release-identity [--git-sha SHA] [--github-output PATH]"
+    parser.on("--git-sha SHA", "Validate and include the full release commit SHA") { |value| options[:git_sha] = value }
+    parser.on("--github-output PATH", "Append release fields to a GitHub Actions output file") { |value| options[:github_output] = value }
+  end.parse!
+
+  identity = Logister::ReleaseIdentity.new(repo_root: Pathname(__dir__).join("..")).validate!
+  git_sha = options[:git_sha] && Logister::ReleaseIdentity.new(repo_root: Pathname(__dir__).join("..")).validate_git_sha!(options[:git_sha])
+  payload = {
+    schema_version: 1,
+    version: identity.version,
+    tag: identity.tag,
+    release_date: identity.release_date,
+    git_sha: git_sha,
+    prerelease: identity.prerelease,
+    make_latest: identity.make_latest,
+    contract_sha256: identity.contract_sha256
+  }.compact
+
+  if options[:github_output]
+    File.open(options[:github_output], "a") do |output|
+      output.puts "version=#{identity.version}"
+      output.puts "tag=#{identity.tag}"
+      output.puts "release_date=#{identity.release_date}"
+      output.puts "git_sha=#{git_sha}" if git_sha
+      output.puts "prerelease=#{identity.prerelease}"
+      output.puts "make_latest=#{identity.make_latest}"
+      output.puts "contract_sha256=#{JSON.generate(identity.contract_sha256)}"
+      output.puts "release_notes<<LOGISTER_RELEASE_NOTES"
+      output.puts identity.release_notes
+      output.puts "LOGISTER_RELEASE_NOTES"
+    end
+  end
+
+  puts JSON.pretty_generate(payload)
+rescue OptionParser::ParseError, Logister::ReleaseIdentity::ValidationError => e
+  warn "Release identity validation failed:"
+  messages = e.respond_to?(:errors) ? e.errors : [ e.message ]
+  messages.each { |message| warn "  - #{message}" }
+  exit 1
+end

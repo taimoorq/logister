@@ -65,6 +65,7 @@ module ProjectSettingsContext
   end
 
   def load_integration_settings_context
+    @integration_changes_allowed = @project_manager && !@project.archived?
     @cloudflare_integration_setting ||= ProjectIntegrationSetting.for(
       project: @project,
       provider: ProjectIntegrationSetting::PROVIDERS[:cloudflare_pages]
@@ -74,7 +75,8 @@ module ProjectSettingsContext
         project: @project,
         provider: ProjectIntegrationSetting::PROVIDERS[:google_play]
       )
-      @android_mapping_files = @project.android_mapping_files.recent_first.to_a
+      @android_mapping_count = @project.android_mapping_files.count
+      @android_mapping_files = @project.android_mapping_files.recent_first.limit(5).to_a
       @android_mapping_file = @project.android_mapping_files.new
     end
     @app_store_connect_integration_setting ||= ProjectIntegrationSetting.for(
@@ -82,7 +84,8 @@ module ProjectSettingsContext
       provider: ProjectIntegrationSetting::PROVIDERS[:app_store_connect]
     ) if @project.integration_ios?
     if @project.integration_ios?
-      @apple_symbol_artifacts = @project.apple_symbol_artifacts.recent_first.to_a
+      @apple_symbol_artifact_count = @project.apple_symbol_artifacts.count
+      @apple_symbol_artifacts = @project.apple_symbol_artifacts.recent_first.limit(5).to_a
       @apple_symbol_artifact = @project.apple_symbol_artifacts.new
     end
     @source_repositories = @project.source_repositories

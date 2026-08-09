@@ -1,4 +1,8 @@
 <% if occurrences.any? %>
+  <p class="muted mb-3">
+    Showing <%= number_with_delimiter(occurrences.items.size) %> of <%= number_with_delimiter(occurrences.total_count) %> scoped occurrences.
+    Labels identify the occurrence currently open and the scope boundaries.
+  </p>
   <%= responsive_scroll_region do %>
     <table class="occurrences-table">
       <thead>
@@ -15,13 +19,20 @@
         </tr>
       </thead>
       <tbody>
-        <% occurrences.each do |occurrence| %>
+        <% occurrences.each_with_index do |occurrence, index| %>
           <% occurrence_event = occurrence.ingest_event_record %>
           <% next unless occurrence_event %>
           <% mobile_presenter = event_presenter(project, occurrence_event) if experience.supports?(:mobile) %>
           <tr>
             <td><%= local_time_tag(occurrence_event.occurred_at, format: :long) %></td>
-            <td><%= truncate(occurrence_event.message.to_s.lines.first, length: 80) %></td>
+            <td>
+              <%= truncate(occurrence_event.message.to_s.lines.first, length: 80) %>
+              <% occurrence_labels = [] %>
+              <% occurrence_labels << "Selected" if occurrence_event.id == event.id %>
+              <% occurrence_labels << "Latest in scope" if occurrences.first_page && index.zero? %>
+              <% occurrence_labels << "First in scope" if occurrences.next_cursor.blank? && index == occurrences.items.size - 1 %>
+              <% if occurrence_labels.any? %><span class="error-meta-chip ml-2"><%= occurrence_labels.join(" · ") %></span><% end %>
+            </td>
             <% if mobile_presenter %>
               <td>
                 <% app = mobile_presenter.app_details %>
@@ -36,8 +47,9 @@
               <td><%= render "shared/widgets/severity_badge", level: occurrence_event.level.presence || "error" %></td>
             <% end %>
             <td>
+              <% occurrence_scope_params = link_data.present? ? { filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid } : {} %>
               <%= link_to "View",
-                          partitioned_project_event_path(project, occurrence_event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid),
+                          partitioned_project_event_path(project, occurrence_event, occurrence_scope_params),
                           class: "inline-link",
                           data: link_data %>
             </td>
@@ -45,6 +57,23 @@
         <% end %>
       </tbody>
     </table>
+  <% end %>
+  <% if occurrences.next_cursor.present? %>
+    <nav class="mt-4" aria-label="Occurrence pages">
+      <% pagination_scope_params = link_data.present? ? inbox_profile_query_params(project).merge(filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid) : {} %>
+      <%= link_to "Older occurrences",
+                  partitioned_project_event_path(
+                    project,
+                    event,
+                    pagination_scope_params.merge(
+                      tab: "occurrences",
+                      occurrence_cursor: occurrences.next_cursor
+                    )
+                  ),
+                  class: "btn btn-ghost",
+                  rel: "next",
+                  data: link_data %>
+    </nav>
   <% end %>
 <% else %>
   <p class="muted">No occurrences recorded yet.</p>

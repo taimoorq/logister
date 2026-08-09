@@ -250,6 +250,47 @@
               <p class="mt-1 text-xs leading-5 text-slate-500">Unresolved, closed, or every status.</p>
             </div>
           </div>
+          <% if @project.integration_android? || @project.integration_ios? %>
+            <section class="mt-5 border-t border-slate-200 pt-5" aria-labelledby="mobile-notification-evidence-heading">
+              <h4 id="mobile-notification-evidence-heading" class="text-sm font-semibold text-slate-900">Mobile evidence match</h4>
+              <p class="mt-1 text-xs leading-5 text-slate-500">These typed facets apply to error triage and workflow alerts. Use <strong>all</strong> to keep a facet unrestricted.</p>
+              <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div>
+                  <%= f.label :mobile_source_filter, "Evidence source", class: "form-label" %>
+                  <%= f.text_field :mobile_source_filter, class: "form-input", placeholder: "all" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">For example sdk, metrickit, or application_exit_info.</p>
+                </div>
+                <div>
+                  <%= f.label :mobile_diagnostic_kind_filter, "Diagnostic kind", class: "form-label" %>
+                  <%= f.text_field :mobile_diagnostic_kind_filter, class: "form-input", placeholder: "all" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">For example crash, hang, anr, or watchdog_termination.</p>
+                </div>
+                <div>
+                  <%= f.label :mobile_build_filter, "Build number", class: "form-label" %>
+                  <%= f.text_field :mobile_build_filter, class: "form-input", placeholder: "all" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">Matches the immutable build carried by the triggering evidence.</p>
+                </div>
+                <div>
+                  <%= f.label :mobile_channel_filter, "Distribution channel", class: "form-label" %>
+                  <%= f.text_field :mobile_channel_filter, class: "form-input", placeholder: "all" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">For example production, internal, or TestFlight.</p>
+                </div>
+                <div>
+                  <%= f.label :mobile_artifact_state_filter, "Artifact coverage", class: "form-label" %>
+                  <%= f.text_field :mobile_artifact_state_filter, class: "form-input", placeholder: "all" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">Matches server-owned mapping or symbol coverage state.</p>
+                </div>
+                <div>
+                  <%= f.label :late_arrival_policy, "Delayed evidence", class: "form-label" %>
+                  <%= f.select :late_arrival_policy,
+                               options_for_select([ [ "Notify when received", "notify_on_receipt" ], [ "Exact occurrence time only", "exact_time_only" ] ], @notification_preference.late_arrival_policy),
+                               {},
+                               class: "form-input" %>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">Received-only and reporting-period diagnostics never count as real-time spikes.</p>
+                </div>
+              </div>
+            </section>
+          <% end %>
         <% when "reports" %>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>

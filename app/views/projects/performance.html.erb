@@ -4,6 +4,10 @@
 
 <%= render "projects/header", tour_group: tour_group %>
 
+<% if project_experience(@project).supports?(:mobile) %>
+  <%= render "projects/mobile_app_health", health: @mobile_app_health %>
+<% else %>
+
 <section class="space-y-6">
   <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :instrumentation_help)) %>>
@@ -66,4 +70,5 @@
     </section>
   <% end %>
 </section>
+<% end %>
 <% end %>

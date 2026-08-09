@@ -1,9 +1,11 @@
 app_name: Logister
 tag_prefix: v
 changelog_path: CHANGELOG.md
+version_path: VERSION
 github:
   create_release_on_deploy: true
   make_latest: true
 deploy:
   provider: fly
   environment: production
+  health_url: https://logister.org/health/release

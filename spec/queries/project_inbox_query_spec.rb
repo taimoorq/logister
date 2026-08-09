@@ -84,11 +84,14 @@ RSpec.describe ProjectInboxQuery do
     )
     query = described_class.new(project:)
 
-    latest_event = query.latest_events([ event.error_group ]).fetch(event.id)
+    latest_event = query.latest_events([ event.error_group ]).fetch(event.error_group_id)
     row = ProjectInbox::RowPresenter.new(project:, group: event.error_group, event: latest_event)
 
     expect(latest_event.context.dig("exception", "stacktrace")).to be_present
-    expect(row.signal_labels).to include("Fatal")
+    expect(row.failure_type_label).to eq("Fatal")
+    expect(row.headline).to include("java.io.IOException", "CartStore.write")
+    expect(row.supporting_label).to include("CartStore.kt:19", "3.0.0 (30)")
+    expect(row.evidence_quality_label).to be_present
     expect(row.release_label).to eq("3.0.0 (30)")
     expect(row.cohort_label).to eq("Pixel 8 · Android 15 · API 35")
     expect(row.culprit).to include("CartStore.write", "CartStore.kt:19")
@@ -150,6 +153,41 @@ RSpec.describe ProjectInboxQuery do
 
     expect(query.groups(filter: "all", dimensions: { release: "2.0.0+50" }).map(&:title)).to contain_exactly("Build fifty")
     expect(query.groups(filter: "all", dimensions: { release: "1.0.0+10" }).map(&:title)).to contain_exactly("Build ten")
+  end
+
+  it "uses one filtered occurrence scope for ranking, representative events, trends, and impact" do
+    older_release = grouped_android_event(
+      message: "Checkout failed in release one",
+      release: "1.0.0+10",
+      mechanism: "handled_exception",
+      device: "Pixel 8",
+      fingerprint: "shared-checkout",
+      occurred_at: 2.hours.ago
+    )
+    grouped_android_event(
+      message: "Checkout failed in release two",
+      release: "2.0.0+20",
+      mechanism: "unhandled_exception",
+      device: "Pixel 9",
+      fingerprint: "shared-checkout",
+      occurred_at: Time.current
+    )
+    dimensions = { release: "1.0.0+10", device_model: "Pixel 8" }
+    query = described_class.new(project: project)
+
+    groups = query.groups(filter: "all", dimensions: dimensions, sort: "last_seen")
+    representative = query.latest_events(groups, dimensions: dimensions).fetch(older_release.error_group_id)
+    trends = query.group_trends(groups, days: 7, dimensions: dimensions)
+    occurrence_scope = query.occurrence_relation(dimensions, group_ids: groups.map(&:id))
+    impact = ErrorGroupImpactSummary.for_group(groups.first, since: nil, occurrence_scope: occurrence_scope)
+
+    expect(groups.map(&:id)).to eq([ older_release.error_group_id ])
+    expect(representative.id).to eq(older_release.id)
+    expect(trends.fetch(older_release.error_group_id).sum).to eq(1)
+    expect(impact.events).to eq(1)
+    expect(impact.first_release).to eq("1.0.0+10")
+    expect(impact.last_release).to eq("1.0.0+10")
+    expect(impact.top_device).to eq(value: "Pixel 8", events: 1)
   end
 
   it "uses Apple diagnostic priority for the iOS recommended view" do

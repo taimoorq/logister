@@ -1,0 +1,181 @@
+name: Validate upstream release impact
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        required: true
+        type: string
+      backend_version:
+        required: true
+        type: string
+      backend_tag:
+        required: true
+        type: string
+      backend_sha:
+        required: true
+        type: string
+      release_set_url:
+        required: true
+        type: string
+      release_set_sha256:
+        required: true
+        type: string
+      baseline_version:
+        required: true
+        type: string
+      target_version:
+        required: true
+        type: string
+      bump:
+        required: true
+        type: string
+
+jobs:
+  validate:
+    name: Validate public upstream release target
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out add-on main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate immutable dispatch payload
+        env:
+          COMPONENT: ${{ inputs.component }}
+          BACKEND_VERSION: ${{ inputs.backend_version }}
+          BACKEND_TAG: ${{ inputs.backend_tag }}
+          BACKEND_SHA: ${{ inputs.backend_sha }}
+          RELEASE_SET_URL: ${{ inputs.release_set_url }}
+          RELEASE_SET_SHA256: ${{ inputs.release_set_sha256 }}
+          BASELINE_VERSION: ${{ inputs.baseline_version }}
+          TARGET_VERSION: ${{ inputs.target_version }}
+          BUMP: ${{ inputs.bump }}
+        run: |
+          ruby <<'RUBY'
+          require "uri"
+
+          values = ENV.values_at("COMPONENT", "BACKEND_VERSION", "BACKEND_TAG", "BACKEND_SHA", "RELEASE_SET_URL", "RELEASE_SET_SHA256", "BASELINE_VERSION", "TARGET_VERSION", "BUMP")
+          abort "release dispatch contains an empty field" if values.any?(&:empty?)
+          abort "release dispatch component does not match this repository" unless ENV.fetch("COMPONENT") == ENV.fetch("GITHUB_REPOSITORY").split("/").last
+          abort "release dispatch has an invalid backend SHA" unless ENV.fetch("BACKEND_SHA").match?(/\A[0-9a-f]{40}\z/)
+          abort "release dispatch has an invalid checksum" unless ENV.fetch("RELEASE_SET_SHA256").match?(/\A[0-9a-f]{64}\z/)
+          abort "release dispatch tag/version mismatch" unless ENV.fetch("BACKEND_TAG") == "v#{ENV.fetch("BACKEND_VERSION")}"
+          expected_url = "https://raw.githubusercontent.com/taimoorq/logister/#{ENV.fetch("BACKEND_SHA")}/config/release-sets/v#{ENV.fetch("BACKEND_VERSION")}.yml"
+          abort "release-set URL is not pinned to the declared public backend commit" unless ENV.fetch("RELEASE_SET_URL") == expected_url
+          abort "release dispatch has an invalid bump" unless %w[patch minor major].include?(ENV.fetch("BUMP"))
+          RUBY
+
+          curl --fail --silent --show-error --location "${RELEASE_SET_URL}" --output /tmp/logister-release-set.yml
+          printf '%s  %s\n' "${RELEASE_SET_SHA256}" /tmp/logister-release-set.yml | sha256sum --check --strict
+
+      - name: Verify this component against the signed-off release set
+        id: component
+        env:
+          COMPONENT: ${{ inputs.component }}
+          BACKEND_VERSION: ${{ inputs.backend_version }}
+          BACKEND_TAG: ${{ inputs.backend_tag }}
+          BASELINE_VERSION: ${{ inputs.baseline_version }}
+          TARGET_VERSION: ${{ inputs.target_version }}
+          BUMP: ${{ inputs.bump }}
+        run: |
+          ruby <<'RUBY'
+          require "json"
+          require "yaml"
+
+          release_set = YAML.safe_load_file("/tmp/logister-release-set.yml", permitted_classes: [], permitted_symbols: [], aliases: false)
+          abort "backend version mismatch" unless release_set.dig("backend", "version") == ENV.fetch("BACKEND_VERSION")
+          abort "backend tag mismatch" unless release_set.dig("backend", "tag") == ENV.fetch("BACKEND_TAG")
+          component = release_set.fetch("components").fetch(ENV.fetch("COMPONENT"))
+          expected = {
+            "repository" => ENV.fetch("GITHUB_REPOSITORY"),
+            "baseline_version" => ENV.fetch("BASELINE_VERSION"),
+            "target_version" => ENV.fetch("TARGET_VERSION"),
+            "bump" => ENV.fetch("BUMP"),
+            "release_required" => true
+          }
+          abort "component metadata does not match the public release set" unless expected.all? { |key, value| component[key] == value }
+
+          version = if File.file?("package.json")
+            JSON.parse(File.read("package.json")).fetch("version")
+          elsif File.file?("VERSION")
+            File.read("VERSION").strip
+          elsif File.file?("gradle.properties")
+            File.read("gradle.properties")[/^VERSION_NAME=(.+)$/, 1]
+          elsif File.file?("pyproject.toml")
+            File.read("pyproject.toml")[/^version\s*=\s*"([^"]+)"$/, 1]
+          elsif File.file?("src/Logister/Logister.csproj")
+            File.read("src/Logister/Logister.csproj")[/<Version>([^<]+)<\/Version>/, 1]
+          elsif File.file?("lib/logister/version.rb")
+            File.read("lib/logister/version.rb")[/VERSION\s*=\s*["']([^"']+)["']/, 1]
+          end
+          abort "unable to locate the add-on version source" if version.to_s.empty?
+          File.open(ENV.fetch("GITHUB_OUTPUT"), "a") do |output|
+            output.puts "current_version=#{version}"
+            output.puts "ready=#{version == ENV.fetch("TARGET_VERSION")}"
+          end
+          RUBY
+
+      - name: Scan public source and validate release metadata
+        if: steps.component.outputs.ready == 'true'
+        env:
+          TARGET_VERSION: ${{ inputs.target_version }}
+        run: |
+          if [ -x scripts/publication-safety-check.sh ]; then
+            scripts/publication-safety-check.sh
+          elif [ -x scripts/secret-scan.sh ]; then
+            scripts/secret-scan.sh
+          else
+            echo "This add-on must provide a public-source safety scan."
+            exit 1
+          fi
+          if ! grep -Eq "^## (v)?${TARGET_VERSION//./\\.}([[:space:]]|$)" CHANGELOG.md; then
+            echo "CHANGELOG.md does not contain the target release ${TARGET_VERSION}."
+            exit 1
+          fi
+
+      - name: Open or update public release-readiness issue
+        if: steps.component.outputs.ready != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKEND_TAG: ${{ inputs.backend_tag }}
+          RELEASE_SET_URL: ${{ inputs.release_set_url }}
+          TARGET_VERSION: ${{ inputs.target_version }}
+          CURRENT_VERSION: ${{ steps.component.outputs.current_version }}
+        run: |
+          title="Upstream Logister ${BACKEND_TAG} release impact"
+          ruby -e '
+            File.write("/tmp/upstream-impact.md", <<~BODY)
+              Logister #{ENV.fetch("BACKEND_TAG")} declares this add-on as release-required.
+
+              - Current source version: `#{ENV.fetch("CURRENT_VERSION")}`
+              - Required target version: `#{ENV.fetch("TARGET_VERSION")}`
+              - Immutable public release set: #{ENV.fetch("RELEASE_SET_URL")}
+
+              Update functionality, tests, public documentation, version metadata, and the changelog together. Merging the completed version to `main` remains the publication authority.
+            BODY
+          '
+          issue_number="$(gh issue list --state all --search "${title} in:title" --json number,title --jq ".[] | select(.title == \"${title}\") | .number" | head -1)"
+          if [ -n "${issue_number}" ]; then
+            gh issue edit "${issue_number}" --body-file /tmp/upstream-impact.md
+            gh issue reopen "${issue_number}" >/dev/null 2>&1 || true
+          else
+            gh issue create --title "${title}" --body-file /tmp/upstream-impact.md
+          fi
+          echo "Current main is not release-ready for ${TARGET_VERSION}."
+          exit 1
+
+      - name: Close resolved release-readiness issue
+        if: steps.component.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKEND_TAG: ${{ inputs.backend_tag }}
+        run: |
+          title="Upstream Logister ${BACKEND_TAG} release impact"
+          issue_number="$(gh issue list --state open --search "${title} in:title" --json number,title --jq ".[] | select(.title == \"${title}\") | .number" | head -1)"
+          if [ -n "${issue_number}" ]; then
+            gh issue close "${issue_number}" --comment "The target version is now present on main with matching public release metadata."
+          fi

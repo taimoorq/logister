@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://logister.org/schemas/release-impact-v1.json",
+  "title": "Logister release impact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "summary", "backend", "contracts", "contract_sha256", "consumers"],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 240
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bump", "compatibility", "activation"],
+      "properties": {
+        "bump": {
+          "enum": ["none", "patch", "minor", "major"]
+        },
+        "compatibility": {
+          "enum": ["compatible", "expand", "breaking"]
+        },
+        "activation": {
+          "enum": ["immediate", "backend_first_dark", "after_consumers"]
+        }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      }
+    },
+    "contract_sha256": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "consumers": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["bump", "reason"],
+        "properties": {
+          "bump": {
+            "enum": ["none", "patch", "minor", "major"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 500
+          }
+        }
+      }
+    }
+  }
+}

@@ -45,6 +45,7 @@ Rails.application.routes.draw do
   get "dashboard/events", to: "dashboard_events#index", as: :dashboard_events
   post "notifications/dismiss", to: "notifications#dismiss", as: :dismiss_notification
   get "health/clickhouse", to: "health#clickhouse"
+  get "health/release", to: "health#release"
   get "github/setup", to: "github/setup#show", as: :github_setup
   post "github/webhooks", to: "github/webhooks#create", as: :github_webhooks
   get "cli/device", to: "cli_device_authorizations#show", as: :cli_device_authorization
@@ -89,6 +90,8 @@ Rails.application.routes.draw do
       get "insights/data", to: "project_insights#data", as: :insights_data
       get :insights, to: "project_insights#show"
       get :performance, to: "project_performance#show"
+      get :releases, to: "project_releases#index"
+      get :artifacts, to: "project_artifacts#index"
       get "performance/request-breakdown", to: "project_performance#request_breakdown", as: :performance_request_breakdown
       get "performance/database-load", to: "project_performance#database_load", as: :performance_database_load
       get "performance/release-health", to: "project_performance#release_health", as: :performance_release_health
@@ -113,7 +116,9 @@ Rails.application.routes.draw do
     resource :retention_policy, only: [ :update ], controller: "project_retention_policies", as: :retention_policy
     resource :rate_limit, only: [ :update ], controller: "project_rate_limits", as: :rate_limit
     resources :check_in_monitors, only: [ :update ], controller: "project_monitors", path: "monitors"
-    resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid
+    resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid do
+      post :original_evidence, on: :member
+    end
 
     resources :error_groups, only: [], param: :uuid do
       resource :assignment, only: [ :update, :destroy ], controller: "error_group_assignments"

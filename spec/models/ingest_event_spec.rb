@@ -395,6 +395,94 @@ RSpec.describe IngestEvent, type: :model do
 
       expect(described_class.related_logs(project: projects(:one), event: event)).to eq([])
     end
+
+    it "does not use receipt time to relate a received-only diagnostic" do
+      project = projects(:one)
+      api_key = api_keys(:one)
+      event = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        level: "error",
+        message: "Delayed diagnostic",
+        occurred_at: Time.current,
+        context: {
+          "session" => { "id" => "received-only-session" },
+          "telemetry_evidence" => {
+            "schema_version" => 1,
+            "time" => { "precision" => "received_only", "received_at" => Time.current.iso8601 }
+          }
+        }
+      )
+      described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "same receipt-time session",
+        occurred_at: Time.current,
+        context: { "session" => { "id" => "received-only-session" } }
+      )
+
+      expect(described_class.related_logs(project: project, event: event)).to eq([])
+    end
+
+    it "limits reporting-interval candidates to strong correlation inside the source interval" do
+      project = projects(:one)
+      api_key = api_keys(:one)
+      reporting_start = 2.hours.ago
+      reporting_end = 1.hour.ago
+      event = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        level: "error",
+        message: "Interval diagnostic",
+        occurred_at: reporting_end,
+        context: {
+          "session" => { "id" => "interval-session" },
+          "user" => { "id" => "shared-user" },
+          "telemetry_evidence" => {
+            "schema_version" => 1,
+            "time" => {
+              "precision" => "reporting_interval",
+              "reporting_start" => reporting_start.iso8601,
+              "reporting_end" => reporting_end.iso8601,
+              "received_at" => Time.current.iso8601
+            }
+          }
+        }
+      )
+      inside = described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "inside interval",
+        occurred_at: 90.minutes.ago,
+        context: { "session" => { "id" => "interval-session" } }
+      )
+      described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "outside interval",
+        occurred_at: 30.minutes.ago,
+        context: { "session" => { "id" => "interval-session" } }
+      )
+      described_class.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :log,
+        level: "info",
+        message: "user-only coincidence",
+        occurred_at: 90.minutes.ago,
+        context: { "user" => { "id" => "shared-user" } }
+      )
+
+      expect(described_class.related_logs(project: project, event: event)).to eq([ inside ])
+    end
   end
 
   describe ".for_partition_references" do

@@ -21,7 +21,7 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:one).name)
         expect(response.body).to include("Ruby gem")
         expect(response.body).to include("Active apps")
-        expect(response.body).to include("Events 7d")
+        expect(response.body).to include("Receipts 7d", "Activity 7d")
         expect(response.body).to include("Active", "Archived", "All")
         expect(response.body).to include(">Docs<")
         expect(response.body).to include("Open the docs")
@@ -58,7 +58,7 @@ RSpec.describe "Projects", type: :request do
         expect(all_errors_link).to be_present
         expect(all_errors_link.text).to include("All error groups", "0", "No errors yet")
         expect(activity_link).to be_present
-        expect(activity_link.text).to include("Events 7d", "2", "View events")
+        expect(activity_link.text).to include("Activity 7d", "2", "View activity")
         expect(card.at_css(".project-card-line-chart")).to be_present
         expect(card.text).to include("No open errors")
       end
@@ -579,6 +579,11 @@ RSpec.describe "Projects", type: :request do
         expect(response.body).to include(projects(:two).name)
         expect(response.body).to include("Public API rate limits")
         expect(response.body).to include(project_rate_limit_path(projects(:two)))
+
+        document = Nokogiri::HTML.parse(response.body)
+        project_navigation = document.at_css("nav[aria-label='Project sections']")
+        expect(project_navigation.css("a").map { |link| link.text.strip }).to eq([ "Settings" ])
+        expect(project_navigation.at_css("a[aria-current='page']")["href"]).to eq(settings_project_path(projects(:two)))
       ensure
         ENV["LOGISTER_ADMIN_EMAILS"] = original
       end
@@ -713,7 +718,8 @@ RSpec.describe "Projects", type: :request do
                occurred_at: 30.seconds.ago,
                context: { "transaction_name" => "POST /checkout" })
 
-        get performance_transactions_project_path(project, period: "all", status: "errored", min_duration_ms: "500", q: "checkout", per_page: 1)
+        get performance_transactions_project_path(project, period: "all", status: "errored", min_duration_ms: "500", q: "checkout", per_page: 1),
+            headers: { "Turbo-Frame" => "performance_transactions" }
 
         expect(response).to have_http_status(:success)
 
@@ -728,7 +734,7 @@ RSpec.describe "Projects", type: :request do
         expect(older_link).to be_present
         expect(older_link["href"]).to include("before=", "status=errored", "q=checkout")
 
-        get older_link["href"]
+        get older_link["href"], headers: { "Turbo-Frame" => "performance_transactions" }
 
         document = Nokogiri::HTML.parse(response.body)
         rows = document.css("table[aria-label='Transaction events'] tbody tr")
@@ -763,11 +769,25 @@ RSpec.describe "Projects", type: :request do
           },
           occurred_at: Time.current
         )
-        get performance_database_load_project_path(projects(:one))
+        get performance_database_load_project_path(projects(:one)),
+            headers: { "Turbo-Frame" => "performance_database_load" }
         expect(response).to have_http_status(:success)
         expect(response.body).to include("Database load (24h)")
         expect(response.body).to include("1 queries captured")
         expect(response.body).to include("42.75 ms")
+      end
+
+      it "redirects direct lazy-panel visits to Performance and rejects a mismatched frame" do
+        project = projects(:one)
+
+        get performance_database_load_project_path(project)
+
+        expect(response).to redirect_to("#{performance_project_path(project)}#performance_database_load")
+
+        get performance_database_load_project_path(project), headers: { "Turbo-Frame" => "performance_transactions" }
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.body).to be_blank
       end
 
       it "returns 404 for project user cannot access" do
@@ -993,6 +1013,109 @@ RSpec.describe "Projects", type: :request do
         expect(rows.size).to eq(1)
         expect(rows.first.text).to include("paged log older")
         expect(document.css("nav[aria-label='Pagination'] a").map { |link| link.text.strip }).to include("Newer")
+      end
+
+      it "uses receipt discovery and typed evidence filters for mobile app activity" do
+        project = create(:project, :ios, user: users(:one), name: "iOS Activity")
+        api_key = create(:api_key, project: project, user: users(:one))
+        received_at = 5.minutes.ago.change(usec: 0)
+        activity = create(
+          :ingest_event,
+          :log,
+          project: project,
+          api_key: api_key,
+          message: "Checkout cache refreshed",
+          occurred_at: 5.days.ago,
+          created_at: received_at,
+          context: {
+            "platform" => "ios",
+            "apple_platform" => "ios",
+            "release" => "com.acme.shop@4.2.0+310",
+            "diagnostic" => { "source" => "sdk" },
+            "app" => { "identifier" => "com.acme.shop", "version_name" => "4.2.0", "version_code" => "310", "process" => "AcmeShop", "screen" => "Checkout" },
+            "distribution" => { "channel" => "testflight" },
+            "session" => { "id" => "session-private-value" },
+            "trace_id" => "trace-private-value",
+            "telemetry_evidence" => {
+              "schema_version" => 1,
+              "source" => "sdk",
+              "kind" => "log",
+              "time" => {
+                "precision" => "exact",
+                "occurred_at" => 5.days.ago.utc.iso8601,
+                "received_at" => received_at.utc.iso8601
+              }
+            }
+          }
+        )
+        hidden = create(
+          :ingest_event,
+          :log,
+          project: project,
+          api_key: api_key,
+          message: "Different activity source",
+          context: {
+            "platform" => "ios",
+            "apple_platform" => "ios",
+            "diagnostic" => { "source" => "metrickit" },
+            "app" => { "version_code" => "311" },
+            "distribution" => { "channel" => "app_store" },
+            "telemetry_evidence" => { "schema_version" => 1, "source" => "metrickit", "time" => { "precision" => "received_only", "received_at" => Time.current.utc.iso8601 } }
+          }
+        )
+        error_event = create(
+          :ingest_event,
+          project: project,
+          api_key: api_key,
+          message: "Related checkout error",
+          occurred_at: activity.occurred_at + 1.minute,
+          context: { "platform" => "ios", "trace_id" => "trace-private-value", "exception" => { "type" => "CheckoutError" } }
+        )
+        ErrorGroupingService.call(error_event)
+
+        get activity_project_path(
+          project,
+          source: "sdk",
+          time_precision: "exact",
+          build_number: "310",
+          channel: "testflight",
+          platform: "ios"
+        )
+
+        expect(response).to have_http_status(:success)
+        document = Nokogiri::HTML.parse(response.body)
+        rows = document.css("table[aria-label='Events'] tbody tr")
+        expect(rows.size).to eq(1)
+        expect(rows.first.text).to include(
+          "Checkout cache refreshed",
+          "Exact occurrence",
+          "Logister SDK",
+          "4.2.0 (310) · testflight",
+          "AcmeShop · Checkout",
+          "Related issue:"
+        )
+        expect(document.text).to include("App activity", "Receipt period", "Stability")
+        expect(response.body).to include("Open same scope in Insights", "attributes%5Bbuild_number%5D=310", "attributes%5Bevidence_source%5D=sdk")
+        expect(document.text).not_to include(hidden.message, "session-private-value", "trace-private-value")
+      end
+
+      it "distinguishes an empty receipt window from a project with no mobile activity" do
+        project = create(:project, :android, user: users(:one), name: "Android Activity")
+        create(
+          :ingest_event,
+          :log,
+          project: project,
+          api_key: create(:api_key, project: project, user: users(:one)),
+          occurred_at: 3.days.ago,
+          created_at: 3.days.ago,
+          context: { "platform" => "android" }
+        )
+
+        get activity_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("No app activity was received in this window")
+        expect(response.body).not_to include("No events yet")
       end
 
       it "shows JavaScript-specific empty-state guidance for JavaScript projects" do

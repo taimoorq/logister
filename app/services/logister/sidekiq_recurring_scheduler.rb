@@ -15,6 +15,7 @@ module Logister
       NotificationEvaluationSweepJob,
       ProjectPurgeRecoverySweepJob,
       AppStoreConnectImportSweepJob,
+      GooglePlayImportSweepJob,
       IngestEventsPartitionMaintenanceJob,
       ClickhouseCoverageSealerJob,
       TelemetryLedgerCleanupJob

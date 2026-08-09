@@ -1,10 +1,13 @@
+require "openssl"
+
 class ProjectEventsController < ApplicationController
   include ProjectInboxData
   include ProjectEventDetailData
 
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_event, only: :show
+  before_action :set_event, only: %i[show original_evidence]
+  before_action :require_project_manager, only: :original_evidence
 
   # GET /projects/:project_uuid/events   — Turbo Frame: project_inbox
   def index
@@ -16,17 +19,21 @@ class ProjectEventsController < ApplicationController
     @inbox_page    = inbox_page(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user, dimensions: @profile_filters, sort: @sort, cursor: params[:cursor])
     @groups        = @inbox_page.groups
     @next_cursor   = @inbox_page.next_cursor
-    @latest_events = inbox_latest_events(@groups)
+    @latest_events = inbox_latest_events(@project, @groups, profile_filters: @profile_filters)
+    @android_mapping_resolutions = inbox_android_mapping_resolutions(@project, @latest_events)
+    @ios_symbol_coverages = inbox_ios_symbol_coverages(@project, @latest_events)
     @group_trends  = inbox_group_trends(@project, @groups, profile_filters: @profile_filters)
     @impact_summaries = inbox_impact_summaries(@project, @groups, profile_filters: @profile_filters)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
     @selected_uuid = params[:group_uuid]
 
-    if turbo_frame_request?
+    if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
       render partial: "projects/inbox_table", locals: {
         project:       @project,
         groups:        @groups,
         latest_events: @latest_events,
+        android_mapping_resolutions: @android_mapping_resolutions,
+        ios_symbol_coverages: @ios_symbol_coverages,
         group_trends:  @group_trends,
         impact_summaries: @impact_summaries,
         has_activity_events: @has_activity_events,
@@ -38,6 +45,8 @@ class ProjectEventsController < ApplicationController
         profile_filters: @profile_filters,
         next_cursor:   @next_cursor
       }
+    elsif turbo_frame_request?
+      head :unprocessable_content
     else
       redirect_to inbox_project_path(@project, inbox_profile_redirect_params.merge(filter: @filter, q: @query, assignee: @assignee_filter, group_uuid: @selected_uuid))
     end
@@ -45,7 +54,11 @@ class ProjectEventsController < ApplicationController
 
   # GET /projects/:project_uuid/events/:uuid   — Turbo Frame: error_detail
   def show
-    detail_data = build_project_event_detail(@project, @event)
+    @profile_filters = normalize_inbox_profile_filters(@project)
+    occurrence_scope = if @event.error_group
+      project_inbox_query(@project).occurrence_relation(@profile_filters, group_ids: [ @event.error_group_id ])
+    end
+    detail_data = build_project_event_detail(@project, @event, occurrence_scope: occurrence_scope)
     @group = detail_data[:group]
     @occurrences = detail_data[:occurrences]
     @related_logs = detail_data[:related_logs]
@@ -75,7 +88,7 @@ class ProjectEventsController < ApplicationController
         frame_scope: @frame_scope,
         selected_frame_index: @frame
       }
-    elsif turbo_frame_request?
+    elsif turbo_frame_request? && request.headers["Turbo-Frame"] == "error_detail"
       render partial: "project_events/event_detail", locals: {
         project:     @project,
         event:       @event,
@@ -91,6 +104,8 @@ class ProjectEventsController < ApplicationController
         frame_scope: @frame_scope,
         frame:       @frame
       }
+    elsif turbo_frame_request?
+      head :unprocessable_content
     else
       # Fallback: if this came from the project inbox workflow, keep users in that workbench.
       if params[:group_uuid].present? || params[:filter].present? || params[:q].present?
@@ -112,6 +127,47 @@ class ProjectEventsController < ApplicationController
     end
   end
 
+  def original_evidence
+    reason = params[:reason].to_s.strip
+    audit = @project.evidence_access_audits.new(
+      user: current_user,
+      ingest_event_uuid: @event.uuid,
+      ingest_event_occurred_at: @event.occurred_at,
+      action: "download_unredacted_stored_evidence",
+      reason: reason,
+      request_metadata: {
+        "ip_hmac" => evidence_request_ip_hmac,
+        "user_agent" => request.user_agent.to_s.first(300)
+      }.compact
+    )
+    unless audit.save
+      return render json: { errors: audit.errors.full_messages }, status: :unprocessable_content
+    end
+
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    send_data(
+      JSON.pretty_generate(
+        {
+          "evidence_access" => {
+            "audit_uuid" => audit.uuid,
+            "project_uuid" => @project.uuid,
+            "event_uuid" => @event.uuid,
+            "event_occurred_at" => @event.occurred_at.utc.iso8601(6),
+            "exported_at" => Time.current.utc.iso8601(6),
+            "representation" => "stored_unredacted_context",
+            "wire_original" => false
+          },
+          "context" => @event.context.as_json
+        }
+      ),
+      filename: "logister-evidence-#{@event.uuid}.json",
+      type: "application/json; charset=utf-8",
+      disposition: "attachment"
+    )
+  end
+
   private
 
   def inbox_profile_redirect_params
@@ -126,6 +182,17 @@ class ProjectEventsController < ApplicationController
 
   def set_event
     @event = project_event_lookup_scope.find_by!(uuid: params[:uuid])
+  end
+
+  def require_project_manager
+    head :not_found unless @project.managed_by?(current_user)
+  end
+
+  def evidence_request_ip_hmac
+    value = request.remote_ip.to_s
+    return if value.blank?
+
+    OpenSSL::HMAC.hexdigest("SHA256", Rails.application.secret_key_base, "evidence-access-ip:#{value}")
   end
 
   def project_event_lookup_scope

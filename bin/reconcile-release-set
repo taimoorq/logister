@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "json"
+require "optparse"
+require "pathname"
+require_relative "../lib/logister/release_set_reconciler"
+
+begin
+  options = { receipt: "release-set-receipt.json", catalog: nil }
+  OptionParser.new do |parser|
+    parser.banner = "Usage: bin/reconcile-release-set --release-set PATH [options]"
+    parser.on("--release-set PATH", "Release-set manifest") { |value| options[:release_set] = value }
+    parser.on("--receipt PATH", "Write the public reconciliation receipt") { |value| options[:receipt] = value }
+    parser.on("--catalog PATH", "Write the verified public version catalog") { |value| options[:catalog] = value }
+  end.parse!
+  raise OptionParser::MissingArgument, "--release-set" unless options[:release_set]
+
+  repo_root = Pathname(__dir__).join("..").expand_path
+  reconciler = Logister::ReleaseSetReconciler.new(
+    repo_root: repo_root,
+    release_set_path: repo_root.join(options[:release_set])
+  )
+  receipt = reconciler.reconcile
+  Pathname(options[:receipt]).write("#{JSON.pretty_generate(receipt)}\n")
+  if receipt.fetch(:status) == "complete" && options[:catalog]
+    Pathname(options[:catalog]).write("#{JSON.pretty_generate(reconciler.catalog(receipt))}\n")
+  end
+
+  puts "Release-set reconciliation #{receipt.fetch(:status)}: #{receipt.fetch(:release_set)}"
+  if receipt.fetch(:status) != "complete"
+    receipt.fetch(:errors).each { |error| warn "  - #{error}" }
+    exit 1
+  end
+rescue OptionParser::ParseError, Logister::ReleaseSet::ValidationError => e
+  warn "Release-set reconciliation failed:"
+  messages = e.respond_to?(:errors) ? e.errors : [ e.message ]
+  messages.each { |message| warn "  - #{message}" }
+  exit 1
+end

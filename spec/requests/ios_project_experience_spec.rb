@@ -28,13 +28,15 @@ RSpec.describe "iOS project experience", type: :request do
     document = Nokogiri::HTML.parse(response.body)
     expect(document.at_css("[data-project-experience='ios']")).to be_present
     expect(document.css(".detail-tab").map { |tab| tab.text.strip }).to eq([
-      "Stack trace", "Trail", "Occurrences (1)", "App & device", "Raw"
+      "Reporting stack", "Trail", "Occurrences (1)", "App & device", "Raw"
     ])
-    expect(document.text).to include("CheckoutError", "CheckoutViewModel.submit(_:)", "Symbols included", "Triggered thread", "Logister SDK")
+    expect(document.text).to include("CheckoutError", "CheckoutViewModel.submit(_:)", "Symbols included", "Reporting thread", "Logister SDK")
     expect(document.at_css(".mobile-mechanism-badge").text).to include("Reported error")
     expect(document.at_css(".ios-incident-header")).to be_present
     expect(document.text).not_to include("Fatal", "Android")
     expect(document.text).to include("iPhone17,1", "iOS 19.0")
+    expect(document.at_css(".mobile-row-type").text).to eq("Reported error")
+    expect(document.at_css(".mobile-row-headline").text).to include("CheckoutError", "CheckoutViewModel.submit(_:)")
   end
 
 
@@ -60,7 +62,7 @@ RSpec.describe "iOS project experience", type: :request do
       sort: "impact",
       release: "com.acme.shop@4.2.0+310",
       diagnostic_source: "sdk",
-      symbolication_status: "not_required",
+      symbolication_status: "symbols_included",
       time_range: "30d"
     ), headers: { "Turbo-Frame" => "project_inbox" }
 
@@ -72,9 +74,111 @@ RSpec.describe "iOS project experience", type: :request do
       "diagnostic_source=sdk",
       "release=com.acme.shop%404.2.0%2B310",
       "sort=impact",
-      "symbolication_status=not_required",
+      "symbolication_status=symbols_included",
       "time_range=30d"
     )
+  end
+
+  it "keeps delayed CPU diagnostics nonfatal and labels reporting versus receipt clocks" do
+    received_at = Time.current.change(usec: 0)
+    report_start = 2.days.ago.change(usec: 0)
+    report_end = 1.day.ago.change(usec: 0)
+    cpu_event = create(
+      :ingest_event,
+      project: project,
+      api_key: api_key,
+      event_type: :error,
+      level: "warning",
+      message: "CPU diagnostic",
+      occurred_at: report_end,
+      context: {
+        "platform" => "ios",
+        "telemetry_schema_version" => 3,
+        "diagnostic" => { "source" => "metrickit", "kind" => "cpu_exception", "measurements" => { "total_cpu_time_seconds" => 98 } },
+        "error" => { "mechanism" => "unhandled_exception", "fatal" => false, "handled" => false },
+        "app" => { "identifier" => "com.acme.shop", "version_name" => "4.2.0", "version_code" => "310" },
+        "telemetry_evidence" => {
+          "schema_version" => 1,
+          "source" => "metrickit",
+          "kind" => "cpu_exception",
+          "evidence_kind" => "sampled_call_tree",
+          "identity_scope" => "occurrence",
+          "fatality" => "nonfatal",
+          "time" => {
+            "precision" => "reporting_interval",
+            "reporting_start" => report_start.utc.iso8601,
+            "reporting_end" => report_end.utc.iso8601,
+            "received_at" => received_at.utc.iso8601
+          }
+        }
+      }
+    )
+    ErrorGroupingService.call(cpu_event)
+
+    get inbox_project_path(project, group_uuid: cpu_event.error_group.uuid)
+
+    document = Nokogiri::HTML.parse(response.body)
+    cpu_row = document.at_css("##{ActionView::RecordIdentifier.dom_id(cpu_event.error_group)}")
+    expect(cpu_row.at_css(".mobile-row-type").text).to eq("Excessive CPU")
+    expect(cpu_row.at_css(".mobile-row-headline").text).to include("Excessive CPU", "98 s CPU")
+    expect(cpu_row.at_css(".mobile-row-fatality").text).to eq("Nonfatal")
+    expect(cpu_row.at_css(".error-meta-time").text).to include("reported through")
+    expect(document.at_css(".detail-context-grid").text).to include("Reporting interval", "Received", "Time precision")
+    expect(document.at_css(".detail-actionbar").text).not_to include("Fatal crash")
+    expect(document.css(".detail-tab").map { |tab| tab.text.strip }).to include("Sampled call tree")
+
+    get inbox_project_path(project, diagnostic_kind: "cpu_exception", time_range: "all")
+    filtered = Nokogiri::HTML.parse(response.body)
+    expect(filtered.css(".mobile-row-type").map { |node| node.text.strip }).to eq([ "Excessive CPU" ])
+  end
+
+  it "shows only blocking symbol coverage in the row while keeping successful coverage in detail" do
+    symbol_event = create(
+      :ingest_event,
+      project: project,
+      api_key: api_key,
+      event_type: :error,
+      message: "Address-only crash",
+      context: {
+        "platform" => "ios",
+        "diagnostic" => { "source" => "sdk", "kind" => "crash" },
+        "error" => { "mechanism" => "native_crash", "fatal" => true },
+        "app" => { "identifier" => "com.acme.shop", "version_name" => "4.2.0", "version_code" => "310" },
+        "device" => { "architecture" => "arm64" },
+        "exception" => {
+          "stacktrace" => [ {
+            "image" => "AcmeShop",
+            "image_uuid" => "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+            "address" => "0x1004a1290",
+            "application_frame" => true
+          } ]
+        }
+      }
+    )
+    ErrorGroupingService.call(symbol_event)
+
+    get inbox_project_path(project, group_uuid: symbol_event.error_group.uuid)
+
+    document = Nokogiri::HTML.parse(response.body)
+    row = document.at_css("##{ActionView::RecordIdentifier.dom_id(symbol_event.error_group)}")
+    expect(row.text).to include("dSYM missing")
+
+    create(
+      :apple_symbol_artifact,
+      project: project,
+      app_identifier: "com.acme.shop",
+      version_code: "310",
+      binary_uuid: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE",
+      architecture: "arm64",
+      status: "verified"
+    )
+
+    get inbox_project_path(project, group_uuid: symbol_event.error_group.uuid)
+
+    document = Nokogiri::HTML.parse(response.body)
+    row = document.at_css("##{ActionView::RecordIdentifier.dom_id(symbol_event.error_group)}")
+    expect(row.text).not_to include("Verified dSYM matched")
+    expect(document.at_css("turbo-frame#error_detail").text).to include("Verified dSYM matched")
   end
 
   it "preserves iOS profile state through Turbo Stream issue actions" do
@@ -84,7 +188,7 @@ RSpec.describe "iOS project experience", type: :request do
       filter: "unresolved",
       release: "com.acme.shop@4.2.0+310",
       diagnostic_source: "sdk",
-      symbolication_status: "not_required",
+      symbolication_status: "symbols_included",
       time_range: "30d",
       sort: "recommended"
     ), headers: { "Accept" => "text/vnd.turbo-stream.html" }
@@ -93,10 +197,35 @@ RSpec.describe "iOS project experience", type: :request do
     expect(response.body).to include(
       "data-inbox-state-url",
       "diagnostic_source=sdk",
-      "symbolication_status=not_required",
+      "symbolication_status=symbols_included",
       "time_range=30d",
       'method="morph"'
     )
+  end
+
+  it "uses memory evidence without rendering an empty stack workbench" do
+    memory_event = create(
+      :ingest_event,
+      project: project,
+      api_key: api_key,
+      event_type: :error,
+      message: "Memory-limit termination",
+      context: {
+        "platform" => "ios",
+        "diagnostic" => { "source" => "sdk", "kind" => "memory_limit_termination" },
+        "error" => { "mechanism" => "memory_termination", "fatal" => true },
+        "termination" => { "namespace" => "JETSAM", "reason" => "per-process-limit" }
+      }
+    )
+    ErrorGroupingService.call(memory_event)
+
+    get inbox_project_path(project, group_uuid: memory_event.error_group.uuid)
+
+    document = Nokogiri::HTML.parse(response.body)
+    detail = document.at_css("turbo-frame#error_detail")
+    expect(detail.css(".detail-tab").map { |tab| tab.text.strip }).to include("Memory evidence")
+    expect(detail.text).to include("No stack applies to this evidence", "does not include an app call stack", "per-process-limit")
+    expect(detail.at_css(".better-errors-workbench")).to be_nil
   end
 
   it "shows a reusable setup checklist tailored to Apple monitoring health" do
@@ -104,6 +233,10 @@ RSpec.describe "iOS project experience", type: :request do
 
     expect(response).to have_http_status(:success)
     expect(response.body).to include(
+      "Connect",
+      "Verify delivery",
+      "Improve evidence",
+      "External sources",
       "First diagnostic",
       "App &amp; build",
       "Sessions",

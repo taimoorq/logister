@@ -1,4 +1,5 @@
 class ProjectIntegrationSetting < ApplicationRecord
+  IMPORT_SCHEDULE_LEASE = 30.minutes
   PROVIDERS = {
     cloudflare_pages: "cloudflare_pages",
     google_play: "google_play",
@@ -46,6 +47,38 @@ class ProjectIntegrationSetting < ApplicationRecord
       enabled? && account_id.present? && external_project_id.present? && external_project_name.present? && credential_reference.present?
     else
       enabled?
+    end
+  end
+
+  def claim_import_schedule!(now: Time.current, lease_for: IMPORT_SCHEDULE_LEASE)
+    with_lock do
+      schedule = metadata.fetch("import_schedule", {})
+      expires_at = Time.zone.parse(schedule["expires_at"].to_s) rescue nil
+      return if expires_at&.future?
+
+      token = SecureRandom.uuid
+      update!(metadata: metadata.merge(
+        "import_schedule" => {
+          "token" => token,
+          "claimed_at" => now.utc.iso8601,
+          "expires_at" => (now + lease_for).utc.iso8601
+        }
+      ))
+      token
+    end
+  end
+
+  def release_import_schedule!(token:)
+    return if token.blank?
+
+    with_lock do
+      schedule = metadata.fetch("import_schedule", {})
+      return false unless ActiveSupport::SecurityUtils.secure_compare(schedule["token"].to_s, token.to_s)
+
+      next_metadata = metadata.deep_dup
+      next_metadata.delete("import_schedule")
+      update!(metadata: next_metadata)
+      true
     end
   end
 

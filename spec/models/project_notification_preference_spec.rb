@@ -81,6 +81,33 @@ RSpec.describe ProjectNotificationPreference, type: :model do
     expect(preference.immediate_email_enabled_for?("regression", error_group: group)).to be false
   end
 
+  it "matches mobile alerts against typed evidence and an explicit delayed-arrival policy" do
+    project = create(:project, :ios)
+    group = create(:error_group, project: project, stage: "production", severity: "error", status: :unresolved)
+    preference = build(
+      :project_notification_preference,
+      project: project,
+      mobile_source_filter: "metrickit",
+      mobile_diagnostic_kind_filter: "hang",
+      mobile_build_filter: "42",
+      mobile_channel_filter: "testflight",
+      mobile_artifact_state_filter: "artifact_matched",
+      late_arrival_policy: "exact_time_only"
+    )
+    metadata = {
+      "evidence_source" => "metrickit",
+      "diagnostic_kind" => "hang",
+      "build_number" => "42",
+      "distribution_channel" => "TestFlight",
+      "artifact_state" => "artifact_matched",
+      "time_precision" => "exact"
+    }
+
+    expect(preference.immediate_email_enabled_for?("regression", error_group: group, metadata: metadata)).to be true
+    expect(preference.immediate_email_enabled_for?("regression", error_group: group, metadata: metadata.merge("time_precision" => "reporting_interval"))).to be false
+    expect(preference.immediate_email_enabled_for?("regression", error_group: group, metadata: metadata.merge("build_number" => "43"))).to be false
+  end
+
   it "limits assignment workflow emails to the assigned user by default" do
     project = create(:project)
     assignee = project.user

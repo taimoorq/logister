@@ -34,6 +34,17 @@ RSpec.describe "Project insights", type: :request do
         expect(response.body).not_to include("queue.depth")
         expect(response.body).to include(insights_data_project_path(project))
       end
+
+
+      it "renders mobile lenses and receipt-clock guidance without server-only presets" do
+        project = create(:project, :ios, user: users(:one), name: "Mobile Insights App")
+
+        get insights_project_path(project)
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include("Stability", "App activity", "App performance", "Receipt-time analytics")
+        expect(response.body).not_to include("Transactions + DB", "Database query")
+      end
     end
   end
 
@@ -75,6 +86,8 @@ RSpec.describe "Project insights", type: :request do
 
         expect(json.fetch("summary")).to include("events" => 7, "errors" => 1, "transactions" => 2, "metrics" => 3)
         expect(json.fetch("selected_metrics")).to include("events.total", "transactions.p95", "db.query.avg", "metric:queue.depth", "metric_value:queue.depth")
+        expect(series_by_key.fetch("events.total").fetch("description")).to eq("Every activity, error, metric, transaction, and check-in event.")
+        expect(series_by_key.fetch("metric:queue.depth").fetch("description")).to eq("Metric event count for queue.depth.")
         expect(series_by_key.fetch("events.total").fetch("data").sum { |point| point.fetch("value") }).to eq(7)
         expect(series_by_key.fetch("transactions.p95").fetch("data").map { |point| point.fetch("value") }.max).to be > 0
         expect(series_by_key.fetch("db.query.avg").fetch("data").map { |point| point.fetch("value") }.max).to eq(50.0)
@@ -118,6 +131,72 @@ RSpec.describe "Project insights", type: :request do
 
           expect(response).to have_http_status(:success)
         end
+      end
+    end
+
+
+    it "keeps mobile sources separate and buckets delayed evidence by receipt time" do
+      travel_to Time.zone.local(2026, 8, 9, 12, 0, 0) do
+        project = create(:project, :ios, user: users(:one), name: "iOS Receipt Insights")
+        api_key = create(:api_key, project: project, user: users(:one))
+        base_context = {
+          "platform" => "ios",
+          "apple_platform" => "ios",
+          "environment" => "production",
+          "release" => "com.acme.shop@4.2.0+310",
+          "diagnostic" => { "source" => "sdk" },
+          "app" => { "identifier" => "com.acme.shop", "version_code" => "310" },
+          "distribution" => { "channel" => "testflight" },
+          "session" => { "id" => "private-session" },
+          "telemetry_evidence" => {
+            "schema_version" => 1,
+            "source" => "sdk",
+            "time" => {
+              "precision" => "exact",
+              "occurred_at" => 5.days.ago.utc.iso8601,
+              "received_at" => 5.minutes.ago.utc.iso8601
+            }
+          }
+        }
+        create(:ingest_event, project: project, api_key: api_key, message: "Delayed app error", occurred_at: 5.days.ago, created_at: 5.minutes.ago, context: base_context)
+        create(:ingest_event, :transaction, project: project, api_key: api_key, message: "Checkout render", occurred_at: 5.days.ago, created_at: 4.minutes.ago, context: base_context.merge("duration_ms" => 240))
+        create(
+          :ingest_event,
+          :log,
+          project: project,
+          api_key: api_key,
+          message: "MetricKit source should be filtered",
+          context: base_context.deep_merge(
+            "diagnostic" => { "source" => "metrickit" },
+            "telemetry_evidence" => { "source" => "metrickit", "time" => { "precision" => "reporting_interval" } }
+          )
+        )
+
+        get insights_data_project_path(project), params: {
+          window: "1h",
+          metrics: [ "errors.count", "transactions.p95", "db.query.avg" ],
+          attributes: {
+            evidence_source: "sdk",
+            time_precision: "exact",
+            build_number: "310",
+            distribution_channel: "testflight",
+            platform: "ios"
+          }
+        }
+
+        expect(response).to have_http_status(:success)
+        json = response.parsed_body
+        expect(json).to include("evidence_clock" => "received_at", "evidence_clock_label" => "Receipt time")
+        expect(json.fetch("summary")).to include("events" => 2, "errors" => 1, "transactions" => 1)
+        expect(json.fetch("selected_metrics")).to contain_exactly("errors.count", "transactions.p95")
+        expect(json.fetch("metric_catalog").map { |metric| metric.fetch("key") }).not_to include("db.query.avg", "db.query.p95")
+        expect(json.fetch("metric_series").find { |series| series.fetch("key") == "errors.count" }.fetch("data").sum { |point| point.fetch("value") }).to eq(1.0)
+        expect(json.fetch("completeness")).to include("source_coverage" => "complete", "time_precision_coverage" => "complete")
+        expect(json.fetch("analytics")).to include("clock" => "received_at", "profile" => "mobile_v1")
+        expect(json.fetch("attributes").map { |attribute| attribute.fetch("key") }).to contain_exactly(
+          "evidence_source", "time_precision", "build_number", "distribution_channel", "platform"
+        )
+        expect(response.body).not_to include("private-session", "MetricKit source should be filtered")
       end
     end
   end

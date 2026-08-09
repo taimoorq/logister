@@ -1,0 +1,81 @@
+schema_version: 1
+id: backend-v3-6
+backend:
+  version: "3.6"
+  tag: v3.6
+impact_records:
+  - telemetry-v3-evidence
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: The existing Ruby release remains wire-compatible with the additive evidence envelope.
+    channels:
+      - rubygems
+      - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.0
+    target_version: 0.4.1
+    bump: patch
+    release_required: true
+    reason: Correct the compact check-in timestamp field and publish the verified runtime package metadata.
+    channels:
+      - npm
+      - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.3.0
+    target_version: 0.3.1
+    bump: patch
+    release_required: true
+    reason: Correct the emitted SDK user-agent version so public package and runtime identities agree.
+    channels:
+      - pypi
+      - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.2.0
+    target_version: 0.2.1
+    bump: patch
+    release_required: true
+    reason: Correct the compact check-in timestamp field across both NuGet packages.
+    channels:
+      - nuget_logister
+      - nuget_logister_aspnetcore
+      - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.3.0
+    target_version: 0.4.0
+    bump: minor
+    release_required: true
+    reason: Publish additive evidence, capture-policy, and durable-delivery functionality for Android.
+    channels:
+      - maven_central
+      - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.3.0
+    target_version: 0.4.0
+    bump: minor
+    release_required: true
+    reason: Publish additive evidence and reporting-period diagnostics for Apple platforms.
+    channels:
+      - swift_package_manager
+      - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.0.0
+    target_version: 1.0.0
+    bump: none
+    release_required: false
+    reason: The existing CLI contract remains compatible and every distribution channel is still reconciled.
+    channels:
+      - npm
+      - github_release
+      - homebrew-logister
+      - scoop-logister

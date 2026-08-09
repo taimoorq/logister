@@ -44,4 +44,41 @@ RSpec.describe IngestEventPayloadNormalizer do
 
     expect(normalizer.event_params(event_hash).fetch("uuid")).to eq(uuid)
   end
+
+  it "accepts only the allow-listed top-level v3 evidence envelope" do
+    context = normalized_context(
+      event_type: "error",
+      message: "MetricKit hang",
+      evidence: {
+        source: "metrickit",
+        kind: "hang",
+        identity_scope: "occurrence",
+        reporting_period: {
+          start: "2026-08-01T00:00:00Z",
+          end: "2026-08-02T00:00:00Z",
+          private_note: "discard"
+        },
+        producer: {
+          sdk_name: "logister-ios",
+          sdk_version: "0.4.0",
+          access_token: "discard"
+        },
+        arbitrary_payload: { secret: "discard" }
+      }
+    )
+
+    expect(context.fetch("evidence")).to eq(
+      "source" => "metrickit",
+      "kind" => "hang",
+      "identity_scope" => "occurrence",
+      "reporting_period" => {
+        "start" => "2026-08-01T00:00:00Z",
+        "end" => "2026-08-02T00:00:00Z"
+      },
+      "producer" => {
+        "sdk_name" => "logister-ios",
+        "sdk_version" => "0.4.0"
+      }
+    )
+  end
 end

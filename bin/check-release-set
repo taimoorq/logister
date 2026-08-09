@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require "pathname"
+require_relative "../lib/logister/release_set"
+
+begin
+  options = {}
+  OptionParser.new do |parser|
+    parser.banner = "Usage: bin/check-release-set [--release-set PATH]"
+    parser.on("--release-set PATH", "Release-set manifest to validate") { |value| options[:release_set] = value }
+  end.parse!
+
+  repo_root = Pathname(__dir__).join("..").expand_path
+  paths = if options[:release_set]
+    [ repo_root.join(options[:release_set]) ]
+  else
+    Dir[repo_root.join("config/release-sets/*.yml")].sort.map { |path| Pathname(path) }
+  end
+  raise Logister::ReleaseSet::ValidationError, [ "No release-set manifests found." ] if paths.empty?
+
+  paths.each do |path|
+    release_set = Logister::ReleaseSet.new(repo_root: repo_root, release_set_path: path).validate!
+    puts "Release set verified: #{release_set.fetch("id")}"
+  end
+rescue OptionParser::ParseError, Logister::ReleaseSet::ValidationError => e
+  warn "Release-set validation failed:"
+  messages = e.respond_to?(:errors) ? e.errors : [ e.message ]
+  messages.each { |message| warn "  - #{message}" }
+  exit 1
+end

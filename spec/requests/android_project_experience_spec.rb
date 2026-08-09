@@ -49,6 +49,11 @@ RSpec.describe "Android project experience", type: :request do
       "No R8 mapping matches"
     )
     expect(document.text).not_to include("Request info", "Local Variables", "Fatal")
+    expect(document.at_css(".mobile-row-type").text).to eq("Reported exception")
+    expect(document.at_css(".mobile-row-headline").text).to include("java.io.IOException", "CartStore.write")
+    expect(document.at_css(".mobile-row-supporting").text).to include("CartStore.kt:19", "1.4.0 (42)")
+    expect(document.at_css("section[aria-label='Scoped issue impact']")).to be_present
+    expect(document.at_css("section[aria-label='Selected occurrence context']").text).to include("Selected occurrence", "1.4.0 (42)")
 
     resolve_form = document.css("form").find { |form| form.text.include?("Mark as fixed") }
     expect(resolve_form["action"]).to include("release=1.4.0%2B42", "sort=impact")
@@ -88,6 +93,54 @@ RSpec.describe "Android project experience", type: :request do
     document = Nokogiri::HTML.parse(response.body)
     expect(document.text).to include("Fatal", "Automatic capture", "message redacted")
     expect(document.text).not_to include("private nested detail", "bearer secret-value")
+  end
+
+  it "renders historical ApplicationExitInfo evidence without a fabricated stack" do
+    exit_event = create(
+      :ingest_event,
+      project: project,
+      api_key: api_key,
+      event_type: :error,
+      level: "error",
+      message: "Android process exit: anr",
+      context: {
+        "platform" => "android",
+        "error_mechanism" => "anr",
+        "capture_source" => "historical_exit",
+        "application_exit_reason" => 6,
+        "application_exit_importance" => 100,
+        "app" => { "package_name" => "com.acme.shop", "version_name" => "1.3.0", "version_code" => "41", "process" => "com.acme.shop" }
+      }
+    )
+    ErrorGroupingService.call(exit_event)
+
+    get inbox_project_path(project, group_uuid: exit_event.error_group.uuid)
+
+    document = Nokogiri::HTML.parse(response.body)
+    detail = document.at_css("turbo-frame#error_detail")
+    expect(detail.text).to include("ApplicationExitInfo evidence", "No stack captured for this historical exit", "Importance", "100")
+    expect(detail.at_css(".better-errors-workbench")).to be_nil
+    exit_row = document.at_css("##{ActionView::RecordIdentifier.dom_id(exit_event.error_group)}")
+    expect(exit_row.at_css(".mobile-row-type").text).to eq("ANR")
+    expect(exit_row.at_css(".mobile-row-headline").text).to include("ANR", "6")
+  end
+
+  it "server-redacts the standard Raw view, including mobile correlation identities" do
+    event.update!(
+      context: event.context.deep_merge(
+        "token" => "top-secret",
+        "session" => { "id" => "session-raw" },
+        "installation" => { "id_hash" => "installation-raw" }
+      )
+    )
+
+    get inbox_project_path(project, group_uuid: event.error_group.uuid)
+
+    document = Nokogiri::HTML.parse(response.body)
+    raw = document.at_css("[data-redaction='server']")
+
+    expect(raw.text).to include("Server-redacted event context", "[REDACTED]")
+    expect(raw.text).not_to include("top-secret", "session-raw", "installation-raw")
   end
 
   it "returns the server-owned list header and filter state inside the Turbo frame" do
@@ -140,7 +193,11 @@ RSpec.describe "Android project experience", type: :request do
     get inbox_project_path(project, group_uuid: event.error_group.uuid)
 
     document = Nokogiri::HTML.parse(response.body)
-    expect(document.text).to include("Deobfuscated", "com.acme.shop.storage.CartStore.write", "CartStore.java")
+    inbox_row = document.at_css("#project_inbox tr")
+    expect(inbox_row.at_css(".mobile-row-headline").text).to include("com.acme.shop.storage.CartStore.write")
+    expect(inbox_row.text).to include("CartStore.java")
+    expect(inbox_row.text).not_to include("Frames deobfuscated")
+    expect(document.text).to include("Frames deobfuscated", "com.acme.shop.storage.CartStore.write", "CartStore.java")
     expect(document.text).not_to include("a.b(SourceFile.java")
   end
 end

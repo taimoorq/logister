@@ -58,16 +58,22 @@ export default class extends Controller {
     this.connected = true
     this.payload = this.hasPayloadValue ? this.payloadValue : {}
     const savedState = this.readSavedState()
-    this.window = savedState.window || this.payload.default_window || "24h"
-    this.environment = savedState.environment || ""
-    this.release = savedState.release || ""
-    this.lens = savedState.lens || "overview"
+    this.lensPresets = this.payload.lens_presets || LENS_PRESETS
+    const scopeOverride = this.payload.scope_override === true
+    this.window = scopeOverride ? (this.payload.default_window || "24h") : (savedState.window || this.payload.default_window || "24h")
+    this.environment = scopeOverride ? (this.payload.initial_environment || "") : (savedState.environment || this.payload.initial_environment || "")
+    this.release = scopeOverride ? (this.payload.initial_release || "") : (savedState.release || this.payload.initial_release || "")
+    this.lens = Object.prototype.hasOwnProperty.call(this.lensPresets, savedState.lens)
+      ? savedState.lens
+      : (this.payload.default_lens || "overview")
     this.refreshSeconds = Number(savedState.refreshSeconds ?? this.payload.refresh_seconds ?? 30)
     this.catalog = this.payload.metric_catalog || []
     this.catalogByKey = new Map(this.catalog.map((metric) => [metric.key, metric]))
     this.attributeCatalog = this.payload.attributes || []
     this.attributeByKey = new Map(this.attributeCatalog.map((attribute) => [attribute.key, attribute]))
-    this.attributeFilters = normalizeAttributeFilters(savedState.attributeFilters || {})
+    this.attributeFilters = normalizeAttributeFilters(
+      scopeOverride ? (this.payload.initial_attribute_filters || {}) : (savedState.attributeFilters || this.payload.initial_attribute_filters || {})
+    )
     this.eventTypes = this.payload.event_types || []
     this.selectedMetrics = Array.isArray(savedState.metrics) && savedState.metrics.length > 0
       ? savedState.metrics.slice(0, MAX_SELECTED_METRICS)
@@ -229,7 +235,7 @@ export default class extends Controller {
   selectLens(event) {
     event.preventDefault()
     const lens = event.currentTarget.dataset.lens
-    if (!lens || !Object.prototype.hasOwnProperty.call(LENS_PRESETS, lens)) return
+    if (!lens || !Object.prototype.hasOwnProperty.call(this.lensPresets, lens)) return
 
     this.lens = lens
     this.selectedMetrics = this.metricsForLens(lens)
@@ -328,7 +334,9 @@ export default class extends Controller {
     this.renderEventChart(data)
     this.renderRecentEvents(data.recent_events || [])
     this.saveState()
-    this.setStatus(`Updated ${timeOnly(data.generated_at || new Date())}`)
+    const clock = data.evidence_clock_label ? ` · ${data.evidence_clock_label}` : ""
+    const sourceCoverage = data.completeness?.source_coverage ? ` · source ${data.completeness.source_coverage}` : ""
+    this.setStatus(`Updated ${timeOnly(data.generated_at || new Date())}${clock}${sourceCoverage}`)
   }
 
   renderError() {
@@ -514,6 +522,7 @@ export default class extends Controller {
                 data-action="project-insights#removeMetric"
                 data-metric-key="${escapeHtml(metric.key)}"
                 ${transitionAttributes("insights-active", metric.key, "project-insights-chip")}
+                title="${escapeHtml(metric.description || "No description available.")}"
                 aria-label="Remove ${escapeHtml(metric.label)}">
           <span>${escapeHtml(metric.label)}</span>
           <span aria-hidden="true">x</span>
@@ -601,7 +610,7 @@ export default class extends Controller {
               <span>${escapeHtml(event.label || event.event_type || "Event")}</span>
             </div>
             <div class="project-insights-recent-meta">
-              <span>${escapeHtml(timeOnly(event.occurred_at))}</span>
+              <span>${escapeHtml(timeOnly(event.observed_at || event.occurred_at))}</span>
               <span>${escapeHtml(event.environment || "unknown")}</span>
               ${event.release ? `<span>${escapeHtml(event.release)}</span>` : ""}
               ${event.duration_ms ? `<span>${formatValue(event.duration_ms, "ms")}</span>` : ""}
@@ -638,7 +647,7 @@ export default class extends Controller {
       return customMetrics.length > 0 ? customMetrics : this.selectedMetrics
     }
 
-    const presetMetrics = LENS_PRESETS[lens]?.metrics || []
+    const presetMetrics = this.lensPresets[lens]?.metrics || []
     const available = new Set(this.catalog.map((metric) => metric.key))
     const selected = presetMetrics.filter((metricKey) => available.has(metricKey)).slice(0, MAX_SELECTED_METRICS)
 

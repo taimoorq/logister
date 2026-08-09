@@ -91,8 +91,8 @@
     <span class="project-overview-cell">
       <span class="project-overview-icon"><%= app_icon(:chart, css: "w-4 h-4") %></span>
       <span>
-        <strong><%= number_with_delimiter(@projects_overview.fetch(:activity_events_count, 0)) %></strong>
-        <span>Events 7d</span>
+        <strong><%= number_with_delimiter(@projects_overview.fetch(:received_events_count, 0)) %></strong>
+        <span>Receipts 7d</span>
       </span>
     </span>
 

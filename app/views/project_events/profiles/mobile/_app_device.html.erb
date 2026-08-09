@@ -6,7 +6,7 @@
   "Correlation & completeness" => presenter.correlation_details
 } %>
 <% if experience.key == :ios %>
-  <% sections["Diagnostic source"] = presenter.diagnostic_details.merge(symbolication: presenter.symbolication_label) %>
+  <% sections["Diagnostic source"] = presenter.diagnostic_details.merge(symbol_coverage: ios_symbol_coverage(project, event, exception_data).label) %>
   <% sections["Termination"] = presenter.termination_details if presenter.termination_details.any? %>
 <% end %>
 

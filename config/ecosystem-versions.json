@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "backend": {
+    "version": "3.5"
+  },
+  "addons": {
+    "logister-ruby": { "version": "0.4.0" },
+    "logister-js": { "version": "0.4.0" },
+    "logister-python": { "version": "0.3.0" },
+    "logister-dotnet": { "version": "0.2.0" },
+    "logister-android": { "version": "0.3.0" },
+    "logister-ios": { "version": "0.3.0" },
+    "logister-cli": { "version": "1.0.0" }
+  }
+}

@@ -1,0 +1,108 @@
+name: Dispatch add-on release set
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+  schedule:
+    - cron: "23 8 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: addon-release-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+
+      - name: Verify dispatch source and public metadata
+        id: source
+        run: |
+          git fetch origin main --force
+          source_sha="$(git rev-parse HEAD)"
+          main_sha="$(git rev-parse origin/main)"
+          if [ "${source_sha}" != "${main_sha}" ]; then
+            echo "Dispatch source ${source_sha} is no longer current main (${main_sha})."
+            exit 1
+          fi
+          scripts/publication-safety-check.sh
+          bin/check-release-impact --all
+          bin/check-release-set
+          echo "sha=${source_sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Require dedicated cross-repository credential
+        env:
+          ADDON_RELEASE_TOKEN: ${{ secrets.LOGISTER_ADDON_RELEASE_TOKEN }}
+        run: |
+          if [ -z "${ADDON_RELEASE_TOKEN}" ]; then
+            echo "Add-on dispatch is not configured. Configure the dedicated fine-grained release-dispatch credential."
+            exit 1
+          fi
+
+      - name: Dispatch every required add-on release
+        env:
+          GH_TOKEN: ${{ secrets.LOGISTER_ADDON_RELEASE_TOKEN }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          ruby <<'RUBY' > /tmp/addon-dispatches.jsonl
+          require "digest"
+          require "json"
+          require "pathname"
+          require "yaml"
+
+          root = Pathname(Dir.pwd)
+          version = root.join("VERSION").read.strip
+          path = root.join("config/release-sets/v#{version}.yml")
+          release_set = YAML.safe_load_file(path, permitted_classes: [], permitted_symbols: [], aliases: false)
+          sha = ENV.fetch("SOURCE_SHA")
+          relative_path = path.relative_path_from(root).to_s
+          public_url = "https://raw.githubusercontent.com/taimoorq/logister/#{sha}/#{relative_path}"
+          checksum = Digest::SHA256.file(path).hexdigest
+
+          release_set.fetch("components").each do |component, metadata|
+            next unless metadata.fetch("release_required")
+
+            payload = {
+              event_type: "logister-release-impact",
+              client_payload: {
+                schema_version: 1,
+                component: component,
+                backend_version: release_set.dig("backend", "version"),
+                backend_tag: release_set.dig("backend", "tag"),
+                backend_sha: sha,
+                release_set_url: public_url,
+                release_set_sha256: checksum,
+                baseline_version: metadata.fetch("baseline_version"),
+                target_version: metadata.fetch("target_version"),
+                bump: metadata.fetch("bump")
+              }
+            }
+            puts JSON.generate(repository: metadata.fetch("repository"), payload: payload)
+          end
+          RUBY
+
+          while IFS= read -r dispatch; do
+            repository="$(ruby -rjson -e 'puts JSON.parse(STDIN.read).fetch("repository")' <<< "${dispatch}")"
+            ruby -rjson -e 'puts JSON.generate(JSON.parse(STDIN.read).fetch("payload"))' <<< "${dispatch}" > /tmp/addon-dispatch.json
+            gh api "repos/${repository}/dispatches" --method POST --input /tmp/addon-dispatch.json
+            echo "Dispatched the public release set to ${repository}."
+          done < /tmp/addon-dispatches.jsonl

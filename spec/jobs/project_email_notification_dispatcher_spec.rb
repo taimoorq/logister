@@ -70,6 +70,33 @@ RSpec.describe ProjectEmailNotificationDispatcher, type: :job do
     expect(ActionMailer::Base.deliveries.first.to).to eq([ assignee.email ])
   end
 
+  it "does not count received-only mobile evidence as a real-time project spike" do
+    now = Time.zone.parse("2026-06-20 12:00:00 UTC")
+    project = create(:project, :android)
+    create(
+      :project_notification_preference,
+      project: project,
+      user: project.user,
+      project_spike_enabled: true,
+      project_spike_threshold_count: 1,
+      project_spike_window_minutes: 10
+    )
+    group = create(:error_group, project: project)
+    event = create(:ingest_event, project: project, occurred_at: now)
+    create(
+      :error_occurrence,
+      error_group: group,
+      ingest_event: event,
+      occurred_at: now,
+      dimensions: { "time_precision" => "received_only" }
+    )
+
+    described_class.call(project: project, kind: "project_spike", metadata: {}, bucket: "2026062012", now: now)
+
+    expect(ActionMailer::Base.deliveries).to be_empty
+    expect(EmailNotificationDelivery.where(notification_kind: "project_spike")).to be_empty
+  end
+
   it "revalidates archived project state before resuming a delivery" do
     delivery = create(:email_notification_delivery, :first_occurrence, status: "pending")
     delivery.project.archive!

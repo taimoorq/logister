@@ -25,11 +25,16 @@ class ErrorOccurrenceDimensions
     "apple_platform" => [ "apple_platform" ],
     "diagnostic_source" => [ "diagnostic", "source" ],
     "diagnostic_kind" => [ "diagnostic", "kind" ],
-    "symbolication_status" => [ "symbolication", "status" ],
     "exception_type" => [ "exception", "type" ],
     "termination_namespace" => [ "termination", "namespace" ],
     "termination_code" => [ "termination", "code" ],
-    "termination_reason" => [ "termination", "reason" ]
+    "termination_reason" => [ "termination", "reason" ],
+    "evidence_source" => [ "telemetry_evidence", "source" ],
+    "evidence_kind" => [ "telemetry_evidence", "evidence_kind" ],
+    "time_precision" => [ "telemetry_evidence", "time", "precision" ],
+    "identity_scope" => [ "telemetry_evidence", "identity_scope" ],
+    "capture_mode" => [ "telemetry_evidence", "capture_mode" ],
+    "fatality" => [ "telemetry_evidence", "fatality" ]
   }.freeze
 
   attr_reader :event, :context
@@ -62,8 +67,22 @@ class ErrorOccurrenceDimensions
       result[key] = value.to_s if value.present? || value == false
     end
     if event.project.integration_ios?
-      culprit = ProjectEvents::IosEventPresenter.new(event).top_in_app_frame&.dig(:method_name)
+      presenter = ProjectEvents::IosEventPresenter.new(event)
+      culprit = presenter.top_in_app_frame&.dig(:method_name)
       values["culprit"] = culprit.to_s if culprit.present?
+      values["symbolication_status"] = AppleSymbolCoverage.call(project: event.project, event: event, presenter: presenter).status.to_s
+    elsif event.project.integration_android?
+      app = context.fetch("app", {})
+      mapping = if app["package_name"].present? && app["version_code"].present?
+        event.project.android_mapping_files.find_by(package_name: app["package_name"], version_code: app["version_code"].to_s)
+      end
+      values["mapping_status"] = if app["version_code"].blank?
+        "build_unknown"
+      elsif mapping
+        "mapping_matched"
+      else
+        "missing"
+      end
     end
     values
   end

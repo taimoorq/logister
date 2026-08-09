@@ -25,29 +25,36 @@ class ErrorGroupingService
 
     attempts = 0
     group = created = occurrence_created = regressed = nil
+    occurrence_decision = nil
     notification_intents = []
     evaluation_to_schedule = nil
 
     begin
       notification_intents = []
       evaluation_to_schedule = nil
+      occurrence_decision = nil
+      regressed = nil
       fingerprint = derive_fingerprint
       ErrorGroup.transaction(requires_new: true) do
         group, created = upsert_group(fingerprint)
-        _occurrence, occurrence_created = link_occurrence(group)
+        occurrence, occurrence_created = link_occurrence(group)
 
         if !created && occurrence_created
-          regressed = group.record_occurrence!(@event)
+          occurrence_decision = group.record_occurrence_with_policy!(@event)
+          regressed = occurrence_decision.reopen_group?
         end
 
         # Back-link on the ingest_event row so we can JOIN cheaply
         @event.update_column(:error_group_id, group.id)
 
-        if @notifications && occurrence_created
+        workflow_alerts = created || occurrence_decision&.workflow_alerts?
+        if @notifications && occurrence_created && workflow_alerts
           notification_intents = capture_notification_intents(
             group,
+            occurrence: occurrence,
             created: created,
-            regressed: regressed
+            regressed: regressed,
+            workflow_alerts: workflow_alerts
           )
           unless created
             evaluation, schedule = NotificationEvaluation.observe_frequent_error!(
@@ -93,6 +100,9 @@ class ErrorGroupingService
       # Build initial state from the event
       ctx = @event.context.is_a?(Hash) ? @event.context : {}
       exc = ctx["exception"] || ctx[:exception]
+      evidence = TelemetryEvidence.for(@event)
+      source_start = evidence.reporting_start || @event.occurred_at
+      source_end = evidence.reporting_end || @event.occurred_at
 
       group.assign_attributes(
         title:           @event.message.to_s.lines.first.to_s.strip.presence || "Untitled error",
@@ -102,8 +112,8 @@ class ErrorGroupingService
         introduced_in_release: IngestEvent.release(@event),
         last_seen_release: IngestEvent.release(@event),
         status:          :unresolved,
-        first_seen_at:   @event.occurred_at,
-        last_seen_at:    @event.occurred_at,
+        first_seen_at:   source_start,
+        last_seen_at:    source_end,
         latest_event_id: @event.id,
         latest_event_occurred_at: @event.occurred_at,
         occurrence_count: 1
@@ -156,7 +166,7 @@ class ErrorGroupingService
     count == 10 || count == 100 || count == 1_000 || (count > 1_000 && (count % 1_000).zero?)
   end
 
-  def capture_notification_intents(group, created:, regressed:)
+  def capture_notification_intents(group, occurrence:, created:, regressed:, workflow_alerts:)
     intents = []
     if created
       intents << NotificationIntent.capture!(
@@ -164,7 +174,7 @@ class ErrorGroupingService
         kind: "first_occurrence",
         error_group: group,
         dedup_key: "error_group:#{group.id}:first_occurrence",
-        metadata: occurrence_identity_metadata
+        metadata: occurrence_identity_metadata(occurrence)
       )
     end
     if regressed
@@ -173,27 +183,38 @@ class ErrorGroupingService
         kind: "regression",
         error_group: group,
         dedup_key: "error_group:#{group.id}:regression:event:#{@event.uuid}",
-        metadata: regression_metadata(group)
+        metadata: regression_metadata(group, occurrence)
       )
     end
-    if milestone_reached?(group.occurrence_count)
+    if workflow_alerts && milestone_reached?(group.occurrence_count)
       intents << NotificationIntent.capture!(
         project: @project,
         kind: "error_milestone",
         error_group: group,
         dedup_key: "error_group:#{group.id}:milestone:#{group.occurrence_count}",
-        metadata: milestone_metadata(group)
+        metadata: milestone_metadata(group, occurrence)
       )
     end
     intents
   end
 
-  def occurrence_identity_metadata
+  def occurrence_identity_metadata(occurrence)
+    evidence = TelemetryEvidence.for(@event)
+    dimensions = occurrence&.dimensions.to_h
     {
       "event_id" => @event.id,
       "event_uuid" => @event.uuid,
-      "occurred_at" => @event.occurred_at.utc.iso8601
-    }
+      "occurred_at" => @event.occurred_at.utc.iso8601,
+      "received_at" => evidence.received_at&.utc&.iso8601,
+      "time_precision" => evidence.time_precision,
+      "reporting_start" => evidence.reporting_start&.utc&.iso8601,
+      "reporting_end" => evidence.reporting_end&.utc&.iso8601,
+      "evidence_source" => evidence.source,
+      "diagnostic_kind" => dimensions["diagnostic_kind"],
+      "build_number" => dimensions["build_number"],
+      "distribution_channel" => dimensions["distribution_channel"],
+      "artifact_state" => dimensions["mapping_status"].presence || dimensions["symbolication_status"].presence
+    }.compact
   end
 
   def schedule_frequent_error_evaluation(evaluation)
@@ -206,22 +227,22 @@ class ErrorGroupingService
     nil
   end
 
-  def regression_metadata(group)
-    {
+  def regression_metadata(group, occurrence)
+    occurrence_identity_metadata(occurrence).merge(
       "event_id" => @event.id,
       "event_uuid" => @event.uuid,
       "occurred_at" => @event.occurred_at.utc.iso8601,
       "reopen_count" => group.reopen_count,
       "release" => IngestEvent.release(@event)
-    }.compact
+    ).compact
   end
 
-  def milestone_metadata(group)
-    {
+  def milestone_metadata(group, occurrence)
+    occurrence_identity_metadata(occurrence).merge(
       "event_id" => @event.id,
       "event_uuid" => @event.uuid,
       "occurred_at" => @event.occurred_at.utc.iso8601,
       "milestone" => group.occurrence_count
-    }
+    )
   end
 end

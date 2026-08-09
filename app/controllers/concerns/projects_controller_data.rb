@@ -17,7 +17,9 @@ module ProjectsControllerData
     @inbox_page = inbox_page(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user, dimensions: @profile_filters, sort: @sort, cursor: params[:cursor])
     @groups = @inbox_page.groups
     @next_cursor = @inbox_page.next_cursor
-    @latest_events = inbox_latest_events(@groups)
+    @latest_events = inbox_latest_events(@project, @groups, profile_filters: @profile_filters)
+    @android_mapping_resolutions = inbox_android_mapping_resolutions(@project, @latest_events)
+    @ios_symbol_coverages = inbox_ios_symbol_coverages(@project, @latest_events)
     @impact_summaries = inbox_impact_summaries(@project, @groups, profile_filters: @profile_filters)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
 
@@ -27,6 +29,8 @@ module ProjectsControllerData
         project:       @project,
         groups:        @groups,
         latest_events: @latest_events,
+        android_mapping_resolutions: @android_mapping_resolutions,
+        ios_symbol_coverages: @ios_symbol_coverages,
         group_trends:  inbox_group_trends(@project, @groups, profile_filters: @profile_filters),
         impact_summaries: @impact_summaries,
         has_activity_events: @has_activity_events,
@@ -44,7 +48,7 @@ module ProjectsControllerData
     @group_trends = inbox_group_trends(@project, @groups, profile_filters: @profile_filters)
     @selected_group = selected_inbox_group
     @selected_event = selected_inbox_event
-    @selected_event = nil if selected_event_mismatches_group?
+    @selected_event = nil if selected_event_mismatches_scope?
 
     load_inbox_detail
     render :inbox unless performed?
@@ -108,12 +112,13 @@ module ProjectsControllerData
 
   def projects_overview(projects, project_stats)
     stats = projects.filter_map { |project| project_stats[project.id] }
-    active_projects_count = stats.count { |project| project[:activity_events].to_i.positive? }
+    active_projects_count = stats.count { |project| project[:received_events].to_i.positive? }
 
     {
       projects_count: projects.size,
       open_groups_count: stats.sum { |project| project[:open_groups].to_i },
       activity_events_count: stats.sum { |project| project[:activity_events].to_i },
+      received_events_count: stats.sum { |project| project[:received_events].to_i },
       active_projects_count: active_projects_count,
       quiet_projects_count: [ projects.size - active_projects_count, 0 ].max
     }
@@ -136,7 +141,7 @@ module ProjectsControllerData
 
   def selected_inbox_group
     if params[:group_uuid].present?
-      @project.error_groups.find_by(uuid: params[:group_uuid])
+      @groups.find { |group| group.uuid == params[:group_uuid] }
     else
       @groups.first
     end
@@ -148,15 +153,22 @@ module ProjectsControllerData
     @project.ingest_events.find_by(uuid: params[:event_uuid])
   end
 
-  def selected_event_mismatches_group?
-    @selected_event && @selected_group && @selected_event.error_group_id != @selected_group.id
+  def selected_event_mismatches_scope?
+    return false unless @selected_event
+    return true unless @selected_group && @selected_event.error_group_id == @selected_group.id
+
+    project_inbox_query(@project)
+      .occurrence_relation(@profile_filters, group_ids: [ @selected_group.id ])
+      .where(ingest_event_id: @selected_event.id, ingest_event_occurred_at: @selected_event.occurred_at)
+      .none?
   end
 
   def load_inbox_detail
-    detail_event = @selected_event || @selected_group&.latest_event_record
+    detail_event = @selected_event || @latest_events[@selected_group&.id]
     return if detail_event.blank?
 
-    detail_data = build_project_event_detail(@project, detail_event, group: @selected_group)
+    occurrence_scope = project_inbox_query(@project).occurrence_relation(@profile_filters, group_ids: [ @selected_group.id ])
+    detail_data = build_project_event_detail(@project, detail_event, group: @selected_group, occurrence_scope: occurrence_scope)
     @detail_event = detail_data[:event]
     @detail_group = detail_data[:group]
     @detail_occurrences = detail_data[:occurrences]

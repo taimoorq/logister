@@ -56,6 +56,8 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     expect(row.dig("attributes", "id")).to eq(event.id)
     expect(row["archive_version"]).to eq(2)
     expect(row["manifest_id"]).to eq(project.telemetry_archives.sole.id)
+    expect(row.dig("export_policy", "payload")).to eq("server_redacted")
+    expect(row.dig("export_policy", "original_evidence_included")).to be false
 
     archive = project.telemetry_archives.sole
     expect(archive).to be_verified
@@ -66,6 +68,54 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     expect(archive.object_records.sole.normalized_source_references).to eq([
       { "id" => event.id, "timestamp" => event.occurred_at.utc.iso8601(6) }
     ])
+  end
+
+  it "redacts private mobile identifiers while preserving evidence clocks and provenance" do
+    storage = FakeArchiveStorage.new
+    project = create(:project, :ios)
+    event = create(
+      :ingest_event,
+      project: project,
+      occurred_at: 3.days.ago,
+      created_at: 1.minute.ago,
+      context: {
+        "session_id" => "private-session",
+        "installation" => { "id_hash" => "private-installation" },
+        "telemetry_evidence" => {
+          "source" => "metrickit",
+          "evidence_kind" => "sampled_call_tree",
+          "identity_scope" => "reporting_interval",
+          "time" => {
+            "precision" => "reporting_interval",
+            "reporting_start" => 4.days.ago.iso8601,
+            "reporting_end" => 3.days.ago.iso8601,
+            "received_at" => 1.minute.ago.iso8601
+          }
+        }
+      }
+    )
+
+    described_class.new(
+      record_type: "ingest_events",
+      project: project,
+      before: 1.day.ago,
+      storage_service: storage
+    ).call
+
+    body = Zlib::GzipReader.new(StringIO.new(storage.uploads.first[:payload])).read
+    row = JSON.parse(body.lines.first)
+
+    expect(row.dig("attributes", "context", "session_id")).to eq("[REDACTED]")
+    expect(row.dig("attributes", "context", "installation", "id_hash")).to eq("[REDACTED]")
+    expect(row.dig("export_policy", "evidence")).to include(
+      "source" => "metrickit",
+      "evidence_kind" => "sampled_call_tree",
+      "identity_scope" => "reporting_interval",
+      "time_precision" => "reporting_interval"
+    )
+    expect(row.dig("export_policy", "evidence", "received_at")).to be_present
+    expect(row.dig("export_policy", "original_evidence_included")).to be false
+    expect(event).to be_persisted
   end
 
   it "supports dry runs without uploading" do

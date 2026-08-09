@@ -44,6 +44,9 @@ class ErrorGroupAssignmentsController < ApplicationController
     groups = page.groups
     counts = inbox_counts(@project, assignee: assignee, viewer: current_user)
     selected_uuid = groups.any? { |group| group.id == @group.id } ? @group.uuid : nil
+    latest_events = inbox_latest_events(@project, groups, profile_filters: profile_filters)
+    mapping_resolutions = inbox_android_mapping_resolutions(@project, latest_events)
+    symbol_coverages = inbox_ios_symbol_coverages(@project, latest_events)
 
     respond_to do |format|
       format.turbo_stream do
@@ -54,7 +57,9 @@ class ErrorGroupAssignmentsController < ApplicationController
             locals: {
               project: @project,
               groups: groups,
-              latest_events: inbox_latest_events(groups),
+              latest_events: latest_events,
+              android_mapping_resolutions: mapping_resolutions,
+              ios_symbol_coverages: symbol_coverages,
               group_trends: inbox_group_trends(@project, groups, profile_filters: profile_filters),
               impact_summaries: inbox_impact_summaries(@project, groups, profile_filters: profile_filters),
               has_activity_events: groups.empty? && project_has_activity_events?(@project),
@@ -74,7 +79,7 @@ class ErrorGroupAssignmentsController < ApplicationController
             locals: { project: @project, counts: counts, filter: filter, query: query, assignee: assignee },
             method: :morph
           ),
-          detail_stream(selected_uuid, filter: filter, query: query, assignee: assignee)
+          detail_stream(selected_uuid, filter: filter, query: query, assignee: assignee, profile_filters: profile_filters)
         ]
       end
 
@@ -84,10 +89,11 @@ class ErrorGroupAssignmentsController < ApplicationController
     end
   end
 
-  def detail_stream(selected_uuid, filter:, query:, assignee:)
-    latest_event = @group.latest_event_record
+  def detail_stream(selected_uuid, filter:, query:, assignee:, profile_filters:)
+    latest_event = inbox_latest_events(@project, [ @group ], profile_filters: profile_filters)[@group.id]
     if selected_uuid.present? && latest_event.present?
-      detail_data = build_project_event_detail(@project, latest_event, group: @group)
+      occurrence_scope = project_inbox_query(@project).occurrence_relation(profile_filters, group_ids: [ @group.id ])
+      detail_data = build_project_event_detail(@project, latest_event, group: @group, occurrence_scope: occurrence_scope)
       return turbo_stream.replace(
         "error_detail",
         partial: "project_events/event_detail",

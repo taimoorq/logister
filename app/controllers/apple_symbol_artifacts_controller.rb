@@ -23,13 +23,14 @@ class AppleSymbolArtifactsController < ApplicationController
 
   def process_artifact
     AppleSymbolArtifactProcessingJob.perform_later(@artifact.id)
-    redirect_to settings_project_path(@project, section: "integrations", anchor: "apple-symbols"), notice: "dSYM verification queued."
+    redirect_to artifact_return_path, notice: "dSYM verification queued."
   end
 
   def destroy
     build = @artifact.version_code
     @artifact.destroy!
-    redirect_to settings_project_path(@project, section: "integrations", anchor: "apple-symbols"), notice: "dSYM archive removed for build #{build}."
+    MobileArtifactCoverageRefreshJob.perform_later(@project.id, "ios")
+    redirect_to artifact_return_path, notice: "dSYM archive removed for build #{build}."
   end
 
   private
@@ -44,5 +45,11 @@ class AppleSymbolArtifactsController < ApplicationController
 
   def require_ios_project
     head :not_found unless @project.integration_ios?
+  end
+
+  def artifact_return_path
+    return artifacts_project_path(@project) if params[:return_to] == "artifacts"
+
+    settings_project_path(@project, section: "integrations", anchor: "apple-symbols")
   end
 end

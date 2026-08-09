@@ -1,0 +1,96 @@
+<%= render "projects/header" %>
+
+<section class="space-y-6" aria-labelledby="mobile-artifacts-title">
+  <section class="dashboard-panel">
+    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="dashboard-kicker">Build evidence</p>
+        <h2 id="mobile-artifacts-title" class="text-xl font-bold text-slate-900"><%= @project.integration_android? ? "R8 mapping artifacts" : "dSYM artifacts" %></h2>
+        <p class="mt-1 max-w-3xl text-sm text-slate-600">
+          Private build artifacts keyed to the exact app/build<%= @project.integration_ios? ? ", binary UUID, and architecture" : "" %>. Inventory state and observed-build coverage are separate; an uploaded artifact does not claim every frame has been enriched.
+        </p>
+      </div>
+      <% if @can_manage_artifacts %>
+        <%= link_to "Upload in integration settings", settings_project_path(@project, section: "integrations", anchor: (@project.integration_android? ? "android-mappings" : "apple-symbols")), class: "btn-primary" %>
+      <% end %>
+    </div>
+    <% if @project.archived? %>
+      <div class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="note">
+        This project is archived. Authorized artifact upload, UUID verification, removal, and evidence review remain available for historical investigations; app intake and distribution-source synchronization stay governed by the archived-project policy.
+      </div>
+    <% end %>
+  </section>
+
+  <section class="grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Artifact inventory summary">
+    <article class="dashboard-panel"><p class="dashboard-kicker">Inventory</p><strong class="mt-2 block text-3xl font-bold text-slate-900"><%= number_with_delimiter(@artifact_index.total_artifacts) %></strong><span class="text-xs text-slate-500">private artifacts</span></article>
+    <% @artifact_index.status_counts.sort.each do |status, count| %>
+      <article class="dashboard-panel"><p class="dashboard-kicker"><%= status.to_s.humanize %></p><strong class="mt-2 block text-3xl font-bold text-slate-900"><%= number_with_delimiter(count) %></strong><span class="text-xs text-slate-500">inventory records</span></article>
+    <% end %>
+  </section>
+
+  <section class="dashboard-panel" aria-labelledby="observed-build-coverage-title">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 id="observed-build-coverage-title" class="text-lg font-bold text-slate-900">Observed-build coverage</h3>
+        <p class="mt-1 text-sm text-slate-600">Coverage is derived from received stability evidence for observed builds, not from the number of files in inventory.</p>
+      </div>
+      <%= link_to "Open Releases", releases_project_path(@project), class: "btn-ghost" %>
+    </div>
+    <% if @artifact_index.observed_builds.empty? %>
+      <p class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">No observed builds have supplied stability evidence yet. Uploads remain inventory until an exact build can require or match them.</p>
+    <% else %>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full min-w-[48rem] text-left text-sm" aria-label="Observed build artifact coverage">
+          <thead class="text-xs uppercase text-slate-500"><tr><th class="py-2 pr-4">Build</th><th class="py-2 pr-4">Channel</th><th class="py-2 pr-4">Diagnostics</th><th class="py-2 pr-4">Coverage</th><th class="py-2">Latest receipt</th></tr></thead>
+          <tbody class="divide-y divide-slate-200">
+            <% @artifact_index.observed_builds.each do |build| %>
+              <tr><td class="py-3 pr-4 font-semibold text-slate-900"><%= build.label %></td><td class="py-3 pr-4"><%= build.channel_label %></td><td class="py-3 pr-4"><%= number_with_delimiter(build.occurrence_count) %></td><td class="py-3 pr-4"><%= build.artifact_state.to_s.humanize %></td><td class="py-3"><%= build.last_received_at ? "#{time_ago_in_words(build.last_received_at)} ago" : "Unknown" %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="overflow-hidden rounded-xl border border-slate-200 bg-white" aria-labelledby="artifact-inventory-title">
+    <div class="border-b border-slate-200 px-5 py-4"><h3 id="artifact-inventory-title" class="text-lg font-bold text-slate-900">Artifact inventory</h3><p class="mt-1 text-sm text-slate-600">Showing at most <%= ProjectMobileArtifactIndex::PAGE_SIZE %> records per page. Artifact contents are never rendered here.</p></div>
+    <% if @artifact_index.artifacts.empty? %>
+      <div class="p-5"><p class="text-sm text-slate-600">No <%= @project.integration_android? ? "R8 mappings" : "dSYMs" %> uploaded yet.</p></div>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[70rem] text-left text-sm" aria-label="Build artifact inventory">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-4 py-3">Artifact</th><th class="px-4 py-3">Build identity</th><th class="px-4 py-3">Binary identity</th><th class="px-4 py-3">State</th><th class="px-4 py-3">Uploaded</th><th class="px-4 py-3">Actions</th></tr></thead>
+          <tbody class="divide-y divide-slate-200">
+            <% @artifact_index.artifacts.each do |artifact| %>
+              <tr>
+                <td class="px-4 py-4 align-top"><strong class="block text-slate-900"><%= artifact.filename %></strong><span class="text-xs text-slate-500"><%= number_to_human_size(artifact.byte_size) %> · SHA-256 <%= artifact.checksum.to_s.first(12) %>…</span></td>
+                <td class="px-4 py-4 align-top"><strong class="block text-slate-900"><%= [artifact.version_name, artifact.version_code.present? && "(#{artifact.version_code})"].compact.join(" ").presence || "Build unknown" %></strong><span class="text-xs text-slate-500"><%= artifact.app_identifier %></span></td>
+                <td class="px-4 py-4 align-top text-xs text-slate-600"><% if artifact.binary_uuid %><code><%= artifact.binary_uuid %></code><br><%= artifact.architecture %><% else %>Not applicable to R8 mapping<% end %></td>
+                <td class="px-4 py-4 align-top"><span class="font-semibold text-slate-900"><%= artifact.status_label %></span><% if @project.integration_ios? && artifact.status == :verified %><span class="mt-1 block text-xs text-slate-500">UUID verified; frame symbolication is separate.</span><% end %></td>
+                <td class="px-4 py-4 align-top"><%= time_ago_in_words(artifact.uploaded_at) %> ago<span class="block text-xs text-slate-500"><%= artifact.uploader %></span></td>
+                <td class="px-4 py-4 align-top">
+                  <% if @can_manage_artifacts %>
+                    <div class="flex flex-wrap gap-2">
+                      <% if @project.integration_ios? && artifact.record.processable? %>
+                        <%= button_to "Verify again", process_artifact_project_apple_symbol_artifact_path(@project, artifact.record), method: :post, params: { return_to: "artifacts" }, class: "btn-ghost btn-sm" %>
+                      <% end %>
+                      <% destroy_path = @project.integration_android? ? project_android_mapping_file_path(@project, artifact.record) : project_apple_symbol_artifact_path(@project, artifact.record) %>
+                      <%= button_to "Remove", destroy_path, method: :delete, params: { return_to: "artifacts" }, class: "btn-ghost btn-sm", form: { data: { turbo_confirm: "Remove this private build artifact? Historical events will retain their evidence, but enrichment may become unavailable." } } %>
+                    </div>
+                  <% else %>
+                    <span class="text-xs text-slate-500">Manager access required</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+
+  <nav class="flex items-center justify-between" aria-label="Artifact pages">
+    <% if @artifact_page > 1 %><%= link_to "Previous", artifacts_project_path(@project, page: @artifact_page - 1), class: "btn-ghost" %><% else %><span></span><% end %>
+    <% if @artifact_index.has_more %><%= link_to "Next", artifacts_project_path(@project, page: @artifact_page + 1), class: "btn-ghost" %><% end %>
+  </nav>
+</section>

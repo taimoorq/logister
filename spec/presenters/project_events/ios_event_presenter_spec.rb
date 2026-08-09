@@ -14,7 +14,9 @@ RSpec.describe ProjectEvents::IosEventPresenter do
     expect(presenter.diagnostic_source_label).to eq("Logister SDK")
     expect(presenter.fatal?).to be(false)
     expect(presenter.symbolication_label).to eq("Symbols included")
-    expect(presenter.triggered_thread).to include(name: "Reporting thread", triggered: true)
+    expect(presenter.triggered_thread).to include(name: "Reporting thread", role: "reporting", triggered: false)
+    expect(presenter.failure_type_label).to eq("Reported error")
+    expect(presenter.technical_signature).to include("CheckoutError", "CheckoutViewModel.submit(_:)")
     expect(presenter.top_in_app_frame).to include(
       image: "AcmeShop",
       method_name: "CheckoutViewModel.submit(_:)",
@@ -23,6 +25,46 @@ RSpec.describe ProjectEvents::IosEventPresenter do
     expect(presenter.app_details).to include(bundle_identifier: "com.acme.shop", version_name: "4.2.0", version_code: "310")
     expect(presenter.device_details).to include(model: "iPhone17,1", family: "iPhone")
     expect(presenter.os_details).to include(name: "iOS", version: "19.0")
+  end
+
+  it "uses diagnostic kind before transport mechanism for non-crash MetricKit evidence" do
+    cpu_event = Struct.new(:context, :message).new(
+      {
+        "diagnostic" => { "source" => "metrickit", "kind" => "cpu_exception", "measurements" => { "total_cpu_time_seconds" => 98 } },
+        "error" => { "mechanism" => "unhandled_exception", "fatal" => false }
+      },
+      "CPU diagnostic"
+    )
+
+    cpu_presenter = described_class.new(cpu_event)
+
+    expect(cpu_presenter.failure_type_label).to eq("Excessive CPU")
+    expect(cpu_presenter.technical_signature).to eq("Excessive CPU · 98 s CPU")
+    expect(cpu_presenter.fatal?).to be(false)
+  end
+
+  it "does not infer fatality for measurement diagnostics when Apple did not supply it" do
+    %w[hang cpu_exception disk_write_exception launch_failure].each do |kind|
+      diagnostic = described_class.new(
+        Struct.new(:context, :message).new(
+          { "diagnostic" => { "source" => "metrickit", "kind" => kind }, "error" => { "mechanism" => "unhandled_exception" } },
+          kind
+        )
+      )
+
+      expect(diagnostic.fatal?).to be(false), "expected #{kind} not to infer fatality"
+    end
+  end
+
+  it "marks aggregate and memory termination evidence as non-stack-bearing" do
+    %w[memory_limit_termination memory_pressure_termination aggregate_exit_metric].each do |kind|
+      diagnostic = described_class.new(
+        Struct.new(:context, :message).new({ "diagnostic" => { "kind" => kind } }, kind)
+      )
+
+      expect(diagnostic.stack_not_applicable?).to be(true)
+      expect(diagnostic.stack_unavailable_reason).to be_present
+    end
   end
 
   it "labels privacy-safe MetricKit diagnostics without inventing a message" do

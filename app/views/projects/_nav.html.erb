@@ -1,53 +1,40 @@
-<%# locals: (tour_group: nil) %>
+<%# locals: (page_context:, tour_group: nil) %>
 
 <nav class="project-section-nav"
      aria-label="Project sections"
      <%= tag.attributes(data: product_tour_step_data(tour_group, :project_navigation)) if tour_group.present? %>>
-  <% primary_sections = [
-    [ "Overview", :home, [ project_path(@project) ], project_path(@project), "At-a-glance health and recent signals" ],
-    [ "Inbox", :inbox, [ inbox_project_path(@project) ], inbox_project_path(@project), "Errors that need triage" ],
-    [ "Events", :events, [ activity_project_path(@project) ], activity_project_path(@project), "Logs, metrics, transactions, and check-ins" ],
-    [ "Insights", :insights, [ insights_project_path(@project) ], insights_project_path(@project), "Trends and deeper telemetry exploration" ],
-    [ "Performance", :performance, [ performance_project_path(@project) ], performance_project_path(@project), "Slow or failing requests and jobs" ],
-    [ "Monitors", :monitors, [ monitors_project_path(@project) ], monitors_project_path(@project), "Scheduled jobs and heartbeat status" ]
-  ] %>
-  <% secondary_sections = [
-    [ "Deployments", :deployments, [ deployments_project_path(@project) ], deployments_project_path(@project), "Releases, commits, and deploy metadata", "Project tools" ],
-    [ "Archive search", :archive, [ archives_project_path(@project) ], archives_project_path(@project), "Find current and archived telemetry", "Project tools" ],
-    [ "Settings", :settings, [ settings_project_path(@project), edit_project_path(@project), setup_project_path(@project) ], settings_project_path(@project), "Setup, access, integrations, and project preferences", "Manage" ]
-  ] %>
-  <% secondary_active = secondary_sections.any? { |_label, _icon, active_paths, _path, _description, _group| active_paths.include?(request.path) } %>
-
-  <% primary_sections.each do |label, icon, active_paths, path, description| %>
-    <% active = active_paths.include?(request.path) %>
-    <%= link_to path,
-                title: description,
+  <% page_context.navigation.primary_pages.each do |page| %>
+    <% active = page_context.active?(page) %>
+    <%= link_to page_context.path_for(page),
+                title: page.description,
                 class: "project-section-nav-link #{active ? 'is-active' : ''}",
                 aria: { current: ("page" if active) } do %>
-      <%= app_icon(icon, css: "h-3.5 w-3.5 shrink-0") %>
-      <span><%= label %></span>
+      <%= app_icon(page.icon_key, css: "h-3.5 w-3.5 shrink-0") %>
+      <span><%= page.label %></span>
     <% end %>
   <% end %>
 
-  <details class="project-nav-menu relative shrink-0">
-    <summary class="project-nav-menu-summary project-section-nav-link <%= 'is-active' if secondary_active %>">
-      <span>More</span>
-      <%= app_icon(:chevron_down, css: "h-3.5 w-3.5 shrink-0") %>
-    </summary>
-    <div class="project-nav-menu-panel absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
-      <% secondary_sections.group_by(&:last).each do |group, sections| %>
-        <p class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 first:pt-0"><%= group %></p>
-        <% sections.each do |label, icon, active_paths, path, description, _group| %>
-          <% active = active_paths.include?(request.path) %>
-          <%= link_to path,
-                      title: description,
+  <% if page_context.navigation.secondary_pages.any? %>
+    <details class="project-nav-menu relative shrink-0">
+      <summary class="project-nav-menu-summary project-section-nav-link <%= 'is-active' if page_context.navigation.secondary_active? %>">
+        <span>More</span>
+        <%= app_icon(:chevron_down, css: "h-3.5 w-3.5 shrink-0") %>
+      </summary>
+      <div class="project-nav-menu-panel absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+        <% page_context.navigation.secondary_pages.group_by(&:menu_group).each do |group, pages| %>
+          <p class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 first:pt-0"><%= group %></p>
+          <% pages.each do |page| %>
+            <% active = page_context.active?(page) %>
+            <%= link_to page_context.path_for(page),
+                      title: page.description,
                       class: "flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 #{active ? 'bg-blue-700 text-white shadow-sm hover:bg-blue-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}",
                       aria: { current: ("page" if active) } do %>
-            <%= app_icon(icon, css: "h-3.5 w-3.5 shrink-0") %>
-            <span><%= label %></span>
+              <%= app_icon(page.icon_key, css: "h-3.5 w-3.5 shrink-0") %>
+              <span><%= page.label %></span>
+            <% end %>
           <% end %>
         <% end %>
-      <% end %>
-    </div>
-  </details>
+      </div>
+    </details>
+  <% end %>
 </nav>

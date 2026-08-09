@@ -6,6 +6,25 @@ require "cgi"
 RSpec.describe "Project integration settings", type: :request do
   include ActiveJob::TestHelper
   describe "PATCH /projects/:uuid/integration_setting" do
+    it "keeps live integration settings immutable while the project is archived" do
+      project = create(:project, :android, :archived, user: users(:one))
+      sign_in users(:one)
+
+      expect do
+        patch project_integration_setting_path(project), params: {
+          project_integration_setting: {
+            provider: "google_play",
+            enabled: "1",
+            external_project_id: "com.acme.shop",
+            credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS"
+          }
+        }
+      end.not_to change(ProjectIntegrationSetting, :count)
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations"))
+      expect(flash[:alert]).to include("paused while this project is archived")
+    end
+
     it "updates an owned Cloudflare Pages project setting" do
       project = create(:project, :cloudflare_pages, user: users(:one))
       sign_in users(:one)
@@ -130,6 +149,27 @@ RSpec.describe "Project integration settings", type: :request do
   end
 
   describe "POST /projects/:uuid/integration_setting/import" do
+    it "does not queue distribution imports for archived projects" do
+      project = create(:project, :ios, :archived, user: users(:one))
+      setting = create(
+        :project_integration_setting,
+        project: project,
+        provider: "app_store_connect",
+        enabled: true,
+        external_project_id: "com.acme.shop",
+        account_id: "issuer-123",
+        external_project_name: "KEY123",
+        credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      )
+      sign_in users(:one)
+
+      expect do
+        post project_integration_setting_import_path(project, provider: "app_store_connect")
+      end.not_to have_enqueued_job(AppStoreConnectImportJob).with(setting.id)
+
+      expect(response).to redirect_to(settings_project_path(project, section: "integrations"))
+    end
+
     it "queues the source-specific App Store Connect importer" do
       project = create(:project, :ios, user: users(:one))
       setting = create(
@@ -199,6 +239,19 @@ RSpec.describe "Project integration settings", type: :request do
 
       expect(response).to have_http_status(:success)
       expect(response.body).to include("App Store Connect", "APP_STORE_CONNECT_PRIVATE_KEY", "dSYM coverage", "No dSYM artifacts uploaded", "No App Store metrics imported")
+    end
+
+    it "shows archived mobile integrations as read-only while retaining forensic artifacts" do
+      project = create(:project, :ios, :archived, user: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "integrations")
+
+      document = Nokogiri::HTML.parse(response.body)
+      expect(document.text).to include("Live integrations are paused", "Existing source links and private build artifacts remain available")
+      expect(document.at_css("input[name='project_integration_setting[external_project_id]']")[:disabled]).to eq("disabled")
+      expect(document.text).not_to include("Sync App Store metrics")
+      expect(document.at_css("input[type='submit'][value='Upload dSYM']")).to be_present
     end
   end
 end

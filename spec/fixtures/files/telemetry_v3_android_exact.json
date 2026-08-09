@@ -1,0 +1,46 @@
+{
+  "input": {
+    "uuid": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+    "event_type": "error",
+    "level": "error",
+    "message": "Checkout crashed",
+    "occurred_at": "2026-08-08T10:30:00Z",
+    "context": {
+      "telemetry_schema_version": 3,
+      "platform": "android",
+      "sdk": { "name": "logister-android", "version": "0.4.0" },
+      "error": { "fatal": true }
+    },
+    "evidence": {
+      "source": "sdk",
+      "kind": "crash",
+      "capture_mode": "uncaught_handler",
+      "producer": { "sdk_name": "logister-android", "sdk_version": "0.4.0" }
+    }
+  },
+  "received_at": "2026-08-09T12:00:00Z",
+  "expected_evidence": {
+    "schema_version": 1,
+    "source": "sdk",
+    "kind": "crash",
+    "capture_mode": "uncaught_handler",
+    "evidence_kind": "crashed_stack",
+    "identity_scope": "occurrence",
+    "fatality": "fatal",
+    "time": {
+      "precision": "exact",
+      "occurred_at": "2026-08-08T10:30:00.000000Z",
+      "received_at": "2026-08-09T12:00:00.000000Z"
+    },
+    "producer": {
+      "sdk_name": "logister-android",
+      "sdk_version": "0.4.0",
+      "telemetry_schema_version": 3
+    },
+    "normalization": {
+      "owner": "server",
+      "normalizer": "TelemetryEvidenceNormalizer",
+      "sensitive_key_filter_applied": true
+    }
+  }
+}

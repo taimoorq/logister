@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: "3.5"
+  version: "3.6"
   summary: Send telemetry to Logister and build authorized read-only CLI clients.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
@@ -56,8 +56,8 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.5"
-                    api_contract_version: "3.5"
+                    server_version: "3.6"
+                    api_contract_version: "3.6"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "0.1.2"
@@ -2277,7 +2277,56 @@ components:
           format: date-time
         context:
           $ref: "#/components/schemas/EventContext"
+        evidence:
+          $ref: "#/components/schemas/TelemetryEvidence"
       additionalProperties: true
+    TelemetryEvidence:
+      type: object
+      description: Immutable client-owned source evidence. Server-derived verification and normalization claims are never accepted here.
+      properties:
+        source:
+          type: string
+          description: Open source identifier such as `sdk`, `metrickit`, or `application_exit_info`.
+        kind:
+          type: string
+          description: Open diagnostic kind identifier.
+        capture_mode:
+          type: string
+          description: Open capture mechanism identifier.
+        evidence_kind:
+          type: string
+          description: Open description of the evidence representation.
+        identity_scope:
+          type: string
+          description: Scope within which the event UUID identifies this evidence.
+        reporting_period:
+          $ref: "#/components/schemas/TelemetryReportingPeriod"
+        producer:
+          $ref: "#/components/schemas/TelemetryProducer"
+      additionalProperties: false
+    TelemetryReportingPeriod:
+      type: object
+      required:
+        - start
+        - end
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+      additionalProperties: false
+    TelemetryProducer:
+      type: object
+      properties:
+        sdk_name:
+          type: string
+        sdk_version:
+          type: string
+        decoder_version:
+          type: string
+      additionalProperties: false
     EventContext:
       type: object
       description: Structured event metadata used for details, filtering, correlation, metrics, and analytics.

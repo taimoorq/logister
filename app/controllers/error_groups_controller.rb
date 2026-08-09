@@ -84,6 +84,9 @@ class ErrorGroupsController < ApplicationController
     page = inbox_page(@project, filter: filter, query: query, assignee: assignee, viewer: current_user, dimensions: profile_filters, sort: sort)
     @groups = page.groups
     @counts = inbox_counts(@project, assignee: assignee, viewer: current_user)
+    latest_events = inbox_latest_events(@project, @groups, profile_filters: profile_filters)
+    mapping_resolutions = inbox_android_mapping_resolutions(@project, latest_events)
+    symbol_coverages = inbox_ios_symbol_coverages(@project, latest_events)
 
     respond_to do |format|
       format.turbo_stream do
@@ -94,7 +97,9 @@ class ErrorGroupsController < ApplicationController
             locals: {
               project: @project,
               groups: @groups,
-              latest_events: inbox_latest_events(@groups),
+              latest_events: latest_events,
+              android_mapping_resolutions: mapping_resolutions,
+              ios_symbol_coverages: symbol_coverages,
               group_trends: inbox_group_trends(@project, @groups, profile_filters: profile_filters),
               impact_summaries: inbox_impact_summaries(@project, @groups, profile_filters: profile_filters),
               has_activity_events: @groups.empty? && project_has_activity_events?(@project),

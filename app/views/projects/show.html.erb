@@ -6,6 +6,10 @@
            highlight_header: true,
            highlight_navigation: true %>
 
+<% if project_experience(@project).supports?(:mobile) %>
+  <%= render "projects/mobile_overview", overview: @mobile_overview %>
+<% else %>
+
 <% open_errors_count = @counts.fetch(:unresolved, 0) %>
 <% introduced_today_count = @counts.fetch(:introduced_today, 0) %>
 <% all_error_groups_count = @counts.fetch(:all, 0) %>
@@ -106,4 +110,5 @@
     </aside>
   </section>
 </section>
+<% end %>
 <% end %>

@@ -138,4 +138,47 @@ RSpec.describe IngestEventPersistence, type: :model do
     expect(second).not_to be_duplicate
     expect(IngestEvent.where(uuid: client_uuid).pluck(:project_id)).to contain_exactly(project.id, other_project.id)
   end
+
+  it "persists a server-owned reporting interval and receipt clock for delayed mobile evidence" do
+    mobile_project = create(:project, :ios)
+    mobile_key = create(:api_key, project: mobile_project, user: mobile_project.user)
+    received_at = Time.zone.parse("2026-08-09T12:00:00Z")
+    delayed_attributes = attributes.except(:occurred_at).merge(
+      uuid: SecureRandom.uuid,
+      context: {
+        "platform" => "ios",
+        "diagnostic" => {
+          "source" => "metrickit",
+          "kind" => "hang",
+          "reporting_period" => {
+            "start" => "2026-08-01T00:00:00Z",
+            "end" => "2026-08-02T00:00:00Z"
+          }
+        }
+      }
+    )
+
+    travel_to(received_at) do
+      result = described_class.new(
+        project: mobile_project,
+        api_key: mobile_key,
+        attributes: delayed_attributes
+      ).call
+      evidence = TelemetryEvidence.for(result.event)
+
+      expect(result.event.occurred_at).to eq(Time.zone.parse("2026-08-02T00:00:00Z"))
+      expect(evidence).to be_reporting_interval
+      expect(evidence.received_at).to eq(received_at)
+      expect(result.outbox_event.recorded_at).to eq(result.event.occurred_at)
+      expect(result.outbox_event.accepted_at).to eq(received_at)
+      expect(result.outbox_event.telemetry_idempotency_key.acceptance_metadata.fetch("evidence")).to include(
+        "source" => "metrickit",
+        "kind" => "hang",
+        "time_precision" => "reporting_interval",
+        "reporting_start" => "2026-08-01T00:00:00.000000Z",
+        "reporting_end" => "2026-08-02T00:00:00.000000Z",
+        "received_at" => "2026-08-09T12:00:00.000000Z"
+      )
+    end
+  end
 end

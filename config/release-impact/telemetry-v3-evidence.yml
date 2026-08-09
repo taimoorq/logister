@@ -1,0 +1,37 @@
+schema_version: 1
+id: telemetry-v3-evidence
+summary: Additive mobile evidence metadata and integration discovery capabilities.
+backend:
+  bump: minor
+  compatibility: expand
+  activation: backend_first_dark
+contracts:
+  - cli_api
+  - telemetry_ingest
+  - integration_discovery
+contract_sha256:
+  cli_api: 17bcd4b2611b5b5cac38dfa8a5e201c869b3ca2525601ad9d3b60ea07c1887af
+  telemetry_ingest: 955dfe2ae495f12659387d08c8741033294a3d4091ce9234f740f45f318fe3ae
+  integration_discovery: f9100789f002c9490434d30e4ca54e2b7ea337222b146e66f3035a86720189cc
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Existing Ruby telemetry envelopes remain accepted without mobile evidence fields.
+  logister-js:
+    bump: none
+    reason: Existing JavaScript telemetry envelopes remain accepted without mobile evidence fields.
+  logister-python:
+    bump: none
+    reason: Existing Python telemetry envelopes remain accepted without mobile evidence fields.
+  logister-dotnet:
+    bump: none
+    reason: Existing .NET telemetry envelopes remain accepted without mobile evidence fields.
+  logister-android:
+    bump: minor
+    reason: Android gains additive evidence, capture policy, and durable delivery capabilities.
+  logister-ios:
+    bump: minor
+    reason: iOS gains additive evidence for crash and reporting-interval diagnostics.
+  logister-cli:
+    bump: none
+    reason: CLI read operations remain compatible and expose no new required fields.

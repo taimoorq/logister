@@ -40,17 +40,29 @@ class ProjectStats
     return {} if project_ids.blank?
 
     stats = project_ids.index_with do
-      { total_events: 0, activity_events: 0, open_groups: 0, all_groups: 0, latest_event_at: nil, trend: Array.new(7, 0) }
+      {
+        total_events: 0,
+        activity_events: 0,
+        received_events: 0,
+        open_groups: 0,
+        all_groups: 0,
+        latest_event_at: nil,
+        latest_received_at: nil,
+        trend: Array.new(7, 0),
+        receipt_trend: Array.new(7, 0)
+      }
     end
     project_error_groups = ErrorGroup.where(project_id: project_ids)
     project_events = IngestEvent.where(project_id: project_ids)
     trend_dates = 7.times.map { |i| Date.current - (6 - i) }
     recent_events = project_events.where("occurred_at >= ?", trend_dates.first.beginning_of_day)
+    recent_receipts = project_events.where("created_at >= ?", trend_dates.first.beginning_of_day)
 
     apply_group_counts(stats, project_error_groups)
     apply_activity_counts(stats, recent_events)
     apply_latest_event_times(stats, recent_events)
     apply_event_trends(stats, recent_events, trend_dates)
+    apply_receipt_stats(stats, project_events, recent_receipts, trend_dates)
 
     stats
   end
@@ -92,6 +104,24 @@ class ProjectStats
 
         stats[project_id][:trend][idx] = count
         stats[project_id][:total_events] += count
+      end
+  end
+
+  def apply_receipt_stats(stats, project_events, recent_receipts, trend_dates)
+    recent_receipts.group(:project_id).count.each do |project_id, count|
+      stats[project_id][:received_events] = count
+    end
+
+    project_events.group(:project_id).maximum(:created_at).each do |project_id, received_at|
+      stats[project_id][:latest_received_at] = received_at
+    end
+
+    recent_receipts
+      .group(:project_id, "DATE(created_at)")
+      .count
+      .each do |(project_id, date), count|
+        index = trend_dates.index(date.to_date)
+        stats[project_id][:receipt_trend][index] = count if index
       end
   end
 end

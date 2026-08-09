@@ -1,13 +1,18 @@
-New error in <%= @project.name %>
+<%= @imprecise_source_time ? "Newly received diagnostic" : "New error" %> in <%= @project.name %>
 
-Logister saw this error type for the first time in your project.
+<% if @imprecise_source_time %>Logister newly received evidence for this error type. Its source does not provide an exact occurrence time, so this does not claim the error first occurred now.
+<% else %>This is the first evidence Logister has received for this error type in your project.
+<% end %>
 
 Error: <%= @group.title %>
 <% if @group.subtitle.present? %>Class: <%= @group.subtitle %>
 <% end %>Environment: <%= @group.stage %>
 Severity: <%= @group.severity %>
 <% if @group.introduced_in_release.present? %>Release: <%= @group.introduced_in_release %>
-<% end %><% if @group.first_seen_at %>First seen: <%= l(@group.first_seen_at, format: :long) %>
+<% end %><% if @evidence.reporting_interval? %>Reporting period: <%= [@evidence.reporting_start, @evidence.reporting_end].compact.map { |time| l(time, format: :long) }.join(" – ") %>
+<% elsif @evidence.exact_time? %>Occurred: <%= l(@evidence.occurred_at, format: :long) %>
+<% elsif @group.first_seen_at %>First observed: <%= l(@group.first_seen_at, format: :long) %>
+<% end %><% if @evidence.received_at %>Received: <%= l(@evidence.received_at, format: :long) %>
 <% end %>
 Open error:
 <%= @group_url %>

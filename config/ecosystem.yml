@@ -1,0 +1,194 @@
+schema_version: 1
+impact_directory: config/release-impact
+
+backend:
+  repository: taimoorq/logister
+  version_source:
+    path: VERSION
+    format: plain_text
+  changelog_path: CHANGELOG.md
+  release_from_main_workflow: .github/workflows/release-from-main.yml
+  release_workflow: .github/workflows/release.yml
+  channels:
+    - fly
+    - ghcr
+    - docker_hub
+    - quay_optional
+    - github_release
+    - cloudflare_docs
+
+contracts:
+  cli_api:
+    description: User-scoped CLI authentication, capabilities, and read API.
+    source_files:
+      - docs/openapi.yaml
+    owned_paths:
+      - app/controllers/api/v1/cli_*.rb
+      - app/services/logister/cli*.rb
+      - app/services/cli*.rb
+      - spec/requests/api/v1/cli_*.rb
+      - docs/openapi.yaml
+    consumers:
+      - logister-cli
+
+  telemetry_ingest:
+    description: SDK ingest, batch ingest, check-in, deployment, and mobile evidence contracts.
+    source_files:
+      - docs/openapi.yaml
+      - docs/telemetry_v3_evidence.schema.json
+    owned_paths:
+      - app/controllers/api/v1/ingest*.rb
+      - app/controllers/api/v1/check_ins*.rb
+      - app/controllers/api/v1/deployments*.rb
+      - app/controllers/api/v1/mobile*.rb
+      - app/services/ingest*.rb
+      - app/services/*telemetry*.rb
+      - app/services/logister/*telemetry*.rb
+      - app/models/*telemetry*.rb
+      - docs/openapi.yaml
+      - docs/telemetry*.json
+      - docs/telemetry*.md
+      - spec/contracts/**/*
+      - spec/fixtures/files/telemetry*.json
+    consumers:
+      - logister-ruby
+      - logister-js
+      - logister-python
+      - logister-dotnet
+      - logister-android
+      - logister-ios
+
+  integration_discovery:
+    description: Public integration availability, setup metadata, package references, and project-type guidance.
+    source_files:
+      - config/ecosystem.yml
+      - docs/mobile-add-ons.md
+    owned_paths:
+      - app/models/project_integration_definition.rb
+      - app/models/project_experience_definition.rb
+      - app/models/project_experiences/*.rb
+      - app/views/projects/*integration*.erb
+      - app/views/projects/*setup*.erb
+      - cloudflare-docs/**/*android*
+      - cloudflare-docs/**/*ios*
+      - cloudflare-docs/**/*ruby*
+      - cloudflare-docs/**/*python*
+      - cloudflare-docs/**/*javascript*
+      - cloudflare-docs/**/*dotnet*
+      - docs/mobile-add-ons.md
+      - public/llms*.txt
+      - bin/sync-doc-versions
+    consumers:
+      - logister-ruby
+      - logister-js
+      - logister-python
+      - logister-dotnet
+      - logister-android
+      - logister-ios
+      - logister-cli
+
+addons:
+  logister-cli:
+    repository: taimoorq/logister-cli
+    version_source:
+      path: package.json
+      format: json_version
+    changelog_path: CHANGELOG.md
+    release_from_main_workflow: .github/workflows/release-from-main.yml
+    release_workflow: .github/workflows/release.yml
+    channels:
+      - npm
+      - github_release
+      - homebrew-logister
+      - scoop-logister
+
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    version_source:
+      path: lib/logister/version.rb
+      format: ruby_constant
+    changelog_path: CHANGELOG.md
+    release_from_main_workflow: .github/workflows/release-from-main.yml
+    release_workflow: .github/workflows/release.yml
+    channels:
+      - rubygems
+      - github_release
+
+  logister-js:
+    repository: taimoorq/logister-js
+    version_source:
+      path: package.json
+      format: json_version
+    changelog_path: CHANGELOG.md
+    release_from_main_workflow: .github/workflows/release-from-main.yml
+    release_workflow: .github/workflows/release.yml
+    channels:
+      - npm
+      - github_release
+
+  logister-python:
+    repository: taimoorq/logister-python
+    version_source:
+      path: pyproject.toml
+      format: pyproject_version
+    changelog_path: CHANGELOG.md
+    release_from_main_workflow: .github/workflows/release-from-main.yml
+    release_workflow: .github/workflows/publish.yml
+    channels:
+      - pypi
+      - github_release
+
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    version_source:
+      path: src/Logister/Logister.csproj
+      secondary_path: src/Logister.AspNetCore/Logister.AspNetCore.csproj
+      format: msbuild_version
+    changelog_path: CHANGELOG.md
+    release_from_main_workflow: .github/workflows/release-from-main.yml
+    release_workflow: .github/workflows/release.yml
+    channels:
+      - nuget_logister
+      - nuget_logister_aspnetcore
+      - github_release
+
+  logister-android:
+    repository: taimoorq/logister-android
+    version_source:
+      path: gradle.properties
+      format: gradle_property
+    changelog_path: CHANGELOG.md
+    release_from_main_workflow: .github/workflows/release-from-main.yml
+    release_workflow: .github/workflows/release.yml
+    channels:
+      - maven_central
+      - github_release
+
+  logister-ios:
+    repository: taimoorq/logister-ios
+    version_source:
+      path: VERSION
+      format: plain_text
+    changelog_path: CHANGELOG.md
+    release_from_main_workflow: .github/workflows/release-from-main.yml
+    release_workflow: .github/workflows/release.yml
+    channels:
+      - swift_package_manager
+      - github_release
+
+distribution_repositories:
+  homebrew-logister:
+    repository: taimoorq/homebrew-logister
+    source_artifact: logister-cli/npm
+    metadata_path: Formula/logister.rb
+    publication_branch: main
+    channels:
+      - homebrew_tap
+
+  scoop-logister:
+    repository: taimoorq/scoop-logister
+    source_artifact: logister-cli/npm
+    metadata_path: bucket/logister.json
+    publication_branch: main
+    channels:
+      - scoop_bucket

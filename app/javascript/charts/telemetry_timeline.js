@@ -53,7 +53,11 @@ export function metricTimelineOption({
       top: 0,
       type: "scroll",
       icon: "roundRect",
-      textStyle: { color: "#475569", fontSize: 11 }
+      textStyle: { color: "#475569", fontSize: 11 },
+      tooltip: {
+        show: true,
+        formatter: (params) => metricDescriptionTooltipFormatter(params, definitionsByName)
+      }
     },
     tooltip: {
       trigger: "axis",
@@ -183,6 +187,14 @@ function metricTooltipFormatter(params, definitionsByName) {
   })
 
   return `${escapeHtml(params[0].axisValueLabel || "")}<br>${rows.length > 0 ? rows.join("<br>") : "No values"}`
+}
+
+function metricDescriptionTooltipFormatter(params, definitionsByName) {
+  const name = params?.name || ""
+  const definition = definitionsByName.get(name) || {}
+  const description = definition.description || "No description available."
+
+  return `<strong>${escapeHtml(name)}</strong><br>${escapeHtml(description)}`
 }
 
 function defaultTimeLabel(value) {

@@ -413,6 +413,69 @@
   gap: 0.35rem;
 }
 
+.mobile-row-primary {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.mobile-row-overline {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--app-muted-text);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.mobile-row-attention,
+.mobile-row-type,
+.mobile-row-fatality {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  border: 1px solid var(--app-control-border);
+  border-radius: 999px;
+  background: var(--app-surface);
+  padding: 0.08rem 0.45rem;
+}
+
+.mobile-row-attention {
+  border-color: var(--app-warning-700);
+  background: var(--app-warning-50);
+  color: var(--app-warning-700);
+}
+
+.mobile-row-type {
+  color: var(--app-text);
+}
+
+.mobile-row-fatality {
+  border-color: var(--app-danger-200);
+  background: var(--app-danger-50);
+  color: var(--app-danger-800);
+}
+
+.mobile-row-headline {
+  color: var(--app-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.mobile-row-supporting {
+  color: var(--app-muted-text);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .mobile-row-signals strong {
   color: var(--app-text);
   font-size: 0.68rem;

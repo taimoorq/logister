@@ -1,5 +1,12 @@
 <% content_for :title, "#{@project.name} insights" %>
 <% tour_group = "project-insights" %>
+<% insight_lenses = @insights_payload[:lenses] || [
+  { key: "overview", label: "Overview", description: "Events + quality" },
+  { key: "health", label: "Health", description: "Errors + logs" },
+  { key: "performance", label: "Performance", description: "Transactions + DB" },
+  { key: "monitors", label: "Monitors", description: "Check-ins" },
+  { key: "custom", label: "Custom", description: "App metrics" }
+] %>
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
 
@@ -13,51 +20,17 @@
        <%= tag.attributes(data: product_tour_step_data(tour_group, :lenses)) %>
        style="view-transition-name: insights-lenses; view-transition-class: project-insights-panel;">
     <div class="project-insights-lens-actions" role="tablist" aria-label="Insight view presets">
-      <button type="button"
-              class="project-insights-lens"
-              data-project-insights-target="lensButton"
-              data-action="project-insights#selectLens"
-              data-lens="overview"
-              role="tab">
-        <span>Overview</span>
-        <small>Events + quality</small>
-      </button>
-      <button type="button"
-              class="project-insights-lens"
-              data-project-insights-target="lensButton"
-              data-action="project-insights#selectLens"
-              data-lens="health"
-              role="tab">
-        <span>Health</span>
-        <small>Errors + logs</small>
-      </button>
-      <button type="button"
-              class="project-insights-lens"
-              data-project-insights-target="lensButton"
-              data-action="project-insights#selectLens"
-              data-lens="performance"
-              role="tab">
-        <span>Performance</span>
-        <small>Transactions + DB</small>
-      </button>
-      <button type="button"
-              class="project-insights-lens"
-              data-project-insights-target="lensButton"
-              data-action="project-insights#selectLens"
-              data-lens="monitors"
-              role="tab">
-        <span>Monitors</span>
-        <small>Check-ins</small>
-      </button>
-      <button type="button"
-              class="project-insights-lens"
-              data-project-insights-target="lensButton"
-              data-action="project-insights#selectLens"
-              data-lens="custom"
-              role="tab">
-        <span>Custom</span>
-        <small>App metrics</small>
-      </button>
+      <% insight_lenses.each do |lens| %>
+        <button type="button"
+                class="project-insights-lens"
+                data-project-insights-target="lensButton"
+                data-action="project-insights#selectLens"
+                data-lens="<%= lens.fetch(:key) %>"
+                role="tab">
+          <span><%= lens.fetch(:label) %></span>
+          <small><%= lens.fetch(:description) %></small>
+        </button>
+      <% end %>
     </div>
     <div class="project-insights-toolbar-actions">
       <div class="project-insights-status" data-project-insights-target="status">Waiting for data</div>
@@ -71,6 +44,14 @@
                  description: "Configure the telemetry that powers insights" %>
     </div>
   </div>
+
+  <% if @insights_payload[:experience] == "mobile" %>
+    <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900" role="note">
+      <strong>Receipt-time analytics.</strong>
+      These charts use when Logister accepted mobile evidence so delayed diagnostics remain discoverable. Use Stability detail for exact occurrence times or source reporting intervals. Platform diagnostics, app activity, and custom app metrics remain separate series; no crash-free rate is inferred.
+      <%= link_to "Open same scope in Activity", activity_project_path(@project, @activity_scope_projection.params), class: "ml-2 font-semibold text-blue-800 underline" %>
+    </div>
+  <% end %>
 
   <div class="project-insights-scope"
        aria-label="Dashboard controls"

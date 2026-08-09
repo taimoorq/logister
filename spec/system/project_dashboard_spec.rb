@@ -13,6 +13,7 @@ RSpec.describe "Project dashboard", type: :system do
     expect(page).to have_css(".project-insights-metric-panel")
     expect(page).to have_css(".project-insights-chart-main[data-rendered='true'] canvas", wait: 10)
     expect(page).to have_css(".project-insights-active-chip", text: "Total events")
+    expect(page).to have_css(".project-insights-active-chip[title='Every activity, error, metric, transaction, and check-in event.']")
 
     chart_box = page.evaluate_script(<<~JS)
       (() => {

@@ -1,6 +1,12 @@
 class HealthController < ApplicationController
   skip_before_action :require_modern_browser, raise: false
 
+  def release
+    payload = Logister::RuntimeReleaseIdentity.call
+    expires_now
+    render json: payload, status: payload.fetch(:status) == "ok" ? :ok : :service_unavailable
+  end
+
   def clickhouse
     client = Logister::ClickhouseClient.new
     schema_status = client.schema_status

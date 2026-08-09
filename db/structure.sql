@@ -502,6 +502,44 @@ ALTER SEQUENCE public.error_occurrences_id_seq OWNED BY public.error_occurrences
 
 
 --
+-- Name: evidence_access_audits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.evidence_access_audits (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    project_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    ingest_event_uuid character varying NOT NULL,
+    ingest_event_occurred_at timestamp(6) without time zone NOT NULL,
+    action character varying NOT NULL,
+    reason character varying NOT NULL,
+    request_metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: evidence_access_audits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.evidence_access_audits_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: evidence_access_audits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.evidence_access_audits_id_seq OWNED BY public.evidence_access_audits.id;
+
+
+--
 -- Name: github_installations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1281,9 +1319,9 @@ CREATE TABLE public.notification_intents (
     CONSTRAINT notification_intents_attempts_nonnegative CHECK ((attempts >= 0)),
     CONSTRAINT notification_intents_enqueued_at CHECK ((((status)::text <> 'enqueued'::text) OR (enqueued_at IS NOT NULL))),
     CONSTRAINT notification_intents_exactly_one_subject CHECK (((error_group_id IS NOT NULL) <> (check_in_monitor_id IS NOT NULL))),
-    CONSTRAINT notification_intents_kind CHECK (((kind)::text = ANY ((ARRAY['first_occurrence'::character varying, 'regression'::character varying, 'error_milestone'::character varying, 'monitor_missed'::character varying, 'monitor_recovered'::character varying])::text[]))),
+    CONSTRAINT notification_intents_kind CHECK (((kind)::text = ANY (ARRAY[('first_occurrence'::character varying)::text, ('regression'::character varying)::text, ('error_milestone'::character varying)::text, ('monitor_missed'::character varying)::text, ('monitor_recovered'::character varying)::text]))),
     CONSTRAINT notification_intents_processing_lease CHECK ((((status)::text = 'processing'::text) = ((lease_token IS NOT NULL) AND (started_at IS NOT NULL)))),
-    CONSTRAINT notification_intents_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'enqueued'::character varying])::text[])))
+    CONSTRAINT notification_intents_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('processing'::character varying)::text, ('enqueued'::character varying)::text])))
 );
 
 
@@ -1494,7 +1532,13 @@ CREATE TABLE public.project_notification_preferences (
     immediate_email_limit_per_hour integer DEFAULT 10 NOT NULL,
     quiet_hours_enabled boolean DEFAULT false NOT NULL,
     quiet_hours_start integer DEFAULT 22 NOT NULL,
-    quiet_hours_end integer DEFAULT 7 NOT NULL
+    quiet_hours_end integer DEFAULT 7 NOT NULL,
+    mobile_source_filter character varying DEFAULT 'all'::character varying NOT NULL,
+    mobile_diagnostic_kind_filter character varying DEFAULT 'all'::character varying NOT NULL,
+    mobile_build_filter character varying DEFAULT 'all'::character varying NOT NULL,
+    mobile_channel_filter character varying DEFAULT 'all'::character varying NOT NULL,
+    mobile_artifact_state_filter character varying DEFAULT 'all'::character varying NOT NULL,
+    late_arrival_policy character varying DEFAULT 'notify_on_receipt'::character varying NOT NULL
 );
 
 
@@ -2389,6 +2433,13 @@ ALTER TABLE ONLY public.error_occurrences ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: evidence_access_audits id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evidence_access_audits ALTER COLUMN id SET DEFAULT nextval('public.evidence_access_audits_id_seq'::regclass);
+
+
+--
 -- Name: github_installations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2684,6 +2735,14 @@ ALTER TABLE ONLY public.error_groups
 
 ALTER TABLE ONLY public.error_occurrences
     ADD CONSTRAINT error_occurrences_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: evidence_access_audits evidence_access_audits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evidence_access_audits
+    ADD CONSTRAINT evidence_access_audits_pkey PRIMARY KEY (id);
 
 
 --
@@ -3174,7 +3233,7 @@ CREATE INDEX idx_cli_monitors_project_updated_uuid ON public.check_in_monitors U
 -- Name: idx_cli_root_traces_project_started_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_cli_root_traces_project_started_uuid ON public.trace_spans USING btree (project_id, started_at DESC, uuid DESC) WHERE (((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)));
+CREATE INDEX idx_cli_root_traces_project_started_uuid ON public.trace_spans USING btree (project_id, started_at DESC, uuid DESC) WHERE (((kind)::text = ANY (ARRAY[('server'::character varying)::text, ('browser'::character varying)::text])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)));
 
 
 --
@@ -3294,6 +3353,20 @@ CREATE INDEX idx_error_occurrences_cursor ON public.error_occurrences USING btre
 --
 
 CREATE INDEX idx_error_occurrences_event_partition_ref ON public.error_occurrences USING btree (ingest_event_id, ingest_event_occurred_at);
+
+
+--
+-- Name: idx_evidence_access_event_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_evidence_access_event_created ON public.evidence_access_audits USING btree (project_id, ingest_event_uuid, created_at);
+
+
+--
+-- Name: idx_evidence_access_project_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_evidence_access_project_created ON public.evidence_access_audits USING btree (project_id, created_at);
 
 
 --
@@ -4820,6 +4893,27 @@ CREATE INDEX index_error_occurrences_on_ingest_event_id ON public.error_occurren
 --
 
 CREATE UNIQUE INDEX index_error_occurrences_on_uuid ON public.error_occurrences USING btree (uuid);
+
+
+--
+-- Name: index_evidence_access_audits_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_evidence_access_audits_on_project_id ON public.evidence_access_audits USING btree (project_id);
+
+
+--
+-- Name: index_evidence_access_audits_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_evidence_access_audits_on_user_id ON public.evidence_access_audits USING btree (user_id);
+
+
+--
+-- Name: index_evidence_access_audits_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_evidence_access_audits_on_uuid ON public.evidence_access_audits USING btree (uuid);
 
 
 --
@@ -12127,6 +12221,14 @@ ALTER TABLE ONLY public.api_keys
 
 
 --
+-- Name: evidence_access_audits fk_rails_087bc6a836; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evidence_access_audits
+    ADD CONSTRAINT fk_rails_087bc6a836 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: android_mapping_files fk_rails_09c2aa1b48; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12212,6 +12314,14 @@ ALTER TABLE ONLY public.error_groups
 
 ALTER TABLE ONLY public.notification_intents
     ADD CONSTRAINT fk_rails_2e98005306 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
+-- Name: evidence_access_audits fk_rails_303b444d55; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.evidence_access_audits
+    ADD CONSTRAINT fk_rails_303b444d55 FOREIGN KEY (project_id) REFERENCES public.projects(id);
 
 
 --
@@ -12653,6 +12763,9 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260809200000'),
+('20260809180000'),
+('20260809170000'),
 ('20260809121000'),
 ('20260809120000'),
 ('20260808161000'),
@@ -12722,3 +12835,4 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260215025030'),
 ('20260215025029'),
 ('20260215025023');
+

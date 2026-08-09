@@ -55,4 +55,24 @@ RSpec.describe ProjectEvents::AndroidEventPresenter do
     expect(safe_presenter.exception_message).to eq("java.lang.IllegalStateException")
     expect(safe_presenter.cause_chain.map { |entry| entry[:message] }).to eq([ nil ])
   end
+
+  it "uses termination evidence instead of inventing an exception for a historical exit" do
+    exit_event = Struct.new(:context, :message).new(
+      {
+        "error_mechanism" => "anr",
+        "capture_source" => "historical_exit",
+        "application_exit_reason" => 6,
+        "app" => { "version_name" => "4.2.0", "version_code" => "310" }
+      },
+      "Android process exit: anr"
+    )
+
+    exit_presenter = described_class.new(exit_event)
+
+    expect(exit_presenter.failure_type_label).to eq("ANR")
+    expect(exit_presenter.technical_signature).to eq("ANR · 6")
+    expect(exit_presenter.top_in_app_frame).to be_nil
+    expect(exit_presenter.stack_not_applicable?).to be(true)
+    expect(exit_presenter.application_exit_details).to include(reason: "6")
+  end
 end

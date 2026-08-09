@@ -16,6 +16,33 @@ RSpec.describe ProjectErrorMailer, type: :mailer do
     expect(mail.body.encoded).to include(delivery.error_group.title)
   end
 
+  it "labels reporting-interval evidence as newly received instead of newly occurred" do
+    delivery = create(:email_notification_delivery, :first_occurrence)
+    create(:project_notification_preference, project: delivery.project, user: delivery.user)
+    event = delivery.error_group.latest_event_record
+    event.update!(
+      context: event.context.merge(
+        "telemetry_evidence" => {
+          "schema_version" => 1,
+          "source" => "metrickit",
+          "time" => {
+            "precision" => "reporting_interval",
+            "reporting_start" => 2.days.ago.utc.iso8601(6),
+            "reporting_end" => 1.day.ago.utc.iso8601(6),
+            "received_at" => Time.current.utc.iso8601(6)
+          }
+        }
+      )
+    )
+
+    mail = described_class.first_occurrence(delivery)
+
+    expect(mail.subject).to include("Newly received diagnostic")
+    bodies = [ mail.text_part.body.decoded, mail.html_part.body.decoded ]
+    expect(bodies).to all(include("does not claim the error first occurred now", "Reporting period", "Received"))
+    expect(bodies.join("\n")).not_to include("saw this error type for the first time")
+  end
+
   it "renders group alert mail for regressions" do
     delivery = create(:email_notification_delivery, :regression)
     create(:project_notification_preference, project: delivery.project, user: delivery.user)

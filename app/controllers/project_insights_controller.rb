@@ -7,8 +7,16 @@ class ProjectInsightsController < ApplicationController
   before_action :set_accessible_project
 
   def show
-    window = ProjectInsights.normalize_window(params[:window])
-    @insights_payload = cached_insights_shell_payload(window)
+    @telemetry_scope = ProjectTelemetryScope.from(project: @project, source: params)
+    @insights_scope_projection = @telemetry_scope.project_for(:insights)
+    @activity_scope_projection = @telemetry_scope.project_for(:activity)
+    window = ProjectInsights.normalize_window(@insights_scope_projection.params[:window] || params[:window])
+    @insights_payload = cached_insights_shell_payload(window).merge(
+      scope_override: @telemetry_scope.to_h.any?,
+      initial_environment: @insights_scope_projection.params[:environment],
+      initial_release: @insights_scope_projection.params[:release],
+      initial_attribute_filters: @insights_scope_projection.params[:attributes] || {}
+    ).compact
 
     render "projects/insights"
   end
@@ -24,15 +32,16 @@ class ProjectInsightsController < ApplicationController
   end
 
   def cached_insights_dashboard
-    window = ProjectInsights.normalize_window(params[:window])
+    scope = ProjectTelemetryScope.from(project: @project, source: params).project_for(:insights)
+    window = ProjectInsights.normalize_window(scope.params[:window] || params[:window])
 
     ProjectInsightsCache.dashboard(
       project: @project,
       window:,
       metrics: params[:metrics],
-      environment: params[:environment],
-      release: params[:release],
-      attribute_filters: insights_attribute_filter_params
+      environment: params[:environment].presence || scope.params[:environment],
+      release: params[:release].presence || scope.params[:release],
+      attribute_filters: (scope.params[:attributes] || {}).merge(insights_attribute_filter_params)
     )
   end
 

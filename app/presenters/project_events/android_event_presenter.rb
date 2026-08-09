@@ -50,6 +50,49 @@ module ProjectEvents
       MECHANISM_LABELS.fetch(mechanism)
     end
 
+    def failure_type_label
+      mechanism_label
+    end
+
+    def technical_signature
+      if exception.blank? && capture_source == "historical_exit"
+        reason = scalar(@context, "application_exit_description") || scalar(@context, "application_exit_reason")
+        return [ mechanism_label, reason ].compact_blank.join(" · ")
+      end
+
+      cause = root_cause || {}
+      type = cause[:type].presence || exception_type.presence
+      method = top_in_app_frame&.dig(:qualified_method).presence || top_in_app_frame&.dig(:method_name).presence
+      [ type, method.present? && "in #{method}" ].compact_blank.join(" ").presence || event&.message.to_s.presence
+    end
+
+    def culprit_location
+      frame = top_in_app_frame
+      return if frame.blank?
+
+      location = frame[:file].presence
+      location = "#{location}:#{frame[:line_number]}" if location && frame[:line_number]
+      location
+    end
+
+    def historical_exit?
+      capture_source == "historical_exit"
+    end
+
+    def stack_not_applicable?
+      historical_exit? && all_frames.empty?
+    end
+
+    def application_exit_details
+      compact_details(
+        reason: scalar(@context, "application_exit_reason"),
+        description: scalar(@context, "application_exit_description"),
+        status: scalar(@context, "application_exit_status"),
+        importance: scalar(@context, "application_exit_importance"),
+        process: nested_scalar("app", "process") || scalar(@context, "process_name")
+      )
+    end
+
     def handled?
       value = nested_value("error", "handled")
       value = @context["handled"] if value.nil?
@@ -129,6 +172,7 @@ module ProjectEvents
         build_type: nested_scalar("app", "build_type") || scalar(@context, "build_type"),
         release: scalar(@context, "release"),
         track: nested_scalar("distribution", "track") || scalar(@context, "distribution_track"),
+        process: nested_scalar("app", "process") || scalar(@context, "process_name"),
         screen: nested_scalar("app", "screen") || scalar(@context, "screen_name"),
         in_foreground: nested_value("app", "in_foreground")
       )
@@ -154,10 +198,10 @@ module ProjectEvents
 
     def correlation_details
       compact_details(
-        session: nested_scalar("session", "id") || scalar(@context, "session_id"),
-        installation: nested_scalar("installation", "id_hash") || scalar(@context, "installation_id_hash"),
-        user: scalar(@context, "user_id"),
-        trace: scalar(@context, "trace_id")
+        session: masked_identifier(nested_scalar("session", "id") || scalar(@context, "session_id")),
+        installation: masked_identifier(nested_scalar("installation", "id_hash") || scalar(@context, "installation_id_hash")),
+        user: masked_identifier(scalar(@context, "user_id")),
+        trace: masked_identifier(scalar(@context, "trace_id"))
       )
     end
 

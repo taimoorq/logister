@@ -147,6 +147,44 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group.id, "regression", hash_including("reopen_count" => 1))
     end
 
+    it "records historical evidence received after resolution without reopening or alerting" do
+      closure_time = 1.day.ago
+      group = create(
+        :error_group,
+        :resolved,
+        project: project,
+        fingerprint: "historical-resolved-fp",
+        occurrence_count: 1,
+        resolved_at: closure_time,
+        first_seen_at: 3.days.ago,
+        last_seen_at: 3.days.ago,
+        latest_event_occurred_at: 3.days.ago
+      )
+      historical_time = 2.days.ago
+      normalized = TelemetryEvidenceNormalizer.normalize(
+        context: { "platform" => "ios", "diagnostic" => { "source" => "metrickit", "kind" => "crash" } },
+        client_occurred_at: historical_time,
+        received_at: Time.current
+      )
+      event = IngestEvent.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "Historical crash arrived late",
+        fingerprint: "historical-resolved-fp",
+        occurred_at: historical_time,
+        context: normalized.context
+      )
+
+      described_class.call(event)
+
+      expect(group.reload).to be_resolved
+      expect(group.occurrence_count).to eq(2)
+      expect(group.regression_count).to eq(0)
+      expect(NotificationIntent.where(kind: "regression", error_group: group)).to be_empty
+      expect(NotificationEvaluation.where(kind: "frequent_error", error_group: group)).to be_empty
+    end
+
     it "enqueues milestone alerts at notable occurrence counts" do
       group = create(:error_group, project: project, fingerprint: "milestone-fp", occurrence_count: 9)
       event = IngestEvent.create!(

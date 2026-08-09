@@ -31,6 +31,11 @@ class ProjectsController < ApplicationController
     end
 
     @counts = inbox_counts(@project, viewer: current_user)
+    if ProjectExperience.for(@project).supports?(:mobile)
+      @mobile_overview = ProjectMobileOverview.new(@project).call
+      return
+    end
+
     dashboard_metrics = project_dashboard_metrics(@project)
     @insights_payload = ProjectInsights.shell_payload(
       @project,

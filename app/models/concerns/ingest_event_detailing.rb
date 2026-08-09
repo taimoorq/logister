@@ -3,14 +3,17 @@ module IngestEventDetailing
 
   class_methods do
     def related_logs(project:, event:, window: 5.minutes, limit: 50)
+      evidence = TelemetryEvidence.for(event)
+      return [] if evidence.received_only?
+
       trace = trace_id(event)
       request = request_id(event)
       session = session_id(event)
-      user = user_identifier(event)
+      user = evidence.reporting_interval? ? nil : user_identifier(event)
       return [] if [ trace, request, session, user ].all?(&:blank?)
 
-      start_time = (event.occurred_at || Time.current) - window
-      end_time = (event.occurred_at || Time.current) + window
+      start_time, end_time = related_log_time_bounds(event, evidence, window)
+      return [] unless start_time && end_time
 
       match_conditions = related_log_match_conditions(
         trace: trace,
@@ -93,8 +96,8 @@ module IngestEventDetailing
 
       if session.present?
         conditions << {
-          sql: "(context->>'session_id' = ? OR context->>'sessionId' = ?)",
-          values: [ session, session ]
+          sql: "(context->>'session_id' = ? OR context->>'sessionId' = ? OR context->'session'->>'id' = ?)",
+          values: [ session, session, session ]
         }
       end
 
@@ -106,6 +109,15 @@ module IngestEventDetailing
       end
 
       conditions
+    end
+
+    def related_log_time_bounds(event, evidence, window)
+      if evidence.reporting_interval?
+        [ evidence.reporting_start, evidence.reporting_end ] if evidence.reporting_start && evidence.reporting_end
+      else
+        anchor = evidence.exact_time? ? evidence.occurred_at : event.occurred_at
+        [ anchor - window, anchor + window ] if anchor
+      end
     end
   end
 end

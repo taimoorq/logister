@@ -35,11 +35,12 @@ class AppleSymbolArtifactProcessingJob < ApplicationJob
     end
 
     artifact.update!(
-      status: "ready",
+      status: "verified",
       processing_error: nil,
       processed_at: Time.current,
       metadata: artifact.metadata.merge("uuid_manifest" => manifest, "tooling" => "dwarfdump")
     )
+    MobileArtifactCoverageRefreshJob.perform_later(artifact.project_id, "ios")
   rescue StandardError => error
     artifact&.update_columns(status: "failed", processing_error: error.message.to_s.first(2_000), updated_at: Time.current)
     raise

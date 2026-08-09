@@ -243,9 +243,24 @@ RSpec.describe Project, type: :model do
       ids = [ projects(:one).id ]
       stats = described_class.stats_for(ids)
       expect(stats).to be_a(Hash)
-      expect(stats[ids.first]).to include(:total_events, :activity_events, :open_groups, :all_groups, :latest_event_at, :trend)
+      expect(stats[ids.first]).to include(:total_events, :activity_events, :received_events, :open_groups, :all_groups, :latest_event_at, :latest_received_at, :trend, :receipt_trend)
       expect(stats[ids.first][:trend].size).to eq(7)
       expect { Marshal.dump(stats) }.not_to raise_error
+    end
+
+
+    it "uses receipt time to keep delayed mobile diagnostics operationally visible" do
+      travel_to Time.zone.local(2026, 8, 9, 12, 0, 0) do
+        project = create(:project, :ios, user: users(:one))
+        event = create(:ingest_event, project:, occurred_at: 10.days.ago)
+
+        stats = described_class.stats_for([ project.id ]).fetch(project.id)
+
+        expect(stats[:total_events]).to eq(0)
+        expect(stats[:received_events]).to eq(1)
+        expect(stats[:receipt_trend].sum).to eq(1)
+        expect(stats[:latest_received_at]).to be_within(1.second).of(event.created_at)
+      end
     end
 
     it "counts recent non-error activity events and uses raw events for the 7-day trend" do

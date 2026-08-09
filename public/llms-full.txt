@@ -90,7 +90,7 @@ Logister CLI docs live at https://logister.org/docs/cli/. The npm package requir
 - Optional Quay mirror: `quay.io/taimoorq/logister` when `QUAY_USERNAME` and `QUAY_TOKEN` are configured
 - Current versioned images: `ghcr.io/taimoorq/logister:v3.5` or `docker.io/taimoorq/logister:v3.5`
 - Latest images: `ghcr.io/taimoorq/logister:latest` or `docker.io/taimoorq/logister:latest`
-- Release workflow publishes version, latest, and short-SHA Docker tags to GHCR and Docker Hub after CI, Fly deploy, and health checks pass. It publishes the same tags to Quay when Quay credentials are present.
+- After CI validates a version-changing main commit, the release workflow builds one canonical image, verifies the same digest through public GHCR, Docker Hub, and optional Quay references, deploys that digest to Fly, and checks the public runtime identity.
 
 ## Maintainer And Discovery Context
 

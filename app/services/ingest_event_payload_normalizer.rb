@@ -165,6 +165,7 @@ class IngestEventPayloadNormalizer
     merge_context_value!(context, "handled", raw_event[:handled])
     merge_context_value!(context, "in_foreground", raw_event[:in_foreground] || raw_event[:inForeground])
     merge_context_value!(context, "installation_id_hash", raw_event[:installation_id_hash] || raw_event[:installationIdHash])
+    merge_submitted_evidence!(context, raw_event["evidence"] || raw_event[:evidence])
 
     context["environment"] ||= default_environment if default_environment.present?
     attrs["context"] = MobileTelemetryNormalizer.normalize(context)
@@ -177,6 +178,34 @@ class IngestEventPayloadNormalizer
     return if context[key].present? || context[key.to_sym].present?
 
     context[key] = final_value
+  end
+
+  def merge_submitted_evidence!(context, value)
+    return unless value.respond_to?(:to_h)
+    return if context["evidence"].is_a?(Hash)
+
+    raw = add_normalized_context_keys(value.to_h).stringify_keys
+    evidence = raw.slice(
+      "source",
+      "kind",
+      "capture_mode",
+      "evidence_kind",
+      "identity_scope",
+      "occurred_at",
+      "reporting_start",
+      "reporting_end"
+    )
+    if raw["reporting_period"].is_a?(Hash)
+      evidence["reporting_period"] = raw["reporting_period"].stringify_keys.slice("start", "end")
+    end
+    if raw["producer"].is_a?(Hash)
+      evidence["producer"] = raw["producer"].stringify_keys.slice(
+        "sdk_name",
+        "sdk_version",
+        "decoder_version"
+      )
+    end
+    context["evidence"] = evidence if evidence.present?
   end
 
   def first_present(*values)

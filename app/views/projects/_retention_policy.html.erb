@@ -48,7 +48,7 @@
                      options_for_select(retention_day_options, retention_policy.hot_retention_days),
                      {},
                      class: "form-input" %>
-        <p class="mt-1 text-xs text-slate-500">Logs, metrics, transactions, and check-ins.</p>
+        <p class="mt-1 text-xs text-slate-500">Activity events, diagnostics, metrics, transactions, and check-ins.</p>
       </div>
 
       <div>
@@ -57,7 +57,7 @@
                      options_for_select(retention_day_options, retention_policy.trace_retention_days),
                      {},
                      class: "form-input" %>
-        <p class="mt-1 text-xs text-slate-500">Request span waterfall data.</p>
+        <p class="mt-1 text-xs text-slate-500">Trace/span and explicitly captured performance evidence.</p>
       </div>
 
       <div>
@@ -66,7 +66,7 @@
                      options_for_select(retention_day_options(include_forever: true), retention_policy.error_retention_days),
                      {},
                      class: "form-input" %>
-        <p class="mt-1 text-xs text-slate-500">Resolved, ignored, or archived groups.</p>
+        <p class="mt-1 text-xs text-slate-500">Resolved, muted, or archived stability issues.</p>
       </div>
     </div>
 

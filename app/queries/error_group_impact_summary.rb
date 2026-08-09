@@ -3,13 +3,19 @@
 class ErrorGroupImpactSummary
   Metric = Data.define(:value, :state, :sampled_events, :total_events) do
     def available?
-      state == :available
+      %i[complete partial sampled].include?(state)
+    end
+
+    def complete?
+      state == :complete
     end
   end
 
   Summary = Data.define(
     :error_group_id,
     :events,
+    :first_seen_at,
+    :last_seen_at,
     :installations,
     :sessions,
     :users,
@@ -26,23 +32,24 @@ class ErrorGroupImpactSummary
   }.freeze
 
   class << self
-    def for_group(group, since: 30.days.ago)
-      for_groups([ group ], since: since).fetch(group.id)
+    def for_group(group, since: 30.days.ago, occurrence_scope: nil)
+      for_groups([ group ], since: since, occurrence_scope: occurrence_scope).fetch(group.id)
     end
 
-    def for_groups(groups, since: 30.days.ago)
+    def for_groups(groups, since: 30.days.ago, occurrence_scope: nil)
       group_ids = Array(groups).map(&:id).compact
       return {} if group_ids.empty?
 
-      new(group_ids: group_ids, since: since).call
+      new(group_ids: group_ids, since: since, occurrence_scope: occurrence_scope).call
     end
   end
 
-  attr_reader :group_ids, :since
+  attr_reader :group_ids, :since, :occurrence_scope
 
-  def initialize(group_ids:, since:)
+  def initialize(group_ids:, since:, occurrence_scope: nil)
     @group_ids = group_ids
     @since = since
+    @occurrence_scope = occurrence_scope
   end
 
   def call
@@ -59,6 +66,8 @@ class ErrorGroupImpactSummary
       Summary.new(
         error_group_id: group_id,
         events: total,
+        first_seen_at: aggregate.fetch(:first_seen_at),
+        last_seen_at: aggregate.fetch(:last_seen_at),
         installations: metric(aggregate.fetch(:installations), aggregate.fetch(:installation_samples), total),
         sessions: metric(aggregate.fetch(:sessions), aggregate.fetch(:session_samples), total),
         users: metric(aggregate.fetch(:users), aggregate.fetch(:user_samples), total),
@@ -74,7 +83,8 @@ class ErrorGroupImpactSummary
   private
 
   def scope
-    value = ErrorOccurrence.where(error_group_id: group_ids)
+    value = occurrence_scope || ErrorOccurrence.all
+    value = value.where(error_group_id: group_ids)
     since ? value.where("occurred_at >= ?", since) : value
   end
 
@@ -82,6 +92,8 @@ class ErrorGroupImpactSummary
     scope.group(:error_group_id).pluck(
       :error_group_id,
       Arel.sql("COUNT(*)"),
+      Arel.sql("MIN(occurred_at)"),
+      Arel.sql("MAX(occurred_at)"),
       Arel.sql("COUNT(DISTINCT installation_hash) FILTER (WHERE installation_hash IS NOT NULL)"),
       Arel.sql("COUNT(installation_hash)"),
       Arel.sql("COUNT(DISTINCT session_hash) FILTER (WHERE session_hash IS NOT NULL)"),
@@ -89,9 +101,11 @@ class ErrorGroupImpactSummary
       Arel.sql("COUNT(DISTINCT user_hash) FILTER (WHERE user_hash IS NOT NULL)"),
       Arel.sql("COUNT(user_hash)")
     ).to_h do |row|
-      group_id, events, installations, installation_samples, sessions, session_samples, users, user_samples = row
+      group_id, events, first_seen_at, last_seen_at, installations, installation_samples, sessions, session_samples, users, user_samples = row
       [ group_id, {
         events: events.to_i,
+        first_seen_at: first_seen_at,
+        last_seen_at: last_seen_at,
         installations: installations.to_i,
         installation_samples: installation_samples.to_i,
         sessions: sessions.to_i,
@@ -135,16 +149,18 @@ class ErrorGroupImpactSummary
   end
 
   def metric(distinct_count, sample_count, total)
-    if sample_count.positive?
-      Metric.new(value: distinct_count, state: :available, sampled_events: sample_count, total_events: total)
-    else
-      Metric.new(value: nil, state: :not_collected, sampled_events: 0, total_events: total)
-    end
+    return Metric.new(value: nil, state: :not_applicable, sampled_events: 0, total_events: 0) if total.zero?
+    return Metric.new(value: nil, state: :not_collected, sampled_events: 0, total_events: total) if sample_count.zero?
+
+    state = sample_count == total ? :complete : :partial
+    Metric.new(value: distinct_count, state: state, sampled_events: sample_count, total_events: total)
   end
 
   def default_aggregate
     {
       events: 0,
+      first_seen_at: nil,
+      last_seen_at: nil,
       installations: 0,
       installation_samples: 0,
       sessions: 0,

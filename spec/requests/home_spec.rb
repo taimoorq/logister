@@ -5,7 +5,8 @@ require "nokogiri"
 
 RSpec.describe "Home", type: :request do
   let(:current_release_tag) do
-    Rails.root.join("CHANGELOG.md").read.match(/^##\s+(v[0-9][^\s]*)\s+-/)[1]
+    catalog = JSON.parse(Rails.root.join("config/ecosystem-versions.json").read)
+    "v#{catalog.dig("backend", "version")}"
   end
 
   around do |example|

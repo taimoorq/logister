@@ -1,38 +1,89 @@
-name: CLI Contract Dispatch
+name: CLI contract dispatch
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - docs/openapi.yaml
 
 permissions:
   contents: read
 
+concurrency:
+  group: cli-contract-dispatch
+  cancel-in-progress: false
+
 jobs:
   dispatch:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
+
     steps:
-      - name: Dispatch CLI contract sync
+      - name: Check out successful current main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+          fetch-depth: 0
+
+      - name: Resolve immutable CLI impact
+        id: contract
+        run: |
+          git fetch origin main --force
+          source_sha="$(git rev-parse HEAD)"
+          main_sha="$(git rev-parse origin/main)"
+          if [ "${source_sha}" != "${main_sha}" ]; then
+            echo "Contract source ${source_sha} is no longer current main (${main_sha})."
+            exit 1
+          fi
+          ruby <<'RUBY' >> "$GITHUB_OUTPUT"
+          require "digest"
+          require "yaml"
+
+          version = File.read("VERSION").strip
+          release_set = YAML.safe_load_file("config/release-sets/v#{version}.yml", permitted_classes: [], permitted_symbols: [], aliases: false)
+          component = release_set.fetch("components").fetch("logister-cli")
+          puts "required=#{component.fetch("release_required") ? "true" : "false"}"
+          puts "target_version=#{component.fetch("target_version")}"
+          puts "sha256=#{Digest::SHA256.file("docs/openapi.yaml").hexdigest}"
+          RUBY
+          echo "source_sha=${source_sha}" >> "$GITHUB_OUTPUT"
+          echo "url=https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${source_sha}/docs/openapi.yaml" >> "$GITHUB_OUTPUT"
+
+      - name: Explain compatible no-release decision
+        if: steps.contract.outputs.required != 'true'
+        run: echo "The release set declares the current CLI compatible; no package snapshot or version change will be dispatched."
+
+      - name: Require dedicated CLI sync credential
+        if: steps.contract.outputs.required == 'true'
         env:
           GH_TOKEN: ${{ secrets.LOGISTER_CLI_SYNC_TOKEN }}
         run: |
-          set -euo pipefail
-          if [ -z "${GH_TOKEN:-}" ]; then
-            echo "LOGISTER_CLI_SYNC_TOKEN is required to dispatch the CLI contract sync." >&2
-            echo "Configure a dedicated fine-grained bot PAT with access to taimoorq/logister-cli." >&2
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "CLI contract dispatch requires the dedicated fine-grained sync credential."
             exit 1
           fi
 
-          gh api repos/taimoorq/logister-cli/dispatches \
-            --method POST \
-            --input - <<'JSON'
-          {
-            "event_type": "logister-contract-updated",
-            "client_payload": {
-              "openapi_url": "https://raw.githubusercontent.com/taimoorq/logister/main/docs/openapi.yaml"
+      - name: Dispatch immutable CLI contract sync
+        if: steps.contract.outputs.required == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.LOGISTER_CLI_SYNC_TOKEN }}
+          OPENAPI_URL: ${{ steps.contract.outputs.url }}
+          OPENAPI_SHA256: ${{ steps.contract.outputs.sha256 }}
+          BACKEND_SHA: ${{ steps.contract.outputs.source_sha }}
+          TARGET_VERSION: ${{ steps.contract.outputs.target_version }}
+        run: |
+          ruby -rjson -e '
+            payload = {
+              event_type: "logister-contract-updated",
+              client_payload: {
+                openapi_url: ENV.fetch("OPENAPI_URL"),
+                openapi_sha256: ENV.fetch("OPENAPI_SHA256"),
+                backend_sha: ENV.fetch("BACKEND_SHA"),
+                target_version: ENV.fetch("TARGET_VERSION")
+              }
             }
-          }
-          JSON
+            File.write("/tmp/cli-contract-dispatch.json", JSON.generate(payload))
+          '
+          gh api repos/taimoorq/logister-cli/dispatches --method POST --input /tmp/cli-contract-dispatch.json

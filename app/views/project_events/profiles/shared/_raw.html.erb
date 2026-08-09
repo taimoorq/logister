@@ -1,7 +1,23 @@
-<div class="mobile-context-section">
+<div class="mobile-context-section" data-redaction="server">
   <div>
-    <p class="kicker">Normalized event context</p>
-    <p class="muted">Canonical keys and legacy SDK fields are retained together for contract debugging.</p>
+    <p class="kicker">Server-redacted event context</p>
+    <p class="muted">Canonical and legacy fields are shown after sensitive identifiers and credential-like values are removed. Original evidence is not included in this standard view.</p>
   </div>
   <pre class="context-json"><code><%= pretty_context_json(event.context) %></code></pre>
+  <% if project.managed_by?(current_user) %>
+    <details class="mt-4">
+      <summary class="btn btn-ghost">Request unredacted stored evidence</summary>
+      <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <p class="text-sm text-amber-900">This downloads the stored unredacted context and may contain sensitive values. It is not guaranteed to be the byte-for-byte wire payload. Every download is audited and is never Turbo-cached.</p>
+        <%= form_with url: original_evidence_project_event_path(project, event), method: :post, class: "mt-3 space-y-3", data: { turbo: false } do |form| %>
+          <%= hidden_field_tag :event_occurred_at, event.occurred_at.utc.iso8601(6) %>
+          <div>
+            <%= form.label :reason, "Investigation reason", class: "form-label" %>
+            <%= form.text_field :reason, required: true, minlength: 10, maxlength: 500, class: "form-input", autocomplete: "off" %>
+          </div>
+          <%= form.submit "Download and audit access", class: "btn btn-ghost", data: { turbo_confirm: "Download unredacted stored evidence and record this access?" } %>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
 </div>

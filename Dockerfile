@@ -12,7 +12,11 @@
 # Debian base to a stable release with the apt packages this app needs.
 ARG RUBY_VERSION=4.0.6
 ARG RUBY_IMAGE_FLAVOR=slim-bookworm
+ARG LOGISTER_VERSION=development
+ARG LOGISTER_GIT_SHA=unknown
 FROM docker.io/library/ruby:$RUBY_VERSION-$RUBY_IMAGE_FLAVOR AS base
+ARG LOGISTER_VERSION
+ARG LOGISTER_GIT_SHA
 
 # Rails app lives here
 WORKDIR /rails
@@ -28,7 +32,9 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
+    LOGISTER_RELEASE="${LOGISTER_VERSION}" \
+    LOGISTER_GIT_SHA="${LOGISTER_GIT_SHA}"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build

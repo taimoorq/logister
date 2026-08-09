@@ -2,6 +2,9 @@
 <% exception_data = event_exception_data(@event) %>
 <% backtrace = event_backtrace(exception_data) %>
 <% experience = project_experience(@project) %>
+<% mobile_evidence = TelemetryEvidence.for(@event) if experience.supports?(:mobile) %>
+<% mobile_presenter = event_presenter(@project, @event, exception_data) if experience.supports?(:mobile) %>
+<% error_detail = @group.present? || @event.error? %>
 <% active_tab = experience.normalize_detail_tab(@tab, event: @event, occurrences_count: @occurrences.size, related_logs_count: @related_logs.size) %>
 <% stacktrace_tab_label = event_stacktrace_tab_label(@project, @event) %>
 <% stacktrace_partial = event_stacktrace_partial(@project, @event) %>
@@ -22,7 +25,9 @@
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
 
-<%= render "projects/archived_notice", project: @project %>
+<%= render "projects/header",
+           tour_group: tour_group,
+           page_key: (@group.present? || @event.error? ? :error_event : :activity_event) %>
 
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
 
@@ -55,14 +60,13 @@
             <span class="kicker">Occurrences</span>
             <strong><%= @group.occurrence_count %></strong>
           </div>
-          <div>
-            <span class="kicker">First seen</span>
-            <span><%= local_time_tag(@group.first_seen_at, format: :date_only) %></span>
-          </div>
-          <div>
-            <span class="kicker">Last seen</span>
-            <span><%= local_time_tag(@group.last_seen_at, format: :date_only) %></span>
-          </div>
+          <% if mobile_evidence %>
+            <div><span class="kicker">First received</span><span><%= local_time_tag(@group.created_at, format: :date_only) %></span></div>
+            <div><span class="kicker">Selected receipt</span><span><%= local_time_tag(mobile_evidence.received_at || @event.created_at, format: :date_only) %></span></div>
+          <% else %>
+            <div><span class="kicker">First seen</span><span><%= local_time_tag(@group.first_seen_at, format: :date_only) %></span></div>
+            <div><span class="kicker">Last seen</span><span><%= local_time_tag(@group.last_seen_at, format: :date_only) %></span></div>
+          <% end %>
           <% if @group.introduced_in_release.present? %>
             <div>
               <span class="kicker">Introduced</span>
@@ -111,12 +115,20 @@
           <% end %>
         </div>
       </div>
-    <% else %>
+    <% elsif @event.error? %>
       <div class="card">
         <p class="kicker">Error group</p>
         <p class="text-slate-600 text-sm">This event has not been grouped yet.</p>
         <%= link_to inbox_project_path(@project), class: "btn-ghost btn-sm mt-2 inline-flex items-center gap-1.5" do %>
           <%= app_icon(:arrow_left, css: "w-3.5 h-3.5") %><span>Back to inbox</span>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="card">
+        <p class="kicker">Activity event</p>
+        <p class="text-slate-600 text-sm">This <%= @event.event_type.to_s.humanize.downcase %> is telemetry activity, not an error issue.</p>
+        <%= link_to activity_project_path(@project), class: "btn-ghost btn-sm mt-2 inline-flex items-center gap-1.5" do %>
+          <%= app_icon(:arrow_left, css: "w-3.5 h-3.5") %><span>Back to activity</span>
         <% end %>
       </div>
     <% end %>
@@ -127,8 +139,16 @@
       <dl class="event-meta-list">
         <dt>ID</dt>
         <dd><code class="text-xs break-all"><%= @event.uuid %></code></dd>
-        <dt>Occurred</dt>
-        <dd><%= local_time_tag(@event.occurred_at, format: :long) %></dd>
+        <% if mobile_evidence&.exact_time? %>
+          <dt>Occurred</dt><dd><%= local_time_tag(mobile_evidence.occurred_at || @event.occurred_at, format: :long) %></dd>
+        <% elsif mobile_evidence&.reporting_interval? %>
+          <dt>Reporting interval</dt><dd><%= local_time_tag(mobile_evidence.reporting_start, format: :long) if mobile_evidence.reporting_start %><%= " – " if mobile_evidence.reporting_start && mobile_evidence.reporting_end %><%= local_time_tag(mobile_evidence.reporting_end, format: :long) if mobile_evidence.reporting_end %></dd>
+        <% elsif mobile_evidence %>
+          <dt>Occurrence time</dt><dd>Not supplied</dd>
+        <% else %>
+          <dt>Occurred</dt><dd><%= local_time_tag(@event.occurred_at, format: :long) %></dd>
+        <% end %>
+        <% if mobile_evidence %><dt>Received</dt><dd><%= local_time_tag(mobile_evidence.received_at || @event.created_at, format: :long) %></dd><% end %>
         <dt>Level</dt>
         <dd><%= render "shared/widgets/severity_badge", level: @event.level.presence || "error" %></dd>
         <dt>Stage</dt>
@@ -147,13 +167,13 @@
     <header class="detail-actionbar"
             <%= tag.attributes(data: product_tour_step_data(tour_group, :title)) %>>
       <div class="detail-actionbar-left">
-        <h1 class="detail-title"><%= @group&.title || @event.message.to_s.lines.first %></h1>
+        <h1 class="detail-title"><%= (error_detail && mobile_presenter&.respond_to?(:technical_signature) && mobile_presenter.technical_signature.presence) || @group&.title || @event.message.to_s.lines.first %></h1>
         <% if @group&.subtitle.present? %>
           <p class="detail-subtitle muted"><%= @group.subtitle %></p>
         <% end %>
         <p class="text-slate-600 text-sm mt-1">
           <%= @project.name %>
-          &middot; <%= local_time_tag(@event.occurred_at, format: :long) %>
+          &middot; <%= mobile_evidence ? "received #{time_ago_in_words(mobile_evidence.received_at || @event.created_at)} ago" : local_time_tag(@event.occurred_at, format: :long) %>
         </p>
       </div>
       <%= tour_help_button %>

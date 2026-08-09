@@ -1,0 +1,90 @@
+<%# locals: (health:) %>
+<% diagnostic_labels = {
+  "anr" => "ANR",
+  "application_exit" => "Historical app exit",
+  "low_memory_kill" => "Memory-related exit",
+  "crash" => "Crash",
+  "hang" => "Hang",
+  "cpu_exception" => "Excessive CPU",
+  "disk_write_exception" => "Excessive disk writes",
+  "launch_failure" => "Launch diagnostic",
+  "watchdog_termination" => "Watchdog termination",
+  "memory_limit_termination" => "Memory-limit termination",
+  "memory_pressure_termination" => "Memory-pressure termination",
+  "handled_exception" => "Reported error",
+  "unhandled_exception" => "Unhandled exception",
+  "native_crash" => "Native crash"
+} %>
+
+<section class="space-y-6" aria-labelledby="mobile-app-health-title">
+  <section class="dashboard-panel">
+    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="dashboard-kicker">App health</p>
+        <h2 id="mobile-app-health-title" class="text-xl font-bold text-slate-900">Responsiveness and resource evidence</h2>
+        <p class="mt-1 max-w-3xl text-sm text-slate-600">Platform diagnostics and app-supplied performance telemetry remain separate. Counts below are receipts from the last 30 days, not device-wide rates or store denominators.</p>
+      </div>
+      <%= link_to "Review setup", setup_project_path(@project), class: "btn-ghost" %>
+    </div>
+  </section>
+
+  <% if health.diagnostics.empty? %>
+    <section class="dashboard-panel" aria-label="No mobile diagnostic health evidence">
+      <h3 class="text-base font-bold text-slate-900">No platform health diagnostics received</h3>
+      <p class="mt-2 text-sm text-slate-600">
+        <% if @project.integration_android? %>
+          ANR and historical-exit evidence appears here only after the Android integration captures it. An empty panel does not mean the app had zero ANRs or exits.
+        <% else %>
+          Hang, CPU, disk-write, launch, and termination evidence appears here only when the SDK or Apple reporting source supplies it. An empty panel does not mean the app had zero incidents.
+        <% end %>
+      </p>
+    </section>
+  <% else %>
+    <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Mobile diagnostic receipt counts">
+      <% health.diagnostics.each do |diagnostic| %>
+        <article class="dashboard-panel">
+          <p class="dashboard-kicker"><%= @project.integration_label %></p>
+          <h3 class="text-base font-bold text-slate-900"><%= diagnostic_labels.fetch(diagnostic.kind, diagnostic.kind.humanize) %></h3>
+          <strong class="mt-3 block text-3xl font-bold text-slate-900"><%= number_with_delimiter(diagnostic.count) %></strong>
+          <p class="mt-1 text-xs text-slate-600">Latest receipt <%= time_ago_in_words(diagnostic.latest_received_at) %> ago</p>
+          <% if diagnostic.measurement.present? %><p class="mt-2 text-sm font-semibold text-slate-800"><%= diagnostic.measurement %></p><% end %>
+          <dl class="mt-3 space-y-1 text-xs text-slate-600">
+            <div><dt class="inline font-semibold">Source:</dt> <dd class="inline"><%= diagnostic.sources.map { |source| { "sdk" => "Logister SDK", "metrickit" => "MetricKit" }.fetch(source, source.humanize) }.join(", ").presence || "Not captured" %></dd></div>
+            <div><dt class="inline font-semibold">Build:</dt> <dd class="inline"><%= diagnostic.builds.join(", ").presence || "Not captured" %></dd></div>
+            <div><dt class="inline font-semibold">Time evidence:</dt> <dd class="inline"><%= diagnostic.time_precisions.map(&:humanize).join(", ").presence || "Unknown" %></dd></div>
+            <% if diagnostic.evidence_role.present? %><div><dt class="inline font-semibold">Evidence role:</dt> <dd class="inline"><%= diagnostic.evidence_role %></dd></div><% end %>
+          </dl>
+          <% diagnostic_filter = @project.integration_ios? ? { diagnostic_kind: diagnostic.kind } : { mechanism: diagnostic.kind } %>
+          <%= link_to "Open matching Stability issues", inbox_project_path(@project, diagnostic_filter.merge(time_range: "30d")), class: "mt-3 inline-block text-sm font-semibold text-blue-700 hover:text-blue-800" %>
+        </article>
+      <% end %>
+    </section>
+  <% end %>
+
+  <section class="dashboard-panel" aria-labelledby="app-supplied-performance-title">
+    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+      <div>
+        <p class="dashboard-kicker">App-supplied telemetry</p>
+        <h2 id="app-supplied-performance-title" class="text-lg font-bold text-slate-900">Transactions, spans, and metrics</h2>
+        <p class="mt-1 text-sm text-slate-600">These signals describe only explicitly instrumented work. They are not blended with delayed platform or store aggregates.</p>
+      </div>
+      <%= link_to "Open Activity", activity_project_path(@project), class: "btn-ghost" %>
+    </div>
+    <% if health.activity_counts.empty? %>
+      <p class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">No non-error performance telemetry was received in this window. Configure app transactions, spans, or metrics before interpreting an empty chart as healthy.</p>
+    <% else %>
+      <dl class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <% health.activity_metrics.each do |metric| %>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <dt class="text-xs font-semibold uppercase text-slate-500"><%= metric.label %></dt>
+            <dd class="mt-1 text-2xl font-bold text-slate-900"><%= metric.value.nil? ? "Not collected" : number_with_delimiter(metric.value) %><% if metric.value.present? %> <span class="text-sm font-semibold text-slate-500"><%= metric.unit %></span><% end %></dd>
+            <p class="mt-2 text-xs text-slate-600"><%= metric.detail %></p>
+            <% unless metric.coverage == :not_applicable %><p class="mt-1 text-xs font-semibold text-slate-700">Coverage: <%= metric.coverage.to_s.humanize %></p><% end %>
+          </div>
+        <% end %>
+      </dl>
+    <% end %>
+  </section>
+
+  <p class="text-xs text-slate-500">Generated <%= local_time_tag(health.generated_at, format: :long) %>. Receipt window began <%= local_time_tag(health.window_started_at, format: :long) %>.</p>
+</section>

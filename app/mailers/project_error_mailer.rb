@@ -4,7 +4,10 @@ class ProjectErrorMailer < ApplicationMailer
     @user = delivery.user
     @project = delivery.project
     @group = delivery.error_group
-    @event = @group.latest_event_record
+    @metadata = delivery.metadata.to_h
+    @event = ProjectNotificationEvidence.event_for(error_group: @group, metadata: @metadata) || @group.latest_event_record
+    @evidence = TelemetryEvidence.for(@event)
+    @imprecise_source_time = @evidence.reporting_interval? || @evidence.received_only?
     @preference = ProjectNotificationPreference.for(user: @user, project: @project)
     @group_url = project_url(@project, group_uuid: @group.uuid)
     @settings_url = settings_project_url(@project, anchor: "notifications")
@@ -13,7 +16,7 @@ class ProjectErrorMailer < ApplicationMailer
 
     mail(
       to: @user.email,
-      subject: "[Logister] New error in #{@project.name}: #{@group.title.to_s.truncate(80)}"
+      subject: "[Logister] #{@imprecise_source_time ? 'Newly received diagnostic' : 'New error'} in #{@project.name}: #{@group.title.to_s.truncate(80)}"
     )
   end
 

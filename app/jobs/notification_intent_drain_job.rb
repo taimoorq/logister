@@ -24,7 +24,7 @@ class NotificationIntentDrainJob < ApplicationJob
     job =
       case intent.kind
       when "first_occurrence"
-        ProjectErrorFirstOccurrenceAlertJob.perform_later(intent.error_group_id)
+        ProjectErrorFirstOccurrenceAlertJob.perform_later(intent.error_group_id, metadata)
       when "regression", "error_milestone"
         ProjectErrorGroupNotificationJob.perform_later(intent.error_group_id, intent.kind, metadata)
       when "monitor_missed", "monitor_recovered"

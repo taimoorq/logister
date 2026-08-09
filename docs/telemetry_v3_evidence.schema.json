@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://logister.dev/schemas/telemetry-v3-evidence.schema.json",
+  "title": "Logister telemetry v3 event evidence",
+  "type": "object",
+  "required": ["uuid", "event_type", "message"],
+  "properties": {
+    "uuid": { "type": "string", "format": "uuid" },
+    "event_type": { "type": "string" },
+    "level": { "type": "string" },
+    "message": { "type": "string", "minLength": 1 },
+    "fingerprint": { "type": "string" },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "context": {
+      "type": "object",
+      "properties": {
+        "telemetry_schema_version": { "const": 3 },
+        "platform": { "type": "string" },
+        "sdk": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string" },
+        "kind": { "type": "string" },
+        "capture_mode": { "type": "string" },
+        "evidence_kind": { "type": "string" },
+        "identity_scope": { "type": "string" },
+        "reporting_period": {
+          "type": "object",
+          "properties": {
+            "start": { "type": "string", "format": "date-time" },
+            "end": { "type": "string", "format": "date-time" }
+          },
+          "additionalProperties": false
+        },
+        "producer": {
+          "type": "object",
+          "properties": {
+            "sdk_name": { "type": "string" },
+            "sdk_version": { "type": "string" },
+            "decoder_version": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "not": {
+        "required": ["occurred_at", "evidence"],
+        "properties": {
+          "evidence": { "required": ["reporting_period"] }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

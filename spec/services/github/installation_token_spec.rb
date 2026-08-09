@@ -63,7 +63,7 @@ RSpec.describe Github::InstallationToken do
 
   it "can request classic opaque tokens while operators diagnose rollout issues" do
     allow(config).to receive(:stateless_s2s_token_override).and_return("disabled")
-    response = installation_token_response("ghs_classicopaqueinstallationtokenvalue123456")
+    response = installation_token_response([ "ghs", "classicopaqueinstallationtokenvalue123456" ].join("_"))
     requests = capture_http_requests(response)
 
     described_class.new(

@@ -23,6 +23,12 @@ FactoryBot.define do
     environment_filter { "all" }
     severity_filter { "all" }
     status_filter { "unresolved" }
+    mobile_source_filter { "all" }
+    mobile_diagnostic_kind_filter { "all" }
+    mobile_build_filter { "all" }
+    mobile_channel_filter { "all" }
+    mobile_artifact_state_filter { "all" }
+    late_arrival_policy { "notify_on_receipt" }
     immediate_email_limit_per_hour { 10 }
     quiet_hours_enabled { false }
     quiet_hours_start { 22 }

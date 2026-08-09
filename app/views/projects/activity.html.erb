@@ -8,17 +8,24 @@
   <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :events)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-      <h2 class="text-lg font-bold text-slate-900">Events</h2>
+      <h2 class="text-lg font-bold text-slate-900"><%= @mobile_activity ? "App activity" : "Events" %></h2>
       <div class="flex flex-col items-start gap-2 sm:items-end">
         <p class="text-slate-500 text-sm sm:text-right">
-          Metrics, logs, transactions, and check-ins sent from your
-          <%= @project.integration_label %> integration.
+          <% if @mobile_activity %>
+            Non-error metrics, logs, transactions, and check-ins received from this app. Crashes and platform diagnostics remain in
+            <%= link_to "Stability", inbox_project_path(@project), class: "text-blue-600 hover:underline" %>.
+          <% else %>
+            Metrics, logs, transactions, and check-ins sent from your <%= @project.integration_label %> integration.
+          <% end %>
           <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>
         </p>
         <%= render "projects/feature_settings_action",
                    label: "Telemetry setup",
                    path: setup_project_path(@project),
                    description: "Configure event intake and instrumentation" %>
+        <% if @mobile_activity %>
+          <%= link_to "Open same scope in Insights", insights_project_path(@project, @insights_scope_projection.params), class: "text-sm font-semibold text-blue-700 hover:text-blue-800" %>
+        <% end %>
       </div>
     </div>
 
@@ -30,7 +37,7 @@
                        class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
       </div>
       <div>
-        <%= label_tag :period, "Period", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+        <%= label_tag :period, @mobile_activity ? "Receipt period" : "Period", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
         <%= select_tag :period,
                        options_for_select(@activity_period_options, @activity_filters[:period]),
                        class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
@@ -42,6 +49,32 @@
                            placeholder: "production",
                            class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
       </div>
+      <% if @mobile_activity %>
+        <div>
+          <%= label_tag :source, "Source", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+          <%= select_tag :source,
+                         options_for_select([["All sources", ""], ["App SDK", "sdk"], ["MetricKit", "metrickit"], ["API", "api"]], @activity_filters[:source]),
+                         class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+        </div>
+        <div>
+          <%= label_tag :time_precision, "Evidence time", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+          <%= select_tag :time_precision,
+                         options_for_select([["All precision", ""], ["Exact occurrence", "exact"], ["Reporting interval", "reporting_interval"], ["Receipt only", "received_only"], ["Legacy / unknown", "unknown"]], @activity_filters[:time_precision]),
+                         class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+        </div>
+        <div>
+          <%= label_tag :build_number, "Build", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+          <%= text_field_tag :build_number, @activity_filters[:build_number], placeholder: "310", class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+        </div>
+        <div>
+          <%= label_tag :channel, @project.integration_android? ? "Play track" : "Distribution", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+          <%= text_field_tag :channel, @activity_filters[:channel], placeholder: (@project.integration_android? ? "production" : "testflight"), class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+        </div>
+        <div>
+          <%= label_tag :platform, "Platform", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
+          <%= text_field_tag :platform, @activity_filters[:platform], placeholder: (@project.integration_android? ? "android" : "ios"), class: "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" %>
+        </div>
+      <% end %>
       <div>
         <%= label_tag :release, "Release", class: "block text-xs font-semibold text-slate-500 uppercase mb-1" %>
         <%= text_field_tag :release,
@@ -80,13 +113,15 @@
           <thead class="bg-slate-50">
             <tr>
               <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Type</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">When</th>
-              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">Message</th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"><%= @mobile_activity ? "Evidence time" : "When" %></th>
+              <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"><%= @mobile_activity ? "Activity" : "Message" %></th>
+              <% if @mobile_activity %><th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase">App context</th><% end %>
               <th class="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 bg-white">
             <% @activity_events.each do |event| %>
+              <% activity_row = @activity_row_presenters[event] %>
               <% python_log_summary = @project.integration_python? && event.log? ? python_activity_summary(event) : nil %>
               <% javascript_log_summary = @project.integration_javascript? && event.log? ? javascript_activity_summary(event) : nil %>
               <% dotnet_log_summary = @project.integration_dotnet? && event.log? ? dotnet_activity_summary(event) : nil %>
@@ -100,13 +135,22 @@
                         when 'check_in' then 'bg-blue-50 text-blue-800 border border-blue-200'
                         else 'bg-slate-100 text-slate-600 border border-slate-200'
                         end %>">
-                    <%= event.event_type %>
+                    <%= @mobile_activity ? activity_row.event_type_label : event.event_type %>
                   </span>
                 </td>
-                <td class="px-3 py-2 text-sm text-slate-700"><%= local_time_tag(event.occurred_at, format: :long) %></td>
+                <td class="px-3 py-2 text-sm text-slate-700">
+                  <% if @mobile_activity %>
+                    <span title="<%= activity_row.time_title %>"><%= activity_row.time_label %></span>
+                    <div class="text-xs text-slate-500 mt-1"><%= activity_row.time_precision_label %></div>
+                  <% else %>
+                    <%= local_time_tag(event.occurred_at, format: :long) %>
+                  <% end %>
+                </td>
                 <td class="px-3 py-2 text-sm text-slate-900">
-                  <div><%= truncate(event.message.to_s.lines.first, length: 80) %></div>
-                  <% if python_log_summary.present? %>
+                  <div><%= truncate(@mobile_activity ? activity_row.headline : event.message.to_s.lines.first, length: 80) %></div>
+                  <% if @mobile_activity %>
+                    <div class="text-xs text-slate-500 mt-1"><%= activity_row.source_label %></div>
+                  <% elsif python_log_summary.present? %>
                     <div class="text-xs text-slate-500 mt-1"><%= python_log_summary %></div>
                   <% elsif javascript_log_summary.present? %>
                     <div class="text-xs text-slate-500 mt-1"><%= javascript_log_summary %></div>
@@ -114,8 +158,19 @@
                     <div class="text-xs text-slate-500 mt-1"><%= dotnet_log_summary %></div>
                   <% end %>
                 </td>
+                <% if @mobile_activity %>
+                  <td class="px-3 py-2 text-sm text-slate-700">
+                    <div><%= activity_row.app_release_label.presence || "Release not captured" %></div>
+                    <% if activity_row.component_label.present? %><div class="text-xs text-slate-500 mt-1"><%= activity_row.component_label %></div><% end %>
+                  </td>
+                <% end %>
                 <td class="px-3 py-2 text-sm">
                   <%= link_to "View", partitioned_project_event_path(@project, event), class: "text-blue-600 hover:underline" %>
+                  <% if @mobile_activity && activity_row.related_group %>
+                    <div class="mt-1"><%= link_to activity_row.related_issue_label, inbox_project_path(@project, group_uuid: activity_row.related_group.uuid), class: "text-blue-600 hover:underline" %></div>
+                  <% elsif @mobile_activity && activity_row.trace_correlated? %>
+                    <div class="text-xs text-slate-500 mt-1">Trace context captured</div>
+                  <% end %>
                 </td>
               </tr>
             <% end %>
@@ -131,6 +186,8 @@
       <p class="text-slate-600 text-sm">
         <% if @activity_filters_active %>
           No events match these filters.
+        <% elsif @activity_has_any_events %>
+          No <%= @mobile_activity ? "app activity was received" : "events occurred" %> in this window. Choose a longer period or All time.
         <% elsif @project.integration_cfml? %>
           No events yet. Send one controlled CFML exception, then verify it here.
           <%= link_to "CFML integration docs", docs_site_url(:cfml_integration), target: "_blank", rel: "noopener noreferrer", class: "text-blue-600 hover:underline" %>

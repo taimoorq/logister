@@ -1,22 +1,17 @@
-<%# locals: (tour_group: nil, archived_notice_settings_link: true, highlight_header: false, highlight_navigation: false) %>
+<%# locals: (tour_group: nil, archived_notice_settings_link: true, highlight_header: false, highlight_navigation: false, page_key: nil) %>
 <% highlight_header = local_assigns.fetch(:highlight_header, false) %>
 <% highlight_navigation = local_assigns.fetch(:highlight_navigation, false) %>
-<% section_label = [
-  [ project_path(@project), "Project overview" ],
-  [ inbox_project_path(@project), "Project inbox" ],
-  [ insights_project_path(@project), "Project insights" ],
-  [ deployments_project_path(@project), "Project deployments" ],
-  [ setup_project_path(@project), "Project setup" ],
-  [ settings_project_path(@project), "Project settings" ],
-  [ edit_project_path(@project), "Project settings" ],
-  [ activity_project_path(@project), "Project events" ],
-  [ performance_project_path(@project), "Project performance" ],
-  [ monitors_project_path(@project), "Project monitors" ],
-  [ archives_project_path(@project), "Project archive search" ]
-].find { |path, _label| request.path == path }&.second || "Project" %>
+<% page_context = project_page_context(@project, page_key: local_assigns[:page_key]) %>
+<% section_label = page_context.page&.header_label || "Project" %>
+<% header_data = {
+  project_kind: page_context.integration_definition.key,
+  project_experience: page_context.experience_definition.key,
+  project_page: page_context.page&.key
+}.compact %>
+<% header_data.merge!(product_tour_step_data(tour_group, :project_header)) if tour_group.present? && highlight_header %>
 
 <header class="project-command-panel"
-        <%= tag.attributes(data: product_tour_step_data(tour_group, :project_header)) if tour_group.present? && highlight_header %>>
+        <%= tag.attributes(data: header_data) %>>
   <div class="project-command-main">
     <div class="project-command-identity">
       <%= project_integration_icon(@project) %>
@@ -35,7 +30,7 @@
     </div>
 
     <div class="project-command-actions">
-      <%= render "projects/nav", tour_group: (highlight_navigation ? tour_group : nil) %>
+      <%= render "projects/nav", page_context: page_context, tour_group: (highlight_navigation ? tour_group : nil) %>
       <%= tour_help_button if tour_group.present? %>
     </div>
   </div>

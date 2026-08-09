@@ -25,6 +25,7 @@ class ProjectInboxQuery
         AND error_occurrences.occurred_at < CURRENT_DATE - INTERVAL '1 day'
     ))
   SQL
+  SCOPED_LAST_SEEN_SQL = "COALESCE(EXTRACT(EPOCH FROM MAX(error_occurrences.occurred_at)), 0)".freeze
 
   attr_reader :project, :viewer, :profile, :page_size, :strict_cursor
 
@@ -78,8 +79,8 @@ class ProjectInboxQuery
       scope = apply_query(scope, normalized_query) if normalized_query.present?
       scope = apply_dimensions(scope, normalized_dimensions)
       scope = apply_sort(scope, normalized_sort, normalized_dimensions)
-      scope = apply_cursor(scope, normalized_sort, cursor_values) if cursor_values
-      ranked_groups = select_cursor_values(scope, normalized_sort).limit(page_size + 1).to_a
+      scope = apply_cursor(scope, normalized_sort, cursor_values, normalized_dimensions) if cursor_values
+      ranked_groups = select_cursor_values(scope, normalized_sort, normalized_dimensions).limit(page_size + 1).to_a
       has_more = ranked_groups.size > page_size
       visible_groups = ranked_groups.first(page_size)
       next_cursor = if has_more && visible_groups.last
@@ -97,17 +98,28 @@ class ProjectInboxQuery
     Page.new(groups: group_ids.filter_map { |id| groups_by_id[id] }, next_cursor: next_cursor)
   end
 
-  def latest_events(groups)
-    latest_event_scope(groups).index_by(&:id)
+  def latest_events(groups, dimensions: {})
+    occurrences = scoped_latest_occurrences(groups, normalize_dimensions(dimensions))
+    events_by_reference = IngestEvent.partition_reference_index(
+      occurrences,
+      id_key: :ingest_event_id,
+      occurred_at_key: :ingest_event_occurred_at
+    )
+
+    occurrences.each_with_object({}) do |occurrence, events_by_group|
+      event = events_by_reference[occurrence.ingest_event_id]
+      events_by_group[occurrence.error_group_id] = event if event
+    end
   end
 
   def cli_latest_events(groups)
     Logister::CliEventQuery.summary(latest_event_scope(groups)).index_by(&:id)
   end
 
-  def group_trends(groups, days: 7)
+  def group_trends(groups, days: 7, dimensions: {})
     group_ids = groups.map(&:id)
     return {} if group_ids.empty?
+    normalized_dimensions = normalize_dimensions(dimensions)
 
     key = [
       "project",
@@ -117,6 +129,7 @@ class ProjectInboxQuery
       profile.version,
       days,
       Digest::SHA256.hexdigest(group_ids.join(",")),
+      Digest::SHA256.hexdigest(normalized_dimensions.to_json),
       cache_version
     ]
 
@@ -125,8 +138,8 @@ class ProjectInboxQuery
       dates = (0...days).map { |offset| start_date + offset }
       trends = group_ids.index_with { Array.new(days, 0) }
 
-      ErrorOccurrence.where(error_group_id: group_ids)
-                     .where("occurred_at >= ?", start_date.beginning_of_day)
+      occurrence_relation(normalized_dimensions, group_ids: group_ids)
+                     .where("error_occurrences.occurred_at >= ?", start_date.beginning_of_day)
                      .group(:error_group_id, "DATE(occurred_at)")
                      .count
                      .each do |(group_id, date), count|
@@ -193,6 +206,13 @@ class ProjectInboxQuery
     "all"
   end
 
+  def occurrence_relation(dimensions = {}, group_ids: nil)
+    ProjectInboxOccurrenceScope.new(
+      project: project,
+      dimensions: normalize_dimensions(dimensions)
+    ).relation(group_ids: group_ids)
+  end
+
   private
 
   def latest_event_scope(groups)
@@ -201,6 +221,16 @@ class ProjectInboxQuery
       id_key: :latest_event_id,
       occurred_at_key: :latest_event_occurred_at
     )
+  end
+
+  def scoped_latest_occurrences(groups, dimensions)
+    group_ids = groups.map(&:id)
+    return ErrorOccurrence.none if group_ids.empty?
+
+    occurrence_relation(dimensions, group_ids: group_ids)
+      .select("DISTINCT ON (error_occurrences.error_group_id) error_occurrences.*")
+      .order(Arel.sql("error_occurrences.error_group_id, error_occurrences.occurred_at DESC, error_occurrences.id DESC"))
+      .to_a
   end
 
   def base_scope(filter)
@@ -246,23 +276,7 @@ class ProjectInboxQuery
   def apply_dimensions(scope, dimensions)
     return scope if dimensions.empty? || !ErrorOccurrence.column_names.include?("dimensions")
 
-    occurrence_scope = ErrorOccurrence.where(error_group_id: scope.select(:id))
-    dimensions.each do |key, value|
-      if key == "time_range"
-        duration = { "24h" => 24.hours, "7d" => 7.days, "30d" => 30.days, "90d" => 90.days }[value]
-        occurrence_scope = occurrence_scope.where("error_occurrences.occurred_at >= ?", duration.ago) if duration
-      elsif key == "foreground"
-        occurrence_scope = occurrence_scope.where(foreground: ActiveModel::Type::Boolean.new.cast(value))
-      elsif key == "mechanism" && ErrorOccurrence.column_names.include?("mechanism")
-        occurrence_scope = occurrence_scope.where(mechanism: value)
-      elsif key == "release" && ErrorOccurrence.column_names.include?("release")
-        occurrence_scope = occurrence_scope.where(release: value)
-      else
-        occurrence_scope = occurrence_scope.where("dimensions ->> ? = ?", key, value)
-      end
-    end
-
-    scope.where(id: occurrence_scope.select(:error_group_id))
+    scope.where(id: occurrence_relation(dimensions).select(:error_group_id))
   end
 
   def normalize_sort(sort)
@@ -276,60 +290,67 @@ class ProjectInboxQuery
     case sort
     when "impact"
       join_scoped_occurrences(scope, dimensions).group("error_groups.id")
-           .order(Arel.sql("COUNT(DISTINCT error_occurrences.installation_hash) DESC NULLS LAST, error_groups.last_seen_at DESC, error_groups.id DESC"))
+           .order(Arel.sql("COUNT(DISTINCT error_occurrences.installation_hash) DESC NULLS LAST, MAX(error_occurrences.occurred_at) DESC NULLS LAST, error_groups.id DESC"))
     when "recommended"
       join_scoped_occurrences(scope, dimensions).group("error_groups.id")
            .order(Arel.sql(<<~SQL.squish))
              #{MECHANISM_PRIORITY_SQL} DESC,
              error_groups.regression_count DESC,
              COUNT(DISTINCT error_occurrences.installation_hash) DESC NULLS LAST,
-             error_groups.last_seen_at DESC,
+             MAX(error_occurrences.occurred_at) DESC NULLS LAST,
              error_groups.id DESC
            SQL
     when "velocity"
       join_scoped_occurrences(scope, dimensions).group("error_groups.id")
-           .order(Arel.sql("#{VELOCITY_SQL} DESC, error_groups.last_seen_at DESC, error_groups.id DESC"))
+           .order(Arel.sql("#{VELOCITY_SQL} DESC, MAX(error_occurrences.occurred_at) DESC NULLS LAST, error_groups.id DESC"))
     else
-      scope.recent_first
+      if dimensions.present?
+        join_scoped_occurrences(scope, dimensions).group("error_groups.id")
+          .order(Arel.sql("MAX(error_occurrences.occurred_at) DESC NULLS LAST, error_groups.id DESC"))
+      else
+        scope.recent_first
+      end
     end
   end
 
   def join_scoped_occurrences(scope, dimensions)
-    since = time_range_since(dimensions["time_range"])
-    return scope.left_joins(:error_occurrences) unless since
+    occurrence_sql = occurrence_relation(dimensions)
+      .select(
+        :id,
+        :error_group_id,
+        :occurred_at,
+        :mechanism,
+        :installation_hash
+      ).to_sql
 
-    join = ActiveRecord::Base.sanitize_sql_array([
-      "LEFT JOIN error_occurrences ON error_occurrences.error_group_id = error_groups.id AND error_occurrences.occurred_at >= ?",
-      since
-    ])
-    scope.joins(join)
+    scope.joins("LEFT JOIN (#{occurrence_sql}) error_occurrences ON error_occurrences.error_group_id = error_groups.id")
   end
 
-  def time_range_since(value)
-    duration = { "24h" => 24.hours, "7d" => 7.days, "30d" => 30.days, "90d" => 90.days }[value]
-    duration&.ago
-  end
-
-  def select_cursor_values(scope, sort)
+  def select_cursor_values(scope, sort, dimensions = {})
     if sort == "recommended" && ErrorOccurrence.column_names.include?("installation_hash")
       scope.select(
         "error_groups.id",
         "#{MECHANISM_PRIORITY_SQL} AS inbox_cursor_priority",
         "COALESCE(error_groups.regression_count, 0) AS inbox_cursor_regressions",
         "COUNT(DISTINCT error_occurrences.installation_hash) AS inbox_cursor_installations",
-        "COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0) AS inbox_cursor_last_seen"
+        "#{SCOPED_LAST_SEEN_SQL} AS inbox_cursor_last_seen"
       )
     elsif sort == "impact" && ErrorOccurrence.column_names.include?("installation_hash")
       scope.select(
         "error_groups.id",
         "COUNT(DISTINCT error_occurrences.installation_hash) AS inbox_cursor_installations",
-        "COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0) AS inbox_cursor_last_seen"
+        "#{SCOPED_LAST_SEEN_SQL} AS inbox_cursor_last_seen"
       )
     elsif sort == "velocity" && ErrorOccurrence.column_names.include?("installation_hash")
       scope.select(
         "error_groups.id",
         "#{VELOCITY_SQL} AS inbox_cursor_velocity",
-        "COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0) AS inbox_cursor_last_seen"
+        "#{SCOPED_LAST_SEEN_SQL} AS inbox_cursor_last_seen"
+      )
+    elsif dimensions.present? && ErrorOccurrence.column_names.include?("installation_hash")
+      scope.select(
+        "error_groups.id",
+        "#{SCOPED_LAST_SEEN_SQL} AS inbox_cursor_last_seen"
       )
     else
       scope.select(
@@ -339,20 +360,25 @@ class ProjectInboxQuery
     end
   end
 
-  def apply_cursor(scope, sort, values)
+  def apply_cursor(scope, sort, values, dimensions = {})
     if sort == "recommended" && values.size == 5
       scope.having(
-        "(#{MECHANISM_PRIORITY_SQL}, COALESCE(error_groups.regression_count, 0), COUNT(DISTINCT error_occurrences.installation_hash), COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0), error_groups.id) < (?, ?, ?, ?, ?)",
+        "(#{MECHANISM_PRIORITY_SQL}, COALESCE(error_groups.regression_count, 0), COUNT(DISTINCT error_occurrences.installation_hash), #{SCOPED_LAST_SEEN_SQL}, error_groups.id) < (?, ?, ?, ?, ?)",
         *values
       )
     elsif sort == "impact" && values.size == 3
       scope.having(
-        "(COUNT(DISTINCT error_occurrences.installation_hash), COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0), error_groups.id) < (?, ?, ?)",
+        "(COUNT(DISTINCT error_occurrences.installation_hash), #{SCOPED_LAST_SEEN_SQL}, error_groups.id) < (?, ?, ?)",
         *values
       )
     elsif sort == "velocity" && values.size == 3
       scope.having(
-        "(#{VELOCITY_SQL}, COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0), error_groups.id) < (?, ?, ?)",
+        "(#{VELOCITY_SQL}, #{SCOPED_LAST_SEEN_SQL}, error_groups.id) < (?, ?, ?)",
+        *values
+      )
+    elsif dimensions.present? && values.size == 2
+      scope.having(
+        "(#{SCOPED_LAST_SEEN_SQL}, error_groups.id) < (?, ?)",
         *values
       )
     elsif values.size == 2

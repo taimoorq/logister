@@ -177,6 +177,44 @@ RSpec.describe "Project notification preferences", type: :request do
 
       expect(response).to have_http_status(:success)
     end
+
+    it "persists and explains typed mobile evidence filters" do
+      project = create(:project, :ios, user: users(:one))
+      sign_in users(:one)
+
+      get settings_project_path(project, section: "notifications", notification_path: "workflow")
+
+      expect(response.body).to include("Mobile evidence match", "Delayed evidence", "reporting-period diagnostics never count as real-time spikes")
+
+      patch project_notification_preference_path(project, notification_path: "workflow"), params: {
+        notification_path: "workflow",
+        project_notification_preference: {
+          mobile_source_filter: "metrickit",
+          mobile_diagnostic_kind_filter: "hang",
+          mobile_build_filter: "42",
+          mobile_channel_filter: "TestFlight",
+          mobile_artifact_state_filter: "artifact_matched",
+          late_arrival_policy: "exact_time_only"
+        }
+      }
+
+      preference = ProjectNotificationPreference.find_by!(project: project, user: users(:one))
+      expect(preference.attributes.slice(
+        "mobile_source_filter",
+        "mobile_diagnostic_kind_filter",
+        "mobile_build_filter",
+        "mobile_channel_filter",
+        "mobile_artifact_state_filter",
+        "late_arrival_policy"
+      )).to eq(
+        "mobile_source_filter" => "metrickit",
+        "mobile_diagnostic_kind_filter" => "hang",
+        "mobile_build_filter" => "42",
+        "mobile_channel_filter" => "TestFlight",
+        "mobile_artifact_state_filter" => "artifact_matched",
+        "late_arrival_policy" => "exact_time_only"
+      )
+    end
   end
 
   describe "POST /notification_preferences/unsubscribe/:token" do

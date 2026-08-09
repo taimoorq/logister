@@ -1,5 +1,6 @@
 <% presenter = event_presenter(project, event, exception_data) %>
 <% breadcrumbs = presenter.respond_to?(:breadcrumbs) ? presenter.breadcrumbs : [] %>
+<% evidence = TelemetryEvidence.for(event) %>
 
 <div class="mobile-trail">
   <section class="mobile-context-section">
@@ -15,12 +16,17 @@
         <% end %>
       </ol>
     <% else %>
-      <p class="muted">No trail was captured by this SDK event. Enable bounded breadcrumbs to see app activity before a failure.</p>
+      <p class="muted">No trail was captured by this SDK event. Enable bounded breadcrumbs to see the app activity that preceded it.</p>
     <% end %>
   </section>
 
   <section class="mobile-context-section">
     <h3>Related logs</h3>
+    <% if evidence.reporting_interval? %>
+      <p class="muted">Candidates below share a direct trace, request, or session identifier and fall within the source reporting interval. Timing alone is not treated as a relationship.</p>
+    <% elsif evidence.received_only? %>
+      <p class="muted">Automatic related logs are unavailable because this diagnostic has no exact occurrence time. Receipt time is not used as an event timestamp.</p>
+    <% end %>
     <% if related_logs.any? %>
       <%= render "project_events/profiles/shared/related_logs",
                  project: project,
@@ -31,7 +37,7 @@
                  query_param: query_param,
                  assignee_param: assignee_param,
                  link_data: link_data %>
-    <% else %>
+    <% elsif !evidence.received_only? %>
       <p class="muted">No matching logs were found for the captured session, trace, or time window.</p>
     <% end %>
   </section>

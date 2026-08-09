@@ -2,11 +2,9 @@
 # frozen_string_literal: true
 
 require "json"
-require "open3"
 require "pathname"
 
 repo_root = Pathname.new(__dir__).join("..").expand_path
-workspace_root = Pathname.new(ENV.fetch("LOGISTER_WORKSPACE_ROOT", repo_root.dirname.to_s)).expand_path
 check_only = ARGV.include?("--check")
 
 def read_match(path, pattern)
@@ -15,50 +13,19 @@ def read_match(path, pattern)
   path.read[pattern, 1]
 end
 
-def read_companion_text(workspace_root, repository, relative_path)
-  repository_root = workspace_root.join(repository)
-  path = repository_root.join(relative_path)
-  return nil unless path.file?
-  return path.read unless repository_root.join(".git").exist?
-
-  branch, branch_status = Open3.capture2("git", "-C", repository_root.to_s, "branch", "--show-current")
-  return path.read unless branch_status.success?
-  return path.read if branch.strip.empty?
-
-  # Public docs should not inherit versions from unrelated branches or uncommitted package bumps.
-  reference = "main"
-  if branch.strip == "main"
-    dirty, dirty_status = Open3.capture2("git", "-C", repository_root.to_s, "status", "--porcelain", "--", relative_path)
-    allow_dirty = ENV["LOGISTER_SYNC_DIRTY_COMPANION_VERSIONS"] == "true"
-    return path.read if allow_dirty || !dirty_status.success? || dirty.strip.empty?
-
-    reference = "HEAD"
-  end
-
-  committed_content, committed_status = Open3.capture2("git", "-C", repository_root.to_s, "show", "#{reference}:#{relative_path}")
-  committed_status.success? ? committed_content : path.read
-end
-
-def read_companion_match(workspace_root, repository, relative_path, pattern)
-  read_companion_text(workspace_root, repository, relative_path)&.[](pattern, 1)
-end
-
-def read_companion_json_version(workspace_root, repository, relative_path)
-  content = read_companion_text(workspace_root, repository, relative_path)
-  JSON.parse(content)["version"] if content
-rescue JSON::ParserError
-  nil
-end
-
+catalog = JSON.parse(repo_root.join("config/ecosystem-versions.json").read)
+source_app = read_match(repo_root.join("VERSION"), /\A([^\s]+)\s*\z/)
+published_app = catalog.dig("backend", "version")
+published_addons = catalog.fetch("addons")
 versions = {
-  app: read_match(repo_root.join("CHANGELOG.md"), /^## (v[0-9][0-9A-Za-z.\-]*)\b/),
-  ruby: read_companion_match(workspace_root, "logister-ruby", "lib/logister/version.rb", /VERSION\s*=\s*["']([^"']+)["']/),
-  python: read_companion_match(workspace_root, "logister-python", "pyproject.toml", /^version\s*=\s*"([^"]+)"/),
-  javascript: read_companion_json_version(workspace_root, "logister-js", "package.json"),
-  dotnet: read_companion_match(workspace_root, "logister-dotnet", "src/Logister/Logister.csproj", /<Version>([^<]+)<\/Version>/),
-  android: read_companion_match(workspace_root, "logister-android", "gradle.properties", /^VERSION_NAME=(.+)$/),
-  ios: read_companion_match(workspace_root, "logister-ios", "VERSION", /^(.+)$/),
-  cli: read_companion_json_version(workspace_root, "logister-cli", "package.json")
+  app: published_app && "v#{published_app.delete_prefix("v")}",
+  ruby: published_addons.dig("logister-ruby", "version"),
+  python: published_addons.dig("logister-python", "version"),
+  javascript: published_addons.dig("logister-js", "version"),
+  dotnet: published_addons.dig("logister-dotnet", "version"),
+  android: published_addons.dig("logister-android", "version"),
+  ios: published_addons.dig("logister-ios", "version"),
+  cli: published_addons.dig("logister-cli", "version")
 }.compact
 
 def rule(name, pattern, replacement)
@@ -69,19 +36,23 @@ rules = []
 
 if versions[:app]
   app = versions[:app]
-  app_number = app.delete_prefix("v")
   rules.concat([
     rule("ghcr app image", /(ghcr\.io\/taimoorq\/logister:)v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
     rule("docker app image", /(docker\.io\/taimoorq\/logister:)v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
     rule("quay app image", /(quay\.io\/taimoorq\/logister:)v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
     rule("app gh release", /(gh release view )v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
-    rule("app version tag example", /(version tag such as <code>)v[0-9][0-9A-Za-z.\-]*(<\/code>)/, "\\1#{app}\\2"),
-    rule("app structured data version", /("softwareVersion"\s*=>\s*")[^"]+(")/, "\\1#{app_number}\\2"),
-    rule("OpenAPI app version", /^(\s{2}version:\s*)\"?[0-9][0-9A-Za-z.\-]*\"?\s*$/, "\\1\"#{app_number}\""),
-    rule("OpenAPI server version example", /^(\s*server_version:\s*")[^"]+("\s*)$/, "\\1#{app_number}\\2"),
-    rule("OpenAPI contract version example", /^(\s*api_contract_version:\s*")[^"]+("\s*)$/, "\\1#{app_number}\\2"),
-    rule("server version expectation", /("server_version"\s*=>\s*")[^"]+("\s*,?)/, "\\1#{app_number}\\2"),
-    rule("contract version expectation", /("api_contract_version"\s*=>\s*")[^"]+("\s*,?)/, "\\1#{app_number}\\2")
+    rule("app version tag example", /(version tag such as <code>)v[0-9][0-9A-Za-z.\-]*(<\/code>)/, "\\1#{app}\\2")
+  ])
+end
+
+if source_app
+  rules.concat([
+    rule("app structured data version", /("softwareVersion"\s*=>\s*")[^"]+(")/, "\\1#{source_app}\\2"),
+    rule("OpenAPI app version", /^(\s{2}version:\s*)\"?[0-9][0-9A-Za-z.\-]*\"?\s*$/, "\\1\"#{source_app}\""),
+    rule("OpenAPI server version example", /^(\s*server_version:\s*")[^"]+("\s*)$/, "\\1#{source_app}\\2"),
+    rule("OpenAPI contract version example", /^(\s*api_contract_version:\s*")[^"]+("\s*)$/, "\\1#{source_app}\\2"),
+    rule("server version expectation", /("server_version"\s*=>\s*")[^"]+("\s*,?)/, "\\1#{source_app}\\2"),
+    rule("contract version expectation", /("api_contract_version"\s*=>\s*")[^"]+("\s*,?)/, "\\1#{source_app}\\2")
   ])
 end
 
@@ -165,8 +136,8 @@ files.uniq.each do |path|
   path.write(updated) unless check_only
 end
 
-missing = %i[ruby python javascript dotnet android ios cli].reject { |key| versions[key] }
-warn "Skipped missing companion repo versions: #{missing.join(", ")}" if missing.any?
+missing = %i[app ruby python javascript dotnet android ios cli].reject { |key| versions[key] }
+warn "Published version catalog is incomplete: #{missing.join(", ")}" if missing.any?
 
 if check_only && changed.any?
   warn "Version references are stale:"

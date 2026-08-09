@@ -1,82 +1,33 @@
 module ProjectsHelper
-  INTEGRATION_PICKER_DETAILS = {
-    "ruby" => {
-      label: "Ruby gem",
-      badge: "Gem",
-      description: "Rails apps, Ruby services, jobs, and custom Ruby telemetry."
-    },
-    "dotnet" => {
-      label: ".NET / ASP.NET Core",
-      badge: "NuGet",
-      description: "ASP.NET Core apps, C# workers, and custom .NET telemetry."
-    },
-    "cloudflare_pages" => {
-      label: "Cloudflare Pages",
-      badge: "HTTP",
-      description: "Pages deployment and traffic signals through manual HTTP telemetry today."
-    },
-    "android" => {
-      label: "Android app",
-      badge: "Gradle",
-      description: "Android telemetry through logister-android and backend-issued ingest tokens."
-    },
-    "ios" => {
-      label: "iOS app",
-      badge: "SPM",
-      description: "iOS telemetry through logister-ios and backend-issued ingest tokens."
-    },
-    "cfml" => {
-      label: "CFML",
-      badge: "CFML",
-      description: "ColdFusion and Lucee apps that send structured server errors."
-    },
-    "javascript" => {
-      label: "JavaScript / TypeScript",
-      badge: "npm",
-      description: "Node, TypeScript, Express, workers, console logs, and browser timing with logister-js."
-    },
-    "python" => {
-      label: "Python",
-      badge: "PyPI",
-      description: "FastAPI, Django, Flask, Celery, Python workers, and native logging with logister-python."
-    },
-    "http_api" => {
-      label: "Manual / HTTP API",
-      badge: "Manual",
-      description: "Any runtime, script, worker, or custom client that posts JSON directly."
-    }
-  }.freeze
+  def project_page_context(project, page_key: nil)
+    key = [ project.object_id, request.path, page_key, current_user&.id, respond_to?(:admin_user?) && admin_user? ]
+    @project_page_contexts ||= {}
+    @project_page_contexts[key] ||= ProjectPageContext.for(
+      project: project,
+      viewer: current_user,
+      request_path: request.path,
+      app_admin: respond_to?(:admin_user?) && admin_user?,
+      page_key: page_key
+    )
+  end
 
   def project_integration_picker_choices
-    Project.integration_options.map do |_label, value|
-      INTEGRATION_PICKER_DETAILS.fetch(value).merge(value: value)
+    ProjectIntegrationDefinition.all_for_picker.map do |definition|
+      {
+        value: definition.key,
+        label: definition.label,
+        badge: definition.picker_badge,
+        description: definition.picker_description
+      }
     end
   end
 
   def project_integration_docs_path(project)
-    return docs_site_url(:cfml_integration) if project&.integration_cfml?
-    return docs_site_url(:dotnet_integration) if project&.integration_dotnet?
-    return docs_site_url(:javascript_integration) if project&.integration_javascript?
-    return docs_site_url(:python_integration) if project&.integration_python?
-    return docs_site_url(:http_api) if project&.integration_http_api?
-    return docs_site_url(:cloudflare_pages_integration) if project&.integration_cloudflare_pages?
-    return docs_site_url(:android_integration) if project&.integration_android?
-    return docs_site_url(:ios_integration) if project&.integration_ios?
-
-    docs_site_url(:ruby_integration)
+    docs_site_url(integration_definition_for(project).documentation_key)
   end
 
   def project_integration_docs_label(project)
-    return "CFML integration docs" if project&.integration_cfml?
-    return ".NET integration docs" if project&.integration_dotnet?
-    return "JavaScript integration docs" if project&.integration_javascript?
-    return "Python integration docs" if project&.integration_python?
-    return "HTTP API docs" if project&.integration_http_api?
-    return "Cloudflare Pages docs" if project&.integration_cloudflare_pages?
-    return "Android SDK docs" if project&.integration_android?
-    return "iOS SDK docs" if project&.integration_ios?
-
-    "Ruby integration docs"
+    integration_definition_for(project).documentation_label
   end
 
   def project_collection_path(project)
@@ -121,6 +72,10 @@ module ProjectsHelper
 
   def retention_timestamp(timestamp)
     timestamp.present? ? l(timestamp, format: :long) : "Never"
+  end
+
+  private def integration_definition_for(project)
+    project&.integration_definition || ProjectIntegrationDefinition.fetch(:ruby)
   end
 
   def archive_status_badge_class(tone)

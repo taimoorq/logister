@@ -29,6 +29,8 @@
     <strong><%= mapping_resolution.label %></strong>
     <% if mapping_resolution.mapped? %>
       <span>R8 mapping <code><%= mapping_resolution.mapping_file.filename %></code> matched build <%= mapping_resolution.mapping_file.version_code %>.</span>
+    <% elsif mapping_resolution.status == :mapping_matched %>
+      <span>The mapping matches this package and version code, but no displayed frame resolved. Original frames remain unchanged.</span>
     <% elsif mapping_resolution.status == :missing %>
       <span>No R8 mapping matches this package and version code. Source names may be obfuscated.</span>
     <% else %>
@@ -36,6 +38,21 @@
     <% end %>
   </div>
 
+  <% if presenter.historical_exit? && presenter.application_exit_details.any? %>
+    <section class="mobile-context-section" aria-labelledby="android-exit-evidence-title">
+      <h3 id="android-exit-evidence-title">ApplicationExitInfo evidence</h3>
+      <dl>
+        <% presenter.application_exit_details.each do |key, value| %><div><dt><%= key.to_s.humanize %></dt><dd><code><%= value %></code></dd></div><% end %>
+      </dl>
+    </section>
+  <% end %>
+
+  <% if presenter.stack_not_applicable? %>
+    <section class="mobile-context-section" aria-labelledby="android-no-stack-title">
+      <h3 id="android-no-stack-title">No stack captured for this historical exit</h3>
+      <p class="muted">Use the exit reason, process, importance, source build, and receipt facts. Logister will not display the reporting process stack as the prior process's crash stack.</p>
+    </section>
+  <% else %>
   <div class="better-errors-workbench">
     <aside class="better-errors-frames">
       <div class="better-errors-frame-scope">
@@ -112,4 +129,5 @@
       </section>
     </div>
   </div>
+  <% end %>
 </div>

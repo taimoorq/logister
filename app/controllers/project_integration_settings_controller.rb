@@ -4,6 +4,7 @@ class ProjectIntegrationSettingsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :set_managed_project
+  before_action :reject_archived_project
 
   def update
     @integration_setting = ProjectIntegrationSetting.for(
@@ -45,6 +46,13 @@ class ProjectIntegrationSettingsController < ApplicationController
   end
 
   private
+
+  def reject_archived_project
+    return unless @project.archived?
+
+    redirect_to settings_project_path(@project, section: "integrations"),
+                alert: "Distribution and platform imports are paused while this project is archived. Restore the project before changing or syncing an integration."
+  end
 
   def integration_anchor
     if @integration_setting.provider_google_play?

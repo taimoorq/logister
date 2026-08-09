@@ -5,18 +5,19 @@
 <% os = presenter.os_details %>
 <% termination = presenter.termination_details %>
 <% stack_text = presenter.stacktrace_text %>
+<% symbol_coverage = ios_symbol_coverage(project, event, exception_data) %>
 
 <div class="better-errors-shell ios-error-shell">
   <header class="better-errors-header ios-incident-header">
     <div class="ios-incident-badges">
-      <span class="mobile-mechanism-badge mechanism-<%= presenter.mechanism %>"><%= presenter.mechanism_label %></span>
+      <span class="mobile-mechanism-badge mechanism-<%= presenter.mechanism %>"><%= presenter.failure_type_label %></span>
       <span class="ios-source-badge"><%= presenter.diagnostic_source_label %></span>
       <% if presenter.capture_source_label.present? %><span class="ios-source-badge"><%= presenter.capture_source_label %></span><% end %>
       <% if presenter.exception_detail_redacted? %><span class="ios-source-badge">Message redacted</span><% end %>
       <% if presenter.fatal? %><span class="ios-severity-label">Fatal</span><% elsif presenter.handled? %><span class="ios-severity-label">Handled</span><% end %>
     </div>
-    <p class="better-errors-runtime"><strong><%= presenter.exception_type %></strong></p>
-    <h3 class="better-errors-message"><%= presenter.exception_message.presence || termination[:reason].presence || "No diagnostic message was reported." %></h3>
+    <p class="better-errors-runtime"><strong><%= presenter.failure_type_label %></strong></p>
+    <h3 class="better-errors-message"><%= presenter.technical_signature.presence || presenter.exception_message.presence || termination[:reason].presence || "No diagnostic summary was reported." %></h3>
     <% if top_in_app_frame.present? %>
       <p class="ios-culprit">
         <code><%= top_in_app_frame[:method_name].presence || top_in_app_frame[:address].presence || "Unknown application frame" %></code>
@@ -31,24 +32,26 @@
     </dl>
   </header>
 
-  <div class="mobile-evidence-status symbolication-<%= presenter.symbolication_status %>" role="status">
-    <strong><%= presenter.symbolication_label %></strong>
+  <div class="mobile-evidence-status symbolication-<%= symbol_coverage.status %>" role="status">
+    <strong><%= symbol_coverage.label %></strong>
     <span>
-      <% case presenter.symbolication_status %>
-      <% when "missing" %>
-        Upload the matching dSYM for <%= presenter.missing_symbol_uuids.any? ? presenter.missing_symbol_uuids.join(", ") : "this app build" %>. Raw addresses remain available.
-      <% when "pending" %>
-        The matching symbols are queued for processing. This issue keeps its current grouping while symbols improve.
-      <% when "partial" %>
-        Some binary images are symbolicated; unmatched UUIDs remain address-only.
-      <% when "failed" %>
-        Symbol processing failed. Review the artifact status in iOS integration settings.
-      <% when "symbolicated" %>
-        Application frames were resolved with a matching binary UUID and architecture.
-      <% when "not_required" %>
-        This SDK report already included callable symbols; no server-side dSYM pass was required.
+      <% case symbol_coverage.status %>
+      <% when :missing %>
+        Upload the exact dSYM UUID and architecture for this build. Raw addresses remain available.
+      <% when :verification_pending %>
+        A matching artifact is uploaded but its UUID manifest is not verified yet.
+      <% when :partial_coverage %>
+        Some address-only binaries have verified dSYMs; unmatched UUIDs still need artifacts. No frames have been server-symbolicated yet.
+      <% when :verification_failed %>
+        A matching artifact failed UUID verification. Review the artifact error before retrying.
+      <% when :artifact_matched %>
+        Exact build, binary UUID, and architecture coverage is verified. This confirms artifact eligibility; it does not claim that stored frames were symbolicated.
+      <% when :symbols_included %>
+        This report already contains callable symbols; no server dSYM lookup is required for the displayed frames.
+      <% when :build_unknown %>
+        The report has address-only frames but lacks the app/build or binary identity needed for an exact dSYM match.
       <% else %>
-        This event did not report symbol coverage. Address-only frames require an exact UUID and architecture match.
+        Symbol artifacts do not apply to this diagnostic evidence.
       <% end %>
     </span>
     <%= link_to "Review symbol coverage", settings_project_path(project, section: "integrations", anchor: "apple-symbols"), class: "inline-link", data: { turbo_frame: "_top" } %>
@@ -65,10 +68,16 @@
     </section>
   <% end %>
 
+  <% if presenter.stack_not_applicable? %>
+    <section class="mobile-context-section" aria-labelledby="ios-no-stack-title">
+      <h3 id="ios-no-stack-title">No stack applies to this evidence</h3>
+      <p class="muted"><%= presenter.stack_unavailable_reason %></p>
+    </section>
+  <% else %>
   <div class="better-errors-workbench">
-    <aside class="better-errors-frames" aria-label="Triggered thread frames">
+    <aside class="better-errors-frames" aria-label="<%= presenter.selected_thread_role_label %> frames">
       <div class="ios-thread-heading">
-        <span>Triggered thread</span>
+        <span><%= presenter.selected_thread_role_label %></span>
         <strong><%= presenter.triggered_thread&.dig(:name).presence || "Not identified" %></strong>
       </div>
       <div class="better-errors-frame-scope">
@@ -98,7 +107,7 @@
           <% end %>
         </ol>
       <% else %>
-        <p class="muted">No frames were captured for the triggered thread. Check the raw diagnostic for termination-only evidence.</p>
+        <p class="muted">No frames were captured for this evidence role. Check termination, measurement, or memory evidence instead of expecting an empty stack.</p>
       <% end %>
     </aside>
 
@@ -162,4 +171,5 @@
       <% end %>
     </div>
   </div>
+  <% end %>
 </div>

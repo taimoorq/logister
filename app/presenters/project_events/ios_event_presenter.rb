@@ -7,25 +7,33 @@ module ProjectEvents
     FRAMEWORK_IMAGES = /\A(?:lib\S+|CoreFoundation|Foundation|UIKitCore|AppKit|Swift\S*|XCTest\S*|dyld|Dispatch|CFNetwork|CoreGraphics|QuartzCore|Metal\S*)\z/i
     MECHANISM_LABELS = {
       "handled_exception" => "Reported error",
-      "unhandled_exception" => "Fatal crash",
+      "unhandled_exception" => "Unhandled exception",
       "native_crash" => "Native crash",
       "hang" => "Hang",
       "watchdog_termination" => "Watchdog termination",
       "memory_termination" => "Memory termination",
       "low_memory_kill" => "Memory termination",
-      "disk_write_exception" => "Disk-write diagnostic",
-      "launch_failure" => "Launch failure",
+      "disk_write_exception" => "Excessive disk writes",
+      "launch_failure" => "Slow app launch",
       "unknown" => "Apple diagnostic"
     }.freeze
     DIAGNOSTIC_KIND_LABELS = {
       "reported_error" => "Reported error",
       "crash" => "Crash",
       "hang" => "Hang",
+      "cpu_exception" => "Excessive CPU",
+      "excessive_cpu" => "Excessive CPU",
       "watchdog" => "Watchdog termination",
       "watchdog_termination" => "Watchdog termination",
       "memory_termination" => "Memory termination",
-      "disk_write_exception" => "Disk-write diagnostic",
-      "launch_failure" => "Launch failure"
+      "memory_limit_termination" => "Memory-limit termination",
+      "memory_pressure_termination" => "Memory-pressure termination",
+      "nonfatal_resource_diagnostic" => "Resource diagnostic",
+      "disk_write_exception" => "Excessive disk writes",
+      "excessive_disk_writes" => "Excessive disk writes",
+      "launch_failure" => "Slow app launch",
+      "slow_launch" => "Slow app launch",
+      "aggregate_exit_metric" => "Aggregate exit metric"
     }.freeze
     SYMBOLICATION_LABELS = {
       "not_required" => "Symbols included",
@@ -99,12 +107,63 @@ module ProjectEvents
       DIAGNOSTIC_KIND_LABELS.fetch(diagnostic_kind, mechanism_label)
     end
 
+    def failure_type_label
+      diagnostic_kind_label
+    end
+
+    def technical_signature
+      frame = top_in_app_frame
+      culprit = frame&.dig(:qualified_method).presence || frame&.dig(:method_name).presence
+      identity = if %w[reported_error crash].include?(diagnostic_kind)
+        exception_type.presence || diagnostic_kind_label
+      else
+        diagnostic_kind_label
+      end
+      signature = [ identity, culprit.present? && "in #{culprit}" ].compact_blank.join(" ")
+      [ signature.presence, measurement_summary ].compact_blank.join(" · ").presence || termination_details[:reason] || event&.message.to_s.presence
+    end
+
+    def culprit_location
+      frame = top_in_app_frame
+      return if frame.blank?
+
+      location = frame[:file].presence
+      location = "#{location}:#{frame[:line_number]}" if location && frame[:line_number]
+      location
+    end
+
+    def measurement_summary
+      diagnostic = normalize_hash(context["diagnostic"])
+      measurements = normalize_hash(diagnostic["measurements"] || context["measurements"])
+      candidates = case diagnostic_kind
+      when "hang"
+        [ [ measurements["duration_ms"] || diagnostic["duration_ms"], "ms hang" ], [ measurements["duration_seconds"] || diagnostic["duration_seconds"], "s hang" ] ]
+      when "cpu_exception", "excessive_cpu"
+        [ [ measurements["total_cpu_time_seconds"] || diagnostic["total_cpu_time_seconds"], "s CPU" ], [ measurements["sampled_time_seconds"] || diagnostic["sampled_time_seconds"], "s sampled" ] ]
+      when "disk_write_exception", "excessive_disk_writes"
+        [ [ measurements["total_bytes_written"] || diagnostic["total_bytes_written"], "bytes written" ] ]
+      when "launch_failure", "slow_launch"
+        [ [ measurements["duration_ms"] || diagnostic["duration_ms"], "ms launch" ] ]
+      else
+        []
+      end
+      candidates.filter_map do |value, suffix|
+        next if value.blank?
+
+        "#{value} #{suffix}"
+      end.join(" · ").presence
+    end
+
     def handled?
       boolean_value(nested_value("error", "handled"), default: mechanism == "handled_exception")
     end
 
     def fatal?
-      boolean_value(nested_value("error", "fatal"), default: %w[unhandled_exception native_crash].include?(mechanism))
+      explicit = nested_value("error", "fatal")
+      return boolean_value(explicit, default: false) unless explicit.nil?
+      return false if %w[hang cpu_exception excessive_cpu disk_write_exception excessive_disk_writes launch_failure slow_launch nonfatal_resource_diagnostic aggregate_exit_metric].include?(diagnostic_kind)
+
+      %w[crash watchdog watchdog_termination memory_limit_termination memory_pressure_termination].include?(diagnostic_kind) || %w[unhandled_exception native_crash].include?(mechanism)
     end
 
     def user_perceived?
@@ -117,7 +176,7 @@ module ProjectEvents
       return normalized if normalized.present?
 
       stack = normalize_frames(exception["stacktrace"] || exception[:stacktrace] || exception["backtrace"] || exception[:backtrace])
-      stack.present? ? [ { id: "reported-thread", name: "Reporting thread", triggered: true, frames: stack } ] : []
+      stack.present? ? [ { id: "reported-thread", name: "Reporting thread", role: "reporting", triggered: false, frames: stack } ] : []
     end
 
     def triggered_thread
@@ -127,6 +186,31 @@ module ProjectEvents
     def other_threads
       selected = triggered_thread
       threads.reject { |thread| thread.equal?(selected) || thread[:id] == selected&.dig(:id) }
+    end
+
+    def selected_thread_role_label
+      {
+        "reporting" => "Reporting thread",
+        "crashed" => "Crashed thread",
+        "attributed" => "Attributed stack",
+        "main" => "Main thread",
+        "sampled" => "Sampled call path",
+        "unknown" => "Selected thread"
+      }.fetch(triggered_thread&.dig(:role).to_s, "Selected thread")
+    end
+
+    def stack_not_applicable?
+      frames.empty? && %w[memory_termination memory_limit_termination memory_pressure_termination aggregate_exit_metric].include?(diagnostic_kind)
+    end
+
+    def stack_unavailable_reason
+      return unless stack_not_applicable?
+
+      if diagnostic_kind == "aggregate_exit_metric"
+        "This record is an interval aggregate, not an individual stack-bearing occurrence."
+      else
+        "This memory/termination evidence does not include an app call stack; use the termination and memory facts instead."
+      end
     end
 
     def frames
@@ -150,7 +234,7 @@ module ProjectEvents
 
     def stacktrace_text
       threads.flat_map do |thread|
-        [ "#{thread[:triggered] ? 'Triggered' : 'Thread'}: #{thread[:name]}", *thread[:frames].map { |frame| "  #{frame_text(frame)}" } ]
+        [ "#{thread[:role].to_s.humanize.presence || 'Thread'}: #{thread[:name]}", *thread[:frames].map { |frame| "  #{frame_text(frame)}" } ]
       end.join("\n")
     end
 
@@ -236,10 +320,10 @@ module ProjectEvents
 
     def correlation_details
       details(
-        session: nested_scalar("session", "id") || scalar(context, "session_id"),
-        installation: nested_scalar("installation", "id_hash") || scalar(context, "installation_id_hash"),
-        user: scalar(context, "user_id"),
-        trace: scalar(context, "trace_id")
+        session: masked_identifier(nested_scalar("session", "id") || scalar(context, "session_id")),
+        installation: masked_identifier(nested_scalar("installation", "id_hash") || scalar(context, "installation_id_hash")),
+        user: masked_identifier(scalar(context, "user_id")),
+        trace: masked_identifier(scalar(context, "trace_id"))
       )
     end
 
@@ -267,10 +351,13 @@ module ProjectEvents
       return unless raw.is_a?(Hash)
 
       frames = normalize_frames(raw["frames"] || raw[:frames] || raw["stacktrace"] || raw[:stacktrace])
+      reporting = diagnostic_kind == "reported_error" && (scalar(raw, "role").blank? || scalar(raw, "role") == "reporting")
+      triggered = reporting ? false : boolean_value(raw["triggered"] || raw[:triggered] || raw["crashed"] || raw[:crashed], default: false)
       {
         id: scalar(raw, "id") || scalar(raw, "number") || index.to_s,
         name: scalar(raw, "name") || "Thread #{index}",
-        triggered: boolean_value(raw["triggered"] || raw[:triggered] || raw["crashed"] || raw[:crashed], default: false),
+        role: scalar(raw, "role") || (reporting ? "reporting" : (triggered ? "crashed" : "unknown")),
+        triggered:,
         frames: frames
       }
     end
@@ -357,7 +444,8 @@ module ProjectEvents
       value = context[parent] || context[parent.to_sym]
       return unless value.is_a?(Hash)
 
-      value[child] || value[child.to_sym]
+      return value[child] if value.key?(child)
+      value[child.to_sym] if value.key?(child.to_sym)
     end
 
     def nested_scalar(parent, child)

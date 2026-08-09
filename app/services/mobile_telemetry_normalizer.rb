@@ -34,6 +34,7 @@ class MobileTelemetryNormalizer
         "version_name" => first(context.dig("app", "version_name"), context["app_version"]),
         "version_code" => first(context.dig("app", "version_code"), context["build_number"]),
         "build_type" => first(context.dig("app", "build_type"), context["build_type"]),
+        "process" => first(context.dig("app", "process"), context["process_name"]),
         "screen" => first(context.dig("app", "screen"), context["screen_name"]),
         "in_foreground" => boolean(context.dig("app", "in_foreground"), context["in_foreground"])
       })

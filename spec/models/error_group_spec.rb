@@ -86,7 +86,10 @@ RSpec.describe ErrorGroup, type: :model do
     it "decides whether to reopen only after acquiring a fresh row lock" do
       group = create(:error_group, project: project, status: :unresolved, occurrence_count: 1)
       event = create(:ingest_event, project: project, api_key: api_key, occurred_at: Time.current)
-      described_class.where(id: group.id).update_all(status: described_class.statuses.fetch("resolved"))
+      described_class.where(id: group.id).update_all(
+        status: described_class.statuses.fetch("resolved"),
+        resolved_at: 1.minute.ago
+      )
 
       expect(group).to be_unresolved
       expect(group.record_occurrence!(event)).to be true

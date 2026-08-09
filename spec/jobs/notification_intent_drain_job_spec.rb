@@ -12,7 +12,7 @@ RSpec.describe NotificationIntentDrainJob, type: :job do
 
     described_class.perform_now(intent.id)
 
-    expect(ProjectErrorFirstOccurrenceAlertJob).to have_been_enqueued.with(intent.error_group_id)
+    expect(ProjectErrorFirstOccurrenceAlertJob).to have_been_enqueued.with(intent.error_group_id, intent.metadata)
     expect(intent.reload).to have_attributes(status: "enqueued", attempts: 1)
     expect(intent.enqueued_at).to be_present
   end

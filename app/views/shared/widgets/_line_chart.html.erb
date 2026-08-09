@@ -1,4 +1,5 @@
 <% points = Array(local_assigns.fetch(:points, [])).map(&:to_i) %>
+<% accessible_label = local_assigns.fetch(:accessible_label, "Last 7 days event trend") %>
 <% points = Array.new(7, 0) if points.empty? %>
 <% width = 320 %>
 <% height = 104 %>
@@ -12,7 +13,7 @@
      "#{x.round(2)},#{y.round(2)}"
    end.join(" ") %>
 
-<svg class="project-card-line-chart" viewBox="0 0 <%= width %> <%= height %>" role="img" aria-label="Last 7 days event trend" preserveAspectRatio="none">
+<svg class="project-card-line-chart" viewBox="0 0 <%= width %> <%= height %>" role="img" aria-label="<%= accessible_label %>" preserveAspectRatio="none">
   <line x1="<%= padding %>" y1="<%= padding %>" x2="<%= width - padding %>" y2="<%= padding %>" class="project-card-chart-grid" />
   <line x1="<%= padding %>" y1="<%= height / 2 %>" x2="<%= width - padding %>" y2="<%= height / 2 %>" class="project-card-chart-grid" />
   <line x1="<%= padding %>" y1="<%= height - padding %>" x2="<%= width - padding %>" y2="<%= height - padding %>" class="project-card-chart-grid" />

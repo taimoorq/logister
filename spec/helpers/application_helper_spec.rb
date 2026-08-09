@@ -119,6 +119,20 @@ RSpec.describe ApplicationHelper, type: :helper do
     end
   end
 
+  describe "#pretty_context_json" do
+    it "server-redacts credential and mobile correlation values by default" do
+      json = helper.pretty_context_json(
+        "token" => "top-secret",
+        "session_id" => "session-raw",
+        "installation" => { "id_hash" => "installation-raw" },
+        "device" => { "model" => "Pixel 9" }
+      )
+
+      expect(json).to include("[REDACTED]", "Pixel 9")
+      expect(json).not_to include("top-secret", "session-raw", "installation-raw")
+    end
+  end
+
   describe "#app_icon" do
     it "renders icons from the local Streamline sprite" do
       fragment = Nokogiri::HTML.fragment(helper.app_icon(:search, css: "h-4 w-4 text-slate-400"))

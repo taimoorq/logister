@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://logister.org/schemas/ecosystem-versions.schema.json",
+  "title": "Verified Logister ecosystem versions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "backend", "addons"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "backend": { "$ref": "#/$defs/versionObject" },
+    "addons": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/versionObject" }
+    }
+  },
+  "$defs": {
+    "versionObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(?:-[0-9A-Za-z.-]+)?$"
+        }
+      }
+    }
+  }
+}

@@ -12,13 +12,13 @@ class ProjectNotificationPreferenceRules
   def immediate_email_enabled?(kind, error_group:, metadata:)
     case kind.to_s
     when "first_occurrence"
-      preference.first_occurrence_enabled? && error_group_matches_filters?(error_group)
+      preference.first_occurrence_enabled? && error_group_matches_filters?(error_group, metadata)
     when "regression"
-      preference.regression_enabled? && error_group_matches_filters?(error_group)
+      preference.regression_enabled? && error_group_matches_filters?(error_group, metadata)
     when "frequent_error"
-      preference.frequent_error_enabled? && error_group_matches_filters?(error_group)
+      preference.frequent_error_enabled? && error_group_matches_filters?(error_group, metadata)
     when "error_milestone"
-      preference.milestone_alerts_enabled? && error_group_matches_filters?(error_group)
+      preference.milestone_alerts_enabled? && error_group_matches_filters?(error_group, metadata)
     when "assignment", "status_change"
       workflow_email_enabled?(kind, error_group: error_group, metadata: metadata)
     when "monitor_missed", "monitor_recovered"
@@ -42,18 +42,19 @@ class ProjectNotificationPreferenceRules
 
   attr_reader :preference
 
-  def error_group_matches_filters?(group)
+  def error_group_matches_filters?(group, metadata = {})
     return true unless group
 
     return false unless environment_matches?(group.stage)
     return false unless severity_matches?(group.severity)
+    return false unless mobile_evidence_matches?(group.project, metadata)
 
     status_matches?(group.status)
   end
 
   def workflow_email_enabled?(kind, error_group:, metadata:)
     return false if preference.workflow_mode == "off"
-    return false unless error_group_matches_filters?(error_group)
+    return false unless error_group_matches_filters?(error_group, metadata)
     return true if preference.workflow_mode == "all_project"
 
     case kind.to_s
@@ -86,6 +87,23 @@ class ProjectNotificationPreferenceRules
     else
       status.to_s == preference.status_filter
     end
+  end
+
+  def mobile_evidence_matches?(project, metadata)
+    return true unless project.integration_android? || project.integration_ios?
+
+    values = metadata.to_h.stringify_keys
+    return false if preference.late_arrival_policy == "exact_time_only" && values["time_precision"] != "exact"
+
+    mobile_filter_matches?(preference.mobile_source_filter, values["evidence_source"]) &&
+      mobile_filter_matches?(preference.mobile_diagnostic_kind_filter, values["diagnostic_kind"]) &&
+      mobile_filter_matches?(preference.mobile_build_filter, values["build_number"]) &&
+      mobile_filter_matches?(preference.mobile_channel_filter, values["distribution_channel"]) &&
+      mobile_filter_matches?(preference.mobile_artifact_state_filter, values["artifact_state"])
+  end
+
+  def mobile_filter_matches?(filter, value)
+    filter == ProjectNotificationPreference::FILTER_ALL || filter.to_s.casecmp?(value.to_s)
   end
 
   def metadata_user_id(metadata, key)

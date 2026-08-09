@@ -71,7 +71,14 @@ class IngestEventPersistence
   def persist
     event = project.ingest_events.new(attributes)
     event.api_key = api_key
-    event.occurred_at ||= Time.current
+    received_at = Time.current
+    evidence = TelemetryEvidenceNormalizer.normalize(
+      context: event.context,
+      client_occurred_at: attributes["occurred_at"],
+      received_at: received_at
+    )
+    event.context = evidence.context
+    event.occurred_at = evidence.canonical_occurred_at
     if event.save
       outbox = accept_record(event, client_identifier: event.uuid)
       Result.new(event, false, outbox)

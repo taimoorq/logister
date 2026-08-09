@@ -14,6 +14,13 @@ class ProjectArchiveInvestigationSearch
     release
     service
     route
+    clock
+    source
+    diagnostic_kind
+    build_number
+    distribution_channel
+    platform
+    artifact_state
     from
     to
   ].freeze
@@ -32,7 +39,7 @@ class ProjectArchiveInvestigationSearch
   def hot_events
     return IngestEvent.none unless query_present?
 
-    @hot_events ||= hot_event_scope.order(occurred_at: :desc, id: :desc).limit(HOT_RESULT_LIMIT)
+    @hot_events ||= hot_event_scope.order(event_time_column => :desc, id: :desc).limit(HOT_RESULT_LIMIT)
   end
 
   def hot_spans
@@ -69,6 +76,35 @@ class ProjectArchiveInvestigationSearch
     params[key.to_s]
   end
 
+  def mobile?
+    project.integration_android? || project.integration_ios?
+  end
+
+  def clock
+    value("clock").presence_in(%w[evidence receipt]) || (mobile? ? "receipt" : "evidence")
+  end
+
+  def clock_label
+    clock == "receipt" ? "Receipt time" : "Evidence time"
+  end
+
+  def event_time(event)
+    clock == "receipt" ? event.created_at : event.occurred_at
+  end
+
+  def mobile_summary(event)
+    context = MobileTelemetryNormalizer.normalize(event.context)
+    evidence = TelemetryEvidence.for(event)
+    {
+      source: evidence.source,
+      kind: context.dig("diagnostic", "kind").presence || context.dig("error", "mechanism").presence,
+      build: context.dig("app", "version_code").presence,
+      channel: context.dig("distribution", "channel").presence,
+      platform: context["apple_platform"].presence || context.dig("os", "name").presence,
+      artifact_state: artifact_states_by_event_id[event.id]
+    }.compact
+  end
+
   private
 
   def normalize_params(raw_params)
@@ -85,7 +121,7 @@ class ProjectArchiveInvestigationSearch
     return IngestEvent.none if value("event_type") == "span"
 
     scope = project.ingest_events
-    scope = apply_time_range(scope, :occurred_at)
+    scope = apply_time_range(scope, event_time_column)
     scope = scope.where(event_type: value("event_type")) if value("event_type").present? && IngestEvent.event_types.key?(value("event_type"))
     scope = apply_context_filter(scope, "trace_id", "traceId", value("trace_id"))
     scope = apply_context_filter(scope, "request_id", "requestId", value("request_id"))
@@ -95,6 +131,7 @@ class ProjectArchiveInvestigationSearch
     scope = apply_context_filter(scope, "release", nil, value("release"))
     scope = apply_context_filter(scope, "service", nil, value("service"))
     scope = apply_context_filter(scope, "route", nil, value("route"))
+    scope = apply_mobile_event_filters(scope) if mobile?
     scope = apply_text_query(scope, value("q"))
     scope
   end
@@ -154,6 +191,31 @@ class ProjectArchiveInvestigationSearch
     end
   end
 
+  def apply_mobile_event_filters(scope)
+    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context #>> '{telemetry_evidence,source}', ''), NULLIF(context #>> '{diagnostic,source}', ''))", value("source"))
+    scope = apply_expression_filter(scope, "context #>> '{diagnostic,kind}'", value("diagnostic_kind"))
+    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context #>> '{app,version_code}', ''), NULLIF(context ->> 'build_number', ''))", value("build_number"))
+    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context #>> '{distribution,channel}', ''), NULLIF(context #>> '{distribution,track}', ''))", value("distribution_channel"))
+    scope = apply_expression_filter(scope, "COALESCE(NULLIF(context ->> 'apple_platform', ''), NULLIF(context #>> '{os,name}', ''))", value("platform"))
+    if value("artifact_state").present?
+      occurrence_ids = ErrorOccurrence.joins(:error_group)
+        .where(error_groups: { project_id: project.id })
+        .where(
+          "error_occurrences.dimensions ->> 'mapping_status' = :state OR error_occurrences.dimensions ->> 'symbolication_status' = :state",
+          state: value("artifact_state")
+        )
+        .select(:ingest_event_id)
+      scope = scope.where(id: occurrence_ids)
+    end
+    scope
+  end
+
+  def apply_expression_filter(scope, expression, raw_value)
+    return scope if raw_value.blank?
+
+    scope.where("#{expression} = ?", raw_value)
+  end
+
   def apply_text_query(scope, raw_query)
     return scope if raw_query.blank?
 
@@ -196,6 +258,23 @@ class ProjectArchiveInvestigationSearch
 
   def parsed_from
     @parsed_from ||= parse_time(value("from"))
+  end
+
+  def event_time_column
+    clock == "receipt" ? :created_at : :occurred_at
+  end
+
+  def artifact_states_by_event_id
+    @artifact_states_by_event_id ||= begin
+      event_ids = hot_events.map(&:id)
+      ErrorOccurrence.joins(:error_group)
+        .where(error_groups: { project_id: project.id }, ingest_event_id: event_ids)
+        .pluck(:ingest_event_id, :dimensions)
+        .each_with_object({}) do |(event_id, dimensions), result|
+          values = dimensions.to_h
+          result[event_id] = values["mapping_status"].presence || values["symbolication_status"].presence
+        end
+    end
   end
 
   def parsed_to

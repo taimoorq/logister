@@ -3,6 +3,7 @@ class ProjectNotificationPreference < ApplicationRecord
   WORKFLOW_MODES = %w[off assigned_to_me all_project].freeze
   FILTER_ALL = "all"
   STATUS_FILTERS = %w[all unresolved closed].freeze
+  LATE_ARRIVAL_POLICIES = %w[notify_on_receipt exact_time_only].freeze
   MIN_THRESHOLD = 1
   MAX_THRESHOLD = 1_000_000
 
@@ -17,6 +18,7 @@ class ProjectNotificationPreference < ApplicationRecord
   validates :digest_frequency, inclusion: { in: DIGEST_FREQUENCIES }
   validates :workflow_mode, inclusion: { in: WORKFLOW_MODES }
   validates :status_filter, inclusion: { in: STATUS_FILTERS }
+  validates :late_arrival_policy, inclusion: { in: LATE_ARRIVAL_POLICIES }
   validates :digest_send_hour, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 23 }
   validates :frequent_error_threshold_count,
             :frequent_error_window_minutes,
@@ -142,6 +144,12 @@ class ProjectNotificationPreference < ApplicationRecord
     self.environment_filter = normalized_filter(environment_filter)
     self.severity_filter = normalized_filter(severity_filter)
     self.status_filter = status_filter.to_s.presence_in(STATUS_FILTERS) || "unresolved"
+    self.mobile_source_filter = normalized_filter(mobile_source_filter)
+    self.mobile_diagnostic_kind_filter = normalized_filter(mobile_diagnostic_kind_filter)
+    self.mobile_build_filter = normalized_filter(mobile_build_filter)
+    self.mobile_channel_filter = normalized_filter(mobile_channel_filter)
+    self.mobile_artifact_state_filter = normalized_filter(mobile_artifact_state_filter)
+    self.late_arrival_policy = late_arrival_policy.to_s.presence_in(LATE_ARRIVAL_POLICIES) || "notify_on_receipt"
     self.time_zone = time_zone.to_s.presence || "UTC"
   end
 

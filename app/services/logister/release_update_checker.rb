@@ -54,12 +54,13 @@ module Logister
       configured = ENV["LOGISTER_RELEASE"].to_s.strip
       return normalize_tag(configured) if release_tag?(configured)
 
-      changelog_version
+      packaged_version
     end
 
-    def changelog_version
-      match = Rails.root.join("CHANGELOG.md").read.match(/^##\s+(v[0-9][^\s]*)\s+-\s+[0-9]{4}-[0-9]{2}-[0-9]{2}\s*$/)
-      normalize_tag(match[1]) if match
+    def packaged_version
+      normalize_tag(Rails.root.join("VERSION").read)
+    rescue Errno::ENOENT
+      nil
     end
 
     def fetch_latest_release

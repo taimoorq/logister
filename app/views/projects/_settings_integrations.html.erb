@@ -6,6 +6,13 @@
   <%= render "projects/settings_ios_integrations" %>
 <% end %>
 
+<% if @project.archived? %>
+  <div class="lg:col-span-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+    <strong class="block">Live integrations are paused</strong>
+    <span>Restore this project before changing credentials or importing distribution reports. Existing source links and private build artifacts remain available for historical investigation.</span>
+  </div>
+<% end %>
+
 <% if @project.integration_cloudflare_pages? %>
         <article class="settings-panel lg:col-span-2"
                  id="platform-integration">
@@ -36,7 +43,7 @@
             <% end %>
 
             <label class="flex items-start gap-3">
-              <%= f.check_box :enabled, class: "form-checkbox mt-1" %>
+              <%= f.check_box :enabled, class: "form-checkbox mt-1", disabled: !@integration_changes_allowed %>
               <span>
                 <span class="block text-sm font-semibold text-slate-900">Enable Cloudflare imports</span>
                 <span class="block text-sm text-slate-600">Marks this project eligible for future importer jobs.</span>
@@ -48,25 +55,29 @@
                 <%= f.label :account_id, "Cloudflare account ID", class: "form-label" %>
                 <%= f.text_field :account_id,
                                  placeholder: "a1b2c3d4e5f6",
-                                 class: "form-input" %>
+                                 class: "form-input",
+                                 disabled: !@integration_changes_allowed %>
               </div>
               <div>
                 <%= f.label :external_project_name, "Pages project name", class: "form-label" %>
                 <%= f.text_field :external_project_name,
                                  placeholder: "marketing-site",
-                                 class: "form-input" %>
+                                 class: "form-input",
+                                 disabled: !@integration_changes_allowed %>
               </div>
               <div>
                 <%= f.label :external_project_id, "Pages project ID", class: "form-label" %>
                 <%= f.text_field :external_project_id,
                                  placeholder: "optional",
-                                 class: "form-input" %>
+                                 class: "form-input",
+                                 disabled: !@integration_changes_allowed %>
               </div>
               <div>
                 <%= f.label :credential_reference, "Credential reference", class: "form-label" %>
                 <%= f.text_field :credential_reference,
                                  placeholder: "CLOUDFLARE_API_TOKEN",
-                                 class: "form-input" %>
+                                 class: "form-input",
+                                 disabled: !@integration_changes_allowed %>
                 <p class="mt-1 text-xs text-slate-500">Reference an environment secret or external secret key. Do not paste raw Cloudflare tokens here.</p>
               </div>
             </div>
@@ -83,7 +94,7 @@
                 Last imported:
                 <span class="font-semibold text-slate-700"><%= @cloudflare_integration_setting.last_imported_at.present? ? local_time_tag(@cloudflare_integration_setting.last_imported_at, format: :long) : "Never" %></span>
               </p>
-              <%= f.submit "Save Cloudflare settings", class: "btn-primary" %>
+              <% if @integration_changes_allowed %><%= f.submit "Save Cloudflare settings", class: "btn-primary" %><% end %>
             </div>
           <% end %>
         </article>

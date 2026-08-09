@@ -29,10 +29,10 @@ module ProjectInboxData
     )
   end
 
-  def inbox_latest_events(groups)
+  def inbox_latest_events(project, groups, profile_filters: {})
     return {} if groups.empty?
 
-    project_inbox_query(groups.first.project).latest_events(groups)
+    project_inbox_query(project).latest_events(groups, dimensions: profile_filters)
   end
 
   def inbox_group_trends(project, groups, days: nil, profile_filters: {})
@@ -42,7 +42,7 @@ module ProjectInboxData
       first = ErrorOccurrence.joins(:error_group).where(error_groups: { project_id: project.id }).minimum(:occurred_at)
       days = first ? [ (Date.current - first.to_date).to_i + 1, 1 ].max : 1
     end
-    project_inbox_query(project).group_trends(groups, days: days || 7)
+    project_inbox_query(project).group_trends(groups, days: days || 7, dimensions: profile_filters)
   end
 
   def inbox_counts(project, assignee: "all", viewer: nil)
@@ -59,7 +59,64 @@ module ProjectInboxData
     range = profile_filters.to_h.stringify_keys["time_range"]
     duration = { "24h" => 24.hours, "7d" => 7.days, "30d" => 30.days, "90d" => 90.days }[range]
     since = range == "all" ? nil : (duration || 30.days).ago
-    ErrorGroupImpactSummary.for_groups(groups, since: since)
+    occurrence_scope = project_inbox_query(project).occurrence_relation(profile_filters, group_ids: groups.map(&:id))
+    ErrorGroupImpactSummary.for_groups(groups, since: since, occurrence_scope: occurrence_scope)
+  end
+
+  def inbox_android_mapping_resolutions(project, latest_events)
+    return {} unless ProjectExperience.for(project).key == :android
+
+    presenters = latest_events.values.compact.index_with { |event| ProjectEvents::AndroidEventPresenter.new(event) }
+    mapping_keys = presenters.values.filter_map do |presenter|
+      app = presenter.app_details
+      next if app[:package_name].blank? || app[:version_code].blank?
+
+      [ app[:package_name], app[:version_code].to_s ]
+    end.uniq
+
+    mappings = mapping_keys
+      .reduce(project.android_mapping_files.none) do |relation, (package_name, version_code)|
+        relation.or(project.android_mapping_files.where(package_name:, version_code:))
+      end
+      .to_a
+      .index_by { |mapping| [ mapping.package_name, mapping.version_code.to_s ] }
+
+    presenters.to_h do |event, presenter|
+      app = presenter.app_details
+      mapping = mappings[[ app[:package_name], app[:version_code].to_s ]]
+      resolution = AndroidMappingResolution.call(project:, event:, presenter:, mapping_file: mapping)
+      [ event.id, resolution ]
+    end
+  end
+
+  def inbox_ios_symbol_coverages(project, latest_events)
+    return {} unless ProjectExperience.for(project).key == :ios
+
+    presenters = latest_events.values.compact.index_with { |event| ProjectEvents::IosEventPresenter.new(event) }
+    build_keys = presenters.values.filter_map do |presenter|
+      app = presenter.app_details
+      next if app[:bundle_identifier].blank? || app[:version_code].blank?
+
+      [ app[:bundle_identifier], app[:version_code].to_s ]
+    end.uniq
+
+    artifacts = build_keys
+      .reduce(project.apple_symbol_artifacts.none) do |relation, (app_identifier, version_code)|
+        relation.or(project.apple_symbol_artifacts.where(app_identifier:, version_code:))
+      end
+      .to_a
+      .group_by { |artifact| [ artifact.app_identifier, artifact.version_code.to_s ] }
+
+    presenters.to_h do |event, presenter|
+      app = presenter.app_details
+      coverage = AppleSymbolCoverage.call(
+        project:,
+        event:,
+        presenter:,
+        artifacts: artifacts.fetch([ app[:bundle_identifier], app[:version_code].to_s ], [])
+      )
+      [ event.id, coverage ]
+    end
   end
 
   def normalize_inbox_assignee_filter(project, assignee, viewer: nil)

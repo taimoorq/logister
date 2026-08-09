@@ -36,7 +36,9 @@ module IngestEventContext
     end
 
     def session_id(event)
-      context_value(event, "session_id").presence || context_value(event, "sessionId").presence
+      context_value(event, "session_id").presence ||
+        context_value(event, "sessionId").presence ||
+        nested_context_value(event, "session", "id").presence
     end
 
     def user_identifier(event)

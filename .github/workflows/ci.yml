@@ -1,4 +1,4 @@
-name: CI / Deploy
+name: CI
 
 on:
   pull_request:
@@ -10,6 +10,43 @@ permissions:
   contents: read
 
 jobs:
+  release_impact:
+    name: Release impact
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check public repository safety
+        run: bash scripts/publication-safety-check.sh
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+
+      - name: Validate ecosystem release impact
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            ruby bin/check-release-impact --base "$BASE_SHA" --head "$HEAD_SHA"
+          elif [ "$EVENT_NAME" = "push" ] && [ -n "$BEFORE_SHA" ] && ! echo "$BEFORE_SHA" | grep -Eq '^0+$'; then
+            ruby bin/check-release-impact --base "$BEFORE_SHA" --head "$HEAD_SHA"
+          else
+            ruby bin/check-release-impact --all
+          fi
+
+      - name: Validate ecosystem release set
+        run: bin/check-release-set
+
   scan_ruby:
     name: Scan Ruby
     runs-on: ubuntu-latest
@@ -280,6 +317,7 @@ jobs:
     name: CI passed
     runs-on: ubuntu-latest
     needs:
+      - release_impact
       - scan_ruby
       - scan_js
       - lint
@@ -295,273 +333,5 @@ jobs:
           echo "One or more required CI jobs did not pass."
           exit 1
 
-      - name: Mark pipeline ready for deploy
-        run: echo "All required CI jobs passed."
-
-  deploy:
-    name: Deploy / Publish release
-    needs: ci_passed
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
-    concurrency: deploy-group
-    permissions:
-      contents: write
-      packages: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-
-      - name: Set up Fly
-        uses: superfly/flyctl-actions/setup-flyctl@v1
-
-      - name: Ensure Fly API token is configured
-        run: |
-          if [ -z "${FLY_API_TOKEN}" ]; then
-            echo "Missing FLY_API_TOKEN GitHub secret. Add it in Settings -> Secrets and variables -> Actions."
-            exit 1
-          fi
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Deploy app
-        run: flyctl deploy --remote-only --max-concurrent 1 --wait-timeout 10m --release-command-timeout 30m --deploy-retries 3
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Verify Fly machines are healthy
-        run: |
-          flyctl status --json > /tmp/fly-status.json
-          ruby <<'RUBY'
-          require "json"
-
-          status = JSON.parse(File.read("/tmp/fly-status.json"))
-          machines = status.fetch("Machines")
-          unhealthy = machines.filter_map do |machine|
-            checks = machine.fetch("checks", [])
-            failed_checks = checks.reject { |check| check["status"] == "passing" }
-            next if machine["state"] == "started" && machine["host_status"] == "ok" && failed_checks.empty?
-
-            "#{machine["id"]} process=#{machine.dig("config", "env", "FLY_PROCESS_GROUP")} state=#{machine["state"]} host=#{machine["host_status"]} failed_checks=#{failed_checks.map { |check| check["name"] }.join(",")}"
-          end
-
-          if unhealthy.any?
-            warn "Fly machines are not healthy after deploy:"
-            warn unhealthy.join("\n")
-            exit 1
-          end
-
-          puts "Fly machines are started and healthy."
-          RUBY
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Read release config
-        id: release_config
-        run: |
-          ruby <<'RUBY' >> "$GITHUB_OUTPUT"
-          require "yaml"
-
-          config = YAML.load_file("config/release.yml")
-          puts "enabled=#{config.dig("github", "create_release_on_deploy") ? "true" : "false"}"
-          puts "app_name=#{config.fetch("app_name")}"
-          puts "tag_prefix=#{config.fetch("tag_prefix", "v")}"
-          puts "changelog_path=#{config.fetch("changelog_path", "CHANGELOG.md")}"
-          puts "make_latest=#{config.dig("github", "make_latest") ? "true" : "false"}"
-          RUBY
-
-      - name: Extract release metadata
-        id: release_meta
-        if: steps.release_config.outputs.enabled == 'true'
-        run: |
-          ruby <<'RUBY' >> "$GITHUB_OUTPUT"
-          changelog_path = "${{ steps.release_config.outputs.changelog_path }}"
-          app_name = "${{ steps.release_config.outputs.app_name }}"
-          tag_prefix = "${{ steps.release_config.outputs.tag_prefix }}"
-          changelog = File.read(changelog_path)
-
-          version_match = changelog.match(/^##\s+(v[0-9][^\s]*)\s+-\s+([0-9]{4}-[0-9]{2}-[0-9]{2})\s*$/.freeze)
-          unless version_match
-            warn "No versioned changelog entry found in #{changelog_path}"
-            exit 1
-          end
-
-          version = version_match[1]
-          version = "#{tag_prefix}#{version}" unless version.start_with?(tag_prefix)
-          prerelease = version.include?("-")
-          configured_make_latest = "${{ steps.release_config.outputs.make_latest }}"
-          release_date = version_match[2]
-          release_start = version_match.begin(0)
-          next_heading = changelog.index(/^##\s+/, version_match.end(0))
-          release_body = changelog[release_start...(next_heading || changelog.length)].strip
-
-          puts "tag_name=#{version}"
-          puts "release_name=#{app_name} #{version}"
-          puts "release_date=#{release_date}"
-          puts "prerelease=#{prerelease ? "true" : "false"}"
-          puts "make_latest=#{prerelease ? "false" : configured_make_latest}"
-          puts "release_body<<EOF"
-          puts release_body
-          puts "EOF"
-          RUBY
-
-      - name: Check whether release already exists
-        id: release_state
-        if: steps.release_config.outputs.enabled == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const tag = "${{ steps.release_meta.outputs.tag_name }}";
-
-            try {
-              const release = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag,
-              });
-
-              core.info(`Release ${tag} already exists: ${release.data.html_url}`);
-              core.setOutput("exists", "true");
-            } catch (error) {
-              if (error.status !== 404) throw error;
-
-              core.info(`Release ${tag} does not exist yet; publishing will continue.`);
-              core.setOutput("exists", "false");
-            }
-
-      - name: Ensure Docker Hub credentials are configured
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        run: |
-          if [ -z "${DOCKERHUB_USERNAME}" ] || [ -z "${DOCKERHUB_TOKEN}" ]; then
-            echo "Missing Docker Hub GitHub secrets. Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN in Settings -> Secrets and variables -> Actions."
-            exit 1
-          fi
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Resolve optional registry mirrors
-        id: registry_mirrors
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        run: |
-          quay_enabled=false
-          if [ -n "${QUAY_USERNAME}" ] || [ -n "${QUAY_TOKEN}" ]; then
-            if [ -z "${QUAY_USERNAME}" ] || [ -z "${QUAY_TOKEN}" ]; then
-              echo "Quay mirror is partially configured. Add both QUAY_USERNAME and QUAY_TOKEN, or remove both secrets."
-              exit 1
-            fi
-            quay_enabled=true
-          fi
-          quay_namespace="${QUAY_NAMESPACE}"
-          if [ -z "${quay_namespace}" ] && [ -n "${QUAY_USERNAME}" ]; then
-            quay_namespace="${QUAY_USERNAME%%+*}"
-          fi
-
-          echo "quay_enabled=${quay_enabled}" >> "$GITHUB_OUTPUT"
-          echo "quay_namespace=${quay_namespace}" >> "$GITHUB_OUTPUT"
-        env:
-          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
-          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
-          QUAY_NAMESPACE: ${{ secrets.QUAY_NAMESPACE }}
-
-      - name: Compute container image metadata
-        id: container_meta
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        env:
-          RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
-          PRERELEASE: ${{ steps.release_meta.outputs.prerelease }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          QUAY_NAMESPACE: ${{ steps.registry_mirrors.outputs.quay_namespace }}
-          QUAY_ENABLED: ${{ steps.registry_mirrors.outputs.quay_enabled }}
-        run: |
-          ruby <<'RUBY' >> "$GITHUB_OUTPUT"
-          repository = ENV.fetch("GITHUB_REPOSITORY").downcase
-          sha = ENV.fetch("GITHUB_SHA")
-          release_tag = ENV.fetch("RELEASE_TAG")
-          prerelease = ENV["PRERELEASE"] == "true"
-          short_sha = sha[0, 12]
-          images = [
-            "ghcr.io/#{repository}",
-            "docker.io/#{ENV.fetch("DOCKERHUB_USERNAME")}/logister"
-          ]
-          images << "quay.io/#{ENV.fetch("QUAY_NAMESPACE")}/logister" if ENV["QUAY_ENABLED"] == "true"
-
-          tags = images.flat_map do |image|
-            image_tags = [
-              "#{image}:#{release_tag}",
-              "#{image}:#{short_sha}"
-            ]
-            image_tags.insert(1, "#{image}:latest") unless prerelease
-            image_tags
-          end
-
-          puts "short_sha=#{short_sha}"
-          puts "tags<<EOF"
-          puts tags
-          puts "EOF"
-          RUBY
-
-      - name: Set up Docker Buildx
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Log in to Docker Hub
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Log in to Quay.io
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true' && steps.registry_mirrors.outputs.quay_enabled == 'true'
-        uses: docker/login-action@v4
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_TOKEN }}
-
-      - name: Publish container images
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.container_meta.outputs.tags }}
-          labels: |
-            org.opencontainers.image.title=Logister
-            org.opencontainers.image.description=Self-hostable error monitoring and bug triage for applications
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ steps.release_meta.outputs.tag_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Publish GitHub release
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists != 'true'
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ steps.release_meta.outputs.tag_name }}
-          target_commitish: ${{ github.sha }}
-          name: ${{ steps.release_meta.outputs.release_name }}
-          body: ${{ steps.release_meta.outputs.release_body }}
-          prerelease: ${{ steps.release_meta.outputs.prerelease }}
-          make_latest: ${{ steps.release_meta.outputs.make_latest }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Skip already-published release
-        if: steps.release_config.outputs.enabled == 'true' && steps.release_state.outputs.exists == 'true'
-        run: echo "Release ${{ steps.release_meta.outputs.tag_name }} already exists; deploy finished without republishing images."
+      - name: Mark pipeline ready for release evaluation
+        run: echo "All required CI jobs passed; release promotion is handled by release-from-main.yml."

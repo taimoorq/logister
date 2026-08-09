@@ -140,6 +140,15 @@ RSpec.describe ErrorGroupJsonExporter do
     expect(payload.dig("export", "include_occurrence_records")).to be(false)
     expect(payload.dig("error_group", "fingerprint")).to eq("checkout-nomethod")
     expect(payload.dig("latest_event", "message")).to eq("Latest checkout failure")
+    expect(payload.dig("export", "version")).to eq(2)
+    expect(payload.dig("latest_event", "evidence", "time", "precision")).to eq("unknown")
+    expect(payload.dig("latest_event", "correlation")).to include(
+      "trace" => "collected_masked",
+      "request" => "collected_masked",
+      "session" => "not_collected",
+      "user" => "not_collected"
+    )
+    expect(payload.fetch("latest_event")).not_to have_key("trace_id")
     expect(payload.fetch("latest_event")).not_to have_key("id")
     expect(payload.dig("latest_event", "api_key", "name")).to eq("production")
     expect(payload.dig("exception", "application_frames").first).to include(
@@ -232,6 +241,7 @@ RSpec.describe ErrorGroupJsonExporter do
     expect(payload.dig("latest_event", "context", "token")).to eq("[REDACTED]")
     expect(payload.dig("latest_event", "context", "request", "headers", "Authorization")).to eq("[REDACTED]")
     expect(JSON.generate(payload)).not_to include("top-secret", "Bearer hidden")
+    expect(JSON.generate(payload)).not_to include("trace-checkout", "req-checkout")
   end
 
   it "bounds individual event context and the complete export response" do

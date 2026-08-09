@@ -1,0 +1,424 @@
+name: Publish and deploy backend release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to reconcile
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: backend-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish one digest and deploy it
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out immutable tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+
+      - name: Validate tag, ancestry, notes, and public contents
+        id: identity
+        env:
+          REQUESTED_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          git fetch origin main --tags --force
+          release_sha="$(git rev-parse HEAD)"
+          tag_sha="$(git rev-parse "refs/tags/${REQUESTED_TAG}^{commit}")"
+          if [ "${release_sha}" != "${tag_sha}" ]; then
+            echo "Checked out commit ${release_sha} does not match ${REQUESTED_TAG} (${tag_sha})."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "${release_sha}" origin/main; then
+            echo "Release tag ${REQUESTED_TAG} is not reachable from protected main."
+            exit 1
+          fi
+          scripts/publication-safety-check.sh
+          bin/check-release-impact --all
+          bin/check-release-set
+          bin/release-identity --git-sha "${release_sha}" --github-output "$GITHUB_OUTPUT"
+          declared_tag="$(ruby -rjson -e 'puts JSON.parse(STDIN.read).fetch("tag")' < <(bin/release-identity --git-sha "${release_sha}"))"
+          if [ "${declared_tag}" != "${REQUESTED_TAG}" ]; then
+            echo "Tag ${REQUESTED_TAG} does not match packaged release ${declared_tag}."
+            exit 1
+          fi
+
+      - name: Validate required publisher configuration
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ -z "${DOCKERHUB_USERNAME}" ] || [ -z "${DOCKERHUB_TOKEN}" ]; then
+            echo "Docker Hub publishing is not fully configured."
+            exit 1
+          fi
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "Fly deployment is not configured."
+            exit 1
+          fi
+
+      - name: Resolve optional Quay mirror
+        id: quay
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+          QUAY_NAMESPACE: ${{ secrets.QUAY_NAMESPACE }}
+        run: |
+          enabled=false
+          namespace="${QUAY_NAMESPACE}"
+          if [ -n "${QUAY_USERNAME}" ] || [ -n "${QUAY_TOKEN}" ]; then
+            if [ -z "${QUAY_USERNAME}" ] || [ -z "${QUAY_TOKEN}" ]; then
+              echo "Quay is partially configured; configure both publisher values or neither."
+              exit 1
+            fi
+            enabled=true
+            if [ -z "${namespace}" ]; then
+              namespace="${QUAY_USERNAME%%+*}"
+            fi
+          fi
+          echo "enabled=${enabled}" >> "$GITHUB_OUTPUT"
+          echo "namespace=${namespace}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Log in to Quay
+        if: steps.quay.outputs.enabled == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Resolve canonical Docker Hub image
+        id: canonical_state
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+        run: |
+          image="docker.io/${DOCKERHUB_USERNAME}/logister"
+          release_ref="${image}:${RELEASE_TAG}"
+          digest="$(docker buildx imagetools inspect "${release_ref}" 2>/dev/null | sed -n 's/^Digest:[[:space:]]*//p' | head -1 || true)"
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          echo "release_ref=${release_ref}" >> "$GITHUB_OUTPUT"
+          if [ -n "${digest}" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and publish canonical immutable image
+        id: build
+        if: steps.canonical_state.outputs.exists != 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.canonical_state.outputs.release_ref }}
+          build-args: |
+            LOGISTER_VERSION=${{ steps.identity.outputs.version }}
+            LOGISTER_GIT_SHA=${{ steps.identity.outputs.git_sha }}
+          labels: |
+            org.opencontainers.image.title=Logister
+            org.opencontainers.image.description=Self-hostable error monitoring and bug triage for applications
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.identity.outputs.git_sha }}
+            org.opencontainers.image.version=${{ steps.identity.outputs.version }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Pin canonical digest
+        id: canonical
+        env:
+          EXISTING_DIGEST: ${{ steps.canonical_state.outputs.digest }}
+          BUILT_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE: ${{ steps.canonical_state.outputs.image }}
+        run: |
+          digest="${EXISTING_DIGEST:-${BUILT_DIGEST}}"
+          if ! printf '%s' "${digest}" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "Canonical registry did not return a valid immutable digest."
+            exit 1
+          fi
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          echo "reference=${IMAGE}@${digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Reconcile immutable registry mirrors
+        id: mirrors
+        env:
+          CANONICAL_REFERENCE: ${{ steps.canonical.outputs.reference }}
+          EXPECTED_DIGEST: ${{ steps.canonical.outputs.digest }}
+          DOCKER_IMAGE: ${{ steps.canonical_state.outputs.image }}
+          GHCR_IMAGE: ghcr.io/${{ github.repository }}
+          QUAY_ENABLED: ${{ steps.quay.outputs.enabled }}
+          QUAY_NAMESPACE: ${{ steps.quay.outputs.namespace }}
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+          RELEASE_SHA: ${{ steps.identity.outputs.git_sha }}
+          PRERELEASE: ${{ steps.identity.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          registry_digest() {
+            docker buildx imagetools inspect "$1" 2>/dev/null | sed -n 's/^Digest:[[:space:]]*//p' | head -1 || true
+          }
+
+          ensure_immutable() {
+            target="$1"
+            actual="$(registry_digest "${target}")"
+            if [ -n "${actual}" ] && [ "${actual}" != "${EXPECTED_DIGEST}" ]; then
+              echo "Immutable registry tag ${target} already has conflicting digest ${actual}."
+              exit 1
+            fi
+            if [ -z "${actual}" ]; then
+              docker buildx imagetools create --tag "${target}" "${CANONICAL_REFERENCE}"
+            fi
+          }
+
+          ensure_mutable() {
+            docker buildx imagetools create --tag "$1" "${CANONICAL_REFERENCE}"
+          }
+
+          short_sha="${RELEASE_SHA:0:12}"
+          images=("${DOCKER_IMAGE}" "${GHCR_IMAGE}")
+          if [ "${QUAY_ENABLED}" = "true" ]; then
+            images+=("quay.io/${QUAY_NAMESPACE}/logister")
+          fi
+
+          for image in "${images[@]}"; do
+            ensure_immutable "${image}:${RELEASE_TAG}"
+            ensure_immutable "${image}:${short_sha}"
+            if [ "${PRERELEASE}" != "true" ]; then
+              ensure_mutable "${image}:latest"
+            fi
+          done
+
+          echo "docker_ref=${DOCKER_IMAGE}:${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "ghcr_ref=${GHCR_IMAGE}:${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          if [ "${QUAY_ENABLED}" = "true" ]; then
+            echo "quay_ref=quay.io/${QUAY_NAMESPACE}/logister:${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify registries are publicly readable
+        env:
+          EXPECTED_DIGEST: ${{ steps.canonical.outputs.digest }}
+          DOCKER_REF: ${{ steps.mirrors.outputs.docker_ref }}
+          GHCR_REF: ${{ steps.mirrors.outputs.ghcr_ref }}
+          QUAY_REF: ${{ steps.mirrors.outputs.quay_ref }}
+        run: |
+          docker logout >/dev/null 2>&1 || true
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          docker logout quay.io >/dev/null 2>&1 || true
+          for reference in "${DOCKER_REF}" "${GHCR_REF}" "${QUAY_REF}"; do
+            [ -n "${reference}" ] || continue
+            digest=""
+            for attempt in 1 2 3 4 5 6; do
+              digest="$(docker buildx imagetools inspect "${reference}" 2>/dev/null | sed -n 's/^Digest:[[:space:]]*//p' | head -1 || true)"
+              [ "${digest}" = "${EXPECTED_DIGEST}" ] && break
+              sleep 5
+            done
+            if [ "${digest}" != "${EXPECTED_DIGEST}" ]; then
+              echo "Public registry verification failed for ${reference}."
+              exit 1
+            fi
+          done
+
+      - name: Set up Fly
+        uses: superfly/flyctl-actions/setup-flyctl@v1
+
+      - name: Deploy the canonical digest
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          CANONICAL_REFERENCE: ${{ steps.canonical.outputs.reference }}
+          RELEASE_VERSION: ${{ steps.identity.outputs.version }}
+          RELEASE_SHA: ${{ steps.identity.outputs.git_sha }}
+          IMAGE_DIGEST: ${{ steps.canonical.outputs.digest }}
+        run: |
+          flyctl deploy \
+            --image "${CANONICAL_REFERENCE}" \
+            --env "LOGISTER_RELEASE=${RELEASE_VERSION}" \
+            --env "LOGISTER_GIT_SHA=${RELEASE_SHA}" \
+            --env "LOGISTER_IMAGE_DIGEST=${IMAGE_DIGEST}" \
+            --max-concurrent 1 \
+            --wait-timeout 10m \
+            --release-command-timeout 30m \
+            --deploy-retries 3
+
+      - name: Verify Fly web and worker machines
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          RELEASE_VERSION: ${{ steps.identity.outputs.version }}
+          RELEASE_SHA: ${{ steps.identity.outputs.git_sha }}
+          IMAGE_DIGEST: ${{ steps.canonical.outputs.digest }}
+        run: |
+          flyctl status --json > /tmp/fly-status.json
+          ruby <<'RUBY'
+          require "json"
+
+          status = JSON.parse(File.read("/tmp/fly-status.json"))
+          machines = status.fetch("Machines")
+          expected_env = {
+            "LOGISTER_RELEASE" => ENV.fetch("RELEASE_VERSION"),
+            "LOGISTER_GIT_SHA" => ENV.fetch("RELEASE_SHA"),
+            "LOGISTER_IMAGE_DIGEST" => ENV.fetch("IMAGE_DIGEST")
+          }
+          problems = []
+          groups = Hash.new(0)
+
+          machines.each do |machine|
+            group = machine.dig("config", "env", "FLY_PROCESS_GROUP")
+            groups[group] += 1
+            failed_checks = machine.fetch("checks", []).reject { |check| check["status"] == "passing" }
+            problems << "#{machine["id"]} is not healthy" unless machine["state"] == "started" && machine["host_status"] == "ok" && failed_checks.empty?
+            actual_env = machine.dig("config", "env") || {}
+            problems << "#{machine["id"]} has stale release identity" unless expected_env.all? { |key, value| actual_env[key] == value }
+          end
+
+          problems << "no healthy app machine is running" if groups["app"].zero?
+          problems << "no healthy worker machine is running" if groups["worker"].zero?
+          unless problems.empty?
+            warn problems.join("\n")
+            exit 1
+          end
+          RUBY
+
+      - name: Verify public runtime release identity
+        env:
+          HEALTH_URL: https://logister.org/health/release
+          RELEASE_VERSION: ${{ steps.identity.outputs.version }}
+          RELEASE_SHA: ${{ steps.identity.outputs.git_sha }}
+          IMAGE_DIGEST: ${{ steps.canonical.outputs.digest }}
+          CONTRACT_SHA256: ${{ steps.identity.outputs.contract_sha256 }}
+        run: |
+          verified=false
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            if curl --fail --silent --show-error --output /tmp/release-health.json "${HEALTH_URL}"; then
+              if ruby -rjson -e '
+                body = JSON.parse(File.read("/tmp/release-health.json"))
+                expected_contracts = JSON.parse(ENV.fetch("CONTRACT_SHA256"))
+                expected = {
+                  "status" => "ok",
+                  "version" => ENV.fetch("RELEASE_VERSION"),
+                  "git_sha" => ENV.fetch("RELEASE_SHA"),
+                  "image_digest" => ENV.fetch("IMAGE_DIGEST"),
+                  "contract_sha256" => expected_contracts,
+                  "database" => { "connected" => true, "migrations_current" => true }
+                }
+                abort "runtime release identity does not match" unless expected.all? { |key, value| body[key] == value }
+              '
+              then
+                verified=true
+                break
+              fi
+            fi
+            sleep 5
+          done
+          if [ "${verified}" != "true" ]; then
+            echo "The public runtime never reported the expected immutable release identity."
+            exit 1
+          fi
+
+      - name: Write public release receipt
+        env:
+          RELEASE_VERSION: ${{ steps.identity.outputs.version }}
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+          RELEASE_DATE: ${{ steps.identity.outputs.release_date }}
+          RELEASE_SHA: ${{ steps.identity.outputs.git_sha }}
+          IMAGE_DIGEST: ${{ steps.canonical.outputs.digest }}
+          CONTRACT_SHA256: ${{ steps.identity.outputs.contract_sha256 }}
+          DOCKER_REF: ${{ steps.mirrors.outputs.docker_ref }}
+          GHCR_REF: ${{ steps.mirrors.outputs.ghcr_ref }}
+          QUAY_REF: ${{ steps.mirrors.outputs.quay_ref }}
+        run: |
+          ruby <<'RUBY' > release-receipt.json
+          require "json"
+          registries = {
+            "docker_hub" => ENV.fetch("DOCKER_REF"),
+            "ghcr" => ENV.fetch("GHCR_REF")
+          }
+          registries["quay"] = ENV["QUAY_REF"] unless ENV["QUAY_REF"].to_s.empty?
+          receipt = {
+            "schema_version" => 1,
+            "version" => ENV.fetch("RELEASE_VERSION"),
+            "tag" => ENV.fetch("RELEASE_TAG"),
+            "release_date" => ENV.fetch("RELEASE_DATE"),
+            "git_sha" => ENV.fetch("RELEASE_SHA"),
+            "contract_sha256" => JSON.parse(ENV.fetch("CONTRACT_SHA256")),
+            "container" => {
+              "digest" => ENV.fetch("IMAGE_DIGEST"),
+              "registries" => registries
+            },
+            "deployment" => {
+              "provider" => "fly",
+              "health_url" => "https://logister.org/health/release",
+              "verified" => true
+            }
+          }
+          puts JSON.pretty_generate(receipt)
+          RUBY
+
+      - name: Publish or repair GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.identity.outputs.tag }}
+          target_commitish: ${{ steps.identity.outputs.git_sha }}
+          name: Logister ${{ steps.identity.outputs.tag }}
+          body: ${{ steps.identity.outputs.release_notes }}
+          files: release-receipt.json
+          overwrite_files: true
+          prerelease: ${{ steps.identity.outputs.prerelease }}
+          make_latest: ${{ steps.identity.outputs.make_latest }}
+
+      - name: Verify GitHub Release is public
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+        run: |
+          gh release view "${RELEASE_TAG}" --json isDraft,isPrerelease,tagName > /tmp/github-release.json
+          ruby -rjson -e '
+            release = JSON.parse(File.read("/tmp/github-release.json"))
+            abort "GitHub Release is still a draft" if release.fetch("isDraft")
+            abort "GitHub Release tag mismatch" unless release.fetch("tagName") == ENV.fetch("RELEASE_TAG")
+          '
+
+      - name: Upload release receipt for workflow recovery
+        uses: actions/upload-artifact@v6
+        with:
+          name: backend-${{ steps.identity.outputs.tag }}-receipt
+          path: release-receipt.json
+          if-no-files-found: error

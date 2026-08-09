@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require "pathname"
+require_relative "../lib/logister/release_impact"
+
+begin
+  options = {
+    changed_files: [],
+    impact_files: []
+  }
+
+  OptionParser.new do |parser|
+    parser.banner = "Usage: bin/check-release-impact [options]"
+    parser.on("--base REF", "Git base ref used to discover changed files") { |value| options[:base] = value }
+    parser.on("--head REF", "Git head ref (default: HEAD)") { |value| options[:head] = value }
+    parser.on("--changed-file PATH", "Explicit changed path; may be repeated") { |value| options[:changed_files] << value }
+    parser.on("--impact-file PATH", "Explicit release-impact record; may be repeated") { |value| options[:impact_files] << value }
+    parser.on("--all", "Validate every tracked release-impact record without path enforcement") { options[:all] = true }
+  end.parse!
+
+  repo_root = Pathname.new(__dir__).join("..").expand_path
+  ecosystem_path = repo_root.join("config/ecosystem.yml")
+
+  changed_files = options[:changed_files]
+  if changed_files.empty? && options[:base]
+    changed_files = Logister::ReleaseImpact.changed_files(
+      repo_root: repo_root,
+      base: options[:base],
+      head: options[:head] || "HEAD"
+    )
+  end
+
+  impact_files = options[:impact_files].map { |path| repo_root.join(path) }
+  if impact_files.empty?
+    impact_files = if options[:all]
+      Dir[repo_root.join("config/release-impact/*.yml")].sort.map { |path| Pathname(path) }
+    else
+      changed_files.grep(%r{\Aconfig/release-impact/[^/]+\.yml\z}).map { |path| repo_root.join(path) }
+    end
+  end
+
+  result = Logister::ReleaseImpact.new(
+    ecosystem_path: ecosystem_path,
+    impact_paths: impact_files,
+    changed_files: options[:all] ? [] : changed_files
+  ).validate!
+
+  contracts = result.triggered_contracts.empty? ? "none" : result.triggered_contracts.join(",")
+  records = result.impact_files.empty? ? "none" : result.impact_files.map { |path| Pathname(path).basename }.join(",")
+  puts "Release impact verified: contracts=#{contracts} records=#{records}"
+rescue OptionParser::ParseError, Logister::ReleaseImpact::ValidationError => e
+  warn "Release impact validation failed:"
+  messages = e.respond_to?(:errors) ? e.errors : [ e.message ]
+  messages.each { |message| warn "  - #{message}" }
+  exit 1
+end

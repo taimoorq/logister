@@ -92,6 +92,10 @@ module ProjectEvents
       value.is_a?(String) || value.is_a?(Numeric) || value == true || value == false
     end
 
+    def masked_identifier(value)
+      "Collected (masked)" if value.present?
+    end
+
     def parse_backtrace_line(line)
       patterns = [
         /\Aat (?:(?<method>.+?) )?\((?<file>.+?):(?<line>\d+):(?<column>\d+)\)\z/,

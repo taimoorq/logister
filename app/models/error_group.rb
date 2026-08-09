@@ -100,32 +100,46 @@ class ErrorGroup < ApplicationRecord
     )
   end
 
-  # Called by the grouping service when a new occurrence arrives.
-  # Reopens the group if it was previously resolved/ignored/archived.
+  # Compatibility wrapper for callers that only need the regression result.
   def record_occurrence!(event)
+    record_occurrence_with_policy!(event).reopen_group?
+  end
+
+  def record_occurrence_with_policy!(event)
     event_release = IngestEvent.release(event)
-    was_closed = false
+    evidence = TelemetryEvidence.for(event)
+    decision = nil
 
     with_lock do
-      was_closed = !unresolved?
-      reopen! if was_closed
-      update!(
-        latest_event_id:  event.id,
-        latest_event_occurred_at: event.occurred_at,
-        last_seen_at:     event.occurred_at,
-        first_seen_at:    [ first_seen_at, event.occurred_at ].compact.min,
-        occurrence_count: occurrence_count + 1,
-        title:            ErrorGroupEventDetails.title(event, fallback: title),
-        subtitle:         ErrorGroupEventDetails.subtitle(event),
-        stage:            ErrorGroupEventDetails.stage(event),
-        severity:         event.level.presence || severity,
-        last_seen_release: event_release.presence || last_seen_release,
-        regressed_in_release: was_closed ? (event_release.presence || regressed_in_release) : regressed_in_release,
-        regression_count: was_closed ? regression_count + 1 : regression_count
-      )
+      decision = ErrorGroupOccurrencePolicy.new(group: self, event: event).call
+      reopen! if decision.reopen_group?
+
+      changes = { occurrence_count: occurrence_count + 1 }
+      if decision.update_source_bounds?
+        source_start = evidence.reporting_start || event.occurred_at
+        source_end = evidence.reporting_end || event.occurred_at
+        changes[:first_seen_at] = [ first_seen_at, source_start ].compact.min
+        changes[:last_seen_at] = [ last_seen_at, source_end ].compact.max
+      end
+      if decision.update_latest?
+        changes.merge!(
+          latest_event_id: event.id,
+          latest_event_occurred_at: event.occurred_at,
+          title: ErrorGroupEventDetails.title(event, fallback: title),
+          subtitle: ErrorGroupEventDetails.subtitle(event),
+          stage: ErrorGroupEventDetails.stage(event),
+          severity: event.level.presence || severity,
+          last_seen_release: event_release.presence || last_seen_release
+        )
+      end
+      if decision.reopen_group?
+        changes[:regressed_in_release] = event_release.presence || regressed_in_release
+        changes[:regression_count] = regression_count + 1
+      end
+      update!(changes)
     end
 
-    was_closed
+    decision
   end
 
   def to_param

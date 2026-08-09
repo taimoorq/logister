@@ -385,8 +385,38 @@ module Logister
         record_type: @record_type,
         exported_at: exported_at.iso8601(6),
         source_identity: source_reference(record),
-        attributes: record.attributes.as_json
+        export_policy: export_policy(record),
+        attributes: archive_attributes(record)
       }.compact
+    end
+
+    def archive_attributes(record)
+      Logister::TelemetryRedactor.call(record.attributes.as_json)
+    end
+
+    def export_policy(record)
+      policy = {
+        "payload" => "server_redacted",
+        "redaction" => "sensitive_key_v1",
+        "original_evidence_included" => false
+      }
+      return policy unless record.is_a?(IngestEvent)
+
+      evidence = TelemetryEvidence.for(record)
+      policy.merge(
+        "evidence" => {
+          "source" => evidence.source,
+          "evidence_kind" => evidence.evidence_kind,
+          "identity_scope" => evidence.identity_scope,
+          "time_precision" => evidence.time_precision,
+          "occurred_at" => evidence.occurred_at&.utc&.iso8601(6),
+          "reporting_start" => evidence.reporting_start&.utc&.iso8601(6),
+          "reporting_end" => evidence.reporting_end&.utc&.iso8601(6),
+          "received_at" => evidence.received_at&.utc&.iso8601(6)
+        }.compact,
+        "producer" => Logister::TelemetryRedactor.call(evidence.producer.as_json),
+        "normalization" => Logister::TelemetryRedactor.call(evidence.normalization.as_json)
+      )
     end
 
     def source_reference(record)

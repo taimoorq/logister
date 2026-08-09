@@ -58,7 +58,7 @@ class ErrorGroupJsonExporter
   def export_payload
     {
       "format" => "logister_error_group",
-      "version" => 1,
+      "version" => 2,
       "generated_at" => timestamp(generated_at),
       "include_all_occurrences" => false,
       "include_occurrence_records" => include_occurrences,
@@ -138,10 +138,13 @@ class ErrorGroupJsonExporter
       "environment" => IngestEvent.environment(event, nil),
       "release" => IngestEvent.release(event),
       "transaction_name" => IngestEvent.transaction_name(event),
-      "trace_id" => IngestEvent.trace_id(event),
-      "request_id" => IngestEvent.request_id(event),
-      "session_id" => IngestEvent.session_id(event),
-      "user_identifier" => IngestEvent.user_identifier(event),
+      "evidence" => evidence_payload(event),
+      "correlation" => {
+        "trace" => correlation_state(IngestEvent.trace_id(event)),
+        "request" => correlation_state(IngestEvent.request_id(event)),
+        "session" => correlation_state(IngestEvent.session_id(event)),
+        "user" => correlation_state(IngestEvent.user_identifier(event))
+      },
       "api_key" => api_key_payload(event.api_key),
       "context" => bounded_event_context(event.context).value
     }.tap do |payload|
@@ -232,8 +235,13 @@ class ErrorGroupJsonExporter
 
     logs = IngestEvent.related_logs(project: project, event: event, window: RELATED_LOG_WINDOW, limit: RELATED_LOG_LIMIT)
 
+    evidence = TelemetryEvidence.for(event)
     {
-      "window_seconds" => RELATED_LOG_WINDOW.to_i,
+      "relation" => related_log_relation(evidence),
+      "time_precision" => evidence.time_precision,
+      "window_seconds" => (RELATED_LOG_WINDOW.to_i if evidence.exact_time? || evidence.time_precision == "unknown"),
+      "reporting_start" => timestamp(evidence.reporting_start),
+      "reporting_end" => timestamp(evidence.reporting_end),
       "limit" => RELATED_LOG_LIMIT,
       "count" => logs.size,
       "records" => logs.map { |log_event| event_payload(log_event) }
@@ -413,6 +421,39 @@ class ErrorGroupJsonExporter
   def event_exception_data(event)
     context = event_context_hash(event)
     normalize_hash(context["exception"] || context[:exception])
+  end
+
+  def evidence_payload(event)
+    evidence = TelemetryEvidence.for(event)
+    {
+      "schema_version" => evidence.schema_version,
+      "source" => evidence.source,
+      "kind" => evidence.kind,
+      "capture_mode" => evidence.capture_mode,
+      "evidence_kind" => evidence.evidence_kind,
+      "identity_scope" => evidence.identity_scope,
+      "fatality" => evidence.fatality,
+      "time" => {
+        "precision" => evidence.time_precision,
+        "occurred_at" => timestamp(evidence.occurred_at),
+        "reporting_start" => timestamp(evidence.reporting_start),
+        "reporting_end" => timestamp(evidence.reporting_end),
+        "received_at" => timestamp(evidence.received_at)
+      }.compact,
+      "producer" => json_value(evidence.producer),
+      "normalization" => json_value(evidence.normalization)
+    }.compact
+  end
+
+  def correlation_state(value)
+    value.present? ? "collected_masked" : "not_collected"
+  end
+
+  def related_log_relation(evidence)
+    return "disabled_received_only" if evidence.received_only?
+    return "contextual_reporting_interval" if evidence.reporting_interval?
+
+    "exact_correlation_window"
   end
 
   def event_backtrace(exception_data)

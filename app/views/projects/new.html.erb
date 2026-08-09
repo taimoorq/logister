@@ -7,7 +7,7 @@
       <h1 class="text-2xl font-bold text-slate-900 inline-flex items-center gap-2"><%= app_icon(:plus, css: "w-6 h-6") %><span>Create a project</span></h1>
       <%= tour_help_button %>
     </div>
-    <p class="text-slate-600 text-sm mb-6">A project represents one monitored application and its integration setup.</p>
+    <p class="text-slate-600 text-sm mb-6">A project represents one deployable application boundary—such as one service, site, Android package, or Apple bundle—and its evidence policy.</p>
 
     <%= form_with model: @project do |f| %>
       <div class="space-y-4">
@@ -51,7 +51,7 @@
                                             {},
                                             required: true,
                                             class: "form-input" %>
-                <p class="mt-1 text-xs text-slate-500">Logs, metrics, transactions, and check-ins.</p>
+                <p class="mt-1 text-xs text-slate-500">Activity events, diagnostics, metrics, transactions, and check-ins.</p>
               </div>
 
               <div>
@@ -61,7 +61,7 @@
                                             {},
                                             required: true,
                                             class: "form-input" %>
-                <p class="mt-1 text-xs text-slate-500">Request span waterfall data.</p>
+                <p class="mt-1 text-xs text-slate-500">Trace/span and explicitly captured performance evidence.</p>
               </div>
 
               <div>
@@ -70,7 +70,7 @@
                                             options_for_select(retention_day_options(include_forever: true), retention_policy.error_retention_days),
                                             {},
                                             class: "form-input" %>
-                <p class="mt-1 text-xs text-slate-500">Resolved, ignored, or archived groups.</p>
+                <p class="mt-1 text-xs text-slate-500">Resolved, muted, or archived stability issues.</p>
               </div>
             </div>
 

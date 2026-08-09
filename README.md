@@ -347,7 +347,7 @@ The repo uses `.env.sample` as the example environment file. For self-hosted pro
 
 For a fresh install, the pre-UI minimum is the Rails web process, PostgreSQL, `RAILS_MASTER_KEY`, `DATABASE_URL`, and a long random `LOGISTER_SETUP_TOKEN`. Open `/setup` to create the first confirmed administrator, remove the one-time token, then continue through **Admin → Installation**. That persistent multipage workflow configures and verifies Redis/Sidekiq plus optional SMTP, ClickHouse, S3-compatible archives, GitHub App access, Turnstile, public analytics, and self-observability. Nonblank environment variables override encrypted values saved in the UI; the page labels the active override without rendering secrets.
 
-Release images are published to GitHub Container Registry and Docker Hub after CI, Fly deploy, and Fly health checks pass. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
+After CI validates a version-changing `main` commit, the release workflow builds one canonical image, verifies its public GHCR and Docker Hub mirrors, deploys that exact digest to Fly, and checks the public runtime identity. The production `Dockerfile` still lets you build locally, but self-hosters can usually pull the versioned image:
 
 - `ghcr.io/taimoorq/logister:<version>`
 - `ghcr.io/taimoorq/logister:latest`

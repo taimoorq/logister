@@ -30,18 +30,6 @@ module ApplicationHelper
     Rails.root.join("config/streamline_icons.yml"),
     aliases: false
   ).transform_keys(&:to_sym).freeze
-  PROJECT_INTEGRATION_ICON_NAMES = {
-    "ruby" => :project_ruby,
-    "cfml" => :project_cfml,
-    "javascript" => :project_javascript,
-    "python" => :project_python,
-    "dotnet" => :project_dotnet,
-    "cloudflare_pages" => :external,
-    "android" => :projects,
-    "ios" => :projects,
-    "http_api" => :external
-  }.freeze
-
   def layout_theme
     if respond_to?(:user_signed_in?) && user_signed_in?
       :authenticated
@@ -268,9 +256,9 @@ module ApplicationHelper
   end
 
   def pretty_context_json(value)
-    JSON.pretty_generate(value)
+    JSON.pretty_generate(Logister::TelemetryRedactor.call(value))
   rescue StandardError
-    value.to_s
+    Logister::TelemetryRedactor.call(value).to_s
   end
 
   def cfml_exception_frames(exception_data)
@@ -357,6 +345,16 @@ module ApplicationHelper
       project: project,
       event: event,
       presenter: android_event_presenter(event, exception_data)
+    )
+  end
+
+  def ios_symbol_coverage(project, event, exception_data = nil)
+    @ios_symbol_coverage ||= {}
+    key = [ project.id, event.id || event.object_id ]
+    @ios_symbol_coverage[key] ||= AppleSymbolCoverage.call(
+      project: project,
+      event: event,
+      presenter: ProjectEvents::IosEventPresenter.new(event, exception_data)
     )
   end
 
@@ -600,7 +598,7 @@ module ApplicationHelper
 
   def project_integration_icon(project)
     kind = project.integration_kind.to_s
-    icon_name = PROJECT_INTEGRATION_ICON_NAMES.fetch(kind, :projects)
+    icon_name = ProjectIntegrationDefinition.find(kind)&.icon_key || :projects
 
     content_tag(:span, class: "project-type-icon project-type-icon-#{kind}", title: project.integration_label, aria: { label: project.integration_label }) do
       app_icon(icon_name, css: "h-6 w-6")

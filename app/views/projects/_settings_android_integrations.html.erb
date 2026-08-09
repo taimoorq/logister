@@ -19,7 +19,7 @@
     <%= form.hidden_field :provider, value: ProjectIntegrationSetting::PROVIDERS[:google_play] %>
 
     <label class="flex items-start gap-3">
-      <%= form.check_box :enabled, class: "form-checkbox mt-1", disabled: !@project_manager %>
+      <%= form.check_box :enabled, class: "form-checkbox mt-1", disabled: !@integration_changes_allowed %>
       <span>
         <span class="block text-sm font-semibold text-slate-900">Enable Google Play imports</span>
         <span class="block text-sm text-slate-600">Requires the Play Developer Reporting API and read-only app access.</span>
@@ -29,11 +29,11 @@
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div>
         <%= form.label :external_project_id, "Android package name", class: "form-label" %>
-        <%= form.text_field :external_project_id, placeholder: "com.acme.shop", class: "form-input", disabled: !@project_manager %>
+        <%= form.text_field :external_project_id, placeholder: "com.acme.shop", class: "form-input", disabled: !@integration_changes_allowed %>
       </div>
       <div>
         <%= form.label :credential_reference, "Credential environment variable", class: "form-label" %>
-        <%= form.text_field :credential_reference, placeholder: "GOOGLE_PLAY_REPORTING_CREDENTIALS", class: "form-input", disabled: !@project_manager %>
+        <%= form.text_field :credential_reference, placeholder: "GOOGLE_PLAY_REPORTING_CREDENTIALS", class: "form-input", disabled: !@integration_changes_allowed %>
         <p class="mt-1 text-xs text-slate-500">Store service-account JSON or a short-lived OAuth token in the environment variable. Never paste the secret here.</p>
       </div>
     </div>
@@ -46,7 +46,7 @@
             <%= check_box_tag "project_integration_setting[metadata][track_allowlist][]",
                               track,
                               Array(@google_play_integration_setting.metadata["track_allowlist"]).include?(track),
-                              disabled: !@project_manager,
+                              disabled: !@integration_changes_allowed,
                               class: "form-checkbox" %>
             <span><%= track.humanize %></span>
           </label>
@@ -54,7 +54,7 @@
       </div>
     </fieldset>
 
-    <% if @project_manager %>
+    <% if @integration_changes_allowed %>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <p class="text-xs text-slate-500">Last imported: <strong><%= @google_play_integration_setting.last_imported_at ? local_time_tag(@google_play_integration_setting.last_imported_at, format: :long) : "Never" %></strong></p>
         <%= form.submit "Save Google Play settings", class: "btn btn-primary" %>
@@ -62,7 +62,7 @@
     <% end %>
   <% end %>
 
-  <% if @project_manager %>
+  <% if @integration_changes_allowed %>
     <div class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
       <div>
         <strong class="block text-sm text-slate-900">Play reporting import</strong>
@@ -106,6 +106,7 @@
     <p class="dashboard-kicker">Source & mappings</p>
     <h2 class="text-base font-bold text-slate-900 mb-2">R8 / ProGuard mappings</h2>
     <p class="text-slate-600 text-sm">Mappings are private, scoped to the Android package and version code, and used only to retrace matching issue frames.</p>
+    <%= link_to "Open artifact inventory and build coverage", artifacts_project_path(@project), class: "mt-2 inline-block text-sm font-semibold text-blue-700 hover:text-blue-800" %>
   </div>
 
   <% if @project_manager %>
@@ -122,6 +123,7 @@
   <div class="mt-5 space-y-2">
     <% if @android_mapping_files.any? %>
       <%= render partial: "projects/android_mapping", collection: @android_mapping_files, as: :mapping %>
+      <% if @android_mapping_count > @android_mapping_files.size %><p class="text-xs text-slate-500">Showing the latest <%= @android_mapping_files.size %> of <%= @android_mapping_count %>. Use Artifacts for the paginated inventory.</p><% end %>
     <% else %>
       <p class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">No R8 mappings uploaded. Release-build issues will show Mapping missing until a matching artifact is available.</p>
     <% end %>

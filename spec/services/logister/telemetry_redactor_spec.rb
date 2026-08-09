@@ -40,5 +40,22 @@ RSpec.describe Logister::TelemetryRedactor do
       expect(result.dig("request", "headers", "traceparent")).to eq("00-safe")
       expect(result.dig("request", "credentials", "private.key")).to eq("[REDACTED]")
     end
+
+    it "redacts raw mobile correlation and hardware identities in every key style" do
+      payload = {
+        "session_id" => "session-raw",
+        "installation" => { "id_hash" => "installation-pseudonym" },
+        "userId" => "customer-42",
+        "device" => { "android-id" => "hardware-raw", "model" => "Pixel 9" }
+      }
+
+      result = described_class.call(payload)
+
+      expect(result["session_id"]).to eq("[REDACTED]")
+      expect(result.dig("installation", "id_hash")).to eq("[REDACTED]")
+      expect(result["userId"]).to eq("[REDACTED]")
+      expect(result.dig("device", "android-id")).to eq("[REDACTED]")
+      expect(result.dig("device", "model")).to eq("Pixel 9")
+    end
   end
 end

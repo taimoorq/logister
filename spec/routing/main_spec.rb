@@ -128,6 +128,13 @@ RSpec.describe "Routes", type: :routing do
   end
 
   describe "health" do
+    it "routes GET /health/release to health#release" do
+      expect(get: "/health/release").to route_to(
+        controller: "health",
+        action: "release"
+      )
+    end
+
     it "routes GET /health/clickhouse to health#clickhouse" do
       expect(get: "/health/clickhouse").to route_to(
         controller: "health",

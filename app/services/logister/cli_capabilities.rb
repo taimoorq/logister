@@ -80,12 +80,13 @@ module Logister
       configured = ENV["LOGISTER_RELEASE"].to_s.strip
       return configured.delete_prefix("v") if configured.match?(/\Av?[0-9]+(\.[0-9A-Za-z-]+)+\z/)
 
-      changelog_version || api_contract_version
+      packaged_version || api_contract_version
     end
 
-    def changelog_version
-      match = Rails.root.join("CHANGELOG.md").read.match(/^##\s+v?([0-9][^\s]*)\s+-\s+[0-9]{4}-[0-9]{2}-[0-9]{2}\s*$/)
-      match&.[](1)
+    def packaged_version
+      Rails.root.join("VERSION").read.strip.presence
+    rescue Errno::ENOENT
+      nil
     end
 
     def api_contract_version

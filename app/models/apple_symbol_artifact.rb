@@ -2,7 +2,7 @@
 
 class AppleSymbolArtifact < ApplicationRecord
   MAX_BYTES = 500.megabytes
-  STATUSES = %w[uploaded processing ready awaiting_tooling failed].freeze
+  STATUSES = %w[uploaded processing verified awaiting_tooling failed].freeze
   ARCHITECTURES = %w[arm64 arm64e x86_64 armv7].freeze
   UUID_PATTERN = /\A[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\z/
 
@@ -24,7 +24,7 @@ class AppleSymbolArtifact < ApplicationRecord
   validate :ios_project
 
   scope :recent_first, -> { order(created_at: :desc, id: :desc) }
-  scope :usable, -> { where(status: "ready") }
+  scope :usable, -> { where(status: "verified") }
 
   after_destroy_commit :delete_private_object
 
@@ -32,8 +32,18 @@ class AppleSymbolArtifact < ApplicationRecord
     uuid
   end
 
-  def ready?
-    status == "ready"
+  def verified?
+    status == "verified"
+  end
+
+  def verification_label
+    {
+      "uploaded" => "Uploaded",
+      "processing" => "Verifying UUIDs",
+      "verified" => "UUID verified",
+      "awaiting_tooling" => "Verification blocked",
+      "failed" => "Verification failed"
+    }.fetch(status)
   end
 
   def processable?

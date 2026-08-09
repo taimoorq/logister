@@ -30,7 +30,11 @@ class ProjectEmailNotificationDispatcher
     @error_group = error_group
     @monitor = monitor
     @recipients = recipients
-    @metadata = metadata.stringify_keys
+    @metadata = ProjectNotificationEvidence.enrich(
+      project: @project,
+      error_group: @error_group,
+      metadata: metadata
+    )
     @subject_key = subject_key
     @bucket = bucket
     @now = now
@@ -144,15 +148,29 @@ class ProjectEmailNotificationDispatcher
     return 0 unless @error_group
 
     since = @now - preference.frequent_error_window_minutes.minutes
-    @error_group.error_occurrences.where("occurred_at >= ?", since).count
+    workflow_occurrence_scope(@error_group.error_occurrences)
+      .where("error_occurrences.occurred_at >= ?", since)
+      .count
   end
 
   def project_error_count(preference)
     since = @now - preference.project_spike_window_minutes.minutes
-    ErrorOccurrence.joins(:error_group)
+    workflow_occurrence_scope(ErrorOccurrence.joins(:error_group))
                    .where(error_groups: { project_id: @project.id })
                    .where("error_occurrences.occurred_at >= ?", since)
                    .count
+  end
+
+  def workflow_occurrence_scope(scope)
+    return scope unless ProjectExperience.for(@project).supports?(:mobile)
+
+    scope.where(<<~SQL.squish)
+      COALESCE(error_occurrences.dimensions ->> 'time_precision', '') = 'exact'
+      OR (
+        COALESCE(error_occurrences.dimensions ->> 'time_precision', '') = ''
+        AND ABS(EXTRACT(EPOCH FROM (error_occurrences.created_at - error_occurrences.occurred_at))) <= 900
+      )
+    SQL
   end
 
   def project_transaction_p95_ms

@@ -5,6 +5,9 @@
   <% exception_data = event_exception_data(event) %>
   <% backtrace = event_backtrace(exception_data) %>
   <% experience = project_experience(project) %>
+  <% mobile_evidence = TelemetryEvidence.for(event) if experience.supports?(:mobile) %>
+  <% mobile_presenter = event_presenter(project, event, exception_data) if experience.supports?(:mobile) %>
+  <% error_detail = group.present? || event.error? %>
   <% parsed_frames = event_frames(project, event, exception_data) %>
   <% app_frames = parsed_frames.select { |frame| frame[:application_frame] } %>
   <% frame_scope = local_assigns[:frame_scope].presence_in(%w[application all]) || "application" %>
@@ -27,8 +30,8 @@
   <% active_tab   = experience.normalize_detail_tab(local_assigns[:tab], event: event, occurrences_count: occurrences.size, related_logs_count: related_logs.size) %>
   <% stacktrace_tab_label = event_stacktrace_tab_label(project, event) %>
   <% stacktrace_partial = event_stacktrace_partial(project, event) %>
-  <% detail_title = truncate(group&.title || event.message.to_s.lines.first, length: 120) %>
-  <% detail_status = group&.status || "unresolved" %>
+  <% detail_title = truncate((error_detail && mobile_presenter&.respond_to?(:technical_signature) && mobile_presenter.technical_signature.presence) || group&.title || event.message.to_s.lines.first, length: 120) %>
+  <% detail_status = group&.status %>
   <% detail_assignee_label = if group&.assignee.present?
     inbox_assignee_label(project, current_user, group.assignee)
   else
@@ -40,15 +43,14 @@
     <div class="detail-actionbar-main">
       <div class="detail-actionbar-left">
         <div class="detail-title-row">
-          <span class="detail-status-badge status-<%= detail_status %>">
+          <% if detail_status.present? %><span class="detail-status-badge status-<%= detail_status %>">
             <%= detail_status.upcase %>
-          </span>
-          <% if experience.supports?(:mobile) %>
-            <% mobile_presenter = event_presenter(project, event, exception_data) %>
-            <span class="mobile-mechanism-badge mechanism-<%= mobile_presenter.mechanism %>"><%= mobile_presenter.mechanism_label %></span>
+          </span><% end %>
+          <% if experience.supports?(:mobile) && error_detail %>
+            <span class="mobile-mechanism-badge mechanism-<%= mobile_presenter.mechanism %>"><%= mobile_presenter.failure_type_label %></span>
             <% if experience.key == :ios %>
               <span class="ios-source-badge"><%= mobile_presenter.diagnostic_source_label %></span>
-              <span class="ios-source-badge"><%= mobile_presenter.symbolication_label %></span>
+              <span class="ios-source-badge"><%= ios_symbol_coverage(project, event, exception_data).label %></span>
             <% end %>
           <% end %>
           <h2 class="detail-title"><%= detail_title %></h2>
@@ -131,18 +133,22 @@
               <dt>Project</dt>
               <dd><%= project.name %></dd>
             </div>
-            <div>
-              <dt>Occurred</dt>
-              <dd><%= local_time_tag(event.occurred_at, format: :long) %></dd>
-            </div>
-            <div>
-              <dt>First seen</dt>
-              <dd><%= local_time_tag(group.first_seen_at, format: :date_only) %></dd>
-            </div>
-            <div>
-              <dt>Last seen</dt>
-              <dd><%= local_time_tag(group.last_seen_at, format: :date_only) %></dd>
-            </div>
+            <% if mobile_evidence %>
+              <% if mobile_evidence.exact_time? %>
+                <div><dt>Occurred</dt><dd><%= local_time_tag(mobile_evidence.occurred_at || event.occurred_at, format: :long) %></dd></div>
+              <% elsif mobile_evidence.reporting_interval? %>
+                <div><dt>Reporting interval</dt><dd><%= local_time_tag(mobile_evidence.reporting_start, format: :long) if mobile_evidence.reporting_start %><%= " – " if mobile_evidence.reporting_start && mobile_evidence.reporting_end %><%= local_time_tag(mobile_evidence.reporting_end, format: :long) if mobile_evidence.reporting_end %></dd></div>
+              <% else %>
+                <div><dt>Occurrence time</dt><dd>Not supplied</dd></div>
+              <% end %>
+              <div><dt>Received</dt><dd><%= local_time_tag(mobile_evidence.received_at || event.created_at, format: :long) %></dd></div>
+              <div><dt>First received</dt><dd><%= local_time_tag(group.created_at, format: :date_only) %></dd></div>
+              <div><dt>Time precision</dt><dd><%= mobile_evidence.time_precision.humanize %></dd></div>
+            <% else %>
+              <div><dt>Occurred</dt><dd><%= local_time_tag(event.occurred_at, format: :long) %></dd></div>
+              <div><dt>First seen</dt><dd><%= local_time_tag(group.first_seen_at, format: :date_only) %></dd></div>
+              <div><dt>Last seen</dt><dd><%= local_time_tag(group.last_seen_at, format: :date_only) %></dd></div>
+            <% end %>
             <div>
               <dt>Occurrences</dt>
               <dd><%= number_with_delimiter(group.occurrence_count) %></dd>
@@ -198,7 +204,7 @@
         <summary>
           <span class="detail-context-summary-title">Event context</span>
           <span class="detail-context-summary-meta">
-            <%= project.name %> · <%= local_time_tag(event.occurred_at, format: :long) %>
+            <%= project.name %> · <%= mobile_evidence ? "received #{time_ago_in_words(mobile_evidence.received_at || event.created_at)} ago" : local_time_tag(event.occurred_at, format: :long) %>
           </span>
         </summary>
         <div class="detail-context-body">
@@ -207,34 +213,49 @@
               <dt>Project</dt>
               <dd><%= project.name %></dd>
             </div>
-            <div>
-              <dt>Occurred</dt>
-              <dd><%= local_time_tag(event.occurred_at, format: :long) %></dd>
-            </div>
+            <% if mobile_evidence&.exact_time? %>
+              <div><dt>Occurred</dt><dd><%= local_time_tag(mobile_evidence.occurred_at || event.occurred_at, format: :long) %></dd></div>
+            <% elsif mobile_evidence&.reporting_interval? %>
+              <div><dt>Reporting interval</dt><dd><%= local_time_tag(mobile_evidence.reporting_start, format: :long) if mobile_evidence.reporting_start %><%= " – " if mobile_evidence.reporting_start && mobile_evidence.reporting_end %><%= local_time_tag(mobile_evidence.reporting_end, format: :long) if mobile_evidence.reporting_end %></dd></div>
+            <% elsif mobile_evidence %>
+              <div><dt>Occurrence time</dt><dd>Not supplied</dd></div>
+            <% else %>
+              <div><dt>Occurred</dt><dd><%= local_time_tag(event.occurred_at, format: :long) %></dd></div>
+            <% end %>
+            <% if mobile_evidence %><div><dt>Received</dt><dd><%= local_time_tag(mobile_evidence.received_at || event.created_at, format: :long) %></dd></div><% end %>
           </dl>
         </div>
       </details>
     <% end %>
   </header>
 
-  <% if experience.supports?(:mobile) %>
-    <% mobile_presenter ||= event_presenter(project, event, exception_data) %>
+  <% if experience.supports?(:mobile) && error_detail %>
     <% impact_summary = local_assigns[:impact_summary] %>
     <% app = mobile_presenter.app_details %>
     <% device = mobile_presenter.device_details %>
     <% os = mobile_presenter.os_details %>
     <% impact_window = inbox_profile_query_params(project)["time_range"].presence || "30d" %>
     <% impact_window_label = { "24h" => "24 hours", "7d" => "7 days", "30d" => "30 days", "90d" => "90 days", "all" => "all time" }.fetch(impact_window, "30 days") %>
-    <section class="mobile-impact-strip" aria-label="<%= experience.key.to_s.upcase_first %> issue context">
+    <section class="mobile-impact-strip" aria-label="Scoped issue impact">
       <% if impact_summary&.installations&.available? %><div><strong><%= number_with_delimiter(impact_summary.installations.value) %></strong><span>affected installations</span></div><% end %>
       <% if impact_summary&.sessions&.available? %><div><strong><%= number_with_delimiter(impact_summary.sessions.value) %></strong><span>affected sessions</span></div><% end %>
       <div><strong><%= number_with_delimiter(impact_summary&.events || group&.occurrence_count || 1) %></strong><span>events in <%= impact_window_label %></span></div>
-      <div><strong><%= [app[:version_name], app[:version_code].presence && "(#{app[:version_code]})"].compact.join(" ").presence || "Not captured" %></strong><span>latest app version</span></div>
-      <div><strong><%= device[:model].presence || "Not captured" %></strong><span>device</span></div>
-      <div><strong><%= [os[:version].presence && "#{os[:name].presence || experience.key.to_s.upcase_first} #{os[:version]}", os[:api_level].presence && "API #{os[:api_level]}"].compact.join(" · ").presence || "Not captured" %></strong><span>operating system</span></div>
+      <% if impact_summary&.first_release.present? %><div><strong><%= impact_summary.first_release %></strong><span>first affected release in scope</span></div><% end %>
+      <% if impact_summary&.last_release.present? %><div><strong><%= impact_summary.last_release %></strong><span>last affected release in scope</span></div><% end %>
+      <% if impact_summary&.top_device.present? %><div><strong><%= impact_summary.top_device[:value] %></strong><span>top device in scope · <%= pluralize(impact_summary.top_device[:events], "event") %></span></div><% end %>
+      <% if impact_summary&.top_os.present? %><div><strong><%= impact_summary.top_os[:value] %></strong><span>top OS in scope · <%= pluralize(impact_summary.top_os[:events], "event") %></span></div><% end %>
       <% unless impact_summary&.installations&.available? && impact_summary&.sessions&.available? %>
         <div class="mobile-impact-incomplete"><strong>Not collected</strong><span><%= [(!impact_summary&.installations&.available? && "installation ID"), (!impact_summary&.sessions&.available? && "session ID")].compact.join(" · ") %></span></div>
       <% end %>
+      <% if impact_summary&.installations&.state == :partial || impact_summary&.sessions&.state == :partial %>
+        <div class="mobile-impact-incomplete"><strong>Partial coverage</strong><span>Counts use only events that supplied the corresponding pseudonymous identifier.</span></div>
+      <% end %>
+    </section>
+    <section class="mobile-impact-strip" aria-label="Selected occurrence context">
+      <div><strong>Selected occurrence</strong><span><code><%= event.uuid %></code></span></div>
+      <div><strong><%= [app[:version_name], app[:version_code].presence && "(#{app[:version_code]})"].compact.join(" ").presence || "Not captured" %></strong><span>app version and build</span></div>
+      <div><strong><%= device[:model].presence || "Not captured" %></strong><span>device</span></div>
+      <div><strong><%= [os[:version].presence && "#{os[:name].presence || experience.key.to_s.upcase_first} #{os[:version]}", os[:api_level].presence && "API #{os[:api_level]}"].compact.join(" · ").presence || "Not captured" %></strong><span>operating system</span></div>
     </section>
   <% end %>
 

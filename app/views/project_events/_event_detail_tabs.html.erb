@@ -8,6 +8,8 @@
 <% turbo_frame_id = turbo_frame_id.presence %>
 <% wrapper_classes = wrapper_classes.presence || "detail-tabs-wrap" %>
 <% link_data = turbo_frame_id.present? ? { turbo_frame: turbo_frame_id } : {} %>
+<% error_detail = group.present? || event.error? %>
+<% detail_scope_params = turbo_frame_id.present? ? { filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid } : {} %>
 
 <div class="<%= wrapper_classes %>"
      data-controller="frame-tabs"
@@ -16,10 +18,10 @@
      data-project-experience="<%= experience.key %>"
      <%= tag.attributes(data: product_tour_step_data(tour_group, :tabs)) if tour_group.present? %>
      aria-busy="false">
-  <nav class="detail-tabs" role="tablist" aria-label="Issue details" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
+  <nav class="detail-tabs" role="tablist" aria-label="<%= error_detail ? "Issue details" : "Event details" %>" <% if turbo_frame_id.present? %>data-turbo-frame="<%= turbo_frame_id %>"<% end %>>
     <% sections.each do |section| %>
       <%= link_to section.label,
-                  partitioned_project_event_path(project, event, filter: filter_param, q: query_param, assignee: assignee_param, group_uuid: group&.uuid, tab: section.key),
+                  partitioned_project_event_path(project, event, detail_scope_params.merge(tab: section.key)),
                   id: "detail-tab-#{section.key}",
                   class: "detail-tab",
                   role: "tab",

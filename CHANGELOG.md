@@ -2,6 +2,25 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6 - 2026-08-09
+
+### Added
+
+- Added a versioned telemetry evidence envelope for mobile capture, symbolication, reporting-period, producer, and delivery provenance while preserving compatibility with existing SDK payloads.
+- Added capability-aware Android and iOS project experiences, mobile release coverage, and auditable access to retained original evidence.
+- Added an ecosystem release-impact manifest so public API changes carry explicit, independently versioned decisions for every supported add-on.
+
+### Changed
+
+- Separated backend CI from release promotion. A version-changing commit on `main` now creates the release tag, and the tag workflow promotes one immutable container digest to Fly, GHCR, Docker Hub, and optional Quay mirrors.
+- Added public release identity and reconciliation checks for app version, Git revision, contract digests, database migrations, worker processes, and dark-launch feature flags.
+
+### Upgrade Notes
+
+- Run database migrations before restarting web and worker processes. This release adds evidence-access auditing and updates Apple symbol artifact state handling.
+- Keep the additive telemetry evidence capabilities dark until the matching Android `v0.4.0` and iOS `v0.4.0` releases are verified in their public channels.
+- Existing Ruby, JavaScript, Python, .NET, and CLI clients remain compatible and do not require a coordinated version bump for this backend release.
+
 ## v3.5 - 2026-08-09
 
 ### Added

@@ -59,9 +59,34 @@ RSpec.describe ErrorOccurrenceDimensions do
       "architecture" => "arm64",
       "diagnostic_source" => "sdk",
       "diagnostic_kind" => "reported_error",
-      "symbolication_status" => "not_required",
+      "symbolication_status" => "symbols_included",
       "exception_type" => "CheckoutError",
       "culprit" => "CheckoutViewModel.submit(_:)"
     )
+  end
+
+  it "materializes server-owned evidence facets without copying receipt timestamps" do
+    normalized = TelemetryEvidenceNormalizer.normalize(
+      context: {
+        "platform" => "android",
+        "diagnostic" => { "source" => "application_exit_info", "kind" => "anr" },
+        "error" => { "capture_source" => "historical_exit", "fatal" => false }
+      },
+      client_occurred_at: 1.hour.ago,
+      received_at: Time.current
+    )
+    evidence_event = build(:ingest_event, project: project, context: normalized.context)
+
+    dimensions = described_class.new(evidence_event).attributes.fetch(:dimensions)
+
+    expect(dimensions).to include(
+      "evidence_source" => "application_exit_info",
+      "evidence_kind" => "event_payload",
+      "time_precision" => "exact",
+      "identity_scope" => "occurrence",
+      "capture_mode" => "historical_exit",
+      "fatality" => "nonfatal"
+    )
+    expect(dimensions.keys).not_to include("received_at")
   end
 end

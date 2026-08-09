@@ -52,6 +52,7 @@ module AppleSymbols
         )
       end
       AppleSymbolArtifactProcessingJob.perform_later(artifact.id)
+      MobileArtifactCoverageRefreshJob.perform_later(artifact.project_id, "ios")
       artifact
     rescue StandardError
       artifact&.destroy if artifact&.persisted?
