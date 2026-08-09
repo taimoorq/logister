@@ -3,7 +3,9 @@ class CheckInMonitor < ApplicationRecord
   belongs_to :last_event, class_name: "IngestEvent", optional: true
   has_many :notification_intents, dependent: :destroy
 
+  before_validation :ensure_uuid
   validates :slug, presence: true
+  validates :uuid, presence: true, uniqueness: true
   validates :environment, presence: true
   validates :expected_interval_seconds, numericality: { greater_than: 0 }
   validates :last_status, presence: true
@@ -191,6 +193,10 @@ class CheckInMonitor < ApplicationRecord
   end
 
   private
+
+  def ensure_uuid
+    self.uuid ||= SecureRandom.uuid
+  end
 
   def sync_last_event_occurred_at
     return if last_event_id.blank?

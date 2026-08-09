@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: 3.4
-  summary: Send application telemetry and scheduled-work check-ins to Logister.
+  version: "3.5"
+  summary: Send telemetry to Logister and build authorized read-only CLI clients.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
     first-party SDKs when they fit your runtime, or use this contract to build
@@ -56,20 +56,32 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.4"
-                    api_contract_version: "3.4"
+                    server_version: "3.5"
+                    api_contract_version: "3.5"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "0.1.2"
                     generated_at: "2026-07-01T12:00:00Z"
                     endpoints:
                       capabilities: /api/v1/cli/capabilities
+                      session: /api/v1/cli/session
                       device_authorizations: /api/v1/cli/device_authorizations
                       device_token: /api/v1/cli/device_authorizations/token
                     auth:
                       cli_access_tokens: true
                       device_authorization: true
                       project_ingest_keys_for_read: false
+                      recommended_scopes:
+                        - projects:read
+                        - project_summary:read
+                        - events:read
+                        - errors:read
+                        - ai_context:read
+                        - traces:read
+                        - monitors:read
+                        - deployments:read
+                        - insights:read
+                        - metrics:read
                     features:
                       capabilities: true
                       cli_access_tokens: true
@@ -77,7 +89,32 @@ paths:
                       projects: true
                       events: true
                       error_groups: true
+                      traces: false
+                      monitors: false
+                      deployments: false
+                      insights: false
+                      metrics: false
                       ai_context_bundles: true
+  /api/v1/cli/session:
+    get:
+      operationId: getCliSession
+      tags:
+        - CLI
+      summary: Inspect the current CLI token and its effective project access.
+      description: Returns safe token metadata, a bounded project UUID list, and read scopes that require a new browser login. Token values and digests are never returned.
+      security:
+        - cliBearerAuth: []
+      responses:
+        "200":
+          description: Current CLI session diagnostics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliSession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/device_authorizations:
     post:
       operationId: createCliDeviceAuthorization
@@ -104,6 +141,8 @@ paths:
                 $ref: "#/components/schemas/CliDeviceAuthorization"
         "422":
           $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/device_authorizations/token:
     post:
       operationId: exchangeCliDeviceAuthorization
@@ -130,6 +169,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CliDeviceAuthorizationError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects:
     get:
       operationId: listCliProjects
@@ -143,6 +184,8 @@ paths:
           in: query
           schema:
             type: boolean
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: Projects visible to this token.
@@ -150,16 +193,20 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/CliProject"
+                allOf:
+                  - $ref: "#/components/schemas/CliListEnvelope"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/CliProject"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}:
     get:
       operationId: getCliProject
@@ -183,6 +230,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}/summary:
     get:
       operationId: getCliProjectSummary
@@ -194,6 +243,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/CliProjectUuid"
         - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
       responses:
         "200":
           description: Project summary.
@@ -207,6 +257,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}/events:
     get:
       operationId: listCliEvents
@@ -227,6 +279,13 @@ paths:
         - $ref: "#/components/parameters/Environment"
         - $ref: "#/components/parameters/Release"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/AfterCursor"
+        - name: level
+          in: query
+          schema:
+            type: string
+          description: Comma-separated event levels.
         - name: q
           in: query
           schema:
@@ -249,25 +308,33 @@ paths:
           schema:
             type: number
             minimum: 0
+        - name: summary
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Return context-minimized rows. The list default is summary-only.
+        - name: include_context
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Explicitly include bounded server-redacted context in list rows.
       responses:
         "200":
           description: Redacted event records.
           content:
             application/json:
               schema:
-                type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/CliEvent"
+                $ref: "#/components/schemas/CliEventList"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}/events/{uuid}:
     get:
       operationId: getCliEvent
@@ -292,6 +359,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}/error_groups:
     get:
       operationId: listCliErrorGroups
@@ -316,25 +385,47 @@ paths:
           schema:
             type: string
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: assignee
+          in: query
+          schema:
+            type: string
+          description: "`all`, `me`, `unassigned`, `any`, or an assignable user UUID."
+        - name: assigned
+          in: query
+          deprecated: true
+          schema:
+            type: string
+            enum: [me, unassigned, any]
+          description: Compatibility alias for assignee selection.
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [last_seen, recommended, impact, velocity]
+          description: Sort options vary by project profile; unsupported values return `422` instead of changing the requested sort.
       responses:
         "200":
           description: Error group records.
           content:
             application/json:
               schema:
-                type: object
-                required: [items]
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/CliErrorGroup"
+                allOf:
+                  - $ref: "#/components/schemas/CliListEnvelope"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/CliErrorGroup"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}:
     get:
       operationId: getCliErrorGroup
@@ -359,6 +450,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}/export:
     get:
       operationId: exportCliErrorGroup
@@ -383,6 +476,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /api/v1/cli/projects/{project_uuid}/error_groups/{uuid}/context:
     get:
       operationId: getCliErrorGroupAiContext
@@ -411,6 +506,300 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/v1/cli/projects/{project_uuid}/traces:
+    get:
+      operationId: listCliTraces
+      tags: [CLI]
+      summary: List root request and browser trace spans.
+      description: Uses coverage-aware ClickHouse reads with PostgreSQL fallback. Requires `traces:read`.
+      x-logister-required-scopes: [traces:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
+        - $ref: "#/components/parameters/Environment"
+        - $ref: "#/components/parameters/Release"
+        - name: service
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: operation
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [unset, ok, error, all]
+        - name: min_duration_ms
+          in: query
+          schema: { type: number, minimum: 0, maximum: 86400000 }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Redacted trace root summaries.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/CliListEnvelope"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/CliTraceSpan" }
+                      analytics: { $ref: "#/components/schemas/CliAnalytics" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/traces/{trace_id}:
+    get:
+      operationId: getCliTrace
+      tags: [CLI]
+      summary: Show a bounded, server-redacted span tree.
+      description: Defaults to 24 hours, accepts at most a 90-day range, returns at most 200 spans, and caps the serialized span payload at 1 MiB. Requires `traces:read`.
+      x-logister-required-scopes: [traces:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/TraceId"
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
+      responses:
+        "200":
+          description: Redacted trace detail.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CliTrace" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/monitors:
+    get:
+      operationId: listCliMonitors
+      tags: [CLI]
+      summary: List check-in monitor state at one evaluation timestamp.
+      description: Requires `monitors:read`. Notification internals and monitor mutations are not exposed.
+      x-logister-required-scopes: [monitors:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Environment"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ok, error, missed, paused, all]
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Monitor summaries.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/CliListEnvelope"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/CliMonitor" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/monitors/{uuid}:
+    get:
+      operationId: getCliMonitor
+      tags: [CLI]
+      summary: Show one check-in monitor by stable UUID.
+      x-logister-required-scopes: [monitors:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Uuid"
+      responses:
+        "200":
+          description: Monitor detail.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CliMonitor" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/deployments:
+    get:
+      operationId: listCliDeployments
+      tags: [CLI]
+      summary: List release-to-commit deployments.
+      description: Requires `deployments:read`. This read route is separate from write-only deployment ingestion.
+      x-logister-required-scopes: [deployments:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - name: repository
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - $ref: "#/components/parameters/Environment"
+        - name: source
+          in: query
+          schema:
+            type: string
+            enum: [api, telemetry, manual]
+        - $ref: "#/components/parameters/Release"
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - $ref: "#/components/parameters/Since"
+        - $ref: "#/components/parameters/Until"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Redacted deployment summaries with previous-deployment comparison context.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/CliListEnvelope"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/CliDeployment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/deployments/{uuid}:
+    get:
+      operationId: getCliDeployment
+      tags: [CLI]
+      summary: Show one redacted deployment by UUID.
+      x-logister-required-scopes: [deployments:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Uuid"
+      responses:
+        "200":
+          description: Deployment detail.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CliDeployment" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/insights:
+    get:
+      operationId: getCliInsights
+      tags: [CLI]
+      summary: Return a cached, redacted project Insights summary.
+      description: Reuses the web Insights query/cache path and omits raw recent-event context. Requires `insights:read`.
+      x-logister-required-scopes: [insights:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/InsightsWindow"
+        - $ref: "#/components/parameters/Metric"
+        - $ref: "#/components/parameters/Environment"
+        - $ref: "#/components/parameters/Release"
+        - $ref: "#/components/parameters/Attribute"
+      responses:
+        "200":
+          description: Insights summary and selected series.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CliInsights" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/metrics/catalog:
+    get:
+      operationId: getCliMetricCatalog
+      tags: [CLI]
+      summary: List metrics available for a project and window.
+      x-logister-required-scopes: [metrics:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/InsightsWindow"
+      responses:
+        "200":
+          description: Metric catalog.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/CliListEnvelope"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/CliMetric" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/metrics/query:
+    get:
+      operationId: queryCliMetric
+      tags: [CLI]
+      summary: Query exactly one known metric series.
+      description: Unknown metrics fail with `422`; the server never substitutes a default series. Requires `metrics:read`.
+      x-logister-required-scopes: [metrics:read]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - name: metric
+          in: query
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/InsightsWindow"
+        - $ref: "#/components/parameters/Environment"
+        - $ref: "#/components/parameters/Release"
+        - $ref: "#/components/parameters/Attribute"
+      responses:
+        "200":
+          description: One metric series and its metadata.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CliMetricQuery" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
   /api/v1/ingest_events:
     post:
       operationId: createIngestEvent
@@ -423,7 +812,9 @@ paths:
         full event shape. Uppercase `EVENT` envelopes are also accepted for
         runtimes that serialize keys that way. A client-supplied event `uuid`
         is an idempotency key within the project: a retry returns the original
-        accepted event without creating another occurrence.
+        accepted event without creating another occurrence. The request body is
+        capped at 2 MiB before JSON parsing; the normalized event has a separate
+        1 MiB limit.
       requestBody:
         required: true
         content:
@@ -559,8 +950,102 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: The request body or normalized event exceeds its byte limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/v1/ingest_events/batch:
+    post:
+      operationId: createIngestEventBatch
+      tags:
+        - Ingest events
+      summary: Atomically ingest a bounded batch of telemetry envelopes.
+      description: |
+        Accepts one `{ "event": ... }` JSON object per nonblank line; both the
+        envelope and its `event` value must be JSON objects. The request may use
+        gzip content encoding. A batch contains at most 100 envelopes, 2 MiB of
+        compressed input, and 8 MiB after decompression. Every event must carry a
+        nonblank, valid UUID in `uuid` or `event_id` for safe retry. If both aliases
+        are supplied, they must normalize to the same UUID. Newly accepted rows are
+        committed atomically; if one envelope is invalid, new rows from the batch
+        are rolled back. Previously accepted duplicate envelopes remain accepted.
+        Tenant rate limits count envelopes rather than HTTP requests.
+      parameters:
+        - name: Content-Encoding
+          in: header
+          required: false
+          description: Use `gzip` for compressed NDJSON or omit for identity encoding.
+          schema:
+            type: string
+            enum: [gzip, identity]
+        - name: X-Logister-Batch-Id
+          in: header
+          required: false
+          description: Stable SDK-generated batch identifier echoed in the response.
+          schema:
+            type: string
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+              format: binary
+            example: |
+              {"event":{"uuid":"11111111-1111-4111-8111-111111111111","event_type":"log","message":"checkout started"}}
+              {"event":{"uuid":"22222222-2222-4222-8222-222222222222","event_type":"metric","message":"queue.depth","context":{"value":12}}}
+      responses:
+        "202":
+          description: Every new envelope was committed with its projection intents.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedBatchResponse"
+        "400":
+          description: |
+            NDJSON or gzip framing is invalid, the batch is empty, an envelope or
+            event is not an object, or a stable identity is missing, malformed, or
+            conflicting. The `code` is one of `invalid_json`, `invalid_gzip`,
+            `empty_batch`, `invalid_envelope`, `missing_event`, `missing_identity`,
+            `invalid_identity`, or `conflicting_identity`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: The compressed body, decompressed body, envelope count, or an individual envelope exceeds its limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: The media type or content encoding is unsupported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: At least one envelope failed model validation; newly inserted rows were rolled back.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RejectedBatchResponse"
         "429":
           $ref: "#/components/responses/TooManyRequests"
   /api/v1/deployments:
@@ -838,6 +1323,60 @@ components:
         type: integer
         minimum: 1
         maximum: 100
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+        maxLength: 8192
+      description: Opaque signed cursor from `next_cursor`. Cursors are project- and filter-bound.
+    AfterCursor:
+      name: after_cursor
+      in: query
+      schema:
+        type: string
+        maxLength: 8192
+      description: Opaque event polling high-water cursor from `poll_cursor`. Poll pages are ordered by `created_at` then UUID ascending.
+    TraceId:
+      name: trace_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: "^[A-Za-z0-9._:-]+$"
+    InsightsWindow:
+      name: window
+      in: query
+      schema:
+        type: string
+        enum: [1h, 6h, 24h, 7d]
+        default: 24h
+    Metric:
+      name: metric[]
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        maxItems: 8
+        uniqueItems: true
+        items:
+          type: string
+      description: Repeat `metric[]` to select multiple known Insights metrics.
+    Attribute:
+      name: attribute[]
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: array
+        maxItems: 6
+        items:
+          type: string
+          pattern: "^[a-z][a-z0-9_.:-]{0,63}=.+$"
+      description: Repeat `attribute[]=key=value` for catalog-backed, non-sensitive scalar attribute filters.
   headers:
     RetryAfter:
       description: Seconds to wait before retrying after a rate limit.
@@ -869,7 +1408,7 @@ components:
               value:
                 error: "param is missing or the value is empty: event"
     Unauthorized:
-      description: API key or mobile ingest token was missing, invalid, revoked, inactive, expired, or belongs to an archived project.
+      description: The required project API key, mobile ingest token, or CLI bearer token was missing, invalid, revoked, inactive, expired, or no longer has effective project access.
       content:
         application/json:
           schema:
@@ -878,6 +1417,8 @@ components:
             unauthorized:
               value:
                 error: Unauthorized
+                code: unauthorized
+                message: Provide an active credential for this endpoint.
     Forbidden:
       description: The credential is valid but cannot access this endpoint or event type.
       content:
@@ -903,14 +1444,16 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ValidationErrorResponse"
+            oneOf:
+              - $ref: "#/components/schemas/ValidationErrorResponse"
+              - $ref: "#/components/schemas/ErrorResponse"
           examples:
             invalid:
               value:
                 errors:
                   - Message can't be blank
     TooManyRequests:
-      description: The API token or authentication-failure source exceeded the public API rate limit.
+      description: The project API token, CLI access token, or authentication-failure source exceeded its configured rate limit.
       headers:
         Retry-After:
           $ref: "#/components/headers/RetryAfter"
@@ -927,11 +1470,235 @@ components:
           examples:
             rateLimited:
               value:
-                error: Rate limit exceeded
-                limit: 1200
-                window_seconds: 60
+                error: Rate limited
+                code: rate_limited
+                message: Too many requests. Retry after the current window.
                 retry_after: 42
   schemas:
+    CliListEnvelope:
+      type: object
+      required: [items, generated_at]
+      properties:
+        items:
+          type: array
+          items: {}
+        next_cursor:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+    CliEventList:
+      allOf:
+        - $ref: "#/components/schemas/CliListEnvelope"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/CliEvent"
+            poll_cursor:
+              type: string
+              description: High-water cursor for a later `after_cursor` request.
+    CliSession:
+      type: object
+      required:
+        - token
+        - accessible_project_count
+        - accessible_project_uuids
+        - accessible_projects_truncated
+        - missing_recommended_scopes
+        - generated_at
+      properties:
+        token:
+          type: object
+          required: [uuid, name, scopes, expires_at, created_at, all_projects]
+          properties:
+            uuid: { type: string, format: uuid }
+            name: { type: string }
+            scopes:
+              type: array
+              items: { type: string }
+            expires_at: { type: string, format: date-time }
+            created_at: { type: string, format: date-time }
+            last_used_at: { type: string, format: date-time }
+            all_projects: { type: boolean }
+        accessible_project_count: { type: integer, minimum: 0 }
+        accessible_project_uuids:
+          type: array
+          maxItems: 100
+          items: { type: string, format: uuid }
+        accessible_projects_truncated: { type: boolean }
+        missing_recommended_scopes:
+          type: array
+          items: { type: string }
+        generated_at: { type: string, format: date-time }
+    CliAnalytics:
+      type: object
+      properties:
+        source:
+          type: string
+          enum: [postgresql, clickhouse]
+        coverage:
+          type: object
+          properties:
+            complete: { type: boolean }
+            ratio: { type: number, minimum: 0, maximum: 1 }
+            fresh_through: { type: string, format: date-time }
+        partial: { type: boolean }
+    CliTraceSpan:
+      type: object
+      required: [uuid, trace_id, span_id, name, operation, kind, status, duration_ms, started_at]
+      properties:
+        uuid: { type: string, format: uuid }
+        trace_id: { type: string }
+        span_id: { type: string }
+        parent_span_id: { type: string }
+        name: { type: string }
+        operation: { type: string }
+        kind: { $ref: "#/components/schemas/SpanKind" }
+        status:
+          type: string
+          enum: [unset, ok, error]
+        duration_ms: { type: number, minimum: 0 }
+        started_at: { type: string, format: date-time }
+        ended_at: { type: string, format: date-time }
+        environment: { type: string }
+        release: { type: string }
+        service: { type: string }
+        request_id: { type: string }
+        context:
+          type: object
+          additionalProperties: true
+          description: Present only on trace detail and always server-redacted.
+        context_truncated:
+          type: boolean
+          description: True when an oversized redacted context was omitted to preserve the response-size bound.
+    CliTrace:
+      type: object
+      required: [trace_id, spans, span_count, truncated, generated_at, analytics]
+      properties:
+        trace_id: { type: string }
+        spans:
+          type: array
+          maxItems: 200
+          items: { $ref: "#/components/schemas/CliTraceSpan" }
+        span_count: { type: integer, minimum: 0, maximum: 200 }
+        truncated: { type: boolean }
+        generated_at: { type: string, format: date-time }
+        analytics: { $ref: "#/components/schemas/CliAnalytics" }
+    CliMonitor:
+      type: object
+      required: [uuid, slug, environment, status, expected_interval_seconds, created_at, updated_at]
+      properties:
+        uuid: { type: string, format: uuid }
+        slug: { type: string }
+        environment: { type: string }
+        status:
+          type: string
+          enum: [ok, error, missed, paused]
+        expected_interval_seconds: { type: integer, minimum: 1 }
+        last_check_in_at: { type: string, format: date-time }
+        last_error_at: { type: string, format: date-time }
+        last_event: { $ref: "#/components/schemas/CliEvent" }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    CliDeployment:
+      type: object
+      required: [uuid, provider, repository_full_name, environment, release, commit_sha, short_commit_sha, deployed_at, source]
+      properties:
+        uuid: { type: string, format: uuid }
+        provider: { type: string }
+        repository_full_name: { type: string }
+        environment: { type: string }
+        release: { type: string }
+        commit_sha: { type: string }
+        short_commit_sha: { type: string }
+        branch: { type: string }
+        deployed_at: { type: string, format: date-time }
+        source:
+          type: string
+          enum: [api, telemetry, manual]
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Server-redacted deployment metadata.
+        links:
+          type: object
+          additionalProperties:
+            type: string
+            format: uri
+        previous_deployment:
+          type: object
+          properties:
+            uuid: { type: string, format: uuid }
+            release: { type: string }
+            commit_sha: { type: string }
+            deployed_at: { type: string, format: date-time }
+    CliMetric:
+      type: object
+      required: [key, label, unit, kind, source, category]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        description: { type: string }
+        unit: { type: string }
+        kind: { type: string }
+        source: { type: string }
+        category: { type: string }
+        category_label: { type: string }
+        events: { type: integer, minimum: 0 }
+        available: { type: boolean }
+        available_events: { type: integer, minimum: 0 }
+    CliMetricSeries:
+      type: object
+      required: [key, data]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        unit: { type: string }
+        data:
+          type: array
+          items:
+            type: object
+            required: [timestamp, value]
+            properties:
+              timestamp: { type: string, format: date-time }
+              value: { type: number }
+    CliInsights:
+      type: object
+      description: Cached Project Insights payload without `recent_events`. Attribute catalog keys are screened by semantic sensitivity before serialization.
+      required: [generated_at, window, bucket, summary, metric_catalog, selected_metrics, metric_series, analytics]
+      properties:
+        generated_at: { type: string, format: date-time }
+        window: { type: string, enum: [1h, 6h, 24h, 7d] }
+        bucket: { type: string, enum: [minute, hour, day] }
+        filters: { type: object, additionalProperties: true }
+        summary: { type: object, additionalProperties: true }
+        metric_catalog:
+          type: array
+          items: { $ref: "#/components/schemas/CliMetric" }
+        selected_metrics:
+          type: array
+          items: { type: string }
+        metric_series:
+          type: array
+          items: { $ref: "#/components/schemas/CliMetricSeries" }
+        attributes:
+          type: array
+          items: { type: object, additionalProperties: true }
+        analytics: { $ref: "#/components/schemas/CliAnalytics" }
+      additionalProperties: true
+    CliMetricQuery:
+      type: object
+      required: [metric, series, window, bucket, filters, generated_at, analytics]
+      properties:
+        metric: { $ref: "#/components/schemas/CliMetric" }
+        series: { $ref: "#/components/schemas/CliMetricSeries" }
+        window: { type: string, enum: [1h, 6h, 24h, 7d] }
+        bucket: { type: string, enum: [minute, hour, day] }
+        filters: { type: object, additionalProperties: true }
+        generated_at: { type: string, format: date-time }
+        analytics: { $ref: "#/components/schemas/CliAnalytics" }
     CliCapabilities:
       type: object
       required:
@@ -973,6 +1740,7 @@ components:
             - cli_access_tokens
             - device_authorization
             - project_ingest_keys_for_read
+            - recommended_scopes
           properties:
             cli_access_tokens:
               type: boolean
@@ -980,6 +1748,10 @@ components:
               type: boolean
             project_ingest_keys_for_read:
               type: boolean
+            recommended_scopes:
+              type: array
+              items:
+                type: string
         features:
           type: object
           additionalProperties:
@@ -993,6 +1765,12 @@ components:
         scope:
           type: string
           description: Space-separated CLI read scopes. Defaults to all read scopes currently supported by the server.
+        scopes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+          description: Preferred array form of requested read scopes.
     CliDeviceAuthorization:
       type: object
       required:
@@ -1002,6 +1780,8 @@ components:
         - verification_uri_complete
         - expires_in
         - interval
+        - scope
+        - scopes
       properties:
         device_code:
           type: string
@@ -1020,6 +1800,12 @@ components:
         interval:
           type: integer
           minimum: 1
+        scope:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
     CliDeviceTokenRequest:
       type: object
       required:
@@ -1034,6 +1820,7 @@ components:
         - token_type
         - expires_at
         - scope
+        - scopes
       properties:
         access_token:
           type: string
@@ -1045,6 +1832,10 @@ components:
           format: date-time
         scope:
           type: string
+        scopes:
+          type: array
+          items:
+            type: string
     CliDeviceAuthorizationError:
       type: object
       required:
@@ -1142,6 +1933,12 @@ components:
           type: object
           description: Server-redacted event context. Sensitive-looking keys are replaced with `[REDACTED]`.
           additionalProperties: true
+        context_truncated:
+          type: boolean
+          description: True when list context was omitted to keep the serialized list below its server-side byte limit.
+        summary_truncated:
+          type: boolean
+          description: True when oversized display strings were shortened to preserve the list response bound.
     CliErrorGroup:
       type: object
       properties:
@@ -1187,6 +1984,9 @@ components:
         window_started_at:
           type: string
           format: date-time
+        window_ended_at:
+          type: string
+          format: date-time
         generated_at:
           type: string
           format: date-time
@@ -1202,6 +2002,8 @@ components:
             type: integer
         activity_events:
           type: integer
+        analytics:
+          $ref: "#/components/schemas/CliAnalytics"
     CliAiContext:
       type: object
       properties:
@@ -1723,6 +2525,83 @@ components:
             type:
               type: string
               const: span
+    BatchEnvelopeResult:
+      type: object
+      required:
+        - index
+        - status
+        - type
+      properties:
+        index:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [accepted, rejected, rolled_back]
+        type:
+          type: string
+          enum: [event, span]
+        id:
+          type: string
+          format: uuid
+        legacy_id:
+          type: integer
+        duplicate:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+    AcceptedBatchResponse:
+      type: object
+      required:
+        - schema_version
+        - status
+        - accepted
+        - duplicates
+        - results
+      properties:
+        schema_version:
+          type: integer
+          const: 1
+        batch_id:
+          type: string
+        status:
+          type: string
+          const: accepted
+        accepted:
+          type: integer
+          minimum: 1
+        duplicates:
+          type: integer
+          minimum: 0
+        results:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/BatchEnvelopeResult"
+    RejectedBatchResponse:
+      type: object
+      required:
+        - schema_version
+        - status
+        - results
+      properties:
+        schema_version:
+          type: integer
+          const: 1
+        batch_id:
+          type: string
+        status:
+          type: string
+          const: rejected
+        results:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/BatchEnvelopeResult"
     AcceptedCheckInResponse:
       type: object
       required:
@@ -1756,6 +2635,16 @@ components:
       properties:
         error:
           type: string
+        code:
+          type: string
+        message:
+          type: string
+        parameter:
+          type: string
+        required_scopes:
+          type: array
+          items:
+            type: string
     ValidationErrorResponse:
       type: object
       required:
@@ -1769,13 +2658,14 @@ components:
       type: object
       required:
         - error
-        - limit
-        - window_seconds
         - retry_after
       properties:
         error:
           type: string
-          const: Rate limit exceeded
+        code:
+          type: string
+        message:
+          type: string
         limit:
           type: integer
         window_seconds:

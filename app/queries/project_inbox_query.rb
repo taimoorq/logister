@@ -3,6 +3,8 @@
 require "digest"
 
 class ProjectInboxQuery
+  class InvalidCursor < Logister::CliCursor::InvalidCursor; end
+
   FILTERS = %w[unresolved introduced_today resolved ignored archived all].freeze
   LIMIT = 100
   Page = Data.define(:groups, :next_cursor)
@@ -24,13 +26,14 @@ class ProjectInboxQuery
     ))
   SQL
 
-  attr_reader :project, :viewer, :profile, :page_size
+  attr_reader :project, :viewer, :profile, :page_size, :strict_cursor
 
-  def initialize(project:, viewer: nil, page_size: LIMIT)
+  def initialize(project:, viewer: nil, page_size: LIMIT, strict_cursor: false)
     @project = project
     @viewer = viewer
     @profile = ProjectExperience.for(project)
     @page_size = page_size.to_i.clamp(1, LIMIT)
+    @strict_cursor = strict_cursor
   end
 
   def groups(filter:, query: nil, assignee: "all", dimensions: {}, sort: nil, cursor: nil)
@@ -51,6 +54,7 @@ class ProjectInboxQuery
       sort: normalized_sort
     )
     cursor_values = decode_cursor(cursor, context_digest:, sort: normalized_sort)
+    raise InvalidCursor if strict_cursor && cursor.present? && cursor_values.nil?
 
     cache_key = [
       "project",
@@ -94,11 +98,13 @@ class ProjectInboxQuery
   end
 
   def latest_events(groups)
-    IngestEvent.for_partition_references(
-      groups,
-      id_key: :latest_event_id,
-      occurred_at_key: :latest_event_occurred_at
-    ).select(:id, :project_id, :uuid, :occurred_at, :event_type, :level, :message, :context, :error_group_id).index_by(&:id)
+    Logister::CliEventQuery.summary(
+      IngestEvent.for_partition_references(
+        groups,
+        id_key: :latest_event_id,
+        occurred_at_key: :latest_event_occurred_at
+      )
+    ).index_by(&:id)
   end
 
   def group_trends(groups, days: 7)
@@ -183,6 +189,7 @@ class ProjectInboxQuery
     return "all" if raw.blank? || raw == "all"
     return "me" if raw == "me" && viewer.present?
     return "unassigned" if raw == "unassigned"
+    return "assigned" if raw == "assigned"
     return raw if project.assignable_users.exists?(uuid: raw)
 
     "all"
@@ -206,6 +213,7 @@ class ProjectInboxQuery
     case assignee
     when "me" then viewer.present? ? scope.assigned_to(viewer) : scope
     when "unassigned" then scope.unassigned
+    when "assigned" then scope.where.not(assignee_id: nil)
     when "all" then scope
     else
       assignable = project.assignable_users.find_by(uuid: assignee)
@@ -379,6 +387,7 @@ class ProjectInboxQuery
 
   def decode_cursor(cursor, context_digest:, sort:)
     return if cursor.blank?
+    return if cursor.to_s.bytesize > Logister::CliCursor::MAX_BYTES
 
     payload = cursor_verifier.verified(cursor, purpose: :project_inbox)
     return unless payload.is_a?(Hash)
@@ -405,10 +414,21 @@ class ProjectInboxQuery
   end
 
   def cache_fetch(key, expires_in:, &block)
-    Rails.cache.fetch(key, expires_in: expires_in, race_condition_ttl: 5.seconds, &block)
+    computing = false
+    computed = false
+    computed_value = nil
+    Rails.cache.fetch(key, expires_in: expires_in, race_condition_ttl: 5.seconds) do
+      computing = true
+      computed_value = block.call
+      computing = false
+      computed = true
+      computed_value
+    end
   rescue StandardError => error
+    raise if computing
+
     Rails.logger.warn("cache fetch failed key=#{key.inspect}: #{error.class} #{error.message}")
-    block.call
+    computed ? computed_value : block.call
   end
 
   def time_bucket(duration)

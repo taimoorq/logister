@@ -77,7 +77,7 @@ if versions[:app]
     rule("app gh release", /(gh release view )v[0-9][0-9A-Za-z.\-]*/, "\\1#{app}"),
     rule("app version tag example", /(version tag such as <code>)v[0-9][0-9A-Za-z.\-]*(<\/code>)/, "\\1#{app}\\2"),
     rule("app structured data version", /("softwareVersion"\s*=>\s*")[^"]+(")/, "\\1#{app_number}\\2"),
-    rule("OpenAPI app version", /^(\s{2}version:\s*)[0-9][0-9A-Za-z.\-]*\s*$/, "\\1#{app_number}"),
+    rule("OpenAPI app version", /^(\s{2}version:\s*)\"?[0-9][0-9A-Za-z.\-]*\"?\s*$/, "\\1\"#{app_number}\""),
     rule("OpenAPI server version example", /^(\s*server_version:\s*")[^"]+("\s*)$/, "\\1#{app_number}\\2"),
     rule("OpenAPI contract version example", /^(\s*api_contract_version:\s*")[^"]+("\s*)$/, "\\1#{app_number}\\2"),
     rule("server version expectation", /("server_version"\s*=>\s*")[^"]+("\s*,?)/, "\\1#{app_number}\\2"),
@@ -85,14 +85,10 @@ if versions[:app]
   ])
 end
 
-if versions[:cli]
-  cli = versions[:cli]
-  rules.concat([
-    rule("recommended CLI constant", /(RECOMMENDED_CLI_VERSION\s*=\s*")[^"]+("\s*)/, "\\1#{cli}\\2"),
-    rule("recommended CLI OpenAPI example", /^(\s*recommended_cli_version:\s*")[^"]+("\s*)$/, "\\1#{cli}\\2"),
-    rule("recommended CLI expectation", /("recommended_cli_version"\s*=>\s*")[^"]+("\s*,?)/, "\\1#{cli}\\2")
-  ])
-end
+# The recommended CLI version is staged runtime rollout state, not source
+# version metadata. Keep it at the currently published recommendation until the
+# immutable npm/GitHub/Homebrew/Scoop release has been verified, then change the
+# runtime setting without coupling activation to a docs rebuild.
 
 if versions[:ruby]
   rules.concat([

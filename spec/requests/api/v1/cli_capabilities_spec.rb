@@ -13,8 +13,8 @@ RSpec.describe "Api::V1::Cli::Capabilities", type: :request do
       body = response.parsed_body
       expect(body).to include(
         "server" => "logister",
-        "server_version" => "3.4",
-        "api_contract_version" => "3.4",
+        "server_version" => "3.5",
+        "api_contract_version" => "3.5",
         "minimum_cli_version" => "0.1.0",
         "recommended_cli_version" => "0.1.2"
       )
@@ -37,6 +37,16 @@ RSpec.describe "Api::V1::Cli::Capabilities", type: :request do
         "device_authorizations" => "/api/v1/cli/device_authorizations",
         "device_token" => "/api/v1/cli/device_authorizations/token"
       )
+    end
+
+    it "fails closed when an activation flag is misspelled" do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("LOGISTER_CLI_FEATURE_TRACES", "false").and_return("flase")
+
+      get "/api/v1/cli/capabilities"
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.dig("features", "traces")).to be(false)
     end
   end
 end

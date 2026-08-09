@@ -4,6 +4,7 @@ class CliAccessToken < ApplicationRecord
   DEFAULT_TOKEN_PREFIX = "logister_cli"
   DEFAULT_EXPIRES_IN = 30.days
   MAX_EXPIRES_IN = 1.year
+  LAST_USED_TOUCH_INTERVAL = 5.minutes
 
   READ_SCOPES = %w[
     projects:read
@@ -11,14 +12,14 @@ class CliAccessToken < ApplicationRecord
     events:read
     errors:read
     ai_context:read
-  ].freeze
-
-  SCOPES = (READ_SCOPES + %w[
     traces:read
     monitors:read
     deployments:read
     insights:read
     metrics:read
+  ].freeze
+
+  SCOPES = (READ_SCOPES + %w[
     errors:write
   ]).freeze
 
@@ -59,7 +60,11 @@ class CliAccessToken < ApplicationRecord
   end
 
   def touch_last_used!
-    update_column(:last_used_at, Time.current)
+    now = Time.current
+    self.class.where(id: id)
+              .where("last_used_at IS NULL OR last_used_at < ?", now - LAST_USED_TOUCH_INTERVAL)
+              .update_all(last_used_at: now)
+    self.last_used_at = now
   end
 
   def allows_scope?(scope)

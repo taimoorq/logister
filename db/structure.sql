@@ -207,7 +207,8 @@ CREATE TABLE public.check_in_monitors (
     last_event_occurred_at timestamp(6) without time zone,
     monitoring_paused_at timestamp(6) without time zone,
     notification_state character varying,
-    notification_transition_id uuid
+    notification_transition_id uuid,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL
 );
 
 
@@ -3156,6 +3157,27 @@ CREATE UNIQUE INDEX idx_check_in_monitors_uniqueness ON public.check_in_monitors
 
 
 --
+-- Name: idx_cli_deployments_project_time_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cli_deployments_project_time_uuid ON public.project_deployments USING btree (project_id, COALESCE(deployed_at, created_at) DESC, uuid DESC);
+
+
+--
+-- Name: idx_cli_monitors_project_updated_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cli_monitors_project_updated_uuid ON public.check_in_monitors USING btree (project_id, updated_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_cli_root_traces_project_started_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cli_root_traces_project_started_uuid ON public.trace_spans USING btree (project_id, started_at DESC, uuid DESC) WHERE (((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)));
+
+
+--
 -- Name: idx_email_deliveries_digest_lookup; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3272,6 +3294,272 @@ CREATE INDEX idx_error_occurrences_cursor ON public.error_occurrences USING btre
 --
 
 CREATE INDEX idx_error_occurrences_event_partition_ref ON public.error_occurrences USING btree (ingest_event_id, ingest_event_occurred_at);
+
+
+--
+-- Name: idx_ie_cli_created_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_uuid ON ONLY public.ingest_events USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_02 ON public.ingest_events_partitioned_2026_02 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_03 ON public.ingest_events_partitioned_2026_03 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_04 ON public.ingest_events_partitioned_2026_04 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_05 ON public.ingest_events_partitioned_2026_05 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_06 ON public.ingest_events_partitioned_2026_06 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_07; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_07 ON public.ingest_events_partitioned_2026_07 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_08; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_08 ON public.ingest_events_partitioned_2026_08 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_09; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_09 ON public.ingest_events_partitioned_2026_09 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_10; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_10 ON public.ingest_events_partitioned_2026_10 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_11; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_11 ON public.ingest_events_partitioned_2026_11 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2026_12; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2026_12 ON public.ingest_events_partitioned_2026_12 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2027_01; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2027_01 ON public.ingest_events_partitioned_2027_01 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2027_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2027_02 ON public.ingest_events_partitioned_2027_02 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2027_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2027_03 ON public.ingest_events_partitioned_2027_03 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2027_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2027_04 ON public.ingest_events_partitioned_2027_04 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2027_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2027_05 ON public.ingest_events_partitioned_2027_05 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_2027_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_2027_06 ON public.ingest_events_partitioned_2027_06 USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_created_default; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_created_default ON public.ingest_events_partitioned_default USING btree (project_id, created_at, uuid);
+
+
+--
+-- Name: idx_ie_cli_occurred_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occurred_uuid ON ONLY public.ingest_events USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_02 ON public.ingest_events_partitioned_2026_02 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_03 ON public.ingest_events_partitioned_2026_03 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_04 ON public.ingest_events_partitioned_2026_04 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_05 ON public.ingest_events_partitioned_2026_05 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_06 ON public.ingest_events_partitioned_2026_06 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_07; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_07 ON public.ingest_events_partitioned_2026_07 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_08; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_08 ON public.ingest_events_partitioned_2026_08 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_09; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_09 ON public.ingest_events_partitioned_2026_09 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_10; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_10 ON public.ingest_events_partitioned_2026_10 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_11; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_11 ON public.ingest_events_partitioned_2026_11 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2026_12; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2026_12 ON public.ingest_events_partitioned_2026_12 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2027_01; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2027_01 ON public.ingest_events_partitioned_2027_01 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2027_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2027_02 ON public.ingest_events_partitioned_2027_02 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2027_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2027_03 ON public.ingest_events_partitioned_2027_03 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2027_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2027_04 ON public.ingest_events_partitioned_2027_04 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2027_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2027_05 ON public.ingest_events_partitioned_2027_05 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_2027_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_2027_06 ON public.ingest_events_partitioned_2027_06 USING btree (project_id, occurred_at DESC, uuid DESC);
+
+
+--
+-- Name: idx_ie_cli_occ_default; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_cli_occ_default ON public.ingest_events_partitioned_default USING btree (project_id, occurred_at DESC, uuid DESC);
 
 
 --
@@ -4210,6 +4498,13 @@ CREATE INDEX index_check_in_monitors_on_project_id ON public.check_in_monitors U
 --
 
 CREATE INDEX index_check_in_monitors_on_project_id_and_last_check_in_at ON public.check_in_monitors USING btree (project_id, last_check_in_at);
+
+
+--
+-- Name: index_check_in_monitors_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_check_in_monitors_on_uuid ON public.check_in_monitors USING btree (uuid);
 
 
 --
@@ -8224,6 +8519,258 @@ CREATE INDEX ingest_events_partitioned_default_uuid_idx ON public.ingest_events_
 
 
 --
+-- Name: idx_ie_cli_created_2026_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_02;
+
+
+--
+-- Name: idx_ie_cli_created_2026_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_03;
+
+
+--
+-- Name: idx_ie_cli_created_2026_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_04;
+
+
+--
+-- Name: idx_ie_cli_created_2026_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_05;
+
+
+--
+-- Name: idx_ie_cli_created_2026_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_06;
+
+
+--
+-- Name: idx_ie_cli_created_2026_07; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_07;
+
+
+--
+-- Name: idx_ie_cli_created_2026_08; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_08;
+
+
+--
+-- Name: idx_ie_cli_created_2026_09; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_09;
+
+
+--
+-- Name: idx_ie_cli_created_2026_10; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_10;
+
+
+--
+-- Name: idx_ie_cli_created_2026_11; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_11;
+
+
+--
+-- Name: idx_ie_cli_created_2026_12; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2026_12;
+
+
+--
+-- Name: idx_ie_cli_created_2027_01; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2027_01;
+
+
+--
+-- Name: idx_ie_cli_created_2027_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2027_02;
+
+
+--
+-- Name: idx_ie_cli_created_2027_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2027_03;
+
+
+--
+-- Name: idx_ie_cli_created_2027_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2027_04;
+
+
+--
+-- Name: idx_ie_cli_created_2027_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2027_05;
+
+
+--
+-- Name: idx_ie_cli_created_2027_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_2027_06;
+
+
+--
+-- Name: idx_ie_cli_created_default; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_created_uuid ATTACH PARTITION public.idx_ie_cli_created_default;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_02;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_03;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_04;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_05;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_06;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_07; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_07;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_08; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_08;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_09; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_09;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_10; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_10;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_11; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_11;
+
+
+--
+-- Name: idx_ie_cli_occ_2026_12; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2026_12;
+
+
+--
+-- Name: idx_ie_cli_occ_2027_01; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2027_01;
+
+
+--
+-- Name: idx_ie_cli_occ_2027_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2027_02;
+
+
+--
+-- Name: idx_ie_cli_occ_2027_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2027_03;
+
+
+--
+-- Name: idx_ie_cli_occ_2027_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2027_04;
+
+
+--
+-- Name: idx_ie_cli_occ_2027_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2027_05;
+
+
+--
+-- Name: idx_ie_cli_occ_2027_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_2027_06;
+
+
+--
+-- Name: idx_ie_cli_occ_default; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ie_cli_occurred_uuid ATTACH PARTITION public.idx_ie_cli_occ_default;
+
+
+--
 -- Name: idx_ie_project_uuid_2026_02; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -12106,6 +12653,8 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260809121000'),
+('20260809120000'),
 ('20260808161000'),
 ('20260808160000'),
 ('20260808150000'),
@@ -12173,4 +12722,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260215025030'),
 ('20260215025029'),
 ('20260215025023');
-

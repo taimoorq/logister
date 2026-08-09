@@ -36,24 +36,45 @@ module Logister
         server_version: server_version,
         api_contract_version: api_contract_version,
         api_contract_sha256: api_contract_sha256,
-        minimum_cli_version: MINIMUM_CLI_VERSION,
-        recommended_cli_version: RECOMMENDED_CLI_VERSION,
+        minimum_cli_version: configured_version("LOGISTER_CLI_MINIMUM_VERSION", MINIMUM_CLI_VERSION),
+        recommended_cli_version: configured_version("LOGISTER_CLI_RECOMMENDED_VERSION", RECOMMENDED_CLI_VERSION),
         generated_at: Time.current.utc.iso8601,
         endpoints: {
           capabilities: "/api/v1/cli/capabilities",
+          session: "/api/v1/cli/session",
           device_authorizations: "/api/v1/cli/device_authorizations",
           device_token: "/api/v1/cli/device_authorizations/token"
         },
         auth: {
           cli_access_tokens: true,
           device_authorization: true,
-          project_ingest_keys_for_read: false
+          project_ingest_keys_for_read: false,
+          recommended_scopes: CliAccessToken::READ_SCOPES
         },
-        features: FEATURES
+        features: configured_features
       }
     end
 
     private
+
+    def configured_features
+      FEATURES.merge(
+        traces: enabled?("LOGISTER_CLI_FEATURE_TRACES"),
+        monitors: enabled?("LOGISTER_CLI_FEATURE_MONITORS"),
+        deployments: enabled?("LOGISTER_CLI_FEATURE_DEPLOYMENTS"),
+        insights: enabled?("LOGISTER_CLI_FEATURE_INSIGHTS"),
+        metrics: enabled?("LOGISTER_CLI_FEATURE_METRICS")
+      )
+    end
+
+    def configured_version(name, fallback)
+      value = ENV[name].to_s.strip
+      value.match?(/\A\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\z/) ? value : fallback
+    end
+
+    def enabled?(name)
+      %w[1 true yes on].include?(ENV.fetch(name, "false").to_s.strip.downcase)
+    end
 
     def server_version
       configured = ENV["LOGISTER_RELEASE"].to_s.strip

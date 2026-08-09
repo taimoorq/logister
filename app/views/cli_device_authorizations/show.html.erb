@@ -32,6 +32,16 @@
       <%= form_with url: cli_device_authorization_path, method: :post, local: true, class: "space-y-5" do %>
         <%= hidden_field_tag :user_code, @authorization.user_code_display %>
 
+        <section class="rounded-lg border border-slate-200 px-4 py-3" aria-labelledby="requested-scopes-heading">
+          <h2 id="requested-scopes-heading" class="text-sm font-semibold text-slate-900">Requested read access</h2>
+          <p class="mt-1 text-xs text-slate-500">The CLI can read only the selected projects. It cannot ingest data or change project settings.</p>
+          <ul class="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+            <% @authorization.requested_scopes.each do |scope| %>
+              <li class="rounded-md bg-slate-50 px-3 py-2 font-mono text-xs"><%= scope %></li>
+            <% end %>
+          </ul>
+        </section>
+
         <fieldset class="space-y-3">
           <legend class="text-sm font-semibold text-slate-900">Project access</legend>
           <label class="flex gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">

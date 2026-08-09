@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::Cli::DeviceAuthorizationsController < ApplicationController
+  include Api::V1::Cli::DeviceRateLimitGuard
+
   skip_before_action :verify_authenticity_token
   skip_before_action :require_modern_browser, raise: false
 
@@ -16,8 +18,17 @@ class Api::V1::Cli::DeviceAuthorizationsController < ApplicationController
       verification_uri: cli_device_authorization_url,
       verification_uri_complete: cli_device_authorization_url(user_code: authorization.user_code_display),
       expires_in: authorization.expires_at.to_i - Time.current.to_i,
-      interval: CliDeviceAuthorization::DEFAULT_INTERVAL_SECONDS
+      interval: CliDeviceAuthorization::DEFAULT_INTERVAL_SECONDS,
+      scope: authorization.requested_scopes.join(" "),
+      scopes: authorization.requested_scopes
     }, status: :created
+  rescue ActiveRecord::RecordInvalid => error
+    render json: {
+      error: "Invalid request",
+      code: "invalid_parameter",
+      message: error.record.errors.full_messages.to_sentence,
+      parameter: "scopes"
+    }, status: :unprocessable_content
   end
 
   def token
@@ -30,7 +41,8 @@ class Api::V1::Cli::DeviceAuthorizationsController < ApplicationController
         access_token: result.access_token.plain_token,
         token_type: "Bearer",
         expires_at: result.access_token.expires_at.utc.iso8601,
-        scope: result.access_token.scopes.join(" ")
+        scope: result.access_token.scopes.join(" "),
+        scopes: result.access_token.scopes
       }
     else
       render_device_error(result.status, device_error_description(result.status))
@@ -40,7 +52,9 @@ class Api::V1::Cli::DeviceAuthorizationsController < ApplicationController
   private
 
   def requested_scopes
-    requested = scope_param.to_s.split(/\s+/).reject(&:blank?)
+    requested = Array(params[:scopes].presence || params.dig(:device_authorization, :scopes).presence)
+    requested = scope_param.to_s.split(/\s+/) if requested.empty?
+    requested = requested.map(&:to_s).reject(&:blank?)
     requested.presence || CliAccessToken::READ_SCOPES
   end
 

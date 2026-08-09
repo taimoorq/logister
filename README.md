@@ -60,6 +60,14 @@ If you only need to instrument an application, install the matching SDK instead 
 - iOS package for Swift apps through Swift Package Manager: https://github.com/taimoorq/logister-ios.git
 - CLI for reading project telemetry from a terminal or coding agent: https://github.com/taimoorq/logister-cli
 
+### CLI API 3.5 rollout
+
+The read-only CLI API exposes projects, summaries, events, logs, issues, traces, monitors, deployments, Insights, metrics, and safe session diagnostics through user-scoped CLI access tokens. PostgreSQL remains authoritative for authorization and durable records. Trace and Insights analytics use the coverage-aware ClickHouse read router and fall back to PostgreSQL when ClickHouse is disabled, incomplete, or unavailable.
+
+Deploy API 3.5 with the five new discovery flags set to `false`: `LOGISTER_CLI_FEATURE_TRACES`, `LOGISTER_CLI_FEATURE_MONITORS`, `LOGISTER_CLI_FEATURE_DEPLOYMENTS`, `LOGISTER_CLI_FEATURE_INSIGHTS`, and `LOGISTER_CLI_FEATURE_METRICS`. Keep `LOGISTER_CLI_RECOMMENDED_VERSION=0.1.2` until the immutable CLI `v1.0.0` artifact is verified in npm, GitHub Releases, Homebrew, and Scoop. Then enable the flags and advertise `1.0.0` without another app deploy. Unknown flag values fail closed.
+
+Authenticated CLI reads default to 600 requests per 60 seconds per token through `LOGISTER_CLI_READ_RATE_LIMIT_REQUESTS` and `LOGISTER_CLI_READ_RATE_LIMIT_PERIOD_SECONDS`. Rate-limit state uses the configured cache/Redis layer, never the raw token, and fails open if that operational dependency is unavailable.
+
 ## Public docs
 
 Canonical setup and integration docs live on `logister.org/docs`, with self-hosting treated as the primary deployment path.

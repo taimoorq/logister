@@ -5,16 +5,28 @@ class Api::V1::Cli::ProjectSummariesController < Api::V1::Cli::BaseController
 
   def show
     project = cli_project
-    since = cli_since(default: 24.hours.ago)
-    events = project.ingest_events.where("occurred_at >= ?", since)
-    latest_event = project.ingest_events.order(occurred_at: :desc, id: :desc).select(:id, :uuid, :event_type, :level, :message, :fingerprint, :occurred_at, :created_at, :context, :error_group_id).first
+    since, window_ended_at = cli_time_range
+    generated_at = Time.current
+    events = project.ingest_events.where(occurred_at: since...window_ended_at)
+    read = Logister::ClickhouseReadRouter.call(
+      project_ids: [ project.id ],
+      signals: Logister::ClickhouseCoverage::EVENT_SIGNALS,
+      from: since,
+      to: window_ended_at,
+      clickhouse: ->(client) {
+        Logister::ClickhouseEventRollup.call(project_ids: [ project.id ], since:, to: window_ended_at, client:)
+      },
+      postgres: -> { postgres_rollup(events, project.id) }
+    )
+    latest_event = Logister::CliEventQuery.summary(events.order(occurred_at: :desc, id: :desc)).first
     status_counts = project.error_groups.group(:status).count
-    events_by_type = event_type_counts(events.group(:event_type).count)
+    events_by_type = event_type_counts(read.payload.fetch(:event_type_counts))
 
     render json: {
       project: Logister::CliSerializer.project(project),
       window_started_at: Logister::CliSerializer.timestamp(since),
-      generated_at: Time.current.utc.iso8601(6),
+      window_ended_at: Logister::CliSerializer.timestamp(window_ended_at),
+      generated_at: Logister::CliSerializer.timestamp(generated_at),
       latest_event: latest_event && Logister::CliSerializer.event(latest_event, include_context: false),
       events_by_type: events_by_type,
       errors: {
@@ -24,7 +36,8 @@ class Api::V1::Cli::ProjectSummariesController < Api::V1::Cli::BaseController
         archived: count_status(status_counts, "archived"),
         all: status_counts.values.sum
       },
-      activity_events: events_by_type.except("error").values.sum
+      activity_events: events_by_type.except("error").values.sum,
+      analytics: Logister::CliSerializer.analytics(read)
     }
   end
 
@@ -38,5 +51,15 @@ class Api::V1::Cli::ProjectSummariesController < Api::V1::Cli::BaseController
 
   def count_status(counts, status)
     counts[status].to_i + counts[status.to_sym].to_i + counts[ErrorGroup.statuses.fetch(status)].to_i
+  end
+
+  def postgres_rollup(events, project_id)
+    counts = event_type_counts(events.group(:event_type).count)
+    {
+      event_type_counts: counts,
+      active_project_ids: counts.values.sum.positive? ? [ project_id ] : [],
+      activity_event_counts: { project_id => counts.except("error").values.sum },
+      latest_event_at_by_project: { project_id => events.maximum(:occurred_at) }.compact
+    }
   end
 end

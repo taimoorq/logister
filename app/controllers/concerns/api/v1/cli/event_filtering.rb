@@ -15,10 +15,10 @@ module Api::V1::Cli::EventFiltering
 
   private
 
-  def apply_event_common_filters(scope)
+  def apply_event_common_filters(scope, time_range: nil)
     scope = apply_event_type_filter(scope)
     scope = apply_event_level_filter(scope)
-    scope = apply_event_time_filters(scope)
+    scope = apply_event_time_filters(scope, time_range:)
     scope = apply_event_context_filters(scope)
     scope = apply_event_status_filter(scope, params[:status])
     scope = apply_event_min_duration_filter(scope, params[:min_duration_ms])
@@ -29,27 +29,34 @@ module Api::V1::Cli::EventFiltering
     requested = (params[:event_type].presence || params[:type].presence).to_s
     return scope if requested.blank? || requested == "all"
 
-    event_types = comma_separated_values(requested).select { |type| IngestEvent.event_types.key?(type) }
+    event_types = comma_separated_values(requested)
+    unknown = event_types - IngestEvent.event_types.keys
+    if unknown.any?
+      raise Logister::CliQuery::InvalidParameter.new("unknown event type: #{unknown.join(', ')}", parameter: "type")
+    end
+
     event_types.any? ? scope.where(event_type: event_types) : scope
   end
 
   def apply_event_level_filter(scope)
     levels = comma_separated_values(params[:level])
+    if levels.length > 10 || levels.any? { |level| level.length > 32 }
+      raise Logister::CliQuery::InvalidParameter.new("level contains too many or oversized values", parameter: "level")
+    end
     levels.any? ? scope.where(level: levels) : scope
   end
 
-  def apply_event_time_filters(scope)
-    since = cli_since
-    until_time = parse_cli_time(params[:until])
-    scope = scope.where("occurred_at >= ?", since) if since.present?
-    scope = scope.where("occurred_at <= ?", until_time) if until_time.present?
-    scope
+  def apply_event_time_filters(scope, time_range:)
+    since_at, until_at = time_range || cli_time_range
+    scope.where(occurred_at: since_at...until_at)
   end
 
   def apply_event_context_filters(scope)
     environment = params[:environment].presence || params[:env].presence
+    environment = Logister::CliQuery.text(environment, parameter: "environment", max: 100)
+    release = Logister::CliQuery.text(params[:release], parameter: "release", max: 200)
     scope = scope.where("COALESCE(NULLIF(context->>'environment', ''), 'production') = ?", environment) if environment.present?
-    scope = scope.where("context->>'release' = ?", params[:release]) if params[:release].present?
+    scope = scope.where("context->>'release' = ?", release) if release.present?
     scope = apply_trace_id_filter(scope)
     apply_request_id_filter(scope)
   end
@@ -57,24 +64,31 @@ module Api::V1::Cli::EventFiltering
   def apply_trace_id_filter(scope)
     return scope if params[:trace_id].blank?
 
+    trace_id = Logister::CliQuery.text(params[:trace_id], parameter: "trace_id", max: 128)
+
     scope.where(
       "context->>'trace_id' = ? OR context->>'traceId' = ? OR context->'trace'->>'traceId' = ?",
-      params[:trace_id], params[:trace_id], params[:trace_id]
+      trace_id, trace_id, trace_id
     )
   end
 
   def apply_request_id_filter(scope)
     return scope if params[:request_id].blank?
 
+    request_id = Logister::CliQuery.text(params[:request_id], parameter: "request_id", max: 200)
+
     scope.where(
       "context->>'request_id' = ? OR context->>'requestId' = ? OR context->'trace'->>'requestId' = ?",
-      params[:request_id], params[:request_id], params[:request_id]
+      request_id, request_id, request_id
     )
   end
 
   def apply_event_status_filter(scope, status)
     normalized = status.to_s.strip.downcase
     return scope if normalized.blank? || normalized == "all"
+    if normalized.length > 64
+      raise Logister::CliQuery::InvalidParameter.new("status must be at most 64 characters", parameter: "status")
+    end
 
     case normalized
     when "errored", "error", "failed"
@@ -114,18 +128,21 @@ module Api::V1::Cli::EventFiltering
 
   def apply_event_min_duration_filter(scope, minimum)
     raw = minimum.to_s.strip
-    return scope unless raw.match?(/\A[0-9]+(\.[0-9]+)?\z/)
+    return scope if raw.blank?
+
+    parsed = Logister::CliQuery.decimal(raw, parameter: "min_duration_ms", min: 0, max: 86_400_000)
 
     condition_sql = [
       "(", EVENT_DURATION_SQL, ") ~ :numeric_pattern AND (",
       EVENT_DURATION_SQL, ")::numeric >= :minimum"
     ].join
-    scope.where(condition_sql, numeric_pattern: NUMERIC_PATTERN, minimum: raw.to_f)
+    scope.where(condition_sql, numeric_pattern: NUMERIC_PATTERN, minimum: parsed)
   end
 
   def apply_event_text_filter(scope, query)
     return scope if query.blank?
 
+    query = Logister::CliQuery.text(query, parameter: "q", max: 200)
     term = "%#{ActiveRecord::Base.sanitize_sql_like(query.downcase)}%"
     scope.where(
       <<~SQL.squish,

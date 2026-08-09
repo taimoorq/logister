@@ -1398,7 +1398,8 @@ class ProjectInsights
       key = key.to_s
       key.match?(ATTRIBUTE_KEY_PATTERN) &&
         key == canonical_attribute_key(key) &&
-        !RESERVED_ATTRIBUTE_KEYS.include?(key)
+        !RESERVED_ATTRIBUTE_KEYS.include?(key) &&
+        !Logister::TelemetryRedactor.sensitive_key?(key)
     end
 
     def canonical_attribute_key(key)

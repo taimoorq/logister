@@ -23,11 +23,10 @@ module IngestEventDetailing
       sql_fragments = match_conditions.map { |condition| "(#{condition[:sql]})" }.join(" OR ")
       bind_values = match_conditions.flat_map { |condition| condition[:values] }
 
-      logs.where(project: project, occurred_at: start_time..end_time)
-          .where([ sql_fragments, *bind_values ])
-          .order(occurred_at: :desc)
-          .limit(limit)
-          .to_a
+      scope = logs.where(project: project, occurred_at: start_time..end_time)
+                  .where([ sql_fragments, *bind_values ])
+      scope = yield(scope) if block_given?
+      scope.order(occurred_at: :desc).limit(limit).to_a
     end
 
     def dashboard_error_views(events)

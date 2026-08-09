@@ -22,6 +22,7 @@ class CliDeviceAuthorization < ApplicationRecord
   before_validation :normalize_fields
 
   validates :uuid, :device_code_digest, :user_code_digest, :user_code_display, :client_name, :expires_at, presence: true
+  validates :client_name, length: { maximum: 80 }
   validates :uuid, :device_code_digest, :user_code_digest, uniqueness: true
   validate :requested_scopes_are_supported
 

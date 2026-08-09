@@ -4,20 +4,20 @@
     <meta charset="utf-8">
     <title>Logister CLI | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.">
+    <meta name="description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, traces, monitors, deployments, Insights, metrics, grouped issues, and AI context from a hosted or self-hosted server.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://logister.org/docs/cli/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Logister CLI | Logister">
-    <meta property="og:description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.">
+    <meta property="og:description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, traces, monitors, deployments, Insights, metrics, grouped issues, and AI context from a hosted or self-hosted server.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://logister.org/docs/cli/">
     <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Logister CLI | Logister">
-    <meta name="twitter:description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.">
+    <meta name="twitter:description" content="Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, traces, monitors, deployments, Insights, metrics, grouped issues, and AI context from a hosted or self-hosted server.">
     <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-cli","https://www.npmjs.com/package/logister-cli"]},{"@type":"TechArticle","@id":"https://logister.org/docs/cli/#article","headline":"Use the Logister CLI to inspect project telemetry from a terminal.","name":"Logister CLI | Logister","url":"https://logister.org/docs/cli/","description":"Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, logs, grouped issues, and AI context bundles from a hosted or self-hosted server.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"about":[{"@type":"Thing","name":"Command line tools"},{"@type":"Thing","name":"Telemetry investigation"},{"@type":"Thing","name":"CLI access tokens"},{"@type":"Thing","name":"AI debugging context"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Logister CLI","item":"https://logister.org/docs/cli/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister","https://github.com/taimoorq/logister-cli","https://www.npmjs.com/package/logister-cli"]},{"@type":"TechArticle","@id":"https://logister.org/docs/cli/#article","headline":"Use the Logister CLI to inspect project telemetry from a terminal.","name":"Logister CLI | Logister","url":"https://logister.org/docs/cli/","description":"Install the Logister CLI with npm, Homebrew, or Scoop, then inspect projects, events, traces, monitors, deployments, Insights, metrics, grouped issues, and AI context from a hosted or self-hosted server.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"about":[{"@type":"Thing","name":"Command line tools"},{"@type":"Thing","name":"Telemetry investigation"},{"@type":"Thing","name":"CLI access tokens"},{"@type":"Thing","name":"AI debugging context"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Beginner","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Logister CLI","item":"https://logister.org/docs/cli/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
     <link rel="alternate" type="text/plain" href="/docs/llms-full.txt" title="LLMs full context">
     <link rel="icon" href="/docs/assets/icon.png" type="image/png">
@@ -132,7 +132,7 @@
               <p class="eyebrow">When to use it</p>
               <h2>Use the CLI when reading project data from a terminal is faster than opening the web UI.</h2>
               <p>
-                The CLI is useful for quick checks during deploys, scripted investigations, support handoffs, and AI-assisted debugging. It can list projects available to your account, summarize recent telemetry, inspect events and redacted logs, list grouped issues, export issue details, and request minimized AI context bundles for an error group.
+                The CLI is useful for quick checks during deploys, scripted investigations, support handoffs, and AI-assisted debugging. It can list projects available to your account, summarize recent telemetry, inspect events, traces, monitors, deployments, Insights, metrics, and redacted logs, list grouped issues, export issue details, and request minimized AI context bundles for an error group.
               </p>
               <p>
                 It does not replace SDKs or the HTTP API. Ruby, .NET, Python, JavaScript, Android, iOS, CFML, Cloudflare Pages, and custom clients still send telemetry into Logister. The CLI reads selected data back out with a user-approved read token.
@@ -143,7 +143,7 @@
               <p class="eyebrow">Before you start</p>
               <h2>Have a Logister host, account, and project ready.</h2>
               <ul>
-                <li>Node.js 20 or newer for the npm package.</li>
+                <li>Node.js 22 or newer for the npm package.</li>
                 <li>A hosted or self-hosted Logister URL, such as <code>https://logister.example.com</code>.</li>
                 <li>A Logister user account with access to at least one active project.</li>
                 <li>Server support for CLI device authorization and CLI access tokens. Use <code>logister doctor</code> to confirm.</li>
@@ -285,6 +285,7 @@ pnpm add -g logister-cli</code></pre>
   --token-stdin</code></pre>
               </div>
               <p>Saved tokens use macOS Keychain when available and fall back to a local <code>0600</code> config file on other platforms.</p>
+              <div class="note tip"><h4>Log in again after new read groups are enabled</h4><p>Existing tokens keep their original scopes. If <code>auth status</code> or a <code>403</code> response reports a missing scope such as <code>traces:read</code>, start a new browser-approved login and review the requested scopes before approving it.</p></div>
             </section>
 
             <section id="verify" class="section">
@@ -300,7 +301,7 @@ logister auth status
 logister projects list</code></pre>
               </div>
               <p>
-                <code>doctor</code> reports the local CLI version, active profile, configured host, token presence, and the server feature map. It does not print the token value. A healthy first run should show the Logister server version, recommended CLI version, and enabled features such as projects, events, logs, error groups, and AI context bundles.
+                <code>doctor</code> reports the local CLI version, active profile, configured host, token presence, and the server feature map. <code>auth status</code> uses the safe session endpoint to show token expiry, effective project access, and missing recommended scopes. Neither command prints the token value.
               </p>
             </section>
 
@@ -323,6 +324,22 @@ logister events show &lt;event-id&gt; --project &lt;project&gt;
 logister logs list --project &lt;project&gt; --level warn,error
 logister logs tail --project &lt;project&gt; --follow</code></pre>
               </div>
+              <p>Use the API 3.5 read groups when the server reports them as enabled:</p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-v1-read-commands">Copy</button>
+                </div>
+                <pre><code id="cli-v1-read-commands">logister traces list --project &lt;project&gt; --since 1h
+logister traces show &lt;trace-id&gt; --project &lt;project&gt;
+logister monitors list --project &lt;project&gt; --status missed
+logister monitors show &lt;monitor-uuid&gt; --project &lt;project&gt;
+logister deployments list --project &lt;project&gt; --since 7d
+logister deployments show &lt;deployment-uuid&gt; --project &lt;project&gt;
+logister insights summary --project &lt;project&gt; --window 24h
+logister metrics catalog --project &lt;project&gt; --window 24h
+logister metrics query --project &lt;project&gt; --metric events.total --window 24h</code></pre>
+              </div>
               <p>Use grouped issue commands when you already know the failing error group:</p>
               <div class="code-block">
                 <div class="code-head">
@@ -336,6 +353,9 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
               </div>
               <p>
                 <code>issues context</code> returns a minimized, server-redacted bundle designed for AI coding tools. It is still project data, so review the output before pasting it into any external tool.
+              </p>
+              <p>
+                List commands accept <code>--limit</code>, <code>--cursor</code>, and <code>--all</code>. JSON keeps the server envelope, while NDJSON with <code>--all</code> streams records page by page. Event and log follow mode advances the server's opaque <code>poll_cursor</code>, so late-created events and records that share a timestamp are not skipped.
               </p>
               <table>
                 <thead>
@@ -369,7 +389,7 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
               <p class="eyebrow">Capabilities</p>
               <h2>The CLI checks what your server exposes before running feature-specific commands.</h2>
               <p>
-                Logister servers publish their CLI feature map at <code>/api/v1/cli/capabilities</code>. Current servers support the first read slice: projects, project summaries, events, logs, error groups, issue export, and AI context bundles. Other command groups are scaffolded in the CLI but stay disabled until the server exposes those read or write capabilities.
+                Logister servers publish their CLI feature map at <code>/api/v1/cli/capabilities</code>. API contract 3.5 adds read routes for traces, monitors, deployments, Insights, and metrics. Self-hosters deploy those routes with discovery disabled, publish and verify CLI <code>v1.0.0</code>, then enable each group at runtime. Older servers continue to expose the original projects, summaries, events, logs, issues, and AI context slice.
               </p>
               <table>
                 <thead>
@@ -402,8 +422,8 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                   </tr>
                   <tr>
                     <td>Traces, monitors, deployments, insights, and metrics</td>
-                    <td>Feature-gated</td>
-                    <td>The CLI has command scaffolding, but current servers report these features as unavailable.</td>
+                    <td>API 3.5, runtime-gated</td>
+                    <td>Routes and read scopes ship in 3.5. Operators enable the five <code>LOGISTER_CLI_FEATURE_*</code> flags only after the v1 package channels are verified.</td>
                   </tr>
                   <tr>
                     <td>Error group mutations</td>
@@ -422,8 +442,8 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                 <li>Tokens are scope-limited, project-limited, expiring, revocable, and audited by the Logister server.</li>
                 <li>Browser-approved login issues a CLI token through the signed-in Logister web session.</li>
                 <li>Project ingest API keys are not accepted for CLI reads.</li>
-                <li>CLI output redacts sensitive-looking fields by default.</li>
-                <li>Use <code>--no-redact</code> only when you intentionally need raw payloads and have permission to view them.</li>
+                <li>The server always redacts sensitive-looking telemetry fields and bounds list/detail payloads.</li>
+                <li><code>--no-redact</code> disables only the CLI's additional local redaction; it cannot restore values removed by the server.</li>
               </ul>
               <div class="note warn"><h4>Do not paste secrets into issues</h4><p>When reporting CLI bugs, include the CLI version, install method, OS, shell, server version from <code>logister doctor</code>, command shape, and error message. Do not include tokens, authorization headers, cookies, private telemetry, customer payloads, local config files, or exploit details.</p></div>
             </section>
@@ -454,6 +474,10 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                   <tr>
                     <td>No projects are visible</td>
                     <td>Confirm the signed-in account has active project access. If you approved selected projects, start a new login and include the missing project.</td>
+                  </tr>
+                  <tr>
+                    <td><code>403</code> with <code>required_scopes</code></td>
+                    <td>The token predates that read group or was approved with fewer scopes. Run <code>logister auth login</code> again and review the requested read scopes.</td>
                   </tr>
                   <tr>
                     <td>Missing project error</td>

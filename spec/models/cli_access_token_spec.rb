@@ -49,4 +49,20 @@ RSpec.describe CliAccessToken, type: :model do
     expect(token.errors[:scopes]).to include("contains unsupported values: admin:everything")
     expect(token.errors[:allowed_project_ids].join).to include(other_project.id.to_s)
   end
+
+  it "throttles durable last-used writes to once every five minutes" do
+    token = create(:cli_access_token)
+    recent = 1.minute.ago
+    token.update_column(:last_used_at, recent)
+
+    token.touch_last_used!
+    expect(token.reload.last_used_at).to be_within(0.001).of(recent)
+
+    stale = 6.minutes.ago
+    token.update_column(:last_used_at, stale)
+    travel_to Time.current.change(usec: 123_456) do
+      token.touch_last_used!
+      expect(token.reload.last_used_at).to be_within(0.001).of(Time.current)
+    end
+  end
 end

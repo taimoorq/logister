@@ -17,6 +17,40 @@ RSpec.describe ProjectInboxQuery do
     end
   end
 
+  describe "cache failure handling" do
+    it "does not execute a failed database computation twice" do
+      calls = 0
+
+      expect do
+        described_class.new(project: project).send(:cache_fetch, "failing-query", expires_in: 1.minute) do
+          calls += 1
+          raise "query failed"
+        end
+      end.to raise_error(RuntimeError, "query failed")
+
+      expect(calls).to eq(1)
+    end
+
+    it "returns an already-computed value when the cache write fails" do
+      cache = Class.new do
+        def fetch(_key, **)
+          yield
+          raise "cache write failed"
+        end
+      end.new
+      allow(Rails).to receive(:cache).and_return(cache)
+      calls = 0
+
+      value = described_class.new(project: project).send(:cache_fetch, "failed-write", expires_in: 1.minute) do
+        calls += 1
+        { ok: true }
+      end
+
+      expect(value).to eq(ok: true)
+      expect(calls).to eq(1)
+    end
+  end
+
   it "sorts by the change in daily occurrence velocity" do
     hot = grouped_android_event(message: "Hot first", release: "3.0.0+30", mechanism: "handled_exception", device: "Pixel", fingerprint: "hot", occurred_at: Time.current)
     grouped_android_event(message: "Hot second", release: "3.0.0+30", mechanism: "handled_exception", device: "Pixel", fingerprint: "hot", occurred_at: Time.current - 1.hour)

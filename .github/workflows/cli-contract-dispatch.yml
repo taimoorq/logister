@@ -1,11 +1,15 @@
 name: CLI Contract Dispatch
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - docs/openapi.yaml
+
+permissions:
+  contents: read
 
 jobs:
   dispatch:
@@ -15,9 +19,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.LOGISTER_CLI_SYNC_TOKEN }}
         run: |
+          set -euo pipefail
           if [ -z "${GH_TOKEN:-}" ]; then
-            echo "LOGISTER_CLI_SYNC_TOKEN is not configured; skipping CLI contract dispatch."
-            exit 0
+            echo "LOGISTER_CLI_SYNC_TOKEN is required to dispatch the CLI contract sync." >&2
+            echo "Configure a dedicated fine-grained bot PAT with access to taimoorq/logister-cli." >&2
+            exit 1
           fi
 
           gh api repos/taimoorq/logister-cli/dispatches \

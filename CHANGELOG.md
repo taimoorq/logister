@@ -2,6 +2,27 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.5 - 2026-08-09
+
+### Added
+
+- Added read-only CLI API routes for token/session diagnostics, traces, check-in monitors, deployments, Insights summaries, metric catalogs, and exact single-metric queries.
+- Added project- and filter-bound cursor pagination, reliable created-at event polling for follow mode, bounded server-redacted event/trace responses, and stable public UUIDs for check-in monitors.
+- Added coverage-aware ClickHouse trace and analytics reads with PostgreSQL fallback, shared web/CLI Insights caching, and per-token CLI read limits with retry headers.
+
+### Changed
+
+- Expanded browser-approved CLI tokens with read-only scopes for traces, monitors, deployments, Insights, and metrics while leaving error-group mutations outside the default scope set.
+- Hardened existing CLI project, event, summary, and issue reads with strict ranges, limits, searches, signed cursors, neutral tenant-safe errors, semantic redaction, and throttled token-use writes.
+- Published OpenAPI contract 3.5. New capability flags are runtime-configurable and fail closed unless explicitly enabled.
+
+### Upgrade Notes
+
+- Run database migrations before restarting web and worker processes. The monitor UUID backfill is batched, cursor indexes are built concurrently per telemetry partition, and interrupted index builds resume from compatible completed children.
+- Deploy with `LOGISTER_CLI_FEATURE_TRACES`, `LOGISTER_CLI_FEATURE_MONITORS`, `LOGISTER_CLI_FEATURE_DEPLOYMENTS`, `LOGISTER_CLI_FEATURE_INSIGHTS`, and `LOGISTER_CLI_FEATURE_METRICS` unset or `false`. Enable them only after CLI `v1.0.0` is published and verified through every supported package channel.
+- Keep `LOGISTER_CLI_RECOMMENDED_VERSION=0.1.2` during the disabled-capability deployment. Change it to `1.0.0` only after npm, GitHub Releases, Homebrew, and Scoop all serve the verified immutable release.
+- Existing CLI tokens retain their previous scopes. Users must log in again before using a newly enabled read group.
+
 ## v3.4 - 2026-07-26
 
 ### Added

@@ -136,6 +136,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       namespace :cli do
         get :capabilities, to: "capabilities#show"
+        get :session, to: "sessions#show"
         resources :device_authorizations, only: :create do
           post :token, on: :collection
         end
@@ -146,10 +147,19 @@ Rails.application.routes.draw do
         end
         get "projects/:project_uuid/events", to: "events#index"
         get "projects/:project_uuid/events/:uuid", to: "events#show"
+        get "projects/:project_uuid/traces", to: "traces#index"
+        get "projects/:project_uuid/traces/:trace_id", to: "traces#show"
         get "projects/:project_uuid/error_groups", to: "error_groups#index"
         get "projects/:project_uuid/error_groups/:uuid", to: "error_groups#show"
         get "projects/:project_uuid/error_groups/:uuid/export", to: "error_groups#export"
         get "projects/:project_uuid/error_groups/:uuid/context", to: "error_groups#context"
+        get "projects/:project_uuid/monitors", to: "monitors#index"
+        get "projects/:project_uuid/monitors/:uuid", to: "monitors#show"
+        get "projects/:project_uuid/deployments", to: "deployments#index"
+        get "projects/:project_uuid/deployments/:uuid", to: "deployments#show"
+        get "projects/:project_uuid/insights", to: "insights#show"
+        get "projects/:project_uuid/metrics/catalog", to: "metrics#catalog"
+        get "projects/:project_uuid/metrics/query", to: "metrics#query"
       end
 
       resources :ingest_events, only: :create do

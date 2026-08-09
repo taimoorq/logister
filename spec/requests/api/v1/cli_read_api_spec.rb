@@ -22,7 +22,7 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       get "/api/v1/cli/projects"
 
       expect(response).to have_http_status(:unauthorized)
-      expect(response.parsed_body).to eq("error" => "Unauthorized")
+      expect(response.parsed_body).to include("error" => "Unauthorized", "code" => "unauthorized")
     end
 
     it "does not accept project ingest API keys as read credentials" do
@@ -44,6 +44,43 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
 
       expect(response).to have_http_status(:forbidden)
       expect(response.parsed_body["required_scopes"]).to eq([ "events:read" ])
+    end
+
+    it "rate limits authenticated reads per token without using the raw token as a cache key" do
+      cache = ActiveSupport::Cache::MemoryStore.new
+      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(cache)
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("LOGISTER_CLI_READ_RATE_LIMIT_REQUESTS", "600").and_return("1")
+      allow(ENV).to receive(:fetch).with("LOGISTER_CLI_READ_RATE_LIMIT_PERIOD_SECONDS", "60").and_return("60")
+
+      get "/api/v1/cli/projects", headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(response.headers).to include(
+        "X-RateLimit-Limit" => "1",
+        "X-RateLimit-Remaining" => "0"
+      )
+
+      get "/api/v1/cli/projects", headers: headers
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.parsed_body["code"]).to eq("rate_limited")
+      expect(response.headers["Retry-After"].to_i).to be_positive
+      expect(response.headers["X-RateLimit-Reset"].to_i).to be > Time.current.to_i
+
+      keys = cache.instance_variable_get(:@data).keys
+      expect(keys.join).not_to include(cli_token.plain_token)
+    end
+
+    it "fails open when the CLI read rate-limit cache is unavailable" do
+      cache = Class.new do
+        def increment(*)
+          raise "cache unavailable"
+        end
+      end.new
+      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(cache)
+
+      get "/api/v1/cli/projects", headers: headers
+
+      expect(response).to have_http_status(:ok)
     end
   end
 
@@ -99,7 +136,7 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       )
       create(:ingest_event, :metric, project: project, api_key: api_key, message: "queue.depth")
 
-      get "/api/v1/cli/projects/#{project.uuid}/events", params: { type: "log", q: "payment" }, headers: headers
+      get "/api/v1/cli/projects/#{project.uuid}/events", params: { type: "log", q: "payment", include_context: true }, headers: headers
 
       expect(response).to have_http_status(:ok)
       event = response.parsed_body["items"].sole
@@ -171,7 +208,7 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       expect(response).to have_http_status(:ok)
       detail = response.parsed_body
       expect(detail.dig("error_group", "title")).to eq("Checkout failed")
-      expect(detail.dig("related_logs", 0, "context", "password")).to eq("[REDACTED]")
+      expect(detail.dig("related_logs", 0)).not_to have_key("context")
 
       get "/api/v1/cli/projects/#{project.uuid}/error_groups/#{group.uuid}/context", headers: headers
 
