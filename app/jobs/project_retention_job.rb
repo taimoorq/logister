@@ -1,5 +1,5 @@
 class ProjectRetentionJob < ApplicationJob
-  queue_as :default
+  queue_as :maintenance
 
   discard_on ActiveRecord::RecordNotFound
 

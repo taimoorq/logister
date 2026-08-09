@@ -8,8 +8,8 @@ RSpec.describe BackfillErrorGroupsJob, type: :job do
   let(:project) { projects(:one) }
   let(:api_key) { api_keys(:one) }
 
-  it "enqueues with default queue" do
-    expect(described_class.new.queue_name).to eq("default")
+  it "enqueues with the isolated maintenance workload" do
+    expect(described_class.new.queue_name).to eq("maintenance")
   end
 
   it "groups ungrouped error events via ErrorGroupingService" do

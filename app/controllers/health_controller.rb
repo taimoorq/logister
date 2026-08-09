@@ -18,5 +18,7 @@ class HealthController < ApplicationController
         schema: schema_status.slice(:healthy, :database, :missing_tables, :present_tables, :event_type_columns, :schema_issues)
       }, status: :service_unavailable
     end
+  ensure
+    client&.close
   end
 end

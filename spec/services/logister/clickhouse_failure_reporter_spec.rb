@@ -51,6 +51,16 @@ RSpec.describe Logister::ClickhouseFailureReporter do
     expect(Logister).to have_received(:report_metric).once
   end
 
+  it "throttles failures whose only differences are row payload and timestamp" do
+    first_error = Logister::ClickhouseClient::Error.new('row 1234567 failed at 2026-08-08T12:00:00Z {"event_id":"cdd9c1bc-0de2-4e18-927f-3ca07133c111"}')
+    second_error = Logister::ClickhouseClient::Error.new('row 7654321 failed at 2026-08-09T13:00:00Z {"event_id":"7274cb13-c522-4504-9c80-3b208a474eee"}')
+
+    expect(described_class.report_event_failure(1, first_error)).to be(true)
+    expect(described_class.report_event_failure(2, second_error)).to be(false)
+
+    expect(Logister).to have_received(:report_log).once
+  end
+
   it "uses the event failure preset helper" do
     expect(described_class.report_event_failure(456, error)).to be(true)
 

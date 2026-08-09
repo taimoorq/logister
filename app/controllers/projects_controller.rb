@@ -66,17 +66,21 @@ class ProjectsController < ApplicationController
   end
 
   def restore
+    if @project.purge_pending?
+      redirect_to projects_path(filter: "archived"), alert: "This project is already queued for permanent deletion and cannot be restored."
+      return
+    end
+
     @project.restore!
     redirect_to project_path(@project), notice: "Project #{@project.name} is active again."
   end
 
   def destroy
-    project_name = @project.name
-
-    if @project.destroy
-      redirect_to projects_path, notice: "Project #{project_name} was deleted."
-    else
-      redirect_to project_path(@project), alert: @project.errors.full_messages.to_sentence.presence || "Project could not be deleted."
-    end
+    purge = Logister::ProjectPurgeRequest.new(project: @project, requested_by: current_user).call
+    redirect_to projects_path,
+                notice: "Project #{@project.name} was disabled and queued for permanent deletion (purge ##{purge.id})."
+  rescue ActiveRecord::RecordInvalid => error
+    redirect_to project_path(@project),
+                alert: error.record.errors.full_messages.to_sentence.presence || "Project could not be queued for deletion."
   end
 end

@@ -19,19 +19,38 @@ module AppleSymbols
     def call
       validate_upload!
       checksums = checksums_for(upload)
-      artifact = project.apple_symbol_artifacts.new(
-        attributes.slice(:app_identifier, :version_name, :version_code, :release, :binary_uuid, :architecture).merge(
-          uploaded_by: uploaded_by,
-          checksum_sha256: checksums.fetch(:sha256),
-          byte_size: upload.size,
-          filename: upload.original_filename.to_s,
-          content_type: upload.content_type.to_s,
-          storage_key: storage_key,
-          status: "uploaded"
+      artifact = nil
+      Project.transaction(requires_new: true) do
+        locked_project = Project.lock.find_by(id: project.id)
+        if locked_project.nil? || locked_project.purge_pending?
+          raise Error, "Project purge is pending; symbol uploads are disabled"
+        end
+
+        artifact = locked_project.apple_symbol_artifacts.new(
+          attributes.slice(:app_identifier, :version_name, :version_code, :release, :binary_uuid, :architecture).merge(
+            uploaded_by: uploaded_by,
+            checksum_sha256: checksums.fetch(:sha256),
+            byte_size: upload.size,
+            filename: upload.original_filename.to_s,
+            content_type: upload.content_type.to_s,
+            storage_key: storage_key,
+            status: "uploaded",
+            metadata: {
+              "storage_locator" => InstanceConfiguration::ArchiveService.locator_for(storage_service)
+            }
+          )
         )
-      )
-      artifact.save!
-      upload_private_object!(artifact.storage_key, checksums.fetch(:md5))
+        artifact.save!
+        upload_private_object!(artifact.storage_key, checksums.fetch(:md5))
+        artifact.update!(
+          metadata: artifact.metadata.merge(
+            "object_version_id" => InstanceConfiguration::ArchiveService.object_version_id(
+              storage_service,
+              artifact.storage_key
+            )
+          )
+        )
+      end
       AppleSymbolArtifactProcessingJob.perform_later(artifact.id)
       artifact
     rescue StandardError

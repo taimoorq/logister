@@ -65,7 +65,9 @@ class AppleSymbolArtifact < ApplicationRecord
   end
 
   def delete_private_object
-    InstanceConfiguration::ArchiveService.build.delete(storage_key)
+    locator = metadata.is_a?(Hash) ? metadata["storage_locator"] : nil
+    service = InstanceConfiguration::ArchiveService.build(locator: locator)
+    InstanceConfiguration::ArchiveService.delete_all_versions!(service, storage_key)
   rescue StandardError => error
     Rails.logger.warn("apple symbol object delete failed key=#{storage_key.inspect}: #{error.class} #{error.message}")
   end

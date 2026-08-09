@@ -119,6 +119,17 @@ RSpec.describe MobileIngestToken, type: :model do
     end
   end
 
+  describe "#touch_last_used!" do
+    it "coalesces activity writes while keeping the newest persisted interval" do
+      token = create(:mobile_ingest_token)
+      first_touch = Time.zone.parse("2026-08-08 12:00:00 UTC")
+
+      expect(token.touch_last_used!(now: first_touch)).to be(true)
+      expect(token.touch_last_used!(now: first_touch + 1.minute)).to be(false)
+      expect(token.reload.last_used_at).to be_within(1.second).of(first_touch)
+    end
+  end
+
   describe "#context_bindings" do
     it "includes only present immutable bindings" do
       token = build(:mobile_ingest_token, release: nil, session_id: nil)

@@ -1,6 +1,8 @@
 require_relative "boot"
 
 require "rails/all"
+require_relative "../app/middleware/client_submissions/pre_auth_ip_guard"
+require_relative "../app/middleware/client_submissions/single_event_body_limiter"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -29,6 +31,11 @@ module Logister
 
     # PostgreSQL partitioning and advanced indexes are represented more reliably in structure.sql.
     config.active_record.schema_format = :sql
+
+    # Protect telemetry intake before Rails parses JSON or performs credential lookups.
+    # RemoteIp stays ahead of the guard so proxy-aware source identities remain accurate.
+    config.middleware.insert_after ActionDispatch::RemoteIp, ClientSubmissions::PreAuthIpGuard
+    config.middleware.insert_after ClientSubmissions::PreAuthIpGuard, ClientSubmissions::SingleEventBodyLimiter
 
     # Generate RSpec specs instead of Minitest tests
     config.generators do |g|

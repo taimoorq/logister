@@ -4,11 +4,29 @@ require "rails_helper"
 
 RSpec.describe InstanceConfiguration, type: :model do
   around do |example|
-    original = ENV["REDIS_URL"]
-    ENV.delete("REDIS_URL")
+    redis_keys = %w[REDIS_URL REDIS_CACHE_URL REDIS_RATE_LIMIT_URL REDIS_SIDEKIQ_URL]
+    original = ENV.to_h.slice(*redis_keys)
+    redis_keys.each { |key| ENV.delete(key) }
     example.run
   ensure
-    ENV["REDIS_URL"] = original
+    redis_keys.each { |key| ENV.delete(key) }
+    original.each { |key, value| ENV[key] = value }
+  end
+
+  it "supports independent Redis roles with backward-compatible shared fallback" do
+    ENV["REDIS_URL"] = "redis://shared.example/0"
+
+    expect(described_class.redis_url(:cache)).to eq("redis://shared.example/0")
+    expect(described_class.redis_url(:rate_limit)).to eq("redis://shared.example/0")
+    expect(described_class.redis_url(:sidekiq)).to eq("redis://shared.example/0")
+
+    ENV["REDIS_CACHE_URL"] = "redis://cache.example/0"
+    ENV["REDIS_RATE_LIMIT_URL"] = "redis://rate-limit.example/0"
+    ENV["REDIS_SIDEKIQ_URL"] = "redis://sidekiq.example/0"
+
+    expect(described_class.redis_url(:cache)).to eq("redis://cache.example/0")
+    expect(described_class.redis_url(:rate_limit)).to eq("redis://rate-limit.example/0")
+    expect(described_class.redis_url(:sidekiq)).to eq("redis://sidekiq.example/0")
   end
 
   it "encrypts saved values and resolves database fallbacks" do

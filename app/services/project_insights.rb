@@ -261,22 +261,63 @@ class ProjectInsights
     def catalog_for(project, window: DEFAULT_WINDOW)
       window_key = normalize_window(window)
       since = since_for(window_key)
+      ended_at = Time.current
       base_metrics = BASE_METRICS.values.map(&:dup)
+      read = Logister::ClickhouseReadRouter.call(
+        project_ids: [ project.id ],
+        signals: [ "metric" ],
+        from: since,
+        to: ended_at,
+        clickhouse: ->(client) {
+          rows = Logister::ClickhouseInsightsQuery.new(
+            project:,
+            since:,
+            to: ended_at,
+            bucket: WINDOW_OPTIONS.fetch(window_key).fetch(:bucket),
+            client:
+          ).custom_metric_rows
+          custom_metric_catalog_from_clickhouse(rows)
+        },
+        postgres: -> { custom_metric_catalog(project, since) }
+      )
 
-      base_metrics + custom_metric_catalog(project, since)
+      base_metrics + read.payload
     end
 
     def filter_options(project, window: DEFAULT_WINDOW)
-      {
-        environments: environments_for(project, window: window),
-        releases: releases_for(project, window: window),
-        attributes: attribute_catalog_for(project, window: window)
-      }
+      window_key = normalize_window(window)
+      since = since_for(window_key)
+      ended_at = Time.current
+      read = Logister::ClickhouseReadRouter.call(
+        project_ids: [ project.id ],
+        signals: Logister::ClickhouseCoverage::EVENT_SIGNALS,
+        from: since,
+        to: ended_at,
+        clickhouse: ->(client) {
+          rows = Logister::ClickhouseInsightsQuery.new(
+            project:,
+            since:,
+            to: ended_at,
+            bucket: WINDOW_OPTIONS.fetch(window_key).fetch(:bucket),
+            client:
+          ).filter_rows
+          filter_options_from_clickhouse(rows)
+        },
+        postgres: -> {
+          {
+            environments: environments_for(project, window: window_key),
+            releases: releases_for(project, window: window_key),
+            attributes: attribute_catalog_for(project, window: window_key)
+          }
+        }
+      )
+      read.payload
     end
 
     def dashboard_for(project, window:, metrics:, environment:, release:, attribute_filters: nil, catalog: nil, filter_options: nil)
       window_key = normalize_window(window)
       since = since_for(window_key)
+      ended_at = Time.current
       catalog ||= catalog_for(project, window: window_key)
       filter_options ||= self.filter_options(project, window: window_key)
       attribute_catalog = filter_options.fetch(:attributes)
@@ -297,8 +338,29 @@ class ProjectInsights
       )
       bucket = WINDOW_OPTIONS.fetch(window_key).fetch(:bucket)
       buckets = buckets_for(since, bucket)
-      summary = summary_for(scope)
-      standard_bucket_rows = standard_bucket_rows(scope, bucket)
+      read = Logister::ClickhouseReadRouter.call(
+        project_ids: [ project.id ],
+        signals: Logister::ClickhouseCoverage::EVENT_SIGNALS,
+        from: since,
+        to: ended_at,
+        clickhouse: ->(client) {
+          Logister::ClickhouseInsightsQuery.new(
+            project:,
+            since:,
+            to: ended_at,
+            bucket:,
+            environment: filters[:environment],
+            release: filters[:release],
+            attribute_filters: selected_attribute_filters,
+            custom_metric_names: custom_metric_catalog_names(catalog),
+            client:
+          ).call
+        },
+        postgres: -> { postgres_insights_payload(scope, bucket, catalog) }
+      )
+      summary = read.payload.fetch(:summary)
+      standard_bucket_rows = read.payload.fetch(:standard_bucket_rows)
+      custom_metric_rows = read.payload.fetch(:custom_metric_rows)
 
       {
         generated_at: Time.current.utc.iso8601,
@@ -313,13 +375,14 @@ class ProjectInsights
         event_type_catalog: event_type_catalog,
         event_timeline: event_timeline(standard_bucket_rows, buckets, bucket),
         event_types: event_type_breakdown(summary),
-        metric_catalog: metric_catalog_with_availability(catalog, scope, summary, standard_bucket_rows),
+        metric_catalog: metric_catalog_with_availability(catalog, summary, standard_bucket_rows, custom_metric_rows),
         selected_metrics: selected_metrics,
-        metric_series: metric_series(scope, selected_metrics, catalog, buckets, bucket, standard_bucket_rows),
+        metric_series: metric_series(selected_metrics, catalog, buckets, bucket, standard_bucket_rows, custom_metric_rows),
         environments: filter_options.fetch(:environments),
         releases: filter_options.fetch(:releases),
         attributes: attribute_catalog,
-        recent_events: recent_events(scope)
+        recent_events: recent_events(scope),
+        analytics: read.diagnostics
       }
     end
 
@@ -396,6 +459,99 @@ class ProjectInsights
     end
 
     private
+
+    def custom_metric_catalog_from_clickhouse(rows)
+      rows.flat_map do |row|
+        name = row.fetch("metric_name", "").to_s.strip
+        next [] if name.blank?
+
+        count = row.fetch("event_count", 0).to_i
+        metrics = [
+          {
+            key: custom_metric_key(name),
+            label: name.truncate(64),
+            description: "Metric event count for #{name.truncate(80)}.",
+            unit: "count",
+            kind: "count",
+            source: "Metrics",
+            category: "metrics",
+            category_label: METRIC_CATEGORY_LABELS.fetch("metrics"),
+            events: count
+          }
+        ]
+        if row.fetch("numeric_count", 0).to_i.positive?
+          metrics << {
+            key: custom_metric_value_key(name),
+            label: "Avg #{name.truncate(58)}",
+            description: "Average numeric context.value for #{name.truncate(80)}.",
+            unit: "value",
+            kind: "number",
+            source: "Metrics",
+            category: "metrics",
+            category_label: METRIC_CATEGORY_LABELS.fetch("metrics"),
+            events: row.fetch("numeric_count").to_i
+          }
+        end
+        metrics
+      end
+    end
+
+    def filter_options_from_clickhouse(rows)
+      {
+        environments: clickhouse_dimension_options(rows.fetch(:environments)),
+        releases: clickhouse_dimension_options(rows.fetch(:releases)),
+        attributes: clickhouse_attribute_catalog(rows.fetch(:attributes))
+      }
+    end
+
+    def clickhouse_dimension_options(rows)
+      rows.map do |row|
+        { name: row.fetch("name", "").to_s.presence || "unknown", count: row.fetch("count", 0).to_i }
+      end
+    end
+
+    def clickhouse_attribute_catalog(rows)
+      grouped = rows.each_with_object({}) do |row, attributes|
+        key = row.fetch("attribute_key", "").to_s
+        next unless visible_attribute_key?(key)
+
+        type = clickhouse_attribute_type(row.fetch("attribute_type", ""))
+        next unless type
+
+        value = parse_clickhouse_attribute_value(row.fetch("attribute_raw_value", ""))
+        next if value.blank?
+
+        count = row.fetch("count", 0).to_i
+        attributes[key] ||= { count: 0, values: [] }
+        attributes[key][:count] += count
+        attributes[key][:values] << { name: value, type:, count: }
+      end
+
+      grouped.sort_by { |key, payload| [ -payload[:count], key ] }
+             .first(MAX_ATTRIBUTE_KEYS)
+             .map do |key, payload|
+        {
+          key:,
+          label: attribute_label(key),
+          count: payload.fetch(:count),
+          values: payload.fetch(:values).sort_by { |value| [ -value.fetch(:count), value.fetch(:name) ] }.first(MAX_ATTRIBUTE_VALUES)
+        }
+      end
+    end
+
+    def clickhouse_attribute_type(value)
+      case value.to_s
+      when "String" then "string"
+      when "Int64", "UInt64", "Float64" then "number"
+      when "Bool" then "boolean"
+      end
+    end
+
+    def parse_clickhouse_attribute_value(raw)
+      JSON.parse(raw.to_s).to_s
+    rescue JSON::ParserError
+      nil
+    end
 
     def custom_metric_catalog(project, since)
       sampled_metrics = sampled_metric_events(project, since)
@@ -611,6 +767,65 @@ class ProjectInsights
       )
     end
 
+    def postgres_insights_payload(scope, bucket, catalog)
+      {
+        summary: summary_for(scope),
+        standard_bucket_rows: normalize_standard_bucket_rows(standard_bucket_rows(scope, bucket), bucket),
+        custom_metric_rows: postgres_custom_metric_rows(scope, bucket, catalog)
+      }
+    end
+
+    def normalize_standard_bucket_rows(rows, bucket)
+      integer_columns = %w[
+        events_total errors_count activity_count logs_count metrics_count check_ins_count
+        transactions_count transactions_duration_count db_query_count db_query_duration_count
+      ]
+      float_columns = %w[transactions_avg transactions_p95 db_query_avg db_query_p95]
+      rows.map do |row|
+        normalized = row.stringify_keys
+        normalized["bucket_time"] = bucket_timestamp(normalized.fetch("bucket_time"), bucket)
+        integer_columns.each { |column| normalized[column] = normalized.fetch(column, 0).to_i }
+        float_columns.each { |column| normalized[column] = normalized.fetch(column, 0).to_f.round(6) }
+        normalized.slice("bucket_time", *integer_columns, *float_columns)
+      end
+    end
+
+    def postgres_custom_metric_rows(scope, bucket, catalog)
+      names = custom_metric_catalog_names(catalog)
+      return [] if names.empty?
+
+      node = bucket_node(bucket)
+      value_node = numeric_context_value_node("value")
+      custom_scope = scope.where(event_type: IngestEvent.event_types.fetch("metric"), message: names)
+      rows = custom_scope.group(node, :message).count.each_with_object({}) do |((bucket_time, name), count), values|
+        key = [ bucket_timestamp(bucket_time, bucket), name.to_s ]
+        values[key] = {
+          "bucket_time" => key.first,
+          "metric_name" => key.last,
+          "event_count" => count.to_i,
+          "numeric_count" => 0,
+          "value_avg" => 0.0
+        }
+      end
+
+      average_node = Arel::Nodes::NamedFunction.new("AVG", [ value_node ])
+      custom_scope.where(value_node.not_eq(nil)).group(node, :message)
+                  .pluck(node, :message, Arel.sql("COUNT(*)"), average_node)
+                  .each do |bucket_time, name, count, average|
+        key = [ bucket_timestamp(bucket_time, bucket), name.to_s ]
+        rows[key] ||= {
+          "bucket_time" => key.first,
+          "metric_name" => key.last,
+          "event_count" => 0,
+          "numeric_count" => 0,
+          "value_avg" => 0.0
+        }
+        rows[key]["numeric_count"] = count.to_i
+        rows[key]["value_avg"] = average.to_f.round(6)
+      end
+      rows.values.sort_by { |row| [ row.fetch("bucket_time"), row.fetch("metric_name") ] }
+    end
+
     def event_bucket_rows(scope, bucket)
       bucket_sql = bucket_sql_for(bucket)
       sql = sanitized_sql_query(
@@ -784,7 +999,7 @@ class ProjectInsights
       ApplicationRecord.connection
     end
 
-    def metric_series(scope, metric_keys, catalog, buckets, bucket, standard_bucket_rows)
+    def metric_series(metric_keys, catalog, buckets, bucket, standard_bucket_rows, custom_metric_rows)
       definitions = catalog.index_by { |metric| metric.fetch(:key) }
       standard_rows = standard_bucket_rows_by_timestamp(standard_bucket_rows, bucket)
 
@@ -798,13 +1013,19 @@ class ProjectInsights
           unit: definition.fetch(:unit),
           kind: definition.fetch(:kind),
           source: definition.fetch(:source),
-          data: standard_metric_key?(metric_key) ? standard_metric_data(metric_key, standard_rows, buckets) : metric_data(scope, metric_key, buckets, bucket)
+          data: metric_series_data(metric_key, standard_rows, custom_metric_rows, buckets, bucket)
         }
       end
     end
 
     def standard_metric_key?(metric_key)
       STANDARD_METRIC_COLUMNS.key?(metric_key)
+    end
+
+    def metric_series_data(metric_key, standard_rows, custom_metric_rows, buckets, bucket)
+      return standard_metric_data(metric_key, standard_rows, buckets) if standard_metric_key?(metric_key)
+
+      custom_metric_data(metric_key, custom_metric_rows, buckets, bucket)
     end
 
     def standard_metric_data(metric_key, standard_rows, buckets)
@@ -817,8 +1038,23 @@ class ProjectInsights
       end
     end
 
-    def metric_catalog_with_availability(catalog, scope, summary, standard_bucket_rows)
-      availability = metric_availability_counts(catalog, scope, summary, standard_bucket_rows)
+    def custom_metric_data(metric_key, rows, buckets, bucket)
+      value_metric = metric_key.start_with?("metric_value:")
+      name = value_metric ? custom_metric_value_name(metric_key) : custom_metric_name(metric_key)
+      values = rows.each_with_object({}) do |row, mapped|
+        next unless row.fetch("metric_name") == name
+
+        timestamp = bucket_timestamp(row.fetch("bucket_time"), bucket)
+        mapped[timestamp] = value_metric ? row.fetch("value_avg", 0).to_f.round(2) : row.fetch("event_count", 0).to_i
+      end
+      buckets.map do |bucket_time|
+        timestamp = bucket_time.utc.iso8601
+        { timestamp:, value: values.fetch(timestamp, 0) }
+      end
+    end
+
+    def metric_catalog_with_availability(catalog, summary, standard_bucket_rows, custom_metric_rows)
+      availability = metric_availability_counts(summary, standard_bucket_rows, custom_metric_rows)
 
       catalog.map do |metric|
         matching_events = availability.fetch(metric.fetch(:key), 0)
@@ -827,7 +1063,7 @@ class ProjectInsights
       end
     end
 
-    def metric_availability_counts(catalog, scope, summary, standard_bucket_rows)
+    def metric_availability_counts(summary, standard_bucket_rows, custom_metric_rows)
       base_counts = {
         "events.total" => summary.fetch(:events, 0),
         "errors.count" => summary.fetch(:errors, 0),
@@ -839,7 +1075,7 @@ class ProjectInsights
 
       base_counts
         .merge(standard_metric_availability_counts(standard_bucket_rows))
-        .merge(custom_metric_availability_counts(catalog, scope))
+        .merge(custom_metric_availability_counts(custom_metric_rows))
     end
 
     def standard_metric_availability_counts(standard_bucket_rows)
@@ -860,20 +1096,11 @@ class ProjectInsights
       standard_bucket_rows.sum { |row| row.fetch(column, 0).to_i }
     end
 
-    def custom_metric_availability_counts(catalog, scope)
-      names = custom_metric_catalog_names(catalog)
-      return {} if names.blank?
-
-      custom_scope = scope.where(event_type: IngestEvent.event_types.fetch("metric"), message: names)
-      counts = custom_scope.group(:message).count.transform_keys(&:to_s)
-      numeric_counts = custom_scope.where(numeric_context_value_node("value").not_eq(nil))
-                                   .group(:message)
-                                   .count
-                                   .transform_keys(&:to_s)
-
-      names.each_with_object({}) do |name, availability|
-        availability[custom_metric_key(name)] = counts.fetch(name, 0)
-        availability[custom_metric_value_key(name)] = numeric_counts.fetch(name, 0)
+    def custom_metric_availability_counts(rows)
+      rows.each_with_object(Hash.new(0)) do |row, availability|
+        name = row.fetch("metric_name")
+        availability[custom_metric_key(name)] += row.fetch("event_count", 0).to_i
+        availability[custom_metric_value_key(name)] += row.fetch("numeric_count", 0).to_i
       end
     end
 

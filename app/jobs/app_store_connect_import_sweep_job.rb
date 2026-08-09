@@ -3,7 +3,7 @@
 class AppStoreConnectImportSweepJob < ApplicationJob
   include SidekiqRecurringJob
 
-  queue_as :default
+  queue_as :integrations
   sidekiq_recurring_schedule(
     key: "app_store_connect_import_sweep",
     every: 15.minutes,

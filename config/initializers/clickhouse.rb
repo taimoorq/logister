@@ -9,3 +9,5 @@ clickhouse_config.clickhouse_events_table = InstanceConfiguration.value("clickho
 clickhouse_config.clickhouse_spans_table = InstanceConfiguration.value("clickhouse.spans_table")
 clickhouse_config.clickhouse_username = InstanceConfiguration.value("clickhouse.username").presence
 clickhouse_config.clickhouse_password = InstanceConfiguration.value("clickhouse.password").to_s
+clickhouse_config.clickhouse_circuit_failure_threshold = InstanceConfiguration.value("clickhouse.circuit_failure_threshold")
+clickhouse_config.clickhouse_circuit_open_seconds = InstanceConfiguration.value("clickhouse.circuit_open_seconds")

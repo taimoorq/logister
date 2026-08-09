@@ -5,8 +5,8 @@ require "rails_helper"
 RSpec.describe ClickhouseIngestJob, type: :job do
   include ActiveJob::TestHelper
 
-  it "enqueues with default queue" do
-    expect(described_class.new.queue_name).to eq("default")
+  it "enqueues with the isolated analytics workload" do
+    expect(described_class.new.queue_name).to eq("analytics")
   end
 
   it "calls EventIngestor with event and request_context" do

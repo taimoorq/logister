@@ -2,10 +2,9 @@
 
 module Logister
   class ClickhouseSchemaRepairer
-    EVENT_ROLLUP_TABLE = "events_1m"
-    EVENT_ROLLUP_VIEW = "mv_events_1m"
     EVENTS_TABLE_PLACEHOLDER = "__LOGISTER_EVENTS_TABLE__"
     SPANS_TABLE_PLACEHOLDER = "__LOGISTER_SPANS_TABLE__"
+    NON_REPLICATED_DEDUPLICATION_WINDOW = 10_000
 
     def self.call(...)
       new(...).call
@@ -13,6 +12,7 @@ module Logister
 
     def initialize(client: nil, schema_sql: nil)
       @client = client || ClickhouseClient.new(config: migration_config)
+      @owns_client = client.nil?
       @schema_sql = schema_sql || Rails.root.join("docs/clickhouse_schema.sql").read
     end
 
@@ -22,7 +22,7 @@ module Logister
       loaded_statements = client.load_schema!(rendered_schema_sql)
       column_types = client.event_type_column_types
       repaired_columns = repair_event_type_columns(column_types)
-      rebuilt_views = rebuild_event_rollup_view_if_needed(column_types, repaired_columns)
+      deduplication_tables = enforce_insert_deduplication!
 
       client.clear_schema_cache!
       status = client.schema_status
@@ -35,9 +35,12 @@ module Logister
         enabled: true,
         loaded_statements: loaded_statements,
         repaired_columns: repaired_columns,
-        rebuilt_views: rebuilt_views,
+        rebuilt_views: [],
+        deduplication_tables: deduplication_tables,
         schema: status
       }
+    ensure
+      client.close if @owns_client
     end
 
     private
@@ -72,48 +75,25 @@ module Logister
     end
 
     def repair_event_type_columns(column_types)
-      repairable_tables.filter_map do |table_name, qualified_table_name|
-        actual_type = column_types[table_name]
-        next if actual_type.blank? || actual_type == ClickhouseClient::CANONICAL_EVENT_TYPE
+      actual_type = column_types[client.events_table]
+      return [] if actual_type.blank? || actual_type == ClickhouseClient::CANONICAL_EVENT_TYPE
 
-        client.execute!(<<~SQL.squish)
-          ALTER TABLE #{qualified_table_name}
-          MODIFY COLUMN event_type #{ClickhouseClient::CANONICAL_EVENT_TYPE}
-        SQL
-        table_name
-      end
-    end
-
-    def rebuild_event_rollup_view_if_needed(column_types, repaired_columns)
-      view_type = column_types[EVENT_ROLLUP_VIEW]
-      return [] if repaired_columns.empty? && view_type == ClickhouseClient::CANONICAL_EVENT_TYPE
-
-      client.execute!("DROP VIEW IF EXISTS #{client.qualified_table_name(EVENT_ROLLUP_VIEW)}")
-      client.execute!(event_rollup_view_sql)
-      [ EVENT_ROLLUP_VIEW ]
-    end
-
-    def repairable_tables
-      {
-        client.events_table => client.events_table_name,
-        EVENT_ROLLUP_TABLE => client.qualified_table_name(EVENT_ROLLUP_TABLE)
-      }
-    end
-
-    def event_rollup_view_sql
-      <<~SQL.squish
-        CREATE MATERIALIZED VIEW #{client.qualified_table_name(EVENT_ROLLUP_VIEW)}
-        TO #{client.qualified_table_name(EVENT_ROLLUP_TABLE)}
-        AS
-        SELECT
-          toStartOfMinute(occurred_at) AS bucket,
-          project_id,
-          event_type,
-          level,
-          sumState(toUInt64(1)) AS count
-        FROM #{client.events_table_name}
-        GROUP BY bucket, project_id, event_type, level
+      client.execute!(<<~SQL.squish)
+        ALTER TABLE #{client.events_table_name}
+        MODIFY COLUMN event_type #{ClickhouseClient::CANONICAL_EVENT_TYPE}
       SQL
+      [ client.events_table ]
+    end
+
+    def enforce_insert_deduplication!
+      table_names = [ client.events_table_name, client.spans_table_name ]
+      table_names.each do |table_name|
+        client.execute!(<<~SQL.squish)
+          ALTER TABLE #{table_name}
+          MODIFY SETTING non_replicated_deduplication_window = #{NON_REPLICATED_DEDUPLICATION_WINDOW}
+        SQL
+      end
+      table_names
     end
 
     def disabled_result
@@ -122,6 +102,7 @@ module Logister
         loaded_statements: 0,
         repaired_columns: [],
         rebuilt_views: [],
+        deduplication_tables: [],
         schema: client.schema_status
       }
     end

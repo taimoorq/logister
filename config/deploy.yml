@@ -12,6 +12,12 @@ servers:
   #   hosts:
   #     - 192.168.0.1
   #   cmd: bundle exec sidekiq -C config/sidekiq.yml
+  # For independently scalable roles, define additional worker groups with:
+  # projector: bundle exec sidekiq -q projector -c 5
+  # analytics: bundle exec sidekiq -q analytics -c 3
+  # notifications: bundle exec sidekiq -q notifications -q mailers -q default -c 3
+  # integrations: bundle exec sidekiq -q integrations -q symbols -c 2
+  # maintenance: bundle exec sidekiq -q maintenance -c 1
 
 # Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
 # If used with Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
@@ -43,6 +49,8 @@ env:
   clear:
     # Run Sidekiq as a separate worker process for background jobs.
     SIDEKIQ_CONCURRENCY: 5
+    # Each process needs a pool at least as large as its worker concurrency plus two.
+    DB_POOL: 7
 
     # Set number of cores available to the application on each server (default: 1).
     # WEB_CONCURRENCY: 2

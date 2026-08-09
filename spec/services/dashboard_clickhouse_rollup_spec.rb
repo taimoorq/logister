@@ -12,7 +12,12 @@ RSpec.describe "Dashboard ClickHouse event rollup", type: :model do
       activity_event_counts: { project.id => 7 },
       latest_event_at_by_project: { project.id => latest_event_at }
     }
-    allow(Logister::ClickhouseEventRollup).to receive(:call).and_return(rollup)
+    read = instance_double(
+      Logister::ClickhouseReadRouter::Result,
+      payload: rollup,
+      diagnostics: { source: "clickhouse" }
+    )
+    allow(Logister::ClickhouseReadRouter).to receive(:call).and_return(read)
 
     summary = Dashboard.summary_for(
       [ project.id ],
@@ -26,7 +31,8 @@ RSpec.describe "Dashboard ClickHouse event rollup", type: :model do
     expect(summary[:active_project_ids_last_24h]).to eq([ project.id ])
     expect(summary.dig(:project_stats, project.id, :activity_events)).to eq(7)
     expect(summary.dig(:project_stats, project.id, :latest_event_at)).to eq(latest_event_at)
-    expect(Logister::ClickhouseEventRollup).to have_received(:call).once
+    expect(Logister::ClickhouseReadRouter).to have_received(:call).once
+    expect(summary.dig(:analytics, :source)).to eq("clickhouse")
   end
 
   it "uses ClickHouse explorer aggregates and adds PostgreSQL error state" do
@@ -39,7 +45,13 @@ RSpec.describe "Dashboard ClickHouse event rollup", type: :model do
       projects: [ { project_id: project.id, count: 9 } ],
       environments: [ { name: "production", count: 9 } ]
     }
-    allow(Logister::ClickhouseExplorer).to receive(:call).and_return(clickhouse_payload)
+    read = instance_double(
+      Logister::ClickhouseReadRouter::Result,
+      payload: clickhouse_payload,
+      clickhouse?: true,
+      diagnostics: { source: "clickhouse" }
+    )
+    allow(Logister::ClickhouseReadRouter).to receive(:call).and_return(read)
 
     explorer = Dashboard.explorer_for([ project.id ])
 
@@ -49,6 +61,7 @@ RSpec.describe "Dashboard ClickHouse event rollup", type: :model do
       count: 9,
       open_errors: be >= 1
     )
-    expect(Logister::ClickhouseExplorer).to have_received(:call).once
+    expect(Logister::ClickhouseReadRouter).to have_received(:call).once
+    expect(explorer.dig(:analytics, :source)).to eq("clickhouse")
   end
 end

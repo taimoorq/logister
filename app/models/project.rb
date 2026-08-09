@@ -3,6 +3,7 @@ class Project < ApplicationRecord
 
   DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS = 1_200
   DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 60
+  DEFAULT_PUBLIC_API_PRE_AUTH_RATE_LIMIT_REQUESTS = 12_000
   DEFAULT_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS = 120
   MIN_PUBLIC_API_RATE_LIMIT_REQUESTS = 1
   MAX_PUBLIC_API_RATE_LIMIT_REQUESTS = 10_000_000
@@ -36,6 +37,7 @@ class Project < ApplicationRecord
 
     delegate :default_public_api_rate_limit_requests,
              :default_public_api_rate_limit_period_seconds,
+             :default_public_api_pre_auth_rate_limit_requests,
              :default_public_api_auth_failure_rate_limit_requests,
              to: "ProjectRateLimits"
     delegate :stats_for,
@@ -65,6 +67,7 @@ class Project < ApplicationRecord
   has_many :github_installations, through: :project_github_installations
   has_many :deployments, class_name: "ProjectDeployment", dependent: :destroy
   has_many :email_notification_deliveries, dependent: :destroy
+  has_many :notification_intents, dependent: :destroy
   has_one :self_monitoring_installation,
           class_name: "Installation",
           foreign_key: :self_monitoring_project_id,
@@ -72,12 +75,14 @@ class Project < ApplicationRecord
           inverse_of: :self_monitoring_project
   has_one :retention_policy, class_name: "ProjectRetentionPolicy", dependent: :destroy
   has_many :telemetry_archives, dependent: :destroy
+  has_many :project_purges, dependent: :nullify
   has_many :members, through: :project_memberships, source: :user
 
   accepts_nested_attributes_for :retention_policy
 
   before_validation :ensure_uuid
   before_validation :normalize_slug
+  before_destroy :require_purge_execution
 
   validate :integration_kind_cannot_change, on: :update
 
@@ -139,6 +144,14 @@ class Project < ApplicationRecord
     archived_at.present?
   end
 
+  def purge_pending?
+    purge_requested_at.present?
+  end
+
+  def notifications_disabled?
+    archived? || purge_pending?
+  end
+
   def archive!
     archive_time = Time.current
 
@@ -149,7 +162,24 @@ class Project < ApplicationRecord
   end
 
   def restore!
+    if purge_pending?
+      errors.add(:base, "cannot restore a project after permanent deletion has been requested")
+      raise ActiveRecord::RecordInvalid, self
+    end
+
     update!(archived_at: nil)
+  end
+
+  def destroy_for_purge!
+    unless purge_pending? && project_purges.exists?
+      errors.add(:base, "requires a durable project purge ledger before deletion")
+      raise ActiveRecord::RecordInvalid, self
+    end
+
+    @purge_execution_authorized = true
+    destroy!
+  ensure
+    @purge_execution_authorized = false
   end
 
   def integration_label
@@ -179,5 +209,12 @@ class Project < ApplicationRecord
     return unless will_save_change_to_integration_kind?
 
     errors.add(:integration_kind, "cannot be changed after project creation")
+  end
+
+  def require_purge_execution
+    return if @purge_execution_authorized
+
+    errors.add(:base, "Must be deleted through the audited project purge lifecycle")
+    throw :abort
   end
 end

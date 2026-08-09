@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+
+require "time"
+require "securerandom"
+
 class ProjectErrorDigestSchedulerJob < ApplicationJob
   queue_as :notifications
 
@@ -5,16 +10,31 @@ class ProjectErrorDigestSchedulerJob < ApplicationJob
   SCHEDULE_TTL = 2.hours.to_i
   CHECK_IN_SLUG = "logister.error_digest_scheduler"
   CHECK_IN_INTERVAL_SECONDS = 65.minutes.to_i
+  SCHEDULE_LOOKAHEAD = 4
+  STATE_TTL = 14.days.to_i
 
-  def self.ensure_scheduled!(now = Time.current)
-    run_at = next_run_at(now)
-    key = schedule_key(run_at)
-    return unless redis_set_once(key, SCHEDULE_TTL)
+  def self.ensure_scheduled!(now = Time.current, occurrences: SCHEDULE_LOOKAHEAD)
+    cursor = now
+    Integer(occurrences).times do
+      run_at = next_run_at(cursor)
+      cursor = run_at
+      key = schedule_key(run_at)
+      ttl = SCHEDULE_TTL + (run_at - now).ceil
+      marker_token = SecureRandom.uuid
+      next unless redis_set_once(key, ttl, value: marker_token)
 
-    set(wait_until: run_at).perform_later
-  rescue StandardError => e
-    Rails.logger.warn("error_digest_scheduler_schedule_failed error=#{e.class}: #{e.message}")
-    report_schedule_failure(e, run_at)
+      begin
+        enqueued_job = set(wait_until: run_at).perform_later
+        raise ActiveJob::EnqueueError, "#{name} was not enqueued" unless enqueued_job
+      rescue StandardError
+        release_schedule_marker(key, marker_token)
+        raise
+      end
+    rescue StandardError => e
+      Rails.logger.warn("error_digest_scheduler_schedule_failed error=#{e.class}: #{e.message}")
+      report_schedule_failure(e, run_at)
+      break
+    end
   end
 
   def self.next_run_at(now)
@@ -22,13 +42,74 @@ class ProjectErrorDigestSchedulerJob < ApplicationJob
     now.beginning_of_hour + 1.hour + 2.minutes
   end
 
-  def self.redis_set_once(key, ttl)
-    Sidekiq.redis { |redis| redis.set(key, "1", nx: true, ex: ttl) }
+  def self.redis_set_once(key, ttl, value: "1")
+    Sidekiq.redis { |redis| redis.set(key, value, nx: true, ex: ttl) }
+  end
+
+  def self.release_schedule_marker(key, marker_token)
+    script = <<~LUA.squish
+      if redis.call('get', KEYS[1]) == ARGV[1] then
+        return redis.call('del', KEYS[1])
+      end
+      return 0
+    LUA
+    Sidekiq.redis { |redis| redis.call("EVAL", script, 1, key, marker_token) }
+  rescue StandardError => error
+    Rails.logger.warn(
+      "error_digest_scheduler_schedule_marker_release_failed " \
+      "error=#{error.class}: #{error.message}"
+    )
+    false
   end
 
   def self.schedule_key(run_at)
     "logister:error_digest_scheduler:scheduled:#{run_at.utc.strftime('%Y%m%d%H')}"
   end
+
+  def self.recurring_status(now = Time.current, redis: nil)
+    state = with_redis(redis) { |connection| connection.hgetall(state_key) }
+    expected_at = next_run_at(now - 1.hour)
+    last_started_at = parse_state_time(state["started_at"])
+    {
+      "key" => CHECK_IN_SLUG,
+      "job_class" => name,
+      "expected_at" => expected_at.iso8601,
+      "last_started_at" => last_started_at&.iso8601,
+      "last_completed_at" => parse_state_time(state["completed_at"])&.iso8601,
+      "last_failed_at" => parse_state_time(state["failed_at"])&.iso8601,
+      "lateness_seconds" => last_started_at && last_started_at >= expected_at ? 0 : [ (now.utc - expected_at).to_i, 0 ].max
+    }
+  rescue StandardError => error
+    { "key" => CHECK_IN_SLUG, "job_class" => name, "status" => "unknown", "error_class" => error.class.name }
+  end
+
+  def self.record_execution!(field, at: Time.current)
+    with_redis do |redis|
+      redis.hset(state_key, field.to_s, at.utc.iso8601(6))
+      redis.expire(state_key, STATE_TTL)
+    end
+  rescue StandardError => error
+    Rails.logger.warn("error_digest_scheduler_state_failed error=#{error.class}: #{error.message}")
+  end
+
+  def self.with_redis(redis = nil)
+    return yield redis if redis
+
+    Sidekiq.redis { |connection| yield connection }
+  end
+  private_class_method :with_redis
+
+  def self.state_key
+    "logister:sidekiq_recurring:state:#{CHECK_IN_SLUG}"
+  end
+  private_class_method :state_key
+
+  def self.parse_state_time(value)
+    Time.iso8601(value.to_s) if value.present?
+  rescue ArgumentError
+    nil
+  end
+  private_class_method :parse_state_time
 
   def self.report_schedule_failure(error, run_at)
     Logister.report_log(
@@ -54,12 +135,18 @@ class ProjectErrorDigestSchedulerJob < ApplicationJob
   def perform(now_iso8601 = Time.current.iso8601)
     started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     now = nil
+    self.class.record_execution!(:started_at) if Rails.env.production?
     now = Time.zone.parse(now_iso8601.to_s)
-    return unless self.class.redis_set_once(lock_key(now), LOCK_TTL)
+    unless self.class.redis_set_once(lock_key(now), LOCK_TTL)
+      self.class.record_execution!(:completed_at) if Rails.env.production?
+      return
+    end
 
     queued_digests = enqueue_due_digests(now)
     report_scheduler_check_in(status: "ok", now: now, queued_digests: queued_digests, started_at: started_at)
+    self.class.record_execution!(:completed_at) if Rails.env.production?
   rescue StandardError => e
+    self.class.record_execution!(:failed_at) if Rails.env.production?
     report_scheduler_failure(e, now: now, started_at: started_at)
     raise
   ensure

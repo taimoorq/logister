@@ -131,9 +131,16 @@ class ProjectDeploymentIndexer
         "event_uuid" => event.uuid
       }.compact
     ).index
-  rescue StandardError => error
-    Rails.logger.info("deployment indexing skipped for event #{event&.id}: #{error.class} #{error.message}")
-    noop
+  end
+
+  def self.indexable_event?(event)
+    indexer = new(
+      project: event.project,
+      payload: event_payload(event),
+      source: ProjectDeployment::SOURCES[:telemetry],
+      required: false
+    )
+    indexer.send(:indexable?, indexer.send(:deployment_attributes))
   end
 
   def self.from_payload(project:, payload:, source: ProjectDeployment::SOURCES[:api])

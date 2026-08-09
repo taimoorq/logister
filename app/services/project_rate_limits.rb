@@ -15,6 +15,13 @@ class ProjectRateLimits
     )
   end
 
+  def self.default_public_api_pre_auth_rate_limit_requests
+    positive_integer_logister_config(
+      :public_api_pre_auth_rate_limit_requests,
+      Project::DEFAULT_PUBLIC_API_PRE_AUTH_RATE_LIMIT_REQUESTS
+    )
+  end
+
   def self.default_public_api_auth_failure_rate_limit_requests
     positive_integer_logister_config(
       :public_api_auth_failure_rate_limit_requests,

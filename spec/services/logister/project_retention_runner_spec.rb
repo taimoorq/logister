@@ -10,16 +10,23 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
 
     def initialize
       @uploads = []
+      @objects = {}
     end
 
     def upload(key, io, checksum:, content_type:)
+      payload = io.read
+      @objects[key] = payload
       @uploads << {
         key: key,
-        payload: io.read,
+        payload: payload,
         checksum: checksum,
         content_type: content_type
       }
     end
+
+    def download(key) = @objects.fetch(key)
+    def exist?(key) = @objects.key?(key)
+    def delete(key) = @objects.delete(key)
   end
 
   class FailingRetentionArchiveStorage
@@ -79,6 +86,71 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(policy.reload.last_retention_run_at.to_i).to eq(now.to_i)
   end
 
+  it "retains event and span sources for every unfinished delivery state and retries after completion" do
+    statuses = %w[pending processing retrying terminal_failed]
+    protected_records = statuses.each_with_index.map do |status, index|
+      record = if index.even?
+        create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
+      else
+        create(:trace_span, project: project, started_at: now - 45.days)
+      end
+      [ record, create_delivery(record, status: status) ]
+    end
+    completed_event = create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
+    completed_span = create(:trace_span, project: project, started_at: now - 45.days)
+    create_delivery(completed_event, status: "completed")
+    create_delivery(completed_span, status: "completed")
+
+    first = described_class.new(project: project, policy: policy, now: now).call
+
+    expect(first[:protected_by_delivery]).to include(hot_events: 2, trace_spans: 2)
+    expect(first[:deleted]).to include(hot_events: 1, trace_spans: 1)
+    expect(IngestEvent.exists?(completed_event.id)).to be(false)
+    expect(TraceSpan.exists?(completed_span.id)).to be(false)
+    expect(idempotency_key_for(completed_event).reload).to be_source_retired
+    expect(idempotency_key_for(completed_span).reload).to be_source_retired
+    protected_records.each { |record, _delivery| expect(record.class.exists?(record.id)).to be(true) }
+    protected_records.each { |record, _delivery| expect(idempotency_key_for(record).reload).not_to be_source_retired }
+
+    protected_records.each do |_record, delivery|
+      delivery.update!(status: "completed", completed_at: now)
+    end
+    second = described_class.new(project: project, policy: policy, now: now + 1.minute).call
+
+    expect(second[:protected_by_delivery]).to include(hot_events: 0, trace_spans: 0)
+    expect(second[:deleted]).to include(hot_events: 2, trace_spans: 2)
+    protected_records.each { |record, _delivery| expect(record.class.exists?(record.id)).to be(false) }
+    protected_records.each { |record, _delivery| expect(idempotency_key_for(record).reload).to be_source_retired }
+  end
+
+  it "keeps a closed error group and its event until the event delivery completes" do
+    group = create(
+      :error_group,
+      :resolved,
+      :with_occurrence,
+      project: project,
+      first_seen_at: now - 60.days,
+      last_seen_at: now - 45.days
+    )
+    event = group.latest_event_record
+    delivery = create_delivery(event, status: "terminal_failed")
+
+    first = described_class.new(project: project, policy: policy, now: now).call
+
+    expect(first.dig(:protected_by_delivery, :error_events)).to eq(1)
+    expect(first.dig(:deleted, :closed_error_groups)).to eq(0)
+    expect(ErrorGroup.exists?(group.id)).to be(true)
+    expect(IngestEvent.exists?(event.id)).to be(true)
+    expect(ErrorOccurrence.where(error_group_id: group.id, ingest_event_id: event.id)).to exist
+
+    delivery.update!(status: "completed", completed_at: now)
+    second = described_class.new(project: project, policy: policy, now: now + 1.minute).call
+
+    expect(second.dig(:deleted, :closed_error_groups)).to eq(1)
+    expect(ErrorGroup.exists?(group.id)).to be(false)
+    expect(IngestEvent.exists?(event.id)).to be(false)
+  end
+
   it "chunks partition-reference deletes below the recursive Arel limit" do
     old_events = create_list(:ingest_event, 205, :log, project: project, occurred_at: now - 45.days)
 
@@ -119,7 +191,14 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     storage = FakeRetentionArchiveStorage.new
     policy.update!(archive_enabled: true, archive_before_delete: true)
     create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
-    create(:ingest_event, project: project, occurred_at: now - 45.days)
+    create(
+      :error_group,
+      :resolved,
+      :with_occurrence,
+      project: project,
+      first_seen_at: now - 60.days,
+      last_seen_at: now - 45.days
+    )
     create(:trace_span, project: project, started_at: now - 45.days)
     create(:ingest_event, :log, occurred_at: now - 45.days)
 
@@ -127,6 +206,8 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
 
     expect(result[:archives].map { |archive| archive.fetch(:scope) }).to include(:hot_events, :trace_spans, :error_events)
     expect(project.telemetry_archives.completed.pluck(:scope)).to include("hot_events", "trace_spans", "error_events")
+    expect(project.telemetry_archives.completed).to all(be_verified)
+    expect(project.telemetry_archives.completed).to all(have_attributes(source_deleted_at: be_present))
     expect(storage.uploads.map { |upload| upload.fetch(:key) }).to all(include("project=#{project.uuid}"))
     expect(policy.reload.last_archive_run_at.to_i).to eq(now.to_i)
   end
@@ -146,5 +227,41 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
       project.id,
       hash_including("scope" => "hot_events", "error_message" => include("storage unavailable"))
     )
+  end
+
+  def create_delivery(record, status:)
+    recorded_at = TelemetryIdempotencyKey.recorded_at_for(record)
+    record_type = record.class.base_class.name
+    key = TelemetryIdempotencyKey.create!(
+      project: record.project,
+      client_identifier: record.uuid,
+      signal: record.is_a?(TraceSpan) ? "span" : record.event_type,
+      record_type: record_type,
+      record_id: record.id,
+      recorded_at: recorded_at,
+      expires_at: now + TelemetryIdempotencyKey::RETENTION
+    )
+    outbox = TelemetryOutboxEvent.create!(
+      project: record.project,
+      telemetry_idempotency_key: key,
+      client_identifier: record.uuid,
+      signal: key.signal,
+      record_type: record_type,
+      record_id: record.id,
+      recorded_at: recorded_at,
+      accepted_at: now
+    )
+    TelemetryDelivery.create!(
+      project: record.project,
+      telemetry_outbox_event: outbox,
+      destination: record.is_a?(TraceSpan) ? "clickhouse_span" : "clickhouse_event",
+      status: status,
+      available_at: now,
+      completed_at: (now if status == "completed")
+    )
+  end
+
+  def idempotency_key_for(record)
+    TelemetryIdempotencyKey.find_by!(project_id: record.project_id, client_identifier: record.uuid)
   end
 end

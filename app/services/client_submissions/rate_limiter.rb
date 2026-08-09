@@ -4,27 +4,32 @@ require "digest"
 
 module ClientSubmissions
   class RateLimiter
+    GLOBAL_IP_KINDS = %w[pre_auth auth_failure].freeze
+
     Result = Data.define(:limited, :limit, :remaining, :reset_at, :retry_after, :window_seconds, :count) do
       def limited?
         limited
       end
     end
 
-    def initialize(cache: Rails.cache)
-      @cache = cache
+    def initialize(cache: nil)
+      @cache = cache || Rails.application.config.x.logister.rate_limit_cache || Rails.cache
     end
 
-    def check(identity:, kind:, endpoint:, limit:, period:)
+    def check(identity:, kind:, endpoint:, limit:, period:, amount: 1)
       limit = limit.to_i
       return nil unless limit.positive?
 
       period = period.to_i
       return nil unless period.positive?
 
+      amount = amount.to_i
+      return nil unless amount.positive?
+
       now = Time.current
       window_started_at = now.to_i / period * period
       reset_at = window_started_at + period
-      count = rate_limit_count(kind, endpoint, identity, window_started_at, period)
+      count = rate_limit_count(kind, endpoint, identity, window_started_at, period, amount)
       return nil unless count
 
       Result.new(
@@ -45,17 +50,17 @@ module ClientSubmissions
 
     attr_reader :cache
 
-    def rate_limit_count(kind, endpoint, identity, window_started_at, period)
+    def rate_limit_count(kind, endpoint, identity, window_started_at, period, amount)
       cache_key = rate_limit_cache_key(kind, endpoint, identity, window_started_at)
-      count = cache.increment(cache_key, 1, expires_in: period + 5)
+      count = cache.increment(cache_key, amount, expires_in: period + 5)
       return count if count
 
-      cache.write(cache_key, 1, expires_in: period + 5)
-      1
+      cache.write(cache_key, amount, expires_in: period + 5)
+      amount
     end
 
     def rate_limit_cache_key(kind, endpoint, identity, window_started_at)
-      endpoint = kind == "auth_failure" ? "all" : endpoint
+      endpoint = GLOBAL_IP_KINDS.include?(kind.to_s) ? "all" : endpoint
       identity_digest = Digest::SHA256.hexdigest(identity.to_s)
       "logister:public_api_rate_limit:v1:#{kind}:#{endpoint}:#{identity_digest}:#{window_started_at}"
     end

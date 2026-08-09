@@ -105,15 +105,24 @@ class SourceFrameResolver
   end
 
   def fetch_source(repository, source_path, ref)
-    Rails.cache.fetch([ "github_source_file", repository.id, ref, source_path ], expires_in: 15.minutes) do
-      fetcher.fetch(
-        owner: repository.owner_name,
-        repo: repository.repo_name,
-        path: source_path,
-        ref: ref,
-        installation: repository.effective_github_installation,
-        repository_id: repository.github_repository&.external_id || repository.external_id
-      )
+    key = [ "project", project.id, "github_source_file", repository.id, ref, source_path ]
+    cached = Rails.cache.read(key)
+    return cached if cached.present?
+
+    fetched = fetcher.fetch(
+      owner: repository.owner_name,
+      repo: repository.repo_name,
+      path: source_path,
+      ref: ref,
+      installation: repository.effective_github_installation,
+      repository_id: repository.github_repository&.external_id || repository.external_id
+    )
+    Project.transaction(requires_new: true) do
+      locked_project = Project.lock.find_by(id: project.id)
+      return if locked_project.nil? || locked_project.purge_pending?
+
+      Rails.cache.write(key, fetched, expires_in: 15.minutes) if fetched.present?
+      fetched
     end
   rescue Github::InstallationToken::NotConfigured, Github::ContentsClient::NotConfigured
     nil

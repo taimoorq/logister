@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class BackfillErrorOccurrenceDimensionsJob < ApplicationJob
-  queue_as :default
+  queue_as :maintenance
 
   BATCH_SIZE = 200
 

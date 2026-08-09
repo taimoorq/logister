@@ -6,12 +6,18 @@
             <h3 class="text-sm font-semibold text-slate-900 mb-1"><%= @project.archived? ? "Restore project" : "Archive project" %></h3>
             <p class="text-slate-600 text-sm mb-3">
               <% if @project.archived? %>
-                Restore this project when you want it to appear in active dashboards and project lists again.
+                <% if @project.purge_pending? %>
+                  This project is tombstoned while permanent deletion finishes and cannot be restored.
+                <% else %>
+                  Restore this project when you want it to appear in active dashboards and project lists again.
+                <% end %>
               <% else %>
                 Archive this project to keep its data while hiding it from active dashboards and project lists.
               <% end %>
             </p>
-            <% if @project.archived? %>
+            <% if @project.purge_pending? %>
+              <span class="text-sm font-semibold text-slate-700">Restore unavailable</span>
+            <% elsif @project.archived? %>
               <%= button_to restore_project_path(@project),
                             method: :patch,
                             class: "btn-ghost inline-flex items-center gap-2" do %>
@@ -30,13 +36,26 @@
           <div class="rounded-lg border border-red-200 bg-red-50 p-4">
             <h3 class="text-sm font-semibold text-red-900 mb-1">Delete project</h3>
             <p class="text-red-800 text-sm mb-3">
-              Deleting a project permanently removes its API keys, memberships, and event data.
+              Permanent deletion first disables ingestion, then removes private archive objects, ClickHouse facts and rollups, PostgreSQL telemetry, and cached project data through an audited background purge.
             </p>
-            <%= button_to "Delete project",
-                          project_path(@project),
-                          method: :delete,
-                          class: "btn-ghost border-red-700 text-red-700 hover:bg-red-100",
-                          form: { data: { turbo_confirm: "Delete this project permanently?" } } %>
+            <% if @project.purge_pending? %>
+              <% purge = @project.project_purges.recent_first.first %>
+              <p class="text-sm font-semibold text-red-900">
+                Permanent deletion is <%= purge&.status.to_s.humanize.downcase.presence || "in progress" %>. This project cannot be restored.
+              </p>
+              <% if purge&.status.in?(%w[failed awaiting_external]) %>
+                <%= button_to "Retry deletion",
+                              retry_project_purge_path(purge),
+                              method: :post,
+                              class: "btn-ghost mt-3 border-red-700 text-red-700 hover:bg-red-100" %>
+              <% end %>
+            <% else %>
+              <%= button_to "Delete project",
+                            project_path(@project),
+                            method: :delete,
+                            class: "btn-ghost border-red-700 text-red-700 hover:bg-red-100",
+                            form: { data: { turbo_confirm: "Disable this project now and permanently delete it from every configured store?" } } %>
+            <% end %>
           </div>
         </div>
       </article>

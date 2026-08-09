@@ -162,22 +162,27 @@ module Logister
 
     def ensure_future_partitions(months_ahead: DEFAULT_FUTURE_PARTITION_MONTHS)
       months_ahead = Integer(months_ahead)
-      created = []
+      connection.transaction(requires_new: true) do
+        select_value("SELECT 1 FROM pg_advisory_xact_lock(hashtext('logister:ingest_events_partition_maintenance'))")
+        maintain_future_partitions(months_ahead)
+      end
+    end
 
-      partition_maintenance_tables.each do |table_name|
-        future_partition_months(months_ahead).each do |month|
-          partition_name = monthly_partition_name(month)
-          next if table_exists?(partition_name)
+    def partition_maintenance_status(months_ahead: DEFAULT_FUTURE_PARTITION_MONTHS)
+      months_ahead = Integer(months_ahead)
+      missing = partition_maintenance_tables.flat_map do |table_name|
+        future_partition_months(months_ahead).filter_map do |month|
+          next if partition_attached?(table_name, monthly_partition_name(month))
 
-          create_monthly_partition(table_name, partition_name, month)
-          created << { parent: table_name, partition: partition_name, month: month.strftime("%Y-%m") }
+          { parent: table_name, month: month.strftime("%Y-%m"), partition: monthly_partition_name(month) }
         end
       end
 
       {
         months_ahead: months_ahead,
-        created_partitions: created,
-        partitioned_tables: partition_maintenance_tables
+        partitioned_tables: partition_maintenance_tables,
+        missing_partitions: missing,
+        default_partitions: default_partition_diagnostics
       }
     end
 
@@ -216,6 +221,50 @@ module Logister
     private
 
     attr_reader :connection
+
+    def maintain_future_partitions(months_ahead)
+      created = []
+      blocked = []
+
+      partition_maintenance_tables.each do |table_name|
+        default_months = default_partition_months(table_name).index_by { |entry| entry.fetch("month") }
+        future_partition_months(months_ahead).each do |month|
+          partition_name = monthly_partition_name(month)
+          next if partition_attached?(table_name, partition_name)
+
+          if table_exists?(partition_name)
+            blocked << {
+              parent: table_name,
+              partition: partition_name,
+              month: month.strftime("%Y-%m"),
+              reason: "relation_exists_but_is_not_attached"
+            }
+            next
+          end
+
+          if (default_rows = default_months[month.strftime("%Y-%m")])
+            blocked << {
+              parent: table_name,
+              partition: partition_name,
+              month: month.strftime("%Y-%m"),
+              default_rows: default_rows.fetch("row_count").to_i
+            }
+            next
+          end
+
+          create_monthly_partition(table_name, partition_name, month)
+          created << { parent: table_name, partition: partition_name, month: month.strftime("%Y-%m") }
+        end
+      end
+
+      {
+        months_ahead: months_ahead,
+        created_partitions: created,
+        blocked_partitions: blocked,
+        partitioned_tables: partition_maintenance_tables,
+        default_partitions: default_partition_diagnostics
+      }
+    end
 
     def cutover_status
       {
@@ -335,6 +384,58 @@ module Logister
                level
         FROM pg_partition_tree(#{connection.quote(table_name)}::regclass)
         ORDER BY level, name
+      SQL
+    end
+
+    def default_partition_diagnostics
+      partition_maintenance_tables.map do |table_name|
+        partition_name = default_partition_for(table_name)
+        months = default_partition_months(table_name)
+        {
+          parent: table_name,
+          partition: partition_name,
+          row_count: months.sum { |entry| entry.fetch("row_count").to_i },
+          drain_ready: months.empty?,
+          month_buckets: months
+        }
+      end
+    end
+
+    def default_partition_months(table_name)
+      partition_name = default_partition_for(table_name)
+      return [] unless partition_name
+      quoted_partition_name = connection.quote_table_name(partition_name)
+
+      connection.select_all(<<~SQL.squish).to_a
+        SELECT to_char(date_trunc('month', occurred_at), 'YYYY-MM') AS month,
+               COUNT(*)::bigint AS row_count,
+               MIN(occurred_at) AS first_occurred_at,
+               MAX(occurred_at) AS last_occurred_at
+        FROM #{quoted_partition_name}
+        GROUP BY 1
+        ORDER BY 1
+      SQL
+    end
+
+    def default_partition_for(table_name)
+      select_value(<<~SQL.squish).presence
+        SELECT child.oid::regclass::text
+        FROM pg_inherits
+        JOIN pg_class child ON child.oid = inhrelid
+        WHERE inhparent = to_regclass(#{connection.quote(table_name)})
+          AND pg_get_expr(child.relpartbound, child.oid) = 'DEFAULT'
+        LIMIT 1
+      SQL
+    end
+
+    def partition_attached?(parent_table, partition_name)
+      select_value(<<~SQL.squish)
+        SELECT EXISTS (
+          SELECT 1
+          FROM pg_inherits
+          WHERE inhparent = to_regclass(#{connection.quote(parent_table)})
+            AND inhrelid = to_regclass(#{connection.quote(partition_name)})
+        )
       SQL
     end
 

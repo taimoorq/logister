@@ -6,8 +6,7 @@ RSpec.describe Logister::ClickhouseExplorer do
   let(:client) do
     instance_double(
       Logister::ClickhouseClient,
-      read_enabled?: true,
-      events_table_name: "logister.events_raw"
+      event_facts_table_name: "logister.event_facts_v2"
     )
   end
 
@@ -32,7 +31,7 @@ RSpec.describe Logister::ClickhouseExplorer do
     expect(payload[:timeline]).to include(day: "2026-07-25", event_type: "metric", count: 5)
     expect(payload[:projects]).to eq([ { project_id: 1, count: 7 }, { project_id: 2, count: 3 } ])
     expect(payload[:environments]).to eq([ { name: "production", count: 7 }, { name: "staging", count: 3 } ])
-    expect(client).to have_received(:select_rows!).with(a_string_including("uniqExact(event_id) AS count")).once
+    expect(client).to have_received(:select_rows!).with(a_string_including("count() AS count", "FROM logister.event_facts_v2")).once
   end
 
   it "applies event, environment, and day filters in ClickHouse" do
@@ -58,11 +57,11 @@ RSpec.describe Logister::ClickhouseExplorer do
     )
   end
 
-  it "returns nil so the explorer can fall back when ClickHouse fails" do
+  it "lets the range-aware read router own query fallback" do
     allow(client).to receive(:select_rows!).and_raise(Logister::ClickhouseClient::Error, "timeout")
 
-    expect(
+    expect {
       described_class.call(project_ids: [ 1 ], since: 1.day.ago, environment_limit: 8, client:)
-    ).to be_nil
+    }.to raise_error(Logister::ClickhouseClient::Error, "timeout")
   end
 end

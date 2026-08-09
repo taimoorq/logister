@@ -45,11 +45,20 @@ RSpec.describe Logister::ClickhouseSchemaRepairer do
       "analytics.custom_spans",
       "analytics.events_1m"
     ))
-    expect(client).not_to have_received(:execute!)
-    expect(result).to include(repaired_columns: [], rebuilt_views: [])
+    expect(client).to have_received(:execute!).with(
+      "ALTER TABLE analytics.custom_events MODIFY SETTING non_replicated_deduplication_window = 10000"
+    )
+    expect(client).to have_received(:execute!).with(
+      "ALTER TABLE analytics.custom_spans MODIFY SETTING non_replicated_deduplication_window = 10000"
+    )
+    expect(result).to include(
+      repaired_columns: [],
+      rebuilt_views: [],
+      deduplication_tables: %w[analytics.custom_events analytics.custom_spans]
+    )
   end
 
-  it "repairs old event enums and rebuilds the dependent materialized view" do
+  it "repairs the raw event enum without recreating unsafe materialized rollups" do
     old_type = "Enum8('error' = 1, 'metric' = 2)"
     allow(client).to receive(:event_type_column_types).and_return(
       "custom_events" => old_type,
@@ -62,19 +71,15 @@ RSpec.describe Logister::ClickhouseSchemaRepairer do
       "ALTER TABLE analytics.custom_events MODIFY COLUMN event_type #{Logister::ClickhouseClient::CANONICAL_EVENT_TYPE}"
     ).ordered
     expect(client).to have_received(:execute!).with(
-      "ALTER TABLE analytics.events_1m MODIFY COLUMN event_type #{Logister::ClickhouseClient::CANONICAL_EVENT_TYPE}"
+      "ALTER TABLE analytics.custom_events MODIFY SETTING non_replicated_deduplication_window = 10000"
     ).ordered
-    expect(client).to have_received(:execute!).with("DROP VIEW IF EXISTS analytics.mv_events_1m").ordered
     expect(client).to have_received(:execute!).with(
-      a_string_including(
-        "CREATE MATERIALIZED VIEW analytics.mv_events_1m",
-        "TO analytics.events_1m",
-        "FROM analytics.custom_events"
-      )
+      "ALTER TABLE analytics.custom_spans MODIFY SETTING non_replicated_deduplication_window = 10000"
     ).ordered
     expect(result).to include(
-      repaired_columns: %w[custom_events events_1m],
-      rebuilt_views: [ "mv_events_1m" ]
+      repaired_columns: %w[custom_events],
+      rebuilt_views: [],
+      deduplication_tables: %w[analytics.custom_events analytics.custom_spans]
     )
   end
 

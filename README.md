@@ -9,6 +9,7 @@ Use this repository to run Logister on your own infrastructure, contribute to th
 | You want to… | Start here |
 |---|---|
 | Run Logister in production | [Self-host quickstart](#self-host-quickstart) |
+| Size Redis, workers, and database pools | [Redis and worker operations](docs/redis-worker-operations.md) |
 | Send telemetry from an app | [Integrating apps with Logister](#integrating-apps-with-logister) |
 | Test the ingest API directly | [Send your first event](#send-your-first-event) |
 | Work on Logister itself | [Running the app locally](#running-the-app-locally) |
@@ -116,7 +117,7 @@ Logister runs as a Rails app with this baseline infrastructure:
 
 - Web/API: Ruby on Rails with Puma/Thruster
 - Primary database: PostgreSQL
-- Cache + job queue backend: Redis
+- Cache, rate-limit, and job queue backends: Redis, with optional role isolation
 - Background processing: Sidekiq worker process
 - Optional analytics store: ClickHouse
 - Optional cold archive storage: Amazon S3 or an S3-compatible object store through Active Storage
@@ -161,7 +162,7 @@ This is the shortest production path. Use the [self-hosting guide](https://logis
    | `DATABASE_URL` | PostgreSQL runtime URL |
    | `LOGISTER_SETUP_TOKEN` | Long random value used once at `/setup`, then removed |
 
-   After the first administrator is created, configure Redis, the canonical URL, release checks, and optional services under **Admin → Installation** or with the equivalent environment variables. Public ingestion endpoints are rate limited by default. `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` accept 1,200 requests per minute per API token per endpoint. Missing, invalid, revoked, or archived-project tokens are capped at 120 authentication failures per minute per source IP. Self-hosters can tune those defaults with `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. Database-backed app administrators and optional break-glass admins from `LOGISTER_ADMIN_EMAILS` can also set project-level overrides from project settings.
+   After the first administrator is created, configure Redis, the canonical URL, release checks, and optional services under **Admin → Installation** or with the equivalent environment variables. Public ingestion endpoints are rate limited by default. A coarse 12,000-attempt-per-minute source-IP guard runs before credential lookup. `POST /api/v1/ingest_events` and `POST /api/v1/check_ins` then accept 1,200 requests per minute per API token per endpoint, while missing, invalid, revoked, or archived-project tokens are counted separately and capped at 120 confirmed authentication failures per minute per source IP. Self-hosters can tune those defaults with `LOGISTER_PUBLIC_API_PRE_AUTH_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_REQUESTS`, `LOGISTER_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS`, and `LOGISTER_PUBLIC_API_AUTH_FAILURE_RATE_LIMIT_REQUESTS`. Database-backed app administrators and optional break-glass admins from `LOGISTER_ADMIN_EMAILS` can also set project-level overrides from project settings.
 
    Public auth forms are also rate limited by default. Devise sign-in, sign-up, password reset, and confirmation resend submissions use Rails cache-backed IP and hashed-email limits and return `429 Too Many Requests` with `Retry-After` when exceeded. See [Authentication Rate Limiting](docs/auth-rate-limiting.md) for the current limits and implementation rules.
 
@@ -239,7 +240,15 @@ curl --fail-with-body --request POST \
   }'
 ```
 
-A working server returns HTTP `201` with `"status":"accepted"`. Open the project inbox and confirm that **README test error** appears. A `401` response usually means the project key is missing, invalid, revoked, or belongs to an archived project; see the [troubleshooting guide](https://logister.org/docs/troubleshooting/).
+A working server returns HTTP `201` with `"status":"accepted"`. Open the project inbox and confirm that **README test error** appears. A single JSON request is capped at 2 MiB before Rails parses it, then its event is checked against narrower per-envelope field, nesting, and 1 MiB normalized-size limits. A `401` response usually means the project key is missing, invalid, revoked, or belongs to an archived project; see the [troubleshooting guide](https://logister.org/docs/troubleshooting/).
+
+High-volume clients can send up to 100 of the same event envelopes as gzip NDJSON
+to `POST /api/v1/ingest_events/batch`. Each line must be shaped as
+`{"event":{...}}`; both the line and `event` value must be JSON objects, and every
+event must carry a nonblank UUID in `uuid` or `event_id`. Logister commits
+the batch's new rows and durable projection intents atomically, returns per-envelope
+results with HTTP `202`, and safely recognizes a whole-batch retry. See the
+[OpenAPI contract](docs/openapi.yaml) for byte, nesting, and validation limits.
 
 ## Integrating apps with Logister
 
@@ -265,7 +274,7 @@ Mobile add-ons use the same ingest envelope with platform-specific setup:
 | Android | Maven Central / Gradle | `org.logister:logister-android:0.3.0` | https://logister.org/docs/integrations/android/ |
 | iOS | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` with product `Logister` | https://logister.org/docs/integrations/ios/ |
 
-The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 requests per minute per endpoint. Only app admins, not project owners or shared project members, can set project-level overrides.
+The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 submissions per minute per endpoint. A batch counts every envelope, not just one HTTP request. Only app admins, not project owners or shared project members, can set project-level overrides.
 
 The machine-readable API contract lives in [docs/openapi.yaml](docs/openapi.yaml), and the ready-to-import Postman collection lives in [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json). The Cloudflare docs build copies both artifacts to the public docs URL.
 
@@ -355,7 +364,7 @@ A few things are worth knowing before you start changing the app locally:
 - ClickHouse `dual_write` is a temporary backfill and coverage-verification mode; supported dashboard analytics still read PostgreSQL until the operator switches to `read_preferred`. The legacy `LOGISTER_CLICKHOUSE_ENABLED=true` variable selects only dual write.
 - The public docs are served from the separately deployed Cloudflare docs site at `logister.org/docs`, so app links intentionally leave the Rails app.
 - On Fly, database preparation should run in the release phase rather than on every web boot. If your database provider gives you separate runtime and migration URLs, set `DATABASE_URL` to the runtime URL and `DATABASE_MIGRATION_URL` to the direct migration/admin URL.
-- On Fly and other production hosts, keep one Sidekiq worker running. It handles ClickHouse writes, Action Mailer delivery, first-occurrence error alerts, digest scheduling, monitor and health sweeps, and retention/archive sweeps; no separate cron service is required for the built-in scheduler jobs.
+- On Fly and other production hosts, keep the combined Sidekiq worker running, or run every split queue role described in [Redis and worker operations](docs/redis-worker-operations.md). Built-in schedules use durable Redis lookahead and do not require a separate cron service.
 
 If you want Docker-backed local infra, or want ClickHouse and PostgreSQL running together locally, use:
 
@@ -404,7 +413,9 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 | [docs/mobile-add-ons.md](docs/mobile-add-ons.md) | Android and iOS package manager setup, SDK usage examples, release mechanics, and mobile telemetry boundaries |
 | [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI contract for the public ingest and check-in APIs |
 | [docs/postman/logister-api.postman_collection.json](docs/postman/logister-api.postman_collection.json) | Postman collection with example requests for every supported event family |
+| [docs/telemetry-architecture.md](docs/telemetry-architecture.md) | Target ownership, durable write/read paths, queue topology, lifecycle rules, and the BigQuery decision |
 | [docs/telemetry-storage-retention.md](docs/telemetry-storage-retention.md) | ClickHouse readiness, S3 archive exports, hot telemetry pruning, and Redis retry cleanup |
+| [docs/redis-worker-operations.md](docs/redis-worker-operations.md) | Redis role isolation, durable Sidekiq requirements, queue scaling, readiness diagnostics, and `DB_POOL` sizing |
 | [docs/cfml_ingestion_guide.md](docs/cfml_ingestion_guide.md) | GitHub-facing pointer to the canonical CFML docs |
 
 ## Source and related repos

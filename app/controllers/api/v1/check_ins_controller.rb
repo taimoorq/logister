@@ -23,20 +23,27 @@ class Api::V1::CheckInsController < ApplicationController
       context: context
     )
 
-    event = @api_key.project.ingest_events.new(
+    result = IngestEventPersistence.new(
+      project: @api_key.project,
       api_key: @api_key,
-      event_type: :check_in,
-      level: monitor_payload[:status] == "error" ? "error" : "info",
-      message: monitor_payload[:slug],
-      occurred_at: monitor_payload[:occurred_at] || Time.current,
-      context: context
-    )
+      attributes: {
+        uuid: monitor_payload[:uuid],
+        event_type: :check_in,
+        level: monitor_payload[:status] == "error" ? "error" : "info",
+        message: monitor_payload[:slug],
+        occurred_at: monitor_payload[:occurred_at] || Time.current,
+        context: context
+      }.compact,
+      request_context: request_context
+    ).call
+    event = result.event
 
-    if event.save
-      CheckInMonitor.record!(project: @api_key.project, event: event)
-      ClickhouseIngestJob.perform_later(event.id, request_context, event.occurred_at)
+    if event.persisted?
+      finalize_projection_intents(result.outbox_event)
       touch_client_submission_credential!
-      render json: { id: event.uuid, status: "accepted" }, status: :created
+      response = { id: event.uuid, status: "accepted" }
+      response[:duplicate] = true if result.duplicate?
+      render json: response, status: result.duplicate? ? :ok : :created
     else
       report_client_submission_failure(
         reason: "invalid_check_in",
@@ -52,7 +59,8 @@ class Api::V1::CheckInsController < ApplicationController
   def check_in_params
     payload = normalized_check_in_payload.permit(
       :slug, :status, :occurred_at, :environment, :release,
-      :expected_interval_seconds, :duration_ms, :trace_id, :request_id
+      :expected_interval_seconds, :duration_ms, :trace_id, :request_id,
+      :uuid, :event_id
     )
 
     {
@@ -64,7 +72,8 @@ class Api::V1::CheckInsController < ApplicationController
       expected_interval_seconds: payload[:expected_interval_seconds].to_i.positive? ? payload[:expected_interval_seconds].to_i : 300,
       duration_ms: payload[:duration_ms].to_f.positive? ? payload[:duration_ms].to_f : nil,
       trace_id: payload[:trace_id].to_s.strip.presence,
-      request_id: payload[:request_id].to_s.strip.presence
+      request_id: payload[:request_id].to_s.strip.presence,
+      uuid: (payload[:uuid].presence || payload[:event_id].presence).to_s.strip.presence
     }
   end
 
@@ -85,7 +94,7 @@ class Api::V1::CheckInsController < ApplicationController
 
     candidate_hash = candidate.respond_to?(:to_unsafe_h) ? candidate.to_unsafe_h : candidate.to_h
     normalized_keys = candidate_hash.keys.map { |key| key.to_s.underscore.downcase }
-    (normalized_keys & %w[slug status occurred_at environment release expected_interval_seconds duration_ms trace_id request_id]).any?
+    (normalized_keys & %w[slug status occurred_at environment release expected_interval_seconds duration_ms trace_id request_id uuid event_id]).any?
   end
 
   def normalized_check_in_payload
@@ -107,6 +116,14 @@ class Api::V1::CheckInsController < ApplicationController
       ip: request.remote_ip,
       user_agent: request.user_agent
     }
+  end
+
+  def finalize_projection_intents(outbox_event)
+    return unless outbox_event
+
+    TelemetryProjectorJob.wake! if outbox_event.telemetry_deliveries.incomplete.exists?
+  rescue StandardError => error
+    Rails.logger.error("telemetry_projector_enqueue_error outbox_id=#{outbox_event&.id} error=#{error.class}: #{error.message}")
   end
 
   def render_bad_request(error)

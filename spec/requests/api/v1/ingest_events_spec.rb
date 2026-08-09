@@ -4,6 +4,18 @@ require "rails_helper"
 
 RSpec.describe "Api::V1::IngestEvents", type: :request do
   describe "POST /api/v1/ingest_events" do
+    around do |example|
+      config = Rails.configuration.x.logister
+      previous_mode = config.clickhouse_mode
+      previous_enabled = config.clickhouse_enabled
+      config.clickhouse_mode = "dual_write"
+      config.clickhouse_enabled = true
+      example.run
+    ensure
+      config.clickhouse_mode = previous_mode
+      config.clickhouse_enabled = previous_enabled
+    end
+
     before do
       allow(Logister).to receive(:report_log).and_return(true)
     end
@@ -36,10 +48,10 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       { "Authorization" => "Bearer test-token-one", "User-Agent" => "LogisterTest/1.0" }
     end
 
-    it "creates event and enqueues ClickhouseIngestJob" do
+    it "creates an event with durable intents and enqueues the batch projector" do
       expect {
         post api_v1_ingest_events_path, params: valid_payload, as: :json, headers: auth_headers
-      }.to have_enqueued_job(ClickhouseIngestJob)
+      }.to have_enqueued_job(TelemetryProjectorJob)
 
       expect(response).to have_http_status(:created)
       body = response.parsed_body
@@ -50,6 +62,11 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       expect(created.project_id).to eq(api_keys(:one).project_id)
       expect(created.api_key_id).to eq(api_keys(:one).id)
       expect(created.event_type).to eq("error")
+      expect(created.uuid).to eq(TelemetryIdempotencyKey.find_by!(project: created.project, client_identifier: created.uuid).client_identifier)
+      expect(TelemetryOutboxEvent.find_by!(record_type: "IngestEvent", record_id: created.id).telemetry_deliveries.pluck(:destination)).to include(
+        "clickhouse_event",
+        "error_grouping"
+      )
       expect(created.context.dig("exception", "class") || created.context.dig(:exception, :class)).to eq("NoMethodError")
       expect(created.context.dig("metadata", "feature_flags", 0) || created.context.dig(:metadata, :feature_flags, 0)).to eq("new-checkout")
     end
@@ -72,11 +89,12 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
 
       expect {
         post api_v1_ingest_events_path, params: payload, as: :json, headers: auth_headers
-      }.not_to have_enqueued_job(ClickhouseIngestJob)
+      }.to have_enqueued_job(TelemetryProjectorJob)
 
       expect(response).to have_http_status(:created)
       event = IngestEvent.find_by!(uuid: response.parsed_body.fetch("id"))
       expect(event.context.dig("logister_internal", "component")).to eq("clickhouse")
+      expect(outbox_for(event).telemetry_deliveries.pluck(:destination)).to contain_exactly("error_grouping")
     end
 
     it "persists a local notification failure without scheduling another notification" do
@@ -100,7 +118,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       }.not_to have_enqueued_job(ProjectErrorFirstOccurrenceAlertJob)
 
       expect(response).to have_http_status(:created)
-      expect(enqueued_jobs.map { |job| job.fetch(:job) }).to include(ClickhouseIngestJob)
+      expect(enqueued_jobs.map { |job| job.fetch(:job) }).to include(TelemetryProjectorJob)
     end
 
     it "persists over-budget local telemetry without downstream fan-out" do
@@ -122,7 +140,10 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
 
       expect(response).to have_http_status(:created)
       queued_classes = enqueued_jobs.map { |job| job.fetch(:job) }
-      expect(queued_classes).not_to include(ClickhouseIngestJob, ProjectErrorFirstOccurrenceAlertJob)
+      expect(queued_classes).to include(TelemetryProjectorJob)
+      expect(queued_classes).not_to include(ProjectErrorFirstOccurrenceAlertJob)
+      event = IngestEvent.find_by!(uuid: response.parsed_body.fetch("id"))
+      expect(outbox_for(event).telemetry_deliveries.pluck(:destination)).to contain_exactly("error_grouping")
     end
 
     it "accepts a client UUID idempotently without inflating error impact" do
@@ -135,7 +156,9 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
 
       expect(response).to have_http_status(:created)
       event = IngestEvent.find_by!(uuid: client_uuid)
-      group = event.error_group
+      expect(event.error_group).to be_nil
+      project_derived_intents!(event)
+      group = event.reload.error_group
       expect(group.occurrence_count).to eq(1)
 
       expect do
@@ -159,6 +182,9 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
     end
 
     it "rejects unauthorized token" do
+      expect_any_instance_of(Api::V1::IngestEventsController).not_to receive(:client_submission_payload_summary)
+      expect_any_instance_of(Api::V1::IngestEventsController).not_to receive(:client_submission_monitoring_payload?)
+
       post api_v1_ingest_events_path,
            params: { event: { event_type: "error", message: "NoMethodError", occurred_at: Time.current.iso8601 } },
            as: :json,
@@ -177,15 +203,28 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
             auth: hash_including(
               bearer_present: true,
               token_digest_prefix: Digest::SHA256.hexdigest("invalid-token")[0, 16]
-            ),
-            payload: hash_including(
-              envelope_key: "event",
-              event_type: "error",
-              message_present: true
             )
           )
         )
       )
+    end
+
+    it "rejects an oversized legacy JSON body before credential lookup or Rails parsing" do
+      allow(ApiKey).to receive(:authenticate).and_call_original
+      allow(MobileIngestToken).to receive(:authenticate).and_call_original
+      oversized_body = "x" * (ClientSubmissions::RequestLimits::MAX_WIRE_BYTES + 1)
+
+      post api_v1_ingest_events_path,
+           params: oversized_body,
+           headers: auth_headers.merge("Content-Type" => "application/json")
+
+      expect(response).to have_http_status(:content_too_large)
+      expect(response.parsed_body).to include(
+        "code" => "request_bytes",
+        "limit" => ClientSubmissions::RequestLimits::MAX_WIRE_BYTES
+      )
+      expect(ApiKey).not_to have_received(:authenticate)
+      expect(MobileIngestToken).not_to have_received(:authenticate)
     end
 
     it "accepts X-Api-Key header" do
@@ -257,6 +296,64 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       end
     end
 
+    it "keeps project-aware credential failure limits after the coarse guard" do
+      api_key = api_keys(:one)
+      api_key.project.update!(public_api_auth_failure_rate_limit_requests_override: 1)
+      api_key.revoke!
+
+      with_public_api_rate_limits(pre_auth_requests: 10, auth_failure_requests: 10) do
+        post api_v1_ingest_events_path,
+             params: { event: { event_type: "error", message: "NoMethodError" } },
+             as: :json,
+             headers: { "Authorization" => "Bearer test-token-one" }
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.headers.fetch("X-RateLimit-Limit")).to eq("1")
+        expect(Logister).to have_received(:report_log).with(
+          message: "Client ingest rejected",
+          level: "warn",
+          fingerprint: "client-submission:ingest:revoked_api_key",
+          context: hash_including(
+            client_submission: hash_including(
+              reason: "revoked_api_key",
+              project: hash_including(slug: api_key.project.slug)
+            )
+          )
+        )
+
+        post api_v1_ingest_events_path,
+             params: { event: { event_type: "error", message: "NoMethodError" } },
+             as: :json,
+             headers: { "Authorization" => "Bearer test-token-one" }
+      end
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.parsed_body.fetch("limit")).to eq(1)
+    end
+
+    it "short-circuits a coarse IP flood before another credential lookup" do
+      allow(ApiKey).to receive(:authenticate).and_call_original
+      allow(MobileIngestToken).to receive(:authenticate).and_call_original
+
+      with_public_api_rate_limits(pre_auth_requests: 1, auth_failure_requests: 10) do
+        post api_v1_ingest_events_path,
+             params: { event: { event_type: "error", message: "NoMethodError" } },
+             as: :json,
+             headers: { "Authorization" => "Bearer invalid-token" }
+        expect(response).to have_http_status(:unauthorized)
+
+        post api_v1_ingest_events_path,
+             params: { event: { event_type: "error", message: "NoMethodError" } },
+             as: :json,
+             headers: { "Authorization" => "Bearer another-invalid-token" }
+      end
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.parsed_body.fetch("limit")).to eq(1)
+      expect(ApiKey).to have_received(:authenticate).once
+      expect(MobileIngestToken).to have_received(:authenticate).once
+    end
+
     it "accepts transaction events and normalizes top-level fields into context" do
       post api_v1_ingest_events_path,
            params: {
@@ -305,9 +402,12 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
              },
              as: :json,
              headers: auth_headers
-      }.to change(ProjectDeployment, :count).by(1)
+      }.not_to change(ProjectDeployment, :count)
 
       expect(response).to have_http_status(:created)
+      event = IngestEvent.find_by!(uuid: response.parsed_body.fetch("id"))
+      expect(outbox_for(event).telemetry_deliveries.find_by!(destination: "deployment_index")).to be_pending
+      expect { project_derived_intents!(event) }.to change(ProjectDeployment, :count).by(1)
       deployment = ProjectDeployment.find_by!(project: project, release: "2026.06.18")
       expect(deployment.project_id).to eq(project.id)
       expect(deployment.repository_full_name).to eq("acme/storefront")
@@ -340,7 +440,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
              },
              as: :json,
              headers: auth_headers
-      }.to have_enqueued_job(ClickhouseSpanIngestJob)
+      }.to have_enqueued_job(TelemetryProjectorJob)
         .and change(TraceSpan, :count).by(1)
 
       expect(response).to have_http_status(:created)
@@ -414,7 +514,10 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       )
     end
 
-    it "does not recursively report rejected client-submission monitoring events" do
+    it "does not inspect an unauthorized monitoring-event body for diagnostics" do
+      expect_any_instance_of(Api::V1::IngestEventsController).not_to receive(:client_submission_payload_summary)
+      expect_any_instance_of(Api::V1::IngestEventsController).not_to receive(:client_submission_monitoring_payload?)
+
       post api_v1_ingest_events_path,
            params: {
              event: {
@@ -431,7 +534,12 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
            headers: { "Authorization" => "Bearer invalid-token" }
 
       expect(response).to have_http_status(:unauthorized)
-      expect(Logister).not_to have_received(:report_log)
+      expect(Logister).to have_received(:report_log).with(
+        message: "Client ingest rejected",
+        level: "warn",
+        fingerprint: "client-submission:ingest:invalid_api_key",
+        context: anything
+      )
     end
 
     it "returns 422 when event is invalid" do
@@ -456,5 +564,13 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
         )
       )
     end
+  end
+
+  def outbox_for(record)
+    TelemetryOutboxEvent.find_by!(record_type: record.class.base_class.name, record_id: record.id)
+  end
+
+  def project_derived_intents!(record)
+    Logister::TelemetryProjector.new.project_synchronously!(outbox_for(record))
   end
 end

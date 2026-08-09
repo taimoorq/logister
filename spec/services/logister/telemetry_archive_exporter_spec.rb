@@ -9,16 +9,23 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
 
     def initialize
       @uploads = []
+      @objects = {}
     end
 
     def upload(key, io, checksum:, content_type:)
+      payload = io.read
+      @objects[key] = payload
       @uploads << {
         key: key,
-        payload: io.read,
+        payload: payload,
         checksum: checksum,
         content_type: content_type
       }
     end
+
+    def download(key) = @objects.fetch(key)
+    def exist?(key) = @objects.key?(key)
+    def delete(key) = @objects.delete(key)
   end
 
   it "uploads compressed JSONL batches for telemetry records" do
@@ -36,15 +43,29 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     ).call
 
     expect(result[:rows]).to eq(1)
+    expect(result[:source_reference_count]).to eq(1)
+    expect(result).not_to have_key(:source_references)
     expect(storage.uploads.size).to eq(1)
     upload = storage.uploads.first
-    expect(upload[:key]).to include("telemetry-test/ingest_events/")
+    expect(upload[:key]).to match(%r{\Atelemetry-test/manifests/project=#{project.uuid}/archive=\d+/ingest_events/part-000000-})
     expect(upload[:content_type]).to eq("application/jsonl+gzip")
 
     body = Zlib::GzipReader.new(StringIO.new(upload[:payload])).read
     row = JSON.parse(body.lines.first)
     expect(row["record_type"]).to eq("ingest_events")
     expect(row.dig("attributes", "id")).to eq(event.id)
+    expect(row["archive_version"]).to eq(2)
+    expect(row["manifest_id"]).to eq(project.telemetry_archives.sole.id)
+
+    archive = project.telemetry_archives.sole
+    expect(archive).to be_verified
+    expect(archive.expected_rows).to eq(1)
+    expect(archive.verified_rows).to eq(1)
+    expect(archive.lifecycle_metadata.fetch("sequence_upper_bound")).to eq(event.id)
+    expect(archive.checksum_sha256).to match(/\A[0-9a-f]{64}\z/)
+    expect(archive.object_records.sole.normalized_source_references).to eq([
+      { "id" => event.id, "timestamp" => event.occurred_at.utc.iso8601(6) }
+    ])
   end
 
   it "supports dry runs without uploading" do
@@ -61,6 +82,23 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     ).call
 
     expect(result[:rows]).to eq(1)
+    expect(storage.uploads).to be_empty
+  end
+
+  it "refuses to create an object after project purge is tombstoned" do
+    storage = FakeArchiveStorage.new
+    project = create(:project, purge_requested_at: Time.current)
+    create(:ingest_event, project: project, occurred_at: 2.days.ago)
+
+    expect {
+      described_class.new(
+        record_type: "ingest_events",
+        project: project,
+        before: 1.day.ago,
+        storage_service: storage
+      ).call
+    }.to raise_error(Logister::TelemetryArchiveExporter::Error, /Project purge is pending/)
+
     expect(storage.uploads).to be_empty
   end
 

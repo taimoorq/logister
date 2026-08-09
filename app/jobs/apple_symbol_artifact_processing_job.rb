@@ -5,7 +5,7 @@ require "tmpdir"
 require "find"
 
 class AppleSymbolArtifactProcessingJob < ApplicationJob
-  queue_as :default
+  queue_as :symbols
   MAX_EXPANDED_BYTES = 2.gigabytes
 
   def perform(artifact_id)

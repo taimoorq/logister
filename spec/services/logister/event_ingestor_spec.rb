@@ -34,9 +34,11 @@ RSpec.describe Logister::EventIngestor, type: :model do
     ).call
 
     payload = fake_client.payload
-    expect(payload[:event_id]).to eq("7f2d5dca-0c4d-4f5e-9997-6f87f5460b88")
+    expect(payload[:event_id]).to eq(event.uuid)
+    expect(payload[:identity_checksum]).to eq(event.uuid.delete("-").to_i(16))
     expect(payload[:project_id]).to eq(event.project_id)
     expect(payload[:api_key_id]).to eq(event.api_key_id)
+    expect(payload[:projection_version]).to be_positive
     expect(payload[:occurred_at]).to match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\z/)
     expect(payload[:received_at]).to match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}\z/)
     expect(payload[:event_type]).to eq("error")
@@ -72,6 +74,14 @@ RSpec.describe Logister::EventIngestor, type: :model do
     described_class.new(event: event, request_context: {}, clickhouse_client: client).call
   end
 
+  it "does not let a rolling-deploy legacy job recreate data after the purge tombstone" do
+    event.project.update!(purge_requested_at: Time.current)
+
+    described_class.new(event: event, request_context: {}, clickhouse_client: fake_client).call
+
+    expect(fake_client.payload).to be_nil
+  end
+
   it "uses fallback fingerprint when event has no fingerprint in context" do
     event.update!(fingerprint: nil, context: {})
     described_class.new(event: event, request_context: {}, clickhouse_client: fake_client).call
@@ -85,5 +95,59 @@ RSpec.describe Logister::EventIngestor, type: :model do
     described_class.new(event: event, request_context: {}, clickhouse_client: fake_client).call
 
     expect(fake_client.payload[:event_id]).to eq(event.uuid)
+  end
+
+  it "projects transaction values into typed analytical columns" do
+    event.update!(
+      event_type: :transaction,
+      message: "POST /checkout",
+      context: {
+        "transaction_name" => "POST /checkout",
+        "transaction_status" => "503",
+        "duration_ms" => "182.5",
+        "trace_id" => "trace-typed",
+        "request_id" => "request-typed"
+      }
+    )
+
+    described_class.new(event: event, request_context: {}, clickhouse_client: fake_client).call
+
+    expect(fake_client.payload).to include(
+      transaction_status: "503",
+      duration_ms: 182.5,
+      trace_id: "trace-typed",
+      request_id: "request-typed",
+      metric_name: "",
+      metric_value: nil
+    )
+  end
+
+  it "keeps check-in status separate from transaction status" do
+    event.update!(
+      event_type: :check_in,
+      context: {
+        "check_in_slug" => "nightly-import",
+        "check_in_status" => "ok",
+        "expected_interval_seconds" => 3600
+      }
+    )
+
+    described_class.new(event: event, request_context: {}, clickhouse_client: fake_client).call
+
+    expect(fake_client.payload).to include(
+      transaction_status: "",
+      check_in_slug: "nightly-import",
+      check_in_status: "ok",
+      check_in_expected_interval_seconds: 3600
+    )
+  end
+
+  it "closes the default-owned ClickHouse client after legacy single-row delivery" do
+    client = instance_double(Logister::ClickhouseClient, enabled?: true, insert_event!: nil, close: nil)
+    allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
+
+    described_class.new(event: event, request_context: {}).call
+
+    expect(client).to have_received(:close).once
   end
 end

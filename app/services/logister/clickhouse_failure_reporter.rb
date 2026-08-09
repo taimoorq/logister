@@ -1,5 +1,3 @@
-require "digest"
-
 module Logister
   class ClickhouseFailureReporter
     DEFAULT_THROTTLE_SECONDS = 60
@@ -101,7 +99,7 @@ module Logister
     end
 
     def signature
-      @signature ||= Digest::SHA256.hexdigest([ @kind, @error.class.name, @error.message ].join("|"))[0, 24]
+      @signature ||= ClickhouseFailureSignature.call(@error, kind: @kind)
     end
 
     def throttle_window

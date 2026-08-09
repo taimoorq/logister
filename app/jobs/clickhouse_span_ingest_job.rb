@@ -1,5 +1,5 @@
 class ClickhouseSpanIngestJob < ApplicationJob
-  queue_as :default
+  queue_as :analytics
 
   discard_on ActiveRecord::RecordNotFound
 

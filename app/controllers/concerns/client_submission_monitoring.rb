@@ -22,7 +22,8 @@ module ClientSubmissionMonitoring
         status: :forbidden,
         api_key: diagnostic_mobile_ingest_token.api_key,
         mobile_ingest_token: diagnostic_mobile_ingest_token,
-        token: token
+        token: token,
+        summarize_payload: false
       )
       render json: { error: "Forbidden" }, status: :forbidden
       return
@@ -61,7 +62,8 @@ module ClientSubmissionMonitoring
         status: :forbidden,
         api_key: @api_key,
         mobile_ingest_token: @mobile_ingest_token,
-        token: token
+        token: token,
+        summarize_payload: false
       )
       render json: { error: "Forbidden" }, status: :forbidden
       return true
@@ -97,7 +99,8 @@ module ClientSubmissionMonitoring
       status: :unauthorized,
       api_key: diagnostic_api_key,
       mobile_ingest_token: diagnostic_mobile_ingest_token,
-      token: token
+      token: token,
+      summarize_payload: false
     )
 
     render json: { error: "Unauthorized" }, status: :unauthorized
@@ -107,13 +110,14 @@ module ClientSubmissionMonitoring
     ClientSubmissions::MobileTokenPolicy.endpoint_allowed?(client_submission_endpoint_label)
   end
 
-  def public_api_rate_limited?(identity:, kind:, limit:, period:)
+  def public_api_rate_limited?(identity:, kind:, limit:, period:, amount: 1)
     result = public_api_rate_limiter.check(
       identity: identity,
       kind: kind,
       endpoint: client_submission_endpoint_label,
       limit: limit,
-      period: period
+      period: period,
+      amount: amount
     )
     return false unless result
 
@@ -184,9 +188,10 @@ module ClientSubmissionMonitoring
     exception: nil,
     api_key: @api_key,
     mobile_ingest_token: @mobile_ingest_token,
-    token: submitted_api_key_token
+    token: submitted_api_key_token,
+    summarize_payload: true
   )
-    return if client_submission_monitoring_payload?
+    return if summarize_payload && client_submission_monitoring_payload?
 
     status_code = response_status_code(status)
 
@@ -205,12 +210,12 @@ module ClientSubmissionMonitoring
           client_ip: request.remote_ip,
           user_agent: request.user_agent,
           content_type: request.content_type,
-          content_length: request.content_length,
+          content_length: client_submission_content_length(summarize_payload: summarize_payload),
           auth: client_submission_auth_context(token),
           project: client_submission_project_context(api_key&.project),
           api_key: client_submission_api_key_context(api_key),
           mobile_ingest_token: client_submission_mobile_ingest_token_context(mobile_ingest_token),
-          payload: client_submission_payload_summary,
+          payload: summarize_payload ? client_submission_payload_summary : nil,
           errors: Array(errors).presence,
           exception: exception && {
             class: exception.class.name,
@@ -275,6 +280,14 @@ module ClientSubmissionMonitoring
       token_source: @client_submission_token_source,
       token_digest_prefix: token.present? ? ApiKey.digest(token)[0, 16] : nil
     }.compact
+  end
+
+  def client_submission_content_length(summarize_payload:)
+    declared_length = request.get_header("CONTENT_LENGTH").to_s
+    return declared_length.to_i if declared_length.present?
+    return request.content_length if summarize_payload
+
+    nil
   end
 
   def client_submission_project_context(project)

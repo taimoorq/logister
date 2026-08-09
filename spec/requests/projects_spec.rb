@@ -4,6 +4,8 @@ require "rails_helper"
 require "nokogiri"
 
 RSpec.describe "Projects", type: :request do
+  include ActiveJob::TestHelper
+
   describe "GET /projects" do
     it "requires authentication" do
       get projects_path
@@ -1520,12 +1522,23 @@ RSpec.describe "Projects", type: :request do
     context "when owner" do
       before { sign_in users(:one) }
 
-      it "deletes project and redirects" do
+      it "tombstones the project and queues an audited cross-store purge" do
         project = projects(:one)
+        api_key = project.api_keys.active.first
+        clear_enqueued_jobs
+
         expect {
           delete project_path(project)
-        }.to change(Project, :count).by(-1)
+        }.to change(ProjectPurge, :count).by(1)
+          .and change(Project, :count).by(0)
+
         expect(response).to redirect_to(projects_path)
+        expect(project.reload).to be_archived
+        expect(project).to be_purge_pending
+        expect(api_key.reload.revoked_at).to be_present if api_key
+        purge = ProjectPurge.find_by!(project_uuid: project.uuid)
+        expect(purge.steps.order(:position).pluck(:store_name)).to eq(ProjectPurge::STORE_ORDER)
+        expect(ProjectPurgeJob).to have_been_enqueued.with(purge.id)
       end
     end
 

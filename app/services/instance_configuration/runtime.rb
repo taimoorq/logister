@@ -29,6 +29,8 @@ module InstanceConfiguration
       config.clickhouse_spans_table = InstanceConfiguration.value("clickhouse.spans_table")
       config.clickhouse_username = InstanceConfiguration.value("clickhouse.username").presence
       config.clickhouse_password = InstanceConfiguration.value("clickhouse.password").to_s
+      config.clickhouse_circuit_failure_threshold = InstanceConfiguration.value("clickhouse.circuit_failure_threshold")
+      config.clickhouse_circuit_open_seconds = InstanceConfiguration.value("clickhouse.circuit_open_seconds")
     end
 
     def apply_url_options!
@@ -69,18 +71,31 @@ module InstanceConfiguration
     end
 
     def apply_cache!
-      return unless Rails.env.production?
+      return if Rails.env.test?
 
       Rails.cache = ActiveSupport::Cache.lookup_store(
         :redis_cache_store,
-        url: InstanceConfiguration.value("background_jobs.redis_url"),
-        namespace: "logister:cache:production",
+        url: InstanceConfiguration.redis_url(:cache),
+        namespace: "logister:cache:#{Rails.env}",
         connect_timeout: 2,
         read_timeout: 2,
         write_timeout: 2,
         reconnect_attempts: 2,
         error_handler: lambda do |method:, returning:, exception:|
-          Rails.logger.warn("Redis cache error in production: #{method} => #{returning.inspect} (#{exception.class})")
+          Rails.logger.warn("Redis cache error in #{Rails.env}: #{method} => #{returning.inspect} (#{exception.class})")
+        end
+      )
+
+      Rails.application.config.x.logister.rate_limit_cache = ActiveSupport::Cache.lookup_store(
+        :redis_cache_store,
+        url: InstanceConfiguration.redis_url(:rate_limit),
+        namespace: "logister:rate_limit:#{Rails.env}",
+        connect_timeout: 2,
+        read_timeout: 2,
+        write_timeout: 2,
+        reconnect_attempts: 2,
+        error_handler: lambda do |method:, returning:, exception:|
+          Rails.logger.warn("Redis rate-limit error in #{Rails.env}: #{method} => #{returning.inspect} (#{exception.class})")
         end
       )
     end
@@ -89,6 +104,7 @@ module InstanceConfiguration
       config = Rails.application.config.x.logister
       config.public_api_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_rate_limit_requests")
       config.public_api_rate_limit_period_seconds = InstanceConfiguration.value("authentication.public_api_rate_limit_period_seconds")
+      config.public_api_pre_auth_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_pre_auth_rate_limit_requests")
       config.public_api_auth_failure_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_auth_failure_rate_limit_requests")
       config.web_request_transactions_enabled = InstanceConfiguration.value("observability.capture_web_transactions")
       config.web_request_min_duration_ms = InstanceConfiguration.value("observability.web_request_min_duration_ms").to_f

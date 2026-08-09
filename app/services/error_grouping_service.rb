@@ -25,20 +25,38 @@ class ErrorGroupingService
 
     attempts = 0
     group = created = occurrence_created = regressed = nil
+    notification_intents = []
+    evaluation_to_schedule = nil
 
     begin
+      notification_intents = []
+      evaluation_to_schedule = nil
       fingerprint = derive_fingerprint
       ErrorGroup.transaction(requires_new: true) do
         group, created = upsert_group(fingerprint)
         _occurrence, occurrence_created = link_occurrence(group)
 
         if !created && occurrence_created
-          regressed = !group.unresolved?
-          group.record_occurrence!(@event)
+          regressed = group.record_occurrence!(@event)
         end
 
         # Back-link on the ingest_event row so we can JOIN cheaply
         @event.update_column(:error_group_id, group.id)
+
+        if @notifications && occurrence_created
+          notification_intents = capture_notification_intents(
+            group,
+            created: created,
+            regressed: regressed
+          )
+          unless created
+            evaluation, schedule = NotificationEvaluation.observe_frequent_error!(
+              error_group: group,
+              occurred_at: @event.occurred_at
+            )
+            evaluation_to_schedule = evaluation if schedule
+          end
+        end
       end
     rescue ActiveRecord::RecordNotUnique
       raise if attempts >= RECORD_NOT_UNIQUE_RETRIES
@@ -48,12 +66,8 @@ class ErrorGroupingService
       retry
     end
 
-    if @notifications
-      ProjectErrorFirstOccurrenceAlertJob.perform_later(group.id) if created
-      ProjectErrorGroupNotificationJob.perform_later(group.id, "regression", regression_metadata(group)) if occurrence_created && regressed
-      ProjectErrorGroupNotificationJob.perform_later(group.id, "error_milestone", milestone_metadata(group)) if occurrence_created && milestone_reached?(group.occurrence_count)
-      ProjectErrorGroupNotificationJob.perform_later(group.id, "frequent_error", frequent_error_metadata) if occurrence_created && !created
-    end
+    notification_intents.each { |intent| NotificationIntent.kick(intent) }
+    schedule_frequent_error_evaluation(evaluation_to_schedule) if evaluation_to_schedule
     group
   end
 
@@ -142,6 +156,56 @@ class ErrorGroupingService
     count == 10 || count == 100 || count == 1_000 || (count > 1_000 && (count % 1_000).zero?)
   end
 
+  def capture_notification_intents(group, created:, regressed:)
+    intents = []
+    if created
+      intents << NotificationIntent.capture!(
+        project: @project,
+        kind: "first_occurrence",
+        error_group: group,
+        dedup_key: "error_group:#{group.id}:first_occurrence",
+        metadata: occurrence_identity_metadata
+      )
+    end
+    if regressed
+      intents << NotificationIntent.capture!(
+        project: @project,
+        kind: "regression",
+        error_group: group,
+        dedup_key: "error_group:#{group.id}:regression:event:#{@event.uuid}",
+        metadata: regression_metadata(group)
+      )
+    end
+    if milestone_reached?(group.occurrence_count)
+      intents << NotificationIntent.capture!(
+        project: @project,
+        kind: "error_milestone",
+        error_group: group,
+        dedup_key: "error_group:#{group.id}:milestone:#{group.occurrence_count}",
+        metadata: milestone_metadata(group)
+      )
+    end
+    intents
+  end
+
+  def occurrence_identity_metadata
+    {
+      "event_id" => @event.id,
+      "event_uuid" => @event.uuid,
+      "occurred_at" => @event.occurred_at.utc.iso8601
+    }
+  end
+
+  def schedule_frequent_error_evaluation(evaluation)
+    NotificationEvaluation.schedule_frequent_error!(evaluation)
+  rescue StandardError => error
+    Rails.logger.warn(
+      "notification_evaluation.schedule_failed evaluation_id=#{evaluation.id} " \
+      "error=#{error.class}: #{error.message}"
+    )
+    nil
+  end
+
   def regression_metadata(group)
     {
       "event_id" => @event.id,
@@ -158,15 +222,6 @@ class ErrorGroupingService
       "event_uuid" => @event.uuid,
       "occurred_at" => @event.occurred_at.utc.iso8601,
       "milestone" => group.occurrence_count
-    }
-  end
-
-  def frequent_error_metadata
-    {
-      "event_id" => @event.id,
-      "event_uuid" => @event.uuid,
-      "occurred_at" => @event.occurred_at.utc.iso8601,
-      "bucket" => @event.occurred_at.utc.strftime("%Y%m%d%H")
     }
   end
 end

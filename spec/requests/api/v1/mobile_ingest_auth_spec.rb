@@ -70,6 +70,13 @@ RSpec.describe "Mobile ingest authentication", type: :request do
     expect(event.context.dig("exception", "type")).to eq("java.lang.IllegalStateException")
     expect(event.context.dig("exception", "message")).to be_nil
     expect(event.context.dig("exception", "cause")).to be_nil
+    outbox = TelemetryOutboxEvent.find_by!(
+      record_type: "IngestEvent",
+      record_id: event.id,
+      recorded_at: event.occurred_at
+    )
+    Logister::TelemetryProjector.new.project_synchronously!(outbox)
+    event.reload
     expect(event.error_group.grouping_evidence).to include(
       "mechanism" => "unhandled_exception",
       "root_exception_type" => "java.lang.IllegalStateException",

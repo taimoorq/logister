@@ -6,8 +6,7 @@ RSpec.describe Logister::ClickhouseEventRollup do
   let(:client) do
     instance_double(
       Logister::ClickhouseClient,
-      read_enabled?: true,
-      events_table_name: "logister.events_raw"
+      event_facts_table_name: "logister.event_facts_v2"
     )
   end
 
@@ -30,20 +29,15 @@ RSpec.describe Logister::ClickhouseEventRollup do
       2 => Time.utc(2026, 7, 25, 1, 30)
     )
     expect(client).to have_received(:select_rows!).with(
-      a_string_including("uniqExact(event_id) AS count", "FROM logister.events_raw", "GROUP BY project_id, event_type")
+      a_string_including("count() AS count", "FROM logister.event_facts_v2", "GROUP BY project_id, event_type")
     ).once
   end
 
-  it "returns nil without querying when ClickHouse is disabled" do
-    allow(client).to receive(:read_enabled?).and_return(false)
-    expect(client).not_to receive(:select_rows!)
-
-    expect(described_class.call(project_ids: [ 1 ], since: 1.day.ago, client:)).to be_nil
-  end
-
-  it "returns nil so callers can fall back when ClickHouse fails" do
+  it "lets the range-aware read router own query fallback" do
     allow(client).to receive(:select_rows!).and_raise(Logister::ClickhouseClient::Error, "timeout")
 
-    expect(described_class.call(project_ids: [ 1 ], since: 1.day.ago, client:)).to be_nil
+    expect {
+      described_class.call(project_ids: [ 1 ], since: 1.day.ago, client:)
+    }.to raise_error(Logister::ClickhouseClient::Error, "timeout")
   end
 end

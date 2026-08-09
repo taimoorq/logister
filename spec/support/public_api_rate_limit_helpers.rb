@@ -1,17 +1,19 @@
 # frozen_string_literal: true
 
 module PublicApiRateLimitHelpers
-  def with_public_api_rate_limits(requests: 1_200, auth_failure_requests: 120, period_seconds: 60)
+  def with_public_api_rate_limits(requests: 1_200, pre_auth_requests: 12_000, auth_failure_requests: 120, period_seconds: 60)
     logister_config = Rails.application.config.x.logister
     previous_values = {
       public_api_rate_limit_requests: logister_config.public_api_rate_limit_requests,
       public_api_rate_limit_period_seconds: logister_config.public_api_rate_limit_period_seconds,
+      public_api_pre_auth_rate_limit_requests: logister_config.public_api_pre_auth_rate_limit_requests,
       public_api_auth_failure_rate_limit_requests: logister_config.public_api_auth_failure_rate_limit_requests
     }
 
     allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
     logister_config.public_api_rate_limit_requests = requests
     logister_config.public_api_rate_limit_period_seconds = period_seconds
+    logister_config.public_api_pre_auth_rate_limit_requests = pre_auth_requests
     logister_config.public_api_auth_failure_rate_limit_requests = auth_failure_requests
 
     yield

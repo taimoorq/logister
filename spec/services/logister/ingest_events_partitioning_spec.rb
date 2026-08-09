@@ -50,6 +50,18 @@ RSpec.describe Logister::IngestEventsPartitioning do
 
       expect(first.fetch(:partitioned_tables)).to include("public.ingest_events")
       expect(second.fetch(:created_partitions)).to be_empty
+      expect(second.fetch(:default_partitions).first).to include(:partition, :row_count, :drain_ready, :month_buckets)
+    end
+
+    it "makes rows routed to the default partition visible for a drain" do
+      create(:ingest_event, occurred_at: Time.zone.parse("2035-04-15T12:00:00Z"))
+
+      result = described_class.new.partition_maintenance_status(months_ahead: 1)
+      default_partition = result.fetch(:default_partitions).find { |entry| entry.fetch(:parent) == "public.ingest_events" }
+
+      expect(default_partition).to include(drain_ready: false)
+      expect(default_partition.fetch(:row_count)).to be >= 1
+      expect(default_partition.fetch(:month_buckets)).to include(hash_including("month" => "2035-04"))
     end
   end
 end

@@ -48,7 +48,8 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(event.reload.error_group_id).to eq(group.id)
       occurrence = ErrorOccurrence.find_by!(error_group: group, ingest_event: event)
       expect(occurrence.ingest_event_occurred_at).to be_within(1.second).of(event.occurred_at)
-      expect(ProjectErrorFirstOccurrenceAlertJob).to have_been_enqueued.with(group.id)
+      intent = NotificationIntent.find_by!(kind: "first_occurrence", error_group: group)
+      expect(NotificationIntentDrainJob).to have_been_enqueued.with(intent.id)
     end
 
     it "groups second event with same fingerprint into same ErrorGroup" do
@@ -75,7 +76,9 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(group2.latest_event_id).to eq(event2.id)
       expect(group2.latest_event_occurred_at).to be_within(1.second).of(event2.occurred_at)
       expect(ErrorOccurrence.where(error_group: group2).count).to eq(2)
-      expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group2.id, "frequent_error", hash_including("event_id" => event2.id))
+      evaluation = NotificationEvaluation.find_by!(kind: "frequent_error", error_group: group2)
+      expect(evaluation.bucket).to eq(event2.occurred_at.utc.strftime("%Y%m%d%H"))
+      expect(FrequentErrorNotificationEvaluationJob).to have_been_enqueued.with(evaluation.id)
     end
 
     it "does not double-count when the same event is grouped again" do
@@ -94,7 +97,7 @@ RSpec.describe ErrorGroupingService, type: :model do
       expect(described_class.call(event.reload).id).to eq(group.id)
       expect(group.reload.occurrence_count).to eq(1)
       expect(ErrorOccurrence.where(error_group: group, ingest_event: event).count).to eq(1)
-      expect(ProjectErrorGroupNotificationJob).not_to have_been_enqueued
+      expect(NotificationIntentDrainJob).not_to have_been_enqueued
     end
 
     it "retries duplicate occurrence races without leaving partial group state" do
@@ -138,6 +141,9 @@ RSpec.describe ErrorGroupingService, type: :model do
       described_class.call(event)
 
       expect(group.reload).to be_unresolved
+      intent = NotificationIntent.find_by!(kind: "regression", error_group: group)
+      expect(intent.metadata).to include("reopen_count" => 1)
+      NotificationIntentDrainJob.perform_now(intent.id)
       expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group.id, "regression", hash_including("reopen_count" => 1))
     end
 
@@ -154,7 +160,47 @@ RSpec.describe ErrorGroupingService, type: :model do
 
       described_class.call(event)
 
+      intent = NotificationIntent.find_by!(kind: "error_milestone", error_group: group)
+      expect(intent.metadata).to include("milestone" => 10)
+      NotificationIntentDrainJob.perform_now(intent.id)
       expect(ProjectErrorGroupNotificationJob).to have_been_enqueued.with(group.id, "error_milestone", hash_including("milestone" => 10))
+    end
+
+    it "commits frequent-error evaluation observations with the grouping mutation" do
+      create(:error_group, :resolved, project: project, fingerprint: "transaction-fp", occurrence_count: 1)
+      event = IngestEvent.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "Transactional evaluation",
+        fingerprint: "transaction-fp",
+        occurred_at: Time.current
+      )
+      allow(NotificationEvaluation).to receive(:observe_frequent_error!).and_wrap_original do |original, *arguments, **keywords|
+        original.call(*arguments, **keywords)
+        raise ActiveRecord::StatementInvalid, "forced rollback"
+      end
+
+      expect { described_class.call(event) }.to raise_error(ActiveRecord::StatementInvalid, "forced rollback")
+
+      expect(NotificationEvaluation.where(error_group: project.error_groups.find_by!(fingerprint: "transaction-fp"))).to be_empty
+      expect(NotificationIntent.where(project: project)).to be_empty
+    end
+
+    it "keeps a committed intent pending when the immediate Sidekiq handoff fails" do
+      event = IngestEvent.create!(
+        project: project,
+        api_key: api_key,
+        event_type: :error,
+        message: "Durable notification",
+        fingerprint: "durable-notification-fp",
+        occurred_at: Time.current
+      )
+      allow(NotificationIntentDrainJob).to receive(:perform_later).and_raise(ActiveJob::EnqueueError, "Redis unavailable")
+
+      group = described_class.call(event)
+
+      expect(NotificationIntent.find_by!(error_group: group, kind: "first_occurrence").status).to eq("pending")
     end
 
     it "derives fingerprint from first line of message when fingerprint blank" do

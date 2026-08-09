@@ -1,4 +1,6 @@
 class MobileIngestToken < ApplicationRecord
+  include CoalescedLastUsed
+
   DEFAULT_TOKEN_PREFIX = "logister_mobile".freeze
   DEFAULT_EXPIRES_IN_SECONDS = 15.minutes.to_i
   MIN_EXPIRES_IN_SECONDS = 1.minute.to_i
@@ -58,10 +60,6 @@ class MobileIngestToken < ApplicationRecord
 
   def revoke!
     update!(revoked_at: Time.current)
-  end
-
-  def touch_last_used!
-    update_column(:last_used_at, Time.current)
   end
 
   def allows_event_type?(event_type)

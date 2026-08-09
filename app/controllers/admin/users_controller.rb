@@ -49,6 +49,15 @@ class Admin::UsersController < Admin::BaseController
       return
     end
 
+    if @user.projects.exists?
+      purge_ids = @user.projects.find_each.map do |project|
+        Logister::ProjectPurgeRequest.new(project: project, requested_by: current_user).call.id
+      end
+      redirect_to admin_user_path(@user),
+                  notice: "Owned projects were disabled and queued for permanent deletion (purges #{purge_ids.join(', ')}). Delete the user after those purges complete."
+      return
+    end
+
     deleted_email = @user.email
     @user.destroy!
     redirect_to admin_users_path, notice: "User #{deleted_email} was deleted."

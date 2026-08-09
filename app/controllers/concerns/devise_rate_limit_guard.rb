@@ -7,10 +7,11 @@ module DeviseRateLimitGuard
 
   RAILS_CACHE_STORE = Class.new do
     def increment(cache_key, amount = 1, expires_in:)
-      count = Rails.cache.increment(cache_key, amount, expires_in: expires_in)
+      cache = Rails.application.config.x.logister.rate_limit_cache || Rails.cache
+      count = cache.increment(cache_key, amount, expires_in: expires_in)
       return count if count
 
-      Rails.cache.write(cache_key, amount, expires_in: expires_in)
+      cache.write(cache_key, amount, expires_in: expires_in)
       amount
     rescue StandardError => error
       Rails.logger.warn("Devise rate limiting skipped: #{error.class} #{error.message}")

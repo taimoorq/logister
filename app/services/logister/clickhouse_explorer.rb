@@ -5,11 +5,12 @@ module Logister
     EVENT_TYPES = %w[error log metric transaction check_in].freeze
 
     class << self
-      def call(project_ids:, since:, event_type: nil, environment: nil, occurred_on: nil,
-               environment_limit:, client: ClickhouseClient.new)
+      def call(project_ids:, since:, to: Time.current, event_type: nil, environment: nil, occurred_on: nil,
+               environment_limit:, client:)
         new(
           project_ids:,
           since:,
+          to:,
           event_type:,
           environment:,
           occurred_on:,
@@ -19,9 +20,10 @@ module Logister
       end
     end
 
-    def initialize(project_ids:, since:, event_type:, environment:, occurred_on:, environment_limit:, client:)
+    def initialize(project_ids:, since:, to:, event_type:, environment:, occurred_on:, environment_limit:, client:)
       @project_ids = Array(project_ids).map(&:to_i).select(&:positive?).uniq
       @since = since
+      @to = to
       @event_type = event_type.to_s.presence
       @environment = environment.to_s.presence
       @occurred_on = occurred_on
@@ -30,13 +32,9 @@ module Logister
     end
 
     def call
-      return unless @client.read_enabled?
       return empty_payload if @project_ids.empty?
 
       build_payload(@client.select_rows!(query))
-    rescue StandardError => error
-      Rails.logger.warn("clickhouse dashboard explorer failed: #{error.class} #{error.message}")
-      nil
     end
 
     private
@@ -48,8 +46,8 @@ module Logister
           project_id,
           event_type,
           #{environment_expression} AS environment_name,
-          uniqExact(event_id) AS count
-        FROM #{@client.events_table_name}
+          count() AS count
+        FROM #{@client.event_facts_table_name}
         WHERE #{query_filters.join(" AND ")}
         GROUP BY day, project_id, event_type, environment_name
       SQL
@@ -58,7 +56,8 @@ module Logister
     def query_filters
       filters = [
         "project_id IN (#{@project_ids.join(", ")})",
-        "occurred_at >= parseDateTime64BestEffort(#{quote(@since.to_time.utc.iso8601(3))}, 3)"
+        "occurred_at >= parseDateTime64BestEffort(#{quote(@since.to_time.utc.iso8601(3))}, 3)",
+        "occurred_at < parseDateTime64BestEffort(#{quote(@to.to_time.utc.iso8601(3))}, 3)"
       ]
       filters << "event_type = #{quote(@event_type)}" if @event_type
       filters << "#{environment_expression} = #{quote(@environment)}" if @environment

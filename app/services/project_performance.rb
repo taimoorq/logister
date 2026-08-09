@@ -17,9 +17,26 @@ class ProjectPerformance
 
   class << self
     def request_breakdown(project, since: 24.hours.ago, limit: REQUEST_LIMIT)
-      clickhouse_payload = request_breakdown_from_clickhouse(project, since:, limit:)
-      return clickhouse_payload if clickhouse_payload.present?
+      ended_at = Time.current
+      read = Logister::ClickhouseReadRouter.call(
+        project_ids: [ project.id ],
+        signals: %w[span transaction],
+        from: since,
+        to: ended_at,
+        clickhouse: ->(client) { request_breakdown_from_clickhouse(project, since:, to: ended_at, limit:, client:) },
+        postgres: -> { request_breakdown_from_postgresql(project, since:, limit:) }
+      )
 
+      read.payload.merge(analytics: read.diagnostics)
+    end
+
+    def segments
+      SEGMENTS
+    end
+
+    private
+
+    def request_breakdown_from_postgresql(project, since:, limit:)
       roots = project.trace_spans
                      .recent_roots(since, limit)
                      .select(:id, :uuid, :trace_id, :span_id, :name, :kind, :status, :duration_ms, :started_at, :ended_at, :context)
@@ -38,67 +55,17 @@ class ProjectPerformance
       payload(rows)
     end
 
-    def segments
-      SEGMENTS
-    end
-
-    private
-
-    def request_breakdown_from_clickhouse(project, since:, limit:)
-      client = Logister::ClickhouseClient.new
-      return unless client.read_enabled?
-
-      config = Rails.configuration.x.logister
-      table = "#{config.clickhouse_database}.#{config.clickhouse_spans_table}"
-      since_literal = quote_clickhouse_time(since)
-      root_rows = client.select_rows!(<<~SQL.squish)
-        SELECT
-          span_id,
-          trace_id,
-          external_span_id,
-          name,
-          route,
-          kind,
-          status,
-          duration_ms,
-          started_at,
-          request_id
-        FROM #{table}
-        WHERE project_id = #{project.id.to_i}
-          AND started_at >= parseDateTime64BestEffort(#{since_literal}, 3)
-          AND kind IN ('server', 'browser')
-          AND parent_span_id = ''
-        ORDER BY duration_ms DESC, started_at DESC
-        LIMIT #{limit.to_i.clamp(1, REQUEST_LIMIT)}
-      SQL
-      return if root_rows.empty?
-
-      trace_ids = root_rows.map { |row| row["trace_id"].to_s }.reject(&:blank?).uniq
-      child_rows = if trace_ids.any?
-        client.select_rows!(<<~SQL.squish)
-          SELECT
-            trace_id,
-            kind,
-            sum(duration_ms) AS duration_ms,
-            count() AS child_count
-          FROM #{table}
-          WHERE project_id = #{project.id.to_i}
-            AND started_at >= parseDateTime64BestEffort(#{since_literal}, 3)
-            AND trace_id IN (#{trace_ids.map { |trace_id| quote_clickhouse(trace_id) }.join(", ")})
-            AND parent_span_id != ''
-          GROUP BY trace_id, kind
-        SQL
-      else
-        []
+    def request_breakdown_from_clickhouse(project, since:, to:, limit:, client:)
+      query_result = Logister::ClickhousePerformanceQuery.new(project:, since:, to:, limit:, client:).call
+      roots = query_result.fetch(:root_rows)
+      if roots.any?
+        child_by_trace = query_result.fetch(:child_rows).group_by { |row| row["trace_id"].to_s }
+        rows = roots.map { |row| row_from_clickhouse_root(row, child_by_trace.fetch(row["trace_id"].to_s, [])) }
+        return payload(rows)
       end
 
-      child_by_trace = child_rows.group_by { |row| row["trace_id"].to_s }
-      rows = root_rows.map { |row| row_from_clickhouse_root(row, child_by_trace.fetch(row["trace_id"].to_s, [])) }
-
+      rows = query_result.fetch(:transaction_rows).map { |row| row_from_clickhouse_transaction(row) }
       payload(rows)
-    rescue StandardError => e
-      Rails.logger.warn("clickhouse request breakdown failed: #{e.class} #{e.message}")
-      nil
     end
 
     def row_from_clickhouse_root(root, child_rows)
@@ -128,6 +95,40 @@ class ProjectPerformance
         segments: rounded_segments(segment_ms),
         child_count: child_count
       }
+    end
+
+    def row_from_clickhouse_transaction(row)
+      context = JSON.parse(row.fetch("context_json", "{}"))
+      duration = numeric(row["duration_ms"])
+      segment_ms = empty_segment_hash
+      explicit = normalized_timing_breakdown(context)
+
+      if explicit.any?
+        explicit.each { |key, value| segment_ms[segment_key(key)] += numeric(value) }
+      else
+        performance = context["performance"] || {}
+        segment_ms["db"] = numeric(performance["dbRuntimeMs"] || performance["db_runtime_ms"])
+        segment_ms["render"] = numeric(performance["viewRuntimeMs"] || performance["view_runtime_ms"])
+        segment_ms["http"] = dependency_duration_ms(context)
+      end
+
+      segment_ms["app"] = [ duration - segment_ms.values.sum, 0.0 ].max
+      segment_ms["other"] = [ duration - segment_ms.values.sum, 0.0 ].max
+      {
+        id: row["event_id"],
+        source: "transaction",
+        label: row["transaction_name"].presence || row["message"].presence || "request",
+        name: row["message"],
+        started_at: row["occurred_at"],
+        duration_ms: rounded(duration),
+        trace_id: row["trace_id"],
+        request_id: row["request_id"],
+        status: row["transaction_status"],
+        segments: rounded_segments(segment_ms),
+        child_count: 0
+      }
+    rescue JSON::ParserError
+      row_from_clickhouse_transaction(row.merge("context_json" => "{}"))
     end
 
     def child_segments_by_trace(project, trace_ids:, root_ids:, window_start:, window_end:)
@@ -266,14 +267,6 @@ class ProjectPerformance
 
     def rounded_segments(segments)
       segments.transform_values { |value| rounded(value) }
-    end
-
-    def quote_clickhouse(value)
-      "'#{value.to_s.gsub("'", "''")}'"
-    end
-
-    def quote_clickhouse_time(value)
-      quote_clickhouse(value.utc.iso8601(3))
     end
   end
 end

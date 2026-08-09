@@ -3,6 +3,12 @@
 require "digest"
 
 module InstanceConfiguration
+  REDIS_ROLE_KEYS = {
+    cache: "background_jobs.cache_redis_url",
+    rate_limit: "background_jobs.rate_limit_redis_url",
+    sidekiq: "background_jobs.sidekiq_redis_url"
+  }.freeze
+
   Entry = Struct.new(
     :definition, :effective_value, :saved_value, :environment_value, :active_environment_key, :source,
     keyword_init: true
@@ -22,6 +28,11 @@ module InstanceConfiguration
 
   def value(key, overrides: {})
     entry(key, overrides: overrides).effective_value
+  end
+
+  def redis_url(role, overrides: {})
+    role_key = REDIS_ROLE_KEYS.fetch(role.to_sym)
+    value(role_key, overrides: overrides).presence || value("background_jobs.redis_url", overrides: overrides)
   end
 
   def entry(key, overrides: {})

@@ -1,4 +1,6 @@
 class ApiKey < ApplicationRecord
+  include CoalescedLastUsed
+
   DEFAULT_TOKEN_PREFIX = "logister".freeze
 
   belongs_to :user
@@ -29,10 +31,6 @@ class ApiKey < ApplicationRecord
 
   def active?
     revoked_at.nil?
-  end
-
-  def touch_last_used!
-    update_column(:last_used_at, Time.current)
   end
 
   def self.authenticate(token)

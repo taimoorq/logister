@@ -1,4 +1,5 @@
 class EmailNotificationDelivery < ApplicationRecord
+  SENDING_LEASE = 15.minutes
   KINDS = %w[
     first_occurrence
     regression
@@ -30,6 +31,9 @@ class EmailNotificationDelivery < ApplicationRecord
   validates :dedup_key, presence: true, uniqueness: true
 
   scope :sent, -> { where(status: "sent") }
+  scope :stale_sending, ->(now = Time.current) {
+    where(status: "sending").where("updated_at <= ?", now - SENDING_LEASE)
+  }
 
   def self.first_occurrence_key(user:, error_group:)
     "first_occurrence:user:#{user.id}:error_group:#{error_group.id}"
@@ -54,8 +58,12 @@ class EmailNotificationDelivery < ApplicationRecord
     status == "sent"
   end
 
-  def sending_recent?
-    status == "sending" && updated_at > 15.minutes.ago
+  def sending_recent?(now: Time.current)
+    status == "sending" && updated_at > now - SENDING_LEASE
+  end
+
+  def sending_stale?(now: Time.current)
+    status == "sending" && !sending_recent?(now: now)
   end
 
   def mark_sending!

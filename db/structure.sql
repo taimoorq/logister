@@ -10,13 +10,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
-
---
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
 --
 
@@ -212,7 +205,9 @@ CREATE TABLE public.check_in_monitors (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     last_event_occurred_at timestamp(6) without time zone,
-    monitoring_paused_at timestamp(6) without time zone
+    monitoring_paused_at timestamp(6) without time zone,
+    notification_state character varying,
+    notification_transition_id uuid
 );
 
 
@@ -1218,6 +1213,99 @@ ALTER SEQUENCE public.mobile_ingest_tokens_id_seq OWNED BY public.mobile_ingest_
 
 
 --
+-- Name: notification_evaluations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_evaluations (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    error_group_id bigint NOT NULL,
+    kind character varying NOT NULL,
+    bucket character varying NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    observation_count integer DEFAULT 0 NOT NULL,
+    processing_observation_count integer DEFAULT 0 NOT NULL,
+    available_at timestamp(6) without time zone NOT NULL,
+    last_observed_at timestamp(6) without time zone,
+    started_at timestamp(6) without time zone,
+    completed_at timestamp(6) without time zone,
+    last_error text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT notification_evaluations_counts_nonnegative CHECK (((attempts >= 0) AND (observation_count >= 0) AND (processing_observation_count >= 0)))
+);
+
+
+--
+-- Name: notification_evaluations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_evaluations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_evaluations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_evaluations_id_seq OWNED BY public.notification_evaluations.id;
+
+
+--
+-- Name: notification_intents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_intents (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    error_group_id bigint,
+    check_in_monitor_id bigint,
+    kind character varying NOT NULL,
+    dedup_key character varying NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    available_at timestamp(6) without time zone NOT NULL,
+    started_at timestamp(6) without time zone,
+    enqueued_at timestamp(6) without time zone,
+    lease_token uuid,
+    last_error text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT notification_intents_attempts_nonnegative CHECK ((attempts >= 0)),
+    CONSTRAINT notification_intents_enqueued_at CHECK ((((status)::text <> 'enqueued'::text) OR (enqueued_at IS NOT NULL))),
+    CONSTRAINT notification_intents_exactly_one_subject CHECK (((error_group_id IS NOT NULL) <> (check_in_monitor_id IS NOT NULL))),
+    CONSTRAINT notification_intents_kind CHECK (((kind)::text = ANY ((ARRAY['first_occurrence'::character varying, 'regression'::character varying, 'error_milestone'::character varying, 'monitor_missed'::character varying, 'monitor_recovered'::character varying])::text[]))),
+    CONSTRAINT notification_intents_processing_lease CHECK ((((status)::text = 'processing'::text) = ((lease_token IS NOT NULL) AND (started_at IS NOT NULL)))),
+    CONSTRAINT notification_intents_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'enqueued'::character varying])::text[])))
+);
+
+
+--
+-- Name: notification_intents_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_intents_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_intents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_intents_id_seq OWNED BY public.notification_intents.id;
+
+
+--
 -- Name: project_deployments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1429,6 +1517,104 @@ ALTER SEQUENCE public.project_notification_preferences_id_seq OWNED BY public.pr
 
 
 --
+-- Name: project_purge_steps; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_purge_steps (
+    id bigint NOT NULL,
+    project_purge_id bigint NOT NULL,
+    store_name character varying NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    "position" integer NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    started_at timestamp(6) without time zone,
+    completed_at timestamp(6) without time zone,
+    failed_at timestamp(6) without time zone,
+    last_error_at timestamp(6) without time zone,
+    last_error_class character varying,
+    last_error_message text,
+    result jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT project_purge_steps_counts CHECK ((("position" >= 0) AND (attempts >= 0))),
+    CONSTRAINT project_purge_steps_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('running'::character varying)::text, ('awaiting_external'::character varying)::text, ('completed'::character varying)::text, ('skipped'::character varying)::text, ('failed'::character varying)::text]))),
+    CONSTRAINT project_purge_steps_store CHECK (((store_name)::text = ANY (ARRAY[('archives'::character varying)::text, ('postgresql'::character varying)::text, ('clickhouse'::character varying)::text, ('redis'::character varying)::text]))),
+    CONSTRAINT project_purge_steps_store_position CHECK (((((store_name)::text = 'archives'::text) AND ("position" = 0)) OR (((store_name)::text = 'clickhouse'::text) AND ("position" = 1)) OR (((store_name)::text = 'postgresql'::text) AND ("position" = 2)) OR (((store_name)::text = 'redis'::text) AND ("position" = 3))))
+);
+
+
+--
+-- Name: project_purge_steps_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_purge_steps_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_purge_steps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_purge_steps_id_seq OWNED BY public.project_purge_steps.id;
+
+
+--
+-- Name: project_purges; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_purges (
+    id bigint NOT NULL,
+    project_id bigint,
+    requested_by_id bigint,
+    project_uuid uuid NOT NULL,
+    source_project_id bigint NOT NULL,
+    project_name character varying NOT NULL,
+    idempotency_key character varying NOT NULL,
+    status character varying DEFAULT 'requested'::character varying NOT NULL,
+    current_step character varying,
+    attempts integer DEFAULT 0 NOT NULL,
+    requested_at timestamp(6) without time zone NOT NULL,
+    tombstoned_at timestamp(6) without time zone,
+    started_at timestamp(6) without time zone,
+    completed_at timestamp(6) without time zone,
+    failed_at timestamp(6) without time zone,
+    last_error_at timestamp(6) without time zone,
+    last_error_class character varying,
+    last_error_message text,
+    configuration_snapshot jsonb DEFAULT '{}'::jsonb NOT NULL,
+    audit_log jsonb DEFAULT '[]'::jsonb NOT NULL,
+    lock_version integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT project_purges_attempts CHECK (((source_project_id > 0) AND (attempts >= 0))),
+    CONSTRAINT project_purges_status CHECK (((status)::text = ANY (ARRAY[('requested'::character varying)::text, ('tombstoned'::character varying)::text, ('running'::character varying)::text, ('awaiting_external'::character varying)::text, ('verifying'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text])))
+);
+
+
+--
+-- Name: project_purges_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_purges_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_purges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_purges_id_seq OWNED BY public.project_purges.id;
+
+
+--
 -- Name: project_retention_policies; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1529,7 +1715,8 @@ CREATE TABLE public.projects (
     archived_at timestamp(6) without time zone,
     public_api_rate_limit_requests_override integer,
     public_api_rate_limit_period_seconds_override integer,
-    public_api_auth_failure_rate_limit_requests_override integer
+    public_api_auth_failure_rate_limit_requests_override integer,
+    purge_requested_at timestamp(6) without time zone
 );
 
 
@@ -1562,6 +1749,61 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: telemetry_archive_objects; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_archive_objects (
+    id bigint NOT NULL,
+    telemetry_archive_id bigint NOT NULL,
+    sequence integer NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    object_key character varying NOT NULL,
+    content_type character varying DEFAULT 'application/jsonl+gzip'::character varying NOT NULL,
+    checksum_sha256 character varying NOT NULL,
+    checksum_md5_base64 character varying NOT NULL,
+    expected_rows integer NOT NULL,
+    expected_bytes bigint NOT NULL,
+    verified_rows integer DEFAULT 0 NOT NULL,
+    verified_bytes bigint DEFAULT 0 NOT NULL,
+    source_min_id bigint NOT NULL,
+    source_max_id bigint NOT NULL,
+    source_references jsonb DEFAULT '[]'::jsonb NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    uploaded_at timestamp(6) without time zone,
+    verified_at timestamp(6) without time zone,
+    deleted_at timestamp(6) without time zone,
+    error_message text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    storage_generation character varying,
+    storage_locator jsonb DEFAULT '{}'::jsonb NOT NULL,
+    object_version_id character varying,
+    CONSTRAINT telemetry_archive_objects_counts CHECK (((expected_rows >= 0) AND (expected_bytes >= 0) AND (verified_rows >= 0) AND (verified_bytes >= 0) AND (attempts >= 0))),
+    CONSTRAINT telemetry_archive_objects_source_range CHECK ((source_min_id <= source_max_id)),
+    CONSTRAINT telemetry_archive_objects_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('uploading'::character varying)::text, ('uploaded'::character varying)::text, ('verifying'::character varying)::text, ('verified'::character varying)::text, ('failed'::character varying)::text, ('deleted'::character varying)::text])))
+);
+
+
+--
+-- Name: telemetry_archive_objects_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_archive_objects_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_archive_objects_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_archive_objects_id_seq OWNED BY public.telemetry_archive_objects.id;
+
+
+--
 -- Name: telemetry_archives; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1579,7 +1821,29 @@ CREATE TABLE public.telemetry_archives (
     dry_run boolean DEFAULT false NOT NULL,
     error_message text,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    manifest_version integer DEFAULT 1 NOT NULL,
+    expected_rows integer DEFAULT 0 NOT NULL,
+    expected_bytes bigint DEFAULT 0 NOT NULL,
+    verified_rows integer DEFAULT 0 NOT NULL,
+    verified_bytes bigint DEFAULT 0 NOT NULL,
+    checksum_sha256 character varying,
+    source_min_id bigint,
+    source_max_id bigint,
+    exported_at timestamp(6) without time zone,
+    upload_started_at timestamp(6) without time zone,
+    uploaded_at timestamp(6) without time zone,
+    verification_started_at timestamp(6) without time zone,
+    verified_at timestamp(6) without time zone,
+    completed_at timestamp(6) without time zone,
+    failed_at timestamp(6) without time zone,
+    restored_at timestamp(6) without time zone,
+    source_deleted_at timestamp(6) without time zone,
+    source_deleted_rows integer DEFAULT 0 NOT NULL,
+    retry_count integer DEFAULT 0 NOT NULL,
+    lifecycle_metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    CONSTRAINT telemetry_archives_lifecycle_counts CHECK (((expected_rows >= 0) AND (expected_bytes >= 0) AND (verified_rows >= 0) AND (verified_bytes >= 0) AND (retry_count >= 0))),
+    CONSTRAINT telemetry_archives_lifecycle_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('uploading'::character varying)::text, ('verifying'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text, ('restoring'::character varying)::text, ('restored'::character varying)::text, ('deleting'::character varying)::text, ('deleted'::character varying)::text])))
 );
 
 
@@ -1600,6 +1864,212 @@ CREATE SEQUENCE public.telemetry_archives_id_seq
 --
 
 ALTER SEQUENCE public.telemetry_archives_id_seq OWNED BY public.telemetry_archives.id;
+
+
+--
+-- Name: telemetry_deliveries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_deliveries (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    project_id bigint NOT NULL,
+    telemetry_outbox_event_id bigint NOT NULL,
+    destination character varying NOT NULL,
+    status character varying DEFAULT 'pending'::character varying NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    available_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    leased_at timestamp(6) without time zone,
+    lease_expires_at timestamp(6) without time zone,
+    lease_token uuid,
+    batch_key character varying,
+    completed_at timestamp(6) without time zone,
+    terminal_failed_at timestamp(6) without time zone,
+    last_error_at timestamp(6) without time zone,
+    last_error_class character varying,
+    last_error_message text,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT telemetry_deliveries_attempts_nonnegative CHECK ((attempts >= 0))
+);
+
+
+--
+-- Name: telemetry_deliveries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_deliveries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_deliveries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_deliveries_id_seq OWNED BY public.telemetry_deliveries.id;
+
+
+--
+-- Name: telemetry_idempotency_keys; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_idempotency_keys (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    client_identifier uuid NOT NULL,
+    signal character varying NOT NULL,
+    record_type character varying NOT NULL,
+    record_id bigint NOT NULL,
+    recorded_at timestamp(6) without time zone NOT NULL,
+    expires_at timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    acceptance_metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    source_retired_at timestamp(6) without time zone
+);
+
+
+--
+-- Name: telemetry_idempotency_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_idempotency_keys_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_idempotency_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_idempotency_keys_id_seq OWNED BY public.telemetry_idempotency_keys.id;
+
+
+--
+-- Name: telemetry_outbox_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_outbox_events (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    project_id bigint NOT NULL,
+    telemetry_idempotency_key_id bigint NOT NULL,
+    client_identifier uuid NOT NULL,
+    signal character varying NOT NULL,
+    record_type character varying NOT NULL,
+    record_id bigint NOT NULL,
+    recorded_at timestamp(6) without time zone NOT NULL,
+    accepted_at timestamp(6) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: telemetry_outbox_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_outbox_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_outbox_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_outbox_events_id_seq OWNED BY public.telemetry_outbox_events.id;
+
+
+--
+-- Name: telemetry_projection_watermarks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_projection_watermarks (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    signal character varying NOT NULL,
+    destination character varying NOT NULL,
+    bucket_start_at timestamp(6) without time zone NOT NULL,
+    accepted_count bigint DEFAULT 0 NOT NULL,
+    delivered_count bigint DEFAULT 0 NOT NULL,
+    terminal_failure_count bigint DEFAULT 0 NOT NULL,
+    accepted_checksum numeric(78,0) DEFAULT 0.0 NOT NULL,
+    delivered_checksum numeric(78,0) DEFAULT 0.0 NOT NULL,
+    last_accepted_at timestamp(6) without time zone,
+    last_delivered_at timestamp(6) without time zone,
+    complete_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT telemetry_watermark_counts_nonnegative CHECK (((accepted_count >= 0) AND (delivered_count >= 0) AND (terminal_failure_count >= 0)))
+);
+
+
+--
+-- Name: telemetry_projection_watermarks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_projection_watermarks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_projection_watermarks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_projection_watermarks_id_seq OWNED BY public.telemetry_projection_watermarks.id;
+
+
+--
+-- Name: telemetry_store_generations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_store_generations (
+    id bigint NOT NULL,
+    store_kind character varying NOT NULL,
+    generation_id character varying NOT NULL,
+    locator jsonb DEFAULT '{}'::jsonb NOT NULL,
+    first_seen_at timestamp(6) without time zone NOT NULL,
+    last_seen_at timestamp(6) without time zone NOT NULL,
+    retired_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: telemetry_store_generations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_store_generations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_store_generations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_store_generations_id_seq OWNED BY public.telemetry_store_generations.id;
 
 
 --
@@ -1974,6 +2444,20 @@ ALTER TABLE ONLY public.mobile_ingest_tokens ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: notification_evaluations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_evaluations ALTER COLUMN id SET DEFAULT nextval('public.notification_evaluations_id_seq'::regclass);
+
+
+--
+-- Name: notification_intents id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_intents ALTER COLUMN id SET DEFAULT nextval('public.notification_intents_id_seq'::regclass);
+
+
+--
 -- Name: project_deployments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2009,6 +2493,20 @@ ALTER TABLE ONLY public.project_notification_preferences ALTER COLUMN id SET DEF
 
 
 --
+-- Name: project_purge_steps id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_purge_steps ALTER COLUMN id SET DEFAULT nextval('public.project_purge_steps_id_seq'::regclass);
+
+
+--
+-- Name: project_purges id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_purges ALTER COLUMN id SET DEFAULT nextval('public.project_purges_id_seq'::regclass);
+
+
+--
 -- Name: project_retention_policies id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2030,10 +2528,52 @@ ALTER TABLE ONLY public.projects ALTER COLUMN id SET DEFAULT nextval('public.pro
 
 
 --
+-- Name: telemetry_archive_objects id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_archive_objects ALTER COLUMN id SET DEFAULT nextval('public.telemetry_archive_objects_id_seq'::regclass);
+
+
+--
 -- Name: telemetry_archives id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.telemetry_archives ALTER COLUMN id SET DEFAULT nextval('public.telemetry_archives_id_seq'::regclass);
+
+
+--
+-- Name: telemetry_deliveries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_deliveries ALTER COLUMN id SET DEFAULT nextval('public.telemetry_deliveries_id_seq'::regclass);
+
+
+--
+-- Name: telemetry_idempotency_keys id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_idempotency_keys ALTER COLUMN id SET DEFAULT nextval('public.telemetry_idempotency_keys_id_seq'::regclass);
+
+
+--
+-- Name: telemetry_outbox_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_outbox_events ALTER COLUMN id SET DEFAULT nextval('public.telemetry_outbox_events_id_seq'::regclass);
+
+
+--
+-- Name: telemetry_projection_watermarks id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_projection_watermarks ALTER COLUMN id SET DEFAULT nextval('public.telemetry_projection_watermarks_id_seq'::regclass);
+
+
+--
+-- Name: telemetry_store_generations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_store_generations ALTER COLUMN id SET DEFAULT nextval('public.telemetry_store_generations_id_seq'::regclass);
 
 
 --
@@ -2362,6 +2902,22 @@ ALTER TABLE ONLY public.mobile_ingest_tokens
 
 
 --
+-- Name: notification_evaluations notification_evaluations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_evaluations
+    ADD CONSTRAINT notification_evaluations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_intents notification_intents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_intents
+    ADD CONSTRAINT notification_intents_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_deployments project_deployments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2402,6 +2958,22 @@ ALTER TABLE ONLY public.project_notification_preferences
 
 
 --
+-- Name: project_purge_steps project_purge_steps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_purge_steps
+    ADD CONSTRAINT project_purge_steps_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_purges project_purges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_purges
+    ADD CONSTRAINT project_purges_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_retention_policies project_retention_policies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2434,11 +3006,59 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: telemetry_archive_objects telemetry_archive_objects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_archive_objects
+    ADD CONSTRAINT telemetry_archive_objects_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: telemetry_archives telemetry_archives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.telemetry_archives
     ADD CONSTRAINT telemetry_archives_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telemetry_deliveries telemetry_deliveries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_deliveries
+    ADD CONSTRAINT telemetry_deliveries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telemetry_idempotency_keys telemetry_idempotency_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_idempotency_keys
+    ADD CONSTRAINT telemetry_idempotency_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telemetry_outbox_events telemetry_outbox_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_outbox_events
+    ADD CONSTRAINT telemetry_outbox_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telemetry_projection_watermarks telemetry_projection_watermarks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_projection_watermarks
+    ADD CONSTRAINT telemetry_projection_watermarks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telemetry_store_generations telemetry_store_generations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_store_generations
+    ADD CONSTRAINT telemetry_store_generations_pkey PRIMARY KEY (id);
 
 
 --
@@ -2505,6 +3125,13 @@ CREATE UNIQUE INDEX idx_apple_symbols_identity_checksum ON public.apple_symbol_a
 --
 
 CREATE INDEX idx_apple_symbols_status_created ON public.apple_symbol_artifacts USING btree (project_id, status, created_at);
+
+
+--
+-- Name: idx_archive_objects_storage_generation; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_archive_objects_storage_generation ON public.telemetry_archive_objects USING btree (storage_generation);
 
 
 --
@@ -2645,6 +3272,139 @@ CREATE INDEX idx_error_occurrences_cursor ON public.error_occurrences USING btre
 --
 
 CREATE INDEX idx_error_occurrences_event_partition_ref ON public.error_occurrences USING btree (ingest_event_id, ingest_event_occurred_at);
+
+
+--
+-- Name: idx_ingest_events_project_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ingest_events_project_uuid ON ONLY public.ingest_events USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_02 ON public.ingest_events_partitioned_2026_02 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_03 ON public.ingest_events_partitioned_2026_03 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_04 ON public.ingest_events_partitioned_2026_04 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_05 ON public.ingest_events_partitioned_2026_05 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_06 ON public.ingest_events_partitioned_2026_06 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_07; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_07 ON public.ingest_events_partitioned_2026_07 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_08; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_08 ON public.ingest_events_partitioned_2026_08 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_09; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_09 ON public.ingest_events_partitioned_2026_09 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_10; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_10 ON public.ingest_events_partitioned_2026_10 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_11; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_11 ON public.ingest_events_partitioned_2026_11 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_12; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2026_12 ON public.ingest_events_partitioned_2026_12 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2027_01; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2027_01 ON public.ingest_events_partitioned_2027_01 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2027_02; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2027_02 ON public.ingest_events_partitioned_2027_02 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2027_03; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2027_03 ON public.ingest_events_partitioned_2027_03 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2027_04; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2027_04 ON public.ingest_events_partitioned_2027_04 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2027_05; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2027_05 ON public.ingest_events_partitioned_2027_05 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2027_06; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_2027_06 ON public.ingest_events_partitioned_2027_06 USING btree (project_id, uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_default; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_ie_project_uuid_default ON public.ingest_events_partitioned_default USING btree (project_id, uuid);
 
 
 --
@@ -3054,6 +3814,13 @@ CREATE INDEX idx_on_project_id_release_environment_84f39b9a75 ON public.project_
 
 
 --
+-- Name: idx_on_store_kind_last_seen_at_272faf8dab; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_on_store_kind_last_seen_at_272faf8dab ON public.telemetry_store_generations USING btree (store_kind, last_seen_at);
+
+
+--
 -- Name: idx_project_github_installations_project_installation; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3103,6 +3870,27 @@ CREATE UNIQUE INDEX idx_project_notification_preferences_uniqueness ON public.pr
 
 
 --
+-- Name: idx_project_purge_steps_ledger_position; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_project_purge_steps_ledger_position ON public.project_purge_steps USING btree (project_purge_id, "position");
+
+
+--
+-- Name: idx_project_purge_steps_ledger_store; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_project_purge_steps_ledger_store ON public.project_purge_steps USING btree (project_purge_id, store_name);
+
+
+--
+-- Name: idx_project_purge_steps_status_updated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_project_purge_steps_status_updated ON public.project_purge_steps USING btree (status, updated_at);
+
+
+--
 -- Name: idx_projects_user_archived_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3124,6 +3912,27 @@ CREATE INDEX idx_projects_user_archived_name ON public.projects USING btree (use
 
 
 --
+-- Name: idx_telemetry_archive_objects_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_archive_objects_key ON public.telemetry_archive_objects USING btree (object_key);
+
+
+--
+-- Name: idx_telemetry_archive_objects_manifest_sequence; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_archive_objects_manifest_sequence ON public.telemetry_archive_objects USING btree (telemetry_archive_id, sequence);
+
+
+--
+-- Name: idx_telemetry_archive_objects_manifest_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_archive_objects_manifest_status ON public.telemetry_archive_objects USING btree (telemetry_archive_id, status);
+
+
+--
 -- Name: idx_telemetry_archives_project_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3138,6 +3947,104 @@ CREATE INDEX idx_telemetry_archives_project_scope_status_before ON public.teleme
 
 
 --
+-- Name: idx_telemetry_archives_source_cleanup; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_archives_source_cleanup ON public.telemetry_archives USING btree (project_id, status, source_deleted_at);
+
+
+--
+-- Name: idx_telemetry_deliveries_due; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_deliveries_due ON public.telemetry_deliveries USING btree (status, available_at, id);
+
+
+--
+-- Name: idx_telemetry_deliveries_intent; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_deliveries_intent ON public.telemetry_deliveries USING btree (telemetry_outbox_event_id, destination);
+
+
+--
+-- Name: idx_telemetry_deliveries_project_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_deliveries_project_status ON public.telemetry_deliveries USING btree (project_id, destination, status);
+
+
+--
+-- Name: idx_telemetry_deliveries_stale_leases; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_deliveries_stale_leases ON public.telemetry_deliveries USING btree (status, lease_expires_at);
+
+
+--
+-- Name: idx_telemetry_idempotency_project_client; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_idempotency_project_client ON public.telemetry_idempotency_keys USING btree (project_id, client_identifier);
+
+
+--
+-- Name: idx_telemetry_idempotency_record; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_idempotency_record ON public.telemetry_idempotency_keys USING btree (record_type, record_id, recorded_at);
+
+
+--
+-- Name: idx_telemetry_keys_source_retired; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_keys_source_retired ON public.telemetry_idempotency_keys USING btree (project_id, source_retired_at) WHERE (source_retired_at IS NOT NULL);
+
+
+--
+-- Name: idx_telemetry_outbox_idempotency; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_outbox_idempotency ON public.telemetry_outbox_events USING btree (telemetry_idempotency_key_id);
+
+
+--
+-- Name: idx_telemetry_outbox_project_signal_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_outbox_project_signal_time ON public.telemetry_outbox_events USING btree (project_id, signal, recorded_at);
+
+
+--
+-- Name: idx_telemetry_outbox_record; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_outbox_record ON public.telemetry_outbox_events USING btree (record_type, record_id, recorded_at);
+
+
+--
+-- Name: idx_telemetry_store_generations_logical_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_store_generations_logical_key ON public.telemetry_store_generations USING btree (store_kind, generation_id);
+
+
+--
+-- Name: idx_telemetry_watermarks_bucket; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_watermarks_bucket ON public.telemetry_projection_watermarks USING btree (project_id, signal, destination, bucket_start_at);
+
+
+--
+-- Name: idx_telemetry_watermarks_destination_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_watermarks_destination_time ON public.telemetry_projection_watermarks USING btree (destination, bucket_start_at);
+
+
+--
 -- Name: idx_trace_spans_project_retention; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3149,6 +4056,13 @@ CREATE INDEX idx_trace_spans_project_retention ON public.trace_spans USING btree
 --
 
 CREATE INDEX idx_trace_spans_project_root_duration ON public.trace_spans USING btree (project_id, duration_ms DESC, started_at DESC) WHERE (((kind)::text = ANY (ARRAY[('server'::character varying)::text, ('browser'::character varying)::text])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)));
+
+
+--
+-- Name: idx_trace_spans_project_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_trace_spans_project_uuid ON public.trace_spans USING btree (project_id, uuid);
 
 
 --
@@ -3275,6 +4189,13 @@ CREATE INDEX index_check_in_monitors_on_last_error_at ON public.check_in_monitor
 --
 
 CREATE INDEX index_check_in_monitors_on_last_event_id ON public.check_in_monitors USING btree (last_event_id);
+
+
+--
+-- Name: index_check_in_monitors_on_notification_transition_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_check_in_monitors_on_notification_transition_id ON public.check_in_monitors USING btree (notification_transition_id);
 
 
 --
@@ -3866,6 +4787,83 @@ CREATE UNIQUE INDEX index_mobile_ingest_tokens_on_uuid ON public.mobile_ingest_t
 
 
 --
+-- Name: index_notification_evaluations_on_error_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_evaluations_on_error_group_id ON public.notification_evaluations USING btree (error_group_id);
+
+
+--
+-- Name: index_notification_evaluations_on_logical_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_notification_evaluations_on_logical_key ON public.notification_evaluations USING btree (kind, error_group_id, bucket);
+
+
+--
+-- Name: index_notification_evaluations_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_evaluations_on_project_id ON public.notification_evaluations USING btree (project_id);
+
+
+--
+-- Name: index_notification_evaluations_on_status_and_available_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_evaluations_on_status_and_available_at ON public.notification_evaluations USING btree (status, available_at);
+
+
+--
+-- Name: index_notification_intents_on_check_in_monitor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_intents_on_check_in_monitor_id ON public.notification_intents USING btree (check_in_monitor_id);
+
+
+--
+-- Name: index_notification_intents_on_dedup_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_notification_intents_on_dedup_key ON public.notification_intents USING btree (dedup_key);
+
+
+--
+-- Name: index_notification_intents_on_error_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_intents_on_error_group_id ON public.notification_intents USING btree (error_group_id);
+
+
+--
+-- Name: index_notification_intents_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_intents_on_project_id ON public.notification_intents USING btree (project_id);
+
+
+--
+-- Name: index_notification_intents_on_project_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_intents_on_project_id_and_created_at ON public.notification_intents USING btree (project_id, created_at);
+
+
+--
+-- Name: index_notification_intents_on_status_and_available_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_intents_on_status_and_available_at ON public.notification_intents USING btree (status, available_at);
+
+
+--
+-- Name: index_notification_intents_on_status_and_started_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_intents_on_status_and_started_at ON public.notification_intents USING btree (status, started_at);
+
+
+--
 -- Name: index_project_deployments_on_github_repository_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4013,6 +5011,48 @@ CREATE UNIQUE INDEX index_project_notification_preferences_on_uuid ON public.pro
 
 
 --
+-- Name: index_project_purges_on_idempotency_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_purges_on_idempotency_key ON public.project_purges USING btree (idempotency_key);
+
+
+--
+-- Name: index_project_purges_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_purges_on_project_id ON public.project_purges USING btree (project_id);
+
+
+--
+-- Name: index_project_purges_on_project_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_purges_on_project_uuid ON public.project_purges USING btree (project_uuid);
+
+
+--
+-- Name: index_project_purges_on_requested_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_purges_on_requested_by_id ON public.project_purges USING btree (requested_by_id);
+
+
+--
+-- Name: index_project_purges_on_source_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_purges_on_source_project_id ON public.project_purges USING btree (source_project_id);
+
+
+--
+-- Name: index_project_purges_on_status_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_purges_on_status_and_created_at ON public.project_purges USING btree (status, created_at);
+
+
+--
 -- Name: index_project_retention_policies_on_project_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4069,6 +5109,13 @@ CREATE INDEX index_projects_on_integration_kind ON public.projects USING btree (
 
 
 --
+-- Name: index_projects_on_purge_requested_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_projects_on_purge_requested_at ON public.projects USING btree (purge_requested_at) WHERE (purge_requested_at IS NOT NULL);
+
+
+--
 -- Name: index_projects_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4094,6 +5141,69 @@ CREATE UNIQUE INDEX index_projects_on_uuid ON public.projects USING btree (uuid)
 --
 
 CREATE INDEX index_telemetry_archives_on_project_id ON public.telemetry_archives USING btree (project_id);
+
+
+--
+-- Name: index_telemetry_deliveries_on_batch_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_deliveries_on_batch_key ON public.telemetry_deliveries USING btree (batch_key);
+
+
+--
+-- Name: index_telemetry_deliveries_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_deliveries_on_project_id ON public.telemetry_deliveries USING btree (project_id);
+
+
+--
+-- Name: index_telemetry_deliveries_on_telemetry_outbox_event_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_deliveries_on_telemetry_outbox_event_id ON public.telemetry_deliveries USING btree (telemetry_outbox_event_id);
+
+
+--
+-- Name: index_telemetry_deliveries_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_telemetry_deliveries_on_uuid ON public.telemetry_deliveries USING btree (uuid);
+
+
+--
+-- Name: index_telemetry_idempotency_keys_on_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_idempotency_keys_on_expires_at ON public.telemetry_idempotency_keys USING btree (expires_at);
+
+
+--
+-- Name: index_telemetry_idempotency_keys_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_idempotency_keys_on_project_id ON public.telemetry_idempotency_keys USING btree (project_id);
+
+
+--
+-- Name: index_telemetry_outbox_events_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_outbox_events_on_project_id ON public.telemetry_outbox_events USING btree (project_id);
+
+
+--
+-- Name: index_telemetry_outbox_events_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_telemetry_outbox_events_on_uuid ON public.telemetry_outbox_events USING btree (uuid);
+
+
+--
+-- Name: index_telemetry_projection_watermarks_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_projection_watermarks_on_project_id ON public.telemetry_projection_watermarks USING btree (project_id);
 
 
 --
@@ -4143,13 +5253,6 @@ CREATE UNIQUE INDEX index_trace_spans_on_project_id_and_trace_id_and_span_id ON 
 --
 
 CREATE INDEX index_trace_spans_on_project_id_and_trace_id_and_started_at ON public.trace_spans USING btree (project_id, trace_id, started_at DESC);
-
-
---
--- Name: index_trace_spans_on_uuid; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_trace_spans_on_uuid ON public.trace_spans USING btree (uuid);
 
 
 --
@@ -7118,6 +8221,132 @@ CREATE INDEX ingest_events_partitioned_default_project_id_updated_at_idx ON publ
 --
 
 CREATE INDEX ingest_events_partitioned_default_uuid_idx ON public.ingest_events_partitioned_default USING btree (uuid);
+
+
+--
+-- Name: idx_ie_project_uuid_2026_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_02;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_03;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_04;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_05;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_06;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_07; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_07;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_08; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_08;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_09; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_09;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_10; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_10;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_11; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_11;
+
+
+--
+-- Name: idx_ie_project_uuid_2026_12; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2026_12;
+
+
+--
+-- Name: idx_ie_project_uuid_2027_01; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2027_01;
+
+
+--
+-- Name: idx_ie_project_uuid_2027_02; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2027_02;
+
+
+--
+-- Name: idx_ie_project_uuid_2027_03; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2027_03;
+
+
+--
+-- Name: idx_ie_project_uuid_2027_04; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2027_04;
+
+
+--
+-- Name: idx_ie_project_uuid_2027_05; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2027_05;
+
+
+--
+-- Name: idx_ie_project_uuid_2027_06; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_2027_06;
+
+
+--
+-- Name: idx_ie_project_uuid_default; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.idx_ingest_events_project_uuid ATTACH PARTITION public.idx_ie_project_uuid_default;
 
 
 --
@@ -10399,6 +11628,14 @@ ALTER TABLE ONLY public.instance_settings
 
 
 --
+-- Name: telemetry_deliveries fk_rails_1e5e533db7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_deliveries
+    ADD CONSTRAINT fk_rails_1e5e533db7 FOREIGN KEY (telemetry_outbox_event_id) REFERENCES public.telemetry_outbox_events(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_deployments fk_rails_1f89aeb07e; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10420,6 +11657,14 @@ ALTER TABLE ONLY public.project_notification_preferences
 
 ALTER TABLE ONLY public.error_groups
     ADD CONSTRAINT fk_rails_2e1f89a5fa FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
+-- Name: notification_intents fk_rails_2e98005306; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_intents
+    ADD CONSTRAINT fk_rails_2e98005306 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -10452,6 +11697,14 @@ ALTER TABLE ONLY public.project_source_repositories
 
 ALTER TABLE ONLY public.trace_spans
     ADD CONSTRAINT fk_rails_401b288d25 FOREIGN KEY (api_key_id) REFERENCES public.api_keys(id);
+
+
+--
+-- Name: project_purges fk_rails_485ee89717; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_purges
+    ADD CONSTRAINT fk_rails_485ee89717 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE SET NULL;
 
 
 --
@@ -10543,6 +11796,14 @@ ALTER TABLE ONLY public.error_group_external_links
 
 
 --
+-- Name: notification_evaluations fk_rails_7942b310cd; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_evaluations
+    ADD CONSTRAINT fk_rails_7942b310cd FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: installation_steps fk_rails_798f5496b0; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10556,6 +11817,14 @@ ALTER TABLE ONLY public.installation_steps
 
 ALTER TABLE ONLY public.ingest_events_unpartitioned_backup
     ADD CONSTRAINT fk_rails_7af152c71f FOREIGN KEY (api_key_id) REFERENCES public.api_keys(id);
+
+
+--
+-- Name: notification_intents fk_rails_7f9d1b714f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_intents
+    ADD CONSTRAINT fk_rails_7f9d1b714f FOREIGN KEY (error_group_id) REFERENCES public.error_groups(id) ON DELETE CASCADE;
 
 
 --
@@ -10580,6 +11849,14 @@ ALTER TABLE ONLY public.project_memberships
 
 ALTER TABLE ONLY public.apple_symbol_artifacts
     ADD CONSTRAINT fk_rails_8d97b5a7f9 FOREIGN KEY (uploaded_by_id) REFERENCES public.users(id);
+
+
+--
+-- Name: telemetry_deliveries fk_rails_8e361121d8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_deliveries
+    ADD CONSTRAINT fk_rails_8e361121d8 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -10615,11 +11892,27 @@ ALTER TABLE ONLY public.error_group_external_links
 
 
 --
+-- Name: project_purge_steps fk_rails_a3d6604904; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_purge_steps
+    ADD CONSTRAINT fk_rails_a3d6604904 FOREIGN KEY (project_purge_id) REFERENCES public.project_purges(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_github_installations fk_rails_a87135db59; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.project_github_installations
     ADD CONSTRAINT fk_rails_a87135db59 FOREIGN KEY (github_installation_id) REFERENCES public.github_installations(id);
+
+
+--
+-- Name: telemetry_archive_objects fk_rails_a9af2fb02e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_archive_objects
+    ADD CONSTRAINT fk_rails_a9af2fb02e FOREIGN KEY (telemetry_archive_id) REFERENCES public.telemetry_archives(id) ON DELETE CASCADE;
 
 
 --
@@ -10631,11 +11924,27 @@ ALTER TABLE ONLY public.ingest_events_unpartitioned_backup
 
 
 --
+-- Name: telemetry_projection_watermarks fk_rails_af9f667a8b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_projection_watermarks
+    ADD CONSTRAINT fk_rails_af9f667a8b FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_deployments fk_rails_b1f64fa257; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.project_deployments
     ADD CONSTRAINT fk_rails_b1f64fa257 FOREIGN KEY (github_repository_id) REFERENCES public.github_repositories(id);
+
+
+--
+-- Name: telemetry_idempotency_keys fk_rails_b6d6b7f34a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_idempotency_keys
+    ADD CONSTRAINT fk_rails_b6d6b7f34a FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -10679,6 +11988,14 @@ ALTER TABLE ONLY public.project_github_installations
 
 
 --
+-- Name: telemetry_outbox_events fk_rails_d1f53a799b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_outbox_events
+    ADD CONSTRAINT fk_rails_d1f53a799b FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: cli_access_tokens fk_rails_d295f5f850; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10703,11 +12020,35 @@ ALTER TABLE ONLY public.telemetry_archives
 
 
 --
+-- Name: notification_evaluations fk_rails_dd24053c87; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_evaluations
+    ADD CONSTRAINT fk_rails_dd24053c87 FOREIGN KEY (error_group_id) REFERENCES public.error_groups(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_source_repositories fk_rails_dd26daa789; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.project_source_repositories
     ADD CONSTRAINT fk_rails_dd26daa789 FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
+-- Name: telemetry_outbox_events fk_rails_e8d3bab506; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_outbox_events
+    ADD CONSTRAINT fk_rails_e8d3bab506 FOREIGN KEY (telemetry_idempotency_key_id) REFERENCES public.telemetry_idempotency_keys(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project_purges fk_rails_ebc568b680; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_purges
+    ADD CONSTRAINT fk_rails_ebc568b680 FOREIGN KEY (requested_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -10743,6 +12084,14 @@ ALTER TABLE ONLY public.cli_device_authorizations
 
 
 --
+-- Name: notification_intents fk_rails_f9cefa944c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_intents
+    ADD CONSTRAINT fk_rails_f9cefa944c FOREIGN KEY (check_in_monitor_id) REFERENCES public.check_in_monitors(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_notification_dismissals fk_rails_feaaa03c25; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10757,6 +12106,14 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260808161000'),
+('20260808160000'),
+('20260808150000'),
+('20260808140000'),
+('20260808130100'),
+('20260808130000'),
+('20260808120100'),
+('20260808120000'),
 ('20260727010000'),
 ('20260726174000'),
 ('20260726173000'),

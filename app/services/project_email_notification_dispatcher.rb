@@ -13,6 +13,17 @@ class ProjectEmailNotificationDispatcher
     new(...).call
   end
 
+  def self.resume(delivery, now: Time.current)
+    new(
+      project: delivery.project,
+      kind: delivery.notification_kind,
+      error_group: delivery.error_group,
+      recipients: [ delivery.user ],
+      metadata: delivery.metadata,
+      now: now
+    ).resume(delivery)
+  end
+
   def initialize(project:, kind:, error_group: nil, monitor: nil, recipients: nil, metadata: {}, subject_key: nil, bucket: nil, now: Time.current)
     @project = project
     @kind = kind.to_s
@@ -26,7 +37,7 @@ class ProjectEmailNotificationDispatcher
   end
 
   def call
-    return [] if @project.archived?
+    return [] unless project_notifications_enabled?
 
     recipient_scope.filter_map do |user|
       next if user.respond_to?(:confirmed?) && !user.confirmed?
@@ -40,6 +51,13 @@ class ProjectEmailNotificationDispatcher
       deliver(delivery)
       delivery
     end
+  end
+
+  def resume(delivery)
+    return delivery unless delivery.sending_stale?(now: @now) || delivery.status.in?(%w[pending failed])
+
+    deliver(delivery)
+    delivery
   end
 
   private
@@ -65,7 +83,11 @@ class ProjectEmailNotificationDispatcher
 
   def deliver(delivery)
     delivery.with_lock do
-      return if delivery.sent? || delivery.sending_recent?
+      return if delivery.sent? || delivery.sending_recent?(now: @now)
+      unless project_notifications_enabled?
+        delivery.mark_skipped!("project_archived_or_purge_pending")
+        return
+      end
 
       delivery.mark_sending!
     end
@@ -163,5 +185,10 @@ class ProjectEmailNotificationDispatcher
 
   def period_end_from_metadata
     Time.zone.parse(@metadata["period_end_at"].to_s) if @metadata["period_end_at"].present?
+  end
+
+  def project_notifications_enabled?
+    state = Project.where(id: @project.id).pick(:archived_at, :purge_requested_at)
+    state.present? && state.all?(&:nil?)
   end
 end

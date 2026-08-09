@@ -105,6 +105,19 @@ RSpec.describe ApiKey, type: :model do
         expect(key.reload.last_used_at).to be_within(1.second).of(Time.current)
       end
     end
+
+    it "coalesces repeated activity writes within the touch interval" do
+      key = api_keys(:one)
+      first_touch = Time.zone.parse("2026-08-08 12:00:00 UTC")
+
+      expect(key.touch_last_used!(now: first_touch)).to be(true)
+      expect(key.touch_last_used!(now: first_touch + 1.minute)).to be(false)
+      expect(key.reload.last_used_at).to be_within(1.second).of(first_touch)
+
+      second_touch = first_touch + CoalescedLastUsed::LAST_USED_TOUCH_INTERVAL + 1.second
+      expect(key.touch_last_used!(now: second_touch)).to be(true)
+      expect(key.reload.last_used_at).to be_within(1.second).of(second_touch)
+    end
   end
 
   describe "token generation on create" do

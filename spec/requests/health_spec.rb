@@ -35,6 +35,7 @@ RSpec.describe "Health", type: :request do
         Rails.configuration.x.logister.clickhouse_enabled = true
         client = instance_double(
           Logister::ClickhouseClient,
+          close: nil,
           schema_status: {
             enabled: true,
             ready: true
@@ -59,6 +60,7 @@ RSpec.describe "Health", type: :request do
         Rails.configuration.x.logister.clickhouse_enabled = true
         client = instance_double(
           Logister::ClickhouseClient,
+          close: nil,
           schema_status: {
             enabled: true,
             healthy: true,

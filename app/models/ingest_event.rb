@@ -16,7 +16,7 @@ class IngestEvent < ApplicationRecord
 
   enum :event_type, { error: 0, metric: 1, transaction: 2, log: 3, check_in: 4 }, validate: true, scopes: false
 
-  validates :uuid, presence: true, uniqueness: true
+  validates :uuid, presence: true, uniqueness: { scope: :project_id }
   validates :message, presence: true
   validates :occurred_at, presence: true
 

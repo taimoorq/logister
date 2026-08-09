@@ -21,7 +21,7 @@ class TraceSpan < ApplicationRecord
 
   ROOT_KINDS = %w[server browser].freeze
 
-  validates :uuid, presence: true, uniqueness: true
+  validates :uuid, presence: true, uniqueness: { scope: :project_id }
   validates :trace_id, :span_id, :name, :kind, :started_at, presence: true
   validates :span_id, uniqueness: { scope: [ :project_id, :trace_id ] }
   validates :duration_ms, numericality: { greater_than_or_equal_to: 0 }

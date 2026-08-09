@@ -27,6 +27,8 @@ RSpec.describe Logister::SpanIngestor, type: :model do
         "release" => "sha123",
         "route" => "GET /checkout",
         "request_id" => "req-123",
+        "http_method" => "GET",
+        "http_status_code" => 200,
         "tags" => { "region" => "us-east-1" }
       }
     )
@@ -39,6 +41,8 @@ RSpec.describe Logister::SpanIngestor, type: :model do
 
     payload = fake_client.payload
     expect(payload[:span_id]).to eq(span.uuid)
+    expect(payload[:identity_checksum]).to eq(span.uuid.delete("-").to_i(16))
+    expect(payload[:projection_version]).to be_positive
     expect(payload[:trace_id]).to eq("trace-123")
     expect(payload[:external_span_id]).to eq("span-123")
     expect(payload[:parent_span_id]).to eq("parent-123")
@@ -50,6 +54,9 @@ RSpec.describe Logister::SpanIngestor, type: :model do
     expect(payload[:environment]).to eq("production")
     expect(payload[:route]).to eq("GET /checkout")
     expect(payload[:request_id]).to eq("req-123")
+    expect(payload[:http_method]).to eq("GET")
+    expect(payload[:http_status_code]).to eq(200)
+    expect(payload[:is_root]).to eq(0)
     expect(payload[:tags]).to eq({ "region" => "us-east-1" })
     expect(payload[:ip]).to eq("127.0.0.1")
   end
@@ -58,5 +65,22 @@ RSpec.describe Logister::SpanIngestor, type: :model do
     disabled_client = instance_double(Logister::ClickhouseClient, enabled?: false)
     expect(disabled_client).not_to receive(:insert_span!)
     described_class.new(span: span, request_context: {}, clickhouse_client: disabled_client).call
+  end
+
+  it "does not let a rolling-deploy legacy job recreate data after the purge tombstone" do
+    span.project.update!(purge_requested_at: Time.current)
+
+    described_class.new(span: span, request_context: {}, clickhouse_client: fake_client).call
+
+    expect(fake_client.payload).to be_nil
+  end
+
+  it "closes the default-owned ClickHouse client after legacy single-row delivery" do
+    client = instance_double(Logister::ClickhouseClient, enabled?: true, insert_span!: nil, close: nil)
+    allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
+
+    described_class.new(span: span, request_context: {}).call
+
+    expect(client).to have_received(:close).once
   end
 end

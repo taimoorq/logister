@@ -57,6 +57,7 @@ logister_config.web_request_min_duration_ms = InstanceConfiguration.value("obser
 logister_config.web_request_log_min_duration_ms = InstanceConfiguration.value("observability.web_request_log_min_duration_ms").to_f
 logister_config.public_api_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_rate_limit_requests")
 logister_config.public_api_rate_limit_period_seconds = InstanceConfiguration.value("authentication.public_api_rate_limit_period_seconds")
+logister_config.public_api_pre_auth_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_pre_auth_rate_limit_requests")
 logister_config.public_api_auth_failure_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_auth_failure_rate_limit_requests")
 
 Rails.application.config.after_initialize do

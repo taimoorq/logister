@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "Admin::Users", type: :request do
+  include ActiveJob::TestHelper
+
   around do |example|
     original = ENV["LOGISTER_ADMIN_EMAILS"]
     example.run
@@ -89,12 +91,27 @@ RSpec.describe "Admin::Users", type: :request do
   describe "DELETE /admin/users/:uuid" do
     before { ENV["LOGISTER_ADMIN_EMAILS"] = users(:one).email }
 
-    it "allows admin to delete another user" do
+    it "tombstones owned projects before deleting another user" do
       sign_in users(:one)
       target = users(:two)
+      clear_enqueued_jobs
+      expect {
+        delete admin_user_path(target)
+      }.to change(ProjectPurge, :count).by(1)
+        .and change(User, :count).by(0)
+      expect(response).to redirect_to(admin_user_path(target))
+      expect(target.projects.sole.reload).to be_purge_pending
+      expect(ProjectPurgeJob).to have_been_enqueued
+    end
+
+    it "deletes a user immediately after all owned projects are gone" do
+      sign_in users(:one)
+      target = create(:user)
+
       expect {
         delete admin_user_path(target)
       }.to change(User, :count).by(-1)
+
       expect(response).to redirect_to(admin_users_path)
     end
 

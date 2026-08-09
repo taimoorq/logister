@@ -4,32 +4,50 @@ require "securerandom"
 
 module Logister
   class EventIngestor
-    def initialize(event:, request_context: {}, clickhouse_client: ClickhouseClient.new)
+    def initialize(event:, request_context: {}, clickhouse_client: nil)
       @event = event
       @request_context = request_context
-      @clickhouse_client = clickhouse_client
+      @owns_clickhouse_client = clickhouse_client.nil?
+      @clickhouse_client = clickhouse_client || ClickhouseClient.new
     end
 
     def call
-      return unless @clickhouse_client.enabled?
-      return if clickhouse_monitoring_event?
+      return unless projectable?
 
-      @clickhouse_client.insert_event!(attributes)
+      # Legacy single-row jobs may still be present during a rolling deploy.
+      # Use the same Project row fence as the batched projector so a tombstoned
+      # project can never be reinserted after ClickHouse purge verification.
+      Project.transaction(requires_new: true) do
+        project = Project.lock.find_by(id: @event.project_id)
+        next if project.nil? || project.purge_pending?
+
+        @clickhouse_client.insert_event!(attributes)
+      end
+    ensure
+      close_owned_clickhouse_client
+    end
+
+    def projectable?
+      @clickhouse_client.enabled? && !suppressed?
+    end
+
+    def suppressed?
+      clickhouse_monitoring_event?
     end
 
     def attributes
       clickhouse_attributes
     end
 
-    private
-
     def clickhouse_attributes
       {
         event_id: event_id,
         project_id: @event.project_id,
         api_key_id: @event.api_key_id,
+        projection_version: projection_version,
+        identity_checksum: identity_checksum,
         occurred_at: clickhouse_timestamp(@event.occurred_at),
-        received_at: clickhouse_timestamp(Time.current),
+        received_at: clickhouse_timestamp(@event.created_at || @event.occurred_at),
         event_type: normalized_event_type,
         level: @event.level.to_s,
         environment: context_value("environment", Rails.env),
@@ -39,11 +57,33 @@ module Logister
         message: @event.message,
         exception_class: context_value("exception_class", context_exception_class),
         transaction_name: context_value("transaction_name", ""),
+        trace_id: IngestEvent.trace_id(@event).to_s,
+        request_id: IngestEvent.request_id(@event).to_s,
+        metric_name: metric_name,
+        metric_value: numeric_context_value("value"),
+        metric_unit: context_value("unit", ""),
+        duration_ms: numeric_context_value("duration_ms", "durationMs"),
+        transaction_status: @event.transaction? ? context_value("transaction_status", context_value("status", "")).to_s : "",
+        log_severity: @event.log? ? @event.level.to_s : "",
+        error_fingerprint: @event.error? ? (@event.fingerprint.presence || fallback_fingerprint) : "",
+        check_in_slug: @event.check_in? ? context_value("check_in_slug", "").to_s : "",
+        check_in_status: @event.check_in? ? context_value("check_in_status", context_value("status", "")).to_s : "",
+        check_in_expected_interval_seconds: @event.check_in? ? unsigned_integer_context_value("expected_interval_seconds") : nil,
         tags: normalized_tags,
         context_json: @event.context.to_json,
         ip: request_ip,
         user_agent: request_user_agent
       }
+    end
+
+    alias_method :attributes, :clickhouse_attributes
+
+    private
+
+    def close_owned_clickhouse_client
+      @clickhouse_client.close if @owns_clickhouse_client
+    rescue StandardError => error
+      Rails.logger.warn("clickhouse_event_client_close_error error=#{error.class}: #{error.message}")
     end
 
     def request_ip
@@ -78,11 +118,37 @@ module Logister
       raw_tags.to_h.transform_keys(&:to_s).transform_values(&:to_s)
     end
 
-    def event_id
-      explicit_id = context_value("event_id", "")
-      return explicit_id if explicit_id.present?
+    def metric_name
+      @event.metric? ? @event.message.to_s : ""
+    end
 
+    def numeric_context_value(*keys)
+      raw = keys.lazy.map { |key| context_hash[key] || context_hash[key.to_sym] }.find { |value| !value.nil? && value != "" }
+      return if raw.nil?
+
+      Float(raw)
+    rescue ArgumentError, TypeError
+      nil
+    end
+
+    def unsigned_integer_context_value(*keys)
+      value = numeric_context_value(*keys)
+      return if value.nil? || value.negative?
+
+      value.to_i
+    end
+
+    def projection_version
+      timestamp = @event.updated_at || @event.created_at || @event.occurred_at
+      (timestamp.to_r * 1_000_000).to_i
+    end
+
+    def event_id
       @event.uuid
+    end
+
+    def identity_checksum
+      event_id.to_s.delete("-").to_i(16)
     end
 
     def fallback_fingerprint

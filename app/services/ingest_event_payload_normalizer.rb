@@ -17,7 +17,7 @@ class IngestEventPayloadNormalizer
 
   def event_params(event_hash)
     safe = event_hash.slice("uuid", "event_type", "level", "message", "fingerprint", "occurred_at")
-    safe["uuid"] ||= event_hash["event_id"]
+    safe["uuid"] = event_hash["uuid"].presence || event_hash["event_id"].presence
     raw_context = event_hash["context"] || {}
     safe["context"] = normalize_context_hash(raw_context)
     normalize_event_payload(safe, event_hash)
@@ -28,6 +28,7 @@ class IngestEventPayloadNormalizer
     normalized = normalize_span_payload(event_hash, context)
 
     {
+      uuid: event_hash["uuid"].presence || event_hash["event_id"].presence,
       trace_id: normalized.fetch("trace_id"),
       span_id: normalized.fetch("span_id"),
       parent_span_id: normalized["parent_span_id"],
@@ -95,6 +96,7 @@ class IngestEventPayloadNormalizer
     end
 
     event_hash = raw_event.respond_to?(:to_unsafe_h) ? raw_event.to_unsafe_h : raw_event.to_h
+    TelemetryPayloadLimits.validate!(event_hash)
 
     event_hash.each_with_object({}) do |(key, value), normalized|
       normalized[normalize_payload_key(key)] = value
@@ -152,7 +154,12 @@ class IngestEventPayloadNormalizer
     merge_context_value!(context, "duration_ms", raw_event[:duration_ms] || raw_event[:durationMs])
     merge_context_value!(context, "expected_interval_seconds", raw_event[:expected_interval_seconds])
     merge_context_value!(context, "check_in_slug", raw_event[:check_in_slug] || raw_event[:monitor_slug])
-    merge_context_value!(context, "check_in_status", raw_event[:check_in_status] || raw_event[:status])
+    event_type = attrs["event_type"].to_s
+    if event_type == "transaction"
+      merge_context_value!(context, "transaction_status", raw_event[:transaction_status] || raw_event[:status])
+    elsif event_type == "check_in"
+      merge_context_value!(context, "check_in_status", raw_event[:check_in_status] || raw_event[:status])
+    end
     merge_context_value!(context, "telemetry_schema_version", raw_event[:telemetry_schema_version] || raw_event[:telemetrySchemaVersion])
     merge_context_value!(context, "error_mechanism", raw_event[:error_mechanism] || raw_event[:errorMechanism] || raw_event[:mechanism])
     merge_context_value!(context, "handled", raw_event[:handled])

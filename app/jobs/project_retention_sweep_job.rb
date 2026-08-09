@@ -1,7 +1,7 @@
 class ProjectRetentionSweepJob < ApplicationJob
   include SidekiqRecurringJob
 
-  queue_as :default
+  queue_as :maintenance
   sidekiq_recurring_schedule(
     key: "project_telemetry_retention",
     daily_at: "02:00",

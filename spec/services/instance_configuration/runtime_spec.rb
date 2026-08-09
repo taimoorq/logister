@@ -8,6 +8,7 @@ RSpec.describe InstanceConfiguration::Runtime, type: :model do
     original_values = {
       public_api_rate_limit_requests: config.public_api_rate_limit_requests,
       public_api_rate_limit_period_seconds: config.public_api_rate_limit_period_seconds,
+      public_api_pre_auth_rate_limit_requests: config.public_api_pre_auth_rate_limit_requests,
       public_api_auth_failure_rate_limit_requests: config.public_api_auth_failure_rate_limit_requests,
       web_request_min_duration_ms: config.web_request_min_duration_ms,
       web_request_log_min_duration_ms: config.web_request_log_min_duration_ms
@@ -17,6 +18,7 @@ RSpec.describe InstanceConfiguration::Runtime, type: :model do
       values: {
         "authentication.public_api_rate_limit_requests" => "777",
         "authentication.public_api_rate_limit_period_seconds" => "45",
+        "authentication.public_api_pre_auth_rate_limit_requests" => "5555",
         "authentication.public_api_auth_failure_rate_limit_requests" => "33"
       },
       clear_keys: [],
@@ -36,6 +38,7 @@ RSpec.describe InstanceConfiguration::Runtime, type: :model do
 
     expect(config.public_api_rate_limit_requests).to eq(777)
     expect(config.public_api_rate_limit_period_seconds).to eq(45)
+    expect(config.public_api_pre_auth_rate_limit_requests).to eq(5555)
     expect(config.public_api_auth_failure_rate_limit_requests).to eq(33)
     expect(config.web_request_min_duration_ms).to eq(175.0)
     expect(config.web_request_log_min_duration_ms).to eq(825.0)

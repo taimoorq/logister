@@ -6,6 +6,7 @@ class ErrorGroup < ApplicationRecord
   has_many   :error_occurrences, dependent: :destroy
   has_many   :ingest_events, through: :error_occurrences
   has_many   :email_notification_deliveries, dependent: :nullify
+  has_many   :notification_intents, dependent: :destroy
   has_many   :external_links, class_name: "ErrorGroupExternalLink", dependent: :destroy
 
   before_validation :ensure_uuid
@@ -102,10 +103,11 @@ class ErrorGroup < ApplicationRecord
   # Called by the grouping service when a new occurrence arrives.
   # Reopens the group if it was previously resolved/ignored/archived.
   def record_occurrence!(event)
-    was_closed = !unresolved?
     event_release = IngestEvent.release(event)
+    was_closed = false
 
     with_lock do
+      was_closed = !unresolved?
       reopen! if was_closed
       update!(
         latest_event_id:  event.id,
@@ -122,6 +124,8 @@ class ErrorGroup < ApplicationRecord
         regression_count: was_closed ? regression_count + 1 : regression_count
       )
     end
+
+    was_closed
   end
 
   def to_param

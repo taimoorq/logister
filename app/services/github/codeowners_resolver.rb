@@ -15,7 +15,7 @@ module Github
     end
 
     def call(project:, repository:, source_path:, ref:)
-      path, content = fetch_codeowners(repository, ref)
+      path, content = fetch_codeowners(project, repository, ref)
       return empty_result unless content
 
       entry = CodeownersFile.parse(content).match(source_path)
@@ -38,10 +38,12 @@ module Github
 
     attr_reader :fetcher
 
-    def fetch_codeowners(repository, ref)
+    def fetch_codeowners(project, repository, ref)
       CODEOWNERS_PATHS.each do |path|
-        fetched = Rails.cache.fetch([ "github_codeowners_file", repository.id, ref, path ], expires_in: 15.minutes) do
-          fetcher.fetch(
+        key = [ "project", project.id, "github_codeowners_file", repository.id, ref, path ]
+        fetched = Rails.cache.read(key)
+        unless fetched
+          fetched = fetcher.fetch(
             owner: repository.owner_name,
             repo: repository.repo_name,
             path: path,
@@ -49,6 +51,12 @@ module Github
             installation: repository.effective_github_installation,
             repository_id: repository.github_repository&.external_id || repository.external_id
           )
+          Project.transaction(requires_new: true) do
+            locked_project = Project.lock.find_by(id: project.id)
+            return if locked_project.nil? || locked_project.purge_pending?
+
+            Rails.cache.write(key, fetched, expires_in: 15.minutes) if fetched.present?
+          end
         end
         return [ path, fetched.content ] if fetched.present?
       end

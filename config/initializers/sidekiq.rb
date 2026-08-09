@@ -1,11 +1,20 @@
-redis_url = InstanceConfiguration.value("background_jobs.redis_url")
+redis_url = InstanceConfiguration.redis_url(:sidekiq)
 
 Sidekiq.configure_server do |config|
   config.redis = { url: redis_url }
-  config.concurrency = InstanceConfiguration.value("background_jobs.sidekiq_concurrency")
 
   config.on(:startup) do
-    Logister::SidekiqRecurringScheduler.install! if Rails.env.production?
+    if Rails.env.production?
+      Logister::SidekiqRecurringScheduler.install!
+      Logister::WorkerPoolHeartbeat.record!(concurrency: config.concurrency)
+    end
+  end
+
+  config.on(:beat) do
+    if Rails.env.production?
+      Logister::WorkerPoolHeartbeat.record!(concurrency: config.concurrency)
+      Logister::SidekiqRecurringScheduler.reconcile!
+    end
   end
 end
 

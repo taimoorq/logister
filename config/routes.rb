@@ -128,6 +128,10 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :project_purges, only: [] do
+    post :retry, on: :member
+  end
+
   namespace :api do
     namespace :v1 do
       namespace :cli do
@@ -148,7 +152,9 @@ Rails.application.routes.draw do
         get "projects/:project_uuid/error_groups/:uuid/context", to: "error_groups#context"
       end
 
-      resources :ingest_events, only: :create
+      resources :ingest_events, only: :create do
+        post :batch, on: :collection
+      end
       resources :check_ins, only: :create
       resources :deployments, only: :create
       resources :mobile_ingest_tokens, only: :create

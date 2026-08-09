@@ -47,7 +47,7 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  redis_url = ENV.fetch("REDIS_URL", "redis://127.0.0.1:6379/0")
+  redis_url = ENV["REDIS_CACHE_URL"].presence || ENV.fetch("REDIS_URL", "redis://127.0.0.1:6379/0")
   config.cache_store = :redis_cache_store, {
     url: redis_url,
     namespace: "logister:cache:production",

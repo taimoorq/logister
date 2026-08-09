@@ -8,6 +8,7 @@ require "net/smtp"
 require "openssl"
 require "redis"
 require "securerandom"
+require "set"
 require "stringio"
 require "uri"
 
@@ -58,19 +59,34 @@ module InstanceConfiguration
 
     def test_background_jobs
       redis = Redis.new(
-        url: fetch("background_jobs.redis_url"),
+        url: background_job_redis_url,
         connect_timeout: 2,
         read_timeout: 2,
         write_timeout: 2
       )
       pong = redis.ping
-      worker_processes = redis.scard("processes")
       raise Redis::BaseError, "Unexpected ping response" unless pong == "PONG"
 
+      readiness = Logister::SidekiqReadiness.new(
+        redis: redis,
+        concurrency: fetch("background_jobs.sidekiq_concurrency")
+      ).call
+      readiness["redis_roles"] = redis_role_connectivity(sidekiq_redis: redis)
+      readiness["ingest_event_partitions"] = Logister::IngestEventsPartitioning.new.partition_maintenance_status(months_ahead: 3)
+      worker_processes = readiness.fetch("sidekiq_processes")
+      worker_pools = Array(readiness["worker_database_pools"])
+      pool_valid = if worker_pools.any?
+        worker_pools.all? { |pool| pool["valid"] == true }
+      else
+        readiness.dig("database_pool", "valid")
+      end
+      readiness["worker_pool_validation_source"] = worker_pools.any? ? "worker_heartbeats" : "local_process_fallback"
+      success = worker_processes.positive? && pool_valid
+
       Result.new(
-        success: worker_processes.positive?,
-        summary: worker_processes.positive? ? "Redis is reachable and Sidekiq workers are registered." : "Redis is reachable, but no Sidekiq worker is registered. Start or restart a worker and run this check again.",
-        details: { "redis" => "reachable", "sidekiq_processes" => worker_processes }
+        success: success,
+        summary: background_job_summary(worker_processes:, pool_valid:),
+        details: readiness.merge("redis_reachable" => true)
       )
     ensure
       redis&.close
@@ -102,11 +118,18 @@ module InstanceConfiguration
 
     def test_clickhouse
       mode = fetch("clickhouse.mode")
-      return Result.new(success: true, summary: "ClickHouse is disabled; PostgreSQL remains the source for reads and writes.", details: { "mode" => "disabled" }) if mode == "disabled"
-
       client = Logister::ClickhouseClient.new(config: clickhouse_config)
+      breaker = client.circuit_breaker_status
+      if mode == "disabled"
+        return Result.new(
+          success: true,
+          summary: "ClickHouse is disabled; PostgreSQL remains the source for reads and writes.",
+          details: { "mode" => "disabled", "circuit_breaker" => breaker }
+        )
+      end
+
       schema = client.schema_status
-      return Result.new(success: false, summary: "ClickHouse is reachable but its schema is not ready.", details: redacted_schema_details(schema)) unless schema[:ready]
+      return Result.new(success: false, summary: "ClickHouse is reachable but its schema is not ready.", details: redacted_schema_details(schema).merge("circuit_breaker" => breaker)) unless schema[:ready]
 
       coverage = clickhouse_coverage(client)
       success = coverage.fetch("ready_for_reads")
@@ -118,7 +141,9 @@ module InstanceConfiguration
         "ClickHouse writes are available, but event coverage is incomplete. Keep dual write enabled and run the backfill before switching reads."
       end
 
-      Result.new(success: success, summary: summary, details: redacted_schema_details(schema).merge(coverage))
+      Result.new(success: success, summary: summary, details: redacted_schema_details(schema).merge(coverage).merge("circuit_breaker" => breaker))
+    ensure
+      client&.close
     end
 
     def test_archive_storage
@@ -207,6 +232,39 @@ module InstanceConfiguration
       @values.fetch(key)
     end
 
+    def background_job_redis_url
+      fetch("background_jobs.sidekiq_redis_url").presence || fetch("background_jobs.redis_url")
+    end
+
+    def redis_role_connectivity(sidekiq_redis:)
+      urls = {
+        "cache" => fetch("background_jobs.cache_redis_url").presence || fetch("background_jobs.redis_url"),
+        "rate_limit" => fetch("background_jobs.rate_limit_redis_url").presence || fetch("background_jobs.redis_url"),
+        "sidekiq" => background_job_redis_url
+      }
+      connections = {}
+
+      urls.to_h do |role, url|
+        connection = if url == background_job_redis_url
+          sidekiq_redis
+        else
+          connections[url] ||= Redis.new(url: url, connect_timeout: 2, read_timeout: 2, write_timeout: 2)
+        end
+        raise Redis::BaseError, "Unexpected #{role} Redis ping response" unless connection.ping == "PONG"
+
+        [ role, "reachable" ]
+      end
+    ensure
+      connections&.each_value(&:close)
+    end
+
+    def background_job_summary(worker_processes:, pool_valid:)
+      return "Redis is reachable, but no Sidekiq worker is registered. Start or restart a worker and run this check again." unless worker_processes.positive?
+      return "Sidekiq is registered, but DB_POOL is smaller than worker concurrency plus operational headroom." unless pool_valid
+
+      "Redis is reachable, Sidekiq workers are registered, and the database pool is sized for worker concurrency."
+    end
+
     def smtp_address
       fetch("email.smtp_address").presence || "email-smtp.#{fetch('email.ses_region')}.amazonaws.com"
     end
@@ -230,28 +288,191 @@ module InstanceConfiguration
         config.clickhouse_spans_table = fetch("clickhouse.spans_table")
         config.clickhouse_username = fetch("clickhouse.username").presence
         config.clickhouse_password = fetch("clickhouse.password").to_s
+        config.clickhouse_circuit_failure_threshold = fetch("clickhouse.circuit_failure_threshold")
+        config.clickhouse_circuit_open_seconds = fetch("clickhouse.circuit_open_seconds")
       end
     end
 
     def clickhouse_coverage(client)
-      finish = 5.minutes.ago.utc
+      finish = 1.hour.ago.utc.beginning_of_hour
       start = finish - 24.hours
+      watermarks = TelemetryProjectionWatermark.for_clickhouse
+        .where(bucket_start_at: start...finish)
+        .order(:project_id, :signal, :bucket_start_at)
+        .to_a
+      observed = clickhouse_bucket_coverage(client, start:, finish:)
+      coverage_project_ids = active_coverage_project_ids(start: start, finish: finish, watermarks: watermarks)
+      capability_coverage = Logister::ClickhouseCoverage.call(
+        project_ids: coverage_project_ids,
+        signals: Logister::ClickhouseCoverage::EVENT_SIGNALS + [ "span" ],
+        from: start,
+        to: finish
+      )
+
+      gaps = watermarks.filter_map do |watermark|
+        key = coverage_key(
+          watermark.project_id,
+          watermark.signal,
+          watermark.bucket_start_at
+        )
+        clickhouse = observed.fetch(key, { "count" => 0, "checksum" => 0 })
+        count_matches = clickhouse.fetch("count").to_i == watermark.accepted_count
+        checksum_matches = clickhouse.fetch("checksum").to_i == watermark.accepted_checksum.to_i
+        next if watermark.complete? && count_matches && checksum_matches
+
+        {
+          "project_id" => watermark.project_id,
+          "signal" => watermark.signal,
+          "bucket_start_at" => watermark.bucket_start_at.utc.iso8601,
+          "accepted" => watermark.accepted_count,
+          "delivered" => watermark.delivered_count,
+          "clickhouse" => clickhouse.fetch("count").to_i,
+          "ledger_checksum_matches" => watermark.delivered_checksum == watermark.accepted_checksum,
+          "clickhouse_checksum_matches" => checksum_matches,
+          "terminal_failures" => watermark.terminal_failure_count
+        }
+      end
+      sample = clickhouse_sample_reconciliation(client, start:, finish:)
+      ledger = telemetry_delivery_ledger
       postgres_count = IngestEvent.where(occurred_at: start...finish).count
-      rows = client.select_rows!(<<~SQL.squish)
-        SELECT uniqExact(event_id) AS count
-        FROM #{client.events_table_name}
-        WHERE occurred_at >= parseDateTime64BestEffort('#{start.iso8601(3)}', 3)
-          AND occurred_at < parseDateTime64BestEffort('#{finish.iso8601(3)}', 3)
-      SQL
-      clickhouse_count = rows.first&.fetch("count", 0).to_i
+      postgres_span_count = TraceSpan.where(started_at: start...finish).count
+      clickhouse_count = observed.sum { |key, values| key[1] == "span" ? 0 : values.fetch("count").to_i }
+      clickhouse_span_count = observed.sum { |key, values| key[1] == "span" ? values.fetch("count").to_i : 0 }
+      event_coverage_present = postgres_count.zero? || watermarks.any? { |watermark| watermark.destination == "clickhouse_event" }
+      span_coverage_present = postgres_span_count.zero? || watermarks.any? { |watermark| watermark.destination == "clickhouse_span" }
 
       {
         "coverage_window_started_at" => start.iso8601,
         "coverage_window_ended_at" => finish.iso8601,
         "postgres_events" => postgres_count,
         "clickhouse_events" => clickhouse_count,
-        "ready_for_reads" => clickhouse_count >= postgres_count
+        "postgres_spans" => postgres_span_count,
+        "clickhouse_spans" => clickhouse_span_count,
+        "coverage_bucket_count" => watermarks.length,
+        "coverage_gap_count" => gaps.length,
+        "coverage_gaps" => gaps.first(100),
+        "capability_coverage" => capability_coverage.to_h,
+        "sample_reconciliation" => sample,
+        "delivery_ledger" => ledger,
+        "ready_for_reads" => event_coverage_present && span_coverage_present && gaps.empty? && capability_coverage.complete? &&
+          sample.fetch("missing_count").zero? && ledger.fetch("terminal_failures").zero?
       }
+    end
+
+    def active_coverage_project_ids(start:, finish:, watermarks:)
+      project_ids = IngestEvent.where(occurred_at: start...finish).distinct.pluck(:project_id)
+      project_ids.concat(TraceSpan.where(started_at: start...finish).distinct.pluck(:project_id))
+      project_ids.concat(TelemetryOutboxEvent.where(recorded_at: start...finish).distinct.pluck(:project_id))
+      project_ids.concat(watermarks.map(&:project_id))
+      Project.where(id: project_ids.uniq, purge_requested_at: nil).pluck(:id)
+    end
+
+    def clickhouse_bucket_coverage(client, start:, finish:)
+      rows = client.select_rows!(<<~SQL.squish)
+        SELECT
+          project_id,
+          toString(event_type) AS signal,
+          toStartOfHour(occurred_at) AS bucket,
+          uniqExact(event_id) AS count,
+          toString(sum(toUInt256(identity_checksum))) AS checksum
+        FROM #{client.event_facts_table_name}
+        WHERE occurred_at >= parseDateTime64BestEffort('#{start.iso8601(3)}', 3)
+          AND occurred_at < parseDateTime64BestEffort('#{finish.iso8601(3)}', 3)
+        GROUP BY project_id, signal, bucket
+        UNION ALL
+        SELECT
+          project_id,
+          'span' AS signal,
+          toStartOfHour(started_at) AS bucket,
+          uniqExact(span_id) AS count,
+          toString(sum(toUInt256(identity_checksum))) AS checksum
+        FROM #{client.span_facts_table_name}
+        WHERE started_at >= parseDateTime64BestEffort('#{start.iso8601(3)}', 3)
+          AND started_at < parseDateTime64BestEffort('#{finish.iso8601(3)}', 3)
+        GROUP BY project_id, signal, bucket
+      SQL
+
+      rows.each_with_object({}) do |row, coverage|
+        bucket = Time.zone.parse(row.fetch("bucket").to_s).utc.beginning_of_hour
+        key = coverage_key(row.fetch("project_id"), row.fetch("signal"), bucket)
+        coverage[key] = {
+          "count" => row.fetch("count", 0).to_i,
+          "checksum" => row.fetch("checksum", 0).to_i
+        }
+      end
+    end
+
+    def clickhouse_sample_reconciliation(client, start:, finish:, limit: 50)
+      samples = TelemetryOutboxEvent
+        .joins(:telemetry_deliveries)
+        .merge(TelemetryDelivery.completed.where(destination: TelemetryDelivery::CLICKHOUSE_DESTINATIONS))
+        .where(recorded_at: start...finish)
+        .order(:client_identifier)
+        .limit(limit)
+        .map do |outbox_event|
+          {
+            "record_type" => outbox_event.record_type,
+            "record_identifier" => outbox_event.metadata.to_h["record_identifier"].presence || outbox_event.client_identifier
+          }
+        end
+      return { "expected_count" => 0, "present_count" => 0, "missing_count" => 0, "missing_identifiers" => [] } if samples.empty?
+
+      event_ids = samples.filter_map { |sample| sample.fetch("record_identifier") if sample.fetch("record_type") == "IngestEvent" }
+      span_ids = samples.filter_map { |sample| sample.fetch("record_identifier") if sample.fetch("record_type") == "TraceSpan" }
+      branches = []
+      if event_ids.any?
+        branches << <<~SQL.squish
+          SELECT toString(event_id) AS record_identifier
+          FROM #{client.event_facts_table_name}
+          WHERE event_id IN (#{clickhouse_uuid_list(event_ids)})
+          GROUP BY event_id
+        SQL
+      end
+      if span_ids.any?
+        branches << <<~SQL.squish
+          SELECT toString(span_id) AS record_identifier
+          FROM #{client.span_facts_table_name}
+          WHERE span_id IN (#{clickhouse_uuid_list(span_ids)})
+          GROUP BY span_id
+        SQL
+      end
+      present = client.select_rows!(branches.join(" UNION ALL ")).map { |row| row.fetch("record_identifier").downcase }.to_set
+      expected = samples.map { |sample| sample.fetch("record_identifier").downcase }.to_set
+      missing = expected - present
+
+      {
+        "expected_count" => expected.length,
+        "present_count" => (expected & present).length,
+        "missing_count" => missing.length,
+        "missing_identifiers" => missing.first(20)
+      }
+    end
+
+    def telemetry_delivery_ledger
+      now = Time.current
+      oldest = TelemetryDelivery.incomplete.minimum(:created_at)
+      {
+        "pending" => TelemetryDelivery.pending.count,
+        "retrying" => TelemetryDelivery.retrying.count,
+        "processing" => TelemetryDelivery.processing.count,
+        "terminal_failures" => TelemetryDelivery.terminal_failed.count,
+        "oldest_incomplete_at" => oldest&.utc&.iso8601,
+        "oldest_incomplete_age_seconds" => oldest ? (now - oldest).to_i : 0,
+        "max_attempts" => TelemetryDelivery.incomplete.maximum(:attempts).to_i
+      }
+    end
+
+    def clickhouse_uuid_list(values)
+      Array(values).map do |value|
+        uuid = Logister::TelemetryIdentity.normalize_uuid(value)
+        raise ArgumentError, "Invalid telemetry UUID in coverage sample" unless uuid
+
+        "toUUID('#{uuid}')"
+      end.join(", ")
+    end
+
+    def coverage_key(project_id, signal, bucket)
+      [ project_id.to_i, signal.to_s, bucket.utc.beginning_of_hour ]
     end
 
     def redacted_schema_details(schema)

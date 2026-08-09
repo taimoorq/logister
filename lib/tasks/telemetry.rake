@@ -4,14 +4,22 @@ require "json"
 
 namespace :logister do
   namespace :telemetry do
-    desc "Archive telemetry to configured Active Storage service: logister:telemetry:archive[ingest_events,30]"
-    task :archive, [ :record_type, :days ] => :environment do |_task, args|
+    desc "Archive one project's telemetry with a verified manifest: logister:telemetry:archive[ingest_events,30,PROJECT_UUID]"
+    task :archive, [ :record_type, :days, :project_uuid ] => :environment do |_task, args|
       record_type = args[:record_type].presence || ENV.fetch("RECORD_TYPE", "ingest_events")
       days = Integer(args[:days].presence || ENV.fetch("DAYS", "30"))
+      project_uuid = args[:project_uuid].presence || ENV["PROJECT_UUID"].presence
+      abort "PROJECT_UUID is required; untracked global archive objects are disabled" if project_uuid.blank?
+
+      project = Project.find_by(uuid: project_uuid)
+      abort "No project found for #{project_uuid}" unless project
+      abort "Project purge is pending for #{project_uuid}" if project.purge_pending?
       before = Time.current - days.days
 
       result = Logister::TelemetryArchiveExporter.new(
         record_type: record_type,
+        project: project,
+        scope: "manual_#{record_type}",
         before: before,
         batch_size: Integer(ENV.fetch("BATCH_SIZE", Logister::TelemetryArchiveExporter::DEFAULT_BATCH_SIZE)),
         prefix: ENV.fetch("LOGISTER_ARCHIVE_PREFIX", "telemetry"),
@@ -21,26 +29,14 @@ namespace :logister do
       puts JSON.pretty_generate(result)
     end
 
-    desc "Prune archived hot telemetry older than DAYS. Requires CONFIRM=prune."
-    task :prune_hot, [ :days ] => :environment do |_task, args|
-      unless ENV["CONFIRM"] == "prune"
-        abort "Refusing to prune without CONFIRM=prune"
-      end
-
-      days = Integer(args[:days].presence || ENV.fetch("DAYS", "30"))
-      before = Time.current - days.days
-      non_error_events = IngestEvent.where("occurred_at < ?", before)
-                                    .where.not(event_type: IngestEvent.event_types.fetch("error"))
-                                    .where(error_group_id: nil)
-      spans = TraceSpan.where("started_at < ?", before)
-
-      result = {
-        before: before.utc.iso8601,
-        deleted_non_error_events: non_error_events.delete_all,
-        deleted_trace_spans: spans.delete_all
-      }
-
-      puts JSON.pretty_generate(result)
+    desc "Disabled legacy global prune; use the delivery-safe per-project retention task."
+    task :prune_hot, [ :days ] => :environment do
+      abort <<~MESSAGE.squish
+        logister:telemetry:prune_hot is disabled because a global delete cannot
+        honor project archive policy or unfinished outbox deliveries. Use
+        logister:telemetry:retention with DRY_RUN=true first, then run with
+        DRY_RUN=false CONFIRM=retention.
+      MESSAGE
     end
 
     desc "Run per-project telemetry retention. Defaults to dry run. Use DRY_RUN=false CONFIRM=retention to delete."

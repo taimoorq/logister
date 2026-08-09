@@ -5,26 +5,23 @@ module Logister
     EVENT_TYPES = %w[error log metric transaction check_in].freeze
 
     class << self
-      def call(project_ids:, since:, client: ClickhouseClient.new)
-        new(project_ids:, since:, client:).call
+      def call(project_ids:, since:, to: Time.current, client:)
+        new(project_ids:, since:, to:, client:).call
       end
     end
 
-    def initialize(project_ids:, since:, client:)
+    def initialize(project_ids:, since:, to:, client:)
       @project_ids = Array(project_ids).map(&:to_i).select(&:positive?).uniq
       @since = since
+      @to = to
       @client = client
     end
 
     def call
-      return unless @client.read_enabled?
       return empty_rollup if @project_ids.empty?
 
       rows = @client.select_rows!(query)
       build_rollup(rows)
-    rescue StandardError => error
-      Rails.logger.warn("clickhouse dashboard rollup failed: #{error.class} #{error.message}")
-      nil
     end
 
     private
@@ -34,17 +31,22 @@ module Logister
         SELECT
           project_id,
           event_type,
-          uniqExact(event_id) AS count,
+          count() AS count,
           max(occurred_at) AS latest_event_at
-        FROM #{@client.events_table_name}
+        FROM #{@client.event_facts_table_name}
         WHERE project_id IN (#{@project_ids.join(", ")})
           AND occurred_at >= parseDateTime64BestEffort(#{quoted_since}, 3)
+          AND occurred_at < parseDateTime64BestEffort(#{quoted_to}, 3)
         GROUP BY project_id, event_type
       SQL
     end
 
     def quoted_since
       "'#{@since.to_time.utc.iso8601(3)}'"
+    end
+
+    def quoted_to
+      "'#{@to.to_time.utc.iso8601(3)}'"
     end
 
     def build_rollup(rows)

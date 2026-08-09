@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "time"
+require "securerandom"
+
 module SidekiqRecurringJob
   extend ActiveSupport::Concern
 
@@ -9,10 +12,13 @@ module SidekiqRecurringJob
     class_attribute :sidekiq_recurring_daily_at
     class_attribute :sidekiq_recurring_schedule_ttl
     class_attribute :sidekiq_recurring_arguments
+    class_attribute :sidekiq_recurring_lookahead
+
+    around_perform :track_sidekiq_recurring_execution
   end
 
   class_methods do
-    def sidekiq_recurring_schedule(key:, every: nil, daily_at: nil, schedule_ttl: nil, arguments: nil)
+    def sidekiq_recurring_schedule(key:, every: nil, daily_at: nil, schedule_ttl: nil, arguments: nil, lookahead: nil)
       if every.present? == daily_at.present?
         raise ArgumentError, "Configure exactly one Sidekiq recurring schedule type"
       end
@@ -22,16 +28,31 @@ module SidekiqRecurringJob
       self.sidekiq_recurring_daily_at = daily_at
       self.sidekiq_recurring_schedule_ttl = schedule_ttl || default_sidekiq_recurring_schedule_ttl(every:)
       self.sidekiq_recurring_arguments = arguments || ->(_run_at) { [] }
+      self.sidekiq_recurring_lookahead = lookahead || (every.present? ? 4 : 3)
     end
 
-    def ensure_scheduled!(now = Time.current)
-      run_at = next_sidekiq_recurring_run_at(now)
-      return unless sidekiq_recurring_redis_set_once(sidekiq_recurring_schedule_key(run_at), sidekiq_recurring_schedule_ttl)
+    def ensure_scheduled!(now = Time.current, occurrences: sidekiq_recurring_lookahead)
+      cursor = now
+      Integer(occurrences).times do
+        run_at = next_sidekiq_recurring_run_at(cursor)
+        cursor = run_at
+        ttl = [ sidekiq_recurring_schedule_ttl.to_i, (run_at - now).ceil + sidekiq_recurring_schedule_ttl.to_i ].max
+        schedule_key = sidekiq_recurring_schedule_key(run_at)
+        marker_token = SecureRandom.uuid
+        next unless sidekiq_recurring_redis_set_once(schedule_key, ttl, value: marker_token)
 
-      set(wait_until: run_at).perform_later(*Array(sidekiq_recurring_arguments.call(run_at)))
-    rescue StandardError => e
-      Rails.logger.warn("#{sidekiq_recurring_key}_schedule_failed error=#{e.class}: #{e.message}")
-      report_sidekiq_recurring_schedule_failure(e, run_at)
+        begin
+          enqueued_job = set(wait_until: run_at).perform_later(*Array(sidekiq_recurring_arguments.call(run_at)))
+          raise ActiveJob::EnqueueError, "#{name} was not enqueued" unless enqueued_job
+        rescue StandardError
+          sidekiq_recurring_release_marker(schedule_key, marker_token)
+          raise
+        end
+      rescue StandardError => e
+        Rails.logger.warn("#{sidekiq_recurring_key}_schedule_failed error=#{e.class}: #{e.message}")
+        report_sidekiq_recurring_schedule_failure(e, run_at)
+        break
+      end
     end
 
     def next_sidekiq_recurring_run_at(now)
@@ -41,15 +62,80 @@ module SidekiqRecurringJob
       next_daily_run_at(now)
     end
 
-    def sidekiq_recurring_redis_set_once(key, ttl)
-      Sidekiq.redis { |redis| redis.set(key, "1", nx: true, ex: ttl.to_i) }
+    def sidekiq_recurring_redis_set_once(key, ttl, value: "1")
+      Sidekiq.redis { |redis| redis.set(key, value, nx: true, ex: ttl.to_i) }
+    end
+
+    def sidekiq_recurring_release_marker(key, marker_token)
+      script = <<~LUA.squish
+        if redis.call('get', KEYS[1]) == ARGV[1] then
+          return redis.call('del', KEYS[1])
+        end
+        return 0
+      LUA
+      Sidekiq.redis { |redis| redis.call("EVAL", script, 1, key, marker_token) }
+    rescue StandardError => error
+      Rails.logger.warn(
+        "#{sidekiq_recurring_key}_schedule_marker_release_failed " \
+        "error=#{error.class}: #{error.message}"
+      )
+      false
     end
 
     def sidekiq_recurring_schedule_key(run_at)
       "logister:sidekiq_recurring:scheduled:#{sidekiq_recurring_key}:#{run_at.utc.strftime('%Y%m%d%H%M')}"
     end
 
+    def sidekiq_recurring_status(now = Time.current, redis: nil)
+      state = sidekiq_recurring_redis(redis) { |connection| connection.hgetall(sidekiq_recurring_state_key) }
+      expected_at = previous_sidekiq_recurring_run_at(now)
+      last_started_at = parse_sidekiq_recurring_time(state["started_at"])
+      lateness = last_started_at && last_started_at >= expected_at ? 0 : [ (now.utc - expected_at).to_i, 0 ].max
+
+      {
+        "key" => sidekiq_recurring_key,
+        "job_class" => name,
+        "expected_at" => expected_at.iso8601,
+        "last_started_at" => last_started_at&.iso8601,
+        "last_completed_at" => parse_sidekiq_recurring_time(state["completed_at"])&.iso8601,
+        "last_failed_at" => parse_sidekiq_recurring_time(state["failed_at"])&.iso8601,
+        "lateness_seconds" => lateness
+      }
+    rescue StandardError => error
+      { "key" => sidekiq_recurring_key, "job_class" => name, "status" => "unknown", "error_class" => error.class.name }
+    end
+
+    def record_sidekiq_recurring_execution!(field, at: Time.current)
+      sidekiq_recurring_redis do |redis|
+        redis.hset(sidekiq_recurring_state_key, field.to_s, at.utc.iso8601(6))
+        redis.expire(sidekiq_recurring_state_key, 14.days.to_i)
+      end
+    rescue StandardError => error
+      Rails.logger.warn("#{sidekiq_recurring_key}_state_failed error=#{error.class}: #{error.message}")
+    end
+
     private
+
+    def sidekiq_recurring_redis(redis = nil)
+      return yield redis if redis
+
+      Sidekiq.redis { |connection| yield connection }
+    end
+
+    def sidekiq_recurring_state_key
+      "logister:sidekiq_recurring:state:#{sidekiq_recurring_key}"
+    end
+
+    def parse_sidekiq_recurring_time(value)
+      Time.iso8601(value.to_s) if value.present?
+    rescue ArgumentError
+      nil
+    end
+
+    def previous_sidekiq_recurring_run_at(now)
+      offset = sidekiq_recurring_every.present? ? sidekiq_recurring_every : 1.day
+      next_sidekiq_recurring_run_at(now - offset)
+    end
 
     def default_sidekiq_recurring_schedule_ttl(every:)
       return 2.days.to_i if every.blank?
@@ -96,6 +182,17 @@ module SidekiqRecurringJob
   end
 
   private
+
+  def track_sidekiq_recurring_execution
+    return yield unless Rails.env.production?
+
+    self.class.record_sidekiq_recurring_execution!(:started_at)
+    yield
+    self.class.record_sidekiq_recurring_execution!(:completed_at)
+  rescue StandardError
+    self.class.record_sidekiq_recurring_execution!(:failed_at)
+    raise
+  end
 
   def reschedule_sidekiq_recurring_job
     return unless Rails.env.production?

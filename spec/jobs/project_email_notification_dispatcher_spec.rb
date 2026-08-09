@@ -69,4 +69,26 @@ RSpec.describe ProjectEmailNotificationDispatcher, type: :job do
     expect(ActionMailer::Base.deliveries.size).to eq(1)
     expect(ActionMailer::Base.deliveries.first.to).to eq([ assignee.email ])
   end
+
+  it "revalidates archived project state before resuming a delivery" do
+    delivery = create(:email_notification_delivery, :first_occurrence, status: "pending")
+    delivery.project.archive!
+
+    described_class.resume(delivery)
+
+    expect(delivery.reload.status).to eq("skipped")
+    expect(delivery.last_error).to eq("project_archived_or_purge_pending")
+    expect(ActionMailer::Base.deliveries).to be_empty
+  end
+
+  it "revalidates purge tombstones before resuming a delivery" do
+    delivery = create(:email_notification_delivery, :first_occurrence, status: "pending")
+    delivery.project.update!(purge_requested_at: Time.current)
+
+    described_class.resume(delivery)
+
+    expect(delivery.reload.status).to eq("skipped")
+    expect(delivery.last_error).to eq("project_archived_or_purge_pending")
+    expect(ActionMailer::Base.deliveries).to be_empty
+  end
 end

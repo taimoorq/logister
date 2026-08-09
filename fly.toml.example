@@ -19,9 +19,15 @@ console_command = '/rails/bin/rails console'
 [processes]
   app = './bin/rails server -b 0.0.0.0 -p 8080'
   worker = 'bundle exec sidekiq -C config/sidekiq.yml'
+# Larger installations can replace `worker` with independently scalable roles:
+# projector = 'bundle exec sidekiq -q projector -c 5'
+# analytics = 'bundle exec sidekiq -q analytics -c 3'
+# notifications = 'bundle exec sidekiq -q notifications -q mailers -q default -c 3'
+# integrations = 'bundle exec sidekiq -q integrations -q symbols -c 2'
+# maintenance = 'bundle exec sidekiq -q maintenance -c 1'
 
-# Keep at least one worker running in production. It handles mail delivery,
-# project error alerts, digest scheduling, and optional ClickHouse writes.
+# Keep either the combined worker or every split role running in production.
+# Configure DB_POOL to at least the largest process concurrency plus two.
 
 [http_service]
   internal_port = 8080

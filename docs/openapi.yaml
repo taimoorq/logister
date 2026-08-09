@@ -423,7 +423,9 @@ paths:
         full event shape. Uppercase `EVENT` envelopes are also accepted for
         runtimes that serialize keys that way. A client-supplied event `uuid`
         is an idempotency key within the project: a retry returns the original
-        accepted event without creating another occurrence.
+        accepted event without creating another occurrence. The request body is
+        capped at 2 MiB before JSON parsing; the normalized event has a separate
+        1 MiB limit.
       requestBody:
         required: true
         content:
@@ -559,8 +561,102 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: The request body or normalized event exceeds its byte limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           $ref: "#/components/responses/UnprocessableContent"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /api/v1/ingest_events/batch:
+    post:
+      operationId: createIngestEventBatch
+      tags:
+        - Ingest events
+      summary: Atomically ingest a bounded batch of telemetry envelopes.
+      description: |
+        Accepts one `{ "event": ... }` JSON object per nonblank line; both the
+        envelope and its `event` value must be JSON objects. The request may use
+        gzip content encoding. A batch contains at most 100 envelopes, 2 MiB of
+        compressed input, and 8 MiB after decompression. Every event must carry a
+        nonblank, valid UUID in `uuid` or `event_id` for safe retry. If both aliases
+        are supplied, they must normalize to the same UUID. Newly accepted rows are
+        committed atomically; if one envelope is invalid, new rows from the batch
+        are rolled back. Previously accepted duplicate envelopes remain accepted.
+        Tenant rate limits count envelopes rather than HTTP requests.
+      parameters:
+        - name: Content-Encoding
+          in: header
+          required: false
+          description: Use `gzip` for compressed NDJSON or omit for identity encoding.
+          schema:
+            type: string
+            enum: [gzip, identity]
+        - name: X-Logister-Batch-Id
+          in: header
+          required: false
+          description: Stable SDK-generated batch identifier echoed in the response.
+          schema:
+            type: string
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/x-ndjson:
+            schema:
+              type: string
+              format: binary
+            example: |
+              {"event":{"uuid":"11111111-1111-4111-8111-111111111111","event_type":"log","message":"checkout started"}}
+              {"event":{"uuid":"22222222-2222-4222-8222-222222222222","event_type":"metric","message":"queue.depth","context":{"value":12}}}
+      responses:
+        "202":
+          description: Every new envelope was committed with its projection intents.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/XRateLimitLimit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/XRateLimitRemaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/XRateLimitReset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedBatchResponse"
+        "400":
+          description: |
+            NDJSON or gzip framing is invalid, the batch is empty, an envelope or
+            event is not an object, or a stable identity is missing, malformed, or
+            conflicting. The `code` is one of `invalid_json`, `invalid_gzip`,
+            `empty_batch`, `invalid_envelope`, `missing_event`, `missing_identity`,
+            `invalid_identity`, or `conflicting_identity`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: The compressed body, decompressed body, envelope count, or an individual envelope exceeds its limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "415":
+          description: The media type or content encoding is unsupported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: At least one envelope failed model validation; newly inserted rows were rolled back.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RejectedBatchResponse"
         "429":
           $ref: "#/components/responses/TooManyRequests"
   /api/v1/deployments:
@@ -1723,6 +1819,83 @@ components:
             type:
               type: string
               const: span
+    BatchEnvelopeResult:
+      type: object
+      required:
+        - index
+        - status
+        - type
+      properties:
+        index:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [accepted, rejected, rolled_back]
+        type:
+          type: string
+          enum: [event, span]
+        id:
+          type: string
+          format: uuid
+        legacy_id:
+          type: integer
+        duplicate:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+    AcceptedBatchResponse:
+      type: object
+      required:
+        - schema_version
+        - status
+        - accepted
+        - duplicates
+        - results
+      properties:
+        schema_version:
+          type: integer
+          const: 1
+        batch_id:
+          type: string
+        status:
+          type: string
+          const: accepted
+        accepted:
+          type: integer
+          minimum: 1
+        duplicates:
+          type: integer
+          minimum: 0
+        results:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/BatchEnvelopeResult"
+    RejectedBatchResponse:
+      type: object
+      required:
+        - schema_version
+        - status
+        - results
+      properties:
+        schema_version:
+          type: integer
+          const: 1
+        batch_id:
+          type: string
+        status:
+          type: string
+          const: rejected
+        results:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/BatchEnvelopeResult"
     AcceptedCheckInResponse:
       type: object
       required:
@@ -1755,6 +1928,8 @@ components:
         - error
       properties:
         error:
+          type: string
+        code:
           type: string
     ValidationErrorResponse:
       type: object
