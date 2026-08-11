@@ -19,6 +19,7 @@ RSpec.describe Logister::ReleaseImpact do
     {
       "schema_version" => 1,
       "id" => "telemetry-evidence-contract",
+      "release_version" => Rails.root.join("VERSION").read.strip,
       "summary" => "Add a compatible telemetry evidence envelope.",
       "backend" => {
         "bump" => "minor",
@@ -146,6 +147,8 @@ RSpec.describe Logister::ReleaseImpact do
     historical_path = impact_path.dirname.join("historical.yml")
     historical = impact.deep_dup
     historical["id"] = "historical-telemetry-contract"
+    historical["release_version"] = "3.6"
+    historical["contract_sha256"]["telemetry_ingest"] = "0" * 64
     historical["consumers"]["logister-ios"] = {
       "bump" => "minor",
       "reason" => "The historical release added a compatible iOS evidence capability."
@@ -159,6 +162,15 @@ RSpec.describe Logister::ReleaseImpact do
     ).validate!
 
     expect(result.triggered_contracts).to be_empty
+  end
+
+  it "does not let a historical record satisfy a current release-sensitive change" do
+    impact["release_version"] = "3.6"
+
+    expect { validate }.to raise_error(
+      described_class::ValidationError,
+      /no changed config\/release-impact\/\*\.yml record for VERSION/
+    )
   end
 
   it "still rejects conflicting consumer decisions within one active change" do

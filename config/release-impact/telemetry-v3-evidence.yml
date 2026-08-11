@@ -1,5 +1,6 @@
 schema_version: 1
 id: telemetry-v3-evidence
+release_version: "3.6"
 summary: Add mobile evidence, artifact workflows, and capability-negotiated CLI artifact APIs.
 backend:
   bump: minor
@@ -10,9 +11,9 @@ contracts:
   - telemetry_ingest
   - integration_discovery
 contract_sha256:
-  cli_api: fa7e2057809de1f85f11b7bd031b07be28e4d1c4e4ea5f94c930889b0d7f897f
-  telemetry_ingest: e780269e6ee558bd50fcf7568b886a62a5bcac58e8c3876613774f23eb4c04a6
-  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
+  cli_api: 3f3b845193a72e2462a7db193c4cae1c7fdfd1f6eb5ee80bf46f6f711129e556
+  telemetry_ingest: cf9691ad647d46d12afa3010b4c9dac9bbe90a65a77a0b7a963da9c637ad2b3e
+  integration_discovery: 0d18ab3c7bc49f395ba7cc147f5765dbc6d04dcc09455d905a18ed6e0dfe95ad
 consumers:
   logister-ruby:
     bump: none

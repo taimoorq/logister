@@ -14,6 +14,7 @@ module Logister
     IMPACT_ID_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
     ADDON_ID_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
     CONTRACT_ID_PATTERN = /\A[a-z][a-z0-9_]*\z/
+    VERSION_PATTERN = /\A[0-9]+\.[0-9]+(?:\.[0-9]+)?(?:-[0-9A-Za-z.-]+)?\z/
     GIT_REF_PATTERN = /\A(?!-)[A-Za-z0-9][A-Za-z0-9._\/-]{0,254}\z/
     SENSITIVE_KEYS = %w[
       api_key credential credentials password private_key secret secrets token tokens
@@ -88,9 +89,18 @@ module Logister
       validate_unique_record_ids(records)
 
       triggered_contracts = triggered_contract_ids(ecosystem)
-      validate_required_records(triggered_contracts, records)
+      current_version = load_current_version
+      active_records = records.select { |record| record["release_version"] == current_version }
+      validate_required_records(triggered_contracts, active_records, current_version)
       contract_digests = build_contract_digests(ecosystem)
-      decisions = validate_records(ecosystem, triggered_contracts, records, contract_digests)
+      decisions = validate_records(
+        ecosystem,
+        triggered_contracts,
+        records,
+        active_records,
+        contract_digests,
+        current_version
+      )
 
       raise ValidationError, errors if errors.any?
 
@@ -187,11 +197,24 @@ module Logister
       File.fnmatch?(pattern.to_s, path, FILE_MATCH_FLAGS)
     end
 
-    def validate_required_records(triggered_contracts, records)
-      return if triggered_contracts.empty?
-      return if records.any?
+    def load_current_version
+      version = ecosystem_path.dirname.dirname.join("VERSION").read.strip
+      unless version.match?(VERSION_PATTERN)
+        errors << "VERSION #{version.inspect} is invalid."
+        return nil
+      end
 
-      errors << "Release-sensitive changes affect #{triggered_contracts.join(", ")}, but no changed config/release-impact/*.yml record was provided."
+      version
+    rescue Errno::ENOENT
+      errors << "VERSION source is missing."
+      nil
+    end
+
+    def validate_required_records(triggered_contracts, active_records, current_version)
+      return if triggered_contracts.empty?
+      return if active_records.any?
+
+      errors << "Release-sensitive changes affect #{triggered_contracts.join(", ")}, but no changed config/release-impact/*.yml record for VERSION #{current_version || "unknown"} was provided."
     end
 
     def build_contract_digests(ecosystem)
@@ -204,10 +227,11 @@ module Logister
       end
     end
 
-    def validate_records(ecosystem, triggered_contracts, records, contract_digests)
+    def validate_records(ecosystem, triggered_contracts, records, active_records, contract_digests, current_version)
       contracts = ecosystem.fetch("contracts", {})
       addons = ecosystem.fetch("addons", {})
       decisions = {}
+      decision_records = triggered_contracts.any? ? active_records : records
 
       records.each do |record|
         path = record["__path__"]
@@ -215,7 +239,13 @@ module Logister
         record_contracts = Array(record["contracts"])
         unknown_contracts = record_contracts - contracts.keys
         errors << "#{path} references unknown contracts: #{unknown_contracts.join(", ")}." if unknown_contracts.any?
-        validate_contract_digests(path, record_contracts, record["contract_sha256"], contract_digests)
+        validate_contract_digests(
+          path,
+          record_contracts,
+          record["contract_sha256"],
+          contract_digests,
+          enforce_current: record["release_version"] == current_version
+        )
 
         consumers = record["consumers"].is_a?(Hash) ? record["consumers"] : {}
         unknown_consumers = consumers.keys - addons.keys
@@ -223,6 +253,7 @@ module Logister
 
         consumers.each do |consumer, decision|
           validate_consumer_decision(path, consumer, decision)
+          next unless decision_records.include?(record)
           next unless decision.is_a?(Hash) && ALLOWED_BUMPS.include?(decision["bump"])
 
           previous = decisions[consumer]
@@ -234,7 +265,7 @@ module Logister
         end
       end
 
-      recorded_contracts = records.flat_map { |record| Array(record["contracts"]) }.uniq
+      recorded_contracts = decision_records.flat_map { |record| Array(record["contracts"]) }.uniq
       missing_contracts = triggered_contracts - recorded_contracts
       errors << "Release-impact records omit triggered contracts: #{missing_contracts.join(", ")}." if missing_contracts.any?
 
@@ -250,11 +281,12 @@ module Logister
     end
 
     def validate_record_shape(record, path)
-      allowed_keys = %w[schema_version id summary backend contracts contract_sha256 consumers __path__]
+      allowed_keys = %w[schema_version id release_version summary backend contracts contract_sha256 consumers __path__]
       unknown_keys = record.keys - allowed_keys
       errors << "#{path} contains unsupported keys: #{unknown_keys.join(", ")}." if unknown_keys.any?
       errors << "#{path} schema_version must be 1." unless record["schema_version"] == 1
       validate_identifier(record["id"], IMPACT_ID_PATTERN, "release-impact id", path)
+      errors << "#{path} release_version is invalid." unless record["release_version"].to_s.match?(VERSION_PATTERN)
 
       summary = record["summary"]
       errors << "#{path} summary must be 8..240 characters." unless summary.is_a?(String) && summary.strip.length.between?(8, 240)
@@ -279,7 +311,7 @@ module Logister
       errors << "#{path} consumers must be a non-empty object." unless consumers.is_a?(Hash) && consumers.any?
     end
 
-    def validate_contract_digests(path, contracts, declared, current)
+    def validate_contract_digests(path, contracts, declared, current, enforce_current:)
       unless declared.is_a?(Hash)
         errors << "#{path} contract_sha256 must be an object."
         return
@@ -293,7 +325,9 @@ module Logister
         end
 
         expected = current[contract]
-        errors << "#{path} contract_sha256.#{contract} is stale; expected #{expected}." if expected && digest != expected
+        if enforce_current && expected && digest != expected
+          errors << "#{path} contract_sha256.#{contract} is stale; expected #{expected}."
+        end
       end
     end
 

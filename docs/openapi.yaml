@@ -7,6 +7,8 @@ info:
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
     first-party SDKs when they fit your runtime, or use this contract to build
     a custom client, script, worker integration, or direct HTTP reporter.
+    Archive retention is managed by bounded backend jobs and does not change
+    the public ingestion or CLI wire contract.
   contact:
     name: Logister
     url: https://logister.org/docs/

@@ -80,7 +80,7 @@ Logister CLI docs live at https://logister.org/docs/cli/. The npm package requir
 - ClickHouse write failures are reported through `logister-ruby` as throttled logs and count metrics when Logister self-observability is configured.
 - Data retention docs are split by task: overview, policy choices, archive storage, and durable retention jobs at https://logister.org/docs/product/data-retention/.
 - S3-compatible archive storage is optional and uses Active Storage with `ACTIVE_STORAGE_SERVICE=amazon` plus AWS/S3 variables.
-- Project retention uses a durable PostgreSQL run ledger, bounded object attempts, stale-attempt fencing, and a dedicated `archives` Sidekiq queue before exact verified source cleanup. The legacy global `logister:telemetry:prune_hot` task is disabled.
+- Project retention advances through a durable PostgreSQL run ledger with bounded object attempts, stale-attempt fencing, and a dedicated `archives` Sidekiq queue before exact verified source cleanup. The legacy global `logister:telemetry:prune_hot` task is disabled.
 
 ## Release Distribution
 

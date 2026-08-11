@@ -1,5 +1,6 @@
 schema_version: 1
 id: archive-retention-reliability
+release_version: "3.6.1"
 summary: Bound and recover project archive retention without changing SDK ingest or CLI wire behavior.
 backend:
   bump: patch
@@ -8,9 +9,11 @@ backend:
 contracts:
   - cli_api
   - telemetry_ingest
+  - integration_discovery
 contract_sha256:
-  cli_api: fa7e2057809de1f85f11b7bd031b07be28e4d1c4e4ea5f94c930889b0d7f897f
-  telemetry_ingest: e780269e6ee558bd50fcf7568b886a62a5bcac58e8c3876613774f23eb4c04a6
+  cli_api: 32d6156fbff86ab927c2e3710ea471ce9b03bd1d889cea9534a0bea1d82c5b2c
+  telemetry_ingest: ada3a5c5bcef42ebff5cd4f0b4dbe31180d27e4caa8cc9512a579c9690021ad0
+  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
 consumers:
   logister-ruby:
     bump: none
