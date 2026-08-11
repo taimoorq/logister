@@ -1,0 +1,36 @@
+schema_version: 1
+id: archive-retention-continuation-throughput
+release_version: "3.6.3"
+summary: Reuse durable retention count snapshots across bounded continuations without changing client wire behavior.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+  - cli_api
+  - telemetry_ingest
+contract_sha256:
+  cli_api: 743f9c9f91e06bff699fc3e2d99f21b1502beccef14624c735a4576d2b9432d5
+  telemetry_ingest: 38b63b5e1cdbb7bf910f7649817bf831b5a4129bd3dfa6fa71666e925d07c929
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Retention continuation accounting is internal and does not alter Ruby SDK ingestion.
+  logister-js:
+    bump: none
+    reason: Retention continuation accounting is internal and does not alter JavaScript SDK ingestion.
+  logister-python:
+    bump: none
+    reason: Retention continuation accounting is internal and does not alter Python SDK ingestion.
+  logister-dotnet:
+    bump: none
+    reason: Retention continuation accounting is internal and does not alter .NET SDK ingestion.
+  logister-android:
+    bump: none
+    reason: Retention continuation accounting is internal and does not alter Android ingestion or evidence contracts.
+  logister-ios:
+    bump: none
+    reason: Retention continuation accounting is internal and does not alter iOS ingestion or evidence contracts.
+  logister-cli:
+    bump: none
+    reason: The CLI API shape is unchanged; only compatible backend release identity metadata advances.

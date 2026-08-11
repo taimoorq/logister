@@ -1,0 +1,81 @@
+schema_version: 1
+id: backend-v3-6-3
+backend:
+  version: "3.6.3"
+  tag: v3.6.3
+impact_records:
+  - archive-retention-continuation-throughput
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: The Ruby SDK remains wire-compatible with this backend-only retention continuation patch.
+    channels:
+      - rubygems
+      - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: The JavaScript SDK remains wire-compatible with this backend-only retention continuation patch.
+    channels:
+      - npm
+      - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: The Python SDK remains wire-compatible with this backend-only retention continuation patch.
+    channels:
+      - pypi
+      - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.2.0
+    target_version: 0.2.0
+    bump: none
+    release_required: false
+    reason: The .NET SDK remains wire-compatible with this backend-only retention continuation patch.
+    channels:
+      - nuget_logister
+      - nuget_logister_aspnetcore
+      - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: The Android SDK remains wire-compatible with this backend-only retention continuation patch.
+    channels:
+      - maven_central
+      - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: The iOS SDK remains wire-compatible with this backend-only retention continuation patch.
+    channels:
+      - swift_package_manager
+      - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.0.0
+    target_version: 1.0.0
+    bump: none
+    release_required: false
+    reason: The CLI remains compatible because no endpoint, scope, or response shape changed.
+    channels:
+      - npm
+      - github_release
+      - homebrew-logister
+      - scoop-logister

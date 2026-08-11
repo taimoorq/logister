@@ -47,7 +47,7 @@ RSpec.describe "CLI OpenAPI route contract" do
       "/api/v1/cli/projects/{project_uuid}/metrics/query" => "queryCliMetric"
     }
 
-    expect(contract.dig("info", "version")).to eq("3.6.2")
+    expect(contract.dig("info", "version")).to eq("3.6.3")
     expected.each do |path, operation_id|
       expect(contract.dig("paths", path, "get", "operationId")).to eq(operation_id)
     end

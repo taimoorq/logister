@@ -64,6 +64,33 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(policy.reload.last_retention_run_at).to be_nil
   end
 
+  it "reuses durable count snapshots and cumulative totals across continuations" do
+    run = create(
+      :project_retention_run,
+      project: project,
+      scheduled_for: now,
+      result: {
+        candidates: { hot_events: 3_714_472, trace_spans: 0, closed_error_groups: 3 },
+        protected_by_delivery: { hot_events: 0, trace_spans: 0, error_events: 0 },
+        recovered_deletions: { hot_events: 25_000 },
+        deleted: { hot_events: 1_000 }
+      }
+    )
+
+    result = described_class.new(
+      project: project,
+      policy: policy,
+      dry_run: true,
+      now: now,
+      run: run
+    ).call
+
+    expect(result[:candidates]).to eq(hot_events: 3_714_472, trace_spans: 0, closed_error_groups: 3)
+    expect(result[:protected_by_delivery]).to eq(hot_events: 0, trace_spans: 0, error_events: 0)
+    expect(result[:recovered_deletions]).to eq(hot_events: 25_000)
+    expect(result[:deleted]).to include(hot_events: 1_000)
+  end
+
   it "deletes old hot telemetry for one project and clears event references" do
     other_project = create(:project)
     old_check_in = create(:ingest_event, :check_in, project: project, occurred_at: now - 45.days)

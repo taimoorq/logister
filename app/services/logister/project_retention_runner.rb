@@ -4,6 +4,8 @@ module Logister
 
     DEFAULT_BATCH_SIZE = 1_000
     HOT_EVENT_TYPES = IngestEvent.event_types.keys.excluding("error").freeze
+    CANDIDATE_COUNT_KEYS = %w[hot_events trace_spans closed_error_groups].freeze
+    PROTECTION_COUNT_KEYS = %w[hot_events trace_spans error_events].freeze
 
     def initialize(project:, policy: nil, batch_size: DEFAULT_BATCH_SIZE, storage_service: nil, dry_run: false,
                    now: Time.current, run: nil, archive_object_limit: nil, cleanup_object_limit: nil,
@@ -35,21 +37,24 @@ module Logister
         archive_before_delete: archive_before_delete?,
         cutoffs: cutoffs.transform_values { |value| value&.utc&.iso8601 },
         archives: [],
-        recovered_deletions: cleanup_verified_archive_sources,
-        candidates: {},
-        protected_by_delivery: {},
-        deleted: {},
+        recovered_deletions: prior_count_totals("recovered_deletions"),
+        candidates: prior_count_snapshot("candidates", CANDIDATE_COUNT_KEYS),
+        protected_by_delivery: prior_count_snapshot("protected_by_delivery", PROTECTION_COUNT_KEYS),
+        deleted: prior_count_totals("deleted"),
         continuation_required: false
       }
 
+      accumulate_counts!(result[:recovered_deletions], cleanup_verified_archive_sources)
       return continuation_result(result) if @continuation_required
 
-      result[:candidates][:hot_events] = hot_event_scope.count
-      result[:candidates][:trace_spans] = trace_span_scope.count
-      result[:candidates][:closed_error_groups] = closed_error_group_scope.count
-      result[:protected_by_delivery][:hot_events] = protected_source_count(hot_event_scope)
-      result[:protected_by_delivery][:trace_spans] = protected_source_count(trace_span_scope)
-      result[:protected_by_delivery][:error_events] = protected_source_count(closed_error_event_scope)
+      capture_candidate_counts!(result[:candidates]) unless count_snapshot_complete?(
+        result[:candidates],
+        CANDIDATE_COUNT_KEYS
+      )
+      capture_protection_counts!(result[:protected_by_delivery]) unless count_snapshot_complete?(
+        result[:protected_by_delivery],
+        PROTECTION_COUNT_KEYS
+      )
 
       archive_retention_scope(result, :hot_events, "ingest_events", hot_cutoff, event_types: HOT_EVENT_TYPES)
       return continuation_result(result) if @continuation_required
@@ -59,23 +64,65 @@ module Logister
       return continuation_result(result) if @continuation_required
 
       if archive_deletion_guard?
-        result[:deleted][:hot_events] = delete_current_archive_sources(:hot_events)
+        accumulate_count!(result[:deleted], :hot_events, delete_current_archive_sources(:hot_events))
         return continuation_result(result) if @continuation_required
-        result[:deleted][:trace_spans] = delete_current_archive_sources(:trace_spans)
+        accumulate_count!(result[:deleted], :trace_spans, delete_current_archive_sources(:trace_spans))
         return continuation_result(result) if @continuation_required
-        result[:deleted][:error_events] = delete_current_archive_sources(:error_events)
+        accumulate_count!(result[:deleted], :error_events, delete_current_archive_sources(:error_events))
         return continuation_result(result) if @continuation_required
       else
-        result[:deleted][:hot_events] = delete_events(hot_event_scope)
-        result[:deleted][:trace_spans] = delete_trace_spans(trace_span_scope)
+        accumulate_count!(result[:deleted], :hot_events, delete_events(hot_event_scope))
+        accumulate_count!(result[:deleted], :trace_spans, delete_trace_spans(trace_span_scope))
       end
-      result[:deleted][:closed_error_groups] = prune_closed_error_groups
+      accumulate_count!(result[:deleted], :closed_error_groups, prune_closed_error_groups)
 
       mark_policy_run!(result)
       result
     end
 
     private
+
+    def prior_count_snapshot(section, required_keys)
+      counts = prior_count_totals(section)
+      return {} unless count_snapshot_complete?(counts, required_keys)
+
+      counts.slice(*required_keys.map(&:to_sym))
+    end
+
+    def prior_count_totals(section)
+      raw = @run&.result.to_h[section.to_s]
+      return {} unless raw.is_a?(Hash)
+
+      raw.each_with_object({}) do |(key, value), counts|
+        counts[key.to_sym] = Integer(value)
+      rescue ArgumentError, TypeError
+        next
+      end
+    end
+
+    def count_snapshot_complete?(counts, required_keys)
+      required_keys.all? { |key| counts.key?(key.to_sym) }
+    end
+
+    def capture_candidate_counts!(counts)
+      counts[:hot_events] = hot_event_scope.count
+      counts[:trace_spans] = trace_span_scope.count
+      counts[:closed_error_groups] = closed_error_group_scope.count
+    end
+
+    def capture_protection_counts!(counts)
+      counts[:hot_events] = protected_source_count(hot_event_scope)
+      counts[:trace_spans] = protected_source_count(trace_span_scope)
+      counts[:error_events] = protected_source_count(closed_error_event_scope)
+    end
+
+    def accumulate_counts!(totals, additions)
+      additions.each { |key, value| accumulate_count!(totals, key, value) }
+    end
+
+    def accumulate_count!(totals, key, value)
+      totals[key.to_sym] = totals.fetch(key.to_sym, 0).to_i + value.to_i
+    end
 
     def default_policy
       return @project.retention_policy || @project.build_retention_policy if @dry_run

@@ -2,6 +2,18 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.3 - 2026-08-11
+
+### Fixed
+
+- Reused the first durable candidate and delivery-protection count snapshot across bounded retention continuations instead of repeating multi-million-row PostgreSQL counts before every object slice.
+- Carried recovered and direct deletion totals forward across continuation checkpoints so the terminal retention result remains cumulative.
+
+### Upgrade Notes
+
+- No database migrations or client upgrades are required. Existing manifests, uploaded objects, durable runs, fences, and cleanup checkpoints resume in place.
+- Deploy this patch before continuing a large manifest recovery. The first completed count snapshot remains the run-level diagnostic baseline; current policy and protection state are still rechecked transactionally before each source deletion.
+
 ## v3.6.2 - 2026-08-11
 
 ### Fixed
