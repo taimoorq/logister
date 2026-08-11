@@ -271,6 +271,17 @@ jobs:
             const startedAt = Date.now();
 
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const analysisPassed = (job) => {
+              if (job?.status === "completed") return job.conclusion === "success";
+
+              const steps = job?.steps || [];
+              const finalStep = steps.find((step) => step.name === "Complete job");
+              return finalStep?.status === "completed" &&
+                finalStep.conclusion === "success" &&
+                steps.every((step) =>
+                  step.status === "completed" && ["success", "skipped"].includes(step.conclusion)
+                );
+            };
 
             const workflows = await github.paginate(github.rest.actions.listRepoWorkflows, {
               owner: context.repo.owner,
@@ -318,9 +329,9 @@ jobs:
                 const analyses = new Map(jobs.map((job) => [job.name, job]));
                 const required = requiredAnalysisJobs.map((name) => analyses.get(name));
 
-                if (required.every((job) => job?.status === "completed" && job.conclusion === "success")) {
+                if (required.every(analysisPassed)) {
                   core.warning(
-                    `${workflowName} parent run ${run.id} has not finalized, but every required analysis job passed for ${headSha}: ${run.html_url}`
+                    `${workflowName} parent run ${run.id} has not finalized, but every required analysis completed successfully for ${headSha}: ${run.html_url}`
                   );
                   return;
                 }
