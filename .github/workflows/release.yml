@@ -198,6 +198,23 @@ jobs:
             docker buildx imagetools inspect "$1" 2>/dev/null | sed -n 's/^Digest:[[:space:]]*//p' | head -1 || true
           }
 
+          create_with_retry() {
+            target="$1"
+            for attempt in 1 2 3 4 5 6; do
+              if docker buildx imagetools create --tag "${target}" "${CANONICAL_REFERENCE}"; then
+                return 0
+              fi
+              if [ "${attempt}" -eq 6 ]; then
+                echo "Registry mirror write failed after ${attempt} attempts: ${target}"
+                return 1
+              fi
+
+              delay=$((attempt * 15))
+              echo "Registry mirror write failed for ${target}; retrying in ${delay}s."
+              sleep "${delay}"
+            done
+          }
+
           ensure_immutable() {
             target="$1"
             actual="$(registry_digest "${target}")"
@@ -206,12 +223,12 @@ jobs:
               exit 1
             fi
             if [ -z "${actual}" ]; then
-              docker buildx imagetools create --tag "${target}" "${CANONICAL_REFERENCE}"
+              create_with_retry "${target}"
             fi
           }
 
           ensure_mutable() {
-            docker buildx imagetools create --tag "$1" "${CANONICAL_REFERENCE}"
+            create_with_retry "$1"
           }
 
           short_sha="${RELEASE_SHA:0:12}"

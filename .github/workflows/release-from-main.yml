@@ -96,6 +96,13 @@ jobs:
           git tag --annotate "${RELEASE_TAG}" --message "Logister ${RELEASE_TAG}"
           git push origin "refs/tags/${RELEASE_TAG}"
 
+      - name: Dispatch deployment for a newly created tag
+        if: steps.tag_state.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.identity.outputs.tag }}
+        run: gh workflow run release.yml --ref main -f tag="${RELEASE_TAG}"
+
       - name: Recover an incomplete existing release
         if: steps.tag_state.outputs.current == 'true'
         env:
