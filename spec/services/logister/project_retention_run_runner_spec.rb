@@ -47,6 +47,31 @@ RSpec.describe Logister::ProjectRetentionRunRunner, type: :model do
     )
   end
 
+  it "records terminal and checkpoint timestamps when the attempt actually finishes" do
+    finished_at = now + 20.seconds
+    clock_time = now
+    result = {
+      candidates: { hot_events: 2, trace_spans: 0, closed_error_groups: 0 },
+      deleted: { hot_events: 2 },
+      continuation_required: false
+    }
+    runner = instance_double(Logister::ProjectRetentionRunner)
+    allow(runner).to receive(:call) do
+      clock_time = finished_at
+      result
+    end
+    allow(Logister::ProjectRetentionRunner).to receive(:new).and_return(runner)
+
+    described_class.new(run: run, now: now, clock: -> { clock_time }).call
+
+    expect(run.reload).to have_attributes(
+      started_at: now,
+      heartbeat_at: finished_at,
+      last_checkpoint_at: finished_at,
+      completed_at: finished_at
+    )
+  end
+
   it "checkpoints a bounded continuation without marking completion" do
     result = { archives: [], deleted: {}, continuation_required: true }
     allow(Logister::ProjectRetentionRunner).to receive(:new).and_return(
@@ -61,6 +86,27 @@ RSpec.describe Logister::ProjectRetentionRunRunner, type: :model do
       attempt_token: nil,
       completed_at: nil,
       last_checkpoint_at: now
+    )
+  end
+
+  it "schedules a continuation from the actual checkpoint time" do
+    checkpointed_at = now + 20.seconds
+    clock_time = now
+    result = { archives: [], deleted: {}, continuation_required: true }
+    runner = instance_double(Logister::ProjectRetentionRunner)
+    allow(runner).to receive(:call) do
+      clock_time = checkpointed_at
+      result
+    end
+    allow(Logister::ProjectRetentionRunner).to receive(:new).and_return(runner)
+
+    described_class.new(run: run, now: now, clock: -> { clock_time }).call
+
+    expect(run.reload).to have_attributes(
+      status: "queued",
+      heartbeat_at: checkpointed_at,
+      last_checkpoint_at: checkpointed_at,
+      available_at: checkpointed_at + described_class::CONTINUATION_DELAY
     )
   end
 

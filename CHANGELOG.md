@@ -2,6 +2,18 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.2 - 2026-08-11
+
+### Fixed
+
+- Separated immutable retention cutoff time from live operational time so durable run heartbeats, continuation availability, failures, completion, archive source cleanup, and retention policy audit fields reflect when each transition actually occurred.
+- Kept Fly release verification compatible with both supported standby metadata representations while still requiring started healthy app, core-worker, and archive-worker process groups.
+
+### Upgrade Notes
+
+- No database migrations or client upgrades are required. Existing archive manifests, durable runs, cleanup checkpoints, and stored objects remain compatible.
+- Deploy this patch before resuming a large multi-attempt retention run so checkpoint freshness and operator-visible completion times remain truthful throughout recovery.
+
 ## v3.6.1 - 2026-08-11
 
 ### Added

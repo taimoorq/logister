@@ -1,0 +1,36 @@
+schema_version: 1
+id: archive-retention-timestamp-integrity
+release_version: "3.6.2"
+summary: Record retention checkpoints and cleanup completion at their actual transition times without changing client wire behavior.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+  - cli_api
+  - telemetry_ingest
+contract_sha256:
+  cli_api: 140ca231380040f4f03db0335c8f03070855283724ba7b5d6db338b74d89c100
+  telemetry_ingest: eb401dee11cc7064fb9cfc3877c6a84d5a910f2a903bed15b449ebd639da45e3
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Retention transition timestamps are internal and do not alter Ruby SDK ingestion.
+  logister-js:
+    bump: none
+    reason: Retention transition timestamps are internal and do not alter JavaScript SDK ingestion.
+  logister-python:
+    bump: none
+    reason: Retention transition timestamps are internal and do not alter Python SDK ingestion.
+  logister-dotnet:
+    bump: none
+    reason: Retention transition timestamps are internal and do not alter .NET SDK ingestion.
+  logister-android:
+    bump: none
+    reason: Retention transition timestamps are internal and do not alter Android ingestion or evidence contracts.
+  logister-ios:
+    bump: none
+    reason: Retention transition timestamps are internal and do not alter iOS ingestion or evidence contracts.
+  logister-cli:
+    bump: none
+    reason: The CLI API shape is unchanged; only compatible backend release identity metadata advances.

@@ -12,10 +12,11 @@ module Logister
 
     Attempt = Data.define(:token, :fence_version)
 
-    def initialize(run:, storage_service: nil, now: Time.current)
+    def initialize(run:, storage_service: nil, now: nil, clock: nil)
       @run = run
       @storage_service = storage_service
-      @now = now
+      @clock = clock || (now ? -> { now } : -> { Time.current })
+      @now = now || current_time
       @lock = nil
       @attempt = nil
     end
@@ -44,7 +45,8 @@ module Logister
         cleanup_object_limit: objects_per_attempt,
         write_fence: method(:assert_current_attempt!),
         storage_service: @storage_service,
-        cutoff_snapshot: @run.cutoff_snapshot
+        cutoff_snapshot: @run.cutoff_snapshot,
+        clock: @clock
       ).call
 
       if result.fetch(:continuation_required, false)
@@ -72,7 +74,8 @@ module Logister
           raise LeaseLost, "Retention attempt #{@attempt&.token} lost fence #{@attempt&.fence_version}"
         end
 
-        current.update_columns(heartbeat_at: Time.current, updated_at: Time.current)
+        heartbeat_at = current_time
+        current.update_columns(heartbeat_at: heartbeat_at, updated_at: heartbeat_at)
       end
       true
     end
@@ -103,14 +106,15 @@ module Logister
     end
 
     def release_for_continuation!(reason:)
+      checkpointed_at = current_time
       update_owned_run! do |current|
         metadata = current.metadata.to_h.merge("last_continuation_reason" => reason)
         current.update!(
           status: "queued",
           attempt_token: nil,
-          heartbeat_at: @now,
-          last_checkpoint_at: @now,
-          available_at: @now + CONTINUATION_DELAY,
+          heartbeat_at: checkpointed_at,
+          last_checkpoint_at: checkpointed_at,
+          available_at: checkpointed_at + CONTINUATION_DELAY,
           metadata: metadata
         )
       end
@@ -118,6 +122,7 @@ module Logister
     end
 
     def checkpoint_continuation!(result)
+      checkpointed_at = current_time
       update_owned_run! do |current|
         progress = progress_for(current)
         current.update!(
@@ -130,9 +135,9 @@ module Logister
           rows_completed: progress.fetch(:rows_completed),
           result: result.as_json,
           attempt_token: nil,
-          heartbeat_at: @now,
-          last_checkpoint_at: @now,
-          available_at: @now + CONTINUATION_DELAY,
+          heartbeat_at: checkpointed_at,
+          last_checkpoint_at: checkpointed_at,
+          available_at: checkpointed_at + CONTINUATION_DELAY,
           last_error_class: nil,
           last_error_message: nil
         )
@@ -141,6 +146,7 @@ module Logister
     end
 
     def complete!(result)
+      completed_at = current_time
       update_owned_run! do |current|
         progress = progress_for(current, final_result: result)
         current.update!(
@@ -153,9 +159,9 @@ module Logister
           rows_completed: progress.fetch(:rows_total),
           result: result.as_json,
           attempt_token: nil,
-          heartbeat_at: @now,
-          last_checkpoint_at: @now,
-          completed_at: @now,
+          heartbeat_at: completed_at,
+          last_checkpoint_at: completed_at,
+          completed_at: completed_at,
           failed_at: nil,
           last_error_class: nil,
           last_error_message: nil
@@ -168,6 +174,7 @@ module Logister
       return { action: :fenced, status: @run.reload.status } unless owns_attempt?
 
       outcome = nil
+      failed_at = current_time
       update_owned_run! do |current|
         metadata = current.metadata.to_h
         failure_count = metadata.fetch("failure_count", 0).to_i + 1
@@ -177,10 +184,10 @@ module Logister
         current.update!(
           status: terminal ? "failed" : "retrying",
           attempt_token: nil,
-          heartbeat_at: @now,
-          available_at: (terminal ? nil : @now + wait),
-          failed_at: (terminal ? @now : nil),
-          last_error_at: @now,
+          heartbeat_at: failed_at,
+          available_at: (terminal ? nil : failed_at + wait),
+          failed_at: (terminal ? failed_at : nil),
+          last_error_at: failed_at,
           last_error_class: error.class.name,
           last_error_message: error.message,
           metadata: metadata
@@ -272,6 +279,10 @@ module Logister
 
     def max_failures
       positive_integer_env("LOGISTER_RETENTION_MAX_FAILURES", DEFAULT_MAX_FAILURES)
+    end
+
+    def current_time
+      @clock.call
     end
 
     def stale_after

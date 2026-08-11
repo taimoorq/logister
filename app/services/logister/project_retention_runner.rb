@@ -7,13 +7,14 @@ module Logister
 
     def initialize(project:, policy: nil, batch_size: DEFAULT_BATCH_SIZE, storage_service: nil, dry_run: false,
                    now: Time.current, run: nil, archive_object_limit: nil, cleanup_object_limit: nil,
-                   write_fence: nil, cutoff_snapshot: nil)
+                   write_fence: nil, cutoff_snapshot: nil, clock: nil)
       @project = project
       @batch_size = batch_size.to_i.positive? ? batch_size.to_i : DEFAULT_BATCH_SIZE
       @storage_service = storage_service
       @dry_run = dry_run
       @policy = policy || default_policy
       @now = now
+      @clock = clock || -> { @now }
       @run = run
       @archive_object_limit = archive_object_limit.to_i if archive_object_limit.to_i.positive?
       @cleanup_object_limit = cleanup_object_limit.to_i if cleanup_object_limit.to_i.positive?
@@ -183,7 +184,7 @@ module Logister
         end
 
         @current_archives[scope.to_sym] = @project.telemetry_archives.find(archive_result.fetch(:archive_id))
-        @policy.update!(last_archive_run_at: @now)
+        @policy.update!(last_archive_run_at: current_time)
       end
     rescue TelemetryArchiveExporter::Error => e
       record_archive_failure!(scope, record_type, before, nil, e) unless @dry_run || e.archive
@@ -249,6 +250,7 @@ module Logister
 
     def delete_archive_sources!(archive)
       ensure_archive_storage_generation!(archive)
+      cleanup_attempted_at = current_time
       inspector = TelemetryArchiveInspector.new(
         archive: archive,
         storage_service: @storage_service,
@@ -256,6 +258,7 @@ module Logister
         work_fence: @write_fence
       )
       verification = inspector.verify_manifest_metadata!
+      manifest_reverified_at = current_time
       deleted = 0
       protected_delivery_rows = 0
       protected_reopened_group_rows = 0
@@ -267,7 +270,7 @@ module Logister
           break
         end
 
-        attempted_at = Time.current
+        attempted_at = current_time
         object_record.update!(
           source_cleanup_status: "cleaning",
           source_cleanup_attempts: object_record.source_cleanup_attempts.to_i + 1,
@@ -302,7 +305,7 @@ module Logister
           protected_reopened_group_rows += reopened_for_object
         end
 
-        completed_at = Time.current
+        completed_at = current_time
         cleanup_error = if remaining_for_object.positive?
           "#{remaining_for_object} source rows remain protected by current policy or delivery/error state"
         end
@@ -316,11 +319,12 @@ module Logister
         )
         @cleanup_objects_processed += 1
       rescue StandardError => error
+        failed_at = current_time
         object_record.update_columns(
           source_cleanup_status: "failed",
-          source_cleanup_failed_at: Time.current,
+          source_cleanup_failed_at: failed_at,
           source_cleanup_error: "#{error.class}: #{error.message}",
-          updated_at: Time.current
+          updated_at: failed_at
         )
         raise
       end
@@ -329,19 +333,20 @@ module Logister
       cleanup_complete = cleanup_scope.where.not(source_cleanup_status: %w[completed not_required]).none?
       deleted_rows_total = cleanup_scope.sum(:source_deleted_rows)
       remaining = [ archive.expected_rows - deleted_rows_total, 0 ].max
+      cleanup_recorded_at = current_time
       archive.update!(
-        source_deleted_at: (cleanup_complete ? @now : nil),
+        source_deleted_at: (cleanup_complete ? cleanup_recorded_at : nil),
         source_deleted_rows: deleted_rows_total,
         lifecycle_metadata: (archive.lifecycle_metadata || {}).merge(
           "source_cleanup" => {
-            "attempted_at" => @now.utc.iso8601,
-            "completed_at" => (@now.utc.iso8601 if cleanup_complete),
+            "attempted_at" => cleanup_attempted_at.utc.iso8601,
+            "completed_at" => (cleanup_recorded_at.utc.iso8601 if cleanup_complete),
             "deleted_rows_this_attempt" => deleted,
             "deleted_rows_total" => deleted_rows_total,
             "verified_remaining_rows" => remaining,
             "protected_delivery_rows" => protected_delivery_rows,
             "protected_reopened_group_rows" => protected_reopened_group_rows,
-            "manifest_reverified_at" => @now.utc.iso8601,
+            "manifest_reverified_at" => manifest_reverified_at.utc.iso8601,
             "manifest_reverified_rows" => verification.fetch(:rows),
             "policy_cutoff" => cutoff_for_archive(archive)&.utc&.iso8601
           }
@@ -687,7 +692,7 @@ module Logister
       end
       return if retired_keys.empty?
 
-      retired_at = Time.current
+      retired_at = current_time
       TelemetryIdempotencyKey.where(id: retired_keys.map(&:id), source_retired_at: nil)
                              .update_all(source_retired_at: retired_at, updated_at: retired_at)
       retired_keys.each { |key| key.source_retired_at ||= retired_at }
@@ -704,15 +709,16 @@ module Logister
       event_ids = Array(ids).compact
       return if event_ids.empty?
 
-      CheckInMonitor.where(last_event_id: event_ids).update_all(last_event_id: nil, last_event_occurred_at: nil, updated_at: @now)
-      ErrorGroup.where(latest_event_id: event_ids).update_all(latest_event_id: nil, latest_event_occurred_at: nil, updated_at: @now)
+      updated_at = current_time
+      CheckInMonitor.where(last_event_id: event_ids).update_all(last_event_id: nil, last_event_occurred_at: nil, updated_at: updated_at)
+      ErrorGroup.where(latest_event_id: event_ids).update_all(latest_event_id: nil, latest_event_occurred_at: nil, updated_at: updated_at)
     end
 
     def mark_policy_run!(result)
       return if @dry_run
 
       @policy.update!(
-        last_retention_run_at: @now,
+        last_retention_run_at: current_time,
         last_retention_result: result.as_json
       )
     end
@@ -724,6 +730,10 @@ module Logister
 
     def cleanup_object_budget_available?
       @cleanup_object_limit.nil? || @cleanup_objects_processed < @cleanup_object_limit
+    end
+
+    def current_time
+      @clock.call
     end
 
     def cleanup_hot_cutoff

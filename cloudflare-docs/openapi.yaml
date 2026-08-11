@@ -1,12 +1,14 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: "3.6.1"
+  version: "3.6.2"
   summary: Send telemetry to Logister and build authorized read-only CLI clients.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
     first-party SDKs when they fit your runtime, or use this contract to build
     a custom client, script, worker integration, or direct HTTP reporter.
+    Archive retention is managed by bounded backend jobs and does not change
+    the public ingestion or CLI wire contract.
   contact:
     name: Logister
     url: https://logister.org/docs/
@@ -56,8 +58,8 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.6.1"
-                    api_contract_version: "3.6.1"
+                    server_version: "3.6.2"
+                    api_contract_version: "3.6.2"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "0.1.2"

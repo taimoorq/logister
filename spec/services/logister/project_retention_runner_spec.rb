@@ -212,6 +212,35 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(policy.reload.last_archive_run_at.to_i).to eq(now.to_i)
   end
 
+  it "separates deterministic cutoff time from archive cleanup audit time" do
+    storage = FakeRetentionArchiveStorage.new
+    finished_at = now + 20.seconds
+    policy.update!(archive_enabled: true, archive_before_delete: true)
+
+    travel_to(now) do
+      create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
+
+      described_class.new(
+        project: project,
+        policy: policy,
+        storage_service: storage,
+        now: now,
+        clock: -> { finished_at }
+      ).call
+    end
+
+    archive = project.telemetry_archives.completed.sole
+    cleanup_metadata = archive.lifecycle_metadata.fetch("source_cleanup")
+    expect(archive.source_deleted_at).to eq(finished_at)
+    expect(archive.object_record_scope.maximum(:source_cleanup_completed_at)).to eq(finished_at)
+    expect(Time.zone.parse(cleanup_metadata.fetch("attempted_at"))).to eq(finished_at)
+    expect(Time.zone.parse(cleanup_metadata.fetch("completed_at"))).to eq(finished_at)
+    expect(policy.reload).to have_attributes(
+      last_archive_run_at: finished_at,
+      last_retention_run_at: finished_at
+    )
+  end
+
   it "records and notifies retention archive failures" do
     policy.update!(archive_enabled: true, archive_before_delete: true)
     create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
