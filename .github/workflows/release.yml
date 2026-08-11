@@ -321,7 +321,7 @@ jobs:
             actual_env = machine.dig("config", "env") || {}
             group = actual_env["FLY_PROCESS_GROUP"]
             active = machine["state"] == "started"
-            standby = actual_env["FLY_STANDBY_FOR"].to_s != ""
+            standby = actual_env["FLY_STANDBY_FOR"].to_s != "" || Array(machine.dig("config", "standbys")).any?
             failed_checks = machine.fetch("checks", []).reject { |check| check["status"] == "passing" }
 
             if active
