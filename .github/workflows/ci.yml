@@ -260,6 +260,11 @@ jobs:
         with:
           script: |
             const workflowName = "CodeQL";
+            const requiredAnalysisJobs = [
+              "Analyze (actions)",
+              "Analyze (javascript-typescript)",
+              "Analyze (ruby)",
+            ];
             const headSha = context.sha;
             const timeoutMs = 45 * 60 * 1000;
             const pollMs = 30 * 1000;
@@ -300,6 +305,35 @@ jobs:
 
                 core.setFailed(`${workflowName} did not pass for ${headSha}: ${run.html_url}`);
                 return;
+              }
+
+              if (run) {
+                const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id,
+                  filter: "latest",
+                  per_page: 100,
+                });
+                const analyses = new Map(jobs.map((job) => [job.name, job]));
+                const required = requiredAnalysisJobs.map((name) => analyses.get(name));
+
+                if (required.every((job) => job?.status === "completed" && job.conclusion === "success")) {
+                  core.warning(
+                    `${workflowName} parent run ${run.id} has not finalized, but every required analysis job passed for ${headSha}: ${run.html_url}`
+                  );
+                  return;
+                }
+
+                const failed = required.filter((job) =>
+                  job?.status === "completed" && job.conclusion !== "success"
+                );
+                if (failed.length > 0) {
+                  core.setFailed(
+                    `${workflowName} analysis jobs did not pass for ${headSha}: ${failed.map((job) => job.name).join(", ")}`
+                  );
+                  return;
+                }
               }
 
               if (Date.now() - startedAt > timeoutMs) {
