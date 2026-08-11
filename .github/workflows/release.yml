@@ -296,7 +296,7 @@ jobs:
             --release-command-timeout 30m \
             --deploy-retries 3
 
-      - name: Verify Fly web and worker machines
+      - name: Verify Fly process machines
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           RELEASE_VERSION: ${{ steps.identity.outputs.version }}
@@ -318,16 +318,25 @@ jobs:
           groups = Hash.new(0)
 
           machines.each do |machine|
-            group = machine.dig("config", "env", "FLY_PROCESS_GROUP")
-            groups[group] += 1
-            failed_checks = machine.fetch("checks", []).reject { |check| check["status"] == "passing" }
-            problems << "#{machine["id"]} is not healthy" unless machine["state"] == "started" && machine["host_status"] == "ok" && failed_checks.empty?
             actual_env = machine.dig("config", "env") || {}
+            group = actual_env["FLY_PROCESS_GROUP"]
+            active = machine["state"] == "started"
+            standby = actual_env["FLY_STANDBY_FOR"].to_s != ""
+            failed_checks = machine.fetch("checks", []).reject { |check| check["status"] == "passing" }
+
+            if active
+              groups[group] += 1
+              problems << "#{machine["id"]} is not healthy" unless machine["host_status"] == "ok" && failed_checks.empty?
+            elsif !(standby && machine["state"] == "stopped" && machine["host_status"] == "ok")
+              problems << "#{machine["id"]} is not healthy"
+            end
+
             problems << "#{machine["id"]} has stale release identity" unless expected_env.all? { |key, value| actual_env[key] == value }
           end
 
           problems << "no healthy app machine is running" if groups["app"].zero?
           problems << "no healthy worker machine is running" if groups["worker"].zero?
+          problems << "no healthy archive machine is running" if groups["archive"].zero?
           unless problems.empty?
             warn problems.join("\n")
             exit 1
