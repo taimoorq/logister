@@ -1,0 +1,81 @@
+schema_version: 1
+id: backend-v3-6-1
+backend:
+  version: "3.6.1"
+  tag: v3.6.1
+impact_records:
+  - archive-retention-reliability
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: The existing Ruby SDK remains wire-compatible with this backend-only archive reliability patch.
+    channels:
+      - rubygems
+      - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: The existing JavaScript SDK remains wire-compatible with this backend-only archive reliability patch.
+    channels:
+      - npm
+      - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: The existing Python SDK remains wire-compatible with this backend-only archive reliability patch.
+    channels:
+      - pypi
+      - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.2.0
+    target_version: 0.2.0
+    bump: none
+    release_required: false
+    reason: The existing .NET SDK remains wire-compatible with this backend-only archive reliability patch.
+    channels:
+      - nuget_logister
+      - nuget_logister_aspnetcore
+      - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: The existing Android SDK remains wire-compatible with this backend-only archive reliability patch.
+    channels:
+      - maven_central
+      - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: The existing iOS SDK remains wire-compatible with this backend-only archive reliability patch.
+    channels:
+      - swift_package_manager
+      - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.0.0
+    target_version: 1.0.0
+    bump: none
+    release_required: false
+    reason: The existing CLI remains compatible because no public endpoint or scope behavior changed.
+    channels:
+      - npm
+      - github_release
+      - homebrew-logister
+      - scoop-logister

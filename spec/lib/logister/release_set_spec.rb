@@ -6,6 +6,12 @@ require "tmpdir"
 RSpec.describe Logister::ReleaseSet do
   let(:release_set_path) { Rails.root.join("config/release-sets/v3.6.yml") }
 
+  it "keeps a historical release set structurally valid after VERSION advances" do
+    release_set = described_class.new(repo_root: Rails.root, release_set_path: release_set_path).validate!
+
+    expect(release_set.dig("backend", "version")).to eq("3.6")
+  end
+
   it "validates every ecosystem component and its independent target version" do
     release_set = described_class.new(repo_root: Rails.root, release_set_path: release_set_path).validate!
 

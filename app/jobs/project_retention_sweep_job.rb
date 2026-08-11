@@ -9,8 +9,17 @@ class ProjectRetentionSweepJob < ApplicationJob
   )
 
   def perform(dry_run: false)
+    scheduled_for = Time.current.change(usec: 0)
     Project.find_each do |project|
-      ProjectRetentionJob.perform_later(project.id, dry_run: dry_run)
+      outcome = Logister::ProjectRetentionRunCoordinator.create_or_find!(
+        project: project,
+        scheduled_for: scheduled_for,
+        dry_run: dry_run,
+        trigger_kind: "scheduled"
+      )
+      next unless outcome.created
+
+      ProjectRetentionJob.perform_later(project.id, dry_run: dry_run, run_id: outcome.run.id)
     end
   ensure
     reschedule_sidekiq_recurring_job

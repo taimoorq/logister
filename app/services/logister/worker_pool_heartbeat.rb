@@ -29,10 +29,23 @@ module Logister
       end
 
       def all(redis:)
-        redis.scan_each(match: "#{KEY_PREFIX}:*").map do |worker_key|
-          normalize(redis.hgetall(worker_key))
+        cursor = "0"
+        statuses = []
+        loop do
+          cursor, worker_keys = redis.call(
+            "SCAN",
+            cursor,
+            "MATCH",
+            "#{KEY_PREFIX}:*",
+            "COUNT",
+            100
+          )
+          worker_keys.each { |worker_key| statuses << normalize(redis.hgetall(worker_key)) }
+          break if cursor.to_s == "0"
         end
-      rescue Redis::BaseError
+
+        statuses
+      rescue Redis::BaseError, RedisClient::Error
         []
       end
 

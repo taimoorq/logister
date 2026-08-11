@@ -16,7 +16,9 @@ RSpec.describe Logister::SidekiqReadiness do
       key == "queue:projector" ? { enqueued_at: (now - 90.seconds).to_f }.to_json : nil
     end
     allow(redis).to receive(:hgetall).and_return({})
-    allow(redis).to receive(:scan_each).and_return([].each)
+    allow(redis).to receive(:call)
+      .with("SCAN", "0", "MATCH", "logister:worker_database_pool:*", "COUNT", 100)
+      .and_return([ "0", [] ])
     allow(redis).to receive(:info).with("persistence").and_return("aof_enabled" => "1")
     allow(redis).to receive(:info).with("replication").and_return("role" => "master", "connected_slaves" => "1")
     allow(redis).to receive(:config).with(:get, "maxmemory-policy").and_return("maxmemory-policy" => "noeviction")
@@ -27,6 +29,7 @@ RSpec.describe Logister::SidekiqReadiness do
 
     expect(result).to include("sidekiq_processes" => 2, "retry_size" => 3, "dead_size" => 1)
     expect(result.dig("queues", "projector")).to include("size" => 4, "age_seconds" => 90)
+    expect(result.dig("queues", "archives")).to include("size" => 0, "age_seconds" => 0)
     expect(result.fetch("redis")).to include(
       "sidekiq_policy_valid" => true,
       "persistence_configured" => true,

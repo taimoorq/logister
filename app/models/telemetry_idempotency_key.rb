@@ -4,6 +4,8 @@ class TelemetryIdempotencyKey < ApplicationRecord
   RETENTION = 120.days
   RECORD_TYPES = %w[IngestEvent TraceSpan].freeze
 
+  include CompositeReferenceQuerying
+
   belongs_to :project
   has_one :telemetry_outbox_event, dependent: :destroy
 
@@ -53,11 +55,8 @@ class TelemetryIdempotencyKey < ApplicationRecord
     end.uniq
     return none if pairs.empty?
 
-    table = arel_table
-    identity_condition = pairs.map do |id, recorded_at|
-      table[:record_id].eq(id).and(table[:recorded_at].eq(recorded_at))
-    end.reduce { |left, right| left.or(right) }
-    where(project_id: project_id, record_type: record_type).where(identity_condition)
+    where(project_id: project_id, record_type: record_type)
+      .merge(where_composite_references([ :record_id, :recorded_at ], pairs))
   end
 
   def self.source_reference_value(reference, key)

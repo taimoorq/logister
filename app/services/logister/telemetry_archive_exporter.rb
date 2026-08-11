@@ -29,7 +29,8 @@ module Logister
                    batch_size: DEFAULT_BATCH_SIZE,
                    prefix: InstanceConfiguration.value("archive_storage.prefix"),
                    storage_service: nil, dry_run: false, scope: nil, archive: nil,
-                   selection: nil, protect_incomplete_deliveries: nil)
+                   selection: nil, protect_incomplete_deliveries: nil,
+                   object_limit: nil, write_fence: nil, project_retention_run: nil)
       @record_type = record_type.to_s
       @before = before
       @after = after
@@ -49,6 +50,10 @@ module Logister
       else
         ActiveModel::Type::Boolean.new.cast(protect_incomplete_deliveries)
       end
+      @object_limit = object_limit.to_i if object_limit.to_i.positive?
+      @objects_processed = 0
+      @write_fence = write_fence
+      @project_retention_run = project_retention_run || archive&.project_retention_run
     end
 
     def call
@@ -60,6 +65,12 @@ module Logister
       @archive ||= create_manifest!
       resume_manifest!
       manifest_result
+    rescue SystemStackError => error
+      fail_manifest!(error)
+      raise Error.new(
+        "Telemetry archive failed: #{error.class}: #{error.message}",
+        archive: @archive
+      )
     rescue Error => error
       fail_manifest!(error)
       raise Error.new(error.message, archive: error.archive || @archive)
@@ -81,6 +92,7 @@ module Logister
     def create_manifest!
       @sequence_upper_bound = relation.maximum(:id)
       @project.telemetry_archives.create!(
+        project_retention_run: @project_retention_run,
         record_type: @record_type,
         scope: @scope,
         status: "pending",
@@ -110,52 +122,69 @@ module Logister
     end
 
     def resume_manifest!
-      resumed = @archive.status != "pending"
+      resumed = @archive.status == "failed"
       @archive.update!(
-        status: "uploading",
+        status: (enumeration_complete? ? "verifying" : "uploading"),
         upload_started_at: @archive.upload_started_at || Time.current,
         failed_at: nil,
         error_message: nil,
         retry_count: @archive.retry_count.to_i + (resumed ? 1 : 0)
       )
 
-      @archive.object_records.ordered.each do |object_record|
-        next if object_record.verified?
+      @archive.each_object_record do |object_record|
+        next unless object_requires_upload?(object_record)
+        break unless object_budget_available?
 
         records = records_for_references(object_record.normalized_source_references)
         upload_object_record!(object_record, records)
+        consume_object_budget!
       end
+      return if upload_work_remaining?
 
       enumerate_and_upload_remaining! unless enumeration_complete?
+      return unless enumeration_complete?
+
       finalize_manifest_metadata!
-      @archive.update!(status: "verifying", verification_started_at: Time.current)
-      TelemetryArchiveInspector.new(
+      @archive.update!(
+        status: "verifying",
+        verification_started_at: @archive.verification_started_at || Time.current
+      )
+      return unless object_budget_available?
+
+      verification = TelemetryArchiveInspector.new(
         archive: @archive,
         storage_service: @storage_service,
-        persist: true
+        persist: true,
+        object_limit: remaining_object_budget,
+        work_fence: @write_fence
       ).call
+      @objects_processed += verification.fetch(:objects_processed)
     end
 
     def enumerate_and_upload_remaining!
-      sequence = @archive.object_records.maximum(:sequence).to_i
-      sequence += 1 if @archive.object_records.exists?
+      sequence = @archive.object_record_scope.maximum(:sequence).to_i
+      sequence += 1 if @archive.object_record_scope.exists?
       remaining_relation.in_batches(of: @batch_size) do |batch_relation|
+        break unless object_budget_available?
+
         records = batch_relation.order(:id).to_a
         next if records.empty?
 
-        object_record = build_object_record!(records, sequence)
-        upload_object_record!(object_record, records)
+        payload = gzip_records(records)
+        object_record = build_object_record!(records, sequence, payload: payload)
+        upload_object_record!(object_record, records, payload: payload)
+        consume_object_budget!
         sequence += 1
       end
 
-      update_lifecycle_metadata!("enumeration_complete" => true)
+      update_lifecycle_metadata!("enumeration_complete" => true) unless remaining_relation.exists?
     end
 
-    def build_object_record!(records, sequence)
-      payload = gzip_records(records)
+    def build_object_record!(records, sequence, payload:)
       references = records.map { |record| source_reference(record) }
 
-      @archive.object_records.create!(
+      TelemetryArchiveObject.create!(
+        telemetry_archive: @archive,
         sequence: sequence,
         status: "pending",
         object_key: object_key(records, sequence),
@@ -169,11 +198,11 @@ module Logister
         source_references: references,
         storage_generation: @storage_locator["generation_id"],
         storage_locator: @storage_locator
-      ).tap { refresh_expected_totals! }
+      )
     end
 
-    def upload_object_record!(object_record, records)
-      payload = gzip_records(records)
+    def upload_object_record!(object_record, records, payload: nil)
+      payload ||= gzip_records(records)
       validate_rebuilt_payload!(object_record, payload)
       object_record.update!(
         status: "uploading",
@@ -221,18 +250,25 @@ module Logister
 
     def finalize_manifest_metadata!
       refresh_expected_totals!
-      checksum = Digest::SHA256.hexdigest(@archive.reload.manifest_checksum_payload)
+      @archive.reload
+      checksum = @archive.manifest_checksum_sha256
+      object_count = @archive.object_record_scope.count
+      metadata = @archive.lifecycle_metadata.is_a?(Hash) ? @archive.lifecycle_metadata.dup : {}
       @archive.update!(
         checksum_sha256: checksum,
         uploaded_at: Time.current,
         rows: @archive.expected_rows,
         bytes: @archive.expected_bytes,
-        objects: legacy_objects_payload
+        objects: [],
+        lifecycle_metadata: metadata.merge(
+          "object_catalog" => "telemetry_archive_objects",
+          "object_count" => object_count
+        )
       )
     end
 
     def refresh_expected_totals!
-      records = @archive.object_records
+      records = @archive.object_record_scope
       @archive.update!(
         expected_rows: records.sum(:expected_rows),
         expected_bytes: records.sum(:expected_bytes),
@@ -252,18 +288,29 @@ module Logister
       @archive.lifecycle_metadata.is_a?(Hash) && @archive.lifecycle_metadata["enumeration_complete"] == true
     end
 
-    def legacy_objects_payload
-      @archive.object_records.ordered.map do |object_record|
-        {
-          "key" => object_record.object_key,
-          "rows" => object_record.expected_rows,
-          "bytes" => object_record.expected_bytes,
-          "checksum_sha256" => object_record.checksum_sha256,
-          "source_min_id" => object_record.source_min_id,
-          "source_max_id" => object_record.source_max_id,
-          "verified_at" => object_record.verified_at&.utc&.iso8601
-        }
-      end
+    def object_requires_upload?(object_record)
+      return false if object_record.status.in?(%w[uploaded verified])
+      return false if object_record.status == "verifying" && object_record.uploaded_at.present?
+
+      true
+    end
+
+    def upload_work_remaining?
+      @archive.each_object_record.any? { |object_record| object_requires_upload?(object_record) }
+    end
+
+    def object_budget_available?
+      @object_limit.nil? || @objects_processed < @object_limit
+    end
+
+    def remaining_object_budget
+      return unless @object_limit
+
+      [ @object_limit - @objects_processed, 0 ].max
+    end
+
+    def consume_object_budget!
+      @objects_processed += 1
     end
 
     def relation
@@ -299,7 +346,7 @@ module Logister
     end
 
     def remaining_relation
-      last_id = @archive.object_records.maximum(:source_max_id)
+      last_id = @archive.object_record_scope.maximum(:source_max_id)
       last_id ? relation.where("#{model.table_name}.id > ?", last_id) : relation
     end
 
@@ -358,6 +405,7 @@ module Logister
           raise Error.new("Project purge is pending; refusing to create an archive object", archive: @archive)
         end
 
+        @write_fence&.call
         yield
       end
     end
@@ -537,6 +585,8 @@ module Logister
       return empty_result unless @archive
 
       @archive.reload
+      objects = @archive.object_summaries
+      object_count = @archive.object_record_scope.count
       {
         archive_id: @archive.id,
         record_type: @archive.record_type,
@@ -544,12 +594,16 @@ module Logister
         before: @archive.before_at.utc.iso8601,
         after: @archive.after_at&.utc&.iso8601,
         batch_size: @archive.lifecycle_metadata["batch_size"] || @batch_size,
-        objects: @archive.archive_objects,
+        objects: objects,
+        object_count: object_count,
+        objects_truncated: object_count > objects.size,
         rows: @archive.expected_rows,
         bytes: @archive.expected_bytes,
         checksum_sha256: @archive.checksum_sha256,
         source_reference_count: @archive.expected_rows,
         verified: @archive.verified?,
+        continuation_required: !@archive.verified?,
+        objects_processed_this_attempt: @objects_processed,
         dry_run: false
       }
     end
@@ -566,6 +620,7 @@ module Logister
         bytes: 0,
         source_reference_count: 0,
         verified: false,
+        continuation_required: false,
         dry_run: @dry_run
       }
     end

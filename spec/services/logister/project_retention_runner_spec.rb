@@ -151,12 +151,12 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(IngestEvent.exists?(event.id)).to be(false)
   end
 
-  it "chunks partition-reference deletes below the recursive Arel limit" do
-    old_events = create_list(:ingest_event, 205, :log, project: project, occurred_at: now - 45.days)
+  it "deletes an archive-sized reference batch without recursive Arel conditions" do
+    old_events = create_list(:ingest_event, 1_000, :log, project: project, occurred_at: now - 45.days)
 
-    result = described_class.new(project: project, policy: policy, batch_size: 205, now: now).call
+    result = described_class.new(project: project, policy: policy, batch_size: 1_000, now: now).call
 
-    expect(result[:deleted][:hot_events]).to eq(205)
+    expect(result[:deleted][:hot_events]).to eq(1_000)
     expect(IngestEvent.where(id: old_events.map(&:id)).count).to eq(0)
   end
 

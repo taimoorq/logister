@@ -226,10 +226,10 @@ module Logister
           next unless decision.is_a?(Hash) && ALLOWED_BUMPS.include?(decision["bump"])
 
           previous = decisions[consumer]
-          if previous && previous != decision["bump"]
+          if previous && previous != decision["bump"] && triggered_contracts.any?
             errors << "Consumer #{consumer} has conflicting bumps #{previous} and #{decision["bump"]}."
           else
-            decisions[consumer] = decision["bump"]
+            decisions[consumer] ||= decision["bump"]
           end
         end
       end

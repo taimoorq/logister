@@ -515,6 +515,24 @@ RSpec.describe IngestEvent, type: :model do
 
       expect(relation).to contain_exactly(event)
     end
+
+    it "matches an archive-sized reference set without a recursive OR predicate" do
+      event = create(:ingest_event, occurred_at: 2.hours.ago)
+      references = 999.times.map do |index|
+        { id: 10_000_000 + index, occurred_at: 1.day.ago }
+      end
+      references << { id: event.id, occurred_at: event.occurred_at }
+
+      relation = described_class.for_partition_references(
+        references,
+        id_key: :id,
+        occurred_at_key: :occurred_at
+      )
+
+      expect(relation.to_sql).to include(" IN (")
+      expect(relation.to_sql).not_to include(" OR ")
+      expect(relation).to contain_exactly(event)
+    end
   end
 
   describe ".partition_reference_index" do

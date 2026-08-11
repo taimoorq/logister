@@ -23,7 +23,13 @@ namespace :logister do
         before: before,
         batch_size: Integer(ENV.fetch("BATCH_SIZE", Logister::TelemetryArchiveExporter::DEFAULT_BATCH_SIZE)),
         prefix: ENV.fetch("LOGISTER_ARCHIVE_PREFIX", "telemetry"),
-        dry_run: ActiveModel::Type::Boolean.new.cast(ENV.fetch("DRY_RUN", "false"))
+        dry_run: ActiveModel::Type::Boolean.new.cast(ENV.fetch("DRY_RUN", "false")),
+        object_limit: Integer(
+          ENV.fetch(
+            "LOGISTER_RETENTION_OBJECTS_PER_ATTEMPT",
+            Logister::ProjectRetentionRunRunner::DEFAULT_OBJECTS_PER_ATTEMPT
+          )
+        )
       ).call
 
       puts JSON.pretty_generate(result)
@@ -50,11 +56,29 @@ namespace :logister do
 
       results = []
       projects.find_each do |project|
-        results << Logister::ProjectRetentionRunner.new(
-          project: project,
-          batch_size: Integer(ENV.fetch("BATCH_SIZE", Logister::ProjectRetentionRunner::DEFAULT_BATCH_SIZE)),
-          dry_run: dry_run
-        ).call
+        if dry_run
+          results << Logister::ProjectRetentionRunner.new(
+            project: project,
+            batch_size: Integer(ENV.fetch("BATCH_SIZE", Logister::ProjectRetentionRunner::DEFAULT_BATCH_SIZE)),
+            dry_run: true
+          ).call
+        else
+          outcome = Logister::ProjectRetentionRunCoordinator.create_or_find!(
+            project: project,
+            scheduled_for: Time.current.change(usec: 0),
+            dry_run: false,
+            trigger_kind: "manual"
+          )
+          ProjectRetentionJob.perform_later(project.id, dry_run: false, run_id: outcome.run.id)
+          results << {
+            project_id: project.id,
+            project_uuid: project.uuid,
+            run_id: outcome.run.id,
+            status: outcome.run.status,
+            created: outcome.created,
+            enqueued: true
+          }
+        end
       end
 
       puts JSON.pretty_generate(results)

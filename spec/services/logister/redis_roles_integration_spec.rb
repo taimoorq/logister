@@ -9,6 +9,7 @@ RSpec.describe "Redis role integration", type: :job do
   let(:redis) { Redis.new(url: redis_url) }
   let(:probe_queue) { "phase_one_ci_probe_#{Process.pid}" }
   let(:recurring_key) { "phase_one_ci_recurring_probe_#{Process.pid}" }
+  let(:worker_heartbeat_key) { "#{Logister::WorkerPoolHeartbeat::KEY_PREFIX}:integration:#{Process.pid}" }
   let(:recurring_job_class) do
     job_class = Class.new(ApplicationJob) do
       include SidekiqRecurringJob
@@ -34,6 +35,7 @@ RSpec.describe "Redis role integration", type: :job do
     redis.scan_each(match: "logister:test:redis_roles:*").to_a.then { |keys| redis.del(*keys) if keys.any? }
     redis.scan_each(match: "logister:sidekiq_recurring:scheduled:#{recurring_key}:*").to_a.then { |keys| redis.del(*keys) if keys.any? }
     redis.del("queue:#{probe_queue}")
+    redis.del(worker_heartbeat_key)
     redis.srem("queues", probe_queue)
     redis.close
   rescue Redis::BaseError
@@ -69,5 +71,27 @@ RSpec.describe "Redis role integration", type: :job do
     recurring_job_class.ensure_scheduled!(Time.zone.parse("2026-08-08T12:10:30Z"), occurrences: 2)
 
     expect(enqueued_jobs.count { |job| job[:job] == recurring_job_class }).to eq(2)
+  end
+
+  it "enumerates worker heartbeats through both real Redis adapters" do
+    redis.hset(
+      worker_heartbeat_key,
+      {
+        "size" => "3",
+        "sidekiq_concurrency" => "1",
+        "headroom" => "2",
+        "required" => "3",
+        "valid" => "true",
+        "pid" => Process.pid.to_s
+      }
+    )
+
+    redis_rb_statuses = Logister::WorkerPoolHeartbeat.all(redis: redis)
+    sidekiq_statuses = Sidekiq.redis do |sidekiq_redis|
+      Logister::WorkerPoolHeartbeat.all(redis: sidekiq_redis)
+    end
+
+    expect(redis_rb_statuses).to include(hash_including("pid" => Process.pid, "valid" => true))
+    expect(sidekiq_statuses).to include(hash_including("pid" => Process.pid, "valid" => true))
   end
 end

@@ -6,6 +6,7 @@
   - analytics
   - integrations
   - symbols
+  - archives
   - maintenance
   # Safety net for Rails/framework jobs and future jobs before they receive an
   # explicit workload queue. Logister-owned jobs are assigned above.

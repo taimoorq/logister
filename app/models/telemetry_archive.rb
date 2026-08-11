@@ -1,4 +1,9 @@
+require "digest"
+
 class TelemetryArchive < ApplicationRecord
+  OBJECT_ITERATION_BATCH_SIZE = 25
+  OBJECT_RESULT_LIMIT = 100
+
   RECORD_TYPES = %w[ingest_events trace_spans].freeze
   STATUSES = %w[
     pending
@@ -13,6 +18,7 @@ class TelemetryArchive < ApplicationRecord
   ].freeze
 
   belongs_to :project
+  belongs_to :project_retention_run, optional: true
   has_many :object_records,
            -> { order(:sequence) },
            class_name: "TelemetryArchiveObject",
@@ -37,6 +43,10 @@ class TelemetryArchive < ApplicationRecord
   end
 
   def object_keys
+    if manifest_version.to_i >= 2 && persisted? && object_record_scope.exists?
+      return object_record_scope.order(:sequence, :id).pluck(:object_key)
+    end
+
     archive_objects.filter_map do |object|
       next unless object.respond_to?(:[])
 
@@ -57,8 +67,31 @@ class TelemetryArchive < ApplicationRecord
   end
 
   def exact_source_references
-    object_records.reorder(:id).find_each(batch_size: 1).each_with_object([]) do |object_record, references|
+    each_object_record(batch_size: 1).each_with_object([]) do |object_record, references|
       references.concat(object_record.normalized_source_references)
+    end
+  end
+
+  def object_record_scope
+    TelemetryArchiveObject.where(telemetry_archive_id: id)
+  end
+
+  def each_object_record(batch_size: OBJECT_ITERATION_BATCH_SIZE)
+    return enum_for(__method__, batch_size: batch_size) unless block_given?
+    return if new_record?
+
+    slice_size = [ batch_size.to_i, 1 ].max
+    last_sequence = -1
+    loop do
+      records = object_record_scope
+        .where("sequence > ?", last_sequence)
+        .order(:sequence, :id)
+        .limit(slice_size)
+        .to_a
+      break if records.empty?
+
+      records.each { |object_record| yield object_record }
+      last_sequence = records.last.sequence
     end
   end
 
@@ -67,12 +100,52 @@ class TelemetryArchive < ApplicationRecord
   def each_source_reference_batch
     return enum_for(__method__) unless block_given?
 
-    object_records.reorder(:id).find_each(batch_size: 1) do |object_record|
+    each_object_record(batch_size: 1) do |object_record|
       yield object_record.normalized_source_references, object_record
     end
   end
 
+  def each_manifest_checksum_chunk
+    return enum_for(__method__) unless block_given?
+
+    yield "["
+    first = true
+    each_object_record(batch_size: 1) do |object_record|
+      yield "," unless first
+      yield object_record.checksum_attributes.to_json
+      first = false
+    end
+    yield "]"
+  end
+
+  def manifest_checksum_sha256
+    digest = Digest::SHA256.new
+    each_manifest_checksum_chunk { |chunk| digest << chunk }
+    digest.hexdigest
+  end
+
+  # Compatibility helper for callers that explicitly need the serialized
+  # manifest. Lifecycle code should use #manifest_checksum_sha256 so memory is
+  # bounded to one object record.
   def manifest_checksum_payload
-    object_records.map(&:checksum_attributes).to_json
+    each_manifest_checksum_chunk.to_a.join
+  end
+
+  def object_summaries(limit: OBJECT_RESULT_LIMIT)
+    object_record_scope.order(:sequence, :id).limit([ limit.to_i, 0 ].max).map do |object_record|
+      object_summary(object_record)
+    end
+  end
+
+  def object_summary(object_record)
+    {
+      "key" => object_record.object_key,
+      "rows" => object_record.expected_rows,
+      "bytes" => object_record.expected_bytes,
+      "checksum_sha256" => object_record.checksum_sha256,
+      "source_min_id" => object_record.source_min_id,
+      "source_max_id" => object_record.source_max_id,
+      "verified_at" => object_record.verified_at&.utc&.iso8601
+    }
   end
 end

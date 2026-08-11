@@ -1747,6 +1747,72 @@ ALTER SEQUENCE public.project_retention_policies_id_seq OWNED BY public.project_
 
 
 --
+-- Name: project_retention_runs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_retention_runs (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    run_key character varying NOT NULL,
+    trigger_kind character varying DEFAULT 'scheduled'::character varying NOT NULL,
+    dry_run boolean DEFAULT false NOT NULL,
+    scheduled_for timestamp(6) without time zone NOT NULL,
+    status character varying DEFAULT 'queued'::character varying NOT NULL,
+    phase character varying DEFAULT 'planning'::character varying NOT NULL,
+    current_scope character varying,
+    attempts integer DEFAULT 0 NOT NULL,
+    fence_version bigint DEFAULT 0 NOT NULL,
+    attempt_token uuid,
+    objects_total integer DEFAULT 0 NOT NULL,
+    objects_completed integer DEFAULT 0 NOT NULL,
+    rows_total bigint DEFAULT 0 NOT NULL,
+    rows_completed bigint DEFAULT 0 NOT NULL,
+    available_at timestamp(6) without time zone,
+    started_at timestamp(6) without time zone,
+    heartbeat_at timestamp(6) without time zone,
+    last_checkpoint_at timestamp(6) without time zone,
+    recovery_enqueued_at timestamp(6) without time zone,
+    completed_at timestamp(6) without time zone,
+    failed_at timestamp(6) without time zone,
+    cancelled_at timestamp(6) without time zone,
+    last_error_at timestamp(6) without time zone,
+    last_error_class character varying,
+    last_error_message text,
+    policy_snapshot jsonb DEFAULT '{}'::jsonb NOT NULL,
+    cutoff_snapshot jsonb DEFAULT '{}'::jsonb NOT NULL,
+    result jsonb DEFAULT '{}'::jsonb NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    lock_version integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT project_retention_runs_counts CHECK (((attempts >= 0) AND (fence_version >= 0) AND (objects_total >= 0) AND (objects_completed >= 0) AND (rows_total >= 0) AND (rows_completed >= 0))),
+    CONSTRAINT project_retention_runs_phase CHECK (((phase)::text = ANY ((ARRAY['planning'::character varying, 'enumerating'::character varying, 'uploading'::character varying, 'verifying'::character varying, 'cleaning'::character varying, 'finalizing'::character varying])::text[]))),
+    CONSTRAINT project_retention_runs_progress CHECK (((objects_completed <= objects_total) AND (rows_completed <= rows_total))),
+    CONSTRAINT project_retention_runs_status CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying, 'waiting'::character varying, 'retrying'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying, 'superseded'::character varying])::text[]))),
+    CONSTRAINT project_retention_runs_trigger CHECK (((trigger_kind)::text = ANY ((ARRAY['scheduled'::character varying, 'manual'::character varying, 'recovery'::character varying, 'legacy'::character varying])::text[])))
+);
+
+
+--
+-- Name: project_retention_runs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_retention_runs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_retention_runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_retention_runs_id_seq OWNED BY public.project_retention_runs.id;
+
+
+--
 -- Name: project_source_repositories; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1871,6 +1937,17 @@ CREATE TABLE public.telemetry_archive_objects (
     storage_generation character varying,
     storage_locator jsonb DEFAULT '{}'::jsonb NOT NULL,
     object_version_id character varying,
+    source_cleanup_status character varying DEFAULT 'pending'::character varying NOT NULL,
+    source_cleanup_attempts integer DEFAULT 0 NOT NULL,
+    source_deleted_rows integer DEFAULT 0 NOT NULL,
+    source_cleanup_started_at timestamp(6) without time zone,
+    source_cleanup_verified_at timestamp(6) without time zone,
+    source_cleanup_completed_at timestamp(6) without time zone,
+    source_cleanup_failed_at timestamp(6) without time zone,
+    source_cleanup_checksum_sha256 character varying,
+    source_cleanup_error text,
+    CONSTRAINT telemetry_archive_objects_cleanup_counts CHECK (((source_cleanup_attempts >= 0) AND (source_deleted_rows >= 0) AND (source_deleted_rows <= expected_rows))),
+    CONSTRAINT telemetry_archive_objects_cleanup_status CHECK (((source_cleanup_status)::text = ANY ((ARRAY['pending'::character varying, 'cleaning'::character varying, 'completed'::character varying, 'blocked'::character varying, 'failed'::character varying, 'not_required'::character varying])::text[]))),
     CONSTRAINT telemetry_archive_objects_counts CHECK (((expected_rows >= 0) AND (expected_bytes >= 0) AND (verified_rows >= 0) AND (verified_bytes >= 0) AND (attempts >= 0))),
     CONSTRAINT telemetry_archive_objects_source_range CHECK ((source_min_id <= source_max_id)),
     CONSTRAINT telemetry_archive_objects_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('uploading'::character varying)::text, ('uploaded'::character varying)::text, ('verifying'::character varying)::text, ('verified'::character varying)::text, ('failed'::character varying)::text, ('deleted'::character varying)::text])))
@@ -1935,6 +2012,7 @@ CREATE TABLE public.telemetry_archives (
     source_deleted_rows integer DEFAULT 0 NOT NULL,
     retry_count integer DEFAULT 0 NOT NULL,
     lifecycle_metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    project_retention_run_id bigint,
     CONSTRAINT telemetry_archives_lifecycle_counts CHECK (((expected_rows >= 0) AND (expected_bytes >= 0) AND (verified_rows >= 0) AND (verified_bytes >= 0) AND (retry_count >= 0))),
     CONSTRAINT telemetry_archives_lifecycle_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('uploading'::character varying)::text, ('verifying'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text, ('restoring'::character varying)::text, ('restored'::character varying)::text, ('deleting'::character varying)::text, ('deleted'::character varying)::text])))
 );
@@ -2621,6 +2699,13 @@ ALTER TABLE ONLY public.project_retention_policies ALTER COLUMN id SET DEFAULT n
 
 
 --
+-- Name: project_retention_runs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_retention_runs ALTER COLUMN id SET DEFAULT nextval('public.project_retention_runs_id_seq'::regclass);
+
+
+--
 -- Name: project_source_repositories id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3105,6 +3190,14 @@ ALTER TABLE ONLY public.project_retention_policies
 
 
 --
+-- Name: project_retention_runs project_retention_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_retention_runs
+    ADD CONSTRAINT project_retention_runs_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: project_source_repositories project_source_repositories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3248,6 +3341,13 @@ CREATE UNIQUE INDEX idx_apple_symbols_identity_checksum ON public.apple_symbol_a
 --
 
 CREATE INDEX idx_apple_symbols_status_created ON public.apple_symbol_artifacts USING btree (project_id, status, created_at);
+
+
+--
+-- Name: idx_archive_objects_cleanup_progress; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_archive_objects_cleanup_progress ON public.telemetry_archive_objects USING btree (telemetry_archive_id, source_cleanup_status, sequence);
 
 
 --
@@ -4354,6 +4454,34 @@ CREATE INDEX idx_projects_user_archived_created_at ON public.projects USING btre
 --
 
 CREATE INDEX idx_projects_user_archived_name ON public.projects USING btree (user_id, archived_at, name);
+
+
+--
+-- Name: idx_retention_runs_one_active_project; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_retention_runs_one_active_project ON public.project_retention_runs USING btree (project_id) WHERE ((dry_run = false) AND ((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying, 'waiting'::character varying, 'retrying'::character varying])::text[])));
+
+
+--
+-- Name: idx_retention_runs_project_status_schedule; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_retention_runs_project_status_schedule ON public.project_retention_runs USING btree (project_id, status, scheduled_for);
+
+
+--
+-- Name: idx_retention_runs_status_available; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_retention_runs_status_available ON public.project_retention_runs USING btree (status, available_at);
+
+
+--
+-- Name: idx_retention_runs_status_heartbeat; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_retention_runs_status_heartbeat ON public.project_retention_runs USING btree (status, heartbeat_at);
 
 
 --
@@ -5547,6 +5675,13 @@ CREATE UNIQUE INDEX index_project_retention_policies_on_project_id ON public.pro
 
 
 --
+-- Name: index_project_retention_runs_on_run_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_retention_runs_on_run_key ON public.project_retention_runs USING btree (run_key);
+
+
+--
 -- Name: index_project_source_repositories_on_github_installation_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -5628,6 +5763,13 @@ CREATE UNIQUE INDEX index_projects_on_uuid ON public.projects USING btree (uuid)
 --
 
 CREATE INDEX index_telemetry_archives_on_project_id ON public.telemetry_archives USING btree (project_id);
+
+
+--
+-- Name: index_telemetry_archives_on_project_retention_run_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_telemetry_archives_on_project_retention_run_id ON public.telemetry_archives USING btree (project_retention_run_id);
 
 
 --
@@ -12359,6 +12501,14 @@ ALTER TABLE ONLY public.error_groups
 
 
 --
+-- Name: project_retention_runs fk_rails_0eeee5ee6f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_retention_runs
+    ADD CONSTRAINT fk_rails_0eeee5ee6f FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_memberships fk_rails_18b611e244; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12372,6 +12522,14 @@ ALTER TABLE ONLY public.project_memberships
 
 ALTER TABLE ONLY public.instance_settings
     ADD CONSTRAINT fk_rails_1c4ca29324 FOREIGN KEY (updated_by_user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: telemetry_archives fk_rails_1cd18b44fa; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_archives
+    ADD CONSTRAINT fk_rails_1cd18b44fa FOREIGN KEY (project_retention_run_id) REFERENCES public.project_retention_runs(id) ON DELETE SET NULL;
 
 
 --
@@ -12869,6 +13027,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260811120000'),
 ('20260809230000'),
 ('20260809220000'),
 ('20260809210000'),

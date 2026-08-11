@@ -142,6 +142,44 @@ RSpec.describe Logister::ReleaseImpact do
     expect(result.triggered_contracts).to be_empty
   end
 
+  it "allows historical records to retain different consumer decisions in all-record validation" do
+    historical_path = impact_path.dirname.join("historical.yml")
+    historical = impact.deep_dup
+    historical["id"] = "historical-telemetry-contract"
+    historical["consumers"]["logister-ios"] = {
+      "bump" => "minor",
+      "reason" => "The historical release added a compatible iOS evidence capability."
+    }
+    historical_path.write(YAML.dump(historical))
+
+    result = described_class.new(
+      ecosystem_path: Rails.root.join("config/ecosystem.yml"),
+      impact_paths: [ impact_path, historical_path ],
+      changed_files: []
+    ).validate!
+
+    expect(result.triggered_contracts).to be_empty
+  end
+
+  it "still rejects conflicting consumer decisions within one active change" do
+    second_path = impact_path.dirname.join("second.yml")
+    second = impact.deep_dup
+    second["id"] = "second-telemetry-contract"
+    second["consumers"]["logister-ios"] = {
+      "bump" => "minor",
+      "reason" => "This active change requests an incompatible second iOS decision."
+    }
+    second_path.write(YAML.dump(second))
+
+    expect do
+      described_class.new(
+        ecosystem_path: Rails.root.join("config/ecosystem.yml"),
+        impact_paths: [ impact_path, second_path ],
+        changed_files: changed_files
+      ).validate!
+    end.to raise_error(described_class::ValidationError, /conflicting bumps none and minor/)
+  end
+
   it "rejects revision arguments that could be interpreted as Git options or shell input" do
     expect(Open3).not_to receive(:capture3)
 

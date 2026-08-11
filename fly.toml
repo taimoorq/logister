@@ -17,7 +17,8 @@ console_command = '/rails/bin/rails console'
 
 [processes]
   app = './bin/rails server -b 0.0.0.0 -p 8080'
-  worker = 'bundle exec sidekiq -C config/sidekiq.yml'
+  worker = 'bundle exec sidekiq -C config/sidekiq-core.yml'
+  archive = 'bundle exec sidekiq -C config/sidekiq-archives.yml'
 
 [http_service]
   internal_port = 8080
@@ -40,7 +41,7 @@ console_command = '/rails/bin/rails console'
       X-Forwarded-Proto = 'https'
 
 [[vm]]
-  memory = '1gb'
+  memory = '768mb'
   cpu_kind = 'shared'
   cpus = 1
   processes = ['app']
@@ -50,3 +51,9 @@ console_command = '/rails/bin/rails console'
   cpu_kind = 'shared'
   cpus = 1
   processes = ['worker']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  processes = ['archive']

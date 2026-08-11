@@ -4,6 +4,7 @@
 <% failed_archive = archive_overview.last_failed_archive %>
 <% archive_enabled = archive_overview.policy.archive_enabled? %>
 <% archive_before_delete = archive_overview.policy.archive_before_delete? %>
+<% retention_run = archive_overview.current_retention_run || archive_overview.last_retention_run %>
 
 <section class="mt-5 space-y-5" aria-labelledby="archive-overview-heading">
   <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -53,6 +54,43 @@
       <strong class="mt-1 block text-sm text-slate-900"><%= local_time_tag(archive_overview.next_sweep_at, format: :long) %></strong>
     </div>
   </div>
+
+  <% if retention_run.present? %>
+    <div class="rounded-lg border border-slate-200 bg-white p-4" data-retention-run-id="<%= retention_run.id %>">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <span class="block text-xs font-semibold uppercase text-slate-500">Retention run</span>
+          <div class="mt-1 flex flex-wrap items-center gap-2">
+            <strong class="text-sm text-slate-900"><%= retention_run.phase.humanize %></strong>
+            <span class="inline-flex rounded-full border px-2 py-1 text-xs font-semibold <%= archive_status_badge_class(archive_overview.retention_run_tone(retention_run)) %>">
+              <%= retention_run.status.humanize %>
+            </span>
+          </div>
+          <p class="mt-1 text-xs text-slate-600">
+            Last heartbeat: <%= retention_timestamp(archive_overview.retention_run_freshness(retention_run)) %>
+            <% if retention_run.current_scope.present? %>
+              · <%= retention_archive_scope_label(retention_run.current_scope) %>
+            <% end %>
+          </p>
+        </div>
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+          <div>
+            <dt class="font-semibold text-slate-500">Objects</dt>
+            <dd><%= number_with_delimiter(retention_run.objects_completed) %> / <%= number_with_delimiter(retention_run.objects_total) %></dd>
+          </div>
+          <div>
+            <dt class="font-semibold text-slate-500">Rows</dt>
+            <dd><%= number_with_delimiter(retention_run.rows_completed) %> / <%= number_with_delimiter(retention_run.rows_total) %></dd>
+          </div>
+        </dl>
+      </div>
+      <% if retention_run.last_error_message.present? %>
+        <p class="mt-3 rounded bg-red-50 px-3 py-2 text-xs text-red-700">
+          <%= retention_run.last_error_class.presence || "Retention error" %>: <%= retention_run.last_error_message %>
+        </p>
+      <% end %>
+    </div>
+  <% end %>
 
   <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
     <div class="rounded-lg border border-slate-200 bg-white p-4">

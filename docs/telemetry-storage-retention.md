@@ -155,6 +155,12 @@ bin/rails "logister:telemetry:archive[ingest_events,30,PROJECT_UUID]"
 bin/rails "logister:telemetry:archive[trace_spans,30,PROJECT_UUID]"
 ```
 
+Each command advances at most
+`LOGISTER_RETENTION_OBJECTS_PER_ATTEMPT` objects, defaulting to 25. If the JSON
+result contains `continuation_required: true`, run the same command again. The
+manifest keeps its deterministic object keys and resumes confirmed work instead
+of loading or restarting the complete archive.
+
 Every non-dry archive is project-scoped and backed by a durable, checksummed
 manifest. Untracked global archive uploads are disabled so permanent project purge
 can enumerate and verify every object. Manifest objects use keys shaped like:
@@ -183,7 +189,13 @@ The **Archive Center** on the same Data page is the verification surface:
 - **Catalog** lists recent archive runs, object keys, row counts, bytes, status, and failure messages.
 - **Search Archives** searches current hot telemetry first and narrows candidate archive runs for older event evidence.
 
-The production Sidekiq worker schedules `ProjectRetentionSweepJob` daily and enqueues one `ProjectRetentionJob` per project. Cleanup is project-scoped and uses `occurred_at` for ingest events, `started_at` for spans, and `last_seen_at` for closed error groups.
+The production Sidekiq worker schedules `ProjectRetentionSweepJob` daily. It
+creates one durable `ProjectRetentionRun` per project and enqueues bounded
+continuations on the `archives` queue. Cleanup is project-scoped and uses
+`occurred_at` for ingest events, `started_at` for spans, and `last_seen_at` for
+closed error groups. A one-minute recovery sweep fences a running attempt whose
+heartbeat is stale, reconstructs missing queue work from PostgreSQL, and resumes
+the same run identity.
 
 Run a safe dry run for every project:
 
@@ -202,6 +214,69 @@ Apply deletion only after reviewing the dry-run output:
 ```sh
 DRY_RUN=false CONFIRM=retention bin/rails "logister:telemetry:retention[PROJECT_UUID]"
 ```
+
+The confirmed command creates or reuses a durable run and enqueues it; it does
+not keep a shell process open until every object finishes. Follow the run in
+**Project settings → Data → Archive Center**. The overview shows its phase,
+status, object and row progress, last heartbeat, and retained error. The catalog
+loads v2 object keys from normalized object rows in pages of 20; legacy v1
+manifests remain readable from their parent JSON.
+
+## Retention run operations
+
+Verify PostgreSQL state before changing queue state. The durable row is the
+source of truth; an empty Sidekiq queue does not mean an archive completed.
+
+| Run state | Meaning | Operator action |
+| --- | --- | --- |
+| `queued` | A bounded attempt is eligible or waiting for its enqueue claim. | Check the `archives` queue and recovery sweep freshness. |
+| `running` | One fenced attempt owns external and database effects. | Check heartbeat age before intervening. |
+| `waiting` or `retrying` | Work is resumable after a lock or transient dependency failure. | Repair the dependency; the recovery sweep re-enqueues due work. |
+| `completed` | Enumeration, upload, verification, cleanup reconciliation, and final policy results are durable. | No repair is required. |
+| `failed` | An integrity/source-retirement error or the retry limit stopped automatic progress. | Preserve the manifest and source rows; investigate before creating a successor. |
+
+Inspect recent runs without reading archived payloads:
+
+```sh
+bin/rails runner '
+ProjectRetentionRun.recent_first.limit(20).pluck(
+  :id, :project_id, :status, :phase, :current_scope,
+  :objects_completed, :objects_total, :rows_completed, :rows_total,
+  :heartbeat_at, :last_error_class, :last_error_message
+).each { |row| puts row.inspect }
+'
+```
+
+If a nonterminal run lost its queue entry, invoke the idempotent recovery sweep.
+It fences stale ownership and claims due work; do not edit `attempt_token`,
+`fence_version`, or progress columns by hand.
+
+```sh
+bin/rails runner 'ProjectRetentionRunRecoverySweepJob.perform_now(Time.current.iso8601(6))'
+```
+
+Use these initial budgets unless a production-shaped measurement supports a
+different value:
+
+| Setting | Default | Behavior |
+| --- | ---: | --- |
+| `LOGISTER_RETENTION_OBJECTS_PER_ATTEMPT` | 25 | Maximum upload, verification, or cleanup objects advanced by one job attempt. |
+| `LOGISTER_RETENTION_STALE_SECONDS` | 900 | Heartbeat age after which recovery fences a running attempt. |
+| `LOGISTER_RETENTION_MAX_FAILURES` | 10 | Retry failures before the run becomes terminal. |
+| `LOGISTER_RETENTION_ENQUEUE_CLAIM_SECONDS` | 300 | Duplicate-enqueue suppression window for recovery. |
+
+Alert on an `archives` queue age that grows across recovery sweeps, a stale
+running heartbeat, any terminal run failure, verified archives awaiting source
+cleanup, or archive-worker OOM/restart events. Correlated
+`project_retention_run.logister` notifications and log records include run,
+project, phase, fence, and committed progress identifiers without policy
+snapshots, object keys, or source payloads.
+
+Stop recovery and preserve evidence if memory grows with total manifest size,
+checksums diverge, a stale attempt issues an effect, cleanup lacks a fresh object
+verification, or archive activity increases core queue age. Roll back by stopping
+new scheduled/recovery advancement while leaving run rows, manifests, object
+checkpoints, provider objects, and source rows intact.
 
 ## Legacy Global Hot Pruning
 

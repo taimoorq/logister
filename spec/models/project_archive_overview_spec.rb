@@ -92,4 +92,72 @@ RSpec.describe ProjectArchiveOverview, type: :model do
     expect(hot_events.status_label).to eq("Archive gap")
     expect(overview.health_status).to eq(:archive_gap)
   end
+
+  it "never labels a stale active run healthy" do
+    now = Time.zone.parse("2026-08-11 12:00:00")
+    project = create(:project, user: users(:one))
+    policy = create(:project_retention_policy, project: project, archive_enabled: true, archive_before_delete: true)
+    run = create(
+      :project_retention_run,
+      project: project,
+      status: "running",
+      phase: "uploading",
+      heartbeat_at: now - ProjectRetentionRun.stale_after - 1.second,
+      objects_total: 50,
+      objects_completed: 25
+    )
+
+    overview = described_class.new(project: project, policy: policy, now: now)
+
+    expect(overview.health_status).to eq(:archive_run_stale)
+    expect(overview.health_tone).to eq(:danger)
+    expect(overview.current_retention_run).to eq(run)
+    expect(overview.health_message).to include("fenced and resumed")
+  end
+
+  it "shows retry state and its retained error instead of reporting healthy" do
+    project = create(:project, user: users(:one))
+    policy = create(:project_retention_policy, project: project, archive_enabled: true, archive_before_delete: true)
+    create(
+      :project_retention_run,
+      project: project,
+      status: "retrying",
+      heartbeat_at: Time.current,
+      last_error_class: "Timeout::Error",
+      last_error_message: "archive storage timed out"
+    )
+
+    overview = described_class.new(project: project, policy: policy)
+
+    expect(overview.health_status).to eq(:archive_run_retrying)
+    expect(overview.health_message).to include("waiting to retry")
+  end
+
+  it "reports verified manifests with unfinished source cleanup" do
+    project = create(:project, user: users(:one))
+    policy = create(:project_retention_policy, project: project, archive_enabled: true, archive_before_delete: true)
+    create(:telemetry_archive, :verified_manifest, project: project, source_deleted_at: nil)
+
+    overview = described_class.new(project: project, policy: policy)
+
+    expect(overview.health_status).to eq(:awaiting_cleanup)
+    expect(overview.health_message).to include("1 verified archive still requires source cleanup")
+  end
+
+  it "surfaces the latest durable run failure" do
+    project = create(:project, user: users(:one))
+    policy = create(:project_retention_policy, project: project, archive_enabled: true, archive_before_delete: true)
+    create(
+      :project_retention_run,
+      project: project,
+      status: "failed",
+      failed_at: Time.current,
+      last_error_message: "manifest checksum mismatch"
+    )
+
+    overview = described_class.new(project: project, policy: policy)
+
+    expect(overview.health_status).to eq(:needs_attention)
+    expect(overview.health_message).to include("manifest checksum mismatch")
+  end
 end

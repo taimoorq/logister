@@ -20,7 +20,6 @@ module Logister
     def call
       verify_archive! if @verify
       processed = 0
-      object_results = []
 
       each_row do |row, object_record|
         @processor&.call(
@@ -29,13 +28,20 @@ module Logister
           archive: @archive
         )
         processed += 1
-        object_results << object_record.object_key unless object_results.last == object_record.object_key
       end
+
+      object_count = @archive.object_record_scope.count
+      object_keys = @archive.object_record_scope
+        .order(:sequence, :id)
+        .limit(TelemetryArchive::OBJECT_RESULT_LIMIT)
+        .pluck(:object_key)
 
       {
         archive_id: @archive.id,
         rows: processed,
-        object_keys: object_results,
+        object_count: object_count,
+        object_keys: object_keys,
+        object_keys_truncated: object_count > object_keys.size,
         processor: @processor.present?
       }
     end
@@ -43,7 +49,7 @@ module Logister
     def each_row
       return enum_for(:each_row) unless block_given?
 
-      @archive.object_records.ordered.each do |object_record|
+      @archive.each_object_record do |object_record|
         payload = @storage_service.download(object_record.object_key)
         unless payload.bytesize == object_record.expected_bytes &&
             Digest::SHA256.hexdigest(payload) == object_record.checksum_sha256

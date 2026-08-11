@@ -134,6 +134,7 @@ module ProjectSettingsContext
                          :rows,
                          :bytes,
                          :objects,
+                         :manifest_version,
                          :status,
                          :error_message,
                          :dry_run,
@@ -141,6 +142,12 @@ module ProjectSettingsContext
                        )
                        .recent_first
                        .limit(50)
+                       .to_a
+    @archive_object_catalog = ProjectArchiveObjectCatalog.new(
+      archives: @archive_catalog,
+      selected_archive_id: params[:archive_object_archive_id],
+      requested_page: params[:archive_object_page]
+    ).call
   end
 
   def normalized_archive_path

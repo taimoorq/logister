@@ -9,25 +9,40 @@ module Logister
   class TelemetryArchiveInspector
     class VerificationError < StandardError; end
 
-    def initialize(archive:, storage_service: nil, persist: false)
+    def initialize(archive:, storage_service: nil, persist: false, object_limit: nil, work_fence: nil)
       @archive = archive
       locator = archive.lifecycle_metadata&.dig("storage_locator") if archive.respond_to?(:lifecycle_metadata)
       @storage_service = storage_service || InstanceConfiguration::ArchiveService.build(locator: locator)
       @persist = persist
+      @object_limit = object_limit.to_i if object_limit.to_i.positive?
+      @work_fence = work_fence
     end
 
     def call
       return inspect_legacy_archive if @archive.manifest_version.to_i < 2
 
-      object_results = @archive.object_records.ordered.map { |object_record| inspect_object(object_record) }
+      manifest_totals = verify_manifest_metadata!
+      return inspect_and_persist_objects(manifest_totals) if @persist
+
       totals = {
-        rows: object_results.sum { |result| result.fetch(:rows) },
-        bytes: object_results.sum { |result| result.fetch(:bytes) }
+        rows: 0,
+        bytes: 0,
+        objects: 0,
+        source_min_id: nil,
+        source_max_id: nil
       }
+      object_results = []
+      @archive.each_object_record do |object_record|
+        result = inspect_object(object_record)
+        totals[:rows] += result.fetch(:rows)
+        totals[:bytes] += result.fetch(:bytes)
+        totals[:objects] += 1
+        totals[:source_min_id] = [ totals[:source_min_id], result.fetch(:source_min_id) ].compact.min
+        totals[:source_max_id] = [ totals[:source_max_id], result.fetch(:source_max_id) ].compact.max
+        object_results << result if object_results.size < TelemetryArchive::OBJECT_RESULT_LIMIT
+      end
       verify_manifest_totals!(totals)
-      verify_manifest_source_range!(object_results)
-      verify_manifest_checksum!
-      complete_manifest!(totals) if @persist
+      verify_manifest_source_range!(totals)
 
       {
         archive_id: @archive.id,
@@ -35,8 +50,14 @@ module Logister
         checksum_sha256: @archive.checksum_sha256,
         rows: totals.fetch(:rows),
         bytes: totals.fetch(:bytes),
-        objects: object_results
+        object_count: totals.fetch(:objects),
+        objects: object_results,
+        objects_truncated: totals.fetch(:objects) > object_results.size
       }
+    rescue SystemStackError => error
+      wrapped = VerificationError.new("Archive verification failed: #{error.class}: #{error.message}")
+      fail_manifest!(wrapped) if @persist
+      raise wrapped
     rescue VerificationError
       fail_manifest!($!) if @persist
       raise
@@ -46,9 +67,75 @@ module Logister
       raise wrapped
     end
 
+    def verify_manifest_metadata!
+      scope = @archive.object_record_scope
+      totals = {
+        rows: scope.sum(:expected_rows),
+        bytes: scope.sum(:expected_bytes),
+        objects: scope.count,
+        source_min_id: scope.minimum(:source_min_id),
+        source_max_id: scope.maximum(:source_max_id)
+      }
+      verify_manifest_totals!(totals)
+      verify_manifest_source_range!(totals)
+      verify_manifest_checksum!
+      totals
+    end
+
+    def inspect_object!(object_record)
+      inspect_object(object_record)
+    end
+
     private
 
+    def inspect_and_persist_objects(manifest_totals)
+      object_results = []
+      processed = 0
+      @archive.each_object_record do |object_record|
+        next if object_record.verified?
+        break if @object_limit && processed >= @object_limit
+
+        result = inspect_object(object_record)
+        processed += 1
+        object_results << result if object_results.size < TelemetryArchive::OBJECT_RESULT_LIMIT
+      end
+
+      remaining = @archive.object_record_scope.where.not(status: "verified").count
+      verified_scope = @archive.object_record_scope.verified
+      verified_rows = verified_scope.sum(:verified_rows)
+      verified_bytes = verified_scope.sum(:verified_bytes)
+      if remaining.zero?
+        complete_manifest!(manifest_totals)
+      else
+        @archive.update!(
+          status: "verifying",
+          verified_rows: verified_rows,
+          verified_bytes: verified_bytes,
+          verification_started_at: @archive.verification_started_at || Time.current,
+          failed_at: nil,
+          error_message: nil
+        )
+      end
+
+      {
+        archive_id: @archive.id,
+        status: remaining.zero? ? "verified" : "verifying",
+        checksum_sha256: @archive.checksum_sha256,
+        rows: remaining.zero? ? manifest_totals.fetch(:rows) : verified_rows,
+        bytes: remaining.zero? ? manifest_totals.fetch(:bytes) : verified_bytes,
+        expected_rows: manifest_totals.fetch(:rows),
+        expected_bytes: manifest_totals.fetch(:bytes),
+        object_count: manifest_totals.fetch(:objects),
+        verified_object_count: manifest_totals.fetch(:objects) - remaining,
+        objects_processed: processed,
+        objects: object_results,
+        objects_truncated: processed > object_results.size,
+        continuation_required: remaining.positive?
+      }
+    end
+
     def inspect_object(object_record)
+      @work_fence&.call
       object_record.update!(status: "verifying", error_message: nil) if @persist
       payload = @storage_service.download(object_record.object_key)
       actual_bytes = payload.bytesize
@@ -142,18 +229,18 @@ module Logister
     end
 
     def verify_manifest_checksum!
-      actual = Digest::SHA256.hexdigest(@archive.manifest_checksum_payload)
+      actual = @archive.manifest_checksum_sha256
       return if ActiveSupport::SecurityUtils.secure_compare(actual, @archive.checksum_sha256.to_s)
 
       raise VerificationError,
             "Archive manifest checksum mismatch: expected #{@archive.checksum_sha256.inspect}, got #{actual.inspect}"
     end
 
-    def verify_manifest_source_range!(object_results)
-      return if object_results.empty?
+    def verify_manifest_source_range!(totals)
+      return if totals.fetch(:objects).zero?
 
-      actual_min = object_results.pluck(:source_min_id).min
-      actual_max = object_results.pluck(:source_max_id).max
+      actual_min = totals.fetch(:source_min_id)
+      actual_max = totals.fetch(:source_max_id)
       unless actual_min == @archive.source_min_id && actual_max == @archive.source_max_id
         raise VerificationError,
               "Archive manifest source range mismatch: expected #{@archive.source_min_id}-#{@archive.source_max_id}, " \
@@ -163,6 +250,7 @@ module Logister
 
     def complete_manifest!(totals)
       now = Time.current
+      metadata = @archive.lifecycle_metadata.is_a?(Hash) ? @archive.lifecycle_metadata.dup : {}
       @archive.reload.update!(
         status: "completed",
         verified_rows: totals.fetch(:rows),
@@ -171,17 +259,11 @@ module Logister
         completed_at: now,
         failed_at: nil,
         error_message: nil,
-        objects: @archive.object_records.ordered.map do |object_record|
-          {
-            "key" => object_record.object_key,
-            "rows" => object_record.expected_rows,
-            "bytes" => object_record.expected_bytes,
-            "checksum_sha256" => object_record.checksum_sha256,
-            "source_min_id" => object_record.source_min_id,
-            "source_max_id" => object_record.source_max_id,
-            "verified_at" => object_record.verified_at&.utc&.iso8601
-          }
-        end
+        objects: [],
+        lifecycle_metadata: metadata.merge(
+          "object_catalog" => "telemetry_archive_objects",
+          "object_count" => totals.fetch(:objects)
+        )
       )
     end
 

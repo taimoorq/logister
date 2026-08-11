@@ -2,6 +2,24 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.1 - 2026-08-11
+
+### Added
+
+- Added a durable, fenced project-retention run ledger with bounded continuations, per-object source-cleanup checkpoints, stale-attempt recovery, and truthful Archive Center progress.
+- Added a dedicated concurrency-1 archive worker profile for hosted deployments while retaining the combined Sidekiq profile for smaller self-hosted installations.
+
+### Fixed
+
+- Replaced recursive composite-reference predicates and whole-manifest object materialization that could overflow the Ruby stack or exhaust a worker at large archive sizes.
+- Fixed worker database-pool readiness enumeration across both Sidekiq Redis Client and redis-rb adapters, and made v2 archive search/catalog reads use normalized object rows.
+
+### Upgrade Notes
+
+- Run database migrations before restarting web and workers. This release adds `project_retention_runs`, links archives to durable runs, and adds per-object cleanup checkpoint fields.
+- Hosted deployments should run `config/sidekiq-core.yml` and `config/sidekiq-archives.yml`; the archive process needs a database pool of at least 3. Existing self-hosted deployments can continue using `config/sidekiq.yml`.
+- Preserve existing manifests and provider objects during rollout. The recovery sweep adopts resumable unlinked v2 manifests, fences stale attempts, and resumes bounded work without requiring an SDK or ingestion-format change.
+
 ## v3.6 - 2026-08-09
 
 ### Added

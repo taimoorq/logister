@@ -2,9 +2,12 @@
 
 module Logister
   class TelemetryArchiveRetry
-    def initialize(archive:, storage_service: nil)
+    def initialize(archive:, storage_service: nil, object_limit: nil, write_fence: nil, project_retention_run: nil)
       @archive = archive
       @storage_service = storage_service
+      @object_limit = object_limit
+      @write_fence = write_fence
+      @project_retention_run = project_retention_run || archive.project_retention_run
     end
 
     def call
@@ -28,7 +31,10 @@ module Logister
         prefix: metadata["prefix"],
         selection: metadata["selection"],
         protect_incomplete_deliveries: metadata["protect_incomplete_deliveries"],
-        storage_service: @storage_service
+        storage_service: @storage_service,
+        object_limit: @object_limit,
+        write_fence: @write_fence,
+        project_retention_run: @project_retention_run
       ).call
     end
   end

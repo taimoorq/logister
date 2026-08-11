@@ -16,7 +16,8 @@ begin
   paths = if options[:release_set]
     [ repo_root.join(options[:release_set]) ]
   else
-    Dir[repo_root.join("config/release-sets/*.yml")].sort.map { |path| Pathname(path) }
+    version = repo_root.join("VERSION").read.strip
+    [ repo_root.join("config/release-sets/v#{version}.yml") ]
   end
   raise Logister::ReleaseSet::ValidationError, [ "No release-set manifests found." ] if paths.empty?
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: "3.6"
+  version: "3.6.1"
   summary: Send telemetry to Logister and build authorized read-only CLI clients.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
@@ -28,7 +28,7 @@ tags:
   - name: Mobile tokens
     description: Mint short-lived Android and iOS ingest tokens from a trusted backend.
   - name: CLI
-    description: Discover CLI compatibility and server feature support.
+    description: Discover CLI compatibility, inspect projects, and perform explicitly approved operational writes.
 security:
   - bearerAuth: []
   - apiKeyHeader: []
@@ -56,8 +56,8 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.6"
-                    api_contract_version: "3.6"
+                    server_version: "3.6.1"
+                    api_contract_version: "3.6.1"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "0.1.2"
@@ -95,6 +95,7 @@ paths:
                       insights: false
                       metrics: false
                       ai_context_bundles: true
+                      mobile_artifacts: true
   /api/v1/cli/session:
     get:
       operationId: getCliSession
@@ -238,6 +239,74 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/CliQueryUnavailable"
+  /api/v1/cli/projects/{project_uuid}/artifacts/android-mapping:
+    post:
+      operationId: uploadCliAndroidMapping
+      tags: [CLI]
+      summary: Upload one Android R8 or ProGuard mapping.
+      description: |
+        Uploads a private mapping for an Android project and queues a coverage
+        refresh. Requires the opt-in `artifacts:write` scope and project owner
+        or admin access. Runtime mobile ingest tokens and project ingest keys
+        are not accepted. Archived projects remain eligible for forensic
+        artifact uploads.
+      x-logister-required-scopes: [artifacts:write]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CliAndroidMappingUpload"
+      responses:
+        "201":
+          description: Mapping stored and coverage refresh queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliAndroidMappingArtifact"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /api/v1/cli/projects/{project_uuid}/artifacts/apple-dsym:
+    post:
+      operationId: uploadCliAppleDsym
+      tags: [CLI]
+      summary: Upload one zipped Apple dSYM.
+      description: |
+        Uploads a private dSYM archive for an iOS project and queues binary UUID
+        verification and coverage refresh. Requires the opt-in
+        `artifacts:write` scope and project owner or admin access. Runtime mobile
+        ingest tokens and project ingest keys are not accepted. A verified
+        artifact is not a claim that stored events have been symbolicated.
+      x-logister-required-scopes: [artifacts:write]
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CliAppleDsymUpload"
+      responses:
+        "201":
+          description: dSYM stored and verification queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliAppleSymbolArtifact"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/UnprocessableContent" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
   /api/v1/cli/projects/{project_uuid}/summary:
     get:
       operationId: getCliProjectSummary
@@ -1305,7 +1374,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: CLI access token
-      description: "Send `Authorization: Bearer <cli-access-token>`. CLI tokens are user-scoped, scope-limited, project-limited, and expiring read credentials."
+      description: "Send `Authorization: Bearer <cli-access-token>`. CLI tokens are user-scoped, scope-limited, project-limited, and expiring. Operational write scopes such as `artifacts:write` require explicit approval and are not granted by the default read login."
     bearerAuth:
       type: http
       scheme: bearer
@@ -1523,6 +1592,78 @@ components:
                 code: query_timeout
                 message: The query exceeded the server time limit. Narrow the time range or filters and try again.
   schemas:
+    CliAndroidMappingUpload:
+      type: object
+      required: [package_name, version_code, file]
+      properties:
+        package_name:
+          type: string
+          description: Android application ID that produced this mapping.
+        version_name:
+          type: string
+        version_code:
+          type: string
+        release:
+          type: string
+        file:
+          type: string
+          format: binary
+          description: Non-empty `mapping.txt` file, at most 20 MiB.
+    CliAppleDsymUpload:
+      type: object
+      required: [app_identifier, version_code, binary_uuid, architecture, file]
+      properties:
+        app_identifier:
+          type: string
+          description: Bundle identifier for the binary represented by this dSYM.
+        version_name:
+          type: string
+        version_code:
+          type: string
+          description: Apple bundle build number (`CFBundleVersion`).
+        release:
+          type: string
+        binary_uuid:
+          type: string
+          format: uuid
+        architecture:
+          type: string
+          enum: [arm64, arm64e, x86_64, armv7]
+        file:
+          type: string
+          format: binary
+          description: Non-empty ZIP containing the matching dSYM, at most 500 MiB.
+    CliAndroidMappingArtifact:
+      type: object
+      required: [artifact, uuid, package_name, version_code, checksum_sha256, byte_size, status, coverage_refresh]
+      properties:
+        artifact: { type: string, const: android_mapping }
+        uuid: { type: string, format: uuid }
+        package_name: { type: string }
+        version_name: { type: string }
+        version_code: { type: string }
+        release: { type: string }
+        checksum_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        byte_size: { type: integer, minimum: 1, maximum: 20971520 }
+        status: { type: string, const: available }
+        coverage_refresh: { type: string, const: queued }
+    CliAppleSymbolArtifact:
+      type: object
+      required: [artifact, uuid, app_identifier, version_code, binary_uuid, architecture, checksum_sha256, byte_size, status, verification, coverage_refresh]
+      properties:
+        artifact: { type: string, const: apple_dsym }
+        uuid: { type: string, format: uuid }
+        app_identifier: { type: string }
+        version_name: { type: string }
+        version_code: { type: string }
+        release: { type: string }
+        binary_uuid: { type: string, format: uuid }
+        architecture: { type: string, enum: [arm64, arm64e, x86_64, armv7] }
+        checksum_sha256: { type: string, pattern: "^[0-9a-f]{64}$" }
+        byte_size: { type: integer, minimum: 1, maximum: 524288000 }
+        status: { type: string, enum: [uploaded, processing, verified, awaiting_tooling, failed] }
+        verification: { type: string, const: queued }
+        coverage_refresh: { type: string, const: queued }
     CliListEnvelope:
       type: object
       required: [items, generated_at]

@@ -76,7 +76,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.5.0")
+    implementation("org.logister:logister-android:0.3.0")
 }
 ```
 
@@ -252,7 +252,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.5.0")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.3.0")
 ]
 ```
 
@@ -465,8 +465,8 @@ canonical last-sampled memory evidence on top of the 0.4 trust contract.
 iOS releases are also tag-driven:
 
 ```bash
-git tag v0.5.0
-git push origin v0.5.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 Swift Package Manager resolves packages from the public Git repository and tag.
@@ -479,12 +479,12 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.5.0/logister-android-0.5.0.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.3.0/logister-android-0.3.0.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.5.0 --repo taimoorq/logister-ios
+gh release view v0.3.0 --repo taimoorq/logister-ios
 ```

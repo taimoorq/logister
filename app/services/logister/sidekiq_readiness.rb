@@ -4,7 +4,7 @@ require "json"
 
 module Logister
   class SidekiqReadiness
-    QUEUES = %w[projector notifications mailers analytics integrations symbols maintenance].freeze
+    QUEUES = %w[projector notifications mailers analytics integrations symbols archives maintenance].freeze
     def initialize(redis:, concurrency:, now: Time.current, connection_pool: ActiveRecord::Base.connection_pool)
       @redis = redis
       @concurrency = Integer(concurrency)

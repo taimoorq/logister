@@ -5,13 +5,23 @@ module Logister
     DEFAULT_BATCH_SIZE = 1_000
     HOT_EVENT_TYPES = IngestEvent.event_types.keys.excluding("error").freeze
 
-    def initialize(project:, policy: nil, batch_size: DEFAULT_BATCH_SIZE, storage_service: nil, dry_run: false, now: Time.current)
+    def initialize(project:, policy: nil, batch_size: DEFAULT_BATCH_SIZE, storage_service: nil, dry_run: false,
+                   now: Time.current, run: nil, archive_object_limit: nil, cleanup_object_limit: nil,
+                   write_fence: nil, cutoff_snapshot: nil)
       @project = project
       @batch_size = batch_size.to_i.positive? ? batch_size.to_i : DEFAULT_BATCH_SIZE
       @storage_service = storage_service
       @dry_run = dry_run
       @policy = policy || default_policy
       @now = now
+      @run = run
+      @archive_object_limit = archive_object_limit.to_i if archive_object_limit.to_i.positive?
+      @cleanup_object_limit = cleanup_object_limit.to_i if cleanup_object_limit.to_i.positive?
+      @cleanup_objects_processed = 0
+      @write_fence = write_fence
+      @cutoff_snapshot = cutoff_snapshot.to_h.stringify_keys
+      @policy_snapshot = run&.policy_snapshot.to_h.stringify_keys
+      @continuation_required = false
     end
 
     def call
@@ -20,15 +30,18 @@ module Logister
         project_id: @project.id,
         project_uuid: @project.uuid,
         dry_run: @dry_run,
-        archive_enabled: @policy.archive_enabled?,
-        archive_before_delete: @policy.archive_before_delete?,
+        archive_enabled: archive_enabled?,
+        archive_before_delete: archive_before_delete?,
         cutoffs: cutoffs.transform_values { |value| value&.utc&.iso8601 },
         archives: [],
         recovered_deletions: cleanup_verified_archive_sources,
         candidates: {},
         protected_by_delivery: {},
-        deleted: {}
+        deleted: {},
+        continuation_required: false
       }
+
+      return continuation_result(result) if @continuation_required
 
       result[:candidates][:hot_events] = hot_event_scope.count
       result[:candidates][:trace_spans] = trace_span_scope.count
@@ -38,13 +51,19 @@ module Logister
       result[:protected_by_delivery][:error_events] = protected_source_count(closed_error_event_scope)
 
       archive_retention_scope(result, :hot_events, "ingest_events", hot_cutoff, event_types: HOT_EVENT_TYPES)
+      return continuation_result(result) if @continuation_required
       archive_retention_scope(result, :trace_spans, "trace_spans", trace_cutoff)
+      return continuation_result(result) if @continuation_required
       archive_retention_scope(result, :error_events, "ingest_events", error_cutoff, event_types: [ "error" ]) if error_cutoff
+      return continuation_result(result) if @continuation_required
 
       if archive_deletion_guard?
         result[:deleted][:hot_events] = delete_current_archive_sources(:hot_events)
+        return continuation_result(result) if @continuation_required
         result[:deleted][:trace_spans] = delete_current_archive_sources(:trace_spans)
+        return continuation_result(result) if @continuation_required
         result[:deleted][:error_events] = delete_current_archive_sources(:error_events)
+        return continuation_result(result) if @continuation_required
       else
         result[:deleted][:hot_events] = delete_events(hot_event_scope)
         result[:deleted][:trace_spans] = delete_trace_spans(trace_span_scope)
@@ -72,17 +91,21 @@ module Logister
     end
 
     def hot_cutoff
-      @hot_cutoff ||= @now - @policy.hot_retention_days.days
+      @hot_cutoff ||= snapshot_cutoff("hot_events") || @now - @policy.hot_retention_days.days
     end
 
     def trace_cutoff
-      @trace_cutoff ||= @now - @policy.trace_retention_days.days
+      @trace_cutoff ||= snapshot_cutoff("trace_spans") || @now - @policy.trace_retention_days.days
     end
 
     def error_cutoff
-      return nil if @policy.error_retention_days.blank?
+      return @error_cutoff if defined?(@error_cutoff)
 
-      @error_cutoff ||= @now - @policy.error_retention_days.days
+      snapshot = snapshot_cutoff("error_events")
+      return @error_cutoff = snapshot if snapshot
+      return @error_cutoff = nil if @policy.error_retention_days.blank?
+
+      @error_cutoff = @now - @policy.error_retention_days.days
     end
 
     def hot_event_scope
@@ -120,7 +143,14 @@ module Logister
 
       retry_archive = retryable_archive_for(scope)
       archive_result = if retry_archive && !@dry_run
-        TelemetryArchiveRetry.new(archive: retry_archive, storage_service: @storage_service).call
+        retry_archive.update!(project_retention_run: @run) if @run && retry_archive.project_retention_run_id.nil?
+        TelemetryArchiveRetry.new(
+          archive: retry_archive,
+          storage_service: @storage_service,
+          object_limit: @archive_object_limit,
+          write_fence: @write_fence,
+          project_retention_run: @run
+        ).call
       else
         TelemetryArchiveExporter.new(
           record_type: record_type,
@@ -133,7 +163,10 @@ module Logister
           protect_incomplete_deliveries: true,
           batch_size: @batch_size,
           storage_service: @storage_service,
-          dry_run: @dry_run
+          dry_run: @dry_run,
+          object_limit: @archive_object_limit,
+          write_fence: @write_fence,
+          project_retention_run: @run
         ).call
       end
 
@@ -141,6 +174,11 @@ module Logister
       result[:archives] << archive_summary
       if !@dry_run && archive_result.fetch(:rows).positive?
         unless archive_result.fetch(:verified)
+          if archive_result.fetch(:continuation_required, false)
+            @continuation_required = true
+            return
+          end
+
           raise TelemetryArchiveExporter::Error, "Archive manifest was not verified"
         end
 
@@ -154,7 +192,24 @@ module Logister
     end
 
     def archive_deletion_guard?
-      @policy.archive_enabled? && @policy.archive_before_delete?
+      archive_enabled? && archive_before_delete?
+    end
+
+    def archive_enabled?
+      return @policy.archive_enabled? unless @policy_snapshot.key?("archive_enabled")
+
+      @policy_snapshot["archive_enabled"] == true
+    end
+
+    def archive_before_delete?
+      return @policy.archive_before_delete? unless @policy_snapshot.key?("archive_before_delete")
+
+      @policy_snapshot["archive_before_delete"] == true
+    end
+
+    def snapshot_cutoff(key)
+      value = @cutoff_snapshot[key]
+      Time.zone.parse(value.to_s) if value.present?
     end
 
     def retryable_archive_for(scope)
@@ -162,6 +217,7 @@ module Logister
               .resumable
               .where(scope: scope.to_s, source_deleted_at: nil)
               .where("manifest_version >= 2")
+              .then { |scope| @run ? scope.where(project_retention_run_id: [ nil, @run.id ]) : scope }
               .recent_first
               .first
     end
@@ -174,6 +230,12 @@ module Logister
               .where(source_deleted_at: nil, scope: %w[hot_events trace_spans error_events])
               .where("manifest_version >= 2")
               .each_with_object(Hash.new(0)) do |archive, totals|
+        unless cleanup_object_budget_available?
+          @continuation_required = true
+          break totals
+        end
+
+        archive.update!(project_retention_run: @run) if @run && archive.project_retention_run_id.nil?
         totals[archive.scope.to_sym] += delete_archive_sources!(archive)
       end
     end
@@ -187,50 +249,95 @@ module Logister
 
     def delete_archive_sources!(archive)
       ensure_archive_storage_generation!(archive)
-      verification = TelemetryArchiveInspector.new(
+      inspector = TelemetryArchiveInspector.new(
         archive: archive,
         storage_service: @storage_service,
-        persist: false
-      ).call
+        persist: false,
+        work_fence: @write_fence
+      )
+      verification = inspector.verify_manifest_metadata!
       deleted = 0
-      remaining = 0
-      deletable_remaining = 0
       protected_delivery_rows = 0
       protected_reopened_group_rows = 0
 
-      archive.object_records.reorder(:id).find_each(batch_size: 1) do |object_record|
+      archive.each_object_record(batch_size: 1) do |object_record|
+        next if object_record.source_cleanup_status.in?(%w[completed not_required])
+        unless cleanup_object_budget_available?
+          @continuation_required = true
+          break
+        end
+
+        attempted_at = Time.current
+        object_record.update!(
+          source_cleanup_status: "cleaning",
+          source_cleanup_attempts: object_record.source_cleanup_attempts.to_i + 1,
+          source_cleanup_started_at: object_record.source_cleanup_started_at || attempted_at,
+          source_cleanup_failed_at: nil,
+          source_cleanup_error: nil
+        )
+        object_verification = inspector.inspect_object!(object_record)
         references = object_record.normalized_source_references
-        deleted += delete_archive_object_sources!(archive, references)
-        remaining += count_archive_sources(archive, references)
-        deletable_remaining += count_archive_sources(archive, references) do |relation|
+        deleted_for_object = delete_archive_object_sources!(archive, references)
+        deleted += deleted_for_object
+        remaining_for_object = count_archive_sources(archive, references)
+        deletable_remaining = count_archive_sources(archive, references) do |relation|
           archive_deletion_eligible_relation(archive, relation)
         end
-        protected_delivery_rows += count_archive_sources(archive, references) do |relation|
+        if deletable_remaining.positive?
+          raise TelemetryArchiveExporter::Error.new(
+            "Verified archive object #{object_record.id} still has #{deletable_remaining} eligible source rows after deletion",
+            archive: archive
+          )
+        end
+
+        protected_for_object = count_archive_sources(archive, references) do |relation|
           TelemetryRetentionProtection.with_incomplete_deliveries(relation)
         end
+        protected_delivery_rows += protected_for_object
+        reopened_for_object = 0
         if error_event_archive?(archive)
-          protected_reopened_group_rows += count_archive_sources(archive, references) do |relation|
+          reopened_for_object = count_archive_sources(archive, references) do |relation|
             outside_closed_error_groups(relation)
           end
+          protected_reopened_group_rows += reopened_for_object
         end
-      end
-      if deletable_remaining.positive?
-        raise TelemetryArchiveExporter::Error.new(
-          "Verified archive #{archive.id} still has #{deletable_remaining} eligible source rows after deletion",
-          archive: archive
+
+        completed_at = Time.current
+        cleanup_error = if remaining_for_object.positive?
+          "#{remaining_for_object} source rows remain protected by current policy or delivery/error state"
+        end
+        object_record.update!(
+          source_cleanup_status: (remaining_for_object.zero? ? "completed" : "blocked"),
+          source_deleted_rows: [ object_record.expected_rows - remaining_for_object, 0 ].max,
+          source_cleanup_verified_at: completed_at,
+          source_cleanup_completed_at: (completed_at if remaining_for_object.zero?),
+          source_cleanup_checksum_sha256: object_verification.fetch(:checksum_sha256),
+          source_cleanup_error: cleanup_error
         )
+        @cleanup_objects_processed += 1
+      rescue StandardError => error
+        object_record.update_columns(
+          source_cleanup_status: "failed",
+          source_cleanup_failed_at: Time.current,
+          source_cleanup_error: "#{error.class}: #{error.message}",
+          updated_at: Time.current
+        )
+        raise
       end
 
-      cleanup_complete = remaining.zero?
+      cleanup_scope = archive.object_record_scope
+      cleanup_complete = cleanup_scope.where.not(source_cleanup_status: %w[completed not_required]).none?
+      deleted_rows_total = cleanup_scope.sum(:source_deleted_rows)
+      remaining = [ archive.expected_rows - deleted_rows_total, 0 ].max
       archive.update!(
         source_deleted_at: (cleanup_complete ? @now : nil),
-        source_deleted_rows: [ archive.expected_rows - remaining, 0 ].max,
+        source_deleted_rows: deleted_rows_total,
         lifecycle_metadata: (archive.lifecycle_metadata || {}).merge(
           "source_cleanup" => {
             "attempted_at" => @now.utc.iso8601,
             "completed_at" => (@now.utc.iso8601 if cleanup_complete),
             "deleted_rows_this_attempt" => deleted,
-            "deleted_rows_total" => [ archive.expected_rows - remaining, 0 ].max,
+            "deleted_rows_total" => deleted_rows_total,
             "verified_remaining_rows" => remaining,
             "protected_delivery_rows" => protected_delivery_rows,
             "protected_reopened_group_rows" => protected_reopened_group_rows,
@@ -277,7 +384,7 @@ module Logister
 
       ErrorGroup.transaction do
         ErrorGroup.where(project_id: @project.id, id: group_ids).order(:id).lock.load
-        eligible_group_ids = closed_error_group_scope.where(id: group_ids).pluck(:id)
+        eligible_group_ids = cleanup_closed_error_group_scope.where(id: group_ids).pluck(:id)
         eligible_references = ingest_event_references_for_groups(references, eligible_group_ids)
         delete_events_by_references(eligible_references)
       end
@@ -294,12 +401,12 @@ module Logister
     end
 
     def ingest_event_references_for_groups(references, group_ids)
-      return [] if group_ids.empty? || error_cutoff.blank?
+      return [] if group_ids.empty? || cleanup_error_cutoff.blank?
 
       partition_references(references).each_slice(IngestEvent::PARTITION_REFERENCE_BATCH_SIZE).flat_map do |batch|
         IngestEvent.for_partition_references(batch, id_key: :id, occurred_at_key: :occurred_at)
                    .where(project_id: @project.id, error_group_id: group_ids)
-                   .where("occurred_at < ?", error_cutoff)
+                   .where("occurred_at < ?", cleanup_error_cutoff)
                    .pluck(:id, :occurred_at)
       end
     end
@@ -336,16 +443,16 @@ module Logister
       relation = TelemetryRetentionProtection.without_incomplete_deliveries(relation)
       case archive.scope
       when "hot_events"
-        relation.where("ingest_events.occurred_at < ?", hot_cutoff)
+        relation.where("ingest_events.occurred_at < ?", cleanup_hot_cutoff)
                 .where(event_type: HOT_EVENT_TYPES.map { |event_type| IngestEvent.event_types.fetch(event_type) })
                 .where(error_group_id: nil)
       when "trace_spans"
-        relation.where("trace_spans.started_at < ?", trace_cutoff)
+        relation.where("trace_spans.started_at < ?", cleanup_trace_cutoff)
       when "error_events"
-        return relation.none if error_cutoff.blank?
+        return relation.none if cleanup_error_cutoff.blank?
 
-        relation.where("ingest_events.occurred_at < ?", error_cutoff)
-                .where(error_group_id: closed_error_group_scope.select(:id))
+        relation.where("ingest_events.occurred_at < ?", cleanup_error_cutoff)
+                .where(error_group_id: cleanup_closed_error_group_scope.select(:id))
       else
         relation.none
       end
@@ -363,14 +470,14 @@ module Logister
 
     def cutoff_for_archive(archive)
       case archive.scope
-      when "hot_events" then hot_cutoff
-      when "trace_spans" then trace_cutoff
-      when "error_events" then error_cutoff
+      when "hot_events" then cleanup_hot_cutoff
+      when "trace_spans" then cleanup_trace_cutoff
+      when "error_events" then cleanup_error_cutoff
       end
     end
 
     def outside_closed_error_groups(relation)
-      closed_ids = closed_error_group_scope.select(:id)
+      closed_ids = cleanup_closed_error_group_scope.select(:id)
       relation.where(error_group_id: nil).or(relation.where.not(error_group_id: closed_ids))
     end
 
@@ -404,6 +511,7 @@ module Logister
 
     def record_archive_failure!(scope, record_type, before, after, error)
       @project.telemetry_archives.create!(
+        project_retention_run: @run,
         scope: scope.to_s,
         record_type: record_type,
         status: "failed",
@@ -489,9 +597,14 @@ module Logister
 
         { id: id, occurred_at: occurred_at }
       end.uniq
-      event_ids = event_references.pluck(:id)
-      return 0 if event_ids.empty?
+      return 0 if event_references.empty?
 
+      event_references.each_slice(IngestEvent::PARTITION_REFERENCE_BATCH_SIZE).sum do |reference_batch|
+        delete_event_reference_batch(reference_batch)
+      end
+    end
+
+    def delete_event_reference_batch(event_references)
       with_locked_delivery_state(
         "IngestEvent",
         event_references,
@@ -560,6 +673,7 @@ module Logister
                                           .lock
                                           .pluck(:id)
         TelemetryDelivery.where(telemetry_outbox_event_id: outbox_ids).order(:id).lock.load if outbox_ids.any?
+        @write_fence&.call
         yield(keys)
       end
     end
@@ -601,6 +715,38 @@ module Logister
         last_retention_run_at: @now,
         last_retention_result: result.as_json
       )
+    end
+
+    def continuation_result(result)
+      result[:continuation_required] = true
+      result
+    end
+
+    def cleanup_object_budget_available?
+      @cleanup_object_limit.nil? || @cleanup_objects_processed < @cleanup_object_limit
+    end
+
+    def cleanup_hot_cutoff
+      @cleanup_hot_cutoff ||= @now - @policy.hot_retention_days.days
+    end
+
+    def cleanup_trace_cutoff
+      @cleanup_trace_cutoff ||= @now - @policy.trace_retention_days.days
+    end
+
+    def cleanup_error_cutoff
+      return @cleanup_error_cutoff if defined?(@cleanup_error_cutoff)
+      return @cleanup_error_cutoff = nil if @policy.error_retention_days.blank?
+
+      @cleanup_error_cutoff = @now - @policy.error_retention_days.days
+    end
+
+    def cleanup_closed_error_group_scope
+      return ErrorGroup.none unless cleanup_error_cutoff
+
+      @project.error_groups
+              .where.not(status: ErrorGroup.statuses.fetch("unresolved"))
+              .where("last_seen_at < ?", cleanup_error_cutoff)
     end
   end
 end

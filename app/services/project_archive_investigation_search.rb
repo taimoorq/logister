@@ -284,7 +284,16 @@ class ProjectArchiveInvestigationSearch
     return scope if raw_query.blank?
 
     pattern = "%#{sanitize_like(raw_query)}%"
-    scope.where("objects::text ILIKE ? OR error_message ILIKE ?", pattern, pattern)
+    scope.where(
+      "telemetry_archives.objects::text ILIKE :pattern " \
+      "OR telemetry_archives.error_message ILIKE :pattern " \
+      "OR EXISTS (" \
+      "SELECT 1 FROM telemetry_archive_objects " \
+      "WHERE telemetry_archive_objects.telemetry_archive_id = telemetry_archives.id " \
+      "AND telemetry_archive_objects.object_key ILIKE :pattern" \
+      ")",
+      pattern: pattern
+    )
   end
 
   def archive_record_types_for_event_type(event_type)

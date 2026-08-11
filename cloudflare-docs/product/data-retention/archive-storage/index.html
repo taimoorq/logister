@@ -56,8 +56,8 @@ LOGISTER_ARCHIVE_PREFIX=telemetry
             <section id="shape" class="section">
               <p class="eyebrow">What an archive contains</p>
               <h2>Archives are compressed JSONL files.</h2>
-              <div class="output-block"><div class="output-head"><span class="output-label">Example key</span></div><pre><code>telemetry/ingest_events/project=PROJECT_UUID/year=2026/month=06/day=20/20260620T180000Z-1000-1999.jsonl.gz</code></pre></div>
-              <p>Each line includes enough metadata to identify the export and the original telemetry row. Archives are useful for later inspection or migration, but they are not meant to be browsed from the normal Logister UI.</p>
+              <div class="output-block"><div class="output-head"><span class="output-label">Example key</span></div><pre><code>telemetry/manifests/project=PROJECT_UUID/archive=MANIFEST_ID/ingest_events/part-0-1000-1999.jsonl.gz</code></pre></div>
+              <p>Each v2 manifest has normalized object rows with deterministic keys, expected rows and bytes, checksums, immutable storage locators, and exact source references. The Archive Center catalog reads those keys in bounded pages; legacy v1 parent JSON remains readable.</p>
             </section>
             <section id="verify" class="section">
               <p class="eyebrow">Verify</p>

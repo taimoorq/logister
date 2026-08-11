@@ -2,6 +2,7 @@
 
 class TelemetryArchiveObject < ApplicationRecord
   STATUSES = %w[pending uploading uploaded verifying verified failed deleted].freeze
+  SOURCE_CLEANUP_STATUSES = %w[pending cleaning completed blocked failed not_required].freeze
 
   belongs_to :telemetry_archive, inverse_of: :object_records
 
@@ -15,8 +16,12 @@ class TelemetryArchiveObject < ApplicationRecord
             numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :verified_rows, :verified_bytes, :attempts,
             numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :source_cleanup_status, inclusion: { in: SOURCE_CLEANUP_STATUSES }
+  validates :source_cleanup_attempts, :source_deleted_rows,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :source_range_is_ordered
   validate :source_references_match_expected_rows
+  validate :source_cleanup_rows_do_not_exceed_expected
 
   scope :ordered, -> { order(:sequence) }
   scope :verified, -> { where(status: "verified") }
@@ -73,5 +78,11 @@ class TelemetryArchiveObject < ApplicationRecord
     return if normalized_source_references.size == expected_rows.to_i
 
     errors.add(:source_references, "must contain one exact reference per expected row")
+  end
+
+  def source_cleanup_rows_do_not_exceed_expected
+    return if source_deleted_rows.to_i <= expected_rows.to_i
+
+    errors.add(:source_deleted_rows, "cannot exceed expected rows")
   end
 end

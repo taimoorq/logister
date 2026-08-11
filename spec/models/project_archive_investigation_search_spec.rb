@@ -59,6 +59,21 @@ RSpec.describe ProjectArchiveInvestigationSearch, type: :model do
     expect(search.hot_spans).to contain_exactly(span)
   end
 
+  it "finds v2 archive keys in normalized object rows" do
+    project = create(:project, user: users(:one))
+    archive = create(:telemetry_archive, project: project, manifest_version: 2, objects: [])
+    create(
+      :telemetry_archive_object,
+      telemetry_archive: archive,
+      sequence: 0,
+      object_key: "telemetry/manifests/normalized-checkout-marker.jsonl.gz"
+    )
+
+    search = described_class.new(project: project, params: { "q" => "normalized-checkout" })
+
+    expect(search.archive_runs).to contain_exactly(archive)
+  end
+
   it "finds delayed mobile diagnostics by receipt clock and typed evidence facets" do
     project = create(:project, :ios)
     event = create(

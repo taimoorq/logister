@@ -39,7 +39,15 @@ bundle exec sidekiq -q analytics -c 3
 bundle exec sidekiq -q notifications -q mailers -q default -c 3
 bundle exec sidekiq -q integrations -q symbols -c 2
 bundle exec sidekiq -q maintenance -c 1
+bundle exec sidekiq -C config/sidekiq-archives.yml
 ```
+
+The checked-in hosted profile uses `config/sidekiq-core.yml` for normal work and
+`config/sidekiq-archives.yml` for archive work. The archive profile consumes only
+the `archives` queue at concurrency 1. This bounds concurrent compression,
+object-storage, verification, and source-cleanup memory without delaying the
+projector, notification, or mailer queues. Small self-hosted installations may
+continue using the combined `config/sidekiq.yml`, which consumes both sets.
 
 Keep every listed role running if you split the combined worker. The recurring scheduler seeds several future occurrences, reconciles missing schedules from the Sidekiq heartbeat, and records its latest start, completion, and failure in Sidekiq Redis so a hard-stopped execution does not silently break the chain.
 
@@ -69,3 +77,8 @@ processes can choose their own `DB_POOL` from their maximum thread count and any
 application-specific headroom. Pool sizing is per OS process, so multiply it by
 the number of web and worker processes when setting the PostgreSQL server
 connection limit.
+
+The concurrency-1 archive worker therefore needs `DB_POOL=3` or higher. Its
+heartbeat appears separately in **Admin → Installation → Redis & jobs**. The
+diagnostic uses raw Redis `SCAN`, so it works with both the Sidekiq Redis Client
+adapter and the redis-rb client used by installation checks.

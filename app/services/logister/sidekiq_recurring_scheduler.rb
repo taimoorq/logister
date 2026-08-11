@@ -8,6 +8,7 @@ module Logister
       TelemetryProjectorJob,
       ProjectErrorDigestSchedulerJob,
       ProjectRetentionSweepJob,
+      ProjectRetentionRunRecoverySweepJob,
       ProjectMonitorSweepJob,
       ProjectHealthNotificationSweepJob,
       ProjectEmailNotificationRecoverySweepJob,

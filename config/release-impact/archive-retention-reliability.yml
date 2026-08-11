@@ -1,0 +1,35 @@
+schema_version: 1
+id: archive-retention-reliability
+summary: Bound and recover project archive retention without changing SDK ingest or CLI wire behavior.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+  - cli_api
+  - telemetry_ingest
+contract_sha256:
+  cli_api: fa7e2057809de1f85f11b7bd031b07be28e4d1c4e4ea5f94c930889b0d7f897f
+  telemetry_ingest: e780269e6ee558bd50fcf7568b886a62a5bcac58e8c3876613774f23eb4c04a6
+consumers:
+  logister-ruby:
+    bump: none
+    reason: The archive worker change does not alter Ruby SDK ingestion or response contracts.
+  logister-js:
+    bump: none
+    reason: The archive worker change does not alter JavaScript SDK ingestion or response contracts.
+  logister-python:
+    bump: none
+    reason: The archive worker change does not alter Python SDK ingestion or response contracts.
+  logister-dotnet:
+    bump: none
+    reason: The archive worker change does not alter .NET SDK ingestion or response contracts.
+  logister-android:
+    bump: none
+    reason: The archive worker change does not alter Android SDK ingestion or evidence contracts.
+  logister-ios:
+    bump: none
+    reason: The archive worker change does not alter iOS SDK ingestion or evidence contracts.
+  logister-cli:
+    bump: none
+    reason: The CLI API surface is unchanged; only compatible backend release identity metadata advances.

@@ -1,0 +1,12 @@
+:concurrency: <%= Integer(ENV.fetch("SIDEKIQ_CONCURRENCY", 5)) %>
+:queues:
+  - projector
+  - notifications
+  - mailers
+  - analytics
+  - integrations
+  - symbols
+  - maintenance
+  # Safety net for Rails/framework jobs and future jobs before they receive an
+  # explicit workload queue. Archive lifecycle work is intentionally excluded.
+  - default

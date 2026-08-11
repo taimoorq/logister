@@ -40,6 +40,15 @@ RSpec.describe Logister::TelemetryArchiveInspector do
 
   class UnitArchiveObjectCollection < Array
     def ordered = self
+
+    def sum(attribute = nil, &block)
+      return super(&block) unless attribute
+
+      super() { |record| record.public_send(attribute) }
+    end
+
+    def minimum(attribute) = map { |record| record.public_send(attribute) }.min
+    def maximum(attribute) = map { |record| record.public_send(attribute) }.max
   end
 
   class UnitArchiveStorage
@@ -74,6 +83,18 @@ RSpec.describe Logister::TelemetryArchiveInspector do
 
     def manifest_checksum_payload
       object_records.map(&:checksum_attributes).to_json
+    end
+
+    def manifest_checksum_sha256
+      Digest::SHA256.hexdigest(manifest_checksum_payload)
+    end
+
+    def object_record_scope = object_records
+
+    def each_object_record(&block)
+      return object_records.each unless block
+
+      object_records.each(&block)
     end
   end
 

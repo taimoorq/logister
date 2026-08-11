@@ -5,6 +5,9 @@ class ProjectArchiveOverview
 
   STATUS_LABELS = {
     archive_gap: "Archive gap",
+    archive_run_in_progress: "Archive run in progress",
+    archive_run_retrying: "Archive run retrying",
+    archive_run_stale: "Archive run stalled",
     awaiting_cleanup: "Awaiting cleanup",
     covered: "Covered",
     failed: "Failed",
@@ -19,6 +22,9 @@ class ProjectArchiveOverview
 
   STATUS_TONES = {
     archive_gap: :danger,
+    archive_run_in_progress: :info,
+    archive_run_retrying: :warning,
+    archive_run_stale: :danger,
     awaiting_cleanup: :warning,
     covered: :success,
     failed: :danger,
@@ -90,6 +96,34 @@ class ProjectArchiveOverview
     @last_failed_archive ||= project.telemetry_archives.failed.recent_first.first
   end
 
+  def current_retention_run
+    @current_retention_run ||= project.retention_runs.active.where(dry_run: false).recent_first.first
+  end
+
+  def last_retention_run
+    @last_retention_run ||= project.retention_runs.where(dry_run: false).recent_first.first
+  end
+
+  def retention_run_freshness(run = current_retention_run || last_retention_run)
+    run&.heartbeat_at || run&.last_checkpoint_at || run&.started_at || run&.updated_at
+  end
+
+  def retention_run_stale?
+    current_retention_run&.stale?(before: now - ProjectRetentionRun.stale_after) || false
+  end
+
+  def outstanding_cleanup_count
+    @outstanding_cleanup_count ||= project.telemetry_archives.awaiting_source_cleanup.count
+  end
+
+  def retention_run_tone(run)
+    return :danger if run.status == "failed"
+    return :warning if run.status.in?(%w[waiting retrying])
+    return :info if run.active_run?
+
+    :success
+  end
+
   def next_sweep_at
     candidate = now.utc.change(hour: RETENTION_SWEEP_HOUR_UTC, min: 0, sec: 0)
     candidate > now.utc ? candidate : candidate + 1.day
@@ -101,6 +135,16 @@ class ProjectArchiveOverview
         :not_archiving
       elsif !policy.archive_before_delete?
         :archive_not_required
+      elsif retention_run_stale?
+        :archive_run_stale
+      elsif current_retention_run&.status.in?(%w[waiting retrying])
+        :archive_run_retrying
+      elsif current_retention_run.present?
+        :archive_run_in_progress
+      elsif last_retention_run&.status == "failed"
+        :needs_attention
+      elsif outstanding_cleanup_count.positive?
+        :awaiting_cleanup
       elsif last_failed_archive.present? && (last_successful_archive.blank? || last_failed_archive.created_at >= last_successful_archive.created_at)
         :needs_attention
       elsif coverage_rows.any?(&:archive_gap?)
@@ -126,14 +170,26 @@ class ProjectArchiveOverview
     when :archive_not_required
       "Archive retained data is on, but retention cleanup can still delete rows without a successful archive first."
     when :needs_attention
-      "The latest archive failure is newer than the latest successful archive."
+      last_retention_run&.status == "failed" ? retention_run_failure_message : "The latest archive failure is newer than the latest successful archive."
+    when :archive_run_stale
+      "The active retention run has not checkpointed within the recovery window and is waiting to be fenced and resumed."
+    when :archive_run_retrying
+      "The active retention run is waiting to retry after a bounded failure. Its last error is retained below."
+    when :archive_run_in_progress
+      "The retention worker is advancing a bounded archive or cleanup slice. Progress and heartbeat freshness are shown below."
     when :archive_gap
       "At least one retained scope has candidates that are older than the latest completed archive."
     when :awaiting_cleanup
-      "The retention worker has not recorded a cleanup for this project yet."
+      "#{outstanding_cleanup_count} verified #{'archive'.pluralize(outstanding_cleanup_count)} still #{outstanding_cleanup_count == 1 ? 'requires' : 'require'} source cleanup."
     else
       "Retention cleanup must write a successful archive before matching rows can be deleted."
     end
+  end
+
+
+  def retention_run_failure_message
+    message = last_retention_run&.last_error_message.to_s.squish.presence
+    message ? "The latest retention run failed: #{message}" : "The latest retention run failed and requires operator attention."
   end
 
   def coverage_rows

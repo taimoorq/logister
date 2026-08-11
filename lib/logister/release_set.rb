@@ -81,7 +81,10 @@ module Logister
       errors << "Backend version is invalid." unless version.match?(VERSION_PATTERN)
       errors << "Backend tag must be v#{version}." unless backend["tag"] == "v#{version}"
       packaged_version = repo_root.join("VERSION").read.strip
-      errors << "Backend release-set version #{version} does not match VERSION #{packaged_version}." unless version == packaged_version
+      current_release_set = release_set_path.basename.to_s == "v#{packaged_version}.yml"
+      if current_release_set && version != packaged_version
+        errors << "Backend release-set version #{version} does not match VERSION #{packaged_version}."
+      end
     rescue Errno::ENOENT
       errors << "Backend VERSION source is missing."
     end

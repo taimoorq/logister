@@ -60,6 +60,7 @@ class Project < ApplicationRecord
           dependent: :nullify,
           inverse_of: :self_monitoring_project
   has_one :retention_policy, class_name: "ProjectRetentionPolicy", dependent: :destroy
+  has_many :retention_runs, class_name: "ProjectRetentionRun", dependent: :destroy
   has_many :telemetry_archives, dependent: :destroy
   has_many :project_purges, dependent: :nullify
   has_many :members, through: :project_memberships, source: :user
