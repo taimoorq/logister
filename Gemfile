@@ -82,7 +82,7 @@ end
 
 gem "dockerfile-rails", ">= 1.7", group: :development
 
-gem "redis", "~> 5.4"
+gem "redis", "~> 6.0"
 
 gem "logister-ruby"
 gem "rouge"
