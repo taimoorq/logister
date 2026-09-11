@@ -382,6 +382,8 @@ API key creation works
 A test event appears in the project inbox</code></pre>
               </div>
             </section>
+
+            <section id="delivery-progress" class="section"><h2>Check accepted work and worker progress separately.</h2><p>An accepted event can be waiting for grouping or analytics projection. Inspect the durable delivery backlog, worker health and coverage before sending it again with a new UUID. Recent releases add opt-in ordered claims, saved retry bodies and bounded projector recovery; follow the <a href="/docs/deployment/#telemetry-rollout">activation and rollback guide</a>. Do not clear queues or stored bodies to remove a backlog.</p></section>
           </article>
         </div>
       </main>

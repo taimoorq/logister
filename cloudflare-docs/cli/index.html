@@ -102,6 +102,7 @@
               <a href="#verify">Verify setup</a>
               <a href="#commands">Read project data</a>
               <a href="#capabilities">Capabilities</a>
+              <a href="#artifacts">Artifact uploads</a>
               <a href="#security">Security model</a>
               <a href="#troubleshooting">Troubleshooting</a>
               <a href="#next">Next steps</a>
@@ -434,11 +435,16 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
               </table>
             </section>
 
+
+            <section id="artifacts" class="section"><h2>Upload mobile artifacts from trusted CI.</h2><p>CLI 1.1 adds <code>artifacts upload-android</code> and <code>artifacts upload-ios</code>. Confirm those commands exist in your installed package and <code>doctor</code> reports <code>mobile_artifacts: true</code>. Request a separate expiring token with project access and <code>artifacts:write</code>; your user must also be a project owner or admin. Default read login does not grant this scope.</p><div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#cli-artifact-login">Copy</button></div><pre><code id="cli-artifact-login">logister auth login --host https://logister.example.com --artifact-write
+logister auth status
+logister artifacts upload-android --help
+logister artifacts upload-ios --help</code></pre></div><p>The API accepts multipart uploads at <code>/api/v1/cli/projects/{project_uuid}/artifacts/android-mapping</code> and <code>/api/v1/cli/projects/{project_uuid}/artifacts/apple-dsym</code>. Match the exact Android package/version code or Apple app/build/binary UUID/architecture. <code>201</code> acknowledges upload, not completed coverage or symbolication. Verify the project <strong>Artifacts</strong> page afterward.</p><p>Keep this token in CI secrets. Project ingest keys and runtime mobile tokens cannot upload artifacts. See the <a href="/docs/openapi.yaml">OpenAPI upload schemas</a> and <a href="/docs/http-api/contracts/#credentials">credential contract</a>.</p></section>
             <section id="security" class="section">
               <p class="eyebrow">Security model</p>
-              <h2>Treat CLI tokens as user read credentials.</h2>
+              <h2>Treat CLI tokens as scoped user credentials.</h2>
               <ul>
-                <li>CLI read access uses user-scoped CLI access tokens.</li>
+                <li>CLI reads use user-scoped tokens; artifact uploads require the additional artifacts:write scope and project owner/admin access.</li>
                 <li>Tokens are scope-limited, project-limited, expiring, revocable, and audited by the Logister server.</li>
                 <li>Browser-approved login issues a CLI token through the signed-in Logister web session.</li>
                 <li>Signed-in users can review active and recently ended CLI sessions under their profile, revoke one session, or revoke every active session.</li>
@@ -512,7 +518,7 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                 </a>
                 <a class="doc-link" href="/docs/http-api/">
                   <strong>Send telemetry over HTTP</strong>
-                  <span>Use project API keys for events, check-ins, and deployment records. Keep CLI tokens for reads.</span>
+                  <span>Use project API keys for events, check-ins, and deployment records. Keep CLI reads and explicitly authorized artifact uploads on separately scoped CLI tokens.</span>
                 </a>
                 <a class="doc-link" href="/docs/product/#triage">
                   <strong>Understand grouped issue triage</strong>

@@ -1,490 +1,120 @@
-# Mobile Add-ons Guide
+# Mobile add-ons and Rails contracts
 
-Logister supports mobile app telemetry through two public add-on repositories:
+Use an Android or iOS project for mobile telemetry. Project type is locked after
+creation because setup, payload interpretation and investigation views depend on
+it. This maintainer guide maps the mobile boundary; the public runtime guides own
+installation examples:
 
-| Platform | Repository | Package manager | Install identity |
-| --- | --- | --- | --- |
-| Android | https://github.com/taimoorq/logister-android | Maven Central / Gradle | `org.logister:logister-android` |
-| iOS | https://github.com/taimoorq/logister-ios | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` |
+- [Android setup](https://logister.org/docs/integrations/android/)
+- [iOS setup](https://logister.org/docs/integrations/ios/)
+- [Add-on compatibility and contracts](https://logister.org/docs/http-api/contracts/)
+- [OpenAPI](openapi.yaml) and [telemetry v3 evidence](telemetry_v3_evidence_contract.md)
 
-Use a dedicated Android or iOS project in the Rails app. Project type is locked
-after creation because the stored telemetry, setup guidance, import settings,
-and dashboards are shaped for the selected platform.
+## Package and release boundaries
 
-## Before You Start
+Reviewed against Rails `v3.6.11` and public package channels on 2026-09-11.
 
-1. Create a Logister project with type `Android app` or `iOS app`.
-2. Create a server project API key in the project settings page.
-3. Store that server key only in your trusted backend or CI/CD environment.
-4. Add a backend endpoint that mints short-lived mobile ingest tokens with
-   `POST /api/v1/mobile_ingest_tokens`.
-5. Set the SDK `baseUrl` to the Logister app host, such as
-   `https://logister.example`.
-6. Send stable `environment`, `release`, `service`, and session context so
-   Logister can group, filter, and correlate events.
-
-Do not compile a Logister project API key into an Android or iOS app. Mobile
-SDKs use short-lived mobile ingest tokens fetched from your backend at runtime.
-
-## Mobile Token Issuer
-
-Your backend should authenticate the app/session, decide whether reporting is
-allowed, then call Logister with the server project API key:
-
-```http
-POST /api/v1/mobile_ingest_tokens
-Authorization: Bearer <server-project-api-key>
-```
-
-```json
-{
-  "mobile_ingest_token": {
-    "platform": "android",
-    "service": "com.example.app",
-    "environment": "production",
-    "release": "1.4.0+42",
-    "session_id": "session-123",
-    "expires_in_seconds": 900,
-    "allowed_event_types": ["error", "log", "metric", "transaction", "span", "check_in"]
-  }
-}
-```
-
-Logister returns the plaintext token once:
-
-```json
-{
-  "token": "logister_mobile_...",
-  "expires_at": "2026-06-20T18:30:00Z",
-  "platform": "android",
-  "service": "com.example.app",
-  "environment": "production",
-  "release": "1.4.0+42",
-  "session_id": "session-123",
-  "allowed_event_types": ["error", "log", "metric", "transaction", "span", "check_in"]
-}
-```
-
-Mobile ingest tokens can send ingest events and check-ins only. They cannot
-write deployments or mint more tokens. Logister rejects mobile payloads that
-try to override token-bound `platform`, `service`, `environment`, `release`, or
-`session_id` values.
-
-## Android
-
-Install from Maven Central:
-
-```kotlin
-dependencies {
-    implementation("org.logister:logister-android:0.3.0")
-}
-```
-
-Kotlin apps should use the Kotlin helper surface:
-
-```kotlin
-import org.logister.android.captureExceptionAsync
-import org.logister.android.captureMetricAsync
-import org.logister.android.captureMessageAsync
-import org.logister.android.captureTransactionAsync
-import org.logister.android.LogisterToken
-import org.logister.android.LogisterTokenProvider
-import org.logister.android.LogisterBreadcrumb
-import org.logister.android.LogisterExceptionDataPolicy
-import org.logister.android.logisterClient
-
-class AppBackendTokenProvider : LogisterTokenProvider {
-    override fun fetchToken(): LogisterToken {
-        // Call your backend token issuer and parse token/expires_at.
-        return LogisterToken("short-lived-mobile-token", System.currentTimeMillis() / 1000 + 900)
-    }
-}
-
-val client = logisterClient(
-    baseUrl = "https://your-logister-host.example",
-    tokenProvider = AppBackendTokenProvider()
-) {
-    environment("production")
-    release("${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}")
-    repository("acme/android-app")
-    commitSha(BuildConfig.GIT_SHA)
-    branch(BuildConfig.GIT_BRANCH)
-    packageName(BuildConfig.APPLICATION_ID)
-    appVersion(BuildConfig.VERSION_NAME)
-    buildNumber(BuildConfig.VERSION_CODE.toString())
-    buildType(BuildConfig.BUILD_TYPE)
-    application(myApplication)
-    exceptionDataPolicy(LogisterExceptionDataPolicy.TYPE_AND_STACKTRACE)
-    sessionTracking(true)
-    installationTracking(true, rotationDays = 90)
-    breadcrumbs(capacity = 50)
-    offlineQueue(enabled = true, maxEvents = 30, maxBytes = 512 * 1024, maxAgeDays = 7)
-    automaticCrashCapture(true, LogisterExceptionDataPolicy.TYPE_AND_STACKTRACE)
-    applicationExitCapture(true)
-}
-
-client.addBreadcrumb(
-    LogisterBreadcrumb.builder("Checkout opened")
-        .category("navigation")
-        .data("screen", "Checkout")
-        .build()
-)
-
-client.captureMessageAsync("Checkout opened") {
-    context("screen_name", "Checkout")
-    sessionId("session-123")
-}
-
-client.captureMetricAsync("cart.item_count", 3, "count")
-
-client.captureTransactionAsync("screen.load", 184.2) {
-    context("screen_name", "Checkout")
-}
-
-try {
-    runCheckout()
-} catch (exception: Exception) {
-    client.captureExceptionAsync(exception) {
-        mechanism("handled_exception")
-        handled(true)
-    }
-}
-```
-
-Send spans and check-ins when you want performance waterfalls and monitor
-status:
-
-```kotlin
-import org.logister.android.captureSpanAsync
-import org.logister.android.checkInAsync
-import org.logister.android.logisterSpan
-
-client.captureSpanAsync(
-    logisterSpan("trace-123", "GET /checkout", 42.5) {
-        spanId("span-456")
-        parentSpanId("span-root")
-        kind("http")
-        status("ok")
-        context("screen_name", "Checkout")
-    }
-)
-
-client.checkInAsync("daily-sync", "ok") {
-    durationMs(812.4)
-    context("expected_interval_seconds", 86_400)
-}
-```
-
-Version 0.4.0 sends a canonical, versioned mobile contract while retaining the
-older flat aliases. Android telemetry should include:
-
-- `platform: "android"`
-- `app.package_name`, `app.version_name`, and `app.version_code`
-- release as version name plus version code, such as `1.4.0+42`
-- `error.mechanism` and `error.handled`; a manual capture defaults to a
-  reported/handled exception, not a fatal crash
-- `repository`, `commit_sha`, and `branch` when the app build is tied to a
-  GitHub repository
-- build type, foreground state, and screen/activity when available
-- Android API level, OS version, device model, locale, and session ID when safe
-- a rotating random installation pseudonym only when installation tracking is
-  enabled
-
-Lifecycle sessions, installation tracking, breadcrumbs, the uncaught-exception
-handler, Android 11+ historical app-exit capture, and the disk retry queue are
-all opt-in. Automatic crashes use the safe type-and-stacktrace policy by default:
-throwable messages and cause chains are omitted, and the sanitized envelope is
-written to the durable queue before Android's previous crash handler runs.
-Historical app exits also omit the raw platform description. The installation
-pseudonym is random and rotated; the SDK does not read Android ID, advertising
-ID, IMEI, or a hardware serial.
-
-Automatic crash and historical exit capture require the offline queue. Bound it
-by count, bytes, and age. Token-provider and transient delivery failures stay
-queued until an authenticated launch can call `flushQueuedEventsAsync()`. A
-queued response is not accepted until a later server response succeeds. Apps
-should call `clearSessionBoundQueuedEvents()` during logout or account
-replacement; anonymous automatic crashes remain available for later delivery.
-
-### Android inbox, R8 mappings, and Google Play
-
-Android projects use a stability-specific inbox. Owners can sort by recommended
-priority, impact, or newest and filter by mechanism, release/build, Play track,
-environment, build type, device, Android/API version, screen, foreground state,
-and time window. Affected installation and session counts appear only when the
-corresponding pseudonymous identifiers were collected; missing data is shown as
-not collected rather than zero.
-
-For minified builds, upload the release variant's exact `mapping.txt` with its
-package name and version code. The paginated **Artifacts** page shows inventory,
-observed-build coverage, and recovery actions; Settings shows only the latest
-summary. Mapping files are private and project-scoped. The issue detail says
-**Mapping missing** when no matching build artifact exists.
-
-Trusted CI can automate the upload with a separate, expiring CLI token that has
-the additive `artifacts:write` scope:
-
-```bash
-logister artifacts upload-android \
-  --project "$LOGISTER_PROJECT" \
-  --file app/build/outputs/mapping/release/mapping.txt \
-  --package-name com.example.app \
-  --version-name "$VERSION_NAME" \
-  --version-code "$VERSION_CODE"
-```
-
-Do not use the app's mobile ingest token or embed the artifact token in the APK.
-Manual upload remains available as a recovery path.
-
-The optional Google Play panel is in **Project settings → Integrations → Google
-Play**. Store the service-account JSON in the host's secret store, enter only its
-environment-variable reference in Logister, and grant the reporting identity
-the least privilege required for the Play Developer Reporting API. Imported
-crash/ANR rates, anomalies, tracks, provenance, freshness, and time zone remain
-visually separate from SDK-derived occurrence and installation metrics. The
-Play rate metric sets are version-code scoped, so Logister resolves each
-permitted track to its active version codes from the release-filter options
-before filtering imported rate rows.
-
-## iOS
-
-Add the package by Git URL with Swift Package Manager:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.3.0")
-]
-```
-
-Then depend on the library product:
-
-```swift
-.product(name: "Logister", package: "logister-ios")
-```
-
-Use the async client from app code:
-
-```swift
-import Foundation
-import Logister
-
-struct AppBackendTokenProvider: LogisterTokenProvider {
-    func fetchToken() async throws -> LogisterToken {
-        // Call your backend token issuer and parse token/expires_at.
-        LogisterToken(
-            token: "short-lived-mobile-token",
-            expiresAt: Date().addingTimeInterval(900)
-        )
-    }
-}
-
-let client = LogisterClient(
-    baseURL: URL(string: "https://your-logister-host.example")!,
-    tokenProvider: AppBackendTokenProvider(),
-    environment: "production",
-    release: "1.4.0+42",
-    repository: "acme/ios-app",
-    commitSHA: "4f8c2d1",
-    branch: "main",
-    service: Bundle.main.bundleIdentifier,
-    exceptionDataPolicy: .typeAndStacktrace,
-    platformContextPolicy: .minimized
-)
-
-let sessionStartedAt = Date()
-try await client.captureMessage(
-    "Checkout opened",
-    options: LogisterEventOptions(
-        sessionID: "session-123",
-        sessionStartedAt: sessionStartedAt,
-        installationIDHash: "rotating-random-pseudonym",
-        distributionChannel: "testflight",
-        inForeground: true,
-        breadcrumbs: [
-            LogisterBreadcrumb(category: "navigation", message: "Opened checkout")
-        ],
-        context: ["app": .object(["screen": .string("Checkout")])]
-    )
-)
-
-try await client.captureMetric("cart.item_count", value: 3, unit: "count")
-
-try await client.captureTransaction(
-    "screen.load",
-    durationMs: 142.7,
-    options: LogisterEventOptions(context: ["screen_name": .string("Checkout")])
-)
-```
-
-Send spans and check-ins when you want performance waterfalls and monitor
-status:
-
-```swift
-try await client.captureSpan(
-    LogisterSpan(
-        traceID: "trace-123",
-        spanID: "span-456",
-        parentSpanID: "span-root",
-        name: "GET /checkout",
-        kind: "http",
-        status: "ok",
-        durationMs: 42.5,
-        context: ["screen_name": .string("Checkout")]
-    )
-)
-
-try await client.checkIn(
-    "daily-sync",
-    status: "ok",
-    options: LogisterEventOptions(
-        durationMs: 812.4,
-        context: ["expected_interval_seconds": .number(86_400)]
-    )
-)
-```
-
-iOS v0.5.0 emits the versioned Apple telemetry contract automatically:
-
-- `platform: "ios"`
-- bundle identifier, app version/build, inferred release, process, Apple
-  platform, OS version/build, device family/model, architecture, locale, and
-  SDK version
-- `repository`, `commit_sha`, and `branch` when the app build is tied to a
-  GitHub repository
-- optional session ID with an explicit session-start time, rotating random installation hash, distribution channel,
-  foreground state, screen, and bounded breadcrumbs
-
-Use `platformContextPolicy: .minimized` to omit exact device model, locale,
-architecture, and OS build. `exceptionDataPolicy: .typeAndStacktrace` omits raw
-error messages and NSError domain/code metadata from handled reports.
-
-`captureException` is always a handled **Reported error**. It is not an
-automatic crash handler. To receive OS-delivered crash, hang, excessive-CPU,
-excessive-disk-write, and iOS 16+ slow-launch evidence, keep an opt-in collector
-alive for the app lifetime:
-
-```swift
-let metricKitCollector = LogisterMetricKitCollector(
-    client: client,
-    dataPolicy: .typeAndStacktrace
-)
-metricKitCollector.start()
-```
-
-MetricKit delivery is delayed. Safe mode omits private reason text, retains
-immutable reporting/build/device evidence, and bounds both a compatibility
-frame list and the hierarchical attributed/sample call tree. Measurements use
-canonical seconds or bytes with their source field recorded; addresses and
-relative offsets remain lossless hexadecimal strings. Resource and launch
-diagnostics do not claim fatality when Apple does not provide it. Each
-diagnostic receives a deterministic event UUID, and
-the Rails ingest boundary returns the existing event on redelivery so occurrence
-and impact counts remain unchanged. The actor-owned durable queue makes bounded
-transient retries for network failures, HTTP 408/425/429, and 5xx responses.
-Automatic screen timing and URLSession timing are not included.
-
-Never send IDFA, raw IDFV, serial numbers, or another stable hardware
-identifier. Both the SDK and Rails normalizer recursively remove common
-aliases. If installation impact is useful, generate and periodically rotate an
-app-scoped random pseudonym before hashing it.
-
-### iOS symbols and Apple reports
-
-The project has two independent production workflows:
-
-| Workflow | What it does | What to verify |
+| Platform | Distribution | Verified behavior |
 | --- | --- | --- |
-| dSYM coverage | Stores zipped dSYMs in private archive storage, verifies exact binary UUID/architecture manifests, and resolves eligible stored frames on an Apple-toolchain worker without mutating raw evidence. Inventory and coverage live on **Artifacts**. | `UUID verified` proves artifact eligibility. Per-event `Symbolicated`, `Partial`, or `Failed` states prove the separate address-resolution step. `Verification blocked` means the worker lacks Apple tooling. Raw addresses remain visible in every state. |
-| App Store Connect | Uses an issuer ID, key ID, bundle ID, and a private-key environment-variable reference to fetch Apple's iOS power/performance report on a 15-minute sweep or manual sync. | Last success, selected app, report availability, freshness, and the last bounded error appear in settings. |
+| Android | Maven Central `org.logister:logister-android`; matching GitHub release | `0.5.2` is published with v3 evidence, queue isolation, structured ANR threads and last-sampled memory evidence. The older `0.3.0` baseline supports safe automatic crash capture, historical exits, bounded offline storage and account-bound cleanup, but lacks those newer guarantees. |
+| iOS | SwiftPM `https://github.com/taimoorq/logister-ios.git`; semantic Git tag and matching GitHub release | `0.5.0` is published. It includes v3 source evidence, reporting intervals, durable queue/relaunch replay, bounded sampled call trees, canonical measurements and explicit session-start timing. `0.3.0` remains a compatible baseline with safe error policies and transient retries, but lacks those newer guarantees. |
 
-App Store aggregates remain separate from SDK and MetricKit event counts. Do
-not add them together or derive a crash-free percentage without a compatible
-numerator, denominator, and stated time window.
+Publication evidence: [Android Maven metadata](https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml),
+[Android release](https://github.com/taimoorq/logister-android/releases/tag/v0.5.2),
+and [iOS releases](https://github.com/taimoorq/logister-ios/releases).
+The committed [ecosystem catalog](../config/ecosystem-versions.json) remains the
+source for generated install pins. A source version or successful CI run alone
+is not a published package. Use [ecosystem releases](ecosystem-releases.md) for
+current-main release promotion, immutable-tag recovery and registry verification;
+do not create manual tags from this guide or assume all packages share a version.
 
-Trusted CI can zip the release archive's exact dSYM and upload each declared
-binary UUID/architecture with a separate `artifacts:write` CLI token:
+When moving from iOS 0.3 to 0.5, read the package migration notes. Client endpoints
+are immutable and MetricKit lifecycle is main-actor owned. Keep the collector
+alive and stop it explicitly through the app lifecycle. Android's newer queue
+migration discards ambiguous old state instead of adopting it under an unproven
+tenant; only claim that behavior for a package that actually contains it.
 
-```bash
-logister artifacts upload-ios \
-  --project "$LOGISTER_PROJECT" \
-  --file "$RUNNER_TEMP/App.dSYM.zip" \
-  --app-identifier com.example.app \
-  --version-name "$MARKETING_VERSION" \
-  --version-code "$CURRENT_PROJECT_VERSION" \
-  --binary-uuid AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE \
-  --architecture arm64
-```
+## Runtime authentication
 
-Never put the CLI artifact token in the application bundle. Manual upload on
-the Artifacts page remains the recovery path.
+1. Create a server project API key and keep it in your trusted backend.
+2. Authenticate the app/session in that backend and decide whether reporting is allowed.
+3. Mint a token with `POST /api/v1/mobile_ingest_tokens`, using the server key.
+4. Return the short-lived token and `expires_at` to the SDK's token provider.
+5. Configure the SDK with the instance base URL and consistent source context.
 
-## What Logister Can Display
+The request needs a `mobile_ingest_token` object containing `platform` (`android`
+or `ios`), `service` and `environment`. `release` and `session_id` are optional
+bindings. `expires_in_seconds` defaults to 900 and must be 60–3,600. The default
+allowed event types are `error`, `log`, `metric`, `transaction`, `span` and
+`check_in`; a nonempty subset can restrict them.
 
-Both mobile SDKs use the existing Logister ingest envelope, so the same product
-views work across platforms:
+Rails returns the plaintext token once with its expiry and scope. It accepts
+that token only on ingest (including batch) and check-in endpoints. It cannot
+mint more tokens, record deployments, upload artifacts or read CLI data. Missing
+bound context is filled by Rails; conflicting context returns `422`, a prohibited
+event type returns `403`, and expired/revoked credentials return `401`. Revoking
+the parent key or archiving the project also invalidates its mobile tokens.
 
-| Event family | Logister view | Mobile use |
+Authorize delayed events against their original build/session. A token bound to
+today's release cannot accept an older queued release; do not rewrite source
+facts to force a match. Remove account-bound queue entries on logout using the
+installed SDK's documented cleanup API. Never embed the project or CLI token in
+an APK, IPA or app bundle.
+
+## Identity, evidence and delivery
+
+- Generate one UUID at capture and retain it with the immutable payload for retries.
+- Single-event acceptance returns `201`; replay returns `200` and `duplicate: true`.
+  Batch acceptance returns `202` with indexed results. Acceptance and downstream
+  grouping, monitor updates or analytics completion are separate stages.
+- v3 is additive to `/api/v1`, not a new HTTP route. Older mobile envelopes remain
+  accepted. Exact `occurred_at`, reporting intervals and `received_only` evidence
+  must remain distinguishable; receipt time is not proof of an original event time.
+- Manual `captureException` is a handled report. Android uncaught/historical
+  evidence and Apple MetricKit diagnostics have different source and fatality semantics.
+- iOS 0.5 includes delayed crash, hang, excessive CPU, disk-write and iOS 16+
+  slow-launch evidence. Resource diagnostics must not imply a fatal crash without
+  source evidence. Keep raw addresses/offsets lossless and sampled roles explicit.
+- SDK queues, transient retries and privacy controls vary by version. Queued work
+  is not accepted work. Review custom context even when SDK/Rails filters apply.
+
+## Build artifacts and external reports
+
+| Workflow | Authentication and identity | Verify separately |
 | --- | --- | --- |
-| `error` | Inbox and event detail | Exceptions, crashes, and fatal states |
-| `log` | Activity and event detail | Breadcrumbs, warnings, and app lifecycle notes |
-| `metric` | Insights and activity | Counters, gauges, screen metrics, and platform measurements |
-| `transaction` | Performance and Insights | Screen loads, app starts, jobs, and long-running tasks |
-| `span` | Performance waterfalls | HTTP calls, database/cache work, and nested operations |
-| `check_in` | Monitors and activity | Sync jobs, background tasks, and heartbeat checks |
+| Android R8 mapping | Owner/admin upload on **Project → Artifacts**, or CLI `artifacts:write`. Match package name and exact version code. | Inventory, observed-build coverage and per-event deobfuscation. `Mapping missing` and `Build unknown` are explicit recovery states. |
+| Apple dSYM | Owner/admin upload on **Project → Artifacts**, or CLI `artifacts:write`. Match app/build, binary UUID and architecture; private archive storage and Apple-toolchain workers are needed. | `UUID verified` establishes artifact eligibility; event `Symbolicated`, `Partial` or `Failed` is separate. `Verification blocked` identifies missing tooling. Raw addresses remain available. |
+| Google Play | Host service-account secret referenced from project integration settings; integrations worker. | Last success, permitted tracks, release/version-code mapping, report freshness and bounded errors. |
+| App Store Connect | Host private-key reference, issuer/key/bundle IDs; integrations worker and a 15-minute sweep or manual sync. | Selected app, report availability, last success, freshness and bounded errors. |
 
-Use low-cardinality context fields for dashboards and filtering. Good examples
-are `screen_name`, `feature`, `build_type`, `device_model`, `region`, `plan`,
-`service`, `environment`, and `release`.
+CLI 1.1 adds upload commands. Run `logister doctor`, then request the additive
+scope with `logister auth login --artifact-write`. Default read scopes do not
+permit uploads; the user must also retain owner/admin access to the project.
+Use a separate expiring CI credential and confirm command availability in the
+installed CLI. A `201` upload response does not mean coverage refresh,
+verification or symbolication has finished.
 
-When the Logister project is connected to the GitHub App, mobile SDKs can send
-`repository`, `commit_sha`, and `branch` on events so source-aware error detail
-can resolve frames to the right code. CI/CD should also POST release-to-commit
-deployment records to `/api/v1/deployments` after each app distribution step,
-because the deployment endpoint is the strongest signal for release history.
+Provider aggregates remain distinct from SDK occurrences and installation/session
+impact. Never sum them or calculate crash-free rates without compatible inputs
+and an explicit time window. Source context (`repository`, `commit_sha`, `branch`)
+helps GitHub lookup; CI records deployments using the server project key at
+`POST /api/v1/deployments`.
 
-Avoid sending passwords, tokens, cookies, authorization headers, payment data,
-request bodies, raw local variables, or other sensitive user data.
+## Verification and source ownership
 
-## Package Release Notes
+Check first delivery, exact replay, token refresh and release/session bindings
+before enabling extra collectors. Then inspect Artifacts, per-event evidence and
+provider freshness. Audited manager evidence downloads contain stored unredacted
+context with `wire_original: false`, not an original wire-payload archive.
 
-The 0.5 mobile evidence releases are tag-driven. Publish the package tags and
-verify their public registries before deploying setup copy that recommends
-them:
+The executable contract owners are:
 
-```bash
-git tag v0.5.0
-git push origin v0.5.0
-```
+- `MobileIngestToken`, `MobileIngestTokenValidator`, and `ClientSubmissions::MobileTokenPolicy`.
+- `IngestEventPayloadNormalizer`, `TelemetryBatchDecoder`, `TelemetryPayloadLimits`,
+  `IngestEventPersistence`, and `TraceSpanPersistence`.
+- `TelemetryEvidenceNormalizer`, `MobileTelemetryNormalizer`, and the mobile event enrichments.
+- `Api::V1::Cli::ArtifactsController`, `AndroidMappingFile`, and `AppleSymbols::ArtifactUploader`.
+- Request specs under `spec/requests/api/v1/` and fixtures/specs under `spec/contracts/`.
 
-The Android GitHub Actions release workflow builds, tests, signs, and uploads
-the artifact to Sonatype Central Portal with automatic Maven Central release.
-The workflow also creates the matching GitHub Release after the package version
-matches the tag. Version `0.5.0` adds structured historical ANR threads and
-canonical last-sampled memory evidence on top of the 0.4 trust contract.
-
-iOS releases are also tag-driven:
-
-```bash
-git tag v0.3.0
-git push origin v0.3.0
-```
-
-Swift Package Manager resolves packages from the public Git repository and tag.
-The iOS GitHub Actions release workflow verifies the package and creates the
-matching GitHub Release; there is no separate package-manager account or secret.
-
-## Verification
-
-For Android, check the release workflow and Maven Central:
-
-```bash
-gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.3.0/logister-android-0.3.0.pom
-curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
-```
-
-For iOS, check the GitHub release:
-
-```bash
-gh release view v0.3.0 --repo taimoorq/logister-ios
-```
+Keep public guides, package READMEs, the verified catalog, OpenAPI/Postman copies,
+AI maps and release-impact decisions aligned when these boundaries change.

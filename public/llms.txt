@@ -4,7 +4,7 @@ Logister is an open source, self-hosted error monitoring and bug triage app for 
 
 The primary goal is helping teams run Logister themselves. The public hosted app at logister.org is a secondary option.
 
-The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, CLI read workflows, API reference, and Troubleshooting.
+The docs are organized as a self-hosted product manual: Documentation, Installation, Configuration, Usage, Integrations, CLI read and artifact workflows, API reference, and Troubleshooting.
 
 Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SETUP_TOKEN`, then configured through persistent Admin → Installation pages. Environment variables override encrypted UI fallbacks and are labeled without displaying secret values.
 
@@ -13,7 +13,7 @@ It supports:
 - .NET and ASP.NET Core apps via the `logister-dotnet` SDK
 - Python apps via the `logister-python` package
 - JavaScript and TypeScript apps via the `logister-js` package
-- Developers and operators via the Logister CLI for read-only project investigation
+- Developers and operators via the Logister CLI for project investigation and separately authorized mobile artifact uploads
 - Android apps via the `org.logister:logister-android` Maven Central package
 - iOS apps via the `Logister` Swift Package Manager package
 - CFML apps running on Lucee or Adobe ColdFusion via direct HTTP ingestion
@@ -148,3 +148,15 @@ Canonical documentation lives at the public docs URL:
 The core worker profile reserves three projector threads and two general job threads by default, with a separate one-thread archive profile. SIDEKIQ_CONCURRENCY is the core total and SIDEKIQ_PROJECTOR_CONCURRENCY selects its projector share. Combined workers use equal queue weights. Pipeline timing logs are sampled via LOGISTER_TELEMETRY_PROFILE_SAMPLE_RATE (default 0.01).
 
 Logister reports only its own application errors. Its self-metrics, request spans/transactions, SQL breadcrumbs, routine logs, check-ins, and deployment records are disabled. Customer projects retain all supported telemetry types. Pause obsolete self-check-in monitors when upgrading.
+
+## SDK and add-on contracts
+
+Reference: https://logister.org/docs/http-api/contracts/ (reviewed against backend 3.6.11 on 2026-09-11). Package releases and server feature activation are independent; installation pins come from the verified ecosystem catalog and may lag individual publications. Android 0.5.2 is published on Maven/GitHub with v3 evidence, queue isolation, structured ANR threads and last-sampled memory evidence; the older 0.3 catalog baseline lacks those newer guarantees. iOS 0.5.0 is published with a durable queue, reporting intervals, sampled call trees and main-actor MetricKit lifecycle.
+
+POST /api/v1/ingest_events/batch accepts lowercase event envelopes as NDJSON with optional gzip: at most 100 events, 2 MiB wire and 8 MiB decompressed. Each needs a stable UUID or event_id. New rows are atomic; existing duplicates remain accepted. Single-event/check-in replay returns 200 with duplicate:true; batches return 202 and indexed results. Acceptance commits durable PostgreSQL intents; derived views update asynchronously. Preserve event identity and source time on retries. X-Logister-Batch-Id is diagnostic context, not deduplication. Batch volume counts per envelope against the ingest limit.
+
+Mobile tokens are minted by an authenticated backend, expire after 900 seconds by default (60–3600 allowed), and bind platform/service/environment plus optional release/session. They can ingest and check in, not deploy, issue tokens or upload artifacts. CLI 1.1 artifact commands require mobile_artifacts, artifacts:write, project access and owner/admin permission; read login does not grant write scope. Five optional CLI read groups remain disabled by default.
+
+R8 and dSYM inventory/coverage are on the project Artifacts page. Apple UUID verification is separate from per-event symbolication. Audited manager evidence downloads contain stored unredacted context and wire_original:false, not original network bytes. Provider report aggregates remain separate from SDK occurrence and impact counts.
+
+Worker rollout: https://logister.org/docs/deployment/#telemetry-rollout. LOGISTER_ORDERED_DELIVERY_CLAIMS, LOGISTER_BATCHED_PROJECTION and LOGISTER_BOUNDED_PROJECTOR default false. Saved projection bodies must drain before downgrading below 3.6.10; preserve queues and delivery identities.

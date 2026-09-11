@@ -1,0 +1,34 @@
+schema_version: 1
+id: docs-contract-sync
+release_version: "3.6.11"
+summary: Clarify published SDK versions, acceptance and retry behavior, mobile evidence, CLI upload permissions, and worker rollout documentation.
+backend:
+  bump: none
+  compatibility: compatible
+  activation: immediate
+contracts:
+  - integration_discovery
+contract_sha256:
+  integration_discovery: 1113358a3520c440616e08b5a3cca39f5fdab4d9b41f2233cb255d12862d2fb8
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Documentation clarifies existing behavior and publication boundaries without changing the package API.
+  logister-js:
+    bump: none
+    reason: Documentation clarifies existing behavior and publication boundaries without changing the package API.
+  logister-python:
+    bump: none
+    reason: Documentation clarifies existing behavior and publication boundaries without changing the package API.
+  logister-dotnet:
+    bump: none
+    reason: Documentation clarifies existing behavior and publication boundaries without changing the package API.
+  logister-android:
+    bump: none
+    reason: Documentation clarifies existing behavior and publication boundaries without changing the package API.
+  logister-ios:
+    bump: none
+    reason: Documentation clarifies existing behavior and publication boundaries without changing the package API.
+  logister-cli:
+    bump: none
+    reason: Documentation clarifies existing behavior and publication boundaries without changing the package API.
