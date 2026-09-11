@@ -215,6 +215,7 @@ RSpec.describe "Telemetry database contention", type: :model do
       2.times { accept_event }
 
       during_clickhouse_write do
+        expect(TelemetryProjectionBatch.count).to eq(1)
         expect(in_connection { accept_event }).to be_persisted
         client = instance_double(Logister::ClickhouseClient, enabled?: true, insert_event_payload!: nil)
         result = in_connection { Logister::TelemetryProjector.new(clickhouse_client: client).call(limit: 1) }

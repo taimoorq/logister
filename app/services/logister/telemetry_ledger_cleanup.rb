@@ -68,12 +68,15 @@ module Logister
     end
 
     def cleanup_candidates
-      incomplete_key_ids = TelemetryDelivery.required_for_replay
-        .joins(:telemetry_outbox_event)
-        .select("telemetry_outbox_events.telemetry_idempotency_key_id")
+      # Start from the bounded expiry candidates and use the unique outbox key
+      # lookup. Evaluating replay-group membership over the entire completed
+      # delivery history would amplify this new retention protection.
+      needed_outbox = TelemetryOutboxEvent.joins(:telemetry_deliveries)
+        .where(TelemetryOutboxEvent.arel_table[:telemetry_idempotency_key_id].eq(TelemetryIdempotencyKey.arel_table[:id]))
+        .merge(TelemetryDelivery.required_for_replay)
 
       TelemetryIdempotencyKey.expired(expired_before)
-        .where.not(id: incomplete_key_ids)
+        .where(needed_outbox.arel.exists.not)
         .order(:expires_at, :id)
     end
 
