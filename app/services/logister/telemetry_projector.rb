@@ -168,12 +168,12 @@ module Logister
       deliveries.each { |delivery| ensure_project_active!(delivery) }
       rows = chunk.map { |item| item.fetch(:attributes) }
 
-      # Serialize every external write with ProjectPurgeRequest's tombstone lock.
-      # A writer that acquired the row first finishes before the tombstone; a
-      # writer that arrives later observes purge_requested_at and cannot recreate
-      # ClickHouse data after the purge mutation has been verified.
+      # Shared writers block ProjectPurgeRequest's exclusive tombstone lock, but
+      # permit other writers and the KEY SHARE locks taken by ingestion foreign
+      # keys. Keep the fence across the external write: releasing it early could
+      # recreate ClickHouse data after the purge mutation has been verified.
       Project.transaction(requires_new: true) do
-        project = Project.lock.find_by(id: project_ids.first)
+        project = Project.lock("FOR SHARE").find_by(id: project_ids.first)
         raise ProjectPurging, "Project purge is pending" if project.nil? || project.purge_pending?
 
         SelfReportingGuard.suppress do

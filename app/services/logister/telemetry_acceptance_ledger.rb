@@ -9,7 +9,8 @@ module Logister
     def self.accept!(record:, client_identifier:, request_context: {}, routing: nil,
                      clickhouse_writable: nil, installation: INSTALLATION_UNRESOLVED,
                      idempotency_key: nil, outbox_event: nil,
-                     identity_preloaded: false, locks_held: false)
+                     identity_preloaded: false, locks_held: false,
+                     watermark_recorder: TelemetryProjectionWatermark)
       new(
         record: record,
         client_identifier: client_identifier,
@@ -20,12 +21,13 @@ module Logister
         idempotency_key: idempotency_key,
         outbox_event: outbox_event,
         identity_preloaded: identity_preloaded,
-        locks_held: locks_held
+        locks_held: locks_held,
+        watermark_recorder: watermark_recorder
       ).accept!
     end
 
     def initialize(record:, client_identifier:, request_context:, routing:, clickhouse_writable:,
-                   installation:, idempotency_key:, outbox_event:, identity_preloaded:, locks_held:)
+                   installation:, idempotency_key:, outbox_event:, identity_preloaded:, locks_held:, watermark_recorder:)
       @record = record
       @client_identifier = TelemetryIdentity.normalize_uuid(client_identifier)
       @request_context = request_context.to_h.symbolize_keys.slice(:ip, :user_agent)
@@ -44,6 +46,7 @@ module Logister
       @outbox_event = outbox_event
       @identity_preloaded = identity_preloaded
       @locks_held = locks_held
+      @watermark_recorder = watermark_recorder
     end
 
     def accept!
@@ -86,7 +89,7 @@ module Logister
         delivery_association.target = locked_deliveries
         delivery_association.loaded!
       end
-      outbox.repair_deliveries!(destinations, locks_held: true) unless key.source_retired?
+      outbox.repair_deliveries!(destinations, locks_held: true, watermark_recorder: @watermark_recorder) unless key.source_retired?
       outbox
     end
 
