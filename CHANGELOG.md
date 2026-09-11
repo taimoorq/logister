@@ -2,6 +2,121 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.11 - 2026-09-11
+
+### Improved
+
+- Added opt-in projector admission with three active owners, one waiting native wake hint, and generation-fenced recovery for lost wakeups, expired owners and orphan enqueue reservations.
+- Applied cooperative run budgets at safe boundaries, smaller fresh synchronous claims, attempt refunds for unstarted work, and atomic lease renewal before external projection writes. Saved retry bodies remain whole.
+- Added a short dependency-failure cooldown and kept retry authority with the PostgreSQL ledger. Scoped worker SQL waits and explicit HTTP write/response limits reduce the time a stalled dependency can hold worker capacity.
+- Added CI proof with real Redis, PostgreSQL, Sidekiq and ClickHouse: kill a worker after external success, recover its saved body, and reconcile logical facts and exact delivery counters. Logical facts also remain correct beyond the provider deduplication window.
+
+### Upgrade Notes
+
+- `LOGISTER_BOUNDED_PROJECTOR` defaults to `false`. Complete the ordered-claim and batched-projection rollout checks, then enable it consistently on intake and workers. Existing argument-free jobs remain compatible; no queue cleanup is needed.
+- The 25-second budget is cooperative: finish an in-flight unit before yielding. Initial SQL, response, cooldown and fresh-claim limits require normal/peak-load validation; see `docs/telemetry-projector-recovery.md`.
+- Disable the flag and restart to restore the prior scheduler. Preserve delivery identities and payloads; the 3.6.10 payload-drain requirement still applies before older-image rollback.
+- No SDK changes, new production machines, or new monitor/email reporting. `bundle update --all` was rerun for this release.
+
+## v3.6.10 - 2026-09-11
+
+### Improved
+
+- Added an opt-in projection path that preloads canonical source references and assigns and acknowledges owned delivery batches atomically.
+- Persisted a bounded, compressed copy of each ClickHouse HTTP body before sending it, so retries preserve original bytes, membership and deduplication identity without reloading sources.
+- Kept watermark counts/checksums in the acknowledgement transaction and retained all source/ledger members needed by incomplete legacy batches.
+
+### Upgrade Notes
+
+- Run the additive `telemetry_projection_batches` migration. `LOGISTER_BATCHED_PROJECTION` defaults to `false`; enable only after all projector workers run compatible code and historical assigned retries have been inspected.
+- Turning the switch off stops new payload creation while draining existing records. Before an image downgrade below 3.6.10, verify the payload table is empty. Schema rollback refuses to discard retained bodies.
+- Incomplete/terminal batches temporarily retain compressed telemetry; final acknowledgement or daily completed-ledger cleanup removes the copy, and project deletion cascades to it. Missing or modified legacy batch data stops inspectably rather than sending a partial body with an old key.
+- No Logister SDK changes or new machines. `bundle update --all` refreshed `aws-sdk-s3` from 1.231.0 to 1.232.0.
+
+## v3.6.9 - 2026-09-11
+
+### Changed
+
+- Logister now reports only its own application errors. SQL metrics and breadcrumbs, request spans and transactions, routine logs, scheduler check-ins, and self-deployment records are disabled at boot and on installation settings refresh.
+- Handled ClickHouse and recurring-scheduler failures remain visible as grouped error events with existing throttling and recursion protection. Unhandled job errors use the SDK callback once. Customer project telemetry remains supported.
+- The sample telemetry task now sends one sample error, and installation guidance describes the errors-only policy.
+
+### Upgrade Notes
+
+- Pause obsolete check-in monitors on the configured self-reporting project before rollout; do not pause job scheduling or customer monitors. Existing capture settings cannot re-enable non-error self-reporting.
+- Preserve historical events and accepted deliveries while old process buffers drain. Verify a controlled error and customer metric ingestion after rollout. No SDK upgrade is required.
+
+## v3.6.8 - 2026-09-11
+
+### Improved
+
+- Added ordered partial indexes for active delivery seeds and fresh project/destination batches, reducing reads through completed delivery history.
+- Added an opt-in delivery claim query that preserves due-time, lease, attempt, purge, and destination boundaries while improving ordered access.
+- Refreshed compatible AWS dependencies with `bundle update --all`: aws-partitions 1.1286.0, aws-sdk-core 3.256.0, and aws-sdk-kms 1.132.0.
+
+### Upgrade Notes
+
+- Run the additive concurrent-index migration while database I/O and intake health are stable. It bounds lock waits and statement time and repairs its own invalid build residue when retried.
+- `LOGISTER_ORDERED_DELIVERY_CLAIMS` defaults to `false`. Verify both new indexes are valid, then enable it on core workers and observe claim time, delivery progress, and intake health. Restore `false` for query rollback; retain indexes during application rollback.
+- No SDK changes, event identity changes, queue clearing, or new machines are required. Additional active-row index maintenance increases write cost; measure the read/write tradeoff for your workload.
+
+## v3.6.7 - 2026-09-11
+
+### Fixed
+
+- Scoped error-group event backlink updates and duplicate-race reloads by project, event ID, and canonical timestamp so PostgreSQL can prune unrelated source partitions.
+- Used known partition timestamps when synchronizing an error group's latest event, while retaining tenant-scoped lookup for legacy callers that change only the event ID.
+- Required an exact source-row update and preserved transactional grouping/notification rollback when the source reference does not match.
+
+### Upgrade Notes
+
+- No migrations, SDK upgrades, queue clearing, or machine changes. Existing event identities and grouping/notification idempotency remain compatible.
+- Rollback uses the prior application image. Verify grouping progress and database read pressure after deployment.
+
+## v3.6.6 - 2026-09-11
+
+### Fixed
+
+- Reserved projector and general-job capacity within the existing core worker thread budget so sustained telemetry cannot exclude notifications and maintenance. The combined worker uses equal queue weights.
+- Corrected queue-age diagnostics for Sidekiq 8 millisecond timestamps and counted all capsule threads when checking database-pool capacity.
+- Added sampled aggregate intake and projector phase timings and SQL counts without recording telemetry contents or SQL text.
+
+### Upgrade Notes
+
+- The core profile defaults to three projector and two general threads. `SIDEKIQ_CONCURRENCY` remains the total; `SIDEKIQ_PROJECTOR_CONCURRENCY` can select a share that leaves general capacity. The archive profile stays at one thread.
+- No migrations, queue clearing, or SDK upgrades are needed. Keep `DB_POOL` at total job threads plus two or more. Set `LOGISTER_TELEMETRY_PROFILE_SAMPLE_RATE=0` to disable the default one-percent diagnostic sampling.
+- Ran `bundle update --all`; the compatible gem set was already current.
+
+## v3.6.5 - 2026-09-11
+
+### Fixed
+
+- Reduced ingestion contention by accumulating accepted delivery counts and checksums and updating hourly watermarks once at the end of the existing atomic batch transaction.
+- Replaced per-event conflict lookups and completion reloads with atomic watermark progress updates.
+- Restricted delivery claim locks to delivery rows and kept retries with an existing ClickHouse deduplication key together under a batch-specific transaction lock.
+- Allowed ingestion and concurrent ClickHouse writers to share the project fence while preserving exclusive purge ordering.
+
+### Upgrade Notes
+
+- No database migrations or SDK/CLI upgrades are required. Existing delivery identities, retry leases, deduplication tokens, counters, and purge tombstones remain compatible.
+- Rollback uses the previous application image without rewriting telemetry or clearing queues. Measure ingestion latency, database lock waits, backlog progress, and web readiness after rollout.
+
+## v3.6.4 - 2026-09-11
+
+### Changed
+
+- Updated Ruby dependencies to their latest compatible releases.
+- Increased the hosted Fly web process to six shared CPUs and 1.5 GiB of memory.
+
+### Fixed
+
+- Constrained JSON to the compatible 2.x series because Rails 8.1 passes positional parsing options that JSON 3 no longer accepts.
+
+### Upgrade Notes
+
+- No database migrations or client upgrades are required. SDK and CLI contracts are unchanged.
+- The hosted web sizing update does not change worker sizing or address database lock contention.
+
 ## v3.6.3 - 2026-08-11
 
 ### Fixed

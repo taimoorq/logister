@@ -3,6 +3,7 @@
 require "rails_helper"
 require "ostruct"
 require "zlib"
+require "socket"
 
 RSpec.describe Logister::ClickhouseClient do
   let(:config) do
@@ -141,6 +142,20 @@ RSpec.describe Logister::ClickhouseClient do
       expect(described_class::ResponseError.new("busy", status_code: 503)).to be_retryable
       expect(described_class::ResponseError.new("limited", status_code: 429)).to be_retryable
     end
+
+    it "sends a persisted Unicode payload verbatim without parsing or serializing its numbers again" do
+      client = described_class.new(config: config)
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
+      allow(client).to receive(:post_query).and_return(response)
+      payload = "{\"message\":\"café 🌍\",\"identity_checksum\":340282366920938463463374607431768211455,\"duration_ms\":0.0000001}\n"
+
+      client.insert_event_payload!(payload, deduplication_token: "persisted-body")
+
+      expect(client).to have_received(:post_query).with(
+        /INSERT INTO logister\.events FORMAT JSONEachRow/, payload,
+        deduplication_token: "persisted-body", gzip: true
+      )
+    end
   end
 
   describe "activation modes" do
@@ -242,8 +257,11 @@ RSpec.describe Logister::ClickhouseClient do
       allow(http).to receive(:use_ssl=)
       allow(http).to receive(:open_timeout=)
       allow(http).to receive(:read_timeout=)
+      allow(http).to receive(:write_timeout=)
+      allow(http).to receive(:max_retries=)
       allow(http).to receive(:keep_alive_timeout=)
       allow(Net::HTTP).to receive(:new).and_return(http)
+      allow(Logister::TelemetryProjectorAdmission).to receive(:enabled?).and_return(true)
       uri = URI.parse(config.clickhouse_url)
 
       2.times { client.send(:with_http_connection, uri) { |connection| expect(connection).to be(http) } }
@@ -251,6 +269,59 @@ RSpec.describe Logister::ClickhouseClient do
       expect(Net::HTTP).to have_received(:new).once
       client.close
       expect(http).to have_received(:finish).once
+      expect(http).to have_received(:write_timeout=).with(5)
+      expect(http).to have_received(:max_retries=).with(0)
+    end
+  end
+
+  describe "bounded insert responses" do
+    it "preserves the library write and retry defaults while the rollout flag is off" do
+      allow(Logister::TelemetryProjectorAdmission).to receive(:enabled?).and_return(false)
+      http = Net::HTTP.new("127.0.0.1", 8123)
+      defaults = [ http.write_timeout, http.max_retries ]
+      allow(http).to receive(:start).and_return(http)
+      allow(Net::HTTP).to receive(:new).and_return(http)
+      client = described_class.new(config: config)
+      client.send(:with_http_connection, URI("http://127.0.0.1:8123")) do |connection|
+        expect([ connection.write_timeout, connection.max_retries ]).to eq(defaults)
+      end
+    ensure
+      client&.close
+    end
+
+    it "closes a real dribbling response at the deadline instead of resetting the budget on each chunk" do
+      allow(Logister::TelemetryProjectorAdmission).to receive(:enabled?).and_return(true)
+      stub_const("Logister::ClickhouseClient::INSERT_RESPONSE_SECONDS", 0.05)
+      server = TCPServer.new("127.0.0.1", 0)
+      config.clickhouse_url = "http://127.0.0.1:#{server.addr[1]}"
+      breaker = instance_double(Logister::ClickhouseCircuitBreaker, allow_request?: true, record_failure!: true)
+      client = described_class.new(config: config, circuit_breaker: breaker)
+      responder = Thread.new do
+        socket = server.accept
+        headers = +""
+        headers << socket.read(1) until headers.end_with?("\r\n\r\n")
+        socket.read(headers[/Content-Length: (\d+)/i, 1].to_i)
+        socket.write("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n")
+        10.times do
+          socket.write("1\r\nx\r\n")
+          sleep 0.03
+        end
+        socket.write("0\r\n\r\n")
+      rescue IOError, SystemCallError
+        nil
+      ensure
+        socket&.close
+      end
+
+      expect { client.insert_event_payload!("{}\n", deduplication_token: "deadline-proof") }
+        .to raise_error(described_class::Error, /response exceeded its deadline/)
+      expect(breaker).to have_received(:record_failure!).once
+      expect(client.instance_variable_get(:@http_connections)).to be_empty
+    ensure
+      client&.close
+      responder&.kill
+      responder&.join
+      server&.close
     end
   end
 

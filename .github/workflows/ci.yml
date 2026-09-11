@@ -143,9 +143,18 @@ jobs:
           - 6379:6379
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
+      clickhouse:
+        image: clickhouse/clickhouse-server:24.8
+        env:
+          CLICKHOUSE_USER: logister_test
+          CLICKHOUSE_PASSWORD: test-only
+        ports:
+          - 8123:8123
+        options: --health-cmd "wget --spider -q http://localhost:8123/ping" --health-interval 5s --health-timeout 3s --health-retries 20
+
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips-dev
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips-dev redis-server
 
       - name: Checkout code
         uses: actions/checkout@v7
@@ -170,6 +179,7 @@ jobs:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           REDIS_URL: redis://localhost:6379/15
+          RECOVERY_CLICKHOUSE_URL: http://127.0.0.1:8123
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: |
           bin/rails db:test:prepare

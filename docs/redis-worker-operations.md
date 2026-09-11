@@ -24,8 +24,8 @@ The **Admin → Installation → Redis & jobs** diagnostic reports the observed 
 ## Queue topology
 
 The checked-in `config/sidekiq.yml` consumes every workload queue plus the
-low-priority `default` compatibility queue for Rails/framework jobs. It remains the
-recommended small-install command:
+`default` compatibility queue for Rails/framework jobs. It remains the
+recommended small-install command, with equal queue weights so one busy queue cannot permanently exclude the others:
 
 ```sh
 bundle exec sidekiq -C config/sidekiq.yml
@@ -43,7 +43,7 @@ bundle exec sidekiq -C config/sidekiq-archives.yml
 ```
 
 The checked-in hosted profile uses `config/sidekiq-core.yml` for normal work and
-`config/sidekiq-archives.yml` for archive work. The archive profile consumes only
+`config/sidekiq-archives.yml` for archive work. The core profile reserves three of its five job threads for the projector and two for notifications, mailers, analytics, integrations, symbols, maintenance, and default jobs. Those general queues have equal positive weights. The archive profile consumes only
 the `archives` queue at concurrency 1. This bounds concurrent compression,
 object-storage, verification, and source-cleanup memory without delaying the
 projector, notification, or mailer queues. Small self-hosted installations may
@@ -60,8 +60,7 @@ because the PostgreSQL intent remains the recovery source of truth.
 
 Sidekiq resolves concurrency before Rails boots. An explicit `-c` value therefore
 wins for split roles; otherwise `config/sidekiq.yml` uses
-`SIDEKIQ_CONCURRENCY`, defaulting to 5. The Rails initializer does not replace the
-parsed value, and worker heartbeats report that actual process concurrency.
+`SIDEKIQ_CONCURRENCY`, defaulting to 5. The core profile divides that parsed total into two capsules. Set `SIDEKIQ_PROJECTOR_CONCURRENCY` to choose the projector share; it must leave at least one general thread. Without an override, two general threads are reserved (one when the total is two). The core profile rejects a total below two; use the combined profile for a one-thread installation. Worker heartbeats sum all capsule threads, so `DB_POOL=7` still covers the default five-thread core worker plus headroom.
 
 ## Database pool sizing
 
@@ -82,3 +81,58 @@ The concurrency-1 archive worker therefore needs `DB_POOL=3` or higher. Its
 heartbeat appears separately in **Admin → Installation → Redis & jobs**. The
 diagnostic uses raw Redis `SCAN`, so it works with both the Sidekiq Redis Client
 adapter and the redis-rb client used by installation checks.
+
+## Sampled pipeline timings
+
+Production emits one payload-free `telemetry_pipeline` log summary for a sample of intake batches and projector drains. `LOGISTER_TELEMETRY_PROFILE_SAMPLE_RATE` defaults to `0.01`; set it to `0` to disable or temporarily increase it for a bounded investigation. Summaries include phase durations, SQL statement counts/timing, row/outcome counts, and exception class only. They never include SQL text, bindings, event contents, or client identifiers, and reporting is suppressed while writing the summary.
+
+Check queue age together with durable delivery age and completed-versus-arriving work. A nonempty projector queue should not prevent general queues from advancing. Sidekiq 8 timestamps are measured in milliseconds; the installation diagnostic accepts these and older second timestamps. Retry/dead totals belong to the Redis service and may include other applications when Redis is shared.
+
+## Enable ordered delivery claims
+
+For operators with a large completed-delivery ledger, release 3.6.8 adds two small partial indexes for unfinished work. The migration builds them concurrently with a five-second lock-wait limit and a five-minute limit per statement. Keep a completed backup and check database I/O and intake health before migrating. A failed concurrent build can leave an invalid index; rerunning this migration removes its invalid residue and retries it. Existing claim indexes remain available.
+
+After migration, verify that both rows below exist and have `indisvalid = true`:
+
+```sql
+SELECT c.relname, i.indisvalid
+FROM pg_class c JOIN pg_index i ON i.indexrelid = c.oid
+WHERE c.oid IN (
+  to_regclass('public.idx_telemetry_deliveries_active_order'),
+  to_regclass('public.idx_telemetry_deliveries_active_group')
+);
+```
+
+Then set `LOGISTER_ORDERED_DELIVERY_CLAIMS=true` on core workers and restart them through the normal deployment process. The default is `false`. Compare sampled claim time, completed-versus-arriving deliveries, pending age, intake health, and the general queues. Eligibility, ordering, batch identities, row locks, retry fences, and purge exclusion are unchanged. Set the switch back to `false` to restore the old query; retain the additive indexes during application rollback. The release maintainer owns this switch until a normal-load window and recovery exercise justify removing the old path.
+
+The [query benchmark](telemetry-claim-query.md) records the measured benefits, unfavorable cases, and additional write cost.
+
+## Enable batched projection
+
+Release 3.6.10 adds temporary durable ClickHouse payloads, source preloading, and atomic delivery acknowledgements. Run its additive migration and finish rolling out compatible code to every projector/replay worker before enabling `LOGISTER_BATCHED_PROJECTION=true`. It defaults to `false`. Mixed older workers do not understand the saved payloads, so this is a separate enablement step after deployment.
+
+Release 3.6.11 separately adds `LOGISTER_BOUNDED_PROJECTOR`, default off. After the query and payload rollout checks, enable it consistently on intake and workers to coalesce wakes, admit up to three drainers, yield unstarted work at safe boundaries, and recover lost hints from the PostgreSQL ledger. See [bounded projector execution and recovery](telemetry-projector-recovery.md) for the state model, measured tests, initial budgets and rollback.
+
+Check pending/terminal deliveries with assigned batch keys before enabling. Historical batches with missing members or changed source data cannot safely reconstruct their original body and need investigation. New batches save exact bytes before the external call and can retry even if source or project data later changes.
+
+After enablement, compare the sampled `source_load`, `batch_persistence`, `insert`, and `acknowledgement` phases, completed-versus-arriving work, durable delivery age, worker memory, and database write load. Check that watermarks reconcile and `telemetry_projection_batches` drains as deliveries complete. Each incomplete batch retains one compressed body; final acknowledgement deletes it. Completed payloads left by older compatible workers are removed by the daily ledger cleanup.
+
+To roll back, set `LOGISTER_BATCHED_PROJECTION=false` and restart workers through the normal rollout. This stops creating new payload records while keeping existing ones usable. Before deploying an image older than 3.6.10, verify this read-only check returns zero:
+
+```sh
+bin/rails runner 'puts TelemetryProjectionBatch.count'
+```
+
+If incomplete or terminal batches remain, keep the compatible image while diagnosing or replaying them through the existing delivery recovery path. Do not delete payloads, clear queues, or change stored batch keys to force the count to zero. The migration also rejects a schema rollback while the payload table is nonempty. The release maintainer owns the switch until normal-load and controlled recovery checks justify removing the old creation path.
+
+### Measured projection cost
+
+A local PostgreSQL 16.12 benchmark ran three samples at each batch size with a no-network ClickHouse client and rolled each sample back. It measures Ruby/SQL work, excluding external latency and final durable commit time. Separate independent-connection tests cover committed payload visibility, overlapping acknowledgements, intake progress, and the purge fence.
+
+| Rows | Previous SQL statements | Batched SQL statements | Previous median | Batched median |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 19 | 23 | 9.2 ms | 10.3 ms |
+| 20 | 190 | 23 | 79.2 ms | 29.7 ms |
+| 200 | 1,810 | 23 | 815.5 ms | 129.8 ms |
+
+The fixed payload-persistence cost slightly increases one-row work. Larger batches avoid repeated source/project reads, row assignments, validations, and watermark updates. Production results depend on payload size, arrival patterns, database I/O, and ClickHouse response time; compare the sampled phases after enabling.

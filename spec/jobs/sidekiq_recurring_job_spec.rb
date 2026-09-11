@@ -7,7 +7,7 @@ RSpec.describe "Sidekiq recurring jobs", type: :job do
 
   before do
     clear_enqueued_jobs
-    allow(Logister).to receive(:report_log)
+    allow(Logister).to receive(:report_error)
   end
 
   it "schedules interval jobs for the next quarter-hour boundary" do
@@ -61,9 +61,8 @@ RSpec.describe "Sidekiq recurring jobs", type: :job do
 
     ProjectMonitorSweepJob.ensure_scheduled!(Time.zone.parse("2026-06-20T12:10:30Z"))
 
-    expect(Logister).to have_received(:report_log).with(
-      hash_including(
-        message: "Sidekiq recurring job schedule failed",
+    expect(Logister).to have_received(:report_error).with(
+      a_kind_of(StandardError), hash_including(
         level: "error",
         fingerprint: "logister:sidekiq_recurring:schedule_failed:project_monitor_sweep"
       )
@@ -94,9 +93,8 @@ RSpec.describe "Sidekiq recurring jobs", type: :job do
       "owned-schedule-marker"
     )
     expect(ProjectMonitorSweepJob).to have_received(:set).once.with(wait_until: run_at)
-    expect(Logister).to have_received(:report_log).once.with(
-      hash_including(
-        message: "Sidekiq recurring job schedule failed",
+    expect(Logister).to have_received(:report_error).once.with(
+      a_kind_of(StandardError), hash_including(
         fingerprint: "logister:sidekiq_recurring:schedule_failed:project_monitor_sweep"
       )
     )

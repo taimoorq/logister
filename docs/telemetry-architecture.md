@@ -48,6 +48,40 @@ This is an at-least-once pipeline with idempotent effects. A worker may repeat w
 after an ambiguous acknowledgement, but repetition must not create a second logical
 fact or inflate an aggregate.
 
+### Lock boundaries under ingestion load
+
+Batch acceptance accumulates the count and UUID checksum of newly created delivery
+intents, then updates hourly watermarks in one sorted upsert immediately before the
+acceptance transaction commits. Repeated identities contribute only when repairing
+a missing intent. Source records, intents, and watermarks still commit or roll back
+together. A projector cannot see an intent before its accepted count is durable.
+
+Accepted and delivered progress use atomic increments that recompute completeness
+from the resulting counts, checksums, and terminal-failure count in the same SQL
+statement. Existing buckets do not require an exception-driven insert, row reload,
+and separate completion update for each envelope. The terminal-failure, replay,
+empty-seal, backfill, and cleanup paths retain their existing safety boundaries.
+
+New delivery claims use `FOR UPDATE OF telemetry_deliveries SKIP LOCKED`. The joined
+project and outbox rows are filters, not claim targets; locking them would serialize
+otherwise independent deliveries for the same project. A batch with an existing
+ClickHouse deduplication key first acquires a transaction advisory lock for that
+batch and locks its due deliveries together in ID order. It must not be split by
+competing claimers into separate writes using the same deduplication token.
+
+ClickHouse writes hold a project row with `FOR SHARE` until the external call ends.
+Concurrent writers and ingestion foreign-key checks can proceed, while the purge
+request's exclusive project lock must wait. After a purge tombstone commits, a new
+writer rechecks it under the shared lock and refuses the write. Do not release this
+fence before the external call or replace it with an unlocked lifecycle check.
+These compatibility rules follow PostgreSQL's [row-lock conflict matrix](https://www.postgresql.org/docs/17/explicit-locking.html#LOCKING-ROWS).
+
+Validate lock changes with real independent PostgreSQL connections in
+`spec/services/logister/telemetry_contention_spec.rb`. The suite holds an external
+write open, verifies ingestion and another projector can advance, and verifies a
+purge cannot pass that write. Batch specs also check counter-query cost, duplicate
+retries, invalid-envelope rollback, and failure of the final counter write.
+
 Error-group and check-in transitions use the same boundary for notifications.
 PostgreSQL commits a uniquely keyed `notification_intents` row in the transaction
 that creates the group occurrence or monitor transition. A Sidekiq enqueue after
@@ -168,3 +202,21 @@ lease-expiration count, terminal delivery failures, per-destination coverage gap
 ClickHouse circuit state, queue age and dead/retry counts, recurring-schedule
 lateness, default-partition rows, database pool headroom, archive verification
 failures, and incomplete project purges.
+
+### Partition-scoped grouping references
+
+Error grouping updates the accepted source event using its project, ID, and canonical `occurred_at`, and uses the same reference when reloading after a duplicate race. A backlink update must match exactly one row; otherwise the grouping transaction rolls back. Latest-event timestamp synchronization uses a supplied partition reference and retains a tenant-scoped ID lookup for legacy callers that change only an ID. Do not replace these predicates with ID-only writes: source IDs can repeat across timestamp partitions.
+
+### Durable projection payloads and acknowledgements
+
+Release 3.6.10 introduces the opt-in `LOGISTER_BATCHED_PROJECTION` path. It preloads source rows by project, record type, ID, and canonical timestamp, then commits each bounded ClickHouse body's compressed NDJSON, SHA-256, ordered delivery membership, and immutable deduplication key before sending it. One `telemetry_projection_batches` row represents one external body, with at most 200 members and 1 MiB plus the legacy trailing-newline allowance. The HTTP client sends verified bytes directly; retries do not rebuild them from changing source data or parse and reserialize numbers.
+
+Release 3.6.11 adds optional bounded admission and cooperative run budgets without changing the accepted-work authority. Native queue hints are coalesced behind one waiting marker, while unique attempt owners admit three drainers and PostgreSQL retains per-delivery fencing. Periodic recovery handles lost hints and expired owners. Unstarted budget yields refund the claim attempt; attempted/ambiguous writes keep their durable identity. See [projector recovery](telemetry-projector-recovery.md) for the complete lifecycle, failure cases and limits.
+
+Batch assignment locks and checks every requested lease before assigning any key. Acknowledgement locks delivery IDs in order, transitions only currently owned processing rows, and updates the exact corresponding watermark counts/checksums in the same transaction. Stale or already completed rows contribute zero. The batch payload is deleted with the final acknowledgement. Daily ledger cleanup removes payloads left after compatible older workers complete their rows; incomplete and terminal batches remain available for recovery. Project deletion cascades to the payload table.
+
+The project shared lock still spans the external insert, preserving the purge fence. Retention and ledger cleanup protect every member while any member of its project/destination/batch remains incomplete, including completed members needed to reconstruct legacy partial acknowledgements. Batch records contain the same sensitive telemetry as their source and must use the same database access and backup controls; they are temporary replay data, not a new archive.
+
+Legacy batches did not store original HTTP bytes. Their retry path reconstructs the full original member set, verifies its deterministic UUID digest, and includes previously completed rows in the external body while counting only newly acknowledged deliveries. Missing membership, changed source/outbox timestamps, changed project service fallback, suppressed members, and oversize groups stop inspectably instead of silently changing the body. This cannot retroactively prove that an older serializer emitted identical bytes; investigate historical unverifiable batches rather than inventing a new deduplication key.
+
+The feature defaults off. Disabling it stops new payload creation but continues to consume existing persisted bodies. Drain those records before downgrading to a release before 3.6.10. The schema rollback refuses to remove a nonempty payload table. See [worker operations](redis-worker-operations.md#enable-batched-projection) for activation and rollback.

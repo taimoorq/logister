@@ -1,0 +1,82 @@
+---
+schema_version: 1
+id: backend-v3-6-10
+backend:
+  version: 3.6.10
+  tag: v3.6.10
+impact_records:
+- durable-projection-payloads
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: Internal query and queue improvements preserve existing public contracts.
+    channels:
+    - rubygems
+    - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: Internal query and queue improvements preserve existing public contracts.
+    channels:
+    - npm
+    - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: Internal query and queue improvements preserve existing public contracts.
+    channels:
+    - pypi
+    - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.2.0
+    target_version: 0.2.0
+    bump: none
+    release_required: false
+    reason: Internal query and queue improvements preserve existing public contracts.
+    channels:
+    - nuget_logister
+    - nuget_logister_aspnetcore
+    - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: Internal query and queue improvements preserve existing public contracts.
+    channels:
+    - maven_central
+    - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: Internal query and queue improvements preserve existing public contracts.
+    channels:
+    - swift_package_manager
+    - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.0.0
+    target_version: 1.0.0
+    bump: none
+    release_required: false
+    reason: Internal query and queue improvements preserve existing public contracts.
+    channels:
+    - npm
+    - github_release
+    - homebrew-logister
+    - scoop-logister

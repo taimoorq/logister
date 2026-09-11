@@ -1,12 +1,12 @@
 :concurrency: <%= Integer(ENV.fetch("SIDEKIQ_CONCURRENCY", 5)) %>
+:logister_worker_role: core
 :queues:
-  - projector
-  - notifications
-  - mailers
-  - analytics
-  - integrations
-  - symbols
-  - maintenance
+  - [notifications, 1]
+  - [mailers, 1]
+  - [analytics, 1]
+  - [integrations, 1]
+  - [symbols, 1]
+  - [maintenance, 1]
   # Safety net for Rails/framework jobs and future jobs before they receive an
   # explicit workload queue. Archive lifecycle work is intentionally excluded.
-  - default
+  - [default, 1]

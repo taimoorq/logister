@@ -33,12 +33,12 @@ class TelemetryOutboxEvent < ApplicationRecord
     raw.to_h.symbolize_keys.slice(:ip, :user_agent)
   end
 
-  def repair_deliveries!(destinations, locks_held: false)
+  def repair_deliveries!(destinations, locks_held: false, watermark_recorder: TelemetryProjectionWatermark)
     unless locks_held
       return telemetry_idempotency_key.with_lock do
         lock!
         load_locked_deliveries!
-        repair_deliveries!(destinations, locks_held: true)
+        repair_deliveries!(destinations, locks_held: true, watermark_recorder: watermark_recorder)
       end
     end
 
@@ -46,16 +46,16 @@ class TelemetryOutboxEvent < ApplicationRecord
 
     existing = telemetry_deliveries.to_a.index_by(&:destination)
     Array(destinations).map(&:to_s).uniq.sort.map do |destination|
-      existing[destination] || ensure_delivery!(destination, locks_held: true)
+      existing[destination] || ensure_delivery!(destination, locks_held: true, watermark_recorder: watermark_recorder)
     end
   end
 
-  def ensure_delivery!(destination, locks_held: false)
+  def ensure_delivery!(destination, locks_held: false, watermark_recorder: TelemetryProjectionWatermark)
     unless locks_held
       return telemetry_idempotency_key.with_lock do
         lock!
         load_locked_deliveries!
-        ensure_delivery!(destination, locks_held: true)
+        ensure_delivery!(destination, locks_held: true, watermark_recorder: watermark_recorder)
       end
     end
 
@@ -70,7 +70,7 @@ class TelemetryOutboxEvent < ApplicationRecord
       status: "pending",
       available_at: Time.current
     )
-    TelemetryProjectionWatermark.record_accepted!(delivery)
+    watermark_recorder.record_accepted!(delivery)
     delivery
   end
 

@@ -2165,6 +2165,44 @@ ALTER SEQUENCE public.telemetry_outbox_events_id_seq OWNED BY public.telemetry_o
 
 
 --
+-- Name: telemetry_projection_batches; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telemetry_projection_batches (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    destination character varying NOT NULL,
+    batch_key character varying NOT NULL,
+    delivery_ids bigint[] NOT NULL,
+    compressed_payload bytea NOT NULL,
+    payload_sha256 character varying NOT NULL,
+    payload_bytes integer NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT telemetry_projection_batches_bounds CHECK ((((cardinality(delivery_ids) >= 1) AND (cardinality(delivery_ids) <= 200)) AND ((payload_bytes >= 1) AND (payload_bytes <= 1048577))))
+);
+
+
+--
+-- Name: telemetry_projection_batches_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telemetry_projection_batches_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telemetry_projection_batches_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telemetry_projection_batches_id_seq OWNED BY public.telemetry_projection_batches.id;
+
+
+--
 -- Name: telemetry_projection_watermarks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2755,6 +2793,13 @@ ALTER TABLE ONLY public.telemetry_outbox_events ALTER COLUMN id SET DEFAULT next
 
 
 --
+-- Name: telemetry_projection_batches id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_projection_batches ALTER COLUMN id SET DEFAULT nextval('public.telemetry_projection_batches_id_seq'::regclass);
+
+
+--
 -- Name: telemetry_projection_watermarks id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3259,6 +3304,14 @@ ALTER TABLE ONLY public.telemetry_idempotency_keys
 
 ALTER TABLE ONLY public.telemetry_outbox_events
     ADD CONSTRAINT telemetry_outbox_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: telemetry_projection_batches telemetry_projection_batches_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_projection_batches
+    ADD CONSTRAINT telemetry_projection_batches_pkey PRIMARY KEY (id);
 
 
 --
@@ -4527,6 +4580,20 @@ CREATE INDEX idx_telemetry_archives_source_cleanup ON public.telemetry_archives 
 
 
 --
+-- Name: idx_telemetry_deliveries_active_group; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_deliveries_active_group ON public.telemetry_deliveries USING btree (project_id, destination, available_at, id) WHERE (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('retrying'::character varying)::text, ('processing'::character varying)::text])) AND (attempts < 8) AND (batch_key IS NULL));
+
+
+--
+-- Name: idx_telemetry_deliveries_active_order; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_deliveries_active_order ON public.telemetry_deliveries USING btree (available_at, id) WHERE (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('retrying'::character varying)::text, ('processing'::character varying)::text])) AND (attempts < 8));
+
+
+--
 -- Name: idx_telemetry_deliveries_due; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4594,6 +4661,13 @@ CREATE INDEX idx_telemetry_outbox_project_signal_time ON public.telemetry_outbox
 --
 
 CREATE INDEX idx_telemetry_outbox_record ON public.telemetry_outbox_events USING btree (record_type, record_id, recorded_at);
+
+
+--
+-- Name: idx_telemetry_projection_batches_identity; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_telemetry_projection_batches_identity ON public.telemetry_projection_batches USING btree (project_id, destination, batch_key);
 
 
 --
@@ -12637,6 +12711,14 @@ ALTER TABLE ONLY public.github_installations
 
 
 --
+-- Name: telemetry_projection_batches fk_rails_4e83895ce5; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telemetry_projection_batches
+    ADD CONSTRAINT fk_rails_4e83895ce5 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: cli_device_authorizations fk_rails_57e8eeff05; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13027,6 +13109,8 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260911190000'),
+('20260911180000'),
 ('20260811120000'),
 ('20260809230000'),
 ('20260809220000'),
