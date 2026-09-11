@@ -2,6 +2,19 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.7 - 2026-09-11
+
+### Fixed
+
+- Scoped error-group event backlink updates and duplicate-race reloads by project, event ID, and canonical timestamp so PostgreSQL can prune unrelated source partitions.
+- Used known partition timestamps when synchronizing an error group's latest event, while retaining tenant-scoped lookup for legacy callers that change only the event ID.
+- Required an exact source-row update and preserved transactional grouping/notification rollback when the source reference does not match.
+
+### Upgrade Notes
+
+- No migrations, SDK upgrades, queue clearing, or machine changes. Existing event identities and grouping/notification idempotency remain compatible.
+- Rollback uses the prior application image. Verify grouping progress and database read pressure after deployment.
+
 ## v3.6.6 - 2026-09-11
 
 ### Fixed

@@ -11,6 +11,84 @@ RSpec.describe ErrorGroupingService, type: :model do
   before { clear_enqueued_jobs }
 
   describe ".call" do
+    it "prunes the actual backlink update to one partition" do
+      event = create(:ingest_event, project: project, api_key: api_key)
+      connection = IngestEvent.connection
+      updates = []
+      subscriber = lambda do |_name, _start, _finish, _id, payload|
+        next unless payload[:sql].start_with?('UPDATE "ingest_events"')
+
+        updates << payload[:sql].gsub(/\$(\d+)/) do
+          connection.quote(payload[:binds].fetch(Regexp.last_match(1).to_i - 1).value_for_database)
+        end
+      end
+      ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+        described_class.call(event, notifications: false)
+      end
+      expect(updates.size).to eq(1)
+      scoped = connection.select_value("EXPLAIN (FORMAT JSON) #{updates.first}")
+      legacy = connection.select_value("EXPLAIN (FORMAT JSON) UPDATE ingest_events SET error_group_id = NULL WHERE id = #{Integer(event.id)}")
+      expect(partition_scans(JSON.parse(scoped).first.fetch("Plan")).uniq.size).to eq(1)
+      expect(partition_scans(JSON.parse(legacy).first.fetch("Plan")).uniq.size).to be > 1
+    end
+
+    it "refreshes a legacy ID-only latest-event change instead of reusing the old timestamp" do
+      first = create(:ingest_event, project: project, api_key: api_key, occurred_at: Time.utc(2026, 8, 1))
+      second = create(:ingest_event, project: project, api_key: api_key, occurred_at: Time.utc(2026, 9, 1))
+      group = described_class.call(first, notifications: false)
+      group.latest_event
+
+      group.update!(latest_event_id: second.id)
+
+      expect(group.latest_event_occurred_at).to eq(second.occurred_at)
+    end
+
+    it "updates only the matching partition reference when IDs repeat across partitions" do
+      occurred_at = Time.utc(2026, 9, 11, 12, 0, 0, 123456)
+      event = create(:ingest_event, project: project, api_key: api_key, occurred_at: occurred_at)
+      other = create(:ingest_event, id: event.id, project: project, api_key: api_key,
+        occurred_at: occurred_at.prev_month)
+
+      group = described_class.call(event, notifications: false)
+
+      expect(event.error_group_id).to eq(group.id)
+      expect(event.changed?).to be(false)
+      expect(IngestEvent.for_partition_reference(id: event.id, occurred_at: occurred_at).sole.error_group_id).to eq(group.id)
+      expect(IngestEvent.for_partition_reference(id: other.id, occurred_at: other.occurred_at).sole.error_group_id).to be_nil
+    end
+
+    it "rolls back grouping and notification intents when the event does not belong to the project" do
+      event = create(:ingest_event, project: project, api_key: api_key)
+      event.project = projects(:two)
+      before_counts = [ ErrorGroup.count, ErrorOccurrence.count, NotificationIntent.count ]
+
+      expect { described_class.call(event) }.to raise_error(ActiveRecord::RecordNotFound, /no longer available/)
+
+      expect([ ErrorGroup.count, ErrorOccurrence.count, NotificationIntent.count ]).to eq(before_counts)
+      expect(NotificationIntentDrainJob).not_to have_been_enqueued
+    end
+
+    it "keeps duplicate-race reloads scoped to the tenant and canonical partition timestamp" do
+      event = create(:ingest_event, project: project, api_key: api_key)
+      attempts = 0
+      allow(ErrorOccurrence).to receive(:create!).and_wrap_original do |original, *args, **kwargs|
+        attempts += 1
+        raise ActiveRecord::RecordNotUnique if attempts == 1
+
+        original.call(*args, **kwargs)
+      end
+      statements = []
+      subscriber = ->(_name, _start, _finish, _id, payload) { statements << payload[:sql] }
+      ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+        described_class.call(event, notifications: false)
+      end
+      reloads = statements.grep(/SELECT.*FROM "ingest_events"/)
+
+      expect(reloads).not_to be_empty
+      expect(reloads).to all(include('"project_id"', '"occurred_at"'))
+      expect(ErrorOccurrence.where(ingest_event_id: event.id).count).to eq(1)
+    end
+
     it "returns nil for metric events" do
       event = IngestEvent.create!(
         project: project,
@@ -380,5 +458,10 @@ RSpec.describe ErrorGroupingService, type: :model do
       described_class.call(event.reload)
       expect(group.reload.error_occurrences.count).to eq(1)
     end
+  end
+
+  def partition_scans(plan)
+    relations = plan.fetch("Relation Name", "").start_with?("ingest_events_") ? [ plan.fetch("Relation Name") ] : []
+    relations + plan.fetch("Plans", []).flat_map { |child| partition_scans(child) }
   end
 end
