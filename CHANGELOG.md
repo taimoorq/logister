@@ -8,6 +8,7 @@ All notable changes to Logister will be documented in this file.
 
 - Added ordered partial indexes for active delivery seeds and fresh project/destination batches, reducing reads through completed delivery history.
 - Added an opt-in delivery claim query that preserves due-time, lease, attempt, purge, and destination boundaries while improving ordered access.
+- Refreshed compatible AWS dependencies with `bundle update --all`: aws-partitions 1.1286.0, aws-sdk-core 3.256.0, and aws-sdk-kms 1.132.0.
 
 ### Upgrade Notes
 
