@@ -35,31 +35,14 @@ RSpec.describe Logister::SampleTelemetryReporter do
     allow(Logister).to receive(:flush).and_return(true)
   end
 
-  it "emits every telemetry family plus a deployment record" do
+  it "emits only a sample error, preserving source context" do
     result = described_class.call(source_context: source_context)
 
-    expect(result).to include(
-      deployment: true,
-      log: true,
-      metric: true,
-      transaction: true,
-      check_in: true,
-      error: true,
-      flushed: true
-    )
-    expect(result[:spans]).to eq([ true, true, true, true ])
-    expect(Logister::DeploymentRecorder).to have_received(:call).with(
-      release: "v2.6.1",
-      environment: "test",
-      repository: "taimoorq/logister",
-      commit_sha: "abc1234",
-      branch: "main"
-    )
-    expect(Logister).to have_received(:report_log).with(hash_including(message: "Logister sample telemetry log"))
-    expect(Logister).to have_received(:report_metric).with(hash_including(message: "logister.self_test.sample_value", value: 1, unit: "count"))
-    expect(Logister).to have_received(:report_transaction).with(hash_including(name: "logister.self_test.transaction"))
-    expect(Logister).to have_received(:report_span).exactly(4).times
-    expect(Logister).to have_received(:report_check_in).with(hash_including(slug: "logister.self_test"))
+    expect(result).to eq(error: true, flushed: true)
+    expect(Logister::DeploymentRecorder).not_to have_received(:call)
+    %i[report_log report_metric report_transaction report_span report_check_in].each do |method|
+      expect(Logister).not_to have_received(method)
+    end
     expect(Logister).to have_received(:report_error).with(
       an_instance_of(Logister::SampleTelemetryReporter::SampleError),
       hash_including(context: hash_including(repository: "taimoorq/logister"))

@@ -160,8 +160,8 @@ module SidekiqRecurringJob
     end
 
     def report_sidekiq_recurring_schedule_failure(error, run_at)
-      Logister.report_log(
-        message: "Sidekiq recurring job schedule failed",
+      Logister.report_error(
+        error,
         level: "error",
         fingerprint: "logister:sidekiq_recurring:schedule_failed:#{sidekiq_recurring_key}",
         context: {

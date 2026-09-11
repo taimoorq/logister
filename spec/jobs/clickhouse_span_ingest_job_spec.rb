@@ -51,17 +51,16 @@ RSpec.describe ClickhouseSpanIngestJob, type: :job do
     ingestor = instance_double(Logister::SpanIngestor)
     allow(Logister::SpanIngestor).to receive(:new).and_return(ingestor)
     allow(ingestor).to receive(:call).and_raise(Logister::ClickhouseClient::Error, "insert failed")
-    allow(Logister).to receive(:report_log) do
+    allow(Logister).to receive(:report_error) do
       expect(Logister::SelfReportingGuard.suppressed?).to be(false)
     end
     allow(Logister).to receive(:report_metric)
 
     described_class.perform_now(span.id)
 
-    expect(Logister).to have_received(:report_log).with(
+    expect(Logister).to have_received(:report_error).with(
+      an_instance_of(Logister::ClickhouseClient::Error),
       hash_including(
-        message: "ClickHouse span ingest failed",
-        level: "error",
         fingerprint: "logister:clickhouse_span_ingest:failure",
         context: hash_including(
           clickhouse_ingest: hash_including(trace_span_id: span.id),
@@ -74,14 +73,6 @@ RSpec.describe ClickhouseSpanIngestJob, type: :job do
         )
       )
     )
-    expect(Logister).to have_received(:report_metric).with(
-      hash_including(
-        message: "logister.clickhouse.span_ingest_failure",
-        level: "error",
-        context: hash_including(
-          metric: hash_including(name: "logister.clickhouse.span_ingest_failure", value: 1, unit: "count")
-        )
-      )
-    )
+    expect(Logister).not_to have_received(:report_metric)
   end
 end
