@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: durable-projection-payloads
+release_version: 3.6.10
+summary: Preload projection sources, persist exact retry payloads, and atomically
+  acknowledge owned delivery batches.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: backend_first_dark
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: de24c0560cf20ffa07ec352d0452300a132f2b421cdb5b7d98dbb71aa6e14f30
+  telemetry_ingest: afa7645370b6d451953725a3164c9212ab2a0183fb68ca4aa95b4aed786fd146
+  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-js:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-python:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-dotnet:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-android:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-ios:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-cli:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.

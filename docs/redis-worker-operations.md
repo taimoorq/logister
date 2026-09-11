@@ -106,3 +106,31 @@ WHERE c.oid IN (
 Then set `LOGISTER_ORDERED_DELIVERY_CLAIMS=true` on core workers and restart them through the normal deployment process. The default is `false`. Compare sampled claim time, completed-versus-arriving deliveries, pending age, intake health, and the general queues. Eligibility, ordering, batch identities, row locks, retry fences, and purge exclusion are unchanged. Set the switch back to `false` to restore the old query; retain the additive indexes during application rollback. The release maintainer owns this switch until a normal-load window and recovery exercise justify removing the old path.
 
 The [query benchmark](telemetry-claim-query.md) records the measured benefits, unfavorable cases, and additional write cost.
+
+## Enable batched projection
+
+Release 3.6.10 adds temporary durable ClickHouse payloads, source preloading, and atomic delivery acknowledgements. Run its additive migration and finish rolling out compatible code to every projector/replay worker before enabling `LOGISTER_BATCHED_PROJECTION=true`. It defaults to `false`. Mixed older workers do not understand the saved payloads, so this is a separate enablement step after deployment.
+
+Check pending/terminal deliveries with assigned batch keys before enabling. Historical batches with missing members or changed source data cannot safely reconstruct their original body and need investigation. New batches save exact bytes before the external call and can retry even if source or project data later changes.
+
+After enablement, compare the sampled `source_load`, `batch_persistence`, `insert`, and `acknowledgement` phases, completed-versus-arriving work, durable delivery age, worker memory, and database write load. Check that watermarks reconcile and `telemetry_projection_batches` drains as deliveries complete. Each incomplete batch retains one compressed body; final acknowledgement deletes it. Completed payloads left by older compatible workers are removed by the daily ledger cleanup.
+
+To roll back, set `LOGISTER_BATCHED_PROJECTION=false` and restart workers through the normal rollout. This stops creating new payload records while keeping existing ones usable. Before deploying an image older than 3.6.10, verify this read-only check returns zero:
+
+```sh
+bin/rails runner 'puts TelemetryProjectionBatch.count'
+```
+
+If incomplete or terminal batches remain, keep the compatible image while diagnosing or replaying them through the existing delivery recovery path. Do not delete payloads, clear queues, or change stored batch keys to force the count to zero. The migration also rejects a schema rollback while the payload table is nonempty. The release maintainer owns the switch until normal-load and controlled recovery checks justify removing the old creation path.
+
+### Measured projection cost
+
+A local PostgreSQL 16.12 benchmark ran three samples at each batch size with a no-network ClickHouse client and rolled each sample back. It measures Ruby/SQL work, excluding external latency and final durable commit time. Separate independent-connection tests cover committed payload visibility, overlapping acknowledgements, intake progress, and the purge fence.
+
+| Rows | Previous SQL statements | Batched SQL statements | Previous median | Batched median |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 19 | 23 | 9.2 ms | 10.3 ms |
+| 20 | 190 | 23 | 79.2 ms | 29.7 ms |
+| 200 | 1,810 | 23 | 815.5 ms | 129.8 ms |
+
+The fixed payload-persistence cost slightly increases one-row work. Larger batches avoid repeated source/project reads, row assignments, validations, and watermark updates. Production results depend on payload size, arrival patterns, database I/O, and ClickHouse response time; compare the sampled phases after enabling.

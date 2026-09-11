@@ -99,6 +99,15 @@ module Logister
     end
 
     def project_clickhouse(deliveries)
+      if deliveries.any? { |delivery| delivery.batch_key.present? }
+        identity = deliveries.first.attributes.symbolize_keys.slice(:project_id, :destination, :batch_key)
+        persisted_batch = TelemetryProjectionBatch.find_by(identity)
+        # Disabling new batch creation must still drain bodies already committed
+        # by this version. Only downgrade the image after those records drain.
+        return retry_clickhouse_batch(deliveries, batch: persisted_batch) if persisted_batch || batched_projection?
+      end
+
+      preload_sources(deliveries) if batched_projection?
       pairs = deliveries.filter_map do |delivery|
         ensure_project_active!(delivery)
         record = source_record!(delivery)
@@ -120,6 +129,8 @@ module Logister
       end
 
       byte_bounded_chunks(pairs).each { |chunk| insert_clickhouse_chunk(chunk) }
+    ensure
+      @projection_sources = nil
     end
 
     def clickhouse_attributes(delivery, record)
@@ -160,6 +171,8 @@ module Logister
     end
 
     def insert_clickhouse_chunk(chunk)
+      return insert_new_projection_batch(chunk) if batched_projection?
+
       deliveries = chunk.map { |item| item.fetch(:delivery) }
       project_ids = deliveries.map(&:project_id).uniq
       raise ProjectionError, "A ClickHouse batch cannot span projects" unless project_ids.one?
@@ -193,10 +206,115 @@ module Logister
       report_clickhouse_failure(chunk&.first, error)
     end
 
+    def batched_projection?
+      ENV["LOGISTER_BATCHED_PROJECTION"] == "true"
+    end
+
+    def preload_sources(deliveries)
+      @projection_sources = @metrics.measure(:source_load) { TelemetryProjectionSources.new(deliveries) }
+    end
+
+    def insert_new_projection_batch(chunk)
+      deliveries = chunk.map { |item| item.fetch(:delivery) }
+      payload = "#{chunk.map { |item| item.fetch(:attributes).to_json }.join("\n")}\n"
+      batch = @metrics.measure(:batch_persistence) do
+        TelemetryProjectionBatch.prepare!(deliveries: deliveries, batch_key: stable_batch_key(deliveries), payload: payload)
+      end
+      @metrics.count(:persisted_payload_bytes, payload.bytesize)
+      send_projection_batch(batch, deliveries)
+    rescue StandardError => error
+      deliveries&.each { |delivery| fail!(delivery, error, terminal: poison_error?(error)) }
+      report_clickhouse_failure(chunk&.first, error)
+    end
+
+    def retry_clickhouse_batch(deliveries, batch: nil)
+      identity = deliveries.first.attributes.symbolize_keys.slice(:project_id, :destination, :batch_key)
+      unless deliveries.all? { |delivery| delivery.attributes.symbolize_keys.slice(*identity.keys) == identity }
+        raise TelemetryProjectionBatch::InvalidPayload, "Claimed deliveries have conflicting batch identities"
+      end
+
+      batch ||= recover_legacy_projection_batch(deliveries, identity)
+      unless (deliveries.map(&:id) - batch.delivery_ids).empty?
+        raise TelemetryProjectionBatch::InvalidPayload, "Claimed deliveries are missing from the persisted batch"
+      end
+
+      TelemetryDelivery.assign_batch_key_batch!(deliveries, batch_key: batch.batch_key)
+      send_projection_batch(batch, deliveries)
+    rescue StandardError => error
+      deliveries.each { |delivery| fail!(delivery, error, terminal: poison_error?(error)) }
+    end
+
+    def recover_legacy_projection_batch(deliveries, identity)
+      # Older releases did not persist the body and could ACK only a prefix.
+      # Rebuild the full original membership, including completed rows, and
+      # verify its UUID digest before ever reusing the old deduplication token.
+      members = TelemetryDelivery.where(identity).order(:id).includes(:telemetry_outbox_event)
+        .limit(TelemetryProjectionBatch::MAX_ROWS + 1).to_a
+      unless members.length <= TelemetryProjectionBatch::MAX_ROWS && generated_batch_key(members) == identity.fetch(:batch_key)
+        raise TelemetryProjectionBatch::InvalidPayload, "The original legacy batch membership is unavailable"
+      end
+      owned_ids = deliveries.map(&:id)
+      unless members.all? { |member| member.completed? || owned_ids.include?(member.id) }
+        raise TelemetryDelivery::BatchOwnershipLost, "Another owner still holds part of the legacy batch"
+      end
+
+      preload_sources(members)
+      rows = members.map do |member|
+        ensure_project_active!(member)
+        record = source_record!(member)
+        ensure_legacy_source_unchanged!(member, record)
+        attributes = clickhouse_attributes(member, record)
+        raise TelemetryProjectionBatch::InvalidPayload, "A legacy batch member is no longer projectable" unless attributes
+
+        attributes
+      end
+      payload = "#{rows.map(&:to_json).join("\n")}\n"
+      @metrics.count(:legacy_batch_snapshots)
+      TelemetryProjectionBatch.prepare!(deliveries: deliveries, members: members, batch_key: identity.fetch(:batch_key), payload: payload)
+    end
+
+    def ensure_legacy_source_unchanged!(delivery, record)
+      outbox = delivery.telemetry_outbox_event
+      service = record.context.to_h.with_indifferent_access[:service]
+      project_fallback_changed = service.blank? && record.project.updated_at > record.created_at
+      if record.updated_at > record.created_at || outbox.updated_at > outbox.created_at || project_fallback_changed
+        raise TelemetryProjectionBatch::InvalidPayload, "Legacy batch data changed without a saved payload; inspect before replay"
+      end
+    end
+
+    def send_projection_batch(batch, deliveries)
+      raise ClickhouseDisabled, "ClickHouse writes are disabled" unless clickhouse_client.enabled?
+
+      payload = batch.payload
+      Project.transaction(requires_new: true) do
+        project = Project.lock("FOR SHARE").find_by(id: batch.project_id)
+        raise ProjectPurging, "Project purge is pending" if project.nil? || project.purge_pending?
+
+        @metrics.measure(:insert) do
+          SelfReportingGuard.suppress do
+            if batch.destination == "clickhouse_event"
+              clickhouse_client.insert_event_payload!(payload, deduplication_token: batch.batch_key, gzip: true)
+            else
+              clickhouse_client.insert_span_payload!(payload, deduplication_token: batch.batch_key, gzip: true)
+            end
+          end
+        end
+      end
+      completed_ids = @metrics.measure(:acknowledgement) { batch.acknowledge!(deliveries, at: now) }
+      @completed += completed_ids.length
+      @metrics.count(:lease_conflicts, deliveries.length - completed_ids.length)
+    end
+
     def stable_batch_key(deliveries)
       existing = deliveries.filter_map(&:batch_key).uniq
       return existing.first if existing.one?
       raise ProjectionError, "Claimed deliveries have conflicting batch identities" if existing.many?
+
+      generated_batch_key(deliveries)
+    end
+
+    def generated_batch_key(deliveries)
+      raise TelemetryProjectionBatch::InvalidPayload, "A projection batch cannot be empty" if deliveries.empty?
 
       digest = Digest::SHA256.hexdigest(deliveries.map(&:uuid).sort.join("|"))
       "logister-v1-#{deliveries.first.destination}-#{digest}"
@@ -204,14 +322,14 @@ module Logister
 
     def source_record!(delivery)
       @metrics.measure(:source_load) do
-        delivery.telemetry_outbox_event.source_record ||
+        (@projection_sources ? @projection_sources.fetch(delivery) : delivery.telemetry_outbox_event.source_record) ||
           raise(MissingSourceRecord, "Accepted #{delivery.telemetry_outbox_event.record_type} is no longer available")
       end
     end
 
     def ensure_project_active!(delivery)
-      project = delivery.project.reload
-      raise ProjectPurging, "Project purge is pending" if project.purge_pending?
+      project = @projection_sources ? @projection_sources.project_for(delivery) : delivery.project.reload
+      raise ProjectPurging, "Project purge is pending" if project.nil? || project.purge_pending?
     end
 
     def send_notifications?(delivery)
@@ -249,7 +367,7 @@ module Logister
 
     def poison_error?(error)
       error.is_a?(MissingSourceRecord) || error.is_a?(PayloadTooLarge) ||
-        error.is_a?(ProjectPurging) || error.is_a?(InvalidProjection)
+        error.is_a?(ProjectPurging) || error.is_a?(InvalidProjection) || error.is_a?(TelemetryProjectionBatch::InvalidPayload)
     end
 
     def report_clickhouse_failure(item, error)

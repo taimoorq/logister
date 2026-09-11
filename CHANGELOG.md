@@ -2,6 +2,21 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.10 - 2026-09-11
+
+### Improved
+
+- Added an opt-in projection path that preloads canonical source references and assigns and acknowledges owned delivery batches atomically.
+- Persisted a bounded, compressed copy of each ClickHouse HTTP body before sending it, so retries preserve original bytes, membership and deduplication identity without reloading sources.
+- Kept watermark counts/checksums in the acknowledgement transaction and retained all source/ledger members needed by incomplete legacy batches.
+
+### Upgrade Notes
+
+- Run the additive `telemetry_projection_batches` migration. `LOGISTER_BATCHED_PROJECTION` defaults to `false`; enable only after all projector workers run compatible code and historical assigned retries have been inspected.
+- Turning the switch off stops new payload creation while draining existing records. Before an image downgrade below 3.6.10, verify the payload table is empty. Schema rollback refuses to discard retained bodies.
+- Incomplete/terminal batches temporarily retain compressed telemetry; final acknowledgement or daily completed-ledger cleanup removes the copy, and project deletion cascades to it. Missing or modified legacy batch data stops inspectably rather than sending a partial body with an old key.
+- No Logister SDK changes or new machines. `bundle update --all` refreshed `aws-sdk-s3` from 1.231.0 to 1.232.0.
+
 ## v3.6.9 - 2026-09-11
 
 ### Changed

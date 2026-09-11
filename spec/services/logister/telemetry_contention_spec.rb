@@ -202,6 +202,66 @@ RSpec.describe "Telemetry database contention", type: :model do
     batch&.join
   end
 
+  context "with durable projection batches" do
+    around do |example|
+      previous = ENV["LOGISTER_BATCHED_PROJECTION"]
+      ENV["LOGISTER_BATCHED_PROJECTION"] = "true"
+      example.run
+    ensure
+      previous.nil? ? ENV.delete("LOGISTER_BATCHED_PROJECTION") : ENV["LOGISTER_BATCHED_PROJECTION"] = previous
+    end
+
+    it "lets intake and a disjoint batch progress while an external write keeps the purge fence" do
+      2.times { accept_event }
+
+      during_clickhouse_write do
+        expect(TelemetryProjectionBatch.count).to eq(1)
+        expect(in_connection { accept_event }).to be_persisted
+        client = instance_double(Logister::ClickhouseClient, enabled?: true, insert_event_payload!: nil)
+        result = in_connection { Logister::TelemetryProjector.new(clickhouse_client: client).call(limit: 1) }
+        expect(result).to have_attributes(claimed: 1, completed: 1)
+        expect do
+          in_connection do
+            ApplicationRecord.transaction do
+              ApplicationRecord.connection.execute("SET LOCAL lock_timeout = '150ms'")
+              Logister::ProjectPurgeRequest.new(project: Project.find(project.id), enqueue: false).call
+            end
+          end
+        end.to raise_error(ActiveRecord::LockWaitTimeout)
+      end
+      expect(project.reload).not_to be_purge_pending
+    end
+
+    it "counts an overlapping acknowledgement exactly once while the other connection waits for its rows" do
+      3.times { accept_event }
+      deliveries = TelemetryDelivery.claim_batch(limit: 3)
+      entered = Queue.new
+      second = nil
+      first = nil
+      TelemetryDelivery.transaction do
+        first = TelemetryDelivery.mark_completed_batch!(deliveries.first(2))
+        second = connection_thread do
+          entered << ApplicationRecord.connection.select_value("SELECT pg_backend_pid()")
+          TelemetryDelivery.mark_completed_batch!(deliveries.last(2))
+        end
+        pid = Timeout.timeout(3) { entered.pop }
+        Timeout.timeout(3) do
+          sleep 0.01 until ApplicationRecord.connection.select_value("SELECT EXISTS (SELECT 1 FROM pg_locks WHERE pid = #{Integer(pid)} AND NOT granted)")
+        end
+      end
+      changed = first + Timeout.timeout(5) { second.value }
+
+      expect(changed).to match_array(deliveries.map(&:id))
+      expect(changed.uniq.length).to eq(3)
+      watermark = TelemetryProjectionWatermark.find_by!(project: project, signal: "log")
+      expect(watermark).to have_attributes(accepted_count: 3, delivered_count: 3)
+      expect(watermark.accepted_checksum).to eq(watermark.delivered_checksum)
+    ensure
+      second&.kill if second&.alive?
+      second&.join
+    end
+  end
+
   private
 
   def event_entry
@@ -240,7 +300,8 @@ RSpec.describe "Telemetry database contention", type: :model do
     entered = Queue.new
     release = Queue.new
     client = instance_double(Logister::ClickhouseClient, enabled?: true)
-    allow(client).to receive(:insert_events!) do
+    method = ENV["LOGISTER_BATCHED_PROJECTION"] == "true" ? :insert_event_payload! : :insert_events!
+    allow(client).to receive(method) do
       entered << true
       release.pop
     end

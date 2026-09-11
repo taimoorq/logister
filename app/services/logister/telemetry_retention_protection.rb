@@ -32,7 +32,7 @@ module Logister
         incomplete_delivery = Arel::SelectManager.new(delivery)
           .project(Arel.sql("1"))
           .where(delivery[:telemetry_outbox_event_id].eq(outbox[:id]))
-          .where(delivery[:status].not_eq(TelemetryDelivery.statuses.fetch("completed")))
+          .where(TelemetryDelivery.replay_required_predicate(delivery))
           .exists
 
         Arel::SelectManager.new(outbox)

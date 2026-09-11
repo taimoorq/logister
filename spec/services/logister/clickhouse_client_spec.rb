@@ -141,6 +141,20 @@ RSpec.describe Logister::ClickhouseClient do
       expect(described_class::ResponseError.new("busy", status_code: 503)).to be_retryable
       expect(described_class::ResponseError.new("limited", status_code: 429)).to be_retryable
     end
+
+    it "sends a persisted Unicode payload verbatim without parsing or serializing its numbers again" do
+      client = described_class.new(config: config)
+      response = Net::HTTPSuccess.new("1.1", "200", "OK")
+      allow(client).to receive(:post_query).and_return(response)
+      payload = "{\"message\":\"café 🌍\",\"identity_checksum\":340282366920938463463374607431768211455,\"duration_ms\":0.0000001}\n"
+
+      client.insert_event_payload!(payload, deduplication_token: "persisted-body")
+
+      expect(client).to have_received(:post_query).with(
+        /INSERT INTO logister\.events FORMAT JSONEachRow/, payload,
+        deduplication_token: "persisted-body", gzip: true
+      )
+    end
   end
 
   describe "activation modes" do
