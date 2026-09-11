@@ -18,6 +18,7 @@ module Logister
       rejected = false
       resolved_clickhouse_writable = clickhouse_writable?
       resolved_installation = installation
+      @watermark_recorder = TelemetryProjectionWatermark::AcceptanceBatch.new
 
       ApplicationRecord.transaction do
         acquire_identity_locks!
@@ -47,6 +48,8 @@ module Logister
         end
 
         raise ActiveRecord::Rollback if rejected
+
+        @watermark_recorder.flush!
       end
 
       Result.new(
@@ -74,7 +77,8 @@ module Logister
         outbox_event: outbox_for(entry),
         ledger_locks_held: true,
         clickhouse_writable: clickhouse_writable,
-        installation: installation
+        installation: installation,
+        watermark_recorder: @watermark_recorder
       }
       entry.fetch(:type) == "span" ? TraceSpanPersistence.new(**options).call : IngestEventPersistence.new(**options).call
     end

@@ -48,6 +48,40 @@ This is an at-least-once pipeline with idempotent effects. A worker may repeat w
 after an ambiguous acknowledgement, but repetition must not create a second logical
 fact or inflate an aggregate.
 
+### Lock boundaries under ingestion load
+
+Batch acceptance accumulates the count and UUID checksum of newly created delivery
+intents, then updates hourly watermarks in one sorted upsert immediately before the
+acceptance transaction commits. Repeated identities contribute only when repairing
+a missing intent. Source records, intents, and watermarks still commit or roll back
+together. A projector cannot see an intent before its accepted count is durable.
+
+Accepted and delivered progress use atomic increments that recompute completeness
+from the resulting counts, checksums, and terminal-failure count in the same SQL
+statement. Existing buckets do not require an exception-driven insert, row reload,
+and separate completion update for each envelope. The terminal-failure, replay,
+empty-seal, backfill, and cleanup paths retain their existing safety boundaries.
+
+New delivery claims use `FOR UPDATE OF telemetry_deliveries SKIP LOCKED`. The joined
+project and outbox rows are filters, not claim targets; locking them would serialize
+otherwise independent deliveries for the same project. A batch with an existing
+ClickHouse deduplication key first acquires a transaction advisory lock for that
+batch and locks its due deliveries together in ID order. It must not be split by
+competing claimers into separate writes using the same deduplication token.
+
+ClickHouse writes hold a project row with `FOR SHARE` until the external call ends.
+Concurrent writers and ingestion foreign-key checks can proceed, while the purge
+request's exclusive project lock must wait. After a purge tombstone commits, a new
+writer rechecks it under the shared lock and refuses the write. Do not release this
+fence before the external call or replace it with an unlocked lifecycle check.
+These compatibility rules follow PostgreSQL's [row-lock conflict matrix](https://www.postgresql.org/docs/17/explicit-locking.html#LOCKING-ROWS).
+
+Validate lock changes with real independent PostgreSQL connections in
+`spec/services/logister/telemetry_contention_spec.rb`. The suite holds an external
+write open, verifies ingestion and another projector can advance, and verifies a
+purge cannot pass that write. Batch specs also check counter-query cost, duplicate
+retries, invalid-envelope rollback, and failure of the final counter write.
+
 Error-group and check-in transitions use the same boundary for notifications.
 PostgreSQL commits a uniquely keyed `notification_intents` row in the transaction
 that creates the group occurrence or monitor transition. A Sidekiq enqueue after

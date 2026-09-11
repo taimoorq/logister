@@ -2,6 +2,20 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.5 - 2026-09-11
+
+### Fixed
+
+- Reduced ingestion contention by accumulating accepted delivery counts and checksums and updating hourly watermarks once at the end of the existing atomic batch transaction.
+- Replaced per-event conflict lookups and completion reloads with atomic watermark progress updates.
+- Restricted delivery claim locks to delivery rows and kept retries with an existing ClickHouse deduplication key together under a batch-specific transaction lock.
+- Allowed ingestion and concurrent ClickHouse writers to share the project fence while preserving exclusive purge ordering.
+
+### Upgrade Notes
+
+- No database migrations or SDK/CLI upgrades are required. Existing delivery identities, retry leases, deduplication tokens, counters, and purge tombstones remain compatible.
+- Rollback uses the previous application image without rewriting telemetry or clearing queues. Measure ingestion latency, database lock waits, backlog progress, and web readiness after rollout.
+
 ## v3.6.4 - 2026-09-11
 
 ### Changed

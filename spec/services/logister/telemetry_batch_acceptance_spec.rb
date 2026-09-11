@@ -74,6 +74,68 @@ RSpec.describe Logister::TelemetryBatchAcceptance, type: :model do
     expect(result.outbox_events.length).to eq(1)
   end
 
+  it "updates a hot bucket once for 100 events and does no watermark work for a retry" do
+    allow(Logister::ClickhouseClient).to receive(:new)
+      .and_return(instance_double(Logister::ClickhouseClient, write_enabled?: true))
+    entries = 100.times.map { event_entry(SecureRandom.uuid, message: "batched log") }
+    entries.each { |entry| entry.fetch(:attributes)[:occurred_at] = Time.current.utc.beginning_of_hour }
+
+    statements = capture_sql do
+      @result = described_class.new(project: project, api_key: api_key, entries: entries).call
+    end
+    expect(@result).not_to be_rejected
+    watermark_queries = statements.grep(/"telemetry_projection_watermarks"/)
+    expect(watermark_queries.length).to eq(1)
+    expect(watermark_queries.first).to match(/ON CONFLICT .* DO UPDATE/i)
+    expect_single_batch_transaction(statements)
+    watermark = TelemetryProjectionWatermark.find_by!(project: project, signal: "log")
+    expected_checksum = entries.sum do |entry|
+      TelemetryProjectionWatermark.identity_checksum(entry.fetch(:attributes).fetch(:uuid))
+    end
+    expect(watermark).to have_attributes(accepted_count: 100, accepted_checksum: expected_checksum, delivered_count: 0)
+
+    retry_statements = capture_sql do
+      @retry = described_class.new(project: project, api_key: api_key, entries: entries.reverse).call
+    end
+    expect(@retry.entries).to all(include(accepted: true, duplicate: true))
+    expect(retry_statements.grep(/"telemetry_projection_watermarks"/)).to be_empty
+    expect(watermark.reload.accepted_count).to eq(100)
+  end
+
+  it "rolls back every source and delivery when one entry is invalid without publishing counters" do
+    allow(Logister::ClickhouseClient).to receive(:new)
+      .and_return(instance_double(Logister::ClickhouseClient, write_enabled?: true))
+    entries = 2.times.map { event_entry(SecureRandom.uuid, message: "batched log") }
+    entries.last.fetch(:attributes)[:message] = nil
+
+    statements = capture_sql do
+      @result = described_class.new(project: project, api_key: api_key, entries: entries).call
+    end
+
+    expect(@result).to be_rejected
+    expect(project.ingest_events.where(uuid: entries.map { |entry| entry.fetch(:attributes).fetch(:uuid) })).to be_empty
+    expect(TelemetryIdempotencyKey.where(project: project)).to be_empty
+    expect(TelemetryOutboxEvent.where(project: project)).to be_empty
+    expect(TelemetryDelivery.where(project: project)).to be_empty
+    expect(TelemetryProjectionWatermark.where(project: project)).to be_empty
+    expect(statements.grep(/"telemetry_projection_watermarks"/)).to be_empty
+  end
+
+  it "rolls back accepted sources if the final counter write fails" do
+    allow(Logister::ClickhouseClient).to receive(:new)
+      .and_return(instance_double(Logister::ClickhouseClient, write_enabled?: true))
+    entries = [ event_entry(SecureRandom.uuid, message: "batched log") ]
+    allow(TelemetryProjectionWatermark).to receive(:record_accepted_batch!)
+      .and_raise(ActiveRecord::LockWaitTimeout)
+
+    expect do
+      described_class.new(project: project, api_key: api_key, entries: entries).call
+    end.to raise_error(ActiveRecord::LockWaitTimeout)
+    expect(TelemetryIdempotencyKey.where(project: project)).to be_empty
+    expect(TelemetryDelivery.where(project: project)).to be_empty
+    expect(project.ingest_events.reload).to be_empty
+  end
+
   private
 
   def event_entry(uuid, message:)

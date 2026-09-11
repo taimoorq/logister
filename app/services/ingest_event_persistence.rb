@@ -13,6 +13,7 @@ class IngestEventPersistence
                  identity_preloaded: false, idempotency_key: nil,
                  existing_record: nil, outbox_event: nil,
                  ledger_locks_held: false, clickhouse_writable: nil,
+                 watermark_recorder: TelemetryProjectionWatermark,
                  installation: Logister::TelemetryAcceptanceLedger::INSTALLATION_UNRESOLVED)
     @project = project
     @api_key = api_key
@@ -27,6 +28,7 @@ class IngestEventPersistence
     @ledger_locks_held = ledger_locks_held
     @clickhouse_writable = clickhouse_writable
     @installation = installation
+    @watermark_recorder = watermark_recorder
   end
 
   def call
@@ -130,7 +132,8 @@ class IngestEventPersistence
       idempotency_key: @idempotency_key,
       outbox_event: @outbox_event,
       identity_preloaded: @identity_preloaded,
-      locks_held: @ledger_locks_held
+      locks_held: @ledger_locks_held,
+      watermark_recorder: @watermark_recorder
     )
   end
 

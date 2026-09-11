@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "digest"
+
 class TelemetryDelivery < ApplicationRecord
   class LeaseExpired < StandardError; end
 
@@ -41,10 +43,14 @@ class TelemetryDelivery < ApplicationRecord
     def claim_batch(limit:, now: Time.current, lease_for: DEFAULT_LEASE, destinations: DESTINATIONS)
       transaction(requires_new: true) do
         terminalize_expired_final_leases!(now: now, limit: limit)
-        seed = due(now:, destinations:).order(:available_at, :id).lock("FOR UPDATE SKIP LOCKED").first
+        seed = due(now:, destinations:).order(:available_at, :id).first
         next [] unless seed
+        # A retry must retain its original deduplication batch. Take its fence
+        # before any delivery row, otherwise racing seeds can split the batch.
+        next [] if seed.batch_key.present? && !lock_assigned_batch(seed)
 
         outbox_event = seed.telemetry_outbox_event
+        next [] unless outbox_event
         candidates = due(now:, destinations:)
           .where(destination: seed.destination, project_id: seed.project_id)
           .joins(:telemetry_outbox_event)
@@ -53,11 +59,12 @@ class TelemetryDelivery < ApplicationRecord
             recorded_at: outbox_event.recorded_at.utc.beginning_of_hour...(outbox_event.recorded_at.utc.beginning_of_hour + 1.hour)
           })
         candidates = if seed.batch_key.present?
-          candidates.where(batch_key: seed.batch_key)
+          candidates.where(batch_key: seed.batch_key).order(:id).lock("FOR UPDATE OF telemetry_deliveries")
         else
-          candidates.where(batch_key: nil).limit(limit)
+          candidates.where(batch_key: nil).order(:available_at, :id).limit(limit)
+            .lock("FOR UPDATE OF telemetry_deliveries SKIP LOCKED")
         end
-        records = candidates.order(:available_at, :id).lock("FOR UPDATE SKIP LOCKED").to_a
+        records = candidates.to_a
         next [] if records.empty?
 
         token = SecureRandom.uuid
@@ -93,7 +100,7 @@ class TelemetryDelivery < ApplicationRecord
         .where("lease_expires_at <= ? AND attempts >= ?", now, MAX_ATTEMPTS)
         .order(:lease_expires_at, :id)
         .limit(limit)
-        .lock("FOR UPDATE SKIP LOCKED")
+        .lock("FOR UPDATE OF telemetry_deliveries SKIP LOCKED")
         .each do |delivery|
           delivery.mark_failed!(
             LeaseExpired.new("Final projector lease expired before acknowledgement"),
@@ -102,6 +109,14 @@ class TelemetryDelivery < ApplicationRecord
             at: now
           )
         end
+    end
+
+    private
+
+    def lock_assigned_batch(seed)
+      identity = "logister:delivery-batch:#{seed.project_id}:#{seed.destination}:#{seed.batch_key}"
+      lock_key = Digest::SHA256.digest(identity).unpack1("q>")
+      connection.select_value(sanitize_sql_array([ "SELECT pg_try_advisory_xact_lock(?)", lock_key ]))
     end
   end
 
