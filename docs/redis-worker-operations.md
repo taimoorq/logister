@@ -24,8 +24,8 @@ The **Admin → Installation → Redis & jobs** diagnostic reports the observed 
 ## Queue topology
 
 The checked-in `config/sidekiq.yml` consumes every workload queue plus the
-low-priority `default` compatibility queue for Rails/framework jobs. It remains the
-recommended small-install command:
+`default` compatibility queue for Rails/framework jobs. It remains the
+recommended small-install command, with equal queue weights so one busy queue cannot permanently exclude the others:
 
 ```sh
 bundle exec sidekiq -C config/sidekiq.yml
@@ -43,7 +43,7 @@ bundle exec sidekiq -C config/sidekiq-archives.yml
 ```
 
 The checked-in hosted profile uses `config/sidekiq-core.yml` for normal work and
-`config/sidekiq-archives.yml` for archive work. The archive profile consumes only
+`config/sidekiq-archives.yml` for archive work. The core profile reserves three of its five job threads for the projector and two for notifications, mailers, analytics, integrations, symbols, maintenance, and default jobs. Those general queues have equal positive weights. The archive profile consumes only
 the `archives` queue at concurrency 1. This bounds concurrent compression,
 object-storage, verification, and source-cleanup memory without delaying the
 projector, notification, or mailer queues. Small self-hosted installations may
@@ -60,8 +60,7 @@ because the PostgreSQL intent remains the recovery source of truth.
 
 Sidekiq resolves concurrency before Rails boots. An explicit `-c` value therefore
 wins for split roles; otherwise `config/sidekiq.yml` uses
-`SIDEKIQ_CONCURRENCY`, defaulting to 5. The Rails initializer does not replace the
-parsed value, and worker heartbeats report that actual process concurrency.
+`SIDEKIQ_CONCURRENCY`, defaulting to 5. The core profile divides that parsed total into two capsules. Set `SIDEKIQ_PROJECTOR_CONCURRENCY` to choose the projector share; it must leave at least one general thread. Without an override, two general threads are reserved (one when the total is two). The core profile rejects a total below two; use the combined profile for a one-thread installation. Worker heartbeats sum all capsule threads, so `DB_POOL=7` still covers the default five-thread core worker plus headroom.
 
 ## Database pool sizing
 
@@ -82,3 +81,9 @@ The concurrency-1 archive worker therefore needs `DB_POOL=3` or higher. Its
 heartbeat appears separately in **Admin → Installation → Redis & jobs**. The
 diagnostic uses raw Redis `SCAN`, so it works with both the Sidekiq Redis Client
 adapter and the redis-rb client used by installation checks.
+
+## Sampled pipeline timings
+
+Production emits one payload-free `telemetry_pipeline` log summary for a sample of intake batches and projector drains. `LOGISTER_TELEMETRY_PROFILE_SAMPLE_RATE` defaults to `0.01`; set it to `0` to disable or temporarily increase it for a bounded investigation. Summaries include phase durations, SQL statement counts/timing, row/outcome counts, and exception class only. They never include SQL text, bindings, event contents, or client identifiers, and reporting is suppressed while writing the summary.
+
+Check queue age together with durable delivery age and completed-versus-arriving work. A nonempty projector queue should not prevent general queues from advancing. Sidekiq 8 timestamps are measured in milliseconds; the installation diagnostic accepts these and older second timestamps. Retry/dead totals belong to the Redis service and may include other applications when Redis is shared.

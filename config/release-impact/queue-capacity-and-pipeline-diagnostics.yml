@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: queue-capacity-and-pipeline-diagnostics
+release_version: 3.6.6
+summary: Reserve capacity for general jobs and measure queue age and pipeline work
+  accurately without changing delivery contracts.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: 49a30a17e82492097525ff2a51de5b84826bed3f5151b3b8aa3b5b82e2d84f41
+  telemetry_ingest: 1954656a32854bbc0ce6029748775a5b5c7ac4cd829328d87a98515ffcf8dffa
+  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Worker scheduling and aggregate diagnostics preserve existing ingestion,
+      evidence, and CLI contracts.
+  logister-js:
+    bump: none
+    reason: Worker scheduling and aggregate diagnostics preserve existing ingestion,
+      evidence, and CLI contracts.
+  logister-python:
+    bump: none
+    reason: Worker scheduling and aggregate diagnostics preserve existing ingestion,
+      evidence, and CLI contracts.
+  logister-dotnet:
+    bump: none
+    reason: Worker scheduling and aggregate diagnostics preserve existing ingestion,
+      evidence, and CLI contracts.
+  logister-android:
+    bump: none
+    reason: Worker scheduling and aggregate diagnostics preserve existing ingestion,
+      evidence, and CLI contracts.
+  logister-ios:
+    bump: none
+    reason: Worker scheduling and aggregate diagnostics preserve existing ingestion,
+      evidence, and CLI contracts.
+  logister-cli:
+    bump: none
+    reason: Worker scheduling and aggregate diagnostics preserve existing ingestion,
+      evidence, and CLI contracts.

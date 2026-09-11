@@ -3,17 +3,19 @@
 require "rails_helper"
 
 RSpec.describe Logister::SidekiqReadiness do
-  it "reports queue age, failure sets, Redis durability, scheduler lateness, and pool sizing" do
-    redis = double("redis")
-    pool = double("connection_pool", size: 7)
-    now = Time.zone.parse("2026-08-08T12:00:00Z")
+  let(:redis) { double("redis") }
+  let(:pool) { double("connection_pool", size: 7) }
+  let(:now) { Time.zone.parse("2026-08-08T12:00:00Z") }
+  let(:enqueued_at) { (now - 90.seconds).to_f }
+
+  before do
     allow(redis).to receive(:scard).with("processes").and_return(2)
     allow(redis).to receive(:zcard).with("retry").and_return(3)
     allow(redis).to receive(:zcard).with("dead").and_return(1)
     allow(redis).to receive(:zcard).with("schedule").and_return(8)
     allow(redis).to receive(:llen) { |key| key == "queue:projector" ? 4 : 0 }
     allow(redis).to receive(:lindex) do |key, _index|
-      key == "queue:projector" ? { enqueued_at: (now - 90.seconds).to_f }.to_json : nil
+      key == "queue:projector" ? { enqueued_at: enqueued_at }.to_json : nil
     end
     allow(redis).to receive(:hgetall).and_return({})
     allow(redis).to receive(:call)
@@ -24,12 +26,15 @@ RSpec.describe Logister::SidekiqReadiness do
     allow(redis).to receive(:config).with(:get, "maxmemory-policy").and_return("maxmemory-policy" => "noeviction")
     allow(redis).to receive(:config).with(:get, "appendonly").and_return("appendonly" => "yes")
     allow(redis).to receive(:config).with(:get, "save").and_return("save" => "3600 1")
+  end
 
-    result = described_class.new(redis: redis, concurrency: 5, now: now, connection_pool: pool).call
+  subject(:result) { described_class.new(redis: redis, concurrency: 5, now: now, connection_pool: pool).call }
 
+  it "reports queue age, failure sets, Redis durability, scheduler lateness, and pool sizing" do
     expect(result).to include("sidekiq_processes" => 2, "retry_size" => 3, "dead_size" => 1)
     expect(result.dig("queues", "projector")).to include("size" => 4, "age_seconds" => 90)
     expect(result.dig("queues", "archives")).to include("size" => 0, "age_seconds" => 0)
+    expect(result.dig("queues", "default")).to include("size" => 0, "age_seconds" => 0)
     expect(result.fetch("redis")).to include(
       "sidekiq_policy_valid" => true,
       "persistence_configured" => true,
@@ -37,5 +42,32 @@ RSpec.describe Logister::SidekiqReadiness do
     )
     expect(result.fetch("database_pool")).to include("required" => 7, "valid" => true)
     expect(result.fetch("scheduler")).not_to be_empty
+  end
+
+  context "with Sidekiq 8 millisecond timestamps" do
+    let(:enqueued_at) { ((now - 90.seconds).to_f * 1_000).to_i }
+
+    it "reports the actual waiting time" do
+      expect(result.dig("queues", "projector", "age_seconds")).to eq(90)
+      expect(result.dig("queues", "projector", "oldest_enqueued_at")).to eq((now - 90.seconds).iso8601)
+    end
+  end
+
+  [ nil, "invalid", -1, 0, "Infinity", "NaN" ].each do |invalid|
+    context "with invalid timestamp #{invalid.inspect}" do
+      let(:enqueued_at) { invalid }
+
+      it "keeps the missing timestamp explicit" do
+        expect(result.dig("queues", "projector", "oldest_enqueued_at")).to be_nil
+      end
+    end
+  end
+
+  context "with a timestamp in the future" do
+    let(:enqueued_at) { ((now + 10.seconds).to_f * 1_000).to_i }
+
+    it "does not report a negative age" do
+      expect(result.dig("queues", "projector", "age_seconds")).to eq(0)
+    end
   end
 end
