@@ -105,6 +105,17 @@ RSpec.describe "Batched telemetry projection", type: :model do
     expect(TelemetryProjectionBatch.count).to eq(1)
   end
 
+  it "removes the retained payload through the real PostgreSQL project purge adapter" do
+    _deliveries, batch = prepared_batch
+    purge = Logister::ProjectPurgeRequest.new(project: project, requested_by: project.user, enqueue: false).call
+
+    result = Logister::ProjectPurgeAdapters::Postgresql.new(project_purge: purge).call
+
+    expect(result).to include(status: "completed", project_deleted: true)
+    expect(TelemetryProjectionBatch.exists?(batch.id)).to be(false)
+    expect(purge.reload.project).to be_nil
+  end
+
   it "reconstructs a partial legacy acknowledgement with the whole original body and counts only the remaining delivery" do
     deliveries, original_body, key = legacy_retry
     first = deliveries.first.reload
