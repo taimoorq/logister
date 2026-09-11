@@ -9,7 +9,7 @@ RSpec.describe Logister::ClickhouseFailureReporter do
   before do
     allow(Rails).to receive(:cache).and_return(cache_store)
     cache_store.clear
-    allow(Logister).to receive(:report_log)
+    allow(Logister).to receive(:report_error)
     allow(Logister).to receive(:report_metric)
   end
 
@@ -29,26 +29,23 @@ RSpec.describe Logister::ClickhouseFailureReporter do
   it "reports the first failure for a signature" do
     expect(reporter.call).to be(true)
 
-    expect(Logister).to have_received(:report_log).with(
-      hash_including(
-        message: "ClickHouse ingest failed",
+    expect(Logister).to have_received(:report_error).with(
+      error, hash_including(
         context: hash_including(
           clickhouse_ingest: hash_including(ingest_event_id: 123),
           throttle: hash_including(window_seconds: 60)
         )
       )
     )
-    expect(Logister).to have_received(:report_metric).with(
-      hash_including(message: "logister.clickhouse.ingest_failure")
-    )
+    expect(Logister).not_to have_received(:report_metric)
   end
 
   it "throttles duplicate failures for the same signature" do
     expect(reporter.call).to be(true)
     expect(reporter.call).to be(false)
 
-    expect(Logister).to have_received(:report_log).once
-    expect(Logister).to have_received(:report_metric).once
+    expect(Logister).to have_received(:report_error).once
+    expect(Logister).not_to have_received(:report_metric)
   end
 
   it "throttles failures whose only differences are row payload and timestamp" do
@@ -58,35 +55,29 @@ RSpec.describe Logister::ClickhouseFailureReporter do
     expect(described_class.report_event_failure(1, first_error)).to be(true)
     expect(described_class.report_event_failure(2, second_error)).to be(false)
 
-    expect(Logister).to have_received(:report_log).once
+    expect(Logister).to have_received(:report_error).once
   end
 
   it "uses the event failure preset helper" do
     expect(described_class.report_event_failure(456, error)).to be(true)
 
-    expect(Logister).to have_received(:report_log).with(
-      hash_including(
-        message: "ClickHouse ingest failed",
+    expect(Logister).to have_received(:report_error).with(
+      error, hash_including(
         context: hash_including(clickhouse_ingest: hash_including(ingest_event_id: 456))
       )
     )
-    expect(Logister).to have_received(:report_metric).with(
-      hash_including(message: "logister.clickhouse.ingest_failure")
-    )
+    expect(Logister).not_to have_received(:report_metric)
   end
 
   it "uses the span failure preset helper" do
     expect(described_class.report_span_failure(789, error)).to be(true)
 
-    expect(Logister).to have_received(:report_log).with(
-      hash_including(
-        message: "ClickHouse span ingest failed",
+    expect(Logister).to have_received(:report_error).with(
+      error, hash_including(
         context: hash_including(clickhouse_ingest: hash_including(trace_span_id: 789))
       )
     )
-    expect(Logister).to have_received(:report_metric).with(
-      hash_including(message: "logister.clickhouse.span_ingest_failure")
-    )
+    expect(Logister).not_to have_received(:report_metric)
   end
 
   it "reports when cache throttling fails open" do
@@ -94,8 +85,8 @@ RSpec.describe Logister::ClickhouseFailureReporter do
 
     expect(reporter.call).to be(true)
 
-    expect(Logister).to have_received(:report_log)
-    expect(Logister).to have_received(:report_metric)
+    expect(Logister).to have_received(:report_error)
+    expect(Logister).not_to have_received(:report_metric)
   end
 
   it "clamps invalid throttle values to at least one second" do
@@ -104,8 +95,8 @@ RSpec.describe Logister::ClickhouseFailureReporter do
 
     expect(reporter.call).to be(true)
 
-    expect(Logister).to have_received(:report_log).with(
-      hash_including(context: hash_including(throttle: hash_including(window_seconds: 1)))
+    expect(Logister).to have_received(:report_error).with(
+      error, hash_including(context: hash_including(throttle: hash_including(window_seconds: 1)))
     )
   ensure
     ENV["LOGISTER_CLICKHOUSE_FAILURE_THROTTLE_SECONDS"] = previous_value

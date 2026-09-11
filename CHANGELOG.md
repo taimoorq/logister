@@ -2,6 +2,19 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.9 - 2026-09-11
+
+### Changed
+
+- Logister now reports only its own application errors. SQL metrics and breadcrumbs, request spans and transactions, routine logs, scheduler check-ins, and self-deployment records are disabled at boot and on installation settings refresh.
+- Handled ClickHouse and recurring-scheduler failures remain visible as grouped error events with existing throttling and recursion protection. Unhandled job errors use the SDK callback once. Customer project telemetry remains supported.
+- The sample telemetry task now sends one sample error, and installation guidance describes the errors-only policy.
+
+### Upgrade Notes
+
+- Pause obsolete check-in monitors on the configured self-reporting project before rollout; do not pause job scheduling or customer monitors. Existing capture settings cannot re-enable non-error self-reporting.
+- Preserve historical events and accepted deliveries while old process buffers drain. Verify a controlled error and customer metric ingestion after rollout. No SDK upgrade is required.
+
 ## v3.6.8 - 2026-09-11
 
 ### Improved

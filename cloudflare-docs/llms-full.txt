@@ -118,7 +118,7 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - ClickHouse readiness requires the event table, span table, one-minute rollup tables, materialized views from `docs/clickhouse_schema.sql`, and matching stable-window event coverage before read cutover.
 - `/health/clickhouse` reports connectivity, schema readiness, and `clickhouse_mode`. A `200` response with `dual_write` does not mean dashboard reads use ClickHouse.
 - The legacy `LOGISTER_CLICKHOUSE_ENABLED=true` setting selects only `dual_write`; use `LOGISTER_CLICKHOUSE_MODE=read_preferred` after coverage passes.
-- ClickHouse write failures are reported through `logister-ruby` as throttled logs and count metrics when Logister self-observability is configured.
+- ClickHouse write failures are reported through `logister-ruby` as throttled error events when Logister self-observability is configured.
 - Data retention docs are split by task: overview, Archive Center paths, policy choices, archive storage, and durable retention jobs at https://logister.org/docs/product/data-retention/.
 - S3-compatible archive storage is optional and uses Active Storage with `ACTIVE_STORAGE_SERVICE=amazon` plus AWS/S3 variables.
 - Project retention uses a durable PostgreSQL run ledger, bounded object attempts, stale-attempt fencing, and a dedicated `archives` Sidekiq queue before exact verified source cleanup. The legacy global `logister:telemetry:prune_hot` task is disabled. Archive Center exposes phase, progress, heartbeat freshness, retry/failure state, cleanup status, Coverage, bounded Catalog pages, and Search Archives.
@@ -206,3 +206,5 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - Short AI map: https://logister.org/docs/llms.txt
 
 The core worker profile reserves three projector threads and two general job threads by default, with a separate one-thread archive profile. SIDEKIQ_CONCURRENCY is the core total and SIDEKIQ_PROJECTOR_CONCURRENCY selects its projector share. Combined workers use equal queue weights. Pipeline timing logs are sampled via LOGISTER_TELEMETRY_PROFILE_SAMPLE_RATE (default 0.01).
+
+Logister reports only its own application errors. Its self-metrics, request spans/transactions, SQL breadcrumbs, routine logs, check-ins, and deployment records are disabled. Customer projects retain all supported telemetry types. Pause obsolete self-check-in monitors when upgrading.

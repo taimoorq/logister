@@ -214,16 +214,10 @@ module InstanceConfiguration
 
     def test_observability
       endpoint = parse_http_uri(fetch("observability.endpoint"), required: true)
-      parse_http_uri(fetch("observability.deployment_endpoint"), required: false)
-      sample_rate = Float(fetch("observability.db_metric_sample_rate"))
-      raise ArgumentError, "Sample rate out of range" unless sample_rate.between?(0.0, 1.0)
-      raise ArgumentError, "Web request threshold out of range" if fetch("observability.web_request_min_duration_ms").to_i.negative?
-      raise ArgumentError, "Slow request threshold out of range" if fetch("observability.web_request_log_min_duration_ms").to_i.negative?
-
       configured = fetch("observability.api_key").present?
       Result.new(
         success: true,
-        summary: configured ? "Self-monitoring configuration is valid and will apply after restart." : "Self-monitoring is not enabled; release checks can still run independently.",
+        summary: configured ? "Errors-only self-monitoring is configured and will apply after restart." : "Self-monitoring is not enabled; release checks can still run independently.",
         details: { "configured" => configured, "endpoint_host" => endpoint.host, "restart_required" => true }
       )
     end

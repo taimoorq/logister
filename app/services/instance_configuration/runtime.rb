@@ -106,9 +106,7 @@ module InstanceConfiguration
       config.public_api_rate_limit_period_seconds = InstanceConfiguration.value("authentication.public_api_rate_limit_period_seconds")
       config.public_api_pre_auth_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_pre_auth_rate_limit_requests")
       config.public_api_auth_failure_rate_limit_requests = InstanceConfiguration.value("authentication.public_api_auth_failure_rate_limit_requests")
-      config.web_request_transactions_enabled = InstanceConfiguration.value("observability.capture_web_transactions")
-      config.web_request_min_duration_ms = InstanceConfiguration.value("observability.web_request_min_duration_ms").to_f
-      config.web_request_log_min_duration_ms = InstanceConfiguration.value("observability.web_request_log_min_duration_ms").to_f
+      config.web_request_transactions_enabled = false
     end
 
     def apply_observability!
@@ -117,15 +115,7 @@ module InstanceConfiguration
       Logister.configure do |config|
         config.api_key = InstanceConfiguration.value("observability.api_key")
         config.endpoint = InstanceConfiguration.value("observability.endpoint")
-        if config.respond_to?(:deployment_endpoint=)
-          config.deployment_endpoint = InstanceConfiguration.value("observability.deployment_endpoint").presence
-        end
-        config.capture_request_spans = InstanceConfiguration.value("observability.capture_request_spans")
-        config.capture_db_metrics = InstanceConfiguration.value("observability.capture_db_metrics")
-        config.db_metric_min_duration_ms = InstanceConfiguration.value("observability.db_metric_min_duration_ms").to_f
-        config.db_metric_sample_rate = InstanceConfiguration.value("observability.db_metric_sample_rate").to_f
-        config.capture_sql_breadcrumbs = InstanceConfiguration.value("observability.capture_sql_breadcrumbs")
-        config.sql_breadcrumb_min_duration_ms = InstanceConfiguration.value("observability.sql_breadcrumb_min_duration_ms").to_f
+        Logister::SelfReportingPolicy.apply!(config)
       end
     end
   end

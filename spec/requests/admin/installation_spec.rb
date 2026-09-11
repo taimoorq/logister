@@ -28,7 +28,7 @@ RSpec.describe "Admin installation", type: :request do
     get admin_installation_section_path("observability")
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("Local self-monitoring project", "Connect self-monitoring project")
+    expect(response.body).to include("Local error-reporting project", "Connect self-monitoring project")
 
     patch admin_installation_self_monitoring_path, params: { project_uuid: projects(:one).uuid }
 

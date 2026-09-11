@@ -1,7 +1,8 @@
 <section class="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
   <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
     <div>
-      <h2 class="text-base font-semibold text-slate-900">Local self-monitoring project</h2>
+      <h2 class="text-base font-semibold text-slate-900">Local error-reporting project</h2>
+      <p class="mt-1 text-sm text-slate-600">This instance reports only errors. Metrics, request traces, routine logs, check-ins, and deployments are not sent. Other projects keep their configured telemetry.</p>
       <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-600">Choose the Ruby project that receives telemetry from this installation. Logister applies recursion-safe routing only to this explicit local relationship.</p>
     </div>
     <span class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold <%= status.connected? ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950' %>">

@@ -43,25 +43,10 @@ module Logister
     def call
       return false unless reportable?
 
-      Logister.report_log(
-        message: @log_message,
-        level: "error",
+      Logister.report_error(
+        @error,
         fingerprint: @log_fingerprint,
         context: context
-      )
-      Logister.report_metric(
-        message: @metric_name,
-        level: "error",
-        fingerprint: @metric_fingerprint,
-        context: context.merge(
-          metric: {
-            name: @metric_name,
-            value: 1,
-            unit: "count"
-          },
-          value: 1,
-          unit: "count"
-        )
       )
       true
     rescue StandardError => report_error
