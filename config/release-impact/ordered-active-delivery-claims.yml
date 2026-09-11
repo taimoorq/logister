@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: ordered-active-delivery-claims
+release_version: 3.6.8
+summary: Add opt-in ordered active delivery claims with resumable concurrent indexes
+  and unchanged retry and purge semantics.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: backend_first_dark
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: 27c96916217bce325f133cb16b318148567d12296171de949d7f1e037cd17c89
+  telemetry_ingest: f05f9585c2ce410d48aee984e32f560abb1baafd780a9c913afec9ca1e070f52
+  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-js:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-python:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-dotnet:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-android:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-ios:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-cli:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.

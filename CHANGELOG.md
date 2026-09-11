@@ -2,6 +2,19 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.8 - 2026-09-11
+
+### Improved
+
+- Added ordered partial indexes for active delivery seeds and fresh project/destination batches, reducing reads through completed delivery history.
+- Added an opt-in delivery claim query that preserves due-time, lease, attempt, purge, and destination boundaries while improving ordered access.
+
+### Upgrade Notes
+
+- Run the additive concurrent-index migration while database I/O and intake health are stable. It bounds lock waits and statement time and repairs its own invalid build residue when retried.
+- `LOGISTER_ORDERED_DELIVERY_CLAIMS` defaults to `false`. Verify both new indexes are valid, then enable it on core workers and observe claim time, delivery progress, and intake health. Restore `false` for query rollback; retain indexes during application rollback.
+- No SDK changes, event identity changes, queue clearing, or new machines are required. Additional active-row index maintenance increases write cost; measure the read/write tradeoff for your workload.
+
 ## v3.6.7 - 2026-09-11
 
 ### Fixed
