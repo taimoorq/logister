@@ -1,0 +1,36 @@
+schema_version: 1
+id: runtime-dependencies-and-web-capacity
+release_version: "3.6.4"
+summary: Update compatible runtime dependencies and hosted web capacity without changing client wire behavior.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+  - cli_api
+  - telemetry_ingest
+contract_sha256:
+  cli_api: 1dbc84160c4a4d623b544293f394796e8aa474c8603012ef42baaa17900e94b1
+  telemetry_ingest: 9b820e1cbaad28a231c20ca89ae5f8f9e0d6edf5276cbf657b3b380f0e6ec420
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Runtime dependency and hosted web capacity updates are internal and does not alter Ruby SDK ingestion.
+  logister-js:
+    bump: none
+    reason: Runtime dependency and hosted web capacity updates are internal and does not alter JavaScript SDK ingestion.
+  logister-python:
+    bump: none
+    reason: Runtime dependency and hosted web capacity updates are internal and does not alter Python SDK ingestion.
+  logister-dotnet:
+    bump: none
+    reason: Runtime dependency and hosted web capacity updates are internal and does not alter .NET SDK ingestion.
+  logister-android:
+    bump: none
+    reason: Runtime dependency and hosted web capacity updates are internal and does not alter Android ingestion or evidence contracts.
+  logister-ios:
+    bump: none
+    reason: Runtime dependency and hosted web capacity updates are internal and does not alter iOS ingestion or evidence contracts.
+  logister-cli:
+    bump: none
+    reason: The CLI API shape is unchanged; only compatible backend release identity metadata advances.

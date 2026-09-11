@@ -2,6 +2,22 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.4 - 2026-09-11
+
+### Changed
+
+- Updated Ruby dependencies to their latest compatible releases.
+- Increased the hosted Fly web process to six shared CPUs and 1.5 GiB of memory.
+
+### Fixed
+
+- Constrained JSON to the compatible 2.x series because Rails 8.1 passes positional parsing options that JSON 3 no longer accepts.
+
+### Upgrade Notes
+
+- No database migrations or client upgrades are required. SDK and CLI contracts are unchanged.
+- The hosted web sizing update does not change worker sizing or address database lock contention.
+
 ## v3.6.3 - 2026-08-11
 
 ### Fixed
