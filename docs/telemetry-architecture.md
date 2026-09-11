@@ -202,3 +202,7 @@ lease-expiration count, terminal delivery failures, per-destination coverage gap
 ClickHouse circuit state, queue age and dead/retry counts, recurring-schedule
 lateness, default-partition rows, database pool headroom, archive verification
 failures, and incomplete project purges.
+
+### Partition-scoped grouping references
+
+Error grouping updates the accepted source event using its project, ID, and canonical `occurred_at`, and uses the same reference when reloading after a duplicate race. A backlink update must match exactly one row; otherwise the grouping transaction rolls back. Latest-event timestamp synchronization uses a supplied partition reference and retains a tenant-scoped ID lookup for legacy callers that change only an ID. Do not replace these predicates with ID-only writes: source IDs can repeat across timestamp partitions.

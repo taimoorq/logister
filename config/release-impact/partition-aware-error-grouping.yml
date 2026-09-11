@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: partition-aware-error-grouping
+release_version: 3.6.7
+summary: Target error-group source updates and reloads to the tenant and canonical
+  partition without changing ingestion contracts.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: b48169abb6bbda5821d5eef3203205ba24d4d923f98628727ccfbe557078e516
+  telemetry_ingest: 6bf1a91249b4085467bcaeda36c1c40a50947064c1e03daf852b1b363ecbe1da
+  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-js:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-python:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-dotnet:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-android:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-ios:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-cli:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
