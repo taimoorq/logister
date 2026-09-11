@@ -27,18 +27,35 @@ module Logister
       reset_counts
     end
 
-    def call(limit: MAX_BATCH_ROWS)
+    def call(limit: MAX_BATCH_ROWS, run: nil)
       reset_counts
-      deliveries = @metrics.measure(:claim) { TelemetryDelivery.claim_batch(limit: limit, now: now) }
+      @run = run
+      @started_delivery_ids = Set.new
+      return result unless continue_work?
+
+      options = { limit: limit, now: now }
+      options[:synchronous_limit] = TelemetryProjectionRun::SYNCHRONOUS_CLAIM_LIMIT if run
+      deliveries = @metrics.measure(:claim) { TelemetryDelivery.claim_batch(**options) }
       @claimed = deliveries.length
       return result if deliveries.empty?
 
       if deliveries.first.destination.in?(TelemetryDelivery::CLICKHOUSE_DESTINATIONS)
         project_clickhouse(deliveries)
       else
-        deliveries.each { |delivery| project_single(delivery) }
+        deliveries.each do |delivery|
+          break unless continue_work?
+
+          project_single(delivery)
+        end
       end
       result
+    ensure
+      if run && deliveries.present?
+        unstarted = deliveries.reject { |delivery| @started_delivery_ids.include?(delivery.id) }
+        released = TelemetryDelivery.release_unstarted_batch!(unstarted, at: now) if unstarted.any?
+        @metrics.count(:yielded, released.to_i)
+      end
+      @run = nil
     end
 
     def project_synchronously!(outbox_event)
@@ -76,6 +93,8 @@ module Logister
     end
 
     def project_single(delivery)
+      start_deliveries!([ delivery ])
+      TelemetryDelivery.renew_batch_lease!([ delivery ], at: now) if @run
       ensure_project_active!(delivery)
       record = source_record!(delivery)
 
@@ -109,6 +128,8 @@ module Logister
 
       preload_sources(deliveries) if batched_projection?
       pairs = deliveries.filter_map do |delivery|
+        return unless continue_work?
+
         ensure_project_active!(delivery)
         record = source_record!(delivery)
         attributes = clickhouse_attributes(delivery, record)
@@ -128,7 +149,11 @@ module Logister
         nil
       end
 
-      byte_bounded_chunks(pairs).each { |chunk| insert_clickhouse_chunk(chunk) }
+      byte_bounded_chunks(pairs).each do |chunk|
+        break unless continue_work?
+
+        insert_clickhouse_chunk(chunk)
+      end
     ensure
       @projection_sources = nil
     end
@@ -178,7 +203,11 @@ module Logister
       raise ProjectionError, "A ClickHouse batch cannot span projects" unless project_ids.one?
 
       batch_key = stable_batch_key(deliveries)
-      deliveries.each { |delivery| delivery.assign_batch_key!(batch_key) }
+      if @run
+        TelemetryDelivery.assign_batch_key_batch!(deliveries, batch_key: batch_key)
+      else
+        deliveries.each { |delivery| delivery.assign_batch_key!(batch_key) }
+      end
       deliveries.each { |delivery| ensure_project_active!(delivery) }
       rows = chunk.map { |item| item.fetch(:attributes) }
 
@@ -189,6 +218,7 @@ module Logister
       Project.transaction(requires_new: true) do
         project = Project.lock("FOR SHARE").find_by(id: project_ids.first)
         raise ProjectPurging, "Project purge is pending" if project.nil? || project.purge_pending?
+        next unless begin_external_write?(deliveries)
 
         @metrics.measure(:insert) do
           SelfReportingGuard.suppress do
@@ -200,9 +230,9 @@ module Logister
           end
         end
       end
-      deliveries.each { |delivery| complete!(delivery) }
+      deliveries.each { |delivery| complete!(delivery) } if !@run || deliveries.all? { |delivery| @started_delivery_ids.include?(delivery.id) }
     rescue StandardError => error
-      deliveries&.each { |delivery| fail!(delivery, error, terminal: poison_error?(error)) }
+      fail_batch!(deliveries, error)
       report_clickhouse_failure(chunk&.first, error)
     end
 
@@ -223,7 +253,7 @@ module Logister
       @metrics.count(:persisted_payload_bytes, payload.bytesize)
       send_projection_batch(batch, deliveries)
     rescue StandardError => error
-      deliveries&.each { |delivery| fail!(delivery, error, terminal: poison_error?(error)) }
+      fail_batch!(deliveries, error)
       report_clickhouse_failure(chunk&.first, error)
     end
 
@@ -241,7 +271,7 @@ module Logister
       TelemetryDelivery.assign_batch_key_batch!(deliveries, batch_key: batch.batch_key)
       send_projection_batch(batch, deliveries)
     rescue StandardError => error
-      deliveries.each { |delivery| fail!(delivery, error, terminal: poison_error?(error)) }
+      fail_batch!(deliveries, error)
     end
 
     def recover_legacy_projection_batch(deliveries, identity)
@@ -289,6 +319,7 @@ module Logister
       Project.transaction(requires_new: true) do
         project = Project.lock("FOR SHARE").find_by(id: batch.project_id)
         raise ProjectPurging, "Project purge is pending" if project.nil? || project.purge_pending?
+        return unless begin_external_write?(deliveries)
 
         @metrics.measure(:insert) do
           SelfReportingGuard.suppress do
@@ -337,6 +368,7 @@ module Logister
     end
 
     def complete!(delivery)
+      start_deliveries!([ delivery ])
       completed = @metrics.measure(:acknowledgement) { delivery.mark_completed!(lease_token: delivery.lease_token, at: now) }
       unless completed
         @metrics.count(:lease_conflicts)
@@ -347,6 +379,7 @@ module Logister
     end
 
     def fail!(delivery, error, terminal: false)
+      start_deliveries!([ delivery ])
       retryable = !terminal && retryable_error?(error)
       marked = delivery.mark_failed!(
         error,
@@ -362,6 +395,37 @@ module Logister
     def retryable_error?(error)
       return error.retryable? if error.respond_to?(:retryable?)
 
+      true
+    end
+
+    def fail_batch!(deliveries, error)
+      return unless deliveries
+
+      start_deliveries!(deliveries)
+      deliveries.each do |delivery|
+        # If failure bookkeeping outlives the run, leave the remaining leases
+        # for recovery. They were attempted, so do not refund those attempts.
+        break unless continue_work?
+
+        fail!(delivery, error, terminal: poison_error?(error))
+      end
+    end
+
+    def continue_work?
+      !@run || @run.continue?
+    end
+
+    def start_deliveries!(deliveries)
+      @started_delivery_ids&.merge(deliveries.map(&:id))
+    end
+
+    def begin_external_write?(deliveries)
+      if @run
+        return false unless @run.continue?(force: true)
+
+        TelemetryDelivery.renew_batch_lease!(deliveries, at: now)
+      end
+      start_deliveries!(deliveries)
       true
     end
 

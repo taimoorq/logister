@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: bounded-projector-recovery
+release_version: 3.6.11
+summary: Bound projector wake admission and run work, preserve lease ownership, and
+  recover ambiguous writes through the durable ledger.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: backend_first_dark
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: 66d9b5d3ce07f2c89f4120e59a6006d782b83a851f5e2c1c92ab41abb3a3f6ac
+  telemetry_ingest: 464025bdd1bce20749810a2ac8eaf20bf4900918864692ebc3b871e294d7f5e7
+  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-js:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-python:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-dotnet:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-android:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-ios:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.
+  logister-cli:
+    bump: none
+    reason: Internal query and queue improvements preserve the public ingestion, evidence,
+      and CLI contracts.

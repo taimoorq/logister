@@ -24,6 +24,8 @@ module Logister
     class CircuitOpen < Error; end
     HEALTH_CACHE_TTL = 30.seconds
     SCHEMA_CACHE_TTL = 30.seconds
+    INSERT_RESPONSE_SECONDS = 10
+    MAX_INSERT_RESPONSE_BYTES = 1.megabyte
     CANONICAL_EVENT_TYPE = "Enum8('error' = 1, 'metric' = 2, 'transaction' = 3, 'log' = 4, 'check_in' = 5)".freeze
     IDENTIFIER_PATTERN = /\A[A-Za-z_][A-Za-z0-9_]*\z/
     SCHEMA_VERSION = 2
@@ -464,7 +466,11 @@ module Logister
       request.body = payload
 
       response = with_http_connection(uri) do |http|
-        http.request(request)
+        if TelemetryProjectorAdmission.enabled? && query.start_with?("INSERT ")
+          bounded_insert_response(http, request)
+        else
+          http.request(request)
+        end
       end
       if transient_response?(response)
         @circuit_breaker.record_failure!(error: Error.new("ClickHouse response failed: HTTP #{response.code}"))
@@ -480,6 +486,26 @@ module Logister
     def transient_response?(response)
       code = response.code.to_i
       code >= 500 || code == 408 || code == 429
+    end
+
+    def bounded_insert_response(http, request)
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + INSERT_RESPONSE_SECONDS
+      http.request(request) do |response|
+        body = +"".b
+        check = -> do
+          if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+            raise Net::ReadTimeout, "ClickHouse insert response exceeded its deadline"
+          end
+        end
+        check.call
+        response.read_body do |chunk|
+          check.call
+          raise IOError, "ClickHouse insert response exceeded its byte limit" if body.bytesize + chunk.bytesize > MAX_INSERT_RESPONSE_BYTES
+
+          body << chunk
+        end
+        response.body = body
+      end
     end
 
     def request_body(query, body)
@@ -531,6 +557,10 @@ module Logister
           http.use_ssl = uri.scheme == "https"
           http.open_timeout = 2
           http.read_timeout = 5
+          if TelemetryProjectorAdmission.enabled?
+            http.write_timeout = 5
+            http.max_retries = 0
+          end
           http.keep_alive_timeout = 30
           http.start
           @http_connections[key] = http

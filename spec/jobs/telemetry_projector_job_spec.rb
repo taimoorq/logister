@@ -83,4 +83,55 @@ RSpec.describe TelemetryProjectorJob, type: :job do
     expect { job.perform }.to raise_error(StandardError, "projection failed")
     expect(client).to have_received(:close).once
   end
+
+  context "with bounded admission" do
+    let(:admission) { instance_double(Logister::TelemetryProjectorAdmission, enter: nil, recover: false) }
+
+    before do
+      allow(described_class).to receive(:bounded_admission?).and_return(true)
+      allow(described_class).to receive(:admission).and_return(admission)
+    end
+
+    it "discards excess legacy hints before creating a client or claiming PostgreSQL work" do
+      expect(Logister::ClickhouseClient).not_to receive(:new)
+      expect(Logister::TelemetryProjector).not_to receive(:new)
+      described_class.new.perform
+    end
+
+    it "uses periodic ledger recovery instead of creating recurring future hints" do
+      expect(described_class).not_to receive(:set)
+      described_class.ensure_scheduled!
+      expect(admission).to have_received(:recover).once
+    end
+
+    it "backs off on dependency failure and leaves retry authority with the durable ledger" do
+      session = instance_double(Logister::TelemetryProjectorAdmission::Session, heartbeat: true, finish: nil)
+      allow(admission).to receive(:enter).and_return(session)
+      client = instance_double(Logister::ClickhouseClient, close: nil)
+      projector = instance_double(Logister::TelemetryProjector)
+      allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
+      allow(Logister::TelemetryProjector).to receive(:new).and_return(projector)
+      allow(projector).to receive(:call).and_raise(ActiveRecord::ConnectionTimeoutError)
+
+      expect { described_class.new.perform }.not_to raise_error
+
+      expect(session).to have_received(:finish).with(work_left: false, failed: true)
+      expect(client).to have_received(:close).once
+    end
+
+    it "stops the drain and starts the cooldown after a retryable projection result" do
+      session = instance_double(Logister::TelemetryProjectorAdmission::Session, heartbeat: true, finish: nil)
+      allow(admission).to receive(:enter).and_return(session)
+      client = instance_double(Logister::ClickhouseClient, close: nil)
+      projector = instance_double(Logister::TelemetryProjector)
+      allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
+      allow(Logister::TelemetryProjector).to receive(:new).and_return(projector)
+      allow(projector).to receive(:call).and_return(Logister::TelemetryProjector::Result.new(200, 0, 200, 0))
+
+      described_class.new.perform
+
+      expect(projector).to have_received(:call).once
+      expect(session).to have_received(:finish).with(work_left: true, failed: true)
+    end
+  end
 end

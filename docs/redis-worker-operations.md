@@ -111,6 +111,8 @@ The [query benchmark](telemetry-claim-query.md) records the measured benefits, u
 
 Release 3.6.10 adds temporary durable ClickHouse payloads, source preloading, and atomic delivery acknowledgements. Run its additive migration and finish rolling out compatible code to every projector/replay worker before enabling `LOGISTER_BATCHED_PROJECTION=true`. It defaults to `false`. Mixed older workers do not understand the saved payloads, so this is a separate enablement step after deployment.
 
+Release 3.6.11 separately adds `LOGISTER_BOUNDED_PROJECTOR`, default off. After the query and payload rollout checks, enable it consistently on intake and workers to coalesce wakes, admit up to three drainers, yield unstarted work at safe boundaries, and recover lost hints from the PostgreSQL ledger. See [bounded projector execution and recovery](telemetry-projector-recovery.md) for the state model, measured tests, initial budgets and rollback.
+
 Check pending/terminal deliveries with assigned batch keys before enabling. Historical batches with missing members or changed source data cannot safely reconstruct their original body and need investigation. New batches save exact bytes before the external call and can retry even if source or project data later changes.
 
 After enablement, compare the sampled `source_load`, `batch_persistence`, `insert`, and `acknowledgement` phases, completed-versus-arriving work, durable delivery age, worker memory, and database write load. Check that watermarks reconcile and `telemetry_projection_batches` drains as deliveries complete. Each incomplete batch retains one compressed body; final acknowledgement deletes it. Completed payloads left by older compatible workers are removed by the daily ledger cleanup.
