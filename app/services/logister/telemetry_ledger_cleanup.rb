@@ -29,6 +29,7 @@ module Logister
         break if removed_this_batch.zero?
       end
       cleanup_watermarks
+      TelemetryProjectionBatch.cleanup_completed!
       deleted
     end
 
@@ -67,7 +68,7 @@ module Logister
     end
 
     def cleanup_candidates
-      incomplete_key_ids = TelemetryDelivery.incomplete
+      incomplete_key_ids = TelemetryDelivery.required_for_replay
         .joins(:telemetry_outbox_event)
         .select("telemetry_outbox_events.telemetry_idempotency_key_id")
 
@@ -81,7 +82,7 @@ module Logister
       return false unless key
 
       key.with_lock do
-        return false if key.telemetry_outbox_event&.telemetry_deliveries&.incomplete&.exists?
+        return false if key.telemetry_outbox_event&.telemetry_deliveries&.required_for_replay&.exists?
 
         key.destroy!
       end

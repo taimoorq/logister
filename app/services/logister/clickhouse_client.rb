@@ -117,6 +117,14 @@ module Logister
       )
     end
 
+    def insert_event_payload!(body, deduplication_token:, gzip: true)
+      insert_payload!(@config.clickhouse_events_table, body, deduplication_token: deduplication_token, gzip: gzip)
+    end
+
+    def insert_span_payload!(body, deduplication_token:, gzip: true)
+      insert_payload!(@config.clickhouse_spans_table, body, deduplication_token: deduplication_token, gzip: gzip)
+    end
+
     def select_rows!(query)
       return [] unless enabled?
 
@@ -280,9 +288,15 @@ module Logister
       return unless enabled?
       return if rows.blank?
 
-      query = "INSERT INTO #{full_table_name(table_name)} FORMAT JSONEachRow"
       body = "#{rows.map(&:to_json).join("\n")}\n"
+      insert_payload!(table_name, body, deduplication_token: deduplication_token, gzip: gzip)
+    end
 
+    def insert_payload!(table_name, body, deduplication_token: nil, gzip: false)
+      return unless enabled?
+      return if body.blank?
+
+      query = "INSERT INTO #{full_table_name(table_name)} FORMAT JSONEachRow"
       options = {}
       options[:deduplication_token] = deduplication_token if deduplication_token.present?
       options[:gzip] = true if gzip

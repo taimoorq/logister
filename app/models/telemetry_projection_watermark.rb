@@ -57,7 +57,11 @@ class TelemetryProjectionWatermark < ApplicationRecord
     end
 
     def record_delivered!(delivery, at: Time.current)
-      record_progress!([ [ delivery, at ] ], kind: :delivered)
+      record_delivered_batch!([ delivery ], at: at)
+    end
+
+    def record_delivered_batch!(deliveries, at: Time.current)
+      record_progress!(deliveries.map { |delivery| [ delivery, at ] }, kind: :delivered)
     end
 
     def record_terminal_failure!(delivery, at: Time.current)

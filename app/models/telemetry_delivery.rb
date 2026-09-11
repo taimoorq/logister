@@ -4,6 +4,7 @@ require "digest"
 
 class TelemetryDelivery < ApplicationRecord
   class LeaseExpired < StandardError; end
+  class BatchOwnershipLost < StandardError; end
 
   DESTINATIONS = %w[
     clickhouse_event
@@ -38,8 +39,59 @@ class TelemetryDelivery < ApplicationRecord
 
   scope :incomplete, -> { where.not(status: :completed) }
   scope :terminal_failures, -> { where(status: :terminal_failed) }
+  scope :required_for_replay, -> { where(replay_required_predicate) }
 
   class << self
+    def replay_required_predicate(delivery = arel_table)
+      sibling = arel_table.alias("replay_batch_member")
+      pending_sibling = Arel::SelectManager.new(sibling).project(Arel.sql("1"))
+        .where(sibling[:project_id].eq(delivery[:project_id]))
+        .where(sibling[:destination].eq(delivery[:destination]))
+        .where(sibling[:batch_key].eq(delivery[:batch_key]))
+        .where(sibling[:status].not_eq(statuses.fetch(:completed))).exists
+      delivery[:status].not_eq(statuses.fetch(:completed))
+        .or(delivery[:batch_key].not_eq(nil).and(pending_sibling))
+    end
+
+    # Assignment is all-or-nothing: a stale worker must not pin only part of a
+    # chunk, or reuse a key after another owner has grouped its rows differently.
+    def assign_batch_key_batch!(deliveries, batch_key:)
+      raise ArgumentError, "batch key is required" if batch_key.blank?
+
+      transaction do
+        owned = lock_owned_deliveries(deliveries)
+        unless owned.length == deliveries.length && owned.all? { |row| row.batch_key.nil? || row.batch_key == batch_key }
+          raise BatchOwnershipLost, "Delivery batch ownership or identity changed"
+        end
+
+        where(id: owned.select { |row| row.batch_key.nil? }.map(&:id)).update_all(batch_key: batch_key)
+      end
+      deliveries.each do |delivery|
+        delivery.batch_key = batch_key
+        delivery.clear_attribute_changes([ "batch_key" ])
+      end
+      batch_key
+    end
+
+    # Lock before selecting transitions and account for exactly those rows in
+    # the same transaction. Already completed or stale-owned rows add nothing.
+    def mark_completed_batch!(deliveries, at: Time.current)
+      transaction do
+        owned = lock_owned_deliveries(deliveries)
+        next [] if owned.empty?
+
+        ids = owned.map(&:id)
+        changed = where(id: ids).update_all(
+          status: statuses.fetch(:completed), completed_at: at, leased_at: nil,
+          lease_expires_at: nil, lease_token: nil, available_at: at, updated_at: at
+        )
+        raise BatchOwnershipLost, "Delivery completion did not match the locked rows" unless changed == ids.length
+
+        TelemetryProjectionWatermark.record_delivered_batch!(owned, at: at)
+        ids
+      end
+    end
+
     def claim_batch(limit:, now: Time.current, lease_for: DEFAULT_LEASE, destinations: DESTINATIONS)
       transaction(requires_new: true) do
         terminalize_expired_final_leases!(now: now, limit: limit)
@@ -125,6 +177,17 @@ class TelemetryDelivery < ApplicationRecord
     end
 
     private
+
+    def lock_owned_deliveries(deliveries)
+      references = deliveries.index_by(&:id)
+      raise ArgumentError, "Delivery references must be unique" unless references.length == deliveries.length
+
+      where(id: references.keys).order(:id).lock.includes(:telemetry_outbox_event).select do |row|
+        requested = references.fetch(row.id)
+        row.project_id == requested.project_id && row.destination == requested.destination &&
+          row.send(:owned_processing_lease?, requested.lease_token)
+      end
+    end
 
     def lock_assigned_batch(seed)
       identity = "logister:delivery-batch:#{seed.project_id}:#{seed.destination}:#{seed.batch_key}"
