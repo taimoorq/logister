@@ -88,6 +88,14 @@ new deduplication token also verifies logical facts remain correct beyond the
 provider's finite insert-deduplication window. CI runs this test with its own
 ClickHouse service; local runs without the URL explicitly skip it.
 
+A local PostgreSQL 16 rehearsal (three samples per size, no-network client,
+outer rollback transaction) measured 31 SQL statements at each of 1, 20 and 200
+rows, versus 23 for persisted projection without run bounds. The extra eight
+statements scope timeout settings and renew ownership. At 200 rows the median
+was 171 ms versus 152 ms in the same rehearsal. This is fixed safety overhead;
+these local samples exclude network and final durable commit and are not a
+production latency target.
+
 ## Enable and roll back
 
 1. Deploy 3.6.11 with the flag off. Finish the separate ordered-claim and batched

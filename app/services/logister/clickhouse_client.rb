@@ -557,8 +557,10 @@ module Logister
           http.use_ssl = uri.scheme == "https"
           http.open_timeout = 2
           http.read_timeout = 5
-          http.write_timeout = 5
-          http.max_retries = 0
+          if TelemetryProjectorAdmission.enabled?
+            http.write_timeout = 5
+            http.max_retries = 0
+          end
           http.keep_alive_timeout = 30
           http.start
           @http_connections[key] = http

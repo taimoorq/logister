@@ -261,6 +261,7 @@ RSpec.describe Logister::ClickhouseClient do
       allow(http).to receive(:max_retries=)
       allow(http).to receive(:keep_alive_timeout=)
       allow(Net::HTTP).to receive(:new).and_return(http)
+      allow(Logister::TelemetryProjectorAdmission).to receive(:enabled?).and_return(true)
       uri = URI.parse(config.clickhouse_url)
 
       2.times { client.send(:with_http_connection, uri) { |connection| expect(connection).to be(http) } }
@@ -274,6 +275,20 @@ RSpec.describe Logister::ClickhouseClient do
   end
 
   describe "bounded insert responses" do
+    it "preserves the library write and retry defaults while the rollout flag is off" do
+      allow(Logister::TelemetryProjectorAdmission).to receive(:enabled?).and_return(false)
+      http = Net::HTTP.new("127.0.0.1", 8123)
+      defaults = [ http.write_timeout, http.max_retries ]
+      allow(http).to receive(:start).and_return(http)
+      allow(Net::HTTP).to receive(:new).and_return(http)
+      client = described_class.new(config: config)
+      client.send(:with_http_connection, URI("http://127.0.0.1:8123")) do |connection|
+        expect([ connection.write_timeout, connection.max_retries ]).to eq(defaults)
+      end
+    ensure
+      client&.close
+    end
+
     it "closes a real dribbling response at the deadline instead of resetting the budget on each chunk" do
       allow(Logister::TelemetryProjectorAdmission).to receive(:enabled?).and_return(true)
       stub_const("Logister::ClickhouseClient::INSERT_RESPONSE_SECONDS", 0.05)
