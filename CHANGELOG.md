@@ -15,7 +15,7 @@ All notable changes to Logister will be documented in this file.
 - Run the additive `telemetry_projection_batches` migration. `LOGISTER_BATCHED_PROJECTION` defaults to `false`; enable only after all projector workers run compatible code and historical assigned retries have been inspected.
 - Turning the switch off stops new payload creation while draining existing records. Before an image downgrade below 3.6.10, verify the payload table is empty. Schema rollback refuses to discard retained bodies.
 - Incomplete/terminal batches temporarily retain compressed telemetry; final acknowledgement or daily completed-ledger cleanup removes the copy, and project deletion cascades to it. Missing or modified legacy batch data stops inspectably rather than sending a partial body with an old key.
-- No SDK changes or new machines. `bundle update --all` was rerun; no compatible dependency updates were available.
+- No Logister SDK changes or new machines. `bundle update --all` refreshed `aws-sdk-s3` from 1.231.0 to 1.232.0.
 
 ## v3.6.9 - 2026-09-11
 
