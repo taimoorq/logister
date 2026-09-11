@@ -76,7 +76,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.3.0")
+    implementation("org.logister:logister-android:0.5.2")
 }
 ```
 
@@ -252,7 +252,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.3.0")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.5.0")
 ]
 ```
 
@@ -447,31 +447,25 @@ request bodies, raw local variables, or other sensitive user data.
 
 ## Package Release Notes
 
-The 0.5 mobile evidence releases are tag-driven. Publish the package tags and
-verify their public registries before deploying setup copy that recommends
-them:
-
-```bash
-git tag v0.5.0
-git push origin v0.5.0
-```
+Mobile SDKs have independent versions and changelogs. Merge each version change
+to its protected `main` branch after review. Once CI passes for the current main
+commit, automation creates the immutable version tag and dispatches publication.
+Verify the public package and matching GitHub Release before updating installation
+recommendations.
 
 The Android GitHub Actions release workflow builds, tests, signs, and uploads
 the artifact to Sonatype Central Portal with automatic Maven Central release.
-The workflow also creates the matching GitHub Release after the package version
-matches the tag. Version `0.5.0` adds structured historical ANR threads and
-canonical last-sampled memory evidence on top of the 0.4 trust contract.
-
-iOS releases are also tag-driven:
-
-```bash
-git tag v0.3.0
-git push origin v0.3.0
-```
+The workflow creates the matching GitHub Release only after public artifact
+verification. Central can take time to expose an accepted deployment; wait for
+its POM and AAR instead of uploading the version again. The 0.5 mobile evidence
+series adds structured historical ANR threads and canonical last-sampled memory
+evidence on top of the 0.4 trust contract.
 
 Swift Package Manager resolves packages from the public Git repository and tag.
 The iOS GitHub Actions release workflow verifies the package and creates the
 matching GitHub Release; there is no separate package-manager account or secret.
+Recover an interrupted publication by dispatching `release.yml` from `main`
+with its existing `tag` input. Never replace a published tag.
 
 ## Verification
 
@@ -479,12 +473,12 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.3.0/logister-android-0.3.0.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.5.2/logister-android-0.5.2.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.3.0 --repo taimoorq/logister-ios
+gh release view v0.5.0 --repo taimoorq/logister-ios
 ```

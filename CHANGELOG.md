@@ -2,6 +2,19 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.12 - 2026-09-11
+
+### Changed
+
+- Refresh installation examples and the published ecosystem catalog for the coordinated SDK and CLI releases.
+- Recommend CLI 1.1.0 after verifying npm, GitHub, Homebrew and Scoop. The minimum supported CLI remains 0.1.0.
+- Validate today's catalog against the current release set while retaining structural validation for historical sets. Allow static documentation and catalog follow-ups after an immutable backend release without requiring another backend version.
+
+### Upgrade Notes
+
+- No schema changes or additional SDK releases are required. Existing telemetry rollout flags remain unchanged.
+- Instances that explicitly set `LOGISTER_CLI_RECOMMENDED_VERSION` can update it to `1.1.0` after making that version available to their users.
+
 ## v3.6.11 - 2026-09-11
 
 ### Improved

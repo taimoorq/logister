@@ -1,0 +1,89 @@
+---
+schema_version: 1
+id: backend-v3-6-12
+backend:
+  version: 3.6.12
+  tag: v3.6.12
+impact_records:
+- published-addon-catalog
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.1
+    target_version: 0.4.1
+    bump: none
+    release_required: false
+    reason: Already published compatible release; catalog and CLI recommendation updates
+      require no additional client release.
+    channels:
+    - rubygems
+    - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.2
+    target_version: 0.4.2
+    bump: none
+    release_required: false
+    reason: Already published compatible release; catalog and CLI recommendation updates
+      require no additional client release.
+    channels:
+    - npm
+    - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: Already published compatible release; catalog and CLI recommendation updates
+      require no additional client release.
+    channels:
+    - pypi
+    - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: Already published compatible release; catalog and CLI recommendation updates
+      require no additional client release.
+    channels:
+    - nuget_logister
+    - nuget_logister_aspnetcore
+    - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.5.2
+    target_version: 0.5.2
+    bump: none
+    release_required: false
+    reason: Already published compatible release; catalog and CLI recommendation updates
+      require no additional client release.
+    channels:
+    - maven_central
+    - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.5.0
+    target_version: 0.5.0
+    bump: none
+    release_required: false
+    reason: Already published compatible release; catalog and CLI recommendation updates
+      require no additional client release.
+    channels:
+    - swift_package_manager
+    - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.1.0
+    target_version: 1.1.0
+    bump: none
+    release_required: false
+    reason: Already published compatible release; catalog and CLI recommendation updates
+      require no additional client release.
+    channels:
+    - npm
+    - github_release
+    - homebrew-logister
+    - scoop-logister
