@@ -45,7 +45,7 @@ class ErrorGroupingService
         end
 
         # Back-link on the ingest_event row so we can JOIN cheaply
-        @event.update_column(:error_group_id, group.id)
+        link_event_to_group!(group)
 
         workflow_alerts = created || occurrence_decision&.workflow_alerts?
         if @notifications && occurrence_created && workflow_alerts
@@ -69,7 +69,8 @@ class ErrorGroupingService
       raise if attempts >= RECORD_NOT_UNIQUE_RETRIES
 
       attempts += 1
-      @event.reload
+      @event = source_event_scope.first!
+      @event.project = @project
       retry
     end
 
@@ -82,6 +83,20 @@ class ErrorGroupingService
   end
 
   private
+
+  def source_event_scope
+    IngestEvent.for_partition_reference(id: @event.id, occurred_at: @event.occurred_at)
+      .where(project_id: @project.id)
+  end
+
+  def link_event_to_group!(group)
+    unless source_event_scope.update_all(error_group_id: group.id) == 1
+      raise ActiveRecord::RecordNotFound, "Accepted event is no longer available for grouping"
+    end
+
+    @event.error_group_id = group.id
+    @event.clear_attribute_changes([ "error_group_id" ])
+  end
 
   def derive_fingerprint
     @grouping_evidence = grouping_evidence

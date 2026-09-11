@@ -208,11 +208,16 @@ class ErrorGroup < ApplicationRecord
     return if latest_event_id.blank?
     return if latest_event_occurred_at.present? && !will_save_change_to_latest_event_id?
 
+    # An ID-only change can leave the previous event's timestamp on the model.
+    # Use a supplied new reference, but keep the legacy ID-only lookup possible.
+    timestamp = latest_event_occurred_at if will_save_change_to_latest_event_occurred_at? || !will_save_change_to_latest_event_id?
+    loaded_event = latest_event if association(:latest_event).loaded?
     event =
-      if association(:latest_event).loaded? && !will_save_change_to_latest_event_id?
-        latest_event
+      if loaded_event&.id == latest_event_id && loaded_event&.project_id == project_id && partition_timestamp_matches?(loaded_event, timestamp)
+        loaded_event
       else
-        IngestEvent.select(:id, :occurred_at).find_by(id: latest_event_id)
+        IngestEvent.for_partition_reference(id: latest_event_id, occurred_at: timestamp)
+          .where(project_id: project_id).select(:id, :occurred_at).first
       end
     self.latest_event_occurred_at = event.occurred_at if event
   end
