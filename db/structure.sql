@@ -4527,6 +4527,20 @@ CREATE INDEX idx_telemetry_archives_source_cleanup ON public.telemetry_archives 
 
 
 --
+-- Name: idx_telemetry_deliveries_active_group; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_deliveries_active_group ON public.telemetry_deliveries USING btree (project_id, destination, available_at, id) WHERE (((status)::text = ANY ((ARRAY['pending'::character varying, 'retrying'::character varying, 'processing'::character varying])::text[])) AND (attempts < 8) AND (batch_key IS NULL));
+
+
+--
+-- Name: idx_telemetry_deliveries_active_order; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_telemetry_deliveries_active_order ON public.telemetry_deliveries USING btree (available_at, id) WHERE (((status)::text = ANY ((ARRAY['pending'::character varying, 'retrying'::character varying, 'processing'::character varying])::text[])) AND (attempts < 8));
+
+
+--
 -- Name: idx_telemetry_deliveries_due; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -13027,6 +13041,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260911180000'),
 ('20260811120000'),
 ('20260809230000'),
 ('20260809220000'),

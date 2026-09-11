@@ -87,3 +87,22 @@ adapter and the redis-rb client used by installation checks.
 Production emits one payload-free `telemetry_pipeline` log summary for a sample of intake batches and projector drains. `LOGISTER_TELEMETRY_PROFILE_SAMPLE_RATE` defaults to `0.01`; set it to `0` to disable or temporarily increase it for a bounded investigation. Summaries include phase durations, SQL statement counts/timing, row/outcome counts, and exception class only. They never include SQL text, bindings, event contents, or client identifiers, and reporting is suppressed while writing the summary.
 
 Check queue age together with durable delivery age and completed-versus-arriving work. A nonempty projector queue should not prevent general queues from advancing. Sidekiq 8 timestamps are measured in milliseconds; the installation diagnostic accepts these and older second timestamps. Retry/dead totals belong to the Redis service and may include other applications when Redis is shared.
+
+## Enable ordered delivery claims
+
+For operators with a large completed-delivery ledger, release 3.6.8 adds two small partial indexes for unfinished work. The migration builds them concurrently with a five-second lock-wait limit and a five-minute limit per statement. Keep a completed backup and check database I/O and intake health before migrating. A failed concurrent build can leave an invalid index; rerunning this migration removes its invalid residue and retries it. Existing claim indexes remain available.
+
+After migration, verify that both rows below exist and have `indisvalid = true`:
+
+```sql
+SELECT c.relname, i.indisvalid
+FROM pg_class c JOIN pg_index i ON i.indexrelid = c.oid
+WHERE c.oid IN (
+  to_regclass('public.idx_telemetry_deliveries_active_order'),
+  to_regclass('public.idx_telemetry_deliveries_active_group')
+);
+```
+
+Then set `LOGISTER_ORDERED_DELIVERY_CLAIMS=true` on core workers and restart them through the normal deployment process. The default is `false`. Compare sampled claim time, completed-versus-arriving deliveries, pending age, intake health, and the general queues. Eligibility, ordering, batch identities, row locks, retry fences, and purge exclusion are unchanged. Set the switch back to `false` to restore the old query; retain the additive indexes during application rollback. The release maintainer owns this switch until a normal-load window and recovery exercise justify removing the old path.
+
+The [query benchmark](telemetry-claim-query.md) records the measured benefits, unfavorable cases, and additional write cost.

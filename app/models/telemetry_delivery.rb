@@ -82,7 +82,20 @@ class TelemetryDelivery < ApplicationRecord
     end
 
     def due(now:, destinations: DESTINATIONS)
-      joins(:project).where(destination: destinations, projects: { purge_requested_at: nil }).where(
+      eligible = joins(:project).where(destination: destinations, projects: { purge_requested_at: nil })
+      if ENV["LOGISTER_ORDERED_DELIVERY_CLAIMS"] == "true"
+        # Keep the active-state predicate literal so generic prepared plans can
+        # use the partial indexes. CASE avoids counting overlapping status
+        # predicates independently when estimating the size of a fresh batch.
+        return eligible.where(
+          <<~SQL.squish, now: now, max_attempts: MAX_ATTEMPTS
+            status IN ('pending', 'retrying', 'processing') AND attempts < :max_attempts
+            AND CASE WHEN status = 'processing' THEN lease_expires_at ELSE available_at END <= :now
+          SQL
+        )
+      end
+
+      eligible.where(
         <<~SQL.squish,
           ((status IN (:available_statuses) AND available_at <= :now)
             OR (status = :processing_status AND lease_expires_at <= :now))
