@@ -2,6 +2,22 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.11 - 2026-09-11
+
+### Improved
+
+- Added opt-in projector admission with three active owners, one waiting native wake hint, and generation-fenced recovery for lost wakeups, expired owners and orphan enqueue reservations.
+- Applied cooperative run budgets at safe boundaries, smaller fresh synchronous claims, attempt refunds for unstarted work, and atomic lease renewal before external projection writes. Saved retry bodies remain whole.
+- Added a short dependency-failure cooldown and kept retry authority with the PostgreSQL ledger. Scoped worker SQL waits and explicit HTTP write/response limits reduce the time a stalled dependency can hold worker capacity.
+- Added CI proof with real Redis, PostgreSQL, Sidekiq and ClickHouse: kill a worker after external success, recover its saved body, and reconcile logical facts and exact delivery counters. Logical facts also remain correct beyond the provider deduplication window.
+
+### Upgrade Notes
+
+- `LOGISTER_BOUNDED_PROJECTOR` defaults to `false`. Complete the ordered-claim and batched-projection rollout checks, then enable it consistently on intake and workers. Existing argument-free jobs remain compatible; no queue cleanup is needed.
+- The 25-second budget is cooperative: finish an in-flight unit before yielding. Initial SQL, response, cooldown and fresh-claim limits require normal/peak-load validation; see `docs/telemetry-projector-recovery.md`.
+- Disable the flag and restart to restore the prior scheduler. Preserve delivery identities and payloads; the 3.6.10 payload-drain requirement still applies before older-image rollback.
+- No SDK changes, new production machines, or new monitor/email reporting. `bundle update --all` was rerun for this release.
+
 ## v3.6.10 - 2026-09-11
 
 ### Improved

@@ -3,6 +3,7 @@
 require "rails_helper"
 require "ostruct"
 require "zlib"
+require "socket"
 
 RSpec.describe Logister::ClickhouseClient do
   let(:config) do
@@ -256,6 +257,8 @@ RSpec.describe Logister::ClickhouseClient do
       allow(http).to receive(:use_ssl=)
       allow(http).to receive(:open_timeout=)
       allow(http).to receive(:read_timeout=)
+      allow(http).to receive(:write_timeout=)
+      allow(http).to receive(:max_retries=)
       allow(http).to receive(:keep_alive_timeout=)
       allow(Net::HTTP).to receive(:new).and_return(http)
       uri = URI.parse(config.clickhouse_url)
@@ -265,6 +268,45 @@ RSpec.describe Logister::ClickhouseClient do
       expect(Net::HTTP).to have_received(:new).once
       client.close
       expect(http).to have_received(:finish).once
+      expect(http).to have_received(:write_timeout=).with(5)
+      expect(http).to have_received(:max_retries=).with(0)
+    end
+  end
+
+  describe "bounded insert responses" do
+    it "closes a real dribbling response at the deadline instead of resetting the budget on each chunk" do
+      allow(Logister::TelemetryProjectorAdmission).to receive(:enabled?).and_return(true)
+      stub_const("Logister::ClickhouseClient::INSERT_RESPONSE_SECONDS", 0.05)
+      server = TCPServer.new("127.0.0.1", 0)
+      config.clickhouse_url = "http://127.0.0.1:#{server.addr[1]}"
+      breaker = instance_double(Logister::ClickhouseCircuitBreaker, allow_request?: true, record_failure!: true)
+      client = described_class.new(config: config, circuit_breaker: breaker)
+      responder = Thread.new do
+        socket = server.accept
+        headers = +""
+        headers << socket.read(1) until headers.end_with?("\r\n\r\n")
+        socket.read(headers[/Content-Length: (\d+)/i, 1].to_i)
+        socket.write("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n")
+        10.times do
+          socket.write("1\r\nx\r\n")
+          sleep 0.03
+        end
+        socket.write("0\r\n\r\n")
+      rescue IOError, SystemCallError
+        nil
+      ensure
+        socket&.close
+      end
+
+      expect { client.insert_event_payload!("{}\n", deduplication_token: "deadline-proof") }
+        .to raise_error(described_class::Error, /response exceeded its deadline/)
+      expect(breaker).to have_received(:record_failure!).once
+      expect(client.instance_variable_get(:@http_connections)).to be_empty
+    ensure
+      client&.close
+      responder&.kill
+      responder&.join
+      server&.close
     end
   end
 

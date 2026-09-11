@@ -35,8 +35,8 @@ RSpec.describe "Health", type: :request do
       expect(response.headers["Cache-Control"]).to include("no-cache")
       expect(response.parsed_body).to include(
         "status" => "ok",
-          "version" => "3.6.10",
-          "tag" => "v3.6.10",
+          "version" => "3.6.11",
+          "tag" => "v3.6.11",
         "git_sha" => "unknown",
         "image_digest" => "unknown",
         "database" => { "connected" => true, "migrations_current" => true }

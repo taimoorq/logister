@@ -92,9 +92,32 @@ class TelemetryDelivery < ApplicationRecord
       end
     end
 
-    def claim_batch(limit:, now: Time.current, lease_for: DEFAULT_LEASE, destinations: DESTINATIONS)
+    def renew_batch_lease!(deliveries, at: Time.current, lease_for: DEFAULT_LEASE)
       transaction(requires_new: true) do
-        terminalize_expired_final_leases!(now: now, limit: limit)
+        owned = lock_owned_deliveries(deliveries)
+        unless owned.length == deliveries.length && owned.all? { |row| row.lease_expires_at && row.lease_expires_at > at }
+          raise BatchOwnershipLost, "Cannot renew changed or expired delivery ownership"
+        end
+
+        where(id: owned.map(&:id)).update_all(lease_expires_at: at + lease_for)
+      end
+    end
+
+    # Yield only work which this attempt has not started. Preserve batch identity
+    # and refund the claim attempt; budget exhaustion is not a delivery failure.
+    def release_unstarted_batch!(deliveries, at: Time.current)
+      transaction(requires_new: true) do
+        owned = lock_owned_deliveries(deliveries).select { |row| row.lease_expires_at && row.lease_expires_at > at }
+        where(id: owned.map(&:id)).update_all(status: statuses.fetch(:pending),
+          attempts: Arel.sql("GREATEST(attempts - 1, 0)"), available_at: at,
+          leased_at: nil, lease_expires_at: nil, lease_token: nil, updated_at: at)
+      end
+    end
+
+    def claim_batch(limit:, now: Time.current, lease_for: DEFAULT_LEASE, destinations: DESTINATIONS, synchronous_limit: nil)
+      transaction(requires_new: true) do
+        terminal_limit = synchronous_limit ? [ limit, synchronous_limit ].min : limit
+        terminalize_expired_final_leases!(now: now, limit: terminal_limit)
         seed = due(now:, destinations:).order(:available_at, :id).first
         next [] unless seed
         # A retry must retain its original deduplication batch. Take its fence
@@ -113,7 +136,8 @@ class TelemetryDelivery < ApplicationRecord
         candidates = if seed.batch_key.present?
           candidates.where(batch_key: seed.batch_key).order(:id).lock("FOR UPDATE OF telemetry_deliveries")
         else
-          candidates.where(batch_key: nil).order(:available_at, :id).limit(limit)
+          fresh_limit = synchronous_limit && seed.destination.in?(SYNCHRONOUS_DESTINATIONS) ? [ limit, synchronous_limit ].min : limit
+          candidates.where(batch_key: nil).order(:available_at, :id).limit(fresh_limit)
             .lock("FOR UPDATE OF telemetry_deliveries SKIP LOCKED")
         end
         records = candidates.to_a
