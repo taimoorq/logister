@@ -14,6 +14,16 @@ module Logister
     end
 
     def call
+      metrics = TelemetryPipelineMetrics.new(operation: "acceptance")
+      metrics.capture do
+        metrics.count(:rows, entries.size)
+        metrics.measure(:acceptance) { accept_batch }
+      end
+    end
+
+    private
+
+    def accept_batch
       accepted_entries = []
       rejected = false
       resolved_clickhouse_writable = clickhouse_writable?

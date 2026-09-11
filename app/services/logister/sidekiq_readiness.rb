@@ -4,7 +4,7 @@ require "json"
 
 module Logister
   class SidekiqReadiness
-    QUEUES = %w[projector notifications mailers analytics integrations symbols archives maintenance].freeze
+    QUEUES = %w[projector notifications mailers analytics integrations symbols archives maintenance default].freeze
     def initialize(redis:, concurrency:, now: Time.current, connection_pool: ActiveRecord::Base.connection_pool)
       @redis = redis
       @concurrency = Integer(concurrency)
@@ -51,8 +51,14 @@ module Logister
     end
 
     def job_enqueued_at(payload)
-      Time.at(Float(payload.fetch("enqueued_at"))).utc if payload["enqueued_at"]
-    rescue TypeError, ArgumentError
+      return unless payload["enqueued_at"]
+
+      timestamp = Float(payload.fetch("enqueued_at"))
+      return unless timestamp.finite? && timestamp.positive?
+
+      timestamp /= 1_000 if timestamp >= 100_000_000_000
+      Time.at(timestamp).utc
+    rescue TypeError, ArgumentError, RangeError
       nil
     end
 

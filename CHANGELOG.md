@@ -2,6 +2,20 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.6 - 2026-09-11
+
+### Fixed
+
+- Reserved projector and general-job capacity within the existing core worker thread budget so sustained telemetry cannot exclude notifications and maintenance. The combined worker uses equal queue weights.
+- Corrected queue-age diagnostics for Sidekiq 8 millisecond timestamps and counted all capsule threads when checking database-pool capacity.
+- Added sampled aggregate intake and projector phase timings and SQL counts without recording telemetry contents or SQL text.
+
+### Upgrade Notes
+
+- The core profile defaults to three projector and two general threads. `SIDEKIQ_CONCURRENCY` remains the total; `SIDEKIQ_PROJECTOR_CONCURRENCY` can select a share that leaves general capacity. The archive profile stays at one thread.
+- No migrations, queue clearing, or SDK upgrades are needed. Keep `DB_POOL` at total job threads plus two or more. Set `LOGISTER_TELEMETRY_PROFILE_SAMPLE_RATE=0` to disable the default one-percent diagnostic sampling.
+- Ran `bundle update --all`; the compatible gem set was already current.
+
 ## v3.6.5 - 2026-09-11
 
 ### Fixed

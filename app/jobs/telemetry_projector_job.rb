@@ -48,12 +48,18 @@ class TelemetryProjectorJob < ApplicationJob
 
   def perform(max_batches: MAX_BATCHES_PER_RUN)
     clickhouse_client = Logister::ClickhouseClient.new
-    projector = Logister::TelemetryProjector.new(clickhouse_client: clickhouse_client)
-    started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    max_batches.to_i.clamp(1, MAX_BATCHES_PER_RUN).times do
-      result = projector.call
-      break unless result.work?
-      break if Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at >= MAX_RUNTIME
+    metrics = Logister::TelemetryPipelineMetrics.new(operation: "drain")
+    projector = Logister::TelemetryProjector.new(clickhouse_client: clickhouse_client, metrics: metrics)
+    metrics.capture do
+      started_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      max_batches.to_i.clamp(1, MAX_BATCHES_PER_RUN).times do
+        result = projector.call
+        metrics.count(:batches)
+        %i[claimed completed retried terminal_failed].each { |name| metrics.count(name, result.public_send(name)) }
+        metrics.count(:empty_batches) unless result.work?
+        break unless result.work?
+        break if Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at >= MAX_RUNTIME
+      end
     end
   ensure
     close_clickhouse_client(clickhouse_client)

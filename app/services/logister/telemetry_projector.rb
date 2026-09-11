@@ -20,15 +20,16 @@ module Logister
     MAX_BATCH_ROWS = 200
     MAX_BATCH_BYTES = 1.megabyte
 
-    def initialize(clickhouse_client: ClickhouseClient.new, now: -> { Time.current })
+    def initialize(clickhouse_client: ClickhouseClient.new, now: -> { Time.current }, metrics: TelemetryPipelineMetrics.new(operation: "projection", sampled: false))
       @clickhouse_client = clickhouse_client
       @now = now
+      @metrics = metrics
       reset_counts
     end
 
     def call(limit: MAX_BATCH_ROWS)
       reset_counts
-      deliveries = TelemetryDelivery.claim_batch(limit: limit, now: now)
+      deliveries = @metrics.measure(:claim) { TelemetryDelivery.claim_batch(limit: limit, now: now) }
       @claimed = deliveries.length
       return result if deliveries.empty?
 
@@ -176,11 +177,13 @@ module Logister
         project = Project.lock("FOR SHARE").find_by(id: project_ids.first)
         raise ProjectPurging, "Project purge is pending" if project.nil? || project.purge_pending?
 
-        SelfReportingGuard.suppress do
-          if deliveries.first.destination == "clickhouse_event"
-            clickhouse_client.insert_events!(rows, deduplication_token: batch_key, gzip: true)
-          else
-            clickhouse_client.insert_spans!(rows, deduplication_token: batch_key, gzip: true)
+        @metrics.measure(:insert) do
+          SelfReportingGuard.suppress do
+            if deliveries.first.destination == "clickhouse_event"
+              clickhouse_client.insert_events!(rows, deduplication_token: batch_key, gzip: true)
+            else
+              clickhouse_client.insert_spans!(rows, deduplication_token: batch_key, gzip: true)
+            end
           end
         end
       end
@@ -200,8 +203,10 @@ module Logister
     end
 
     def source_record!(delivery)
-      delivery.telemetry_outbox_event.source_record ||
-        raise(MissingSourceRecord, "Accepted #{delivery.telemetry_outbox_event.record_type} is no longer available")
+      @metrics.measure(:source_load) do
+        delivery.telemetry_outbox_event.source_record ||
+          raise(MissingSourceRecord, "Accepted #{delivery.telemetry_outbox_event.record_type} is no longer available")
+      end
     end
 
     def ensure_project_active!(delivery)
@@ -214,7 +219,11 @@ module Logister
     end
 
     def complete!(delivery)
-      return unless delivery.mark_completed!(lease_token: delivery.lease_token, at: now)
+      completed = @metrics.measure(:acknowledgement) { delivery.mark_completed!(lease_token: delivery.lease_token, at: now) }
+      unless completed
+        @metrics.count(:lease_conflicts)
+        return
+      end
 
       @completed += 1
     end

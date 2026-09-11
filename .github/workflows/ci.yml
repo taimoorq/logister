@@ -145,7 +145,7 @@ jobs:
 
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips-dev
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips-dev redis-server
 
       - name: Checkout code
         uses: actions/checkout@v7

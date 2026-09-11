@@ -57,7 +57,7 @@ RSpec.describe TelemetryProjectorJob, type: :job do
     drained = Logister::TelemetryProjector::Result.new(0, 0, 0, 0)
     allow(Logister::ClickhouseClient).to receive(:new).and_return(client)
     allow(Logister::TelemetryProjector).to receive(:new)
-      .with(clickhouse_client: client)
+      .with(clickhouse_client: client, metrics: instance_of(Logister::TelemetryPipelineMetrics))
       .and_return(projector)
     allow(projector).to receive(:call).and_return(working, drained)
     job = described_class.new
