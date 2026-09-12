@@ -447,3 +447,5 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - npm: https://www.npmjs.com/package/logister-js
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
 - Swift Package Manager releases: https://github.com/taimoorq/logister-ios/releases
+
+For SDK/CLI compatibility and contract maintenance, see [add-on contracts](docs/add-on-contracts.md) and the [public reference](https://logister.org/docs/http-api/contracts/).

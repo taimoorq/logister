@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Logister Public Ingestion API",
-    "description": "Postman collection for sending errors, logs, metrics, transactions, spans, check-ins, and deployments to Logister. Set `base_url` to your Logister host and `api_key` to a project API token.",
+    "description": "Postman collection for sending errors, logs, metrics, transactions, spans, check-ins, and deployments to Logister. Set `base_url` to your Logister host and `api_key` to a project API token. Batch ingestion and backend-issued mobile token examples are included. Project keys stay on trusted servers; never embed them in mobile apps.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -48,6 +48,16 @@
     {
       "key": "branch",
       "value": "main",
+      "type": "string"
+    },
+    {
+      "key": "batch_event_uuid_1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "batch_event_uuid_2",
+      "value": "",
       "type": "string"
     }
   ],
@@ -229,6 +239,61 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"check_in\": {\n    \"slug\": \"nightly-reconcile\",\n    \"status\": \"ok\",\n    \"expected_interval_seconds\": 900,\n    \"duration_ms\": 1820.5,\n    \"environment\": \"{{environment}}\",\n    \"release\": \"{{release}}\",\n    \"request_id\": \"job_123\"\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Ingest atomic NDJSON batch (stable replay)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "[\"batch_event_uuid_1\", \"batch_event_uuid_2\"].forEach((key) => {",
+              "  if (!pm.collectionVariables.get(key)) {",
+              "    pm.collectionVariables.set(key, pm.variables.replaceIn(\"{{$guid}}\"));",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-ndjson"
+          },
+          {
+            "key": "X-Logister-Batch-Id",
+            "value": "postman-contract-check"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/ingest_events/batch",
+        "description": "First send: 202 and two accepted rows. Re-send unchanged: 202 and duplicates=2. Clear both collection UUID variables only to start a new test. The header is not a deduplication key. A validation error rolls back new rows.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"event\":{\"uuid\":\"{{batch_event_uuid_1}}\",\"event_type\":\"log\",\"message\":\"Postman batch check\",\"context\":{\"environment\":\"{{environment}}\"}}}\n{\"event\":{\"uuid\":\"{{batch_event_uuid_2}}\",\"event_type\":\"metric\",\"message\":\"queue.depth\",\"context\":{\"value\":12,\"unit\":\"jobs\",\"environment\":\"{{environment}}\"}}}\n"
+        }
+      }
+    },
+    {
+      "name": "Mint mobile ingest token (trusted backend only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/mobile_ingest_tokens",
+        "description": "Use an Android project key from a trusted backend. The 201 response contains a one-time plaintext mobile token. Do not export or share response credentials. Change platform/service for an iOS project.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"mobile_ingest_token\": {\n    \"platform\": \"android\",\n    \"service\": \"com.example.app\",\n    \"environment\": \"{{environment}}\",\n    \"expires_in_seconds\": 900,\n    \"allowed_event_types\": [\n      \"error\",\n      \"log\",\n      \"metric\",\n      \"transaction\",\n      \"span\",\n      \"check_in\"\n    ]\n  }\n}"
         }
       }
     }

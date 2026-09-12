@@ -125,6 +125,8 @@ app.UseLogisterRequestTransactions();</code></pre></div><p>The exception middlew
     "CaptureRequestSpans": true
   }
 }</code></pre></div><p>The base client also reads <code>LOGISTER_API_KEY</code>, <code>LOGISTER_BASE_URL</code>, <code>LOGISTER_ENVIRONMENT</code>, <code>LOGISTER_RELEASE</code>, <code>LOGISTER_REPOSITORY</code>, <code>LOGISTER_COMMIT_SHA</code>, <code>LOGISTER_BRANCH</code>, and <code>LOGISTER_TIMEOUT</code>. In GitHub Actions it falls back to <code>GITHUB_REPOSITORY</code>, <code>GITHUB_SHA</code>, and <code>GITHUB_REF_NAME</code> when the Logister-specific source variables are not set.</p></section>
+
+            <section id="contract" class="section"><h2>Check delivery and compatibility.</h2><p>Use the <a href="/docs/http-api/contracts/">add-on contract reference</a> for version requirements, token permissions, retries and mobile evidence. Verify the installed package before using a newer API, and confirm both HTTP acceptance and the resulting project view.</p></section>
           </article>
         </div>
       </main>

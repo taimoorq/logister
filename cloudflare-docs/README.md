@@ -145,7 +145,7 @@ When you add or change docs pages in this folder:
 - keep sidebar groups as `<div class="sidebar-group"><p class="sidebar-label">...</p>...</div>`; `assets/site.js` turns those groups into accessible collapsible sections at runtime
 - include prerequisites, verification, likely failure modes, and the next page for setup, integration, and operations guidance
 - use real screenshots, examples, or tables when they explain the task faster than prose; keep screenshot files available through `bin/build-cloudflare-docs`
-- avoid manually drifting SDK version references; prefer generated values from companion repo metadata when available
+- keep install versions generated from `config/ecosystem-versions.json`; never infer publication from companion worktrees. Label newer APIs with their minimum version and verify every required public channel before changing the catalog
 - run `bin/build-cloudflare-docs` when you add a new public page so `sitemap.xml` and `robots.txt` stay aligned
 - keep article content inside `<article class="article" data-pagefind-body>` so Pagefind indexes page content without sidebars and navigation
 - preview locally with `wrangler pages dev cloudflare-docs` for root previews or through the Worker proxy for `/docs` previews
