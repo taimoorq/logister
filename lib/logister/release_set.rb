@@ -119,6 +119,9 @@ module Logister
     end
 
     def validate_catalog(release_set)
+      # Historical sets describe their own release, not today's published catalog.
+      return unless release_set.dig("backend", "version") == repo_root.join("VERSION").read.strip
+
       path = repo_root.join("config/ecosystem-versions.json")
       catalog = JSON.parse(path.read)
       errors << "Published version catalog schema_version must be 1." unless catalog["schema_version"] == 1

@@ -28,9 +28,9 @@ runtime-gated and default off; a newer installed CLI cannot enable them.
 Public-channel observations on 2026-09-11 found Ruby 0.4.1, JavaScript 0.4.2,
 Python 0.4.0, both .NET packages 0.3.0, iOS 0.5.0 and CLI 1.1.0 on npm/GitHub.
 Android Maven/GitHub now expose 0.5.2, including the earlier v3 evidence and
-queue changes. The public reference links the evidence and distinguishes these
-individual observations from a fully reconciled release set. The older Android
-0.3 catalog baseline does not provide the newer collection or queue guarantees.
+queue changes. The public reference links the evidence. The reviewed catalog now
+includes these SDK versions and CLI 1.1.0 across its required channels. Older
+Android 0.3 releases do not provide the newer collection or queue guarantees.
 
 Generated installation pins remain tied to the committed verified catalog. Do
 not replace it with neighboring checkout versions or infer that every CLI

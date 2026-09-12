@@ -106,6 +106,10 @@ if versions[:ios]
   ])
 end
 
+if versions[:cli]
+  rules << rule("cli current version html", /(current public CLI version is <code>)[^<]+(<\/code>)/i, "\\1#{versions[:cli]}\\2")
+end
+
 files = [
   repo_root.join("README.md"),
   repo_root.join("public/llms.txt"),

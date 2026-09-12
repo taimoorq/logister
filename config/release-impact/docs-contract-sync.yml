@@ -1,6 +1,6 @@
 schema_version: 1
 id: docs-contract-sync
-release_version: "3.6.11"
+release_version: "3.6.12"
 summary: Clarify published SDK versions, acceptance and retry behavior, mobile evidence, CLI upload permissions, and worker rollout documentation.
 backend:
   bump: none
@@ -9,7 +9,7 @@ backend:
 contracts:
   - integration_discovery
 contract_sha256:
-  integration_discovery: 1113358a3520c440616e08b5a3cca39f5fdab4d9b41f2233cb255d12862d2fb8
+  integration_discovery: 11821b1dbb908e2affbd77bbb8d84fa7356f5be62415731ea40fc638c8158e6d
 consumers:
   logister-ruby:
     bump: none

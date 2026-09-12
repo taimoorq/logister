@@ -281,7 +281,7 @@ Mobile add-ons use the same ingest envelope with platform-specific setup:
 
 | Platform | Package manager | Package / URL | Docs |
 |----------|-------------|-------------|-------------|
-| Android | Maven Central / Gradle | `org.logister:logister-android:0.3.0` | https://logister.org/docs/integrations/android/ |
+| Android | Maven Central / Gradle | `org.logister:logister-android:0.5.2` | https://logister.org/docs/integrations/android/ |
 | iOS | Swift Package Manager | `https://github.com/taimoorq/logister-ios.git` with product `Logister` | https://logister.org/docs/integrations/ios/ |
 
 The public HTTP APIs return `429 Too Many Requests` with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers when a project token exceeds the default 1,200 submissions per minute per endpoint. A batch counts every envelope, not just one HTTP request. Only app admins, not project owners or shared project members, can set project-level overrides.

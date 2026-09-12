@@ -15,7 +15,7 @@ contracts:
 contract_sha256:
   cli_api: 66d9b5d3ce07f2c89f4120e59a6006d782b83a851f5e2c1c92ab41abb3a3f6ac
   telemetry_ingest: 464025bdd1bce20749810a2ac8eaf20bf4900918864692ebc3b871e294d7f5e7
-  integration_discovery: 1113358a3520c440616e08b5a3cca39f5fdab4d9b41f2233cb255d12862d2fb8
+  integration_discovery: 56a059cc2eb5b54cf8ec716973b00acd3e9d19814bff321423fdc290d632389e
 consumers:
   logister-ruby:
     bump: none

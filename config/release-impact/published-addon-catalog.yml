@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: published-addon-catalog
+release_version: 3.6.12
+summary: Publish verified SDK installation versions, recommend the fully distributed
+  CLI 1.1.0, and keep historical release and catalog follow-up checks valid.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: after_consumers
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: e48ce2024a14419eef344855b84f4999537e8a4bf2d14c7ad65a4ea830f0a06c
+  telemetry_ingest: bbb9a8d88aa0cb7632e3fe8b3c06fb18ea2f41b6209aeb20194d900827bb06e0
+  integration_discovery: 11821b1dbb908e2affbd77bbb8d84fa7356f5be62415731ea40fc638c8158e6d
+consumers:
+  logister-cli:
+    bump: none
+    reason: Already published compatible SDKs and CLI remain valid; only release catalog
+      metadata and the CLI recommendation change.
+  logister-ruby:
+    bump: none
+    reason: Already published compatible SDKs and CLI remain valid; only release catalog
+      metadata and the CLI recommendation change.
+  logister-js:
+    bump: none
+    reason: Already published compatible SDKs and CLI remain valid; only release catalog
+      metadata and the CLI recommendation change.
+  logister-python:
+    bump: none
+    reason: Already published compatible SDKs and CLI remain valid; only release catalog
+      metadata and the CLI recommendation change.
+  logister-dotnet:
+    bump: none
+    reason: Already published compatible SDKs and CLI remain valid; only release catalog
+      metadata and the CLI recommendation change.
+  logister-android:
+    bump: none
+    reason: Already published compatible SDKs and CLI remain valid; only release catalog
+      metadata and the CLI recommendation change.
+  logister-ios:
+    bump: none
+    reason: Already published compatible SDKs and CLI remain valid; only release catalog
+      metadata and the CLI recommendation change.

@@ -29,14 +29,15 @@ RSpec.describe "Health", type: :request do
     end
 
     it "returns the public packaged release and contract identity" do
+      packaged_version = Rails.root.join("VERSION").read.strip
       get "/health/release"
 
       expect(response).to have_http_status(:ok)
       expect(response.headers["Cache-Control"]).to include("no-cache")
       expect(response.parsed_body).to include(
         "status" => "ok",
-          "version" => "3.6.11",
-          "tag" => "v3.6.11",
+        "version" => packaged_version,
+        "tag" => "v#{packaged_version}",
         "git_sha" => "unknown",
         "image_digest" => "unknown",
         "database" => { "connected" => true, "migrations_current" => true }

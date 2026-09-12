@@ -27,6 +27,11 @@ source for generated install pins. A source version or successful CI run alone
 is not a published package. Use [ecosystem releases](ecosystem-releases.md) for
 current-main release promotion, immutable-tag recovery and registry verification;
 do not create manual tags from this guide or assume all packages share a version.
+Merge version changes to each protected main branch after review; current-main CI
+promotes the immutable tag and dispatches publication. For Android, wait for the
+public Maven POM and AAR after Central accepts a deployment instead of uploading
+the version again. Recover interrupted publication through `release.yml` on main
+with the existing `tag` input; never replace a published tag.
 
 When moving from iOS 0.3 to 0.5, read the package migration notes. Client endpoints
 are immutable and MetricKit lifecycle is main-actor owned. Keep the collector
