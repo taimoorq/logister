@@ -2,8 +2,9 @@
 schema_version: 1
 id: published-addon-catalog
 release_version: 3.6.12
-summary: Publish verified SDK installation versions, recommend the fully distributed
-  CLI 1.1.0, and keep historical release and catalog follow-up checks valid.
+summary: Publish verified SDK versions and CLI 1.1.0 recommendation. After verifying
+  deployed Rails 3.6.12 and all public channels, promote its catalog and Docker examples;
+  existing SDK versions and contract digests remain valid.
 backend:
   bump: patch
   compatibility: compatible
