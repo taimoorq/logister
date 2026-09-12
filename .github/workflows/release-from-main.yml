@@ -70,8 +70,8 @@ jobs:
             fi
 
             publishable="$(git diff --name-only "${tag_sha}..${RELEASE_SHA}" | ruby -e '
-              ignored = %r{\A(?:\.github|docs|spec|test|tmp|scripts)/|\A(?:AGENTS\.md|LICENSE|README\.md|\.gitignore)\z|\.md\z|\Aconfig/(?:ecosystem\.yml|release-impact(?:\.schema\.json|/))}
-              puts STDIN.each_line.map(&:strip).reject(&:empty?).reject { |path| path.match?(ignored) }
+              require_relative "./lib/logister/backend_release_changes"
+              puts Logister::BackendReleaseChanges.publishable(STDIN.each_line.to_a)
             ')"
             if [ -n "${publishable}" ]; then
               echo "Release ${RELEASE_TAG} points to ${tag_sha}, but current main contains publishable changes without a new VERSION:"
