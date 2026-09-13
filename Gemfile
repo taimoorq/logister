@@ -5,7 +5,7 @@ ruby "4.0.6"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.2"
 # Rails 8.1 passes positional JSON options; JSON 3 requires keywords (rails/rails#58685).
-gem "json", "< 3"
+gem "json", "< 4"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Tailwind CSS for Rails asset pipeline [https://github.com/rails/tailwindcss-rails]
