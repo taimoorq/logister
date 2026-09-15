@@ -2,6 +2,19 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.13 - 2026-09-15
+
+### Improved
+
+- Replaced interpolated CLI deployment and monitor predicates with explicit Arel and parameterized SQL while preserving cursor ordering, inclusive time bounds, and status deadlines.
+- Split controller responses, batch ingestion, activity queries, and model recording and lifecycle responsibilities into focused components.
+- Simplified artifact-row rendering and grouped setup steps once in memory. Documented RailsForge diagnostic limitations and retained informational suggestions.
+
+### Upgrade Notes
+
+- No migrations, SDK or CLI upgrades, configuration changes, or queue clearing are required. Existing payloads, authorization, telemetry leases, batch ownership, and recovery behavior remain compatible.
+- Rollback uses the previous application image. Verify web readiness and worker release identity after deployment.
+
 ## v3.6.12 - 2026-09-11
 
 ### Changed

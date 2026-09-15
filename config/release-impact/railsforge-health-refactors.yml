@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: railsforge-health-refactors
+release_version: 3.6.13
+summary: Clarify query safety and split Rails controller and model responsibilities
+  while preserving current ingestion, CLI, and integration contracts.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: b46108a76fec40b0cee4a0f36ab2233be18d5bcd5bc56346bd351b6455d3b6dd
+  telemetry_ingest: 21da06951a4bc92a12aa352f133aff690b0bca9a68f284374e0d1093a6671804
+  integration_discovery: 58837a3dda7f3a6d145cd75aaf8060bdb783890c12a2b9efcec8aafe8cc7c00f
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Internal Rails refactors preserve single and batch ingestion, check-ins,
+      and deployment payloads; the Ruby SDK remains compatible.
+  logister-js:
+    bump: none
+    reason: Internal Rails refactors preserve event payloads, credentials, and ingestion
+      responses; the JavaScript SDK remains compatible.
+  logister-python:
+    bump: none
+    reason: Internal Rails refactors preserve event payloads, credentials, and ingestion
+      responses; the Python SDK remains compatible.
+  logister-dotnet:
+    bump: none
+    reason: Internal Rails refactors preserve event payloads, credentials, and ingestion
+      responses; both .NET packages remain compatible.
+  logister-android:
+    bump: none
+    reason: Internal Rails refactors preserve mobile token enforcement, evidence semantics,
+      artifact inventory, and setup metadata; the Android SDK remains compatible.
+  logister-ios:
+    bump: none
+    reason: Internal Rails refactors preserve mobile token enforcement, evidence semantics,
+      artifact inventory, and setup metadata; the iOS SDK remains compatible.
+  logister-cli:
+    bump: none
+    reason: CLI API shapes, cursor signatures, access scopes, pagination order, and
+      filter boundaries are unchanged; only backend release metadata advances.
