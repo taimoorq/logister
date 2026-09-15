@@ -1,5 +1,6 @@
 class Project < ApplicationRecord
   include ProjectAccess
+  include ProjectLifecycle
 
   DEFAULT_PUBLIC_API_RATE_LIMIT_REQUESTS = 1_200
   DEFAULT_PUBLIC_API_RATE_LIMIT_PERIOD_SECONDS = 60
@@ -69,7 +70,6 @@ class Project < ApplicationRecord
 
   before_validation :ensure_uuid
   before_validation :normalize_slug
-  before_destroy :require_purge_execution
 
   validate :integration_kind_cannot_change, on: :update
 
@@ -127,48 +127,6 @@ class Project < ApplicationRecord
     uuid
   end
 
-  def archived?
-    archived_at.present?
-  end
-
-  def purge_pending?
-    purge_requested_at.present?
-  end
-
-  def notifications_disabled?
-    archived? || purge_pending?
-  end
-
-  def archive!
-    archive_time = Time.current
-
-    transaction do
-      update!(archived_at: archive_time)
-      api_keys.active.update_all(revoked_at: archive_time, updated_at: archive_time)
-    end
-  end
-
-  def restore!
-    if purge_pending?
-      errors.add(:base, "cannot restore a project after permanent deletion has been requested")
-      raise ActiveRecord::RecordInvalid, self
-    end
-
-    update!(archived_at: nil)
-  end
-
-  def destroy_for_purge!
-    unless purge_pending? && project_purges.exists?
-      errors.add(:base, "requires a durable project purge ledger before deletion")
-      raise ActiveRecord::RecordInvalid, self
-    end
-
-    @purge_execution_authorized = true
-    destroy!
-  ensure
-    @purge_execution_authorized = false
-  end
-
   def integration_label
     INTEGRATION_LABELS.fetch(integration_kind, integration_kind.to_s.humanize)
   end
@@ -200,12 +158,5 @@ class Project < ApplicationRecord
     return unless will_save_change_to_integration_kind?
 
     errors.add(:integration_kind, "cannot be changed after project creation")
-  end
-
-  def require_purge_execution
-    return if @purge_execution_authorized
-
-    errors.add(:base, "Must be deleted through the audited project purge lifecycle")
-    throw :abort
   end
 end

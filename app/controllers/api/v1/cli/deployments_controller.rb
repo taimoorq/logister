@@ -3,7 +3,9 @@
 class Api::V1::Cli::DeploymentsController < Api::V1::Cli::BaseController
   CURSOR_RESOURCE = "deployments"
   SEARCH_LIMIT = 200
-  SORT_TIMESTAMP_SQL = "COALESCE(project_deployments.deployed_at, project_deployments.created_at)"
+  SORT_TIMESTAMP = Arel::Nodes::NamedFunction.new(
+    "COALESCE", [ ProjectDeployment.arel_table[:deployed_at], ProjectDeployment.arel_table[:created_at] ]
+  )
 
   before_action -> { require_cli_scopes!("deployments:read") }
 
@@ -18,8 +20,11 @@ class Api::V1::Cli::DeploymentsController < Api::V1::Cli::BaseController
       filters: cursor_filters
     )
     scope = filtered_scope(filters).includes(:project_source_repository, :github_repository)
-    scope = scope.where("(#{SORT_TIMESTAMP_SQL}, project_deployments.uuid) < (?, ?::uuid)", cursor[:timestamp], cursor[:uuid]) if cursor
-    records = scope.order(Arel.sql("#{SORT_TIMESTAMP_SQL} DESC"), uuid: :desc).limit(limit + 1).to_a
+    scope = scope.where(
+      "(COALESCE(project_deployments.deployed_at, project_deployments.created_at), project_deployments.uuid) < (?, ?::uuid)",
+      cursor[:timestamp], cursor[:uuid]
+    ) if cursor
+    records = scope.order(SORT_TIMESTAMP.desc, uuid: :desc).limit(limit + 1).to_a
     has_more = records.length > limit
     records = records.first(limit)
     previous = ProjectDeploymentPreviousLookup.call(project: cli_project, deployments: records)
@@ -71,8 +76,8 @@ class Api::V1::Cli::DeploymentsController < Api::V1::Cli::BaseController
     scope = scope.where(environment: filters[:environment]) if filters[:environment].present?
     scope = scope.where(source: filters[:source]) if filters[:source].present?
     scope = scope.where(release: filters[:release]) if filters[:release].present?
-    scope = scope.where("#{SORT_TIMESTAMP_SQL} >= ?", filters[:since]) if filters[:since]
-    scope = scope.where("#{SORT_TIMESTAMP_SQL} <= ?", filters[:until]) if filters[:until]
+    scope = scope.where(SORT_TIMESTAMP.gteq(filters[:since])) if filters[:since]
+    scope = scope.where(SORT_TIMESTAMP.lteq(filters[:until])) if filters[:until]
     scope = apply_text_filter(scope, filters[:q]) if filters[:q].present?
     scope
   end

@@ -1,6 +1,6 @@
-require "openssl"
-
 class ProjectEventsController < ApplicationController
+  include ProjectEvidenceDownload
+  include ProjectEventResponses
   include ProjectInboxData
   include ProjectEventDetailData
 
@@ -27,31 +27,7 @@ class ProjectEventsController < ApplicationController
     @evidence_signals = inbox_evidence_signals(@project, @groups, profile_filters: @profile_filters)
     @has_activity_events = @groups.empty? && project_has_activity_events?(@project)
     @selected_uuid = params[:group_uuid]
-
-    if turbo_frame_request? && request.headers["Turbo-Frame"] == "project_inbox"
-      render partial: "projects/inbox_table", locals: {
-        project:       @project,
-        groups:        @groups,
-        latest_events: @latest_events,
-        android_mapping_resolutions: @android_mapping_resolutions,
-        ios_symbol_coverages: @ios_symbol_coverages,
-        group_trends:  @group_trends,
-        impact_summaries: @impact_summaries,
-        evidence_signals: @evidence_signals,
-        has_activity_events: @has_activity_events,
-        selected_uuid: @selected_uuid,
-        filter:        @filter,
-        query:         @query,
-        assignee:      @assignee_filter,
-        sort:          @sort,
-        profile_filters: @profile_filters,
-        next_cursor:   @next_cursor
-      }
-    elsif turbo_frame_request?
-      head :unprocessable_content
-    else
-      redirect_to inbox_project_path(@project, inbox_profile_redirect_params.merge(filter: @filter, q: @query, assignee: @assignee_filter, group_uuid: @selected_uuid))
-    end
+    render_inbox_response
   end
 
   # GET /projects/:project_uuid/events/:uuid   — Turbo Frame: error_detail
@@ -80,97 +56,7 @@ class ProjectEventsController < ApplicationController
     )
     @frame_scope = params[:frame_scope].presence_in(%w[application all]) || "application"
     @frame = params[:frame].to_i
-
-    if turbo_frame_request? && request.headers["Turbo-Frame"] == "stack_frame_source" && @project.integration_ruby?
-      render partial: "project_events/ruby_stack_frame_source", locals: {
-        project:     @project,
-        event:       @event,
-        group:       @group,
-        filter_param: @filter,
-        query_param: @query,
-        assignee_param: @assignee_filter,
-        frame_scope: @frame_scope,
-        selected_frame_index: @frame
-      }
-    elsif turbo_frame_request? && request.headers["Turbo-Frame"] == "error_detail"
-      render partial: "project_events/event_detail", locals: {
-        project:     @project,
-        event:       @event,
-        group:       @group,
-        occurrences: @occurrences,
-        related_logs: @related_logs,
-        impact_summary: @impact_summary,
-        variant_summary: @variant_summary,
-        filter:      @filter,
-        query:       @query,
-        assignee:    @assignee_filter,
-        assignable_users: @assignable_users,
-        tab:         @tab,
-        frame_scope: @frame_scope,
-        frame:       @frame
-      }
-    elsif turbo_frame_request?
-      head :unprocessable_content
-    else
-      # Fallback: if this came from the project inbox workflow, keep users in that workbench.
-      if params[:group_uuid].present? || params[:filter].present? || params[:q].present?
-        redirect_to inbox_project_path(
-          @project,
-          inbox_profile_redirect_params.merge(
-            filter: @filter,
-            q: @query,
-            assignee: @assignee_filter,
-            group_uuid: @group&.uuid || params[:group_uuid],
-            event_uuid: @event.uuid,
-            tab: @tab
-          )
-        )
-      else
-        # Full page load — standalone event page.
-        render :show
-      end
-    end
-  end
-
-  def original_evidence
-    reason = params[:reason].to_s.strip
-    audit = @project.evidence_access_audits.new(
-      user: current_user,
-      ingest_event_uuid: @event.uuid,
-      ingest_event_occurred_at: @event.occurred_at,
-      action: "download_unredacted_stored_evidence",
-      reason: reason,
-      request_metadata: {
-        "ip_hmac" => evidence_request_ip_hmac,
-        "user_agent" => request.user_agent.to_s.first(300)
-      }.compact
-    )
-    unless audit.save
-      return render json: { errors: audit.errors.full_messages }, status: :unprocessable_content
-    end
-
-    response.headers["Cache-Control"] = "no-store, private"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    send_data(
-      JSON.pretty_generate(
-        {
-          "evidence_access" => {
-            "audit_uuid" => audit.uuid,
-            "project_uuid" => @project.uuid,
-            "event_uuid" => @event.uuid,
-            "event_occurred_at" => @event.occurred_at.utc.iso8601(6),
-            "exported_at" => Time.current.utc.iso8601(6),
-            "representation" => "stored_unredacted_context",
-            "wire_original" => false
-          },
-          "context" => @event.context.as_json
-        }
-      ),
-      filename: "logister-evidence-#{@event.uuid}.json",
-      type: "application/json; charset=utf-8",
-      disposition: "attachment"
-    )
+    render_event_response
   end
 
   private
@@ -191,13 +77,6 @@ class ProjectEventsController < ApplicationController
 
   def require_project_manager
     head :not_found unless @project.managed_by?(current_user)
-  end
-
-  def evidence_request_ip_hmac
-    value = request.remote_ip.to_s
-    return if value.blank?
-
-    OpenSSL::HMAC.hexdigest("SHA256", Rails.application.secret_key_base, "evidence-access-ip:#{value}")
   end
 
   def project_event_lookup_scope

@@ -1,0 +1,20 @@
+<tr>
+  <td class="px-4 py-4 align-top"><strong class="block text-slate-900"><%= artifact.filename %></strong><span class="text-xs text-slate-500"><%= number_to_human_size(artifact.byte_size) %> · SHA-256 <%= artifact.checksum.to_s.first(12) %>…</span></td>
+  <td class="px-4 py-4 align-top"><strong class="block text-slate-900"><%= [artifact.version_name, artifact.version_code.present? && "(#{artifact.version_code})"].compact.join(" ").presence || "Build unknown" %></strong><span class="text-xs text-slate-500"><%= artifact.app_identifier %></span></td>
+  <td class="px-4 py-4 align-top text-xs text-slate-600"><% if artifact.binary_uuid %><code><%= artifact.binary_uuid %></code><br><%= artifact.architecture %><% else %>Not applicable to R8 mapping<% end %></td>
+  <td class="px-4 py-4 align-top"><span class="font-semibold text-slate-900"><%= artifact.status_label %></span><% if project.integration_ios? && artifact.status == :verified %><span class="mt-1 block text-xs text-slate-500">UUID verified; frame symbolication is separate.</span><% end %></td>
+  <td class="px-4 py-4 align-top"><%= time_ago_in_words(artifact.uploaded_at) %> ago<span class="block text-xs text-slate-500"><%= artifact.uploader %></span></td>
+  <td class="px-4 py-4 align-top">
+    <% if can_manage_artifacts %>
+      <div class="flex flex-wrap gap-2">
+        <% if project.integration_ios? && artifact.record.processable? %>
+          <%= button_to "Verify again", process_artifact_project_apple_symbol_artifact_path(project, artifact.record), method: :post, params: { return_to: "artifacts" }, class: "btn-ghost btn-sm" %>
+        <% end %>
+        <% destroy_path = project.integration_android? ? project_android_mapping_file_path(project, artifact.record) : project_apple_symbol_artifact_path(project, artifact.record) %>
+        <%= button_to "Remove", destroy_path, method: :delete, params: { return_to: "artifacts" }, class: "btn-ghost btn-sm", form: { data: { turbo_confirm: "Remove this private build artifact? Historical events will retain their evidence, but enrichment may become unavailable." } } %>
+      </div>
+    <% else %>
+      <span class="text-xs text-slate-500">Manager access required</span>
+    <% end %>
+  </td>
+</tr>
