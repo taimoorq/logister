@@ -79,7 +79,7 @@ class Api::V1::Cli::MonitorsController < Api::V1::Cli::BaseController
 
   def apply_status_filter(scope, status, at:)
     active = scope.where(monitoring_paused_at: nil)
-    deadline_sql = <<~SQL.squish
+    deadline = Arel.sql(<<~SQL.squish)
       check_in_monitors.last_check_in_at + make_interval(
         secs => check_in_monitors.expected_interval_seconds +
           GREATEST((check_in_monitors.expected_interval_seconds / 2), 30)
@@ -92,9 +92,9 @@ class Api::V1::Cli::MonitorsController < Api::V1::Cli::BaseController
     when "error"
       active.where(last_status: "error")
     when "missed"
-      active.where.not(last_status: "error").where("last_check_in_at IS NULL OR #{deadline_sql} < ?", at)
+      active.where.not(last_status: "error").where(CheckInMonitor.arel_table[:last_check_in_at].eq(nil).or(deadline.lt(at)))
     when "ok"
-      active.where.not(last_status: "error").where("last_check_in_at IS NOT NULL AND #{deadline_sql} >= ?", at)
+      active.where.not(last_status: "error").where.not(last_check_in_at: nil).where(deadline.gteq(at))
     end
   end
 

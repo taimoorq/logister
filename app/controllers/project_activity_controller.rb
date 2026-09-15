@@ -25,7 +25,7 @@ class ProjectActivityController < ApplicationController
     @per_page_options = PER_PAGE_OPTIONS
     @activity_filters_active = activity_filters_active?(@activity_filters)
     @activity_page = cursor_page(
-      filtered_activity_events,
+      activity_query.events,
       before: params[:before],
       after: params[:after],
       per_page: @activity_filters[:per_page],
@@ -33,7 +33,7 @@ class ProjectActivityController < ApplicationController
     )
     @activity_events = @activity_page.records
     @mobile_activity = ProjectExperience.for(@project).supports?(:mobile)
-    @activity_related_groups = @mobile_activity ? related_activity_groups(@activity_events) : {}
+    @activity_related_groups = @mobile_activity ? activity_query.related_groups(@activity_events) : {}
     @activity_row_presenters = @activity_events.index_with do |event|
       ProjectActivity::RowPresenter.new(
         project: @project,
@@ -47,25 +47,6 @@ class ProjectActivityController < ApplicationController
   end
 
   private
-
-  def filtered_activity_events
-    filters = @activity_filters
-    scope = @project.ingest_events.where.not(event_type: :error)
-
-    scope = scope.where(event_type: filters[:event_type]) unless filters[:event_type] == "all"
-    scope = apply_activity_period_filter(scope, filters[:period])
-    scope = apply_text_filter(scope, filters[:q]) if filters[:q].present?
-    scope = scope.where("COALESCE(NULLIF(ingest_events.context->>'environment', ''), 'production') = ?", filters[:environment]) if filters[:environment].present?
-    scope = scope.where("ingest_events.context->>'release' = ?", filters[:release]) if filters[:release].present?
-    if mobile_activity?
-      scope = scope.where("COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,source}', ''), NULLIF(ingest_events.context #>> '{diagnostic,source}', ''), 'sdk') = ?", filters[:source]) if filters[:source].present?
-      scope = scope.where("COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,time,precision}', ''), 'unknown') = ?", filters[:time_precision]) if filters[:time_precision].present?
-      scope = scope.where("ingest_events.context #>> '{app,version_code}' = ?", filters[:build_number]) if filters[:build_number].present?
-      scope = scope.where("COALESCE(NULLIF(ingest_events.context #>> '{distribution,channel}', ''), ingest_events.context #>> '{distribution,track}') = ?", filters[:channel]) if filters[:channel].present?
-      scope = scope.where("COALESCE(NULLIF(ingest_events.context->>'apple_platform', ''), ingest_events.context->>'platform') = ?", filters[:platform]) if filters[:platform].present?
-    end
-    scope
-  end
 
   def normalized_activity_filters
     scope = @activity_scope_projection.params
@@ -82,41 +63,6 @@ class ProjectActivityController < ApplicationController
       platform: mobile_activity? ? (params[:platform].presence || scope[:platform]).to_s.strip.downcase : "",
       per_page: normalized_per_page(params[:per_page].presence || TableCursorPagination::DEFAULT_PER_PAGE)
     }
-  end
-
-  def apply_period_filter(scope, period, periods)
-    lookback = periods.fetch(period)
-    return scope if lookback.blank?
-
-    scope.where("ingest_events.occurred_at >= ?", lookback.ago)
-  end
-
-  def apply_activity_period_filter(scope, period)
-    lookback = ACTIVITY_PERIODS.fetch(period)
-    return scope if lookback.blank?
-
-    column = mobile_activity? ? "ingest_events.created_at" : "ingest_events.occurred_at"
-    scope.where("#{column} >= ?", lookback.ago)
-  end
-
-  def apply_text_filter(scope, query)
-    term = "%#{ActiveRecord::Base.sanitize_sql_like(query.downcase)}%"
-    scope.where(
-      <<~SQL.squish,
-        LOWER(ingest_events.message) LIKE :term
-        OR LOWER(COALESCE(ingest_events.level, '')) LIKE :term
-        OR LOWER(COALESCE(
-          ingest_events.context->>'transaction_name',
-          ingest_events.context->>'transactionName',
-          ingest_events.context->>'name',
-          ingest_events.context->>'check_in_slug',
-          ingest_events.context->>'logger_name',
-          ingest_events.context->>'release',
-          ''
-        )) LIKE :term
-      SQL
-      term: term
-    )
   end
 
   def activity_filters_active?(filters)
@@ -152,30 +98,13 @@ class ProjectActivityController < ApplicationController
     ]
   end
 
-  def mobile_activity?
-    ProjectExperience.for(@project).supports?(:mobile)
+  def activity_query
+    @activity_query ||= ProjectActivityQuery.new(
+      project: @project, filters: @activity_filters, lookback: ACTIVITY_PERIODS.fetch(@activity_filters[:period])
+    )
   end
 
-  def related_activity_groups(events)
-    trace_ids = events.filter_map { |event| ProjectActivity::RowPresenter.trace_id(event) }.uniq
-    return {} if trace_ids.empty?
-
-    occurred_times = events.map(&:occurred_at).compact
-    scope = @project.ingest_events
-      .where(event_type: :error)
-      .where.not(error_group_id: nil)
-      .where(
-        "ingest_events.context->>'trace_id' IN (?) OR ingest_events.context #>> '{trace,id}' IN (?)",
-        trace_ids,
-        trace_ids
-      )
-    if occurred_times.any?
-      scope = scope.where(occurred_at: (occurred_times.min - 1.day)..(occurred_times.max + 1.day))
-    end
-
-    scope.order(created_at: :desc).limit([ trace_ids.size * 3, 300 ].min).includes(:error_group).each_with_object({}) do |error_event, result|
-      trace_id = ProjectActivity::RowPresenter.trace_id(error_event)
-      result[trace_id] ||= error_event.error_group if trace_id.present?
-    end
+  def mobile_activity?
+    ProjectExperience.for(@project).supports?(:mobile)
   end
 end

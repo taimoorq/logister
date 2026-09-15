@@ -260,6 +260,27 @@ RSpec.describe "Api::V1::Cli v3.5 read API", type: :request do
   end
 
   describe "monitors" do
+    it "matches status filters at the deadline and for missing, errored, and paused check-ins" do
+      travel_to Time.zone.local(2026, 9, 15, 12, 0, 0) do
+        monitors = [
+          create(:check_in_monitor, project:, expected_interval_seconds: 101, last_check_in_at: 151.seconds.ago),
+          create(:check_in_monitor, project:, expected_interval_seconds: 101, last_check_in_at: 152.seconds.ago),
+          create(:check_in_monitor, project:, last_check_in_at: nil),
+          create(:check_in_monitor, :errored, project:, last_check_in_at: nil),
+          create(:check_in_monitor, :errored, project:, last_check_in_at: 1.minute.ago),
+          create(:check_in_monitor, :missed, project:, monitoring_paused_at: 1.minute.ago)
+        ]
+
+        %w[ok error missed paused].each do |status|
+          get "/api/v1/cli/projects/#{project.uuid}/monitors", params: { status: }, headers: headers
+
+          expect(response).to have_http_status(:ok)
+          expected = monitors.select { |monitor| monitor.status(at: Time.current) == status }.map(&:uuid)
+          expect(response.parsed_body["items"].pluck("uuid")).to match_array(expected)
+        end
+      end
+    end
+
     it "uses stable UUIDs and one status snapshot for list and detail" do
       ok = create(:check_in_monitor, :with_last_event, project:, api_key:, slug: "billing", last_check_in_at: 1.minute.ago)
       create(:check_in_monitor, :missed, project:, slug: "stale")
@@ -308,6 +329,30 @@ RSpec.describe "Api::V1::Cli v3.5 read API", type: :request do
   end
 
   describe "deployments" do
+    it "paginates tied timestamps and filters inclusive bounds using created_at for undated deployments" do
+      travel_to Time.zone.local(2026, 9, 15, 12, 0, 0) do
+        timestamp = 1.hour.ago
+        tied = [
+          create(:project_deployment, project:, deployed_at: timestamp),
+          create(:project_deployment, project:, deployed_at: nil, created_at: timestamp)
+        ].sort_by(&:uuid).reverse
+        oldest = create(:project_deployment, project:, deployed_at: 2.hours.ago)
+        create(:project_deployment, project:, deployed_at: 3.hours.ago)
+        create(:project_deployment, project:, deployed_at: Time.current)
+        filters = { since: 2.hours.ago.iso8601, until: timestamp.iso8601, limit: 1 }
+        cursor = nil
+
+        [ *tied, oldest ].each_with_index do |deployment, index|
+          get "/api/v1/cli/projects/#{project.uuid}/deployments", params: filters.merge(cursor:).compact, headers: headers
+
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body["items"].pluck("uuid")).to eq([ deployment.uuid ])
+          cursor = response.parsed_body["next_cursor"]
+          expect(cursor.present?).to eq(index < 2)
+        end
+      end
+    end
+
     it "reuses filters and previous-deployment context without leaking metadata secrets" do
       previous = create(:project_deployment, project:, release: "1.0.0", commit_sha: "abc1234", deployed_at: 2.hours.ago)
       current = create(

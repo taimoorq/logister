@@ -32,7 +32,7 @@ class ProjectExperience
               "Project experience registry mismatch (missing: #{missing_keys.join(', ')}; extra: #{extra_keys.join(', ')})"
       end
 
-      ProjectIntegrationDefinition.all.each do |integration|
+      ProjectIntegrationDefinition::DEFINITIONS.each do |integration|
         integration.allowed_experience_keys.each { |key| ProjectExperienceDefinition.fetch(key) }
         definition = ProjectExperienceDefinition.fetch(integration.default_experience_key)
         profile_class = definition.profile_class

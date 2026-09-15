@@ -10,6 +10,8 @@ class Api::V1::Cli::BaseController < ApplicationController
     end
   end
 
+  include Api::V1::Cli::Responses
+  include Api::V1::Cli::QueryParameters
   include Api::V1::Cli::EventFiltering
   include Api::V1::Cli::ReadRateLimitGuard
 
@@ -85,89 +87,6 @@ class Api::V1::Cli::BaseController < ApplicationController
         matches.first
       end
     end
-  end
-
-  def cli_limit(default: 50, max: 100)
-    Logister::CliQuery.integer(params[:limit], parameter: "limit", default:, min: 1, max:)
-  end
-
-  def parse_cli_time(value)
-    Logister::CliQuery.time(value, parameter: "timestamp")
-  end
-
-  def cli_since(default: nil)
-    raw = params[:since].to_s.strip
-    return default if raw.blank?
-
-    Logister::CliQuery.relative_or_time(raw, parameter: "since")
-  end
-
-  def cli_time_range(default_duration: 24.hours, max_duration: 90.days)
-    Logister::CliQuery.range(
-      since_value: params[:since],
-      until_value: params[:until],
-      default_duration:,
-      max_duration:
-    )
-  end
-
-  def decode_cli_cursor(value, resource:, project_uuid:, filters:)
-    return if value.blank?
-
-    Logister::CliCursor.decode(value, resource:, project_uuid:, filters:)
-  end
-
-  def encode_cli_cursor(resource:, project_uuid:, filters:, timestamp:, uuid:)
-    Logister::CliCursor.encode(resource:, project_uuid:, filters:, timestamp:, uuid:)
-  end
-
-  def cli_list_payload(items:, next_cursor: nil, generated_at: Time.current, **metadata)
-    {
-      items:,
-      next_cursor:,
-      generated_at: Logister::CliSerializer.timestamp(generated_at)
-    }.merge(metadata).compact
-  end
-
-  def render_not_found
-    render json: {
-      error: "Not found",
-      code: "not_found",
-      message: "The requested resource was not found."
-    }, status: :not_found
-  end
-
-  def render_ambiguous_project(error)
-    render json: {
-      error: "Ambiguous project",
-      code: "ambiguous_project",
-      message: "More than one accessible project uses '#{error.identifier}'. Use the project UUID instead."
-    }, status: :conflict
-  end
-
-  def render_invalid_cursor
-    render json: {
-      error: "Invalid cursor",
-      code: "invalid_cursor",
-      message: "The cursor is invalid or does not match this project and filter set."
-    }, status: :unprocessable_content
-  end
-
-  def render_invalid_parameter(error)
-    render json: {
-      error: "Invalid parameter",
-      code: "invalid_parameter",
-      message: error.message,
-      parameter: error.parameter
-    }.compact, status: :unprocessable_content
-  end
-
-  def render_query_timeout
-    render json: {
-      error: "Query unavailable",
-      code: "query_timeout",
-      message: "The query exceeded the server time limit. Narrow the time range or filters and try again."
-    }, status: :service_unavailable
   end
 
   def with_cli_postgres_statement_timeout(&)
