@@ -12,10 +12,9 @@ module CheckInMonitorRecording
       intent = nil
 
       CheckInMonitor.transaction(requires_new: true) do
-        monitor = project.check_in_monitors.create_or_find_by!(
-          slug: payload[:slug],
-          environment: payload[:environment]
-        ) { |candidate| assign_event!(candidate, event, payload) }
+        identity = { slug: payload[:slug], environment: payload[:environment] }
+        monitor = project.check_in_monitors.find_by(identity) ||
+          project.check_in_monitors.create_or_find_by!(identity) { |candidate| assign_event!(candidate, event, payload) }
         created = monitor.previously_new_record?
 
         monitor.with_lock do

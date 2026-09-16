@@ -83,6 +83,33 @@ RSpec.describe Logister::ClickhouseBackfillWatermarkReconciler, type: :model do
     expect(watermark).to have_attributes(accepted_count: 0, delivered_count: 0)
   end
 
+  it "reuses a verified watermark without exception-driven insert attempts" do
+    allow(client).to receive(:select_rows!).and_return([ { "logical_count" => 0, "checksum" => "0" } ])
+    arguments = { client: client, project_id: project.id, signal: "log", bucket_start_at: bucket, source_complete: true }
+    described_class.call(**arguments)
+    inserts = []
+    subscriber = ->(*args) { inserts << args.last[:sql] if args.last[:sql].match?(/INSERT INTO "telemetry_projection_watermarks"/) }
+
+    ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+      expect(described_class.call(**arguments)).to be_verified
+    end
+
+    expect(inserts).to be_empty
+  end
+
+  it "keeps the unique absolute watermark if another creator wins the lookup race" do
+    allow(client).to receive(:select_rows!).and_return([ { "logical_count" => 0, "checksum" => "0" } ])
+    arguments = { client: client, project_id: project.id, signal: "log", bucket_start_at: bucket, source_complete: true }
+    described_class.call(**arguments)
+    allow(TelemetryProjectionWatermark).to receive(:find_by).and_return(nil)
+
+    expect(described_class.call(**arguments)).to be_verified
+
+    rows = TelemetryProjectionWatermark.where(project_id: project.id, signal: "log", bucket_start_at: bucket)
+    expect(rows.count).to eq(1)
+    expect(rows.first).to have_attributes(accepted_count: 0, delivered_count: 0, accepted_checksum: 0, delivered_checksum: 0)
+  end
+
   it "stores absolute mismatch evidence and refuses to mark the bucket complete" do
     event = create(:ingest_event, :log, project: project, occurred_at: bucket + 5.minutes)
     allow(client).to receive(:select_rows!).and_return(

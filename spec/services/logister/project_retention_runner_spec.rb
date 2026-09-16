@@ -214,6 +214,32 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(IngestEvent.exists?(open_group.latest_event_id)).to be true
   end
 
+  it "defers backup-referenced error groups while safely pruning other groups" do
+    connection = ActiveRecord::Base.connection
+    protected_group = create(:error_group, :resolved, project: project, last_seen_at: now - 45.days)
+    deletable_group = create(:error_group, :resolved, project: project, last_seen_at: now - 45.days)
+    event = create(:ingest_event, project: project, error_group: protected_group)
+    connection.execute(<<~SQL)
+      INSERT INTO ingest_events_unpartitioned_backup
+        (id, api_key_id, context, created_at, event_type, fingerprint, level, message,
+         occurred_at, project_id, updated_at, uuid, error_group_id)
+      SELECT id, api_key_id, context, created_at, event_type, fingerprint, level, message,
+        occurred_at, project_id, updated_at, uuid, error_group_id
+      FROM ingest_events WHERE id = #{Integer(event.id)}
+    SQL
+
+    preview = described_class.new(project: project, policy: policy, dry_run: true, now: now).call
+    expect(preview[:deferred]).to include(legacy_backup_error_groups: 1, legacy_backup_count_limited: false)
+    expect(ErrorGroup.exists?(deletable_group.id)).to be true
+
+    result = described_class.new(project: project, policy: policy, now: now).call
+    expect(result[:deleted][:closed_error_groups]).to eq(1)
+    expect(result[:deferred][:legacy_backup_error_groups]).to eq(1)
+    expect(ErrorGroup.exists?(protected_group.id)).to be true
+    expect(ErrorGroup.exists?(deletable_group.id)).to be false
+    expect(connection.select_value("SELECT COUNT(*) FROM ingest_events_unpartitioned_backup WHERE error_group_id = #{Integer(protected_group.id)}")).to eq(1)
+  end
+
   it "archives project-scoped telemetry before deleting when configured" do
     storage = FakeRetentionArchiveStorage.new
     policy.update!(archive_enabled: true, archive_before_delete: true)

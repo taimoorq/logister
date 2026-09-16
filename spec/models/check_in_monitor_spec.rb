@@ -92,6 +92,35 @@ RSpec.describe CheckInMonitor, type: :model do
       expect(NotificationIntent.where(check_in_monitor: project.check_in_monitors.find_by!(slug: slug)).count).to eq(1)
     end
 
+    it "does not attempt a conflicting insert for an existing monitor" do
+      event = check_in_event(status: "ok", occurred_at: Time.current)
+      described_class.record!(project: project, event: event)
+      inserts = []
+      subscriber = ->(*args) { inserts << args.last[:sql] if args.last[:sql].match?(/INSERT INTO "check_in_monitors"/) }
+
+      ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+        described_class.record!(project: project, event: event)
+      end
+
+      expect(inserts).to be_empty
+      expect(project.check_in_monitors.where(slug: slug).count).to eq(1)
+    end
+
+    it "preserves identity and ordering when another creation wins after lookup" do
+      newer = check_in_event(status: "ok", occurred_at: Time.current)
+      older = check_in_event(status: "error", occurred_at: 5.minutes.ago)
+      monitor = described_class.record!(project: project, event: newer)
+      # Force the lookup-miss interleaving while the unique row already exists.
+      allow(project.check_in_monitors).to receive(:find_by).and_return(nil)
+
+      result = described_class.record!(project: project, event: older)
+
+      expect(result.id).to eq(monitor.id)
+      expect(result.reload.last_event_id).to eq(newer.id)
+      expect(project.check_in_monitors.where(slug: slug).count).to eq(1)
+      expect(enqueued_jobs).to be_empty
+    end
+
     it "keeps the transition intent durable when its immediate enqueue fails" do
       event = check_in_event(status: "error", occurred_at: Time.zone.parse("2026-08-08 12:00:00 UTC"))
       allow(NotificationIntentDrainJob).to receive(:perform_later).and_raise(ActiveJob::EnqueueError, "Redis unavailable")

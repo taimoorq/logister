@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: identity-and-retention-reliability
+release_version: 3.6.14
+summary: Reuse stable monitor and watermark identities, defer backup-protected retention,
+  and prepare independent Ruby delivery diagnostics.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: aca9d834e36babf4abd55d57db48660a09b784869cfc63d172741d5c3c799076
+  telemetry_ingest: 3bf6715a7ee06543be18371844461d69ca1d737cc6aa880629dde5e4550a3602
+  integration_discovery: 58837a3dda7f3a6d145cd75aaf8060bdb783890c12a2b9efcec8aafe8cc7c00f
+consumers:
+  logister-ruby:
+    bump: patch
+    reason: Independent delivery counters, isolated observer callbacks and bounded
+      async shutdown require Ruby SDK 0.4.2; the existing SDK remains backend-compatible.
+  logister-js:
+    bump: none
+    reason: Ingest payloads, responses, authorization and CLI contracts remain compatible;
+      no consumer update is required.
+  logister-python:
+    bump: none
+    reason: Ingest payloads, responses, authorization and CLI contracts remain compatible;
+      no consumer update is required.
+  logister-dotnet:
+    bump: none
+    reason: Ingest payloads, responses, authorization and CLI contracts remain compatible;
+      no consumer update is required.
+  logister-android:
+    bump: none
+    reason: Ingest payloads, responses, authorization and CLI contracts remain compatible;
+      no consumer update is required.
+  logister-ios:
+    bump: none
+    reason: Ingest payloads, responses, authorization and CLI contracts remain compatible;
+      no consumer update is required.
+  logister-cli:
+    bump: none
+    reason: Ingest payloads, responses, authorization and CLI contracts remain compatible;
+      no consumer update is required.
