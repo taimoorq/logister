@@ -41,6 +41,7 @@ module Logister
         candidates: prior_count_snapshot("candidates", CANDIDATE_COUNT_KEYS),
         protected_by_delivery: prior_count_snapshot("protected_by_delivery", PROTECTION_COUNT_KEYS),
         deleted: prior_count_totals("deleted"),
+        deferred: {},
         continuation_required: false
       }
 
@@ -74,7 +75,7 @@ module Logister
         accumulate_count!(result[:deleted], :hot_events, delete_events(hot_event_scope))
         accumulate_count!(result[:deleted], :trace_spans, delete_trace_spans(trace_span_scope))
       end
-      accumulate_count!(result[:deleted], :closed_error_groups, prune_closed_error_groups)
+      accumulate_count!(result[:deleted], :closed_error_groups, prune_closed_error_groups(result[:deferred]))
 
       mark_policy_run!(result)
       result
@@ -614,8 +615,21 @@ module Logister
       deleted
     end
 
-    def prune_closed_error_groups
+    def prune_closed_error_groups(deferred)
       scope = closed_error_group_scope
+      reference = nil
+      if ErrorGroup.connection.data_source_exists?("ingest_events_unpartitioned_backup")
+        # The legacy table is protected by the partition-cutover recovery
+        # contract. Do not destroy referenced groups or remove its foreign key.
+        reference = <<~SQL.squish
+          EXISTS (SELECT 1 FROM ingest_events_unpartitioned_backup legacy
+                  WHERE legacy.error_group_id = error_groups.id)
+        SQL
+        count = scope.where(reference).limit(@batch_size).count
+        deferred[:legacy_backup_error_groups] = count
+        deferred[:legacy_backup_count_limited] = count == @batch_size
+        scope = scope.where("NOT (#{reference})")
+      end
       return 0 if @dry_run
 
       deleted = 0
@@ -623,6 +637,10 @@ module Logister
         removed = group.with_lock do
           group.reload
           next false unless closed_error_group?(group)
+          # Recheck after locking: a backup reference could appear between the
+          # candidate read and this deletion attempt. The row lock then fences
+          # subsequent FK inserts until this transaction completes.
+          next false if reference && ErrorGroup.where(id: group.id).where(reference).exists?
 
           event_references = (
             group.error_occurrences.pluck(:ingest_event_id, :ingest_event_occurred_at) +

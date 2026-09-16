@@ -2,6 +2,20 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.6.14 - 2026-09-16
+
+### Fixed
+
+- Reuse existing check-in monitor and ClickHouse watermark identities before attempting insertion. Concurrent first creation still relies on the database uniqueness constraint and existing row locks.
+- Defer closed error groups referenced by the legacy unpartitioned backup while allowing other eligible groups to be pruned. Retention results report the bounded deferred count; backup rows and foreign keys stay intact.
+
+### Upgrade Notes
+
+- No migration, credential changes, queue clearing, or ingestion contract change. Existing SDKs remain compatible.
+- Ruby SDK 0.4.2 is prepared separately with process-local delivery counters, an isolated observer, and bounded shutdown. Publish and verify that gem before upgrading consumers. A drained queue is not proof of server acceptance.
+- Review retention dry-run results before execution. Legacy backup retirement still requires verified archive coverage and a rehearsed restore; this release does not drop the backup.
+- Roll back to the previous app image if needed. Published image/package references remain pinned to the verified catalog until each new artifact is published.
+
 ## v3.6.13 - 2026-09-15
 
 ### Improved

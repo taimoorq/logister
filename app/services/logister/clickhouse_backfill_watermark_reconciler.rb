@@ -61,7 +61,8 @@ module Logister
     def reconcile_with_locked_watermark(clickhouse)
       attempts = 0
       begin
-        watermark = TelemetryProjectionWatermark.create_or_find_by!(watermark_identity)
+        watermark = TelemetryProjectionWatermark.find_by(watermark_identity) ||
+          TelemetryProjectionWatermark.create_or_find_by!(watermark_identity)
 
         watermark.with_lock do
           unless @source_complete

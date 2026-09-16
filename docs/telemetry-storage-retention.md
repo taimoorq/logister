@@ -299,3 +299,9 @@ Delete only the matched stale retry jobs:
 ```sh
 DRY_RUN=false bin/rails logister:sidekiq:prune_clickhouse_unknown_job_retries
 ```
+
+## Legacy backup references (3.6.14)
+
+Closed error groups referenced by `ingest_events_unpartitioned_backup` are deferred instead of failing the retention pass. Both dry-run and execution results include `deferred.legacy_backup_error_groups` and `deferred.legacy_backup_count_limited`. The count is capped at the configured batch size; a true limited flag means the count is a lower bound. The durable retention run stores this result. Other eligible groups continue through the existing locked deletion checks.
+
+This is a non-destructive containment measure. Keep backup rows, foreign keys, and archived data until the partition-cutover inventory, row/UUID coverage and checksums, retention eligibility, and a restore rehearsal have been reviewed. Do not remove a foreign key merely to make pruning pass. Run a fresh preview before any later backup retirement. Repeated check-ins and watermark reconciliation reuse existing identities; database uniqueness remains the first-creation race guard.
