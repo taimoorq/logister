@@ -33,11 +33,7 @@ class ProjectActivityQuery
     scope = project.ingest_events
       .where(event_type: :error)
       .where.not(error_group_id: nil)
-      .where(
-        "ingest_events.context->>'trace_id' IN (?) OR ingest_events.context #>> '{trace,id}' IN (?)",
-        trace_ids,
-        trace_ids
-      )
+      .where(Arel.sql(CorrelationContext.postgres("trace_id", column: "ingest_events.context")).in(trace_ids))
     if occurred_times.any?
       scope = scope.where(occurred_at: (occurred_times.min - 1.day)..(occurred_times.max + 1.day))
     end

@@ -82,15 +82,15 @@ module IngestEventDetailing
 
       if trace.present?
         conditions << {
-          sql: "(context->>'trace_id' = ? OR context->>'traceId' = ? OR context->'trace'->>'traceId' = ?)",
-          values: [ trace, trace, trace ]
+          sql: "#{CorrelationContext.postgres("trace_id")} = ?",
+          values: [ trace ]
         }
       end
 
       if request.present?
         conditions << {
-          sql: "(context->>'request_id' = ? OR context->>'requestId' = ? OR context->'trace'->>'requestId' = ?)",
-          values: [ request, request, request ]
+          sql: "#{CorrelationContext.postgres("request_id")} = ?",
+          values: [ request ]
         }
       end
 

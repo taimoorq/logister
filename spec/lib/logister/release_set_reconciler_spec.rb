@@ -54,6 +54,23 @@ RSpec.describe Logister::ReleaseSetReconciler do
     expect { reconciler.catalog(receipt) }.to raise_error("release set is not complete")
   end
 
+  it "requires both Android artifacts from 0.6.0 onward" do
+    version = "0.6.0"
+    root = "https://repo1.maven.org/maven2/org/logister"
+    urls = %w[logister-android logister-android-okhttp].flat_map do |artifact|
+      %w[pom aar].map { |ext| "#{root}/#{artifact}/#{version}/#{artifact}-#{version}.#{ext}" }
+    end
+    values = urls.to_h { |url| [ url, [ 200, url.end_with?("aar") ? "PKsynthetic-archive" : "<artifactId>logister-android-okhttp</artifactId><version>0.6.0</version>" ] ] }
+    values.delete(urls.last)
+    reconciler = described_class.new(repo_root: Rails.root, release_set_path:, http: FakeHttp.new(values))
+    reconciler.send(:reconcile_channel, "logister-android", "maven_central", version)
+    expect(reconciler.send(:errors)).to include(match(/public endpoint returned HTTP 404/))
+    values[urls.last] = [ 200, "PKsynthetic-archive" ]
+    complete = described_class.new(repo_root: Rails.root, release_set_path:, http: FakeHttp.new(values))
+    complete.send(:reconcile_channel, "logister-android", "maven_central", version)
+    expect(complete.send(:errors)).to be_empty
+  end
+
   def public_responses
     release_set = YAML.safe_load_file(release_set_path, permitted_classes: [], permitted_symbols: [], aliases: false)
     values = {}

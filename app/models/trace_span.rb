@@ -29,7 +29,6 @@ class TraceSpan < ApplicationRecord
   scope :recent_roots, ->(since, limit = 50) {
     where("started_at >= ?", since)
       .where(kind: ROOT_KINDS)
-      .where(parent_span_id: [ nil, "" ])
       .order(duration_ms: :desc, started_at: :desc)
       .limit(limit)
   }

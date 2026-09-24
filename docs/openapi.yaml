@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: "3.6.14"
+  version: "3.7.0"
   summary: Send telemetry to Logister and build authorized read-only CLI clients.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
@@ -58,8 +58,8 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.6.14"
-                    api_contract_version: "3.6.14"
+                    server_version: "3.7.0"
+                    api_contract_version: "3.7.0"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "1.1.0"
@@ -91,6 +91,7 @@ paths:
                       projects: true
                       events: true
                       error_groups: true
+                      correlations: false
                       traces: false
                       monitors: false
                       deployments: false
@@ -440,6 +441,50 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/CliQueryUnavailable"
+  /api/v1/cli/projects/{project_uuid}/events/{uuid}/correlations:
+    get:
+      operationId: getCliEventCorrelations
+      x-logister-required-scopes: ["events:read", "errors:read", "traces:read", "deployments:read"]
+      tags: [CLI]
+      summary: Find related requests in explicitly connected, accessible projects.
+      description: >-
+        Requires events:read, errors:read, traces:read and deployments:read.
+        Links do not grant project access. Both projects must enable correlations;
+        the installation must enable LOGISTER_CROSS_PROJECT_CORRELATIONS.
+        Matches shared trace IDs, parent spans or weaker request IDs, never users or time proximity alone.
+        Defaults to 15 minutes on either side of the occurrence; maximum range 24 hours.
+        At most 10 direct neighbors and 500 summaries within one MiB are returned.
+        Check partial, truncated and per-project/signal coverage before interpreting an empty result.
+      security:
+        - cliBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CliProjectUuid"
+        - $ref: "#/components/parameters/Uuid"
+        - name: from
+          in: query
+          schema: {type: string, format: date-time}
+        - name: to
+          in: query
+          schema: {type: string, format: date-time}
+      responses:
+        "200":
+          description: Minimized occurrence and span summaries with match evidence and retention coverage.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CliCorrelations"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Invalid time range or too many connected projects for this environment.
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "503":
@@ -1678,6 +1723,52 @@ components:
         generated_at:
           type: string
           format: date-time
+    CliCorrelations:
+      type: object
+      required: [items, coverage, from, to, partial, truncated]
+      properties:
+        from: {type: string, format: date-time}
+        to: {type: string, format: date-time}
+        partial: {type: boolean}
+        truncated: {type: boolean}
+        reason: {type: string}
+        coverage:
+          type: array
+          items:
+            type: object
+            properties:
+              project_uuid: {type: string, format: uuid}
+              signal: {type: string, enum: [error, log, transaction, span]}
+              source: {type: string, enum: [postgresql, clickhouse]}
+              partial: {type: boolean}
+            additionalProperties: true
+        items:
+          type: array
+          maxItems: 500
+          items:
+            type: object
+            required: [project_uuid, project_name, uuid, type, occurred_at, evidence, environment]
+            properties:
+              project_uuid: {type: string, format: uuid}
+              project_name: {type: string, maxLength: 100}
+              uuid: {type: string, format: uuid}
+              type: {type: string, enum: [error, log, transaction, span]}
+              occurred_at: {type: string, format: date-time}
+              evidence: {type: string, enum: [parent_span, shared_trace, shared_request_id]}
+              trace_id: {type: string, maxLength: 128}
+              span_id: {type: string, maxLength: 128}
+              parent_span_id: {type: string, maxLength: 128}
+              request_id: {type: string, maxLength: 200}
+              environment: {type: string, maxLength: 100}
+              release: {type: string, maxLength: 200}
+              operation: {type: string, maxLength: 512}
+              deployment:
+                type: object
+                properties:
+                  uuid: {type: string, format: uuid}
+                  release: {type: string}
+                  evidence: {type: string, const: exact_release}
+                  repository: {type: string}
     CliEventList:
       allOf:
         - $ref: "#/components/schemas/CliListEnvelope"

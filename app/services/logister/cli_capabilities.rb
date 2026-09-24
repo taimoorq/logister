@@ -18,6 +18,7 @@ module Logister
       logs: true,
       error_groups: true,
       traces: false,
+      correlations: false,
       monitors: false,
       deployments: false,
       insights: false,
@@ -60,6 +61,7 @@ module Logister
 
     def configured_features
       FEATURES.merge(
+        correlations: enabled?("LOGISTER_CROSS_PROJECT_CORRELATIONS"),
         traces: enabled?("LOGISTER_CLI_FEATURE_TRACES"),
         monitors: enabled?("LOGISTER_CLI_FEATURE_MONITORS"),
         deployments: enabled?("LOGISTER_CLI_FEATURE_DEPLOYMENTS"),

@@ -1509,6 +1509,78 @@ ALTER SEQUENCE public.project_integration_settings_id_seq OWNED BY public.projec
 
 
 --
+-- Name: project_link_audits; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_link_audits (
+    id bigint NOT NULL,
+    source_project_id bigint NOT NULL,
+    target_project_id bigint NOT NULL,
+    actor_id bigint,
+    action character varying NOT NULL,
+    environment_pairs jsonb DEFAULT '[]'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: project_link_audits_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_link_audits_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_link_audits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_link_audits_id_seq OWNED BY public.project_link_audits.id;
+
+
+--
+-- Name: project_links; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_links (
+    id bigint NOT NULL,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    source_project_id bigint NOT NULL,
+    target_project_id bigint NOT NULL,
+    created_by_id bigint,
+    relation character varying DEFAULT 'calls'::character varying NOT NULL,
+    environment_pairs jsonb DEFAULT '[]'::jsonb NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT project_links_distinct_projects CHECK ((source_project_id <> target_project_id)),
+    CONSTRAINT project_links_known_relation CHECK (((relation)::text = 'calls'::text))
+);
+
+
+--
+-- Name: project_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_links_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_links_id_seq OWNED BY public.project_links.id;
+
+
+--
 -- Name: project_memberships; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1786,10 +1858,10 @@ CREATE TABLE public.project_retention_runs (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     CONSTRAINT project_retention_runs_counts CHECK (((attempts >= 0) AND (fence_version >= 0) AND (objects_total >= 0) AND (objects_completed >= 0) AND (rows_total >= 0) AND (rows_completed >= 0))),
-    CONSTRAINT project_retention_runs_phase CHECK (((phase)::text = ANY ((ARRAY['planning'::character varying, 'enumerating'::character varying, 'uploading'::character varying, 'verifying'::character varying, 'cleaning'::character varying, 'finalizing'::character varying])::text[]))),
+    CONSTRAINT project_retention_runs_phase CHECK (((phase)::text = ANY (ARRAY[('planning'::character varying)::text, ('enumerating'::character varying)::text, ('uploading'::character varying)::text, ('verifying'::character varying)::text, ('cleaning'::character varying)::text, ('finalizing'::character varying)::text]))),
     CONSTRAINT project_retention_runs_progress CHECK (((objects_completed <= objects_total) AND (rows_completed <= rows_total))),
-    CONSTRAINT project_retention_runs_status CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying, 'waiting'::character varying, 'retrying'::character varying, 'completed'::character varying, 'failed'::character varying, 'cancelled'::character varying, 'superseded'::character varying])::text[]))),
-    CONSTRAINT project_retention_runs_trigger CHECK (((trigger_kind)::text = ANY ((ARRAY['scheduled'::character varying, 'manual'::character varying, 'recovery'::character varying, 'legacy'::character varying])::text[])))
+    CONSTRAINT project_retention_runs_status CHECK (((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('running'::character varying)::text, ('waiting'::character varying)::text, ('retrying'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text, ('cancelled'::character varying)::text, ('superseded'::character varying)::text]))),
+    CONSTRAINT project_retention_runs_trigger CHECK (((trigger_kind)::text = ANY (ARRAY[('scheduled'::character varying)::text, ('manual'::character varying)::text, ('recovery'::character varying)::text, ('legacy'::character varying)::text])))
 );
 
 
@@ -1875,7 +1947,8 @@ CREATE TABLE public.projects (
     public_api_rate_limit_requests_override integer,
     public_api_rate_limit_period_seconds_override integer,
     public_api_auth_failure_rate_limit_requests_override integer,
-    purge_requested_at timestamp(6) without time zone
+    purge_requested_at timestamp(6) without time zone,
+    cross_project_correlations_enabled boolean DEFAULT false NOT NULL
 );
 
 
@@ -1947,7 +2020,7 @@ CREATE TABLE public.telemetry_archive_objects (
     source_cleanup_checksum_sha256 character varying,
     source_cleanup_error text,
     CONSTRAINT telemetry_archive_objects_cleanup_counts CHECK (((source_cleanup_attempts >= 0) AND (source_deleted_rows >= 0) AND (source_deleted_rows <= expected_rows))),
-    CONSTRAINT telemetry_archive_objects_cleanup_status CHECK (((source_cleanup_status)::text = ANY ((ARRAY['pending'::character varying, 'cleaning'::character varying, 'completed'::character varying, 'blocked'::character varying, 'failed'::character varying, 'not_required'::character varying])::text[]))),
+    CONSTRAINT telemetry_archive_objects_cleanup_status CHECK (((source_cleanup_status)::text = ANY (ARRAY[('pending'::character varying)::text, ('cleaning'::character varying)::text, ('completed'::character varying)::text, ('blocked'::character varying)::text, ('failed'::character varying)::text, ('not_required'::character varying)::text]))),
     CONSTRAINT telemetry_archive_objects_counts CHECK (((expected_rows >= 0) AND (expected_bytes >= 0) AND (verified_rows >= 0) AND (verified_bytes >= 0) AND (attempts >= 0))),
     CONSTRAINT telemetry_archive_objects_source_range CHECK ((source_min_id <= source_max_id)),
     CONSTRAINT telemetry_archive_objects_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('uploading'::character varying)::text, ('uploaded'::character varying)::text, ('verifying'::character varying)::text, ('verified'::character varying)::text, ('failed'::character varying)::text, ('deleted'::character varying)::text])))
@@ -2179,7 +2252,7 @@ CREATE TABLE public.telemetry_projection_batches (
     payload_bytes integer NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT telemetry_projection_batches_bounds CHECK ((((cardinality(delivery_ids) >= 1) AND (cardinality(delivery_ids) <= 200)) AND ((payload_bytes >= 1) AND (payload_bytes <= 1048577))))
+    CONSTRAINT telemetry_projection_batches_bounds CHECK (((cardinality(delivery_ids) >= 1) AND (cardinality(delivery_ids) <= 200) AND ((payload_bytes >= 1) AND (payload_bytes <= 1048577))))
 );
 
 
@@ -2702,6 +2775,20 @@ ALTER TABLE ONLY public.project_integration_settings ALTER COLUMN id SET DEFAULT
 
 
 --
+-- Name: project_link_audits id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_link_audits ALTER COLUMN id SET DEFAULT nextval('public.project_link_audits_id_seq'::regclass);
+
+
+--
+-- Name: project_links id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_links ALTER COLUMN id SET DEFAULT nextval('public.project_links_id_seq'::regclass);
+
+
+--
 -- Name: project_memberships id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3192,6 +3279,22 @@ ALTER TABLE ONLY public.project_github_installations
 
 ALTER TABLE ONLY public.project_integration_settings
     ADD CONSTRAINT project_integration_settings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_link_audits project_link_audits_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_link_audits
+    ADD CONSTRAINT project_link_audits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_links project_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_links
+    ADD CONSTRAINT project_links_pkey PRIMARY KEY (id);
 
 
 --
@@ -4510,10 +4613,17 @@ CREATE INDEX idx_projects_user_archived_name ON public.projects USING btree (use
 
 
 --
+-- Name: idx_request_entries_project_started_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_request_entries_project_started_uuid ON public.trace_spans USING btree (project_id, started_at DESC, uuid DESC) WHERE ((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[]));
+
+
+--
 -- Name: idx_retention_runs_one_active_project; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX idx_retention_runs_one_active_project ON public.project_retention_runs USING btree (project_id) WHERE ((dry_run = false) AND ((status)::text = ANY ((ARRAY['queued'::character varying, 'running'::character varying, 'waiting'::character varying, 'retrying'::character varying])::text[])));
+CREATE UNIQUE INDEX idx_retention_runs_one_active_project ON public.project_retention_runs USING btree (project_id) WHERE ((dry_run = false) AND ((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('running'::character varying)::text, ('waiting'::character varying)::text, ('retrying'::character varying)::text])));
 
 
 --
@@ -5648,6 +5758,62 @@ CREATE INDEX index_project_integration_settings_on_provider_and_enabled ON publi
 --
 
 CREATE UNIQUE INDEX index_project_integration_settings_on_uuid ON public.project_integration_settings USING btree (uuid);
+
+
+--
+-- Name: index_project_link_audits_on_actor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_link_audits_on_actor_id ON public.project_link_audits USING btree (actor_id);
+
+
+--
+-- Name: index_project_link_audits_on_source_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_link_audits_on_source_project_id ON public.project_link_audits USING btree (source_project_id);
+
+
+--
+-- Name: index_project_link_audits_on_target_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_link_audits_on_target_project_id ON public.project_link_audits USING btree (target_project_id);
+
+
+--
+-- Name: index_project_links_on_created_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_links_on_created_by_id ON public.project_links USING btree (created_by_id);
+
+
+--
+-- Name: index_project_links_on_source_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_links_on_source_project_id ON public.project_links USING btree (source_project_id);
+
+
+--
+-- Name: index_project_links_on_target_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_links_on_target_project_id ON public.project_links USING btree (target_project_id);
+
+
+--
+-- Name: index_project_links_on_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_links_on_uuid ON public.project_links USING btree (uuid);
+
+
+--
+-- Name: index_project_links_unique_pair; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_links_unique_pair ON public.project_links USING btree (source_project_id, target_project_id, relation);
 
 
 --
@@ -12551,6 +12717,14 @@ ALTER TABLE ONLY public.android_mapping_files
 
 
 --
+-- Name: project_links fk_rails_09f2da4d0f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_links
+    ADD CONSTRAINT fk_rails_09f2da4d0f FOREIGN KEY (created_by_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: mobile_ingest_tokens fk_rails_0bc57896ad; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12668,6 +12842,14 @@ ALTER TABLE ONLY public.email_notification_deliveries
 
 ALTER TABLE ONLY public.api_keys
     ADD CONSTRAINT fk_rails_32c28d0dc2 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: project_links fk_rails_35322176e3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_links
+    ADD CONSTRAINT fk_rails_35322176e3 FOREIGN KEY (source_project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -12935,6 +13117,14 @@ ALTER TABLE ONLY public.project_deployments
 
 
 --
+-- Name: project_link_audits fk_rails_b49677a02e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_link_audits
+    ADD CONSTRAINT fk_rails_b49677a02e FOREIGN KEY (target_project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: telemetry_idempotency_keys fk_rails_b6d6b7f34a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12959,6 +13149,14 @@ ALTER TABLE ONLY public.installations
 
 
 --
+-- Name: project_link_audits fk_rails_bd00ea9ccb; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_link_audits
+    ADD CONSTRAINT fk_rails_bd00ea9ccb FOREIGN KEY (actor_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
 -- Name: project_integration_settings fk_rails_c86e5b4a54; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12980,6 +13178,14 @@ ALTER TABLE ONLY public.project_notification_preferences
 
 ALTER TABLE ONLY public.project_github_installations
     ADD CONSTRAINT fk_rails_ce98bc6cb1 FOREIGN KEY (linked_by_id) REFERENCES public.users(id);
+
+
+--
+-- Name: project_link_audits fk_rails_ceb396438a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_link_audits
+    ADD CONSTRAINT fk_rails_ceb396438a FOREIGN KEY (source_project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -13020,6 +13226,14 @@ ALTER TABLE ONLY public.telemetry_archives
 
 ALTER TABLE ONLY public.mobile_event_enrichments
     ADD CONSTRAINT fk_rails_d93655f704 FOREIGN KEY (project_id) REFERENCES public.projects(id);
+
+
+--
+-- Name: project_links fk_rails_da5af476a0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_links
+    ADD CONSTRAINT fk_rails_da5af476a0 FOREIGN KEY (target_project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
 
 
 --
@@ -13109,6 +13323,8 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260924121000'),
+('20260924120000'),
 ('20260911190000'),
 ('20260911180000'),
 ('20260811120000'),

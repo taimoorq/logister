@@ -1,0 +1,334 @@
+{
+  "envelopes": [
+    {
+      "event": {
+        "context": {
+          "app": {
+            "identifier": "com.apple.dt.xctest.tool",
+            "process": "xctest",
+            "version_code": "25228",
+            "version_name": "16.0"
+          },
+          "apple_platform": "macos",
+          "device": {
+            "architecture": "arm64",
+            "family": "Mac",
+            "locale": "en_US",
+            "model": "arm64"
+          },
+          "environment": "production",
+          "os": {
+            "build": "25G83",
+            "name": "macOS",
+            "version": "26.6.2"
+          },
+          "platform": "ios",
+          "release": "mobile-test",
+          "request_id": "959ad335-350b-4e25-a849-9d928831173e",
+          "sdk": {
+            "name": "logister-ios",
+            "platform_context_policy": "standard",
+            "version": "0.5.0"
+          },
+          "span_id": "eb17db224adf052d",
+          "telemetry_schema_version": 3,
+          "trace_id": "c7512d06468a551a2e3582f450c9c590"
+        },
+        "duration_ms": 2.16479180380702,
+        "environment": "production",
+        "event_type": "span",
+        "evidence": {
+          "capture_mode": "manual_capture",
+          "evidence_kind": "event_payload",
+          "identity_scope": "occurrence",
+          "kind": "span",
+          "producer": {
+            "sdk_name": "logister-ios",
+            "sdk_version": "0.5.0"
+          },
+          "source": "sdk"
+        },
+        "kind": "http",
+        "message": "HTTP request",
+        "name": "HTTP request",
+        "occurred_at": "2026-09-24T18:14:38.510Z",
+        "release": "mobile-test",
+        "request_id": "959ad335-350b-4e25-a849-9d928831173e",
+        "span_id": "eb17db224adf052d",
+        "started_at": "2026-09-24T18:14:38.507Z",
+        "status": "error",
+        "trace_id": "c7512d06468a551a2e3582f450c9c590",
+        "uuid": "0b9ac4f1-a588-4472-bae7-5990e9b7e597"
+      }
+    },
+    {
+      "event": {
+        "context": {
+          "app": {
+            "identifier": "com.apple.dt.xctest.tool",
+            "process": "xctest",
+            "version_code": "25228",
+            "version_name": "16.0"
+          },
+          "apple_platform": "macos",
+          "device": {
+            "architecture": "arm64",
+            "family": "Mac",
+            "locale": "en_US",
+            "model": "arm64"
+          },
+          "diagnostic": {
+            "kind": "reported_error",
+            "source": "sdk"
+          },
+          "environment": "production",
+          "error": {
+            "capture_source": "manual",
+            "data_policy": "full",
+            "fatal": false,
+            "handled": true,
+            "mechanism": "handled_exception",
+            "thread_role": "reporting"
+          },
+          "exception": {
+            "code": -1011,
+            "domain": "NSURLErrorDomain",
+            "message": "Error Domain=NSURLErrorDomain Code=-1011 \"(null)\"",
+            "stacktrace": [
+              {
+                "address": "0x0000000108082ff4",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 0,
+                "raw": "0   LogisterTests                       0x0000000108082ff4 $s8Logister0A6ClientV16captureException_7optionsAA0A8ResponseVs5Error_p_AA0A12EventOptionsVtYaKFTY0_ + 80",
+                "symbol": "$s8Logister0A6ClientV16captureException_7optionsAA0A8ResponseVs5Error_p_AA0A12EventOptionsVtYaKFTY0_ + 80"
+              },
+              {
+                "address": "0x0000000108067c61",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 1,
+                "raw": "1   LogisterTests                       0x0000000108067c61 $s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFTQ3_ + 1",
+                "symbol": "$s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFTQ3_ + 1"
+              },
+              {
+                "address": "0x000000010806c84d",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 2,
+                "raw": "2   LogisterTests                       0x000000010806c84d $s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTQ1_ + 1",
+                "symbol": "$s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTQ1_ + 1"
+              },
+              {
+                "address": "0x000000010806d931",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 3,
+                "raw": "3   LogisterTests                       0x000000010806d931 $s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTATQ0_ + 1",
+                "symbol": "$s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTATQ0_ + 1"
+              },
+              {
+                "address": "0x0000000108061acd",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 4,
+                "raw": "4   LogisterTests                       0x0000000108061acd $sIeghH_IeAgH_TRTQ0_ + 1",
+                "symbol": "$sIeghH_IeAgH_TRTQ0_ + 1"
+              },
+              {
+                "address": "0x000000010806433d",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 5,
+                "raw": "5   LogisterTests                       0x000000010806433d $sIeghH_IeAgH_TRTATQ0_ + 1",
+                "symbol": "$sIeghH_IeAgH_TRTATQ0_ + 1"
+              },
+              {
+                "address": "0x0000000108061b9d",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 6,
+                "raw": "6   LogisterTests                       0x0000000108061b9d $sIeAgH_ytIeAgHr_TRTQ0_ + 1",
+                "symbol": "$sIeAgH_ytIeAgHr_TRTQ0_ + 1"
+              },
+              {
+                "address": "0x0000000108064495",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 7,
+                "raw": "7   LogisterTests                       0x0000000108064495 $sIeAgH_ytIeAgHr_TRTATQ0_ + 1",
+                "symbol": "$sIeAgH_ytIeAgHr_TRTATQ0_ + 1"
+              },
+              {
+                "address": "0x0000000108062065",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 8,
+                "raw": "8   LogisterTests                       0x0000000108062065 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TQ0_ + 1",
+                "symbol": "$sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TQ0_ + 1"
+              },
+              {
+                "address": "0x00000001080645cd",
+                "application_frame": true,
+                "image": "LogisterTests",
+                "index": 9,
+                "raw": "9   LogisterTests                       0x00000001080645cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TATQ0_ + 1",
+                "symbol": "$sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TATQ0_ + 1"
+              },
+              {
+                "address": "0x000000028937fec5",
+                "application_frame": false,
+                "image": "libswift_Concurrency.dylib",
+                "index": 10,
+                "raw": "10  libswift_Concurrency.dylib          0x000000028937fec5 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1",
+                "symbol": "_ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1"
+              }
+            ],
+            "threads": [
+              {
+                "frames": [
+                  {
+                    "address": "0x0000000108082ff4",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 0,
+                    "raw": "0   LogisterTests                       0x0000000108082ff4 $s8Logister0A6ClientV16captureException_7optionsAA0A8ResponseVs5Error_p_AA0A12EventOptionsVtYaKFTY0_ + 80",
+                    "symbol": "$s8Logister0A6ClientV16captureException_7optionsAA0A8ResponseVs5Error_p_AA0A12EventOptionsVtYaKFTY0_ + 80"
+                  },
+                  {
+                    "address": "0x0000000108067c61",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 1,
+                    "raw": "1   LogisterTests                       0x0000000108067c61 $s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFTQ3_ + 1",
+                    "symbol": "$s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFTQ3_ + 1"
+                  },
+                  {
+                    "address": "0x000000010806c84d",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 2,
+                    "raw": "2   LogisterTests                       0x000000010806c84d $s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTQ1_ + 1",
+                    "symbol": "$s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTQ1_ + 1"
+                  },
+                  {
+                    "address": "0x000000010806d931",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 3,
+                    "raw": "3   LogisterTests                       0x000000010806d931 $s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTATQ0_ + 1",
+                    "symbol": "$s13LogisterTests0a10HTTPClientB0C58testRequestIdentityReachesTheWireAndCanBeAttachedToFailureyyYaKFyyYacfU_ToTATQ0_ + 1"
+                  },
+                  {
+                    "address": "0x0000000108061acd",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 4,
+                    "raw": "4   LogisterTests                       0x0000000108061acd $sIeghH_IeAgH_TRTQ0_ + 1",
+                    "symbol": "$sIeghH_IeAgH_TRTQ0_ + 1"
+                  },
+                  {
+                    "address": "0x000000010806433d",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 5,
+                    "raw": "5   LogisterTests                       0x000000010806433d $sIeghH_IeAgH_TRTATQ0_ + 1",
+                    "symbol": "$sIeghH_IeAgH_TRTATQ0_ + 1"
+                  },
+                  {
+                    "address": "0x0000000108061b9d",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 6,
+                    "raw": "6   LogisterTests                       0x0000000108061b9d $sIeAgH_ytIeAgHr_TRTQ0_ + 1",
+                    "symbol": "$sIeAgH_ytIeAgHr_TRTQ0_ + 1"
+                  },
+                  {
+                    "address": "0x0000000108064495",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 7,
+                    "raw": "7   LogisterTests                       0x0000000108064495 $sIeAgH_ytIeAgHr_TRTATQ0_ + 1",
+                    "symbol": "$sIeAgH_ytIeAgHr_TRTATQ0_ + 1"
+                  },
+                  {
+                    "address": "0x0000000108062065",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 8,
+                    "raw": "8   LogisterTests                       0x0000000108062065 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TQ0_ + 1",
+                    "symbol": "$sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TQ0_ + 1"
+                  },
+                  {
+                    "address": "0x00000001080645cd",
+                    "application_frame": true,
+                    "image": "LogisterTests",
+                    "index": 9,
+                    "raw": "9   LogisterTests                       0x00000001080645cd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TATQ0_ + 1",
+                    "symbol": "$sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRyt_Tgq5TATQ0_ + 1"
+                  },
+                  {
+                    "address": "0x000000028937fec5",
+                    "application_frame": false,
+                    "image": "libswift_Concurrency.dylib",
+                    "index": 10,
+                    "raw": "10  libswift_Concurrency.dylib          0x000000028937fec5 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1",
+                    "symbol": "_ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1"
+                  }
+                ],
+                "id": "reporting-thread",
+                "name": "Reporting thread",
+                "role": "reporting",
+                "triggered": false
+              }
+            ],
+            "type": "NSError"
+          },
+          "os": {
+            "build": "25G83",
+            "name": "macOS",
+            "version": "26.6.2"
+          },
+          "platform": "ios",
+          "release": "mobile-test",
+          "request_id": "959ad335-350b-4e25-a849-9d928831173e",
+          "sdk": {
+            "name": "logister-ios",
+            "platform_context_policy": "standard",
+            "version": "0.5.0"
+          },
+          "span_id": "eb17db224adf052d",
+          "symbolication": {
+            "status": "not_required"
+          },
+          "telemetry_schema_version": 3,
+          "trace_id": "c7512d06468a551a2e3582f450c9c590"
+        },
+        "environment": "production",
+        "event_type": "error",
+        "evidence": {
+          "capture_mode": "manual",
+          "evidence_kind": "reported_stack",
+          "identity_scope": "occurrence",
+          "kind": "reported_error",
+          "producer": {
+            "sdk_name": "logister-ios",
+            "sdk_version": "0.5.0"
+          },
+          "source": "sdk"
+        },
+        "level": "error",
+        "message": "Error Domain=NSURLErrorDomain Code=-1011 \"(null)\"",
+        "occurred_at": "2026-09-24T18:14:38.511Z",
+        "release": "mobile-test",
+        "request_id": "959ad335-350b-4e25-a849-9d928831173e",
+        "trace_id": "c7512d06468a551a2e3582f450c9c590",
+        "uuid": "1f899a27-43d8-4d28-a8b1-6f6461d45724"
+      }
+    }
+  ],
+  "headers": {
+    "traceparent": "00-c7512d06468a551a2e3582f450c9c590-eb17db224adf052d-01",
+    "x-request-id": "959ad335-350b-4e25-a849-9d928831173e"
+  }
+}

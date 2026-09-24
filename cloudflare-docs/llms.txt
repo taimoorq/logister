@@ -134,3 +134,5 @@ Logister reports only its own application errors. Its self-metrics, request span
 
 ## Reliability release preparation
 Logister 3.6.14 reuses monitor/watermark identities and reports legacy-backup retention deferrals without dropping protected data. The independently prepared Ruby SDK 0.4.2 adds safe delivery counters, an isolated observer and bounded async shutdown. Verify artifact publication before upgrading consumers; published install references follow the verified ecosystem catalog.
+
+- [Request correlation](https://logister.org/docs/request-correlation/): Logister 3.7 explicit project/environment links, opt-in SDK request propagation, evidence labels, permissions, and coverage limits.

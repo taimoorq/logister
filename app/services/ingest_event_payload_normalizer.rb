@@ -24,7 +24,7 @@ class IngestEventPayloadNormalizer
   end
 
   def trace_span_params(event_hash)
-    context = normalize_context_hash(event_hash["context"] || {})
+    context = CorrelationContext.new(normalize_context_hash(event_hash["context"] || {})).normalized
     normalized = normalize_span_payload(event_hash, context)
 
     {
@@ -145,6 +145,8 @@ class IngestEventPayloadNormalizer
     merge_context_value!(context, "release", raw_event[:release])
     merge_context_value!(context, "trace_id", raw_event[:trace_id] || raw_event[:traceId])
     merge_context_value!(context, "request_id", raw_event[:request_id] || raw_event[:requestId])
+    merge_context_value!(context, "span_id", raw_event[:span_id] || raw_event[:spanId])
+    merge_context_value!(context, "parent_span_id", raw_event[:parent_span_id] || raw_event[:parentSpanId])
     merge_context_value!(context, "session_id", raw_event[:session_id] || raw_event[:sessionId])
     merge_context_value!(context, "user_id", raw_event[:user_id] || raw_event[:userId])
     merge_context_value!(context, "commit_sha", raw_event[:commit_sha] || raw_event[:commitSha] || raw_event[:sha])
@@ -168,7 +170,7 @@ class IngestEventPayloadNormalizer
     merge_submitted_evidence!(context, raw_event["evidence"] || raw_event[:evidence])
 
     context["environment"] ||= default_environment if default_environment.present?
-    attrs["context"] = MobileTelemetryNormalizer.normalize(context)
+    attrs["context"] = CorrelationContext.new(MobileTelemetryNormalizer.normalize(context)).normalized
     attrs
   end
 

@@ -2,6 +2,24 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.7.0 - 2026-09-24
+
+### Added
+
+- Explicit mobile/backend project connections with environment mappings and management audits. Connections never grant access to another project.
+- Related requests on an event and through the CLI: parent-span, shared-trace, or shared-request-ID evidence, each project's exact release deployment, and per-signal coverage.
+- One bounded correlation-ID contract for current and historical SDK contexts in PostgreSQL and ClickHouse. Conflicting identifiers cannot establish a relationship.
+
+### Fixed
+
+- Keep server/browser entry spans visible when they have a remote parent. Assign child timings to their nearest local request instead of mixing every request in a shared trace.
+
+### Upgrade Notes
+
+- Apply the additive project-link tables, opt-in project setting, and concurrent request-entry index migrations. No historical telemetry rewrite is required.
+- Cross-project lookup is off by default. Set `LOGISTER_CROSS_PROJECT_CORRELATIONS=true`, enable each participating project under Settings → Integrations → Project connections, and explicitly map environments.
+- Prepare the companion SDK and CLI versions in `config/release-sets/v3.7.0.yml`; existing ingestion clients remain compatible. See `docs/request-correlation.md` for rollout and rollback.
+
 ## v3.6.14 - 2026-09-16
 
 ### Fixed

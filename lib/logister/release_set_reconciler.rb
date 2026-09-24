@@ -169,6 +169,12 @@ module Logister
       when "maven_central"
         url = "https://repo1.maven.org/maven2/org/logister/logister-android/#{version}/logister-android-#{version}.pom"
         check(id, channel, url) { |body| body.include?("<version>#{version}</version>") }
+        if Gem::Version.new(version) >= Gem::Version.new("0.6.0")
+          check(id, channel, url.sub(/\.pom\z/, ".aar")) { |body| body.start_with?("PK") }
+          optional = url.gsub("logister-android", "logister-android-okhttp")
+          check(id, channel, optional) { |body| body.include?("<artifactId>logister-android-okhttp</artifactId>") && body.include?("<version>#{version}</version>") }
+          check(id, channel, optional.sub(/\.pom\z/, ".aar")) { |body| body.start_with?("PK") }
+        end
       when "swift_package_manager"
         checks << { component: id, channel: channel, url: "https://github.com/taimoorq/logister-ios/releases/tag/v#{version}", status: "verified" }
       when "homebrew-logister", "scoop-logister"

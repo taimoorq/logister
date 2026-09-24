@@ -38,7 +38,6 @@ module Logister
         WHERE project_id = #{@project.id.to_i}
           AND started_at >= parseDateTime64BestEffort(#{quote(@since.iso8601(3))}, 3)
           AND started_at < parseDateTime64BestEffort(#{quote(@to.iso8601(3))}, 3)
-          AND is_root = 1
           AND kind IN ('server', 'browser')
         ORDER BY duration_ms DESC, started_at DESC
         LIMIT #{@limit}
@@ -50,15 +49,16 @@ module Logister
         SELECT
           trace_id,
           kind,
-          sum(duration_ms) AS duration_ms,
-          count() AS child_count
+          external_span_id,
+          parent_span_id,
+          duration_ms
         FROM #{@client.span_facts_table_name}
         WHERE project_id = #{@project.id.to_i}
           AND started_at >= parseDateTime64BestEffort(#{quote(@since.iso8601(3))}, 3)
           AND started_at < parseDateTime64BestEffort(#{quote(@to.iso8601(3))}, 3)
           AND trace_id IN (#{trace_ids.map { |trace_id| quote(trace_id) }.join(", ")})
-          AND is_root = 0
-        GROUP BY trace_id, kind
+        ORDER BY started_at ASC, span_id ASC
+        LIMIT #{RequestSpanSegments::LIMIT + 1}
       SQL
     end
 

@@ -1,3 +1,10 @@
+<% if @project.managed_by?(current_user) %>
+  <section class="settings-panel space-y-3">
+    <h2 class="text-base font-bold text-slate-900">Connected projects</h2>
+    <p>Follow a request between apps using shared request identifiers.</p>
+    <%= link_to "Manage connected projects", project_project_links_path(@project), class: "btn-ghost" %>
+  </section>
+<% end %>
 <% if @project.integration_android? %>
   <%= render "projects/settings_android_integrations" %>
 <% end %>

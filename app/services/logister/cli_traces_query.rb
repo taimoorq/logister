@@ -73,7 +73,7 @@ module Logister
 
       def postgres_list(project:, since:, to:, filters:, cursor:, limit:)
         scope = project.trace_spans.where(started_at: since...to)
-                       .where(kind: TraceSpan::ROOT_KINDS, parent_span_id: [ nil, "" ])
+                       .where(kind: TraceSpan::ROOT_KINDS)
         scope = apply_postgres_filters(scope, project:, filters:)
         if cursor
           scope = scope.where(
@@ -130,7 +130,6 @@ module Logister
 
       def clickhouse_list(client:, project:, since:, to:, filters:, cursor:, limit:)
         clauses = clickhouse_filters(project:, since:, to:, filters:)
-        clauses << "is_root = 1"
         clauses << "kind IN ('server', 'browser')"
         if cursor
           clauses << <<~SQL.squish

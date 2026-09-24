@@ -1,0 +1,32 @@
+<%= turbo_frame_tag "related_requests" do %>
+  <section class="settings-panel space-y-3" aria-labelledby="related-requests-title">
+    <h2 class="text-base font-bold text-slate-900" id="related-requests-title">Related requests</h2>
+    <% if @error %>
+      <p role="alert"><%= @error %></p>
+    <% else %>
+      <p>Requests linked by shared identifiers, from <%= @result[:from] %> to <%= @result[:to] %>.</p>
+      <% if @result[:partial] %><p role="status">Results are incomplete. Some data is outside retention or the result limit was reached. Narrow the time range to investigate further.</p><% end %>
+      <% if @result[:items].empty? %><p><%= @result[:reason] || "No related requests found in the accessible connected projects for this time range." %></p><% end %>
+      <% @result[:items].each do |item| %>
+        <article class="rounded-lg border border-slate-200 p-4 space-y-2 break-words">
+          <p><strong><%= item[:project_name] %></strong> · <%= item[:type] %> · <%= item[:occurred_at] %></p>
+          <p><%= item[:operation] %> · <%= item[:environment] %> · <%= item[:evidence].humanize %></p>
+          <% if item[:type] != "span" %>
+            <%= link_to "Open occurrence", project_event_path(item[:project_uuid], item[:uuid]), data: {turbo_frame: "_top"} %>
+          <% else %>
+            <%= link_to "Open performance", performance_project_path(item[:project_uuid]), data: {turbo_frame: "_top"} %>
+            <p>Trace: <code><%= item[:trace_id] %></code> · Span: <code><%= item[:span_id] %></code></p>
+          <% end %>
+          <% if item[:deployment] %>
+            <p><%= link_to "Deployment #{item[:deployment][:release]}", deployments_project_path(item[:project_uuid]), data: {turbo_frame: "_top"} %> · Exact release match</p>
+          <% end %>
+        </article>
+      <% end %>
+    <% end %>
+    <%= form_with url: correlations_project_event_path(@project, @event), method: :get, class: "grid grid-cols-1 gap-3 max-w-xl" do |form| %>
+      <%= form.label :from, "From (ISO 8601)" %><%= form.text_field :from, value: params[:from] || @result&.dig(:from), required: true, class: "form-input" %>
+      <%= form.label :to, "To (ISO 8601)" %><%= form.text_field :to, value: params[:to] || @result&.dig(:to), required: true, class: "form-input" %>
+      <%= form.submit "Update time range", class: "btn-primary" %>
+    <% end %>
+  </section>
+<% end %>

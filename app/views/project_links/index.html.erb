@@ -1,0 +1,30 @@
+<%= render "projects/header" %>
+<section class="settings-panel space-y-6">
+  <h1 class="text-xl font-bold text-slate-900">Connected projects</h1>
+  <p>Connect apps that call each other. Related requests use shared trace or request identifiers within the mapped environments. Connections never grant access to a project.</p>
+  <%= form_with url: correlation_setting_project_path(@project), method: :patch, class: "flex flex-wrap items-center gap-3" do |form| %>
+    <%= form.label :enabled, "Enable related requests for this project" %>
+    <%= form.check_box :enabled, checked: @project.cross_project_correlations_enabled? %>
+    <%= form.submit "Save setting", class: "btn-primary" %>
+  <% end %>
+  <h2 class="text-base font-bold text-slate-900">Connections</h2>
+  <% if @links.empty? %><p>No accessible projects are connected yet.</p><% end %>
+  <% @links.each do |link| %>
+    <div class="rounded-lg border border-slate-200 p-4 space-y-3">
+      <p><%= link.source_project.name %> calls <%= link.target_project.name %></p>
+      <p><%= link.environment_pairs.map { |pair| "#{pair['source']} → #{pair['target']}" }.join(", ") %></p>
+      <%= button_to "Disconnect", project_project_link_path(@project, link), method: :delete, class: "btn-ghost" %>
+    </div>
+  <% end %>
+  <h2 class="text-base font-bold text-slate-900">Connect a backend</h2>
+  <%= form_with url: project_project_links_path(@project), class: "grid grid-cols-1 gap-3 max-w-xl" do |form| %>
+    <%= form.label :target_project_uuid, "Called project" %>
+    <%= form.select :target_project_uuid, @candidates.map { |project| [project.name, project.uuid] }, {prompt: "Choose a project"}, required: true, class: "form-select" %>
+    <%= form.label :source_environment, "This project's environment" %>
+    <%= form.text_field :source_environment, value: params[:source_environment].presence || "production", class: "form-input", required: true, maxlength: 100 %>
+    <%= form.label :target_environment, "Called project's environment" %>
+    <%= form.text_field :target_environment, value: params[:target_environment].presence || "production", class: "form-input", required: true, maxlength: 100 %>
+    <%= form.submit "Connect projects", class: "btn-primary" %>
+  <% end %>
+  <p>You must manage both projects to connect them. Either manager can disconnect them.</p>
+</section>

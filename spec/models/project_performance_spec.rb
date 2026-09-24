@@ -41,6 +41,17 @@ RSpec.describe ProjectPerformance do
       )
     end
 
+    it "keeps remote-parent requests separate within one trace" do
+      project = create(:project)
+      first = create(:trace_span, project:, trace_id: "shared", span_id: "first", parent_span_id: "mobile", duration_ms: 100)
+      second = create(:trace_span, project:, trace_id: "shared", span_id: "second", parent_span_id: "mobile", duration_ms: 90)
+      create(:trace_span, project:, trace_id: "shared", span_id: "db1", parent_span_id: "first", kind: "db", duration_ms: 20)
+      create(:trace_span, project:, trace_id: "shared", span_id: "db2", parent_span_id: "second", kind: "db", duration_ms: 40)
+      rows = described_class.request_breakdown(project, since: 1.hour.ago).fetch(:requests).index_by { |row| row[:id] }
+      expect(rows.fetch(first.uuid).fetch(:segments)["db"]).to eq(20)
+      expect(rows.fetch(second.uuid).fetch(:segments)["db"]).to eq(40)
+    end
+
     it "falls back to transaction timing context when spans are not present" do
       project = create(:project)
       api_key = create(:api_key, project: project, user: project.user)
