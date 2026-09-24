@@ -4,6 +4,7 @@ import CountupController from "controllers/countup_controller"
 import DashboardAttentionController from "controllers/dashboard_attention_controller"
 import DashboardExplorerController from "controllers/dashboard_explorer_controller"
 import ErrorExportController from "controllers/error_export_controller"
+import EnvironmentSelectController from "controllers/environment_select_controller"
 import FrameTabsController from "controllers/frame_tabs_controller"
 import HelloController from "controllers/hello_controller"
 import InboxController from "controllers/inbox_controller"
@@ -24,6 +25,7 @@ application.register("countup", CountupController)
 application.register("dashboard-attention", DashboardAttentionController)
 application.register("dashboard-explorer", DashboardExplorerController)
 application.register("error-export", ErrorExportController)
+application.register("environment-select", EnvironmentSelectController)
 application.register("frame-tabs", FrameTabsController)
 application.register("hello", HelloController)
 application.register("inbox", InboxController)

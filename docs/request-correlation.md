@@ -45,6 +45,22 @@ and, for CLI tokens, an intersecting allowlist and all relevant scopes. Lookups
 recheck access, lifecycle, opt-in state, links, and environment mappings before
 returning. Archived or purging projects are excluded. Linking is one hop only.
 
+In the backend project's **Settings → Integrations → Connected projects**, use
+**Link an app to this backend**. Choose the mobile project from the **App project**
+dropdown and select **Review connection**. The review names both projects and
+shows the request direction. Choose the **App environment** and **Backend
+environment**, then select **Link projects**. Repeat for Android and iOS.
+Starting from a mobile project instead shows **Link this app to a backend**.
+
+Project choices include the integration type and slug, exclude inactive or
+unmanaged projects, and disable existing connections. Mobile projects cannot be
+selected as receiving backends. Environment suggestions use up to 500 recent
+PostgreSQL events and 500 spans per project plus 50 recent deployments. Common
+names are identified separately; neither list chooses an environment for the
+user. For absent or ClickHouse-only values, choose **Other environment** and enter
+the exact name. Submitted direction, project and custom names survive validation
+errors. Both steps work without JavaScript; Stimulus only reveals the custom field.
+
 The related requests panel starts at one occurrence. It searches error, log,
 transaction, and span records using a shared trace ID, or a request ID without a
 contradictory trace. A matching parent span is stronger evidence. Endpoint names

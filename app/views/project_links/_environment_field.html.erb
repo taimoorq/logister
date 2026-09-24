@@ -1,0 +1,14 @@
+<div class="min-w-0 space-y-2" data-controller="environment-select">
+  <%= form.label "#{side}_environment", "#{label} — #{project.name}", class: "form-label" %>
+  <%= form.select "#{side}_environment",
+    grouped_options_for_select(groups, @connection.public_send("#{side}_environment")) +
+      options_for_select([["Other environment (enter name)", "__custom__"]], @connection.public_send("#{side}_environment")),
+    { prompt: "Choose an environment" }, class: "form-input bg-white", required: true,
+    data: { environment_select_target: "select", action: "change->environment-select#update" } %>
+  <div data-environment-select-target="custom">
+    <%= form.label "custom_#{side}_environment", "Other #{label.downcase}", class: "form-label" %>
+    <%= form.text_field "custom_#{side}_environment", value: @connection.public_send("custom_#{side}_environment"),
+      maxlength: 100, pattern: "[A-Za-z0-9._\\-]+", class: "form-input", data: { environment_select_target: "input" } %>
+    <p class="mt-1 text-sm text-slate-600">Used only when “Other environment” is selected above.</p>
+  </div>
+</div>
