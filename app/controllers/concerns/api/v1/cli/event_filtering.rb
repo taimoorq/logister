@@ -66,10 +66,7 @@ module Api::V1::Cli::EventFiltering
 
     trace_id = Logister::CliQuery.text(params[:trace_id], parameter: "trace_id", max: 128)
 
-    scope.where(
-      "context->>'trace_id' = ? OR context->>'traceId' = ? OR context->'trace'->>'traceId' = ?",
-      trace_id, trace_id, trace_id
-    )
+    scope.where(Arel.sql(CorrelationContext.postgres("trace_id")).eq(trace_id))
   end
 
   def apply_request_id_filter(scope)
@@ -77,10 +74,7 @@ module Api::V1::Cli::EventFiltering
 
     request_id = Logister::CliQuery.text(params[:request_id], parameter: "request_id", max: 200)
 
-    scope.where(
-      "context->>'request_id' = ? OR context->>'requestId' = ? OR context->'trace'->>'requestId' = ?",
-      request_id, request_id, request_id
-    )
+    scope.where(Arel.sql(CorrelationContext.postgres("request_id")).eq(request_id))
   end
 
   def apply_event_status_filter(scope, status)

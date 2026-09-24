@@ -1,0 +1,382 @@
+{
+  "envelopes": [
+    {
+      "event": {
+        "context": {
+          "environment": "production",
+          "platform": "android",
+          "release": "mobile-test",
+          "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+          "sdk": {
+            "application_exit_capture": false,
+            "automatic_crash_capture": false,
+            "automatic_crash_data_policy": "type_and_stacktrace",
+            "breadcrumbs_capacity": 0,
+            "collection_enabled": true,
+            "installation_tracking": false,
+            "manual_exception_data_policy": "full",
+            "name": "logister-android",
+            "offline_queue": false,
+            "offline_queue_max_age_days": 7,
+            "process_policy": "main_only",
+            "session_tracking": false,
+            "version": "0.5.2"
+          },
+          "span_id": "2fc5697917964da7",
+          "telemetry_schema_version": 3,
+          "trace_id": "003d32cd17a9c5a40cae61256f951774"
+        },
+        "duration_ms": 9.216209,
+        "environment": "production",
+        "event_type": "span",
+        "evidence": {
+          "capture_mode": "manual_api",
+          "evidence_kind": "captured_event",
+          "identity_scope": "occurrence",
+          "kind": "span",
+          "producer": {
+            "sdk_name": "logister-android",
+            "sdk_version": "0.5.2"
+          },
+          "source": "sdk"
+        },
+        "kind": "http",
+        "message": "HTTP request",
+        "name": "HTTP request",
+        "occurred_at": "2026-09-24T18:14:42.502Z",
+        "release": "mobile-test",
+        "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+        "span_id": "2fc5697917964da7",
+        "started_at": "2026-09-24T18:14:42.492Z",
+        "status": "error",
+        "trace_id": "003d32cd17a9c5a40cae61256f951774",
+        "uuid": "3e27042b-f401-4506-90b4-ea121b8bad62"
+      }
+    },
+    {
+      "event": {
+        "context": {
+          "capture_source": "manual",
+          "environment": "production",
+          "error": {
+            "capture_source": "manual",
+            "data_policy": "full",
+            "fatal": false,
+            "handled": true,
+            "mechanism": "handled_exception",
+            "thread_role": "reporting"
+          },
+          "exception": {
+            "message": "backend failed",
+            "stacktrace": [
+              {
+                "class": "org.logister.android.LogisterHttpClientTest",
+                "file": "LogisterHttpClientTest.kt",
+                "line": 45,
+                "method": "requestWireAndFailureIdentity"
+              },
+              {
+                "class": "jdk.internal.reflect.DirectMethodHandleAccessor",
+                "file": "DirectMethodHandleAccessor.java",
+                "line": 103,
+                "method": "invoke"
+              },
+              {
+                "class": "java.lang.reflect.Method",
+                "file": "Method.java",
+                "line": 580,
+                "method": "invoke"
+              },
+              {
+                "class": "org.junit.runners.model.FrameworkMethod$1",
+                "file": "FrameworkMethod.java",
+                "line": 59,
+                "method": "runReflectiveCall"
+              },
+              {
+                "class": "org.junit.internal.runners.model.ReflectiveCallable",
+                "file": "ReflectiveCallable.java",
+                "line": 12,
+                "method": "run"
+              },
+              {
+                "class": "org.junit.runners.model.FrameworkMethod",
+                "file": "FrameworkMethod.java",
+                "line": 56,
+                "method": "invokeExplosively"
+              },
+              {
+                "class": "org.junit.internal.runners.statements.InvokeMethod",
+                "file": "InvokeMethod.java",
+                "line": 17,
+                "method": "evaluate"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner$3",
+                "file": "ParentRunner.java",
+                "line": 306,
+                "method": "evaluate"
+              },
+              {
+                "class": "org.junit.runners.BlockJUnit4ClassRunner$1",
+                "file": "BlockJUnit4ClassRunner.java",
+                "line": 100,
+                "method": "evaluate"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner",
+                "file": "ParentRunner.java",
+                "line": 366,
+                "method": "runLeaf"
+              },
+              {
+                "class": "org.junit.runners.BlockJUnit4ClassRunner",
+                "file": "BlockJUnit4ClassRunner.java",
+                "line": 103,
+                "method": "runChild"
+              },
+              {
+                "class": "org.junit.runners.BlockJUnit4ClassRunner",
+                "file": "BlockJUnit4ClassRunner.java",
+                "line": 63,
+                "method": "runChild"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner$4",
+                "file": "ParentRunner.java",
+                "line": 331,
+                "method": "run"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner$1",
+                "file": "ParentRunner.java",
+                "line": 79,
+                "method": "schedule"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner",
+                "file": "ParentRunner.java",
+                "line": 329,
+                "method": "runChildren"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner",
+                "file": "ParentRunner.java",
+                "line": 66,
+                "method": "access$100"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner$2",
+                "file": "ParentRunner.java",
+                "line": 293,
+                "method": "evaluate"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner$3",
+                "file": "ParentRunner.java",
+                "line": 306,
+                "method": "evaluate"
+              },
+              {
+                "class": "org.junit.runners.ParentRunner",
+                "file": "ParentRunner.java",
+                "line": 413,
+                "method": "run"
+              },
+              {
+                "class": "org.junit.runner.JUnitCore",
+                "file": "JUnitCore.java",
+                "line": 137,
+                "method": "run"
+              },
+              {
+                "class": "org.junit.runner.JUnitCore",
+                "file": "JUnitCore.java",
+                "line": 115,
+                "method": "run"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor",
+                "file": "JUnitTestExecutor.java",
+                "line": 174,
+                "method": "runRequest"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor",
+                "file": "JUnitTestExecutor.java",
+                "line": 84,
+                "method": "accept"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.junit.JUnitTestExecutor",
+                "file": "JUnitTestExecutor.java",
+                "line": 47,
+                "method": "accept"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.junit.AbstractJUnitTestDefinitionProcessor",
+                "file": "AbstractJUnitTestDefinitionProcessor.java",
+                "line": 65,
+                "method": "processTestDefinition"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.SuiteTestDefinitionProcessor",
+                "file": "SuiteTestDefinitionProcessor.java",
+                "line": 53,
+                "method": "processTestDefinition"
+              },
+              {
+                "class": "jdk.internal.reflect.DirectMethodHandleAccessor",
+                "file": "DirectMethodHandleAccessor.java",
+                "line": 103,
+                "method": "invoke"
+              },
+              {
+                "class": "java.lang.reflect.Method",
+                "file": "Method.java",
+                "line": 580,
+                "method": "invoke"
+              },
+              {
+                "class": "org.gradle.internal.dispatch.MethodInvocation",
+                "file": "MethodInvocation.java",
+                "line": 77,
+                "method": "invokeOn"
+              },
+              {
+                "class": "org.gradle.internal.dispatch.ReflectionDispatch",
+                "file": "ReflectionDispatch.java",
+                "line": 28,
+                "method": "dispatch"
+              },
+              {
+                "class": "org.gradle.internal.dispatch.ReflectionDispatch",
+                "file": "ReflectionDispatch.java",
+                "line": 19,
+                "method": "dispatch"
+              },
+              {
+                "class": "org.gradle.internal.dispatch.ContextClassLoaderDispatch",
+                "file": "ContextClassLoaderDispatch.java",
+                "line": 33,
+                "method": "dispatch"
+              },
+              {
+                "class": "org.gradle.internal.dispatch.ProxyDispatchAdapter$DispatchingInvocationHandler",
+                "file": "ProxyDispatchAdapter.java",
+                "line": 88,
+                "method": "invoke"
+              },
+              {
+                "class": "jdk.proxy1.$Proxy4",
+                "line": -1,
+                "method": "processTestDefinition"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.worker.TestWorker$2",
+                "file": "TestWorker.java",
+                "line": 178,
+                "method": "run"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.worker.TestWorker",
+                "file": "TestWorker.java",
+                "line": 126,
+                "method": "executeAndMaintainThreadName"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.worker.TestWorker",
+                "file": "TestWorker.java",
+                "line": 103,
+                "method": "execute"
+              },
+              {
+                "class": "org.gradle.api.internal.tasks.testing.worker.TestWorker",
+                "file": "TestWorker.java",
+                "line": 63,
+                "method": "execute"
+              },
+              {
+                "class": "org.gradle.process.internal.worker.child.ActionExecutionWorker",
+                "file": "ActionExecutionWorker.java",
+                "line": 56,
+                "method": "execute"
+              },
+              {
+                "class": "org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker",
+                "file": "SystemApplicationClassLoaderWorker.java",
+                "line": 122,
+                "method": "call"
+              },
+              {
+                "class": "org.gradle.process.internal.worker.child.SystemApplicationClassLoaderWorker",
+                "file": "SystemApplicationClassLoaderWorker.java",
+                "line": 72,
+                "method": "call"
+              },
+              {
+                "class": "worker.org.gradle.process.internal.worker.GradleWorkerMain",
+                "file": "GradleWorkerMain.java",
+                "line": 69,
+                "method": "run"
+              },
+              {
+                "class": "worker.org.gradle.process.internal.worker.GradleWorkerMain",
+                "file": "GradleWorkerMain.java",
+                "line": 74,
+                "method": "main"
+              }
+            ],
+            "type": "java.lang.IllegalStateException"
+          },
+          "exception_data_policy": "full",
+          "platform": "android",
+          "release": "mobile-test",
+          "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+          "sdk": {
+            "application_exit_capture": false,
+            "automatic_crash_capture": false,
+            "automatic_crash_data_policy": "type_and_stacktrace",
+            "breadcrumbs_capacity": 0,
+            "collection_enabled": true,
+            "installation_tracking": false,
+            "manual_exception_data_policy": "full",
+            "name": "logister-android",
+            "offline_queue": false,
+            "offline_queue_max_age_days": 7,
+            "process_policy": "main_only",
+            "session_tracking": false,
+            "version": "0.5.2"
+          },
+          "span_id": "2fc5697917964da7",
+          "telemetry_schema_version": 3,
+          "trace_id": "003d32cd17a9c5a40cae61256f951774"
+        },
+        "environment": "production",
+        "event_type": "error",
+        "evidence": {
+          "capture_mode": "manual",
+          "evidence_kind": "reported_stack",
+          "identity_scope": "occurrence",
+          "kind": "handled_exception",
+          "producer": {
+            "sdk_name": "logister-android",
+            "sdk_version": "0.5.2"
+          },
+          "source": "sdk"
+        },
+        "level": "error",
+        "message": "java.lang.IllegalStateException: backend failed",
+        "occurred_at": "2026-09-24T18:14:42.508Z",
+        "release": "mobile-test",
+        "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+        "trace_id": "003d32cd17a9c5a40cae61256f951774",
+        "uuid": "4000c137-81b3-4ab1-afd4-8af49a05b288"
+      }
+    }
+  ],
+  "headers": {
+    "traceparent": "00-003d32cd17a9c5a40cae61256f951774-2fc5697917964da7-01",
+    "x-request-id": "1f659d15-6d20-40d8-8e73-524826064798"
+  }
+}

@@ -482,3 +482,13 @@ For iOS, check the GitHub release:
 ```bash
 gh release view v0.5.0 --repo taimoorq/logister-ios
 ```
+
+## Request correlation in the 3.7 release set
+
+Prepared iOS 0.6.0 and Android 0.6.0 add immutable request handles and opt-in HTTP
+wrappers. Android also publishes `org.logister:logister-android-okhttp:0.6.0`;
+the core artifact remains free of an OkHttp runtime dependency. Verify both
+Android POM/AAR pairs before declaring the Android release complete. Application
+token issuers belong in the explicit URL exclusion list. Automatic crashes and
+OS diagnostics are not matched to a recent request. See
+[request correlation](request-correlation.md) for the wire contract and rollout.

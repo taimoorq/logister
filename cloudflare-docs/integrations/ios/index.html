@@ -164,6 +164,7 @@ MetricKit test evidence shows its source and does not duplicate on redelivery
 dSYM status shows Ready or an explicit worker-tooling action
 App Store settings show provenance, last success, freshness, and errors</code></pre></div></section>
             <section id="releases" class="section"><p class="eyebrow">Package releases</p><h2>iOS SDK releases are versioned separately from the Rails app.</h2><p>Swift Package Manager distribution resolves from the public Git repository and semantic version tags. The iOS release workflow verifies the package and creates the matching GitHub Release from the checked-in changelog, so app teams can update through Xcode or SwiftPM when a new tag is available.</p><ul><li>SDK source and SwiftPM URL: <a href="https://github.com/taimoorq/logister-ios">github.com/taimoorq/logister-ios</a></li><li>Current release: <a href="https://github.com/taimoorq/logister-ios/releases/tag/v0.5.0">v0.5.0</a></li><li>Package product: <code>Logister</code></li></ul></section>
+          <section id="request-correlation" class="section"><h2>Follow requests between projects</h2><p>Logister 3.7 adds explicit project connections and request-identifier evidence. See <a href="/docs/request-correlation/">request correlation setup</a> for the required SDK versions, origin allowlists, permissions, and verification.</p></section>
           </article>
         </div>
       </main>

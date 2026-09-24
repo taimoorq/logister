@@ -44,24 +44,26 @@ class ProjectPerformance
       return transaction_breakdown(project, since:, limit:) if roots.empty?
 
       trace_ids = roots.map(&:trace_id).uniq
-      root_ids = roots.map(&:id)
       window_start = [ roots.map(&:started_at).compact.min || since, since ].min - SPAN_LOOKBACK_PADDING
       window_end = [ roots.filter_map(&:ended_at).max || Time.current, Time.current ].max + SPAN_LOOKBACK_PADDING
 
-      children_by_trace = child_segments_by_trace(project, trace_ids:, root_ids:, window_start:, window_end:)
-
-      rows = roots.map { |root| row_from_root_span(root, children_by_trace.fetch(root.trace_id, [])) }
-
-      payload(rows)
+      children = project.trace_spans.where(trace_id: trace_ids, started_at: window_start..window_end)
+        .order(:started_at, :uuid).limit(RequestSpanSegments::LIMIT + 1)
+        .pluck(:trace_id, :span_id, :parent_span_id, :kind, :duration_ms)
+        .map { |values| %w[trace_id external_span_id parent_span_id kind duration_ms].zip(values).to_h }
+      grouped = RequestSpanSegments.call(roots.map { |root| { "trace_id" => root.trace_id, "external_span_id" => root.span_id } }, children.first(RequestSpanSegments::LIMIT))
+      rows = roots.map { |root| row_from_root_span(root, grouped.fetch([ root.trace_id, root.span_id ], []).map(&:symbolize_keys)) }
+      payload(rows).merge(child_data_truncated: children.size > RequestSpanSegments::LIMIT)
     end
 
     def request_breakdown_from_clickhouse(project, since:, to:, limit:, client:)
       query_result = Logister::ClickhousePerformanceQuery.new(project:, since:, to:, limit:, client:).call
       roots = query_result.fetch(:root_rows)
       if roots.any?
-        child_by_trace = query_result.fetch(:child_rows).group_by { |row| row["trace_id"].to_s }
-        rows = roots.map { |row| row_from_clickhouse_root(row, child_by_trace.fetch(row["trace_id"].to_s, [])) }
-        return payload(rows)
+        children = query_result.fetch(:child_rows)
+        grouped = RequestSpanSegments.call(roots, children.first(RequestSpanSegments::LIMIT))
+        rows = roots.map { |row| row_from_clickhouse_root(row, grouped.fetch([ row["trace_id"], row["external_span_id"] ], [])) }
+        return payload(rows).merge(child_data_truncated: children.size > RequestSpanSegments::LIMIT)
       end
 
       rows = query_result.fetch(:transaction_rows).map { |row| row_from_clickhouse_transaction(row) }
@@ -129,21 +131,6 @@ class ProjectPerformance
       }
     rescue JSON::ParserError
       row_from_clickhouse_transaction(row.merge("context_json" => "{}"))
-    end
-
-    def child_segments_by_trace(project, trace_ids:, root_ids:, window_start:, window_end:)
-      project.trace_spans
-             .where(trace_id: trace_ids, started_at: window_start..window_end)
-             .where.not(id: root_ids)
-             .group(:trace_id, :kind)
-             .pluck(:trace_id, :kind, Arel.sql("SUM(duration_ms)"), Arel.sql("COUNT(*)"))
-             .each_with_object(Hash.new { |hash, key| hash[key] = [] }) do |(trace_id, kind, duration_ms, child_count), grouped|
-        grouped[trace_id] << {
-          kind: kind,
-          duration_ms: duration_ms,
-          child_count: child_count
-        }
-      end
     end
 
     def row_from_root_span(root, child_rows)

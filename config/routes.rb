@@ -87,6 +87,7 @@ Rails.application.routes.draw do
       patch :restore
       get :setup, to: "project_setup#show"
       get :settings, to: "project_settings#show"
+      patch :correlation_setting, to: "project_links#update"
       get "insights/data", to: "project_insights#data", as: :insights_data
       get :insights, to: "project_insights#show"
       get :performance, to: "project_performance#show"
@@ -101,6 +102,7 @@ Rails.application.routes.draw do
       get :activity, to: "project_activity#show"
       get :archives, to: "project_archives#show"
     end
+    resources :project_links, only: [ :index, :create, :destroy ], param: :uuid
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :update, :destroy ], param: :uuid
     resources :source_repositories, only: [ :create, :update, :destroy ], controller: "project_source_repositories", param: :uuid
@@ -118,6 +120,7 @@ Rails.application.routes.draw do
     resources :check_in_monitors, only: [ :update ], controller: "project_monitors", path: "monitors"
     resources :events, only: [ :index, :show ], controller: "project_events", param: :uuid do
       post :original_evidence, on: :member
+      get :correlations, on: :member, to: "project_correlations#show"
     end
 
     resources :error_groups, only: [], param: :uuid do
@@ -154,6 +157,7 @@ Rails.application.routes.draw do
         end
         get "projects/:project_uuid/events", to: "events#index"
         get "projects/:project_uuid/events/:uuid", to: "events#show"
+        get "projects/:project_uuid/events/:uuid/correlations", to: "correlations#show"
         get "projects/:project_uuid/traces", to: "traces#index"
         get "projects/:project_uuid/traces/:trace_id", to: "traces#show"
         get "projects/:project_uuid/error_groups", to: "error_groups#index"

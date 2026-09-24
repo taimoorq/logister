@@ -1,0 +1,40 @@
+---
+schema_version: 1
+id: cross-project-request-correlation
+release_version: 3.7.0
+summary: Link explicitly connected projects through request evidence and prepare matching
+  request-scoped SDKs.
+backend:
+  bump: minor
+  compatibility: expand
+  activation: backend_first_dark
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: 8f02bde20fd92f4f0aee0033fcd320882da4e1f22e6657d3721271266e28afc6
+  telemetry_ingest: 3cc2e883aa07bf6538a6e4775a06aa9d0d21223bc912ce89d360a29b18841bcf
+  integration_discovery: 316811a88a1b446610ed78a3ed098554247fd46e0d0d1fd6aa8d994d6cf90083
+consumers:
+  logister-ruby:
+    bump: minor
+    reason: Rack/Rails request context and immutable outbound request handles.
+  logister-js:
+    bump: minor
+    reason: Express async request context and an opt-in traced fetch wrapper.
+  logister-python:
+    bump: minor
+    reason: Task-local framework request context and outbound propagation helpers.
+  logister-dotnet:
+    bump: minor
+    reason: ASP.NET Core Activity reuse and immutable request snapshots.
+  logister-android:
+    bump: minor
+    reason: Immutable request handles, native HTTP wrapper, and optional OkHttp artifact.
+  logister-ios:
+    bump: minor
+    reason: Immutable request handles and opt-in URLSession tracing.
+  logister-cli:
+    bump: minor
+    reason: Related-request command and reviewed additive backend API contract.

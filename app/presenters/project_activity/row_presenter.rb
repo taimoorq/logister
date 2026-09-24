@@ -18,8 +18,7 @@ module ProjectActivity
     end
 
     def self.trace_id(event)
-      context = event.context.is_a?(Hash) ? event.context.stringify_keys : {}
-      context["trace_id"].to_s.presence || context.dig("trace", "id").to_s.presence
+      IngestEvent.trace_id(event)
     end
 
     def event_type_label

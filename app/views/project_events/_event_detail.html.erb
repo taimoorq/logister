@@ -311,4 +311,9 @@
              variant_summary: local_assigns[:variant_summary],
              turbo_frame_id: "error_detail",
              wrapper_classes: "detail-tabs-wrap detail-workspace card" %>
+  <% if ProjectCorrelationPolicy.enabled?(project) %>
+    <%= turbo_frame_tag "related_requests", src: correlations_project_event_path(project, event), loading: :lazy do %>
+      <%= link_to "Related requests", correlations_project_event_path(project, event) %>
+    <% end %>
+  <% end %>
 </turbo-frame>

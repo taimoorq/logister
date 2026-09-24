@@ -1,0 +1,96 @@
+{
+  "envelopes": [
+    {
+      "event": {
+        "context": {
+          "environment": "test",
+          "parent_span_id": "2fc5697917964da7",
+          "release": "test-release",
+          "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+          "service": "logister-ruby-test",
+          "span_id": "406c49c55fe3ec16",
+          "tags": {},
+          "trace_id": "003d32cd17a9c5a40cae61256f951774"
+        },
+        "event_type": "log",
+        "fingerprint": "696c209641c65a6044b07b7dc707ee5c",
+        "level": "info",
+        "message": "request log",
+        "occurred_at": "2026-09-24T18:15:50Z"
+      }
+    },
+    {
+      "event": {
+        "context": {
+          "deployment": {
+            "environment": "test",
+            "release": "test-release",
+            "service": "logister-ruby-test"
+          },
+          "environment": "test",
+          "exception": {
+            "backtrace": [],
+            "class": "RuntimeError",
+            "message": "handled request failure"
+          },
+          "parent_span_id": "2fc5697917964da7",
+          "release": "test-release",
+          "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+          "runtime": {
+            "platform": "arm64-darwin25",
+            "rackVersion": "3.2.7",
+            "rubyVersion": "4.0.6"
+          },
+          "service": "logister-ruby-test",
+          "span_id": "406c49c55fe3ec16",
+          "tags": {},
+          "trace_id": "003d32cd17a9c5a40cae61256f951774"
+        },
+        "event_type": "error",
+        "fingerprint": "4818ab2edad2803e99109d5417a65397",
+        "level": "error",
+        "message": "RuntimeError: handled request failure",
+        "occurred_at": "2026-09-24T18:15:50Z"
+      }
+    },
+    {
+      "event": {
+        "context": {
+          "duration_ms": 0.09,
+          "environment": "test",
+          "kind": "server",
+          "method": "GET",
+          "name": "CorrelationController#show",
+          "parent_span_id": "2fc5697917964da7",
+          "path": "/correlation",
+          "release": "test-release",
+          "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+          "route": "CorrelationController#show",
+          "service": "logister-ruby-test",
+          "span_id": "406c49c55fe3ec16",
+          "span_kind": "server",
+          "started_at": "2026-09-24T18:15:50Z",
+          "status": "ok",
+          "tags": {},
+          "timing_breakdown": {
+            "render": 0.05
+          },
+          "trace_id": "003d32cd17a9c5a40cae61256f951774"
+        },
+        "duration_ms": 0.09,
+        "event_type": "span",
+        "fingerprint": "229743a5aebcb55f8b7056d4b0279142",
+        "kind": "server",
+        "level": "info",
+        "message": "CorrelationController#show",
+        "occurred_at": "2026-09-24T18:15:50Z",
+        "parent_span_id": "2fc5697917964da7",
+        "request_id": "1f659d15-6d20-40d8-8e73-524826064798",
+        "span_id": "406c49c55fe3ec16",
+        "started_at": "2026-09-24T18:15:50Z",
+        "status": "ok",
+        "trace_id": "003d32cd17a9c5a40cae61256f951774"
+      }
+    }
+  ]
+}

@@ -24,15 +24,11 @@ module IngestEventContext
     end
 
     def trace_id(event)
-      context_value(event, "trace_id").presence ||
-        context_value(event, "traceId").presence ||
-        nested_context_value(event, "trace", "traceId").presence
+      CorrelationContext.new(context_hash(event)).value("trace_id")
     end
 
     def request_id(event)
-      context_value(event, "request_id").presence ||
-        context_value(event, "requestId").presence ||
-        nested_context_value(event, "trace", "requestId").presence
+      CorrelationContext.new(context_hash(event)).value("request_id")
     end
 
     def session_id(event)

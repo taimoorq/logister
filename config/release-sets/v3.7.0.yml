@@ -1,0 +1,82 @@
+---
+schema_version: 1
+id: backend-v3-7-0
+backend:
+  version: 3.7.0
+  tag: v3.7.0
+impact_records:
+- cross-project-request-correlation
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.1
+    target_version: 0.5.0
+    bump: minor
+    release_required: true
+    reason: Rack/Rails request context and immutable outbound request handles.
+    channels:
+    - rubygems
+    - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.2
+    target_version: 0.5.0
+    bump: minor
+    release_required: true
+    reason: Express async request context and an opt-in traced fetch wrapper.
+    channels:
+    - npm
+    - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.4.0
+    target_version: 0.5.0
+    bump: minor
+    release_required: true
+    reason: Task-local framework request context and outbound propagation helpers.
+    channels:
+    - pypi
+    - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.3.0
+    target_version: 0.4.0
+    bump: minor
+    release_required: true
+    reason: ASP.NET Core Activity reuse and immutable request snapshots.
+    channels:
+    - nuget_logister
+    - nuget_logister_aspnetcore
+    - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.5.2
+    target_version: 0.6.0
+    bump: minor
+    release_required: true
+    reason: Immutable request handles, native HTTP wrapper, and optional OkHttp artifact.
+    channels:
+    - maven_central
+    - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.5.0
+    target_version: 0.6.0
+    bump: minor
+    release_required: true
+    reason: Immutable request handles and opt-in URLSession tracing.
+    channels:
+    - swift_package_manager
+    - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.1.0
+    target_version: 1.2.0
+    bump: minor
+    release_required: true
+    reason: Related-request command and reviewed additive backend API contract.
+    channels:
+    - npm
+    - github_release
+    - homebrew-logister
+    - scoop-logister
