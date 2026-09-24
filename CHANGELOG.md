@@ -2,6 +2,18 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.7.1 - 2026-09-24
+
+### Fixed
+
+- Link Android and iOS apps directly from their backend's Connected projects page. Project dropdowns show names, platforms and slugs; the review step spells out which app sends requests to which backend.
+- Choose app and backend environments from styled dropdowns with recent values, common names and an explicit custom-name option. Preserve selections after validation errors and prevent duplicate or reversed mobile connections.
+- Show disabled related-request settings alongside existing connections, with links to enable each project.
+
+### Upgrade Notes
+
+- App UI update only. No migrations, ingestion changes or add-on releases are required. Existing project links and permissions remain unchanged.
+
 ## v3.7.0 - 2026-09-24
 
 ### Added

@@ -1,30 +1,85 @@
 <%= render "projects/header" %>
-<section class="settings-panel space-y-6">
-  <h1 class="text-xl font-bold text-slate-900">Connected projects</h1>
-  <p>Connect apps that call each other. Related requests use shared trace or request identifiers within the mapped environments. Connections never grant access to a project.</p>
-  <%= form_with url: correlation_setting_project_path(@project), method: :patch, class: "flex flex-wrap items-center gap-3" do |form| %>
-    <%= form.label :enabled, "Enable related requests for this project" %>
-    <%= form.check_box :enabled, checked: @project.cross_project_correlations_enabled? %>
-    <%= form.submit "Save setting", class: "btn-primary" %>
-  <% end %>
-  <h2 class="text-base font-bold text-slate-900">Connections</h2>
-  <% if @links.empty? %><p>No accessible projects are connected yet.</p><% end %>
-  <% @links.each do |link| %>
-    <div class="rounded-lg border border-slate-200 p-4 space-y-3">
-      <p><%= link.source_project.name %> calls <%= link.target_project.name %></p>
-      <p><%= link.environment_pairs.map { |pair| "#{pair['source']} → #{pair['target']}" }.join(", ") %></p>
-      <%= button_to "Disconnect", project_project_link_path(@project, link), method: :delete, class: "btn-ghost" %>
+<div class="space-y-6">
+  <section class="settings-panel space-y-4" aria-labelledby="connected-projects-title">
+    <div>
+      <h1 id="connected-projects-title" class="text-xl font-bold text-slate-900">Connected projects</h1>
+      <p class="mt-2 text-sm text-slate-600">Link your mobile apps and backend so you can follow a failed request across projects.</p>
     </div>
-  <% end %>
-  <h2 class="text-base font-bold text-slate-900">Connect a backend</h2>
-  <%= form_with url: project_project_links_path(@project), class: "grid grid-cols-1 gap-3 max-w-xl" do |form| %>
-    <%= form.label :target_project_uuid, "Called project" %>
-    <%= form.select :target_project_uuid, @candidates.map { |project| [project.name, project.uuid] }, {prompt: "Choose a project"}, required: true, class: "form-select" %>
-    <%= form.label :source_environment, "This project's environment" %>
-    <%= form.text_field :source_environment, value: params[:source_environment].presence || "production", class: "form-input", required: true, maxlength: 100 %>
-    <%= form.label :target_environment, "Called project's environment" %>
-    <%= form.text_field :target_environment, value: params[:target_environment].presence || "production", class: "form-input", required: true, maxlength: 100 %>
-    <%= form.submit "Connect projects", class: "btn-primary" %>
-  <% end %>
-  <p>You must manage both projects to connect them. Either manager can disconnect them.</p>
-</section>
+    <%= form_with url: correlation_setting_project_path(@project), method: :patch, class: "flex flex-wrap items-center gap-3" do |form| %>
+      <%= form.check_box :enabled, checked: @project.cross_project_correlations_enabled?, class: "form-checkbox" %>
+      <%= form.label :enabled, "Find related requests for #{@project.name}", class: "text-sm font-medium text-slate-700" %>
+      <%= form.submit "Save setting", class: "btn-ghost" %>
+    <% end %>
+    <p class="text-sm text-slate-600">Enable this setting in each linked project. Connections do not change who can access either project.</p>
+  </section>
+
+  <section class="settings-panel space-y-5" aria-labelledby="link-project-title">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 id="link-project-title" class="text-base font-bold text-slate-900"><%= @connection.incoming? ? "Link an app to this backend" : "Link this app to a backend" %></h2>
+        <p class="mt-1 text-sm text-slate-600"><%= @connection.incoming? ? "Choose an Android, iOS or web app that sends requests to #{@project.name}. Add each app separately." : "Choose the backend that receives requests from #{@project.name}." %></p>
+      </div>
+      <% if @connection.can_receive_requests? %>
+        <%= link_to(@connection.incoming? ? "Link a backend instead" : "Link an app instead",
+          project_project_links_path(@project, direction: @connection.incoming? ? "outgoing" : "incoming"), class: "text-sm font-medium text-blue-700 underline") %>
+      <% end %>
+    </div>
+
+    <% if @connection.errors.any? %>
+      <div class="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800" role="alert">
+        <p class="font-semibold">The projects could not be linked.</p>
+        <ul class="mt-2 list-disc pl-5">
+          <% @connection.errors.each do |error| %><li><%= error.message %></li><% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <% if @connection.peer %>
+      <%= render "connection_form" %>
+    <% elsif @connection.candidates.empty? %>
+      <p class="text-sm text-slate-600">No other active projects are available. Create the app or backend as a separate Logister project, or ask its owner to give you admin access.</p>
+    <% else %>
+      <%= form_with url: project_project_links_path(@project), method: :get, class: "max-w-2xl space-y-4" do |form| %>
+        <%= form.hidden_field :direction, value: @connection.direction %>
+        <div>
+          <p class="form-label"><%= @connection.incoming? ? "Backend receiving requests" : "App sending requests" %></p>
+          <p class="text-sm font-semibold text-slate-900 break-words"><%= @connection.label(@project) %></p>
+        </div>
+        <div>
+          <%= form.label :peer_project_uuid, @connection.incoming? ? "App project" : "Backend project", class: "form-label" %>
+          <%= form.select :peer_project_uuid, grouped_options_for_select(@project_options),
+            { prompt: @connection.incoming? ? "Choose an app project" : "Choose a backend project" },
+            required: true, class: "form-input bg-white", aria: { describedby: "project-picker-help" } %>
+          <p id="project-picker-help" class="mt-2 text-sm text-slate-600">Only active projects you own or administer are listed. Already linked projects are unavailable.</p>
+        </div>
+        <%= form.submit "Review connection", class: "btn-primary" %>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="settings-panel space-y-4" aria-labelledby="connections-title">
+    <h2 id="connections-title" class="text-base font-bold text-slate-900">Linked apps and backends</h2>
+    <% if @links.empty? %>
+      <p class="text-sm text-slate-600">No linked projects are visible to you yet. Use the form above to link your first app or backend.</p>
+    <% end %>
+    <% @links.each do |link| %>
+      <div class="rounded-lg border border-slate-200 p-4 space-y-3">
+        <p class="text-sm text-slate-900 break-words"><strong><%= link.source_project.name %></strong> (<%= link.source_project.integration_label %>) sends requests to <strong><%= link.target_project.name %></strong> (<%= link.target_project.integration_label %>).</p>
+        <% link.environment_pairs.each do |pair| %>
+          <p class="text-sm text-slate-600 break-words">App environment: <strong><%= pair["source"] %></strong> → Backend environment: <strong><%= pair["target"] %></strong></p>
+        <% end %>
+        <% [link.source_project, link.target_project].reject(&:cross_project_correlations_enabled?).each do |project| %>
+          <p class="text-sm text-slate-600">Related requests are off for <%= project.name %>.
+            <% if project.managed_by?(current_user) %>
+              <%= link_to "Open #{project.name} settings", project_project_links_path(project), class: "font-medium text-blue-700 underline" %>
+            <% else %>
+              Ask its owner or an admin to enable them.
+            <% end %>
+          </p>
+        <% end %>
+        <%= button_to "Disconnect", project_project_link_path(@project, link), method: :delete, class: "btn-ghost",
+          form: { data: { turbo_confirm: "Disconnect #{link.source_project.name} from #{link.target_project.name}? Existing events will be kept." } } %>
+      </div>
+    <% end %>
+  </section>
+</div>

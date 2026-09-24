@@ -13,8 +13,8 @@ RSpec.describe "Api::V1::Cli::Capabilities", type: :request do
       body = response.parsed_body
       expect(body).to include(
         "server" => "logister",
-        "server_version" => "3.7.0",
-        "api_contract_version" => "3.7.0",
+        "server_version" => "3.7.1",
+        "api_contract_version" => "3.7.1",
         "minimum_cli_version" => "0.1.0",
         "recommended_cli_version" => "1.1.0"
       )

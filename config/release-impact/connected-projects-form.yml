@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: connected-projects-form
+release_version: 3.7.1
+summary: Link mobile apps from their backend with explicit project identities, request
+  direction and environment choices.
+backend:
+  bump: patch
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: 4c867982540486d345ca65daab10c09da163981730dfe883292be6d8cb373667
+  telemetry_ingest: 69446cbba73f1af80f38e4430c46a633b49b1269711931064400459b524f3848
+  integration_discovery: 316811a88a1b446610ed78a3ed098554247fd46e0d0d1fd6aa8d994d6cf90083
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Project-link form improvements change only the Rails settings UI; existing
+      SDK payloads and CLI APIs remain compatible.
+  logister-js:
+    bump: none
+    reason: Project-link form improvements change only the Rails settings UI; existing
+      SDK payloads and CLI APIs remain compatible.
+  logister-python:
+    bump: none
+    reason: Project-link form improvements change only the Rails settings UI; existing
+      SDK payloads and CLI APIs remain compatible.
+  logister-dotnet:
+    bump: none
+    reason: Project-link form improvements change only the Rails settings UI; existing
+      SDK payloads and CLI APIs remain compatible.
+  logister-android:
+    bump: none
+    reason: Project-link form improvements change only the Rails settings UI; existing
+      SDK payloads and CLI APIs remain compatible.
+  logister-ios:
+    bump: none
+    reason: Project-link form improvements change only the Rails settings UI; existing
+      SDK payloads and CLI APIs remain compatible.
+  logister-cli:
+    bump: none
+    reason: Project-link form improvements change only the Rails settings UI; existing
+      SDK payloads and CLI APIs remain compatible.

@@ -1,0 +1,20 @@
+<%= form_with url: project_project_links_path(@project), class: "space-y-5" do |form| %>
+  <%= form.hidden_field :direction, value: @connection.direction %>
+  <%= form.hidden_field :peer_project_uuid, value: @connection.peer_project_uuid %>
+  <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2" aria-label="Connection to create">
+    <p class="text-sm font-semibold text-slate-900 break-words"><%= @connection.source.name %> sends requests to <%= @connection.target.name %>.</p>
+    <p class="text-sm text-slate-600 break-words">App: <%= @connection.label(@connection.source) %></p>
+    <p class="text-sm text-slate-600 break-words">Backend: <%= @connection.label(@connection.target) %></p>
+    <%= link_to "Choose a different project", project_project_links_path(@project, direction: @connection.direction), class: "inline-block text-sm font-medium text-blue-700 underline" %>
+  </div>
+  <div>
+    <h3 class="text-sm font-semibold text-slate-900">Choose the environments that communicate</h3>
+    <p class="mt-1 text-sm text-slate-600">Match the names sent by each app. For example, an app's <strong>production</strong> environment usually connects to the backend's <strong>production</strong> environment.</p>
+  </div>
+  <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+    <%= render "environment_field", form: form, side: :source, project: @connection.source, groups: @source_environment_groups, label: "App environment" %>
+    <%= render "environment_field", form: form, side: :target, project: @connection.target, groups: @target_environment_groups, label: "Backend environment" %>
+  </div>
+  <p class="text-sm text-slate-600">The lists include recent data and common names. If your environment is missing, choose “Other environment” and enter the exact name. Only requests in these two environments will be matched.</p>
+  <%= form.submit "Link projects", class: "btn-primary", data: { turbo_submits_with: "Linking projects…" } %>
+<% end %>
