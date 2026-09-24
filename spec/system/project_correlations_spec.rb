@@ -51,7 +51,7 @@ RSpec.describe "Connected requests", type: :system do
     page.driver.browser.execute_cdp("Emulation.setDeviceMetricsOverride", width: 390, height: 844, deviceScaleFactor: 1, mobile: true)
     expect(page.evaluate_script("window.innerWidth")).to eq(390)
     expect(page.evaluate_script("document.documentElement.scrollWidth <= window.innerWidth")).to be(true)
-    find("#link-project-title").scroll_to(:top)
+    page.execute_script("document.querySelector('#link-project-title').scrollIntoView({ block: 'start', behavior: 'instant' })")
     page.save_screenshot("/tmp/logister-project-link-review-mobile.png")
     click_button "Link projects"
     expect(page).to have_text("StoreStuff Android is now linked to StoreStuff.app")
@@ -65,6 +65,8 @@ RSpec.describe "Connected requests", type: :system do
     expect(ProjectLink.where(target_project: backend).pluck(:source_project_id)).to contain_exactly(android.id, ios.id)
     expect(ProjectLink.find_by!(source_project: ios).environment_pairs).to eq([ { "source" => "testflight", "target" => "staging" } ])
     expect(page.driver.browser.logs.get(:browser).select { |entry| entry.level == "SEVERE" }).to be_empty
+  ensure
+    page.driver.browser.execute_cdp("Emulation.clearDeviceMetricsOverride")
   end
   it "can review and link a custom environment without JavaScript" do
     driven_by :rack_test
