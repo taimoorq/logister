@@ -22,7 +22,7 @@ RSpec.describe ProjectCorrelationsQuery do
     error = create(:ingest_event, project: backend, context: { request: { traceId: trace }, environment: "production" })
     result = query
     expect(result[:items].map { |item| item[:uuid] }).to contain_exactly(span.uuid, error.uuid)
-    expect(result[:items].find { |item| item[:uuid] == span.uuid }[:evidence]).to eq("parent_span")
+    expect(result[:items].find { |item| item[:uuid] == span.uuid }).to include(evidence: "parent_span", operation: span.name)
     expect(result[:coverage].map { |item| item[:signal] }.uniq).to match_array(described_class::SIGNALS)
   end
 

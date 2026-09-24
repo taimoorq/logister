@@ -101,9 +101,10 @@ class ProjectCorrelationsQuery
     end
     # Aggregated mobile diagnostics are never evidence of a single request.
     scope = scope.where("COALESCE(context #>> '{telemetry_evidence,time,precision}', '') NOT IN ('reporting_interval', 'received_only')")
+    operation = "COALESCE(NULLIF(context->>'route', ''), NULLIF(context->>'http.route', ''), NULLIF(context->>'transaction_name', '')#{span ? ', name' : ''})"
     fields = [ "uuid", "#{timestamp} AS occurred_at", *ids.map { |key, sql| "#{sql} AS #{key}" },
       "LEFT(context->>'environment', 100) AS environment", "LEFT(context->>'release', 200) AS release",
-      "LEFT(COALESCE(context->>'route', context->>'http.route', context->>'transaction_name'), 512) AS operation" ]
+      "LEFT(#{operation}, 512) AS operation" ]
     scope.reselect(Arel.sql(fields.join(", "))).order(timestamp => :asc, uuid: :asc).limit(LIMIT + 1)
       .map { |row| row.attributes }
   end

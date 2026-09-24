@@ -27,7 +27,7 @@ RSpec.describe "Correlation PostgreSQL / ClickHouse parity" do
     client.insert_span!(Logister::SpanIngestor.new(span:, clickhouse_client: client).attributes)
     pg_spans = query.send(:postgres_rows, project, [ "production" ], "span")
     ch_spans = query.send(:clickhouse_rows, client, project, [ "production" ], "span")
-    expect(ch_spans.map { |row| row.slice("uuid", "trace_id", "span_id", "parent_span_id", "request_id") }).to eq(pg_spans.map { |row| row.slice("uuid", "trace_id", "span_id", "parent_span_id", "request_id") })
+    expect(ch_spans.map { |row| row.slice("uuid", "trace_id", "span_id", "parent_span_id", "request_id", "operation") }).to eq(pg_spans.map { |row| row.slice("uuid", "trace_id", "span_id", "parent_span_id", "request_id", "operation") })
     performance = Logister::ClickhousePerformanceQuery.new(project:, since: 1.hour.ago, to: 1.hour.from_now, limit: 50, client:).call
     expect(performance[:root_rows].map { |row| row.fetch("span_id") }).to include(span.uuid)
 
