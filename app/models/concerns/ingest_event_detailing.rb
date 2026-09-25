@@ -15,19 +15,20 @@ module IngestEventDetailing
       start_time, end_time = related_log_time_bounds(event, evidence, window)
       return [] unless start_time && end_time
 
-      match_conditions = related_log_match_conditions(
-        trace: trace,
-        request: request,
-        session: session,
-        user: user
-      )
-      return [] if match_conditions.empty?
-
-      sql_fragments = match_conditions.map { |condition| "(#{condition[:sql]})" }.join(" OR ")
-      bind_values = match_conditions.flat_map { |condition| condition[:values] }
-
       scope = logs.where(project: project, occurred_at: start_time..end_time)
-                  .where([ sql_fragments, *bind_values ])
+      matches = scope.none
+      [ [ "trace_id", trace ], [ "request_id", request ] ].each do |key, value|
+        matches = matches.or(CorrelationContext.filter(scope, key, value:)) if value.present?
+      end
+      [
+        [ session, [ [ "session_id" ], [ "sessionId" ], [ "session", "id" ] ] ],
+        [ user, [ [ "user_id" ], [ "userId" ], [ "user", "id" ] ] ]
+      ].each do |value, paths|
+        next if value.blank?
+
+        matches = matches.or(scope.where_json_text(:context, paths: paths, value: value))
+      end
+      scope = matches
       scope = yield(scope) if block_given?
       scope.order(occurred_at: :desc).limit(limit).to_a
     end
@@ -76,40 +77,6 @@ module IngestEventDetailing
     end
 
     private
-
-    def related_log_match_conditions(trace:, request:, session:, user:)
-      conditions = []
-
-      if trace.present?
-        conditions << {
-          sql: "#{CorrelationContext.postgres("trace_id")} = ?",
-          values: [ trace ]
-        }
-      end
-
-      if request.present?
-        conditions << {
-          sql: "#{CorrelationContext.postgres("request_id")} = ?",
-          values: [ request ]
-        }
-      end
-
-      if session.present?
-        conditions << {
-          sql: "(context->>'session_id' = ? OR context->>'sessionId' = ? OR context->'session'->>'id' = ?)",
-          values: [ session, session, session ]
-        }
-      end
-
-      if user.present?
-        conditions << {
-          sql: "(context->>'user_id' = ? OR context->>'userId' = ? OR context->'user'->>'id' = ?)",
-          values: [ user, user, user ]
-        }
-      end
-
-      conditions
-    end
 
     def related_log_time_bounds(event, evidence, window)
       if evidence.reporting_interval?

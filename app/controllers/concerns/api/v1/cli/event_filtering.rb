@@ -56,7 +56,7 @@ module Api::V1::Cli::EventFiltering
     environment = Logister::CliQuery.text(environment, parameter: "environment", max: 100)
     release = Logister::CliQuery.text(params[:release], parameter: "release", max: 200)
     scope = scope.where("COALESCE(NULLIF(context->>'environment', ''), 'production') = ?", environment) if environment.present?
-    scope = scope.where("context->>'release' = ?", release) if release.present?
+    scope = scope.for_release(release) if release.present?
     scope = apply_trace_id_filter(scope)
     apply_request_id_filter(scope)
   end
@@ -66,7 +66,7 @@ module Api::V1::Cli::EventFiltering
 
     trace_id = Logister::CliQuery.text(params[:trace_id], parameter: "trace_id", max: 128)
 
-    scope.where(Arel.sql(CorrelationContext.postgres("trace_id")).eq(trace_id))
+    CorrelationContext.filter(scope, "trace_id", value: trace_id)
   end
 
   def apply_request_id_filter(scope)
@@ -74,7 +74,7 @@ module Api::V1::Cli::EventFiltering
 
     request_id = Logister::CliQuery.text(params[:request_id], parameter: "request_id", max: 200)
 
-    scope.where(Arel.sql(CorrelationContext.postgres("request_id")).eq(request_id))
+    CorrelationContext.filter(scope, "request_id", value: request_id)
   end
 
   def apply_event_status_filter(scope, status)

@@ -1,0 +1,16 @@
+schema_version: 1
+id: controller-read-indexes
+release_version: 3.7.1
+summary: Optimize controller read queries and database indexes while preserving public CLI contracts.
+backend:
+  bump: none
+  compatibility: compatible
+  activation: immediate
+contracts:
+  - cli_api
+contract_sha256:
+  cli_api: 4c867982540486d345ca65daab10c09da163981730dfe883292be6d8cb373667
+consumers:
+  logister-cli:
+    bump: none
+    reason: Database access paths change without altering CLI requests, response schemas, canonical correlation IDs, or cursor ordering; existing clients remain compatible and no package release is required.

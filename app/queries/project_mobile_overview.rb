@@ -27,7 +27,7 @@ class ProjectMobileOverview
   end
 
   def call
-    release_index = ProjectMobileReleaseIndex.new(project).call
+    release_index = ProjectMobileReleaseIndex.new(project, limit: 1).call
     occurrence_facts = aggregate_occurrence_facts
     activity = project.ingest_events.where.not(event_type: IngestEvent.event_types.fetch("error"))
 
@@ -54,26 +54,30 @@ class ProjectMobileOverview
   end
 
   def aggregate_occurrence_facts
-    occurrence_scope.pick(
-      Arel.sql("COUNT(*) AS occurrence_count"),
-      Arel.sql("COUNT(installation_hash) AS installation_observations"),
-      Arel.sql("COUNT(session_hash) AS session_observations"),
-      Arel.sql("MAX(error_occurrences.created_at) AS latest_received_at")
-    ).then do |values|
-      values ||= [ 0, 0, 0, nil ]
-      {
-        "occurrence_count" => values[0],
-        "installation_observations" => values[1],
-        "session_observations" => values[2],
-        "latest_received_at" => values[3]
-      }
+    ProjectReadCache.fetch(project, :mobile_occurrence_facts, shared: true) do
+      occurrence_scope.pick(
+        Arel.sql("COUNT(*) AS occurrence_count"),
+        Arel.sql("COUNT(installation_hash) AS installation_observations"),
+        Arel.sql("COUNT(session_hash) AS session_observations"),
+        Arel.sql("MAX(error_occurrences.created_at) AS latest_received_at")
+      ).then do |values|
+        values ||= [ 0, 0, 0, nil ]
+        {
+          "occurrence_count" => values[0],
+          "installation_observations" => values[1],
+          "session_observations" => values[2],
+          "latest_received_at" => values[3]
+        }
+      end
     end
   end
 
   def source_counts
-    occurrence_scope
-      .group(Arel.sql("COALESCE(NULLIF(error_occurrences.dimensions ->> 'evidence_source', ''), NULLIF(error_occurrences.dimensions ->> 'diagnostic_source', ''), 'unlabelled')"))
-      .count
+    ProjectReadCache.fetch(project, :mobile_source_counts, shared: true) do
+      occurrence_scope
+        .group(Arel.sql("COALESCE(NULLIF(error_occurrences.dimensions ->> 'evidence_source', ''), NULLIF(error_occurrences.dimensions ->> 'diagnostic_source', ''), 'unlabelled')"))
+        .count
+    end
   end
 
   def coverage(observed, total)

@@ -677,7 +677,7 @@ class ProjectInsights
     def events_scope(project, since:, environment:, release:, attribute_filters:)
       scope = project.ingest_events.where("occurred_at >= ?", since)
       scope = scope.where(environment_node.eq(environment)) if environment.present?
-      scope = scope.where("context->>'release' = ?", release) if release.present?
+      scope = scope.for_release(release) if release.present?
       attribute_filters.each do |key, filter|
         scope = apply_attribute_filter(scope, key, filter)
       end

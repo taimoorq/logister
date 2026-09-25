@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
+  around_action :with_project_read_cache
   before_action :continue_incomplete_installation
 
   helper_method :admin_user?, :nav_active_projects, :nav_notifications
@@ -14,6 +15,10 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  def with_project_read_cache(&block)
+    ProjectReadCache.set(values: {}, &block)
+  end
 
   def admin_user?
     return false unless user_signed_in?

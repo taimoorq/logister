@@ -74,6 +74,8 @@ module Logister
       def postgres_list(project:, since:, to:, filters:, cursor:, limit:)
         scope = project.trace_spans.where(started_at: since...to)
                        .where(kind: TraceSpan::ROOT_KINDS)
+                       .where("#{POSTGRES_CURSOR_TIMESTAMP_SQL} >= ? AND #{POSTGRES_CURSOR_TIMESTAMP_SQL} <= ?",
+                         millisecond_time(since), millisecond_time(to))
         scope = apply_postgres_filters(scope, project:, filters:)
         if cursor
           scope = scope.where(

@@ -3,6 +3,15 @@
 require "rails_helper"
 
 RSpec.describe ProjectSetupStatus do
+  it "does not load mobile evidence for server setup" do
+    project = create(:project, :ruby)
+    statuses = nil
+    queries = capture_sql { statuses = described_class.new(project).call }
+
+    expect(statuses.keys).to contain_exactly(:active_api_key, :has_events, :source_repository, :deployments)
+    expect(queries.join("\n")).not_to match(/error_occurrences|mobile_ingest_tokens|apple_symbol_artifacts|android_mapping_files/)
+  end
+
   it "uses accepted receipt evidence and returns typed mobile setup health" do
     project = create(:project, :ios)
     group = create(:error_group, project: project)

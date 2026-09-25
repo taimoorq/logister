@@ -92,7 +92,7 @@ class ProjectMobileInsights
       filters = normalized_attribute_filters(attribute_filters, filter_options.fetch(:attributes))
       scope = project.ingest_events.where(created_at: since..)
       scope = scope.where(environment_expression.eq(environment)) if environment.to_s.present?
-      scope = scope.where("ingest_events.context->>'release' = ?", release) if release.to_s.present?
+      scope = scope.for_release(release) if release.to_s.present?
       filters.each { |key, value| scope = scope.where(ATTRIBUTE_EXPRESSIONS.fetch(key).eq(value)) }
 
       bucket = ProjectInsights::WINDOW_OPTIONS.fetch(window_key).fetch(:bucket)

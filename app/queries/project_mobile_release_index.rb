@@ -42,9 +42,42 @@ class ProjectMobileReleaseIndex
   end
 
   def call
-    rows = grouped_scope.limit(limit + 1).offset(offset).to_a
-    releases = rows.first(limit).map { |row| release_from(row) }.freeze
-    Result.new(releases:, has_more: rows.size > limit, total_builds: total_builds).freeze
+    ProjectReadCache.fetch(project, [ :mobile_releases, limit, offset ], shared: true) do
+      rows = grouped_scope.select("COUNT(*) OVER() AS total_builds").limit(limit + 1).offset(offset).to_a
+      releases = rows.first(limit).map { |row| release_from(row) }.freeze
+      total = rows.first&.total_builds || (offset.zero? ? 0 : total_builds)
+      Result.new(releases:, has_more: rows.size > limit, total_builds: total.to_i).freeze
+    end
+  end
+
+  ArtifactBuild = Data.define(:app_version, :build_number, :channel, :occurrence_count, :artifact_state, :last_received_at) do
+    def label
+      version = app_version.presence || "Version unknown"
+      build_number.present? ? "#{version} (#{build_number})" : version
+    end
+
+    def channel_label
+      channel.presence || "Channel unknown"
+    end
+  end
+
+  def artifact_coverage
+    ProjectReadCache.fetch(project, :mobile_artifact_builds, shared: true) do
+      grouped_scope.reselect(
+        "COALESCE(error_occurrences.dimensions ->> 'app_version', '') AS app_version",
+        "COALESCE(error_occurrences.dimensions ->> 'build_number', '') AS build_number",
+        "COALESCE(NULLIF(error_occurrences.dimensions ->> 'track', ''), NULLIF(error_occurrences.dimensions ->> 'distribution_channel', ''), '') AS channel",
+        "COUNT(*) AS occurrence_count",
+        "MAX(error_occurrences.created_at) AS last_received_at",
+        "ARRAY_REMOVE(ARRAY_AGG(DISTINCT COALESCE(error_occurrences.dimensions ->> 'mapping_status', error_occurrences.dimensions ->> 'symbolication_status')), NULL) AS artifact_states"
+      ).limit(MAX_LIMIT).map do |row|
+        ArtifactBuild.new(
+          app_version: row.app_version.presence, build_number: row.build_number.presence, channel: row.channel.presence,
+          occurrence_count: row.occurrence_count.to_i, artifact_state: artifact_state(Array(row.artifact_states).compact_blank),
+          last_received_at: row.last_received_at
+        ).freeze
+      end.freeze
+    end
   end
 
   private
@@ -81,9 +114,7 @@ class ProjectMobileReleaseIndex
   end
 
   def total_builds
-    occurrence_scope
-      .pick(Arel.sql("COUNT(DISTINCT CONCAT_WS('|', COALESCE(dimensions ->> 'app_version', ''), COALESCE(dimensions ->> 'build_number', ''), COALESCE(dimensions ->> 'track', dimensions ->> 'distribution_channel', '')))"))
-      .to_i
+    Project.connection.select_value("SELECT COUNT(*) FROM (#{grouped_scope.reorder(nil).reselect('1').to_sql}) builds").to_i
   end
 
   def release_from(row)

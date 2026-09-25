@@ -66,23 +66,23 @@ module TableCursorPagination
   end
 
   def older_than_cursor(relation, cursor, timestamp_column:)
-    table = relation.klass.arel_table
-    timestamp = table[timestamp_column]
-    relation.where(
-      timestamp.lt(cursor.fetch(:timestamp)).or(
-        timestamp.eq(cursor.fetch(:timestamp)).and(table[:id].lt(cursor.fetch(:id)))
-      )
-    )
+    position, boundary = table_cursor_operands(relation, cursor, timestamp_column:)
+    relation.where(position.lt(boundary))
   end
 
   def newer_than_cursor(relation, cursor, timestamp_column:)
+    position, boundary = table_cursor_operands(relation, cursor, timestamp_column:)
+    relation.where(position.gt(boundary))
+  end
+
+  def table_cursor_operands(relation, cursor, timestamp_column:)
     table = relation.klass.arel_table
-    timestamp = table[timestamp_column]
-    relation.where(
-      timestamp.gt(cursor.fetch(:timestamp)).or(
-        timestamp.eq(cursor.fetch(:timestamp)).and(table[:id].gt(cursor.fetch(:id)))
-      )
-    )
+    columns = [ table[normalized_timestamp_column(timestamp_column)], table[:id] ]
+    values = [ cursor.fetch(:timestamp), cursor.fetch(:id) ].zip(columns).map do |value, column|
+      Arel::Nodes.build_quoted(value, column)
+    end
+    # Keep a native row comparison while letting Arel quote identifiers and values.
+    [ Arel::Nodes::Grouping.new(columns), Arel::Nodes::Grouping.new(values) ]
   end
 
   def encode_table_cursor(record, timestamp_column:)

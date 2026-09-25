@@ -4,7 +4,7 @@ class ProjectCapabilitySnapshot
   attr_reader :project, :experience_definition, :statuses
 
   def self.for(project)
-    new(project: project)
+    ProjectReadCache.fetch(project, :capability_snapshot) { new(project: project) }
   end
 
   def initialize(project:)

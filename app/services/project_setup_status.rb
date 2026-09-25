@@ -8,28 +8,37 @@ class ProjectSetupStatus
   end
 
   def call
-    context = latest_context
+    mobile = project.integration_android? || project.integration_ios?
+    context = mobile ? latest_context : {}
     sdk = context.fetch("sdk", {})
-    capabilities = ProjectCapabilitySnapshot.for(project)
+    capabilities = ProjectCapabilitySnapshot.for(project) if mobile
 
-    {
-      active_api_key: existence_status(:active_api_key, project.api_keys.active.maximum(:created_at), "No active API key is available.", :create_api_key),
-      has_events: existence_status(:has_events, latest_event&.created_at, "No telemetry receipt has been accepted yet.", :send_first_event),
-      source_repository: existence_status(:source_repository, project.source_repositories.enabled.maximum(:created_at), "No enabled source repository is connected.", :connect_source_repository),
-      deployments: existence_status(:deployments, project.deployments.maximum(:created_at), "No deployment evidence has been recorded.", :record_deployment),
-      mobile_token: existence_status(:mobile_token, active_mobile_token_at, "No unexpired mobile ingest token is available.", :issue_mobile_token),
-      release_metadata: existence_status(:release_metadata, dimension_observed_at("app_version", require_also: "build_number"), "No diagnostic has supplied both app version and build number.", :capture_release_metadata),
-      app_build_metadata: existence_status(:app_build_metadata, dimension_observed_at("app_identifier", require_also: %w[app_version build_number]), "No diagnostic has supplied bundle identifier, version, and build number together.", :capture_release_metadata),
-      sessions: existence_status(:sessions, occurrence_scope.where.not(session_hash: nil).maximum(:created_at), "No scoped session correlation evidence has been observed.", :configure_sessions),
-      installations: existence_status(:installations, occurrence_scope.where.not(installation_hash: nil).maximum(:created_at), "No scoped installation pseudonym has been observed.", :configure_installations),
-      breadcrumbs: boolean_status(:breadcrumbs, Array(context["breadcrumbs"]).any?, latest_event&.created_at, "The latest received event has no bounded breadcrumb trail.", :configure_breadcrumbs),
-      automatic_capture: boolean_status(:automatic_capture, sdk["automatic_crash_capture"] == true, latest_event&.created_at, "Automatic crash capture has not been verified in the latest client evidence.", :configure_automatic_capture),
-      metric_kit: existence_status(:metric_kit, dimension_observed_at("diagnostic_source", equals: "metrickit"), "No MetricKit diagnostic receipt has been observed.", :configure_metric_kit),
-      android_mapping: capabilities.status(:stack_mapping),
-      google_play: project.integration_android? ? capabilities.status(:distribution_store) : unsupported(:google_play),
-      apple_symbols: capabilities.status(:symbol_artifacts),
-      app_store: project.integration_ios? ? capabilities.status(:distribution_store) : unsupported(:app_store)
-    }.freeze
+    loaders = {
+      active_api_key: -> { existence_status(:active_api_key, project.api_keys.active.maximum(:created_at), "No active API key is available.", :create_api_key) },
+      has_events: -> { existence_status(:has_events, latest_event&.created_at, "No telemetry receipt has been accepted yet.", :send_first_event) },
+      source_repository: -> { existence_status(:source_repository, project.source_repositories.enabled.maximum(:created_at), "No enabled source repository is connected.", :connect_source_repository) },
+      deployments: -> { existence_status(:deployments, project.deployments.maximum(:created_at), "No deployment evidence has been recorded.", :record_deployment) },
+      mobile_token: -> { existence_status(:mobile_token, active_mobile_token_at, "No unexpired mobile ingest token is available.", :issue_mobile_token) },
+      release_metadata: -> { existence_status(:release_metadata, dimension_observed_at("app_version", require_also: "build_number"), "No diagnostic has supplied both app version and build number.", :capture_release_metadata) },
+      app_build_metadata: -> { existence_status(:app_build_metadata, dimension_observed_at("app_identifier", require_also: %w[app_version build_number]), "No diagnostic has supplied bundle identifier, version, and build number together.", :capture_release_metadata) },
+      sessions: -> { existence_status(:sessions, occurrence_scope.where.not(session_hash: nil).maximum(:created_at), "No scoped session correlation evidence has been observed.", :configure_sessions) },
+      installations: -> { existence_status(:installations, occurrence_scope.where.not(installation_hash: nil).maximum(:created_at), "No scoped installation pseudonym has been observed.", :configure_installations) },
+      breadcrumbs: -> { boolean_status(:breadcrumbs, Array(context["breadcrumbs"]).any?, latest_event&.created_at, "The latest received event has no bounded breadcrumb trail.", :configure_breadcrumbs) },
+      automatic_capture: -> { boolean_status(:automatic_capture, sdk["automatic_crash_capture"] == true, latest_event&.created_at, "Automatic crash capture has not been verified in the latest client evidence.", :configure_automatic_capture) },
+      metric_kit: -> { existence_status(:metric_kit, dimension_observed_at("diagnostic_source", equals: "metrickit"), "No MetricKit diagnostic receipt has been observed.", :configure_metric_kit) },
+      android_mapping: -> { capabilities.status(:stack_mapping) },
+      google_play: -> { capabilities.status(:distribution_store) },
+      apple_symbols: -> { capabilities.status(:symbol_artifacts) },
+      app_store: -> { capabilities.status(:distribution_store) }
+    }
+    keys = if project.integration_android?
+      %i[mobile_token has_events release_metadata sessions automatic_capture source_repository android_mapping google_play]
+    elsif project.integration_ios?
+      %i[mobile_token has_events app_build_metadata sessions installations breadcrumbs metric_kit source_repository apple_symbols app_store]
+    else
+      %i[active_api_key has_events source_repository deployments]
+    end
+    loaders.slice(*keys).transform_values(&:call).freeze
   end
 
   private
@@ -52,7 +61,7 @@ class ProjectSetupStatus
 
   def dimension_observed_at(key, equals: nil, require_also: nil)
     scope = occurrence_scope.where("COALESCE(error_occurrences.dimensions ->> ?, '') <> ''", key)
-    scope = scope.where("error_occurrences.dimensions ->> ? = ?", key, equals) if equals
+    scope = scope.where_json_text(:dimensions, paths: [ [ key ] ], value: equals) if equals
     Array(require_also).each do |required_key|
       scope = scope.where("COALESCE(error_occurrences.dimensions ->> ?, '') <> ''", required_key)
     end
@@ -77,10 +86,6 @@ class ProjectSetupStatus
       reason: configured ? "Verified in the latest received client evidence." : missing_reason,
       action_key:
     )
-  end
-
-  def unsupported(key)
-    status(key, :unsupported, reason: "This setup item does not apply to this project type.")
   end
 
   def status(key, state, observed_at: nil, reason: nil, action_key: nil)

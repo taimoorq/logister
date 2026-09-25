@@ -1,4 +1,6 @@
 class TraceSpan < ApplicationRecord
+  include JsonTextQuerying
+
   belongs_to :project
   belongs_to :api_key
 

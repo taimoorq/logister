@@ -7,55 +7,33 @@ class ProjectDeploymentPreviousLookup
 
   def initialize(project:, deployments:)
     @project = project
-    @deployments = deployments.to_a
+    @deployment_ids = deployments.map(&:id).compact.uniq
   end
 
   def call
-    return {} if searchable_deployments.empty?
+    return {} if @deployment_ids.empty?
 
-    candidates_by_key = previous_candidates.group_by { |deployment| deployment_key(deployment) }
+    requested = @project.deployments.where(id: @deployment_ids)
+      .select(:id, :repository_full_name, :environment, Arel.sql("COALESCE(deployed_at, created_at) AS cutoff"))
+    previous = @project.deployments
+      .where("project_deployments.repository_full_name = requested.repository_full_name")
+      .where("project_deployments.environment = requested.environment")
+    dated = previous.where.not(deployed_at: nil)
+      .where("COALESCE(project_deployments.deployed_at, project_deployments.updated_at) < requested.cutoff")
+      .newest_first.limit(1)
+    undated = previous.where(deployed_at: nil).where("project_deployments.created_at < requested.cutoff")
+      .newest_first.limit(1)
 
-    searchable_deployments.each_with_object({}) do |deployment, previous_by_id|
-      previous = candidates_by_key.fetch(deployment_key(deployment), []).find do |candidate|
-        deployment_timestamp(candidate) < deployment_timestamp(deployment)
-      end
-      previous_by_id[deployment.id] = previous if previous
-    end
-  end
-
-  private
-
-  attr_reader :project, :deployments
-
-  def searchable_deployments
-    @searchable_deployments ||= deployments.select { |deployment| deployment_timestamp(deployment).present? }
-  end
-
-  def previous_candidates
-    project.deployments
-           .where(repository_full_name: repositories, environment: environments)
-           .where("COALESCE(deployed_at, created_at) < ?", latest_timestamp)
-           .newest_first
-           .to_a
-  end
-
-  def repositories
-    searchable_deployments.map(&:repository_full_name).compact_blank.uniq
-  end
-
-  def environments
-    searchable_deployments.map(&:environment).compact_blank.uniq
-  end
-
-  def latest_timestamp
-    searchable_deployments.map { |deployment| deployment_timestamp(deployment) }.max
-  end
-
-  def deployment_key(deployment)
-    [ deployment.repository_full_name, deployment.environment ]
-  end
-
-  def deployment_timestamp(deployment)
-    deployment.deployed_at || deployment.created_at
+    # Each visible deployment retrieves at most one predecessor, preserving the
+    # existing updated_at fallback order for deployments without deployed_at.
+    ProjectDeployment.find_by_sql(<<~SQL).to_h { |row| [ row.requested_deployment_id, row ] }
+      SELECT previous.*, requested.id AS requested_deployment_id
+      FROM (#{requested.to_sql}) requested
+      CROSS JOIN LATERAL (
+        SELECT candidates.* FROM ((#{dated.to_sql}) UNION ALL (#{undated.to_sql})) candidates
+        ORDER BY COALESCE(candidates.deployed_at, candidates.updated_at) DESC, candidates.id DESC
+        LIMIT 1
+      ) previous
+    SQL
   end
 end

@@ -51,6 +51,21 @@ RSpec.describe ProjectMobileReleaseIndex do
     expect(release.artifact_state).to eq(:missing)
   end
 
+  it "counts exactly the same normalized build groups as the rows, including platforms" do
+    project = create(:project, :ios)
+    group = create(:error_group, project:)
+    [ "iOS", "macOS" ].each do |platform|
+      create(:error_occurrence, error_group: group, dimensions: {
+        "app_version" => "1.0", "build_number" => "1", "track" => "", "distribution_channel" => "store", "apple_platform" => platform
+      })
+    end
+    first = described_class.new(project, limit: 1).call
+    expect(first.total_builds).to eq(2)
+    expect(first.has_more).to be(true)
+    expect(described_class.new(project, offset: 2).call.total_builds).to eq(2)
+    expect(described_class.new(project).artifact_coverage.map(&:occurrence_count)).to eq([ 1, 1 ])
+  end
+
   it "rejects non-mobile projects rather than fabricating an empty mobile release page" do
     expect do
       described_class.new(build(:project, :ruby))

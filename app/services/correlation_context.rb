@@ -36,6 +36,13 @@ class CorrelationContext
     result
   end
 
+  def self.filter(scope, key, value:)
+    # Containment is only the GIN candidate lookup. The canonical expression
+    # still enforces the shared type, format and alias-precedence contract.
+    scope.where_json_text(:context, paths: PATHS.fetch(key), value:)
+      .where(Arel.sql(postgres(key, column: "#{scope.klass.table_name}.context")).eq(value))
+  end
+
   def self.postgres(key, column: "context", matchable: false)
     raise ArgumentError, "invalid context column" unless column.match?(/\A[a-z_]+(?:\.[a-z_]+)?\z/)
     parts = PATHS.fetch(key).map do |path|

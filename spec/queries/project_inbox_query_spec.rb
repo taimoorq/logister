@@ -117,6 +117,64 @@ RSpec.describe ProjectInboxQuery do
     expect(second_page.next_cursor).to be_nil
   end
 
+  it "traverses null timestamps, ties and microseconds once in native last-seen order" do
+    server = create(:project, :ruby)
+    time = Time.current.change(usec: 123456)
+    groups = [ time - 0.000001, time, time, nil, nil ].map do |timestamp|
+      create(:error_group, project: server).tap { |group| group.update_columns(last_seen_at: timestamp) }
+    end
+    query = described_class.new(project: server, page_size: 1)
+    seen = []
+    cursor = nil
+    5.times do
+      page = query.page(filter: "all", sort: "last_seen", cursor:)
+      seen.concat(page.groups.map(&:id))
+      cursor = page.next_cursor
+    end
+    expect(seen).to eq(groups.reverse.map(&:id))
+    expect(cursor).to be_nil
+  end
+
+  it "continues a legacy numeric cursor whose floating timestamp rounds upward" do
+    server = create(:project, :ruby)
+    time = Time.utc(2026, 9, 25, 12).change(usec: 2)
+    oldest = create(:error_group, project: server, last_seen_at: time - Rational(1, 1_000_000))
+    tied = create(:error_group, project: server, last_seen_at: time)
+    create(:error_group, project: server, last_seen_at: time)
+    query = described_class.new(project: server, page_size: 1)
+    first = query.page(filter: "all", sort: "last_seen")
+    verifier = Rails.application.message_verifier(:project_inbox_cursor)
+    payload = verifier.verified(first.next_cursor, purpose: :project_inbox)
+    payload.delete("version")
+    payload["values"][0] = Time.iso8601(payload["values"][0]).to_f
+    legacy = verifier.generate(payload, purpose: :project_inbox)
+
+    second = query.page(filter: "all", sort: "last_seen", cursor: legacy)
+    expect(second.groups.map(&:id)).to eq([ tied.id ])
+    expect(query.page(filter: "all", sort: "last_seen", cursor: second.next_cursor).groups.map(&:id)).to eq([ oldest.id ])
+  end
+
+  it "does not repeat aggregate-ranked issues at floating timestamp boundaries" do
+    time = Time.current.change(usec: 2)
+    groups = [ time - Rational(1, 1_000_000), time, time ].map do |timestamp|
+      group = create(:error_group, project:, last_seen_at: timestamp)
+      create(:error_occurrence, error_group: group, occurred_at: timestamp)
+      group
+    end
+    query = described_class.new(project:, page_size: 1)
+
+    %w[recommended impact velocity].each do |sort|
+      cursor = nil
+      seen = 3.times.flat_map do
+        page = query.page(filter: "all", sort:, cursor:)
+        cursor = page.next_cursor
+        page.groups.map(&:id)
+      end
+      expect(seen).to eq(groups.reverse.map(&:id))
+      expect(cursor).to be_nil
+    end
+  end
+
   it "ignores a cursor when the filter context changes" do
     grouped_android_event(message: "One", release: "1.0.0+1", mechanism: "handled_exception", device: "Pixel", fingerprint: "one")
     grouped_android_event(message: "Two", release: "2.0.0+2", mechanism: "handled_exception", device: "Pixel", fingerprint: "two")

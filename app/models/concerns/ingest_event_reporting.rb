@@ -15,7 +15,7 @@ module IngestEventReporting
       return [] if releases.empty?
 
       release_names = releases.map(&:first)
-      events_scope = where(project: project).where("context->>'release' IN (?)", release_names)
+      events_scope = where(project: project).for_release(release_names)
       total_events_by_release = grouped_count(events_scope, release_sql)
       error_events_by_release = grouped_count(events_scope.where(event_type: event_types[:error]), release_sql)
       introduced_issues_by_release = grouped_count(project.error_groups.where(introduced_in_release: release_names), :introduced_in_release)

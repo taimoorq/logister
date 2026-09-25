@@ -26,6 +26,34 @@ RSpec.describe "Admin::Users", type: :request do
         sign_in users(:one)
       end
 
+      it "paginates filtered users in both directions and counts only their owned records" do
+        time = Time.current
+        users = create_list(:user, 52, name: "Directory sample", created_at: time)
+        newest = users.last
+        create_list(:project, 2, user: newest)
+        project = newest.projects.first
+        create_list(:api_key, 3, user: newest, project:)
+
+        get admin_users_path, params: { q: "Directory sample" }
+        expect(response).to have_http_status(:success)
+        document = Nokogiri::HTML(response.body)
+        rows = document.css("tr.inbox-row")
+        expect(rows.length).to eq(50)
+        expect(rows.first.css("td")[0].text).to eq(newest.email)
+        expect(rows.first.css("td")[4].text).to eq("2")
+        expect(rows.first.css("td")[5].text).to eq("3")
+        first_emails = rows.map { |row| row.css("td").first.text }
+        older = document.css("nav[aria-label='Pagination'] a").find { |link| link.text.strip == "Older" }
+
+        get older["href"]
+        expect(response).to have_http_status(:success)
+        document = Nokogiri::HTML(response.body)
+        expect(document.css("tr.inbox-row").map { |row| row.css("td").first.text }).to eq(users.first(2).reverse.map(&:email))
+        newer = document.css("nav[aria-label='Pagination'] a").find { |link| link.text.strip == "Newer" }
+        get newer["href"]
+        expect(Nokogiri::HTML(response.body).css("tr.inbox-row").map { |row| row.css("td").first.text }).to eq(first_emails)
+      end
+
       it "returns success and user list" do
         get admin_users_path
         expect(response).to have_http_status(:success)

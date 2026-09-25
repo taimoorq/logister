@@ -10,6 +10,25 @@ RSpec.describe CorrelationContext do
     expect(ids.matchable("request_id")).to eq("req-1")
   end
 
+  it "keeps canonical precedence and valid nested aliases when using indexed candidate lookup" do
+    project = create(:project)
+    contexts = [
+      { "trace_id" => "canonical", "request" => { "traceId" => "legacy" } },
+      { "trace_id" => 123, "trace" => { "id" => "legacy" } },
+      { "trace_id" => "", "request" => { "trace_id" => "legacy" } },
+      { "trace_id" => "invalid spaces", "request" => { "traceId" => "legacy" } },
+      { "trace_id" => 123 },
+      { "trace_id" => "123" }
+    ]
+    events = contexts.map { |context| create(:ingest_event, project:, context:) }
+    create(:ingest_event, context: { "trace_id" => "legacy" })
+    scope = project.ingest_events
+
+    expect(described_class.filter(scope, "trace_id", value: "legacy").ids).to match_array(events[1..3].map(&:id))
+    expect(described_class.filter(scope, "trace_id", value: "canonical").ids).to eq([ events[0].id ])
+    expect(described_class.filter(scope, "trace_id", value: "123").ids).to eq([ events[5].id ])
+  end
+
   it "agrees with PostgreSQL on empty, invalid, nested and contradictory identifiers" do
     [ { trace_id: 123, trace: { id: "valid" } }, { trace_id: "", traceId: "old" }, { trace_id: "x", traceId: "y" }, { request: { traceId: "nested" } }, { trace_id: "x" * 129 } ].each do |context|
       sql = "SELECT #{described_class.postgres('trace_id', matchable: true)} FROM (SELECT #{ActiveRecord::Base.connection.quote(context.to_json)}::jsonb AS context) source"
