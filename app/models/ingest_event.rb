@@ -1,4 +1,6 @@
 class IngestEvent < ApplicationRecord
+  include JsonTextQuerying
+
   PARTITION_REFERENCE_BATCH_SIZE = 200
 
   self.primary_key = :id
@@ -35,7 +37,13 @@ class IngestEvent < ApplicationRecord
   scope :recent_transactions, ->(since, limit = 300) {
     transactions.where("occurred_at >= ?", since).order(occurred_at: :desc).limit(limit)
   }
-  scope :released, -> { where("COALESCE(context->>'release', '') <> ''") }
+  scope :released, -> { where("COALESCE(ingest_events.context->>'release', '') <> ''") }
+  scope :for_release, ->(values) {
+    # The activity cursor index uses raw extraction; the general release index
+    # uses NULLIF. Keep both expressions and the shared partial-index predicate.
+    released.where("ingest_events.context->>'release' IN (?)", Array(values))
+            .where("NULLIF(ingest_events.context->>'release', '') IN (?)", Array(values))
+  }
 
   def self.for_partition_references(records, id_key:, occurred_at_key:)
     partition_reference_relation(

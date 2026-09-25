@@ -112,7 +112,7 @@ class ProjectTransactionsBrowser
     scope = apply_status_filter(scope, filters[:status])
     scope = apply_min_duration_filter(scope, filters[:min_duration_ms]) if filters[:min_duration_ms].present?
     scope = scope.where("COALESCE(NULLIF(ingest_events.context->>'environment', ''), 'production') = ?", filters[:environment]) if filters[:environment].present?
-    scope = scope.where("ingest_events.context->>'release' = ?", filters[:release]) if filters[:release].present?
+    scope = scope.for_release(filters[:release]) if filters[:release].present?
     scope
   end
 
@@ -207,7 +207,7 @@ class ProjectTransactionsBrowser
     scope = project.ingest_events.where(event_type: :error).where(transaction_name_node.in(names))
     scope = apply_period_filter(scope, filters[:period])
     scope = scope.where("COALESCE(NULLIF(ingest_events.context->>'environment', ''), 'production') = ?", filters[:environment]) if filters[:environment].present?
-    scope = scope.where("ingest_events.context->>'release' = ?", filters[:release]) if filters[:release].present?
+    scope = scope.for_release(filters[:release]) if filters[:release].present?
 
     counts = scope.group(transaction_name_node).count
     latest_events = scope

@@ -11,8 +11,6 @@ module ProjectsControllerData
     @assignee_filter = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)
     @profile_filters = normalize_inbox_profile_filters(@project)
     @sort = normalize_inbox_sort(@project, params[:sort])
-    @profile_filter_options = inbox_filter_options(@project)
-    @assignable_users = @project.assignable_users.to_a
     @tab    = ProjectExperience.for(@project).normalize_detail_tab(params[:tab])
     @inbox_page = inbox_page(@project, filter: @filter, query: @query, assignee: @assignee_filter, viewer: current_user, dimensions: @profile_filters, sort: @sort, cursor: params[:cursor])
     @groups = @inbox_page.groups
@@ -46,6 +44,8 @@ module ProjectsControllerData
       }
     end
 
+    @profile_filter_options = inbox_filter_options(@project)
+    @assignable_users = @project.assignable_users.to_a
     @counts  = inbox_counts(@project, assignee: @assignee_filter, viewer: current_user)
     @group_trends = inbox_group_trends(@project, @groups, profile_filters: @profile_filters)
     @selected_group = selected_inbox_group

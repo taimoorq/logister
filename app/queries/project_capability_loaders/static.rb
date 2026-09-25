@@ -28,10 +28,22 @@ module ProjectCapabilityLoaders
     end
 
     def correlation_observed_at
-      ErrorOccurrence.joins(:error_group)
-                     .where(error_groups: { project_id: project.id })
-                     .where.not(session_hash: nil)
-                     .maximum(:occurred_at)
+      ProjectReadCache.fetch(project, :session_observed_at, shared: true) do
+        ErrorOccurrence.joins(:error_group)
+                       .where(error_groups: { project_id: project.id })
+                       .where.not(session_hash: nil)
+                       .maximum(:occurred_at)
+      end
+    end
+
+    def dimension_counts(key)
+      ProjectReadCache.fetch(project, [ :dimension_counts, key ], shared: true) do
+        ErrorOccurrence.joins(:error_group)
+          .where(error_groups: { project_id: project.id })
+          .where("COALESCE(error_occurrences.dimensions ->> ?, '') <> ''", key)
+          .group(Arel.sql("error_occurrences.dimensions ->> #{ActiveRecord::Base.connection.quote(key)}"))
+          .count
+      end
     end
 
     def distribution_status(key, setting, label:)

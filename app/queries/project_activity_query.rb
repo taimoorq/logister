@@ -14,7 +14,7 @@ class ProjectActivityQuery
     scope = apply_activity_period_filter(scope)
     scope = apply_text_filter(scope, filters[:q]) if filters[:q].present?
     scope = scope.where("COALESCE(NULLIF(ingest_events.context->>'environment', ''), 'production') = ?", filters[:environment]) if filters[:environment].present?
-    scope = scope.where("ingest_events.context->>'release' = ?", filters[:release]) if filters[:release].present?
+    scope = scope.for_release(filters[:release]) if filters[:release].present?
     if mobile_activity?
       scope = scope.where("COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,source}', ''), NULLIF(ingest_events.context #>> '{diagnostic,source}', ''), 'sdk') = ?", filters[:source]) if filters[:source].present?
       scope = scope.where("COALESCE(NULLIF(ingest_events.context #>> '{telemetry_evidence,time,precision}', ''), 'unknown') = ?", filters[:time_precision]) if filters[:time_precision].present?
@@ -33,7 +33,10 @@ class ProjectActivityQuery
     scope = project.ingest_events
       .where(event_type: :error)
       .where.not(error_group_id: nil)
-      .where(Arel.sql(CorrelationContext.postgres("trace_id", column: "ingest_events.context")).in(trace_ids))
+
+    scope = trace_ids.reduce(scope.none) do |matches, trace_id|
+      matches.or(CorrelationContext.filter(scope, "trace_id", value: trace_id))
+    end
     if occurred_times.any?
       scope = scope.where(occurred_at: (occurred_times.min - 1.day)..(occurred_times.max + 1.day))
     end

@@ -55,8 +55,8 @@
               <% end %>
             </td>
             <td class="text-slate-600"><%= local_time_tag(user.created_at, format: :date_only) %></td>
-            <td class="text-slate-600"><%= user.read_attribute(:projects_count).to_i %></td>
-            <td class="text-slate-600"><%= user.read_attribute(:api_keys_count).to_i %></td>
+            <td class="text-slate-600"><%= @projects_count.fetch(user.id, 0) %></td>
+            <td class="text-slate-600"><%= @api_keys_count.fetch(user.id, 0) %></td>
             <td>
               <%= link_to admin_user_path(user),
                           class: "inline-link inline-flex items-center gap-1.5",
@@ -71,3 +71,5 @@
     </table>
   <% end %>
 </div>
+
+<%= render "shared/cursor_pagination", page: @users_page, base_path: admin_users_path, params: { q: @query }, page_label: "users" %>

@@ -53,13 +53,5 @@ module ProjectCapabilityLoaders
 
       "Every observed Android error build has a matching mapping artifact. Frame retracing is evaluated separately."
     end
-
-    def dimension_counts(key)
-      ErrorOccurrence.joins(:error_group)
-        .where(error_groups: { project_id: project.id })
-        .where("COALESCE(error_occurrences.dimensions ->> ?, '') <> ''", key)
-        .group(Arel.sql("error_occurrences.dimensions ->> #{ActiveRecord::Base.connection.quote(key)}"))
-        .count
-    end
   end
 end

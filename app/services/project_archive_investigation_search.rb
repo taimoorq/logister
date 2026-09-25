@@ -196,11 +196,11 @@ class ProjectArchiveInvestigationSearch
   def apply_context_filter(scope, snake_key, camel_key, raw_value)
     return scope if raw_value.blank?
 
-    if camel_key.present?
-      scope.where("context ->> ? = ? OR context ->> ? = ?", snake_key, raw_value, camel_key, raw_value)
-    else
-      scope.where("context ->> ? = ?", snake_key, raw_value)
-    end
+    return scope.for_release(raw_value) if snake_key == "release" && scope.klass == IngestEvent
+
+    paths = [ [ snake_key ] ]
+    paths << [ camel_key ] if camel_key.present?
+    scope.where_json_text(:context, paths: paths, value: raw_value)
   end
 
   def apply_mobile_event_filters(scope)
@@ -212,10 +212,7 @@ class ProjectArchiveInvestigationSearch
     if value("artifact_state").present?
       occurrence_ids = ErrorOccurrence.joins(:error_group)
         .where(error_groups: { project_id: project.id })
-        .where(
-          "error_occurrences.dimensions ->> 'mapping_status' = :state OR error_occurrences.dimensions ->> 'symbolication_status' = :state",
-          state: value("artifact_state")
-        )
+        .where_json_text(:dimensions, paths: [ %w[mapping_status], %w[symbolication_status] ], value: value("artifact_state"))
         .select(:ingest_event_id)
       scope = scope.where(id: occurrence_ids)
     end

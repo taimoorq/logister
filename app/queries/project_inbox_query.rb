@@ -60,7 +60,7 @@ class ProjectInboxQuery
     cache_key = [
       "project",
       project.id,
-      "inbox_groups",
+      "inbox_groups_v2",
       profile.key,
       profile.version,
       normalized_filter,
@@ -190,7 +190,7 @@ class ProjectInboxQuery
 
         column = definition.key.to_s
         expression = column == "release" ? "error_occurrences.release" : "error_occurrences.dimensions ->> #{ActiveRecord::Base.connection.quote(column)}"
-        values[column] = scope.where("COALESCE(#{expression}, '') <> ''").distinct.order(Arel.sql(expression)).pluck(Arel.sql(expression)).first(100)
+        values[column] = scope.where("COALESCE(#{expression}, '') <> ''").distinct.order(Arel.sql(expression)).limit(100).pluck(Arel.sql(expression))
       end
     end
   end
@@ -227,10 +227,18 @@ class ProjectInboxQuery
     group_ids = groups.map(&:id)
     return ErrorOccurrence.none if group_ids.empty?
 
-    occurrence_relation(dimensions, group_ids: group_ids)
-      .select("DISTINCT ON (error_occurrences.error_group_id) error_occurrences.*")
-      .order(Arel.sql("error_occurrences.error_group_id, error_occurrences.occurred_at DESC, error_occurrences.id DESC"))
-      .to_a
+    latest = occurrence_relation(dimensions)
+      .where("error_occurrences.error_group_id = requested_groups.id")
+      .select("error_occurrences.*")
+      .order(occurred_at: :desc, id: :desc)
+      .limit(1)
+
+    sql = ErrorOccurrence.sanitize_sql_array([
+      "SELECT latest_occurrence.* FROM unnest(ARRAY[?]::bigint[]) requested_groups(id) " \
+      "CROSS JOIN LATERAL (#{latest.to_sql}) latest_occurrence",
+      group_ids
+    ])
+    ErrorOccurrence.find_by_sql(sql)
   end
 
   def base_scope(filter)
@@ -259,13 +267,14 @@ class ProjectInboxQuery
 
   def apply_query(scope, query)
     term = "%#{ActiveRecord::Base.sanitize_sql_like(query.downcase)}%"
-    dimension_matches = ErrorOccurrence.where(error_group_id: scope.select(:id))
-                                       .where("LOWER(error_occurrences.dimensions::text) LIKE ?", term)
-                                       .select(:error_group_id)
-    scope.where(
-      "LOWER(title) LIKE :term OR LOWER(COALESCE(subtitle,'')) LIKE :term OR LOWER(fingerprint) LIKE :term OR LOWER(stage) LIKE :term OR error_groups.id IN (#{dimension_matches.to_sql})",
-      term: term
-    )
+    condition = "LOWER(title) LIKE :term OR LOWER(COALESCE(subtitle,'')) LIKE :term OR LOWER(fingerprint) LIKE :term OR LOWER(stage) LIKE :term"
+    if profile.supports?(:mobile)
+      dimension_matches = ErrorOccurrence.where(error_group_id: scope.select(:id))
+        .where("LOWER(error_occurrences.dimensions::text) LIKE ?", term)
+        .select(:error_group_id)
+      condition += " OR error_groups.id IN (#{dimension_matches.to_sql})"
+    end
+    scope.where(condition, term: term)
   end
 
   def normalize_dimensions(dimensions)
@@ -353,10 +362,7 @@ class ProjectInboxQuery
         "#{SCOPED_LAST_SEEN_SQL} AS inbox_cursor_last_seen"
       )
     else
-      scope.select(
-        "error_groups.id",
-        "COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0) AS inbox_cursor_last_seen"
-      )
+      scope.select(:id, :last_seen_at)
     end
   end
 
@@ -382,16 +388,25 @@ class ProjectInboxQuery
         *values
       )
     elsif values.size == 2
-      scope.where(
-        "(COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0), error_groups.id) < (?, ?)",
-        *values
-      )
+      timestamp, id = values
+      if timestamp.nil?
+        # recent_first puts NULL timestamps first. Finish that segment, then
+        # continue through dated rows; ordinary pages use the native index seek.
+        scope.where("error_groups.last_seen_at IS NOT NULL OR (error_groups.last_seen_at IS NULL AND error_groups.id < ?)", id)
+      elsif timestamp.is_a?(String)
+        scope.where("(error_groups.last_seen_at, error_groups.id) < (?, ?)", Time.iso8601(timestamp), id)
+      else
+        # Keep already-issued numeric cursors working during rolling deploys.
+        scope.where("(COALESCE(EXTRACT(EPOCH FROM error_groups.last_seen_at), 0), error_groups.id) < (?, ?)", *values)
+      end
     else
       scope
     end
   end
 
   def cursor_values_for(group, sort)
+    return [ group.last_seen_at&.utc&.iso8601(6), group.id ] if group.has_attribute?(:last_seen_at)
+
     if sort == "recommended" && group.has_attribute?(:inbox_cursor_priority)
       [
         group.inbox_cursor_priority.to_i,
@@ -414,7 +429,7 @@ class ProjectInboxQuery
   end
 
   def encode_cursor(context_digest:, sort:, values:)
-    cursor_verifier.generate({ "context" => context_digest, "sort" => sort, "values" => values }, purpose: :project_inbox)
+    cursor_verifier.generate({ "version" => 2, "context" => context_digest, "sort" => sort, "values" => values }, purpose: :project_inbox)
   end
 
   def decode_cursor(cursor, context_digest:, sort:)
@@ -426,9 +441,12 @@ class ProjectInboxQuery
     return unless ActiveSupport::SecurityUtils.secure_compare(payload["context"].to_s, context_digest)
     return unless payload["sort"] == sort && payload["values"].is_a?(Array)
 
-    return unless payload["values"].all? { |value| value.is_a?(Numeric) }
+    values = payload["values"]
+    return values if values.all? { |value| value.is_a?(Numeric) && value.finite? }
+    return unless payload["version"] == 2 && values.size == 2 && values.last.is_a?(Integer) && values.last.positive?
+    return unless values.first.nil? || (values.first.is_a?(String) && Time.iso8601(values.first))
 
-    payload["values"]
+    values
   rescue ArgumentError, TypeError
     nil
   end

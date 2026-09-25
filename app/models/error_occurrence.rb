@@ -1,4 +1,6 @@
 class ErrorOccurrence < ApplicationRecord
+  include JsonTextQuerying
+
   belongs_to :error_group
   belongs_to :ingest_event
 

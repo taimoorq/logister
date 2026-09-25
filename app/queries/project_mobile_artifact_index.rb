@@ -40,7 +40,7 @@ class ProjectMobileArtifactIndex
     else
       relation.reorder(nil).group(:status).count.transform_keys(&:to_sym)
     end.freeze
-    releases = ProjectMobileReleaseIndex.new(project, limit: ProjectMobileReleaseIndex::MAX_LIMIT).call.releases
+    releases = ProjectMobileReleaseIndex.new(project).artifact_coverage
 
     Result.new(
       artifacts: items,

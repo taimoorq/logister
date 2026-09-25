@@ -38,6 +38,21 @@ RSpec.describe Logister::CliTracesQuery do
     )
   end
 
+  it "preserves exact time bounds within a millisecond on the indexed PostgreSQL path" do
+    clickhouse = client(read_enabled: false)
+    allow(Logister::ClickhouseClient).to receive(:new).and_return(clickhouse)
+    start = Time.current.change(usec: 123100)
+    finish = start + Rational(500, 1_000_000)
+    before = create(:trace_span, project:, api_key:, started_at: start - Rational(1, 1_000_000))
+    inside = create(:trace_span, project:, api_key:, started_at: start, parent_span_id: "mobile-parent")
+    boundary = create(:trace_span, project:, api_key:, started_at: finish)
+
+    result = described_class.list(project:, since: start, to: finish, filters: {}, cursor: nil, limit: 10)
+
+    expect(result.items.map { |item| item[:uuid] }).to eq([ inside.uuid ])
+    expect(result.items.map { |item| item[:uuid] }).not_to include(before.uuid, boundary.uuid)
+  end
+
   it "uses complete ClickHouse trace coverage and redacts returned context" do
     clickhouse = client
     row = {

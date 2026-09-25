@@ -51,14 +51,7 @@ class ProjectDeploymentContext
   end
 
   def previous_deployment_for(deployment)
-    timestamp = deployment.deployed_at || deployment.created_at
-    return if timestamp.blank?
-
-    project.deployments
-           .where(repository_full_name: deployment.repository_full_name, environment: deployment.environment)
-           .where("COALESCE(deployed_at, created_at) < ?", timestamp)
-           .newest_first
-           .first
+    ProjectDeploymentPreviousLookup.call(project:, deployments: [ deployment ])[deployment.id]
   end
 
   def relation

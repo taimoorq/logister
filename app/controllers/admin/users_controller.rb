@@ -1,4 +1,6 @@
 class Admin::UsersController < Admin::BaseController
+  include TableCursorPagination
+
   before_action :set_user, only: [ :show, :confirm, :resend_confirmation, :destroy ]
 
   def index
@@ -10,11 +12,11 @@ class Admin::UsersController < Admin::BaseController
       @users = @users.where("LOWER(email) LIKE ? OR LOWER(COALESCE(name, '')) LIKE ?", like, like)
     end
 
-    @users = @users
-      .left_joins(:projects, :api_keys)
-      .select("users.*, COUNT(DISTINCT projects.id) AS projects_count, COUNT(DISTINCT api_keys.id) AS api_keys_count")
-      .group("users.id")
-      .order(created_at: :desc)
+    @users_page = cursor_page(@users, before: params[:before], after: params[:after], timestamp_column: :created_at)
+    @users = @users_page.records
+    user_ids = @users.map(&:id)
+    @projects_count = Project.where(user_id: user_ids).group(:user_id).count
+    @api_keys_count = ApiKey.where(user_id: user_ids).group(:user_id).count
   end
 
   def show

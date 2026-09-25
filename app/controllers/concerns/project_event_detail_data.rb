@@ -65,11 +65,9 @@ module ProjectEventDetailData
     if cursor
       anchor = ordered.find_by(uuid: cursor)
       if anchor
-        table = ErrorOccurrence.arel_table
         ordered = ordered.where(
-          table[:occurred_at].lt(anchor.occurred_at).or(
-            table[:occurred_at].eq(anchor.occurred_at).and(table[:id].lt(anchor.id))
-          )
+          "(error_occurrences.occurred_at, error_occurrences.id) < (?, ?)",
+          anchor.occurred_at, anchor.id
         )
       else
         first_page = true

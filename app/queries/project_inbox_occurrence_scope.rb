@@ -43,7 +43,7 @@ class ProjectInboxOccurrenceScope
     when "release"
       scope.where(release: value)
     else
-      scope.where("error_occurrences.dimensions ->> ? = ?", key, value)
+      scope.where_json_text(:dimensions, paths: [ [ key ] ], value: value)
     end
   end
 end

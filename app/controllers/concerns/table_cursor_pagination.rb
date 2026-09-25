@@ -66,23 +66,17 @@ module TableCursorPagination
   end
 
   def older_than_cursor(relation, cursor, timestamp_column:)
-    table = relation.klass.arel_table
-    timestamp = table[timestamp_column]
-    relation.where(
-      timestamp.lt(cursor.fetch(:timestamp)).or(
-        timestamp.eq(cursor.fetch(:timestamp)).and(table[:id].lt(cursor.fetch(:id)))
-      )
-    )
+    compare_table_cursor(relation, cursor, timestamp_column:, operator: "<")
   end
 
   def newer_than_cursor(relation, cursor, timestamp_column:)
-    table = relation.klass.arel_table
-    timestamp = table[timestamp_column]
-    relation.where(
-      timestamp.gt(cursor.fetch(:timestamp)).or(
-        timestamp.eq(cursor.fetch(:timestamp)).and(table[:id].gt(cursor.fetch(:id)))
-      )
-    )
+    compare_table_cursor(relation, cursor, timestamp_column:, operator: ">")
+  end
+
+  def compare_table_cursor(relation, cursor, timestamp_column:, operator:)
+    table = relation.klass.quoted_table_name
+    column = relation.klass.connection.quote_column_name(normalized_timestamp_column(timestamp_column))
+    relation.where("(#{table}.#{column}, #{table}.id) #{operator} (?, ?)", cursor.fetch(:timestamp), cursor.fetch(:id))
   end
 
   def encode_table_cursor(record, timestamp_column:)

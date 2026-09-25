@@ -4,6 +4,18 @@ require "rails_helper"
 require "nokogiri"
 
 RSpec.describe "mobile inbox query budget", type: :request do
+  it "does not compute filter option lists for a table-only refresh" do
+    project = create(:project, :android, user: users(:one))
+    sign_in users(:one)
+    queries = capture_sql do
+      get inbox_project_path(project), headers: { "Turbo-Frame" => "project_inbox" }
+    end
+
+    expect(response).to have_http_status(:success)
+    expect(response.body).to include('id="project_inbox"')
+    expect(queries.grep(/SELECT DISTINCT.*dimensions.*ORDER BY/)).to be_empty
+  end
+
   it "renders one hundred Android issues with a bounded, non-row-linear query count" do
     project = create(:project, :android, user: users(:one))
     api_key = create(:api_key, project:, user: users(:one))

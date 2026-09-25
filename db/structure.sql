@@ -3493,6 +3493,13 @@ CREATE UNIQUE INDEX idx_apple_symbols_identity_checksum ON public.apple_symbol_a
 
 
 --
+-- Name: idx_apple_symbols_project_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_apple_symbols_project_created ON public.apple_symbol_artifacts USING btree (project_id, created_at DESC, id DESC);
+
+
+--
 -- Name: idx_apple_symbols_status_created; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3542,6 +3549,13 @@ CREATE INDEX idx_cli_deployments_project_time_uuid ON public.project_deployments
 
 
 --
+-- Name: idx_cli_entry_traces_project_millis_uuid; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cli_entry_traces_project_millis_uuid ON public.trace_spans USING btree (project_id, date_trunc('milliseconds'::text, started_at) DESC, uuid DESC) WHERE ((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[]));
+
+
+--
 -- Name: idx_cli_monitors_project_updated_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3553,6 +3567,20 @@ CREATE INDEX idx_cli_monitors_project_updated_uuid ON public.check_in_monitors U
 --
 
 CREATE INDEX idx_cli_root_traces_project_started_uuid ON public.trace_spans USING btree (project_id, started_at DESC, uuid DESC) WHERE (((kind)::text = ANY (ARRAY[('server'::character varying)::text, ('browser'::character varying)::text])) AND ((parent_span_id IS NULL) OR ((parent_span_id)::text = ''::text)));
+
+
+--
+-- Name: idx_deployments_lane_recency; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_deployments_lane_recency ON public.project_deployments USING btree (project_id, repository_full_name, environment, COALESCE(deployed_at, updated_at) DESC, id DESC) WHERE (deployed_at IS NOT NULL);
+
+
+--
+-- Name: idx_deployments_lane_undated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_deployments_lane_undated ON public.project_deployments USING btree (project_id, repository_full_name, environment, COALESCE(deployed_at, updated_at) DESC, id DESC) WHERE (deployed_at IS NULL);
 
 
 --
@@ -3672,6 +3700,13 @@ CREATE INDEX idx_error_occurrences_cursor ON public.error_occurrences USING btre
 --
 
 CREATE INDEX idx_error_occurrences_event_partition_ref ON public.error_occurrences USING btree (ingest_event_id, ingest_event_occurred_at);
+
+
+--
+-- Name: idx_error_occurrences_group_received; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_error_occurrences_group_received ON public.error_occurrences USING btree (error_group_id, created_at DESC, id DESC);
 
 
 --
@@ -4841,6 +4876,13 @@ CREATE INDEX idx_trace_spans_trace_parent ON public.trace_spans USING btree (pro
 --
 
 CREATE UNIQUE INDEX idx_user_notification_dismissals_uniqueness ON public.user_notification_dismissals USING btree (user_id, notification_key);
+
+
+--
+-- Name: idx_users_created_cursor; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_users_created_cursor ON public.users USING btree (created_at DESC, id DESC);
 
 
 --
@@ -13323,6 +13365,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260925120000'),
 ('20260924121000'),
 ('20260924120000'),
 ('20260911190000'),

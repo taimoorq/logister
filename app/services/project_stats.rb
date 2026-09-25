@@ -6,18 +6,28 @@ class ProjectStats
   end
 
   def self.latest_event_at_by_project(project_ids)
+    latest_timestamp_by_project(project_ids, :occurred_at)
+  end
+
+  def self.latest_received_at_by_project(project_ids)
+    latest_timestamp_by_project(project_ids, :created_at)
+  end
+
+  def self.latest_timestamp_by_project(project_ids, column)
+    raise ArgumentError unless %i[occurred_at created_at].include?(column)
+
     ids = Array(project_ids).filter_map { |project_id| Integer(project_id, exception: false) }.uniq
     return {} if ids.blank?
 
     sql = Project.sanitize_sql_array([
       <<~SQL.squish,
-        SELECT requested_projects.project_id, latest_events.occurred_at
+        SELECT requested_projects.project_id, latest_events.#{column}
         FROM unnest(ARRAY[?]::bigint[]) AS requested_projects(project_id)
         LEFT JOIN LATERAL (
-          SELECT occurred_at
+          SELECT #{column}
           FROM ingest_events
           WHERE ingest_events.project_id = requested_projects.project_id
-          ORDER BY occurred_at DESC
+          ORDER BY #{column} DESC
           LIMIT 1
         ) latest_events ON TRUE
       SQL
@@ -25,7 +35,7 @@ class ProjectStats
     ])
 
     Project.connection.exec_query(sql).each_with_object({}) do |row, latest_events|
-      occurred_at = row["occurred_at"]
+      occurred_at = row[column.to_s]
       next if occurred_at.blank?
 
       latest_events[row["project_id"].to_i] = occurred_at
@@ -59,10 +69,8 @@ class ProjectStats
     recent_receipts = project_events.where("created_at >= ?", trend_dates.first.beginning_of_day)
 
     apply_group_counts(stats, project_error_groups)
-    apply_activity_counts(stats, recent_events)
-    apply_latest_event_times(stats, recent_events)
-    apply_event_trends(stats, recent_events, trend_dates)
-    apply_receipt_stats(stats, project_events, recent_receipts, trend_dates)
+    apply_event_stats(stats, recent_events, trend_dates)
+    apply_receipt_stats(stats, recent_receipts, trend_dates)
 
     stats
   end
@@ -72,56 +80,36 @@ class ProjectStats
   attr_reader :project_ids
 
   def apply_group_counts(stats, project_error_groups)
-    project_error_groups.group(:project_id).count.each do |project_id, count|
-      stats[project_id][:all_groups] = count
-    end
-
-    project_error_groups.unresolved.group(:project_id).count.each do |project_id, count|
-      stats[project_id][:open_groups] = count
+    project_error_groups.group(:project_id, :status).count.each do |(project_id, status), count|
+      stats[project_id][:all_groups] += count
+      stats[project_id][:open_groups] += count if status == "unresolved"
     end
   end
 
-  def apply_activity_counts(stats, recent_events)
-    activity_events = recent_events.where.not(event_type: IngestEvent.event_types[:error])
-    activity_events.group(:project_id).count.each do |project_id, count|
-      stats[project_id][:activity_events] = count
-    end
-  end
+  def apply_event_stats(stats, recent_events, trend_dates)
+    recent_events.group(:project_id, Arel.sql("DATE(occurred_at)"), :event_type)
+      .pluck(:project_id, Arel.sql("DATE(occurred_at)"), :event_type, Arel.sql("COUNT(*)"), Arel.sql("MAX(occurred_at)"))
+      .each do |project_id, date, event_type, count, latest_at|
+        entry = stats.fetch(project_id)
+        entry[:activity_events] += count unless event_type == "error"
+        entry[:latest_event_at] = [ entry[:latest_event_at], latest_at ].compact.max
+        index = trend_dates.index(date.to_date)
+        next unless index
 
-  def apply_latest_event_times(stats, recent_events)
-    recent_events.group(:project_id).maximum(:occurred_at).each do |project_id, occurred_at|
-      stats[project_id][:latest_event_at] = occurred_at
-    end
-  end
-
-  def apply_event_trends(stats, recent_events, trend_dates)
-    recent_events
-      .group(:project_id, "DATE(occurred_at)")
-      .count
-      .each do |(project_id, date), count|
-        idx = trend_dates.index(date.to_date)
-        next unless idx
-
-        stats[project_id][:trend][idx] = count
-        stats[project_id][:total_events] += count
+        entry[:trend][index] += count
+        entry[:total_events] += count
       end
   end
 
-  def apply_receipt_stats(stats, project_events, recent_receipts, trend_dates)
-    recent_receipts.group(:project_id).count.each do |project_id, count|
-      stats[project_id][:received_events] = count
-    end
-
-    project_events.group(:project_id).maximum(:created_at).each do |project_id, received_at|
+  def apply_receipt_stats(stats, recent_receipts, trend_dates)
+    self.class.latest_received_at_by_project(project_ids).each do |project_id, received_at|
       stats[project_id][:latest_received_at] = received_at
     end
 
-    recent_receipts
-      .group(:project_id, "DATE(created_at)")
-      .count
-      .each do |(project_id, date), count|
-        index = trend_dates.index(date.to_date)
-        stats[project_id][:receipt_trend][index] = count if index
-      end
+    recent_receipts.group(:project_id, "DATE(created_at)").count.each do |(project_id, date), count|
+      stats[project_id][:received_events] += count
+      index = trend_dates.index(date.to_date)
+      stats[project_id][:receipt_trend][index] = count if index
+    end
   end
 end
