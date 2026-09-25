@@ -135,10 +135,12 @@ RSpec.describe ProjectInboxQuery do
     expect(cursor).to be_nil
   end
 
-  it "continues an already-issued numeric cursor" do
+  it "continues a legacy numeric cursor whose floating timestamp rounds upward" do
     server = create(:project, :ruby)
-    oldest = create(:error_group, project: server, last_seen_at: 2.hours.ago)
-    create(:error_group, project: server, last_seen_at: 1.hour.ago)
+    time = Time.utc(2026, 9, 25, 12).change(usec: 2)
+    oldest = create(:error_group, project: server, last_seen_at: time - Rational(1, 1_000_000))
+    tied = create(:error_group, project: server, last_seen_at: time)
+    create(:error_group, project: server, last_seen_at: time)
     query = described_class.new(project: server, page_size: 1)
     first = query.page(filter: "all", sort: "last_seen")
     verifier = Rails.application.message_verifier(:project_inbox_cursor)
@@ -147,7 +149,30 @@ RSpec.describe ProjectInboxQuery do
     payload["values"][0] = Time.iso8601(payload["values"][0]).to_f
     legacy = verifier.generate(payload, purpose: :project_inbox)
 
-    expect(query.page(filter: "all", sort: "last_seen", cursor: legacy).groups.map(&:id)).to eq([ oldest.id ])
+    second = query.page(filter: "all", sort: "last_seen", cursor: legacy)
+    expect(second.groups.map(&:id)).to eq([ tied.id ])
+    expect(query.page(filter: "all", sort: "last_seen", cursor: second.next_cursor).groups.map(&:id)).to eq([ oldest.id ])
+  end
+
+  it "does not repeat aggregate-ranked issues at floating timestamp boundaries" do
+    time = Time.current.change(usec: 2)
+    groups = [ time - Rational(1, 1_000_000), time, time ].map do |timestamp|
+      group = create(:error_group, project:, last_seen_at: timestamp)
+      create(:error_occurrence, error_group: group, occurred_at: timestamp)
+      group
+    end
+    query = described_class.new(project:, page_size: 1)
+
+    %w[recommended impact velocity].each do |sort|
+      cursor = nil
+      seen = 3.times.flat_map do
+        page = query.page(filter: "all", sort:, cursor:)
+        cursor = page.next_cursor
+        page.groups.map(&:id)
+      end
+      expect(seen).to eq(groups.reverse.map(&:id))
+      expect(cursor).to be_nil
+    end
   end
 
   it "ignores a cursor when the filter context changes" do

@@ -442,7 +442,13 @@ class ProjectInboxQuery
     return unless payload["sort"] == sort && payload["values"].is_a?(Array)
 
     values = payload["values"]
-    return values if values.all? { |value| value.is_a?(Numeric) && value.finite? }
+    if [ 2, 3, 5 ].include?(values.size) && values.all? { |value| value.is_a?(Numeric) && value.finite? }
+      # Legacy and aggregate cursors encode epoch seconds as a Float. Restore
+      # database microsecond precision before comparing to PostgreSQL numeric;
+      # otherwise a rounded-up boundary can include the same row again.
+      values[-2] = BigDecimal(values[-2].to_s).round(6)
+      return values
+    end
     return unless payload["version"] == 2 && values.size == 2 && values.last.is_a?(Integer) && values.last.positive?
     return unless values.first.nil? || (values.first.is_a?(String) && Time.iso8601(values.first))
 
