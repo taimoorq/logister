@@ -2,6 +2,25 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.7.2 - 2026-09-25
+
+### Improved
+
+- Use indexed lookups for deep inbox pages, release and JSON filters, occurrence receipts, request-entry traces, deployment history, and Apple symbol artifacts.
+- Bound deployment and occurrence lookups, consolidate project statistics, and paginate the admin user list with counts for the visible users.
+- Reuse mobile telemetry summaries for 30 seconds, load setup evidence only for the selected platform, and skip unused inbox filters for table-only updates. Integration configuration and failure status refresh on each request.
+
+### Fixed
+
+- Preserve microseconds and tied timestamps when paging inbox results, including older signed cursors, so floating-point rounding cannot repeat a boundary row.
+- Count mobile releases using the same normalized release and platform grouping as the displayed rows.
+
+### Upgrade Notes
+
+- Apply the six additive indexes in `20260925120000_add_controller_read_indexes`. Fly runs this migration in the release phase; self-hosted installations should run their normal database migration step. Indexes build concurrently with bounded lock and statement waits, and interrupted builds can be retried.
+- Existing SDKs and CLI clients remain compatible; no add-on release or configuration change is required. Cached mobile telemetry summaries can lag ingestion by up to 30 seconds.
+- Roll back to the previous application image if needed. The additive indexes can remain in place.
+
 ## v3.7.1 - 2026-09-24
 
 ### Fixed

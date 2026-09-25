@@ -16,12 +16,10 @@ RSpec.describe Github::InstallationToken do
   let(:installation) { create(:github_installation, installation_id: 42) }
   let(:stateless_s2s_token_override) { nil }
   let(:stateless_installation_token) { github_stateless_installation_token }
+  let(:classic_installation_token) { [ "ghs", "classicopaqueinstallationtokenvalue123456" ].join("_") }
 
-  around do |example|
-    Rails.cache.clear
-    example.run
-  ensure
-    Rails.cache.clear
+  before do
+    allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
   end
 
   it "accepts the longer stateless ghs installation token as an opaque string" do
@@ -63,7 +61,7 @@ RSpec.describe Github::InstallationToken do
 
   it "can request classic opaque tokens while operators diagnose rollout issues" do
     allow(config).to receive(:stateless_s2s_token_override).and_return("disabled")
-    response = installation_token_response([ "ghs", "classicopaqueinstallationtokenvalue123456" ].join("_"))
+    response = installation_token_response(classic_installation_token)
     requests = capture_http_requests(response)
 
     described_class.new(
@@ -75,6 +73,44 @@ RSpec.describe Github::InstallationToken do
     expect(requests.first[described_class::STATELESS_S2S_TOKEN_HEADER]).to eq("disabled")
   end
 
+  %i[classic_installation_token stateless_installation_token].each do |token_fixture|
+    it "preserves #{token_fixture} through the cache without requesting another token" do
+      expected_token = public_send(token_fixture)
+      requests = capture_http_requests(installation_token_response(expected_token))
+
+      2.times do
+        token = described_class.new(
+          installation: installation,
+          config: config,
+          jwt_provider: jwt_provider
+        ).token
+
+        expect(token).to eq(expected_token)
+      end
+
+      expect(requests.size).to eq(1)
+    end
+  end
+
+  it "requests a fresh token when the rollout override changes despite a warm cache" do
+    expected_tokens = [ classic_installation_token, stateless_installation_token, "#{classic_installation_token}fallback" ]
+    requests = capture_http_requests(*expected_tokens.map { |token| installation_token_response(token) })
+
+    [ nil, "enabled", "disabled" ].zip(expected_tokens).each do |override, expected_token|
+      allow(config).to receive(:stateless_s2s_token_override).and_return(override)
+
+      token = described_class.new(
+        installation: installation,
+        config: config,
+        jwt_provider: jwt_provider
+      ).token
+
+      expect(token).to eq(expected_token)
+    end
+
+    expect(requests.map { |request| request[described_class::STATELESS_S2S_TOKEN_HEADER] }).to eq([ nil, "enabled", "disabled" ])
+  end
+
   def installation_token_response(token)
     response = Net::HTTPCreated.new("1.1", "201", "Created")
     response.instance_variable_set(:@body, { token: token, expires_at: 1.hour.from_now.iso8601 }.to_json)
@@ -82,14 +118,14 @@ RSpec.describe Github::InstallationToken do
     response
   end
 
-  def capture_http_requests(response)
+  def capture_http_requests(*responses)
     requests = []
 
     allow(Net::HTTP).to receive(:start) do |_host, _port, **_options, &block|
       http = instance_double(Net::HTTP)
       allow(http).to receive(:request) do |request|
         requests << request
-        response
+        responses.shift
       end
       block.call(http)
     end

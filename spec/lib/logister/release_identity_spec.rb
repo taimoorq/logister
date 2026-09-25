@@ -9,13 +9,13 @@ RSpec.describe Logister::ReleaseIdentity do
     identity = described_class.new(repo_root: Rails.root).validate!
 
     expect(identity).to have_attributes(
-      version: "3.7.1",
-      tag: "v3.7.1",
-      release_date: "2026-09-24",
+      version: "3.7.2",
+      tag: "v3.7.2",
+      release_date: "2026-09-25",
       prerelease: false,
       make_latest: true
     )
-    expect(identity.release_notes).to start_with("## v3.7.1 - 2026-09-24")
+    expect(identity.release_notes).to start_with("## v3.7.2 - 2026-09-25")
     expect(identity.release_notes).not_to include("## v3.5")
     expect(identity.contract_sha256.keys).to contain_exactly("cli_api", "telemetry_ingest", "integration_discovery")
     expect(identity.contract_sha256.values).to all(match(/\A[0-9a-f]{64}\z/))

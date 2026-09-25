@@ -1,0 +1,90 @@
+---
+schema_version: 1
+id: backend-v3-7-2
+backend:
+  version: 3.7.2
+  tag: v3.7.2
+impact_records:
+- controller-read-indexes
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.1
+    target_version: 0.4.1
+    bump: none
+    release_required: false
+    reason: Query and index improvements preserve Ruby SDK ingestion payloads and
+      responses; no gem update is required.
+    channels:
+    - rubygems
+    - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.2
+    target_version: 0.4.2
+    bump: none
+    release_required: false
+    reason: Query and index improvements preserve JavaScript SDK ingestion payloads
+      and responses; no npm package update is required.
+    channels:
+    - npm
+    - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.4.0
+    target_version: 0.4.0
+    bump: none
+    release_required: false
+    reason: Query and index improvements preserve Python SDK ingestion payloads and
+      responses; no package update is required.
+    channels:
+    - pypi
+    - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.3.0
+    target_version: 0.3.0
+    bump: none
+    release_required: false
+    reason: Query and index improvements preserve .NET SDK ingestion payloads and
+      responses; no NuGet package update is required.
+    channels:
+    - nuget_logister
+    - nuget_logister_aspnetcore
+    - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.5.2
+    target_version: 0.5.2
+    bump: none
+    release_required: false
+    reason: Mobile summary caching and query improvements preserve Android ingestion
+      and setup contracts; no Maven package update is required.
+    channels:
+    - maven_central
+    - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.5.0
+    target_version: 0.5.0
+    bump: none
+    release_required: false
+    reason: Mobile summary caching and query improvements preserve iOS ingestion and
+      symbol-upload contracts; no Swift package update is required.
+    channels:
+    - swift_package_manager
+    - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.1.0
+    target_version: 1.1.0
+    bump: none
+    release_required: false
+    reason: Queries preserve CLI request and response schemas, canonical correlation
+      IDs, and cursor ordering; existing signed cursors remain accepted and no package
+      update is required.
+    channels:
+    - npm
+    - github_release
+    - homebrew-logister
+    - scoop-logister

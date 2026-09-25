@@ -1,16 +1,48 @@
+---
 schema_version: 1
 id: controller-read-indexes
-release_version: 3.7.1
-summary: Optimize controller read queries and database indexes while preserving public CLI contracts.
+release_version: 3.7.2
+summary: Optimize controller reads with indexes, bounded lookups, and mobile summary
+  caching while preserving SDK and CLI compatibility.
 backend:
-  bump: none
+  bump: patch
   compatibility: compatible
   activation: immediate
 contracts:
-  - cli_api
+- cli_api
+- telemetry_ingest
+- integration_discovery
 contract_sha256:
-  cli_api: 4c867982540486d345ca65daab10c09da163981730dfe883292be6d8cb373667
+  cli_api: '008f290d27b8f9fccfb1bd82f0516577b6fcd02dcb660fdc50a42ff83643d754'
+  telemetry_ingest: dbe4c9b6c342645094d39dba8a9d5d584f832e9d24acb55ddb52add829683662
+  integration_discovery: 316811a88a1b446610ed78a3ed098554247fd46e0d0d1fd6aa8d994d6cf90083
 consumers:
+  logister-ruby:
+    bump: none
+    reason: Query and index improvements preserve Ruby SDK ingestion payloads and
+      responses; no gem update is required.
+  logister-js:
+    bump: none
+    reason: Query and index improvements preserve JavaScript SDK ingestion payloads
+      and responses; no npm package update is required.
+  logister-python:
+    bump: none
+    reason: Query and index improvements preserve Python SDK ingestion payloads and
+      responses; no package update is required.
+  logister-dotnet:
+    bump: none
+    reason: Query and index improvements preserve .NET SDK ingestion payloads and
+      responses; no NuGet package update is required.
+  logister-android:
+    bump: none
+    reason: Mobile summary caching and query improvements preserve Android ingestion
+      and setup contracts; no Maven package update is required.
+  logister-ios:
+    bump: none
+    reason: Mobile summary caching and query improvements preserve iOS ingestion and
+      symbol-upload contracts; no Swift package update is required.
   logister-cli:
     bump: none
-    reason: Database access paths change without altering CLI requests, response schemas, canonical correlation IDs, or cursor ordering; existing clients remain compatible and no package release is required.
+    reason: Queries preserve CLI request and response schemas, canonical correlation
+      IDs, and cursor ordering; existing signed cursors remain accepted and no package
+      update is required.

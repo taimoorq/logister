@@ -33,7 +33,8 @@ module Github
         "github_installation_token",
         installation.installation_id,
         repository_ids,
-        permissions
+        permissions,
+        stateless_s2s_token_override
       ]
     end
 
