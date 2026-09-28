@@ -5180,3 +5180,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Connected request evidence: a compact record rail using existing semantic roles. */
+.connection-evidence { padding: 1rem; margin-block: 1rem; color: var(--app-text); min-width: 0; }
+.connection-evidence-header h2 { font-size: 1rem; font-weight: 800; }
+.connection-evidence-header p, .connection-evidence-summary p { color: var(--app-muted-text); font-size: .8rem; margin-top: .3rem; }
+.connection-evidence-summary { border-inline-start: 3px solid var(--app-control-border); padding: .6rem .85rem; margin-block: 1rem; background: var(--app-surface-subtle); }
+.connection-evidence-row { border-top: 1px solid var(--app-border); padding-block: 1rem; overflow-wrap: anywhere; }
+.connection-evidence-identity { display: flex; flex-wrap: wrap; gap: .4rem .8rem; align-items: baseline; }
+.connection-evidence-identity span { color: var(--app-muted-text); font-size: .78rem; }
+.connection-evidence-link { flex-basis: 100%; text-decoration: underline; font-weight: 600; }
+.connection-evidence-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .7rem 1.2rem; margin-block: .8rem; }
+.connection-evidence-facts > div { min-width: 0; }
+.connection-evidence-facts dt { color: var(--app-muted-text); font-size: .72rem; }
+.connection-evidence-facts dd { font-size: .82rem; overflow-wrap: anywhere; }
+.connection-evidence details > summary { cursor: pointer; min-height: 2rem; padding-block: .4rem; font-size: .8rem; }
+.connection-evidence-range { border-top: 1px solid var(--app-border); padding-top: .5rem; }
+.connection-evidence-facts input { max-width: 100%; }

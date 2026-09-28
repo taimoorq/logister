@@ -1,0 +1,99 @@
+<%= render "projects/header" unless turbo_frame_request? %>
+<%= turbo_frame_tag "connected_evidence" do %>
+  <section class="connection-evidence card" aria-labelledby="connected-evidence-title">
+    <header class="connection-evidence-header">
+      <h2 id="connected-evidence-title">Connected impact</h2>
+      <p>Investigate related issues, API performance and release evidence across apps and backends.</p>
+    </header>
+    <% if @error %>
+      <p role="alert"><%= @error %></p>
+    <% end %>
+    <%= form_with url: connections_project_path(@project), method: :get, data: { turbo_action: "advance" } do |form| %>
+      <div class="connection-evidence-facts">
+        <div><%= form.label :environment, "This project's environment" %><%= form.text_field :environment, value: @filters["environment"].presence || "production", class: "form-input", required: true %></div>
+        <div><%= form.label :connected_project, "Connected project" %><%= form.select :connected_project, options_for_select(Array(@report&.dig(:peers)).map { |peer| [peer[:name], peer[:uuid]] }, @filters["connected_project"]), { include_blank: "All accessible connections" }, class: "form-input" %></div>
+        <div><%= form.label :from, "From (ISO 8601)" %><%= form.text_field :from, value: @filters["from"] || @report&.dig(:from), class: "form-input", required: true %></div>
+        <div><%= form.label :to, "To (ISO 8601)" %><%= form.text_field :to, value: @filters["to"] || @report&.dig(:to), class: "form-input", required: true %></div>
+        <div><%= form.label :release, "This project's release" %><%= form.text_field :release, value: @filters["release"], class: "form-input" %></div>
+        <div><%= form.label :app_version, "This app's version" %><%= form.text_field :app_version, value: @filters["app_version"], class: "form-input" %></div>
+        <div><%= form.label :build_number, "This app's build" %><%= form.text_field :build_number, value: @filters["build_number"], class: "form-input" %></div>
+        <div><%= form.label :peer_release, "Connected project's release" %><%= form.text_field :peer_release, value: @filters["peer_release"], class: "form-input" %></div>
+        <div><%= form.label :peer_app_version, "Connected app's version" %><%= form.text_field :peer_app_version, value: @filters["peer_app_version"], class: "form-input" %></div>
+        <div><%= form.label :peer_build_number, "Connected app's build" %><%= form.text_field :peer_build_number, value: @filters["peer_build_number"], class: "form-input" %></div>
+      </div>
+      <%= form.hidden_field :group_uuid, value: @filters["group_uuid"] if @filters["group_uuid"].present? %>
+      <%= form.hidden_field :deployment_uuid, value: @filters["deployment_uuid"] if @filters["deployment_uuid"].present? %>
+      <label><%= form.check_box :only_errors, checked: @filters["only_errors"] == "1" %> Pairs with an observed error</label>
+      <%= form.submit "Inspect evidence", class: "btn-primary" %>
+    <% end %>
+    <% if @report %>
+      <div class="connection-evidence-summary">
+        <strong><%= @report[:matched_anchor_count] %> of <%= @report[:anchor_count] %> inspected records have connected evidence</strong>
+        <p>Up to <%= @report[:limit] %> recent eligible records from this project in the selected window. Peers include matching records only. Counts are observed evidence, not total traffic or unique people. Matches are limited to 15 minutes around each record.</p>
+        <% if @report[:partial] %><p role="status"><strong>Partial evidence.</strong> Retention, read limits or result limits reduced coverage. Narrow the window; missing matches do not prove an absence of failures.</p><% end %>
+        <% if @filters["group_uuid"].present? %><p>Scoped to this issue's retained event records. Historical occurrences without retained event payloads are unavailable.</p><% end %>
+      </div>
+      <%= link_to "Export this evidence as JSON", connections_project_path(@project, @filters.merge(from: @report[:from], to: @report[:to], format: :json)), class: "btn-ghost", data: { turbo: false } %>
+      <% if (comparison = @report[:comparison]) %>
+        <section aria-label="Deployment comparison">
+          <h3 class="font-bold mt-4">Around deployment <%= comparison[:release] %></h3>
+          <p class="text-sm text-slate-600">Observed related error events before and after <%= local_time_tag(Time.iso8601(comparison[:deployed_at]), format: :long) %>. Windows: <%= number_with_precision(comparison[:before_seconds] / 3600.0, precision: 1) %> hours before; <%= number_with_precision(comparison[:after_seconds] / 3600.0, precision: 1) %> hours after. These counts are not traffic-adjusted rates or proof of regression or recovery.</p>
+          <% comparison[:projects].each do |row| %><p class="mt-2"><strong><%= row[:project_name] %></strong> · <%= row[:before_errors] %> before / <%= row[:after_errors] %> after</p><% end %>
+        </section>
+      <% end %>
+      <section aria-label="Connection verification">
+        <h3 class="font-bold mt-4">Connection verification</h3>
+        <% if @report[:peers].empty? %><p>No enabled, accessible connection maps this environment. Review Connected projects in Integrations.</p><% end %>
+        <% @report[:peers].each do |peer| %>
+          <% pairs = @report[:pairs].select { |pair| pair[:peer][:project_uuid] == peer[:uuid] } %>
+          <p class="mt-2"><strong><%= peer[:name] %></strong> · <%= peer[:environments].join(", ") %> ·
+            <% if pairs.any? %>Matching request evidence observed. Latest match <%= local_time_tag(Time.iso8601(pairs.map { |pair| pair[:anchor][:occurred_at] }.max), format: :long) %>.
+            <% else %>No matching evidence in this inspection. Verify SDK instrumentation, both project settings and exact environment mappings.<% end %>
+          </p>
+        <% end %>
+      </section>
+      <% if @report[:impact].any? %>
+        <section aria-label="Observed mobile impact">
+          <h3 class="font-bold mt-4">Observed mobile impact</h3>
+          <% @report[:impact].each do |impact| %>
+            <p class="mt-2"><strong><%= impact[:project_name] %></strong>: <%= pluralize(impact[:matched_errors], "matched error event") %> · <%= impact[:installations].nil? ? "Installation IDs not collected" : "#{impact[:installations]} affected installations" %> · <%= impact[:sessions].nil? ? "Session IDs not collected" : "#{impact[:sessions]} affected sessions" %>.</p>
+            <p class="text-sm text-slate-600"><%= impact[:installation_observations] %>/<%= impact[:matched_errors] %> events supply installation identity; <%= impact[:session_observations] %>/<%= impact[:matched_errors] %> supply session identity. Each app is counted independently.</p>
+          <% end %>
+        </section>
+      <% end %>
+      <section aria-label="Request and release evidence">
+        <h3 class="font-bold mt-4">Requests by operation and release</h3>
+        <p class="text-sm text-slate-600">Failures count recorded errors or HTTP 4xx/5xx responses among known outcomes. P95 uses captured durations. Each row measures one project's request spans; client and server times are not added or subtracted.</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm mt-3">
+            <thead><tr><th class="p-2">Project / operation</th><th class="p-2">Release / app build</th><th class="p-2">Requests</th><th class="p-2">Failures / known outcomes</th><th class="p-2">P95</th><th class="p-2">Error events / issues</th></tr></thead>
+            <tbody>
+              <% @report[:metrics].each do |metric| %>
+                <tr class="border-t border-slate-200">
+                  <td class="p-2"><strong><%= metric[:project_name] %></strong><br><%= link_to metric[:operation].presence || "Open evidence", correlation_record_path(metric[:example]), data: { turbo_frame: "_top" } %></td>
+                  <td class="p-2"><%= metric[:release].presence || "Not captured" %><br><%= [metric[:app_version], metric[:build_number]].compact.join(" / ") %></td>
+                  <td class="p-2"><%= metric[:requests] %></td><td class="p-2"><%= metric[:failed_requests] %> / <%= metric[:known_outcomes] %></td>
+                  <td class="p-2"><%= metric[:p95_ms] ? "#{number_with_precision(metric[:p95_ms], precision: 1)} ms" : "Not captured" %><br><small><%= metric[:duration_count] %> durations<% if metric[:duration_scope].present? %> · <%= metric[:duration_scope].humanize %><% end %></small></td>
+                  <td class="p-2"><%= metric[:errors] %> / <%= metric[:issues] %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section aria-label="Related occurrences">
+        <h3 class="font-bold mt-4">Related occurrences</h3>
+        <p class="text-sm text-slate-600">A shared trace may include several calls. Parent/child spans provide more specific request evidence; no match proves cause.</p>
+        <% if @report[:pairs].empty? %><p class="mt-3">No related occurrences found in this inspection.</p><% end %>
+        <% if @report[:pairs].size > 50 %><p>Showing 50 of <%= @report[:pairs].size %> inspected pairs. Narrow the window or export the bounded evidence to inspect the rest.</p><% end %>
+        <% @report[:pairs].first(50).each do |pair| %>
+          <details class="connection-evidence-row">
+            <summary><%= pair[:anchor].dig(:issue, :title).presence || pair[:anchor][:operation].presence || pair[:anchor][:type] %> → <%= pair[:peer][:project_name] %>: <%= pair[:peer].dig(:issue, :title).presence || pair[:peer][:operation].presence || pair[:peer][:type] %> · <%= correlation_evidence_label(evidence: pair[:evidence]) %></summary>
+            <%= render "project_correlations/record", item: pair[:anchor] %>
+            <%= render "project_correlations/record", item: pair[:peer].merge(evidence: pair[:evidence]) %>
+          </details>
+        <% end %>
+      </section>
+    <% end %>
+  </section>
+<% end %>

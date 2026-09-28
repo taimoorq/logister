@@ -492,3 +492,14 @@ Android POM/AAR pairs before declaring the Android release complete. Application
 token issuers belong in the explicit URL exclusion list. Automatic crashes and
 OS diagnostics are not matched to a recent request. See
 [request correlation](request-correlation.md) for the wire contract and rollout.
+
+## HTTP outcome enrichment in the 3.8 release set
+
+Android and iOS 0.6.1 are independent release targets for optional structured
+HTTP method, status, failure category, attempt and measurement-scope metadata.
+Older SDK payloads remain accepted. URLSession measures through the body,
+HttpURLConnection through the caller callback, and OkHttp through headers.
+No extra bodies, headers or identity propagation are introduced. See
+[connected impact](request-correlation.md#connected-impact-and-enriched-requests-38)
+for the bounded report, permissions and coverage semantics. Verify each target
+in Maven Central or Swift Package Manager before changing application versions.

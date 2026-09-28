@@ -23,11 +23,16 @@ RSpec.describe "Correlation PostgreSQL / ClickHouse parity" do
     clickhouse = query.send(:clickhouse_rows, client, project, [ "production" ], "error")
     expect(clickhouse.map { |row| row.slice("uuid", "trace_id") }).to eq(postgres.map { |row| row.slice("uuid", "trace_id") })
 
-    span = create(:trace_span, project:, trace_id: trace, parent_span_id: "remote-parent", context: { environment: "production", request: { id: "request-1" } })
+    span = create(:trace_span, project:, trace_id: trace, parent_span_id: "remote-parent", context: { environment: "production", request: { id: "request-1" }, http: { status_code: 503, method: "POST", attempt: 2, failure_kind: "http", duration_scope: "response_headers" }, app: { version_name: "4.2", version_code: 12 } })
     client.insert_span!(Logister::SpanIngestor.new(span:, clickhouse_client: client).attributes)
     pg_spans = query.send(:postgres_rows, project, [ "production" ], "span")
     ch_spans = query.send(:clickhouse_rows, client, project, [ "production" ], "span")
     expect(ch_spans.map { |row| row.slice("uuid", "trace_id", "span_id", "parent_span_id", "request_id", "operation") }).to eq(pg_spans.map { |row| row.slice("uuid", "trace_id", "span_id", "parent_span_id", "request_id", "operation") })
+    fields = %w[http_status_code http_method failure_kind attempt duration_scope app_version build_number status kind duration_ms]
+    expect(ch_spans.map { |row| row.slice(*fields) }).to eq(pg_spans.map { |row| row.slice(*fields) })
+    expect(ch_spans.first.fetch("http_status_code")).to eq("503")
+    reader = ProjectCorrelationRecords.new(from: 1.hour.ago, to: 1.hour.from_now, identities: [ CorrelationContext.new(trace_id: trace) ], filters: { build_number: "12" }, newest_first: true)
+    expect(reader.send(:clickhouse_rows, client, project, [ "production" ], "span").pluck("uuid")).to eq([ span.uuid ])
     performance = Logister::ClickhousePerformanceQuery.new(project:, since: 1.hour.ago, to: 1.hour.from_now, limit: 50, client:).call
     expect(performance[:root_rows].map { |row| row.fetch("span_id") }).to include(span.uuid)
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: "3.7.2"
+  version: "3.8.0"
   summary: Send telemetry to Logister and build authorized read-only CLI clients.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the
@@ -58,8 +58,8 @@ paths:
                 current:
                   value:
                     server: logister
-                    server_version: "3.7.2"
-                    api_contract_version: "3.7.2"
+                    server_version: "3.8.0"
+                    api_contract_version: "3.8.0"
                     api_contract_sha256: 28b02964e64dcd1f6dc9ba2c5ca1b417f93ee360420a4f1c173bc45d61663a36
                     minimum_cli_version: "0.1.0"
                     recommended_cli_version: "1.1.0"
@@ -1742,33 +1742,59 @@ components:
               source: {type: string, enum: [postgresql, clickhouse]}
               partial: {type: boolean}
             additionalProperties: true
+        anchor:
+          $ref: "#/components/schemas/CliCorrelationRecord"
         items:
           type: array
           maxItems: 500
           items:
-            type: object
-            required: [project_uuid, project_name, uuid, type, occurred_at, evidence, environment]
-            properties:
-              project_uuid: {type: string, format: uuid}
-              project_name: {type: string, maxLength: 100}
-              uuid: {type: string, format: uuid}
-              type: {type: string, enum: [error, log, transaction, span]}
-              occurred_at: {type: string, format: date-time}
-              evidence: {type: string, enum: [parent_span, shared_trace, shared_request_id]}
-              trace_id: {type: string, maxLength: 128}
-              span_id: {type: string, maxLength: 128}
-              parent_span_id: {type: string, maxLength: 128}
-              request_id: {type: string, maxLength: 200}
-              environment: {type: string, maxLength: 100}
-              release: {type: string, maxLength: 200}
-              operation: {type: string, maxLength: 512}
-              deployment:
-                type: object
-                properties:
-                  uuid: {type: string, format: uuid}
-                  release: {type: string}
-                  evidence: {type: string, const: exact_release}
-                  repository: {type: string}
+            $ref: "#/components/schemas/CliCorrelationRecord"
+    CliCorrelationRecord:
+      type: object
+      description: Bounded authorized evidence. Optional fields are absent when not captured or no longer retained. Durations retain their producer's measurement scope; identifiers do not prove causation.
+      required: [project_uuid, project_name, uuid, type, occurred_at, evidence, environment]
+      properties:
+        project_uuid: {type: string, format: uuid}
+        project_name: {type: string, maxLength: 100}
+        integration: {type: string}
+        uuid: {type: string, format: uuid}
+        type: {type: string, enum: [error, log, transaction, span]}
+        occurred_at: {type: string, format: date-time}
+        evidence: {type: string, enum: [parent_span, shared_trace, shared_request_id]}
+        trace_id: {type: string, maxLength: 128}
+        span_id: {type: string, maxLength: 128}
+        parent_span_id: {type: string, maxLength: 128}
+        request_id: {type: string, maxLength: 200}
+        environment: {type: string, maxLength: 100}
+        release: {type: string, maxLength: 200}
+        operation: {type: string, maxLength: 512}
+        duration_ms: {type: number, minimum: 0}
+        duration_scope: {type: string, maxLength: 100}
+        status: {type: string, enum: [ok, error, unset]}
+        kind: {type: string}
+        http_method: {type: string, maxLength: 100}
+        http_status_code: {type: integer, minimum: 100, maximum: 599}
+        failure_kind: {type: string, maxLength: 100}
+        attempt: {type: integer, minimum: 1, maximum: 1000}
+        app_version: {type: string, maxLength: 100}
+        build_number: {type: string, maxLength: 100}
+        device_model: {type: string, maxLength: 100}
+        os_version: {type: string, maxLength: 100}
+        issue:
+          type: object
+          properties:
+            uuid: {type: string, format: uuid}
+            title: {type: string, maxLength: 200}
+            status: {type: string}
+            assignee: {type: string, maxLength: 200}
+        deployment:
+          type: object
+          properties:
+            uuid: {type: string, format: uuid}
+            release: {type: string}
+            evidence: {type: string, const: exact_release}
+            repository: {type: [string, "null"]}
+            deployed_at: {type: string, format: date-time}
     CliEventList:
       allOf:
         - $ref: "#/components/schemas/CliListEnvelope"

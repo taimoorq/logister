@@ -227,7 +227,7 @@ module ApplicationHelper
     return {} unless respond_to?(:request) && request
 
     profile = project_experience(project)
-    allowed = profile.filters.map { |definition| definition.key.to_s } + [ "sort" ]
+    allowed = profile.filters.map { |definition| definition.key.to_s } + [ "sort", "connected" ]
     request.query_parameters.slice(*allowed).compact_blank
   end
 

@@ -11,22 +11,24 @@ class ErrorGroupJsonExporter
   RESPONSE_BUDGET_MARGIN = 4.kilobytes
   EVENT_CONTEXT_BYTES_LIMIT = 64.kilobytes
 
-  def self.call(project:, group:, include_occurrences: false, generated_at: Time.current, logister_url: nil)
+  def self.call(project:, group:, include_occurrences: false, generated_at: Time.current, logister_url: nil, connected_evidence: nil)
     new(
       project: project,
       group: group,
       include_occurrences: include_occurrences,
       generated_at: generated_at,
-      logister_url: logister_url
+      logister_url: logister_url,
+      connected_evidence:
     ).call
   end
 
-  def initialize(project:, group:, include_occurrences:, generated_at:, logister_url:)
+  def initialize(project:, group:, include_occurrences:, generated_at:, logister_url:, connected_evidence: nil)
     @project = project
     @group = group
     @include_occurrences = include_occurrences
     @generated_at = generated_at
     @logister_url = logister_url
+    @connected_evidence = connected_evidence
   end
 
   def call
@@ -44,6 +46,7 @@ class ErrorGroupJsonExporter
       "deployment_context" => deployment_context_payload(latest_event),
       "external_links" => external_links_payload
     }
+    payload["connected_evidence"] = @connected_evidence if @connected_evidence
     bounded = Logister::BoundedJsonPayload.call(
       payload,
       max_bytes: RESPONSE_BYTES_LIMIT - RESPONSE_BUDGET_MARGIN

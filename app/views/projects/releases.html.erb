@@ -68,6 +68,7 @@
               <tr>
                 <td class="px-4 py-4 align-top">
                   <strong class="block text-slate-900"><%= release.label %></strong>
+                  <% if ProjectCorrelationPolicy.enabled?(@project) %><%= link_to "Connected evidence", connections_project_path(@project, app_version: release.app_version, build_number: release.build_number), class: "text-sm underline" %><% end %>
                   <span class="mt-1 block text-xs text-slate-500"><%= release.platform.presence || @project.integration_label %></span>
                 </td>
                 <td class="px-4 py-4 align-top text-slate-700"><%= release.channel_label %></td>
@@ -103,3 +104,5 @@
     </nav>
   <% end %>
 </section>
+
+<%= render "project_connections/entry", project: @project %>

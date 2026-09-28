@@ -3,8 +3,12 @@ class ProjectCorrelationPolicy
   class TooManyProjects < StandardError; end
 
   def self.enabled?(project)
-    %w[1 true yes on].include?(ENV.fetch("LOGISTER_CROSS_PROJECT_CORRELATIONS", "false").downcase) &&
+    instance_enabled? &&
       project.cross_project_correlations_enabled? && !project.archived? && !project.purge_pending?
+  end
+
+  def self.instance_enabled?
+    %w[1 true yes on].include?(ENV.fetch("LOGISTER_CROSS_PROJECT_CORRELATIONS", "false").downcase)
   end
 
   # The caller passes a user or a CLI token, both of which resolve current access.

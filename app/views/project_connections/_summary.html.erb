@@ -1,0 +1,14 @@
+<%= turbo_frame_tag "connected_evidence_summary" do %>
+  <section class="connection-evidence card" aria-label="Connected project evidence">
+    <header class="connection-evidence-header"><h2>Connected project evidence</h2><p>Last inspection window: <%= report ? "#{report[:from]} – #{report[:to]}" : "unavailable" %>. Environment: <%= filters["environment"].presence || "production" %>.</p></header>
+    <% if error %><p role="status"><%= error %></p><% end %>
+    <% if report %>
+      <p class="mt-2"><strong><%= report[:matched_anchor_count] %> / <%= report[:anchor_count] %></strong> inspected records have connected evidence.</p>
+      <p class="text-sm text-slate-600">Bounded observed evidence; peers include matching records only.<%= " Partial coverage: narrow the window to investigate." if report[:partial] %></p>
+      <% report[:metrics].first(6).each do |metric| %>
+        <p class="mt-2 text-sm"><strong><%= metric[:project_name] %></strong> · <%= metric[:operation].presence || "Error evidence" %> · <%= metric[:requests] %> request spans · <%= metric[:failed_requests] %>/<%= metric[:known_outcomes] %> failed/known outcomes · <%= metric[:errors] %> error events<% if metric[:p95_ms] %> · P95 <%= number_with_precision(metric[:p95_ms], precision: 1) %> ms<% if metric[:duration_scope].present? %> (<%= metric[:duration_scope].humanize %>)<% end %><% end %></p>
+      <% end %>
+    <% end %>
+    <%= link_to "Inspect connected impact", connections_project_path(project, filters), class: "btn-ghost mt-2", data: { turbo_frame: "_top" } %>
+  </section>
+<% end %>

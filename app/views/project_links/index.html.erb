@@ -11,6 +11,7 @@
       <%= form.submit "Save setting", class: "btn-ghost" %>
     <% end %>
     <p class="text-sm text-slate-600">Enable this setting in each linked project. Connections do not change who can access either project.</p>
+    <% unless ProjectCorrelationPolicy.instance_enabled? %><p role="status" class="text-sm text-slate-600">Related requests are disabled for this Logister instance. An instance operator must enable cross-project correlations before request evidence can be inspected.</p><% end %>
   </section>
 
   <section class="settings-panel space-y-5" aria-labelledby="link-project-title">
@@ -66,6 +67,7 @@
       <div class="rounded-lg border border-slate-200 p-4 space-y-3">
         <p class="text-sm text-slate-900 break-words"><strong><%= link.source_project.name %></strong> (<%= link.source_project.integration_label %>) sends requests to <strong><%= link.target_project.name %></strong> (<%= link.target_project.integration_label %>).</p>
         <% link.environment_pairs.each do |pair| %>
+          <% if ProjectCorrelationPolicy.enabled?(@project) %><%= link_to "Verify request evidence", connections_project_path(@project, connected_project: (link.source_project_id == @project.id ? link.target_project.uuid : link.source_project.uuid), environment: pair[link.source_project_id == @project.id ? "source" : "target"]), class: "btn-ghost" %><% end %>
           <p class="text-sm text-slate-600 break-words">App environment: <strong><%= pair["source"] %></strong> → Backend environment: <strong><%= pair["target"] %></strong></p>
         <% end %>
         <% [link.source_project, link.target_project].reject(&:cross_project_correlations_enabled?).each do |project| %>

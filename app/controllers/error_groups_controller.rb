@@ -13,6 +13,7 @@ class ErrorGroupsController < ApplicationController
       project: @project,
       group: @group,
       include_occurrences: include_occurrences,
+      connected_evidence: connected_export_evidence,
       logister_url: inbox_project_url(@project, group_uuid: @group.uuid)
     )
 
@@ -53,6 +54,22 @@ class ErrorGroupsController < ApplicationController
   end
 
   private
+
+  def connected_export_evidence
+    return unless ActiveModel::Type::Boolean.new.cast(params[:include_connected_evidence])
+
+    event = @group.latest_event_record
+    return { state: "unavailable", reason: "The latest occurrence is outside retained event evidence." } unless event
+
+    result = ProjectCorrelationsQuery.call(principal: current_user, project: @project, event:)
+    if result[:items].size > 50
+      result[:items] = result[:items].first(50)
+      result[:truncated] = result[:partial] = true
+    end
+    { scope: "latest_retained_occurrence", occurrence_uuid: event.uuid, **result }
+  rescue ActiveRecord::QueryCanceled, ProjectCorrelationPolicy::TooManyProjects
+    { state: "unavailable", reason: "Connected evidence could not be retrieved within the query limits." }
+  end
 
   def set_project
     @project = current_user.accessible_projects.find_by!(uuid: params[:project_uuid])

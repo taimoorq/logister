@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: connected-project-enrichment
+release_version: 3.8.0
+summary: Enrich connected requests, bounded impact reports, notifications and exports
+  with authorized evidence.
+backend:
+  bump: minor
+  compatibility: expand
+  activation: backend_first_dark
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: 14ec60dbf1baa77d2ff8a38d066cf76340a9b13dcf972c8d684af9129b1380a3
+  telemetry_ingest: 33357b6d881dbe6449a812546d9ab0b0da422a86083c9343481fe654c1da5267
+  integration_discovery: df475b8570c7a974591111aa22f927683d4740127977d57352d0adbabe5ee55b
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Existing request context remains compatible; no additional Ruby SDK change
+      is needed for enriched reads.
+  logister-js:
+    bump: none
+    reason: Existing request context remains compatible; no additional JavaScript
+      SDK change is needed for enriched reads.
+  logister-python:
+    bump: none
+    reason: Existing request context remains compatible; no additional Python SDK
+      change is needed for enriched reads.
+  logister-dotnet:
+    bump: none
+    reason: Existing request context remains compatible; no additional .NET SDK change
+      is needed for enriched reads.
+  logister-android:
+    bump: patch
+    reason: Add optional HTTP outcome and duration-scope metadata and capture pre-network
+      OkHttp failures.
+  logister-ios:
+    bump: patch
+    reason: Add optional HTTP outcome and duration-scope metadata without changing
+      URLSession response handling.
+  logister-cli:
+    bump: patch
+    reason: Review the additive 3.8 API contract and display HTTP outcome and duration
+      in related-request output.

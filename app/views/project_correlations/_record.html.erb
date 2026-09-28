@@ -1,0 +1,26 @@
+<article class="connection-evidence-row">
+  <div class="connection-evidence-identity">
+    <strong><%= item[:project_name] %></strong>
+    <span class="text-muted"><%= item[:integration]&.humanize %> · <%= item[:environment] %> · <%= item[:type] %></span>
+    <%= link_to item.dig(:issue, :title).presence || item[:operation].presence || "Open #{item[:type]}", correlation_record_path(item), data: { turbo_frame: "_top" }, class: "connection-evidence-link" %>
+  </div>
+  <dl class="connection-evidence-facts">
+    <div><dt>Outcome</dt><dd><%= correlation_outcome(item) %><% if item[:failure_kind] %> · <%= item[:failure_kind].humanize %><% end %></dd></div>
+    <% if item[:duration_ms] %><div><dt>Recorded duration</dt><dd><%= number_with_precision(item[:duration_ms], precision: 1) %> ms<% if item[:duration_scope] %> · <%= item[:duration_scope].humanize %><% end %></dd></div><% end %>
+    <% if item[:http_method] %><div><dt>HTTP method / attempt</dt><dd><%= item[:http_method] %><%= " / #{item[:attempt]}" if item[:attempt] %></dd></div><% end %>
+    <% if item[:release] %><div><dt>Release</dt><dd><code><%= item[:release] %></code></dd></div><% end %>
+    <% if item[:app_version] || item[:build_number] %><div><dt>App version / build</dt><dd><%= [item[:app_version], item[:build_number]].compact.join(" / ") %></dd></div><% end %>
+    <% if item[:device_model] || item[:os_version] %><div><dt>Device / OS</dt><dd><%= [item[:device_model], item[:os_version]].compact.join(" / ") %></dd></div><% end %>
+    <% if item[:issue] %><div><dt>Issue ownership</dt><dd><%= item[:issue][:status].humanize %> · <%= item[:issue][:assignee].presence || "Unassigned" %></dd></div><% end %>
+    <% if item[:deployment] %><div><dt>Deployment</dt><dd><%= link_to item[:deployment][:release], deployments_project_path(item[:project_uuid]), data: { turbo_frame: "_top" } %> · Exact release match</dd></div><% end %>
+  </dl>
+  <%= link_to item[:type] == "span" ? "Open request" : "Open occurrence", correlation_record_path(item), data: { turbo_frame: "_top" }, class: "btn-ghost" %>
+  <details class="connection-evidence-details">
+    <summary><%= correlation_evidence_label(item) || "Request identifiers" %> · <%= local_time_tag(Time.iso8601(item[:occurred_at]), format: :long) %></summary>
+    <dl class="connection-evidence-facts">
+      <% %i[trace_id span_id parent_span_id request_id].each do |key| %>
+        <% if item[key] %><div><dt><%= key.to_s.humanize %></dt><dd><code><%= item[key] %></code></dd></div><% end %>
+      <% end %>
+    </dl>
+  </details>
+</article>

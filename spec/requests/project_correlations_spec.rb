@@ -38,7 +38,7 @@ RSpec.describe "Project correlations", type: :request do
     backend = create(:project, user:, cross_project_correlations_enabled: true)
     ProjectLink.connect!(actor: user, source: mobile, target: backend, environment_pairs: [ { "source" => "production", "target" => "production" } ])
     event = create(:ingest_event, project: mobile, context: { trace_id: "synthetic-cli-trace" })
-    related = create(:ingest_event, project: backend, context: event.context)
+    related = create(:ingest_event, :grouped, project: backend, context: event.context.merge(http: { status_code: 503 }))
     path = "/api/v1/cli/projects/#{mobile.uuid}/events/#{event.uuid}/correlations"
     allow(ProjectCorrelationPolicy).to receive(:enabled?).and_return(true)
     key = create(:api_key, project: mobile, user:)
@@ -54,5 +54,9 @@ RSpec.describe "Project correlations", type: :request do
     token.update!(allowed_project_ids: [ mobile.id, backend.id ])
     get path, headers: { "Authorization" => "Bearer #{token.plain_token}" }
     expect(response.parsed_body.fetch("items").map { |row| row.fetch("uuid") }).to include(related.uuid)
+    expect(response.parsed_body.dig("anchor", "uuid")).to eq(event.uuid)
+    item = response.parsed_body.fetch("items").find { |row| row["uuid"] == related.uuid }
+    expect(item["http_status_code"]).to eq(503)
+    expect(item.dig("issue", "uuid")).to eq(related.error_group.uuid)
   end
 end

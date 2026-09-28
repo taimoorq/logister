@@ -29,6 +29,8 @@ RSpec.describe ApplicationHelper, type: :helper do
 
   describe "#layout_theme" do
     before do
+      # Devise generates user-specific helpers when Rails finalizes lazy routes.
+      Rails.application.routes.url_helpers.new_user_session_path
       allow(helper).to receive(:user_signed_in?).and_return(false)
       allow(helper).to receive(:devise_controller?).and_return(false)
     end

@@ -71,8 +71,8 @@ used to choose a backend deployment.
 
 Default range is ±15 minutes, with a 24-hour maximum. Limits: ten neighbors,
 500 rows per signal query, 500 returned rows, 1 MiB serialized payload. Only
-bounded operation/identity metadata is returned, not messages, headers, bodies,
-or arbitrary context. PostgreSQL statement timeout uses the existing bounded
+bounded request metadata and authorized issue summaries are returned, not event
+messages, headers, bodies, or arbitrary context. PostgreSQL statement timeout uses the existing bounded
 CLI setting. ClickHouse reads use coverage-aware routing and deduplicated fact
 views; PostgreSQL fallback retention gaps and truncation remain visible. IDs
 are normalized at ingest and resolved for historical records without a backfill.
@@ -127,3 +127,65 @@ maintainers own package publication and application developers own allowlists.
 Async job propagation, heuristic/time-only relationships, automatic source-code
 endpoint discovery, and complete distributed waterfall views remain outside
 this release. Missing IDs produce an explicit explanation rather than a guess.
+
+## Connected impact and enriched requests (3.8+)
+
+The related-request panel shows observed HTTP outcome, duration and measurement
+scope, app version/build and device metadata when captured. Retained error events
+also link their issue status and owner. **Open request** opens that exact span;
+**Open occurrence** opens the retained event. Each record keeps its own release
+and exact deployment evidence. Older SDKs remain readable with absent metadata.
+
+Use **Inspect connected impact** from overview, inbox, activity, performance/App
+health or releases. In the inbox, **Show connected evidence** computes badges for
+the visible issues with one batched report; **Filter connected impact** opens the
+full report. An issue's detail links a report scoped to that issue's retained
+occurrences. Release links preserve the app version/build; deployment links
+compare observed related errors before and after the selected deployment.
+
+Reports default to the last 24 hours and allow at most seven days. They inspect
+up to 500 recent eligible anchor records, at most 500 candidates per signal per
+peer, 2,000 pairs within a 550 KiB pair budget, and 200 metric rows. Each match is
+within 15 minutes of its anchor. The screen displays the first 50 pairs; its JSON
+export preserves all pairs within those bounds. Limits or storage gaps mark the
+report partial. A missing match does not prove a backend is healthy.
+
+Filters distinguish this project's release/version/build from the connected
+project's release/version/build. The error checkbox restricts pairs to those
+containing an observed error event. Request metrics count unique HTTP/server/
+browser spans, known outcomes, recorded failures or HTTP 4xx/5xx responses, and
+P95 over captured durations. Anchor metrics include inspected unmatched records;
+peer metrics include matches only. These are bounded observations, not traffic
+rates. Duration populations retain their measurement scope; do not subtract
+client and server times to estimate network latency.
+
+Mobile impact counts retained matched error occurrences with installation or
+session evidence, deduplicated inside each mobile project. Missing identity
+coverage is visible. Raw and hashed identities never appear in the report.
+Issue scoping, ownership and identity counts depend on retained PostgreSQL
+evidence; older ClickHouse records may have request metadata without those
+fields. Deployment comparisons show exposure time and observed counts, not
+traffic-adjusted regressions or causal conclusions.
+
+**Verify request evidence** on a connection opens the report for its mapped
+environment and accessible peer. It distinguishes observed matching requests
+from no matching evidence in the selected window. It does not certify SDK
+configuration or header propagation without a captured request.
+
+Issue JSON export adds connected evidence only when requested. It uses the
+latest retained occurrence and limits related records to 50. Existing first-error
+and grouped-alert emails can include up to five related records, authorized for
+the recipient when the message is built. No peer metadata is persisted in the
+notification delivery. Each new download, report and delivery checks current
+access; copies already exported or emailed cannot be recalled.
+
+Android and iOS 0.6.1 optionally add `context.http.method`, `status_code`,
+`failure_kind`, `attempt`, and `duration_scope`. URLSession measures through the
+response body, HttpURLConnection through the caller's consumption callback,
+and OkHttp through response headers. DNS/connect failures before OkHttp network
+interception create one failure record. Body failures after an OkHttp response
+and transport retries invisible to the interceptor are outside its measurement.
+No bodies, headers, URLs or cross-project user identities are added. CLI 1.2.1
+reviews the additive 3.8 response. These are release targets; check the package
+channel before upgrading. Existing independently released correlation SDKs
+remain the minimum for trace propagation.
