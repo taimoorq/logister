@@ -1,0 +1,10 @@
+<% if ProjectCorrelationPolicy.enabled?(project) %>
+  <% connection_filters = local_assigns.fetch(:filters) { params.permit(:environment, :release, :app_version, :build_number).to_h } %>
+  <%= turbo_frame_tag "connected_evidence_summary", src: connections_project_path(project, connection_filters.merge(summary: "1")), loading: :lazy do %>
+    <section class="connection-evidence card" aria-label="Connected project evidence">
+      <strong>Connected project evidence</strong>
+      <p class="text-sm text-slate-600">Inspect related errors, request timing, app builds and backend releases.</p>
+      <%= link_to "Inspect connected impact", connections_project_path(project, connection_filters), class: "btn-ghost mt-2", data: { turbo_frame: "_top" } %>
+    </section>
+  <% end %>
+<% end %>

@@ -2,7 +2,8 @@
   filter: filter,
   q: query,
   assignee: local_assigns[:assignee].presence || "all",
-  sort: local_assigns[:sort]
+  sort: local_assigns[:sort],
+  connected: params[:connected] == "1" ? "1" : nil
 }.merge(local_assigns.fetch(:profile_filters, {})).compact_blank %>
 <turbo-frame id="project_inbox"
              target="error_detail"
@@ -23,6 +24,14 @@
     <h2 class="text-sm font-semibold text-slate-900 uppercase tracking-[0.14em]"><%= experience.inbox_title %></h2>
     <p class="text-xs text-slate-500"><%= groups.size %> shown · <%= experience.sort_options.to_h.key(active_sort).to_s.downcase %></p>
   </header>
+  <% if ProjectCorrelationPolicy.enabled?(project) %>
+    <div class="p-3 text-xs text-slate-600">
+      <%= link_to params[:connected] == "1" ? "Hide connected evidence" : "Show connected evidence", inbox_project_path(project, state_params.merge(connected: params[:connected] == "1" ? nil : "1")), class: "underline", data: { turbo_frame: "project_inbox", turbo_action: "advance" } %>
+      · <%= link_to "Filter connected impact", connections_project_path(project, only_errors: "1"), class: "underline", data: { turbo_frame: "_top" } %>
+      <% if @connection_badge_report %><p>Selected issues · <%= @connection_badge_report[:environment] %> · last 24 hours · up to 500 retained events.<%= " Partial evidence." if @connection_badge_report[:partial] %> No match does not prove no impact.</p><% end %>
+      <% if @connection_badge_error %><p role="status"><%= @connection_badge_error %></p><% end %>
+    </div>
+  <% end %>
   <div class="inbox-table-wrap">
     <% if groups.any? %>
       <div class="inbox-list-scroll">
@@ -96,6 +105,9 @@
                     </span>
                   <% end %>
                   <div class="error-meta-row">
+                    <% if (connected = @connection_badges&.dig(group.uuid)) %>
+                      <%= link_to "#{connected[:occurrences]} with connected evidence · #{connected[:errors]} with related errors", connections_project_path(project, group_uuid: group.uuid, environment: @connection_badge_report[:environment]), class: "error-meta-chip", data: { turbo_frame: "_top" } %>
+                    <% end %>
                     <% if row_presenter.mobile? %>
                       <% if row_presenter.impact_label.present? %><span class="error-meta-chip" title="<%= row_presenter.impact_coverage_label %>"><strong><%= row_presenter.impact_label %></strong><% if row_presenter.impact_coverage_label.present? %><span class="sr-only">, <%= row_presenter.impact_coverage_label %></span><% end %></span><% end %>
                       <span class="error-meta-chip"><%= row_presenter.workflow_label %></span>
@@ -148,7 +160,8 @@
           q: query,
           assignee: assignee_param,
           sort: local_assigns[:sort],
-          cursor: next_cursor
+          cursor: next_cursor,
+          connected: params[:connected] == "1" ? "1" : nil
         }.merge(local_assigns.fetch(:profile_filters, {})).compact_blank %>
         <nav class="inbox-pagination" aria-label="Issue pages">
           <%= link_to "Next #{ProjectInboxQuery::LIMIT} issues",

@@ -100,9 +100,11 @@ Rails.application.routes.draw do
       get :monitors, to: "project_monitors#show"
       get :deployments, to: "project_deployments#index"
       get :activity, to: "project_activity#show"
+      get :connections, to: "project_connections#index"
       get :archives, to: "project_archives#show"
     end
     resources :project_links, only: [ :index, :create, :destroy ], param: :uuid
+    resources :requests, only: :show, controller: "project_requests", param: :uuid
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
     resources :project_memberships, only: [ :create, :update, :destroy ], param: :uuid
     resources :source_repositories, only: [ :create, :update, :destroy ], controller: "project_source_repositories", param: :uuid

@@ -32,7 +32,22 @@ module ProjectInboxData
   def inbox_latest_events(project, groups, profile_filters: {})
     return {} if groups.empty?
 
+    load_inbox_connection_badges(project, groups, profile_filters)
     project_inbox_query(project).latest_events(groups, dimensions: profile_filters)
+  end
+
+  def load_inbox_connection_badges(project, groups, profile_filters)
+    return unless params[:connected] == "1" && ProjectCorrelationPolicy.enabled?(project)
+
+    filters = profile_filters.to_h.stringify_keys.slice("environment", "release", "app_version", "build_number")
+    @connection_badge_report = ProjectConnectionReport.new(principal: current_user, project:, params: filters, group_uuids: groups.map(&:uuid)).call
+    @connection_badges = @connection_badge_report[:pairs].group_by { |pair| pair[:anchor].dig(:issue, :uuid) }.transform_values do |pairs|
+      { occurrences: pairs.map { |pair| pair[:anchor][:uuid] }.uniq.size,
+        errors: pairs.select { |pair| pair[:peer][:type] == "error" }.map { |pair| pair[:anchor][:uuid] }.uniq.size }
+    end
+  rescue ActiveRecord::RecordNotFound, ActiveRecord::QueryCanceled, ProjectCorrelationPolicy::TooManyProjects, ProjectConnectionReport::InvalidScope
+    @connection_badges = {}
+    @connection_badge_error = "Connected evidence is unavailable. Open connected impact to inspect a smaller window."
   end
 
   def inbox_group_trends(project, groups, days: nil, profile_filters: {})

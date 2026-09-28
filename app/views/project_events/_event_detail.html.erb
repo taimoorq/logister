@@ -80,6 +80,9 @@
                   <%= check_box_tag :include_occurrences, "1", false %>
                   <span>Include latest 50 occurrences</span>
                 </label>
+                <% if ProjectCorrelationPolicy.enabled?(project) %>
+                  <label class="detail-export-checkbox"><%= check_box_tag :include_connected_evidence, "1", false %><span>Include connected evidence for the latest retained occurrence</span></label>
+                <% end %>
                 <%= button_tag "Export JSON",
                                type: :submit,
                                name: nil,
@@ -285,6 +288,16 @@
     </section>
   <% end %>
 
+  <% if ProjectCorrelationPolicy.enabled?(project) %>
+    <%= turbo_frame_tag "related_requests", src: correlations_project_event_path(project, event), loading: :lazy do %>
+      <%= link_to "Related requests", correlations_project_event_path(project, event) %>
+    <% end %>
+  <% end %>
+
+  <% if group && ProjectCorrelationPolicy.enabled?(project) %>
+    <%= link_to "Inspect connected impact for this issue", connections_project_path(project, group_uuid: group.uuid, environment: IngestEvent.environment(event)), class: "btn-ghost", data: { turbo_frame: "_top" } %>
+  <% end %>
+
   <%= render "project_events/event_detail_tabs",
              project: project,
              event: event,
@@ -311,9 +324,4 @@
              variant_summary: local_assigns[:variant_summary],
              turbo_frame_id: "error_detail",
              wrapper_classes: "detail-tabs-wrap detail-workspace card" %>
-  <% if ProjectCorrelationPolicy.enabled?(project) %>
-    <%= turbo_frame_tag "related_requests", src: correlations_project_event_path(project, event), loading: :lazy do %>
-      <%= link_to "Related requests", correlations_project_event_path(project, event) %>
-    <% end %>
-  <% end %>
 </turbo-frame>

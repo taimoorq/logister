@@ -4,6 +4,7 @@ class ProjectErrorMailer < ApplicationMailer
     @user = delivery.user
     @project = delivery.project
     @group = delivery.error_group
+    @related_requests = ProjectNotificationCorrelations.call(delivery)
     @metadata = delivery.metadata.to_h
     @event = ProjectNotificationEvidence.event_for(error_group: @group, metadata: @metadata) || @group.latest_event_record
     @evidence = TelemetryEvidence.for(@event)
@@ -45,6 +46,7 @@ class ProjectErrorMailer < ApplicationMailer
     @user = delivery.user
     @project = delivery.project
     @group = delivery.error_group
+    @related_requests = ProjectNotificationCorrelations.call(delivery)
     @preference = ProjectNotificationPreference.for(user: @user, project: @project)
     @notification_label = notification_kind_label(delivery.notification_kind)
     @metadata = delivery.metadata || {}

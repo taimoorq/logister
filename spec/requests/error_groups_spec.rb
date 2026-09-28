@@ -40,6 +40,25 @@ RSpec.describe "Error groups", type: :request do
       expect(payload.fetch("occurrences")).not_to have_key("records")
     end
 
+    it "includes connected evidence only on request and rechecks access before each download" do
+      allow(ProjectCorrelationPolicy).to receive(:enabled?).and_return(true)
+      project.update!(cross_project_correlations_enabled: true)
+      peer = create(:project, user: users(:one), cross_project_correlations_enabled: true)
+      ProjectLink.connect!(actor: users(:one), source: project, target: peer, environment_pairs: [ { "source" => "production", "target" => "production" } ])
+      event = create(:ingest_event, :grouped, project:, context: { trace_id: "export-trace" })
+      create(:trace_span, project: peer, trace_id: "export-trace", context: { secret: "excluded-peer-payload" })
+      path = export_project_error_group_path(project, event.error_group)
+      get path
+      expect(response.parsed_body).not_to have_key("connected_evidence")
+      get path, params: { include_connected_evidence: "1" }
+      expect(response.parsed_body.dig("connected_evidence", "items").first["project_uuid"]).to eq(peer.uuid)
+      expect(response.body).not_to include("excluded-peer-payload")
+      peer.update!(user: users(:two))
+      get path, params: { include_connected_evidence: "1" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(peer.uuid, peer.name)
+    end
+
     it "can render the export inline for preview links" do
       group = create_error_group_for_project
 

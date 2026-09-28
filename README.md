@@ -447,3 +447,16 @@ The Logister name, logo, wordmark, visual identity, and brand assets are not lic
 - npm: https://www.npmjs.com/package/logister-js
 - Maven Central: https://central.sonatype.com/artifact/org.logister/logister-android
 - Swift Package Manager releases: https://github.com/taimoorq/logister-ios/releases
+
+### Investigate connected mobile and backend projects
+
+Logister 3.8 enriches related requests with HTTP outcomes, duration scope, app
+build/device context, issue ownership and exact request links. Connected impact
+reports are available from overview, inbox, activity, performance, releases and
+deployments, with optional inbox evidence badges and JSON exports. Existing
+error emails resolve related context under the recipient's current permissions.
+
+These views require the existing instance/project opt-ins and explicit environment
+mappings. Reports show bounded observed evidence and coverage, not complete
+traffic or proof of root cause. Read the [request correlation guide](https://logister.org/docs/request-correlation/)
+for setup, SDK release requirements and limitations.

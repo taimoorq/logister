@@ -1,0 +1,11 @@
+<% if @related_requests&.any? %>
+  <h2>Related request evidence</h2>
+  <p>Up to five accessible records with matching identifiers. This does not prove cause.</p>
+  <ul>
+    <% @related_requests.each do |item| %>
+      <li><strong><%= item[:project_name] %></strong>: <%= item[:operation].presence || item[:type] %> · <%= item[:environment] %> · <%= item[:release].presence || "Release not captured" %>.
+        <%= link_to "Inspect request evidence", item[:type] == "span" ? project_request_url(item[:project_uuid], item[:uuid], occurred_at: item[:occurred_at], environment: item[:environment]) : project_event_url(item[:project_uuid], item[:uuid]) %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

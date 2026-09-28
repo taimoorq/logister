@@ -2,6 +2,23 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.8.0 - 2026-09-28
+
+### Added
+
+- Follow an exact connected request with HTTP outcome, recorded duration and its measurement scope, app build/device context, issue ownership, and each project's own release evidence.
+- Inspect connected impact from overview, inbox, activity, performance, releases and deployments. Filter either project's release/build, inspect per-project request outcomes and affected mobile installations/sessions, and compare observed errors around a deployment.
+- Load connected evidence badges for visible inbox issues, verify observed request evidence for each connection, and optionally include the latest occurrence's related evidence in issue JSON exports.
+- Add recipient-authorized related requests to existing error emails and additive bounded metadata to the CLI correlation response.
+
+### Upgrade Notes
+
+- No migrations or historical backfill. Existing instance/project correlation switches control these additive reads; connections grant no access. Older SDK payloads remain supported.
+- Android and iOS 0.6.1 add optional HTTP method/status/failure metadata. Durations describe each wrapper's own measurement; client and server times are not added or subtracted. CLI 1.2.1 reviews the enriched contract. Verify package publication before upgrading.
+- Reports inspect up to 500 recent eligible anchor records over at most seven days and show coverage and truncation. Counts describe observed evidence, not total traffic, unique people, or proof of root cause. Issue filters and mobile identity counts require retained PostgreSQL occurrence evidence.
+- Deployment comparisons are observational, not traffic-adjusted. Exported evidence and delivered email cannot be recalled after permissions change; each new lookup/delivery rechecks current access.
+- Disable correlation reads to roll back the new views, or revert the application/SDK independently. Preserve captured telemetry.
+
 ## v3.7.2 - 2026-09-25
 
 ### Improved
