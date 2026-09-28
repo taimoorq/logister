@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "backend": {
-    "version": "3.6.12"
+    "version": "3.7.2"
   },
   "addons": {
     "logister-ruby": {
