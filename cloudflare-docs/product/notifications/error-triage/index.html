@@ -39,6 +39,12 @@
               <table><thead><tr><th>Setting</th><th>What it means in the inbox</th><th>Default</th></tr></thead><tbody><tr><td>New error groups</td><td>Email when a brand-new grouped issue appears in the inbox.</td><td>On</td></tr><tr><td>Reopened error groups</td><td>Email when a group you had resolved, ignored, or archived gets a fresh occurrence and needs another look.</td><td>On</td></tr><tr><td>Lifetime count milestones</td><td>Email when one group's all-time occurrence count reaches a milestone, even if those events were spread out.</td><td>Off</td></tr><tr><td>Single-error volume threshold</td><td>Email when one grouped issue becomes noisy inside the recent window you choose.</td><td>Off, 25 events in 60 minutes</td></tr></tbody></table>
               <div class="note tip"><h4>Do not confuse the thresholds</h4><p>Milestones answer "has this one issue become important over its whole life?" The single-error threshold answers "is this one issue suddenly noisy right now?" Project-wide spike alerts live on the Project health page because they count the whole project, not one group.</p></div>
             </section>
+            <section id="connected-evidence" class="section">
+              <p class="eyebrow">Connected request context · Logister 3.8+</p>
+              <h2>Inspect related evidence from an error email.</h2>
+              <p>When related requests are enabled and an app/backend connection matches the occurrence's environment, existing first-error and grouped-alert emails can include up to five related records. Logister checks the recipient's project access when building the message; the connection itself grants no permissions.</p>
+              <p>These records provide request and release context, not proof of root cause. They do not merge issues, suppress duplicate alerts or change notification eligibility. New deliveries recheck access; already delivered emails cannot be recalled. See <a href="/docs/request-correlation/#impact">connected evidence and export limits</a>.</p>
+            </section>
             <section class="section">
               <p class="eyebrow">Verify</p>
               <h2>Trigger the exact condition you enabled.</h2>
