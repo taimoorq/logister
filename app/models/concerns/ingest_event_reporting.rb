@@ -5,6 +5,7 @@ module IngestEventReporting
     def released_error_groups(project, lookback: 30.days, limit: 6)
       since = lookback.is_a?(ActiveSupport::Duration) ? lookback.ago : lookback
       release_sql = Arel.sql("context->>'release'")
+      error_count = arel_table[:id].count.filter(arel_table[:event_type].eq(event_types.fetch("error")))
       # Discover releases and count their telemetry in the same bounded scan.
       # Counting again without the lookback touched every retained partition.
       releases = released.where(project: project)
@@ -12,8 +13,7 @@ module IngestEventReporting
                          .group(release_sql)
                          .order(Arel.sql("MAX(occurred_at) DESC"), release_sql)
                          .limit(limit)
-                         .pluck(release_sql, Arel.sql("MAX(occurred_at)"), Arel.sql("COUNT(*)"),
-                                Arel.sql("COUNT(*) FILTER (WHERE event_type = #{event_types.fetch('error')})"))
+                         .pluck(release_sql, Arel.sql("MAX(occurred_at)"), Arel.sql("COUNT(*)"), error_count)
       return [] if releases.empty?
 
       release_names = releases.map(&:first)
