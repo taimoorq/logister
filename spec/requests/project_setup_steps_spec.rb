@@ -479,6 +479,24 @@ RSpec.describe "Project setup paths", type: :request do
   describe "mobile projects" do
     let(:android) { create(:project, :android, user: owner, name: "Path Android") }
 
+    it "honors and undoes a skip after an optional step has partial evidence" do
+      make_live(android)
+      expect(ProjectSetupPlan.for(android, viewer: owner).item(:automatic_handler).state).to eq(:partial)
+
+      post project_setup_skips_path(android, key: "automatic_handler")
+      follow_redirect!
+
+      expect(document.at_css("#step-automatic_handler").text).to include("Not needed")
+      plan = ProjectSetupPlan.for(android.reload, viewer: owner)
+      expect(plan.open_recommended_items.map(&:key)).not_to include(:automatic_handler)
+
+      delete project_setup_skip_path(android, key: "automatic_handler")
+      follow_redirect!
+
+      expect(document.at_css("#step-automatic_handler").text).to include("Partial")
+      expect(ProjectSetupPlan.for(android.reload, viewer: owner).open_recommended_items.map(&:key)).to include(:automatic_handler)
+    end
+
     it "uses the same layout with mobile steps" do
       get step_path("receive_data", "mobile_token", android)
 

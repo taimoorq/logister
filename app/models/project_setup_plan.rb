@@ -265,7 +265,7 @@ class ProjectSetupPlan
     blocker = nil
     owner = step.owner
 
-    if state == :pending && skippable?(step) && skipped_keys.include?(step.key)
+    if DONE_STATES.exclude?(state) && skippable?(step) && skipped_keys.include?(step.key)
       state = :skipped
     end
 

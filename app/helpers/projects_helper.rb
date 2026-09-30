@@ -93,14 +93,9 @@ module ProjectsHelper
 
     scope = ProjectTelemetryScope.from(project: page_context.project, source: request.query_parameters)
     params, dropped = case view.key
-    when :activity
-      projection = scope.project_for(:activity)
+    when :activity, :insights, :connections
+      projection = scope.project_for(view.key)
       [ projection.params, projection.dropped ]
-    when :insights
-      projection = scope.project_for(:insights)
-      [ projection.params, projection.dropped ]
-    when :connections
-      [ { environment: scope.environment, release: scope.release, build_number: scope.build_number }.compact, [] ]
     else
       [ {}, [] ]
     end

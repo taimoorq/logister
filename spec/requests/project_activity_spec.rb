@@ -186,7 +186,7 @@ RSpec.describe "Project activity", type: :request do
         api_key = create(:api_key, user: users(:one), project: project, name: "javascript-activity")
         IngestEvent.create!(
           project: project,
-          api_key: api_key,
+          api_key_id: api_key.id,
           event_type: :log,
           level: "warning",
           message: "Queue backlog rising",
@@ -217,7 +217,7 @@ RSpec.describe "Project activity", type: :request do
         api_key = create(:api_key, user: users(:one), project: project, name: "dotnet-activity")
         IngestEvent.create!(
           project: project,
-          api_key: api_key,
+          api_key_id: api_key.id,
           event_type: :log,
           level: "warning",
           message: "Approval queue backlog rising",
@@ -248,7 +248,7 @@ RSpec.describe "Project activity", type: :request do
         api_key = create(:api_key, user: users(:one), project: project, name: "python-activity")
         IngestEvent.create!(
           project: project,
-          api_key: api_key,
+          api_key_id: api_key.id,
           event_type: :log,
           level: "warning",
           message: "Inventory cache miss",

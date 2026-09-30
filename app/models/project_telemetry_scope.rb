@@ -5,6 +5,7 @@ class ProjectTelemetryScope
   ACTIVITY_WINDOWS = %w[24h 7d 30d 90d all].freeze
   INSIGHTS_WINDOWS = %w[1h 6h 24h 7d].freeze
   INBOX_WINDOWS = %w[24h 7d 30d 90d all].freeze
+  CONNECTION_WINDOWS = { "1h" => 1.hour, "6h" => 6.hours, "24h" => 24.hours, "7d" => 7.days }.freeze
   FIELDS = %i[window environment release build_number distribution source platform].freeze
 
   Projection = Data.define(:page, :params, :dropped) do
@@ -101,6 +102,16 @@ class ProjectTelemetryScope
       apple_platform: (platform if project.integration_ios?)
     }.compact
     projection(:inbox, supported, params, window_supported: INBOX_WINDOWS)
+  end
+
+  def project_for_connections
+    supported = %i[window environment release build_number]
+    params = { environment:, release:, build_number: }.compact
+    if (duration = CONNECTION_WINDOWS[window])
+      to = Time.current
+      params.merge!(from: (to - duration).iso8601(6), to: to.iso8601(6))
+    end
+    projection(:connections, supported, params, window_supported: CONNECTION_WINDOWS.keys)
   end
 
   def projection(page, supported, params, window_supported:)

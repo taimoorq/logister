@@ -65,4 +65,33 @@ RSpec.describe "Explore keeps one scope across its views", type: :request do
 
     expect(query_of(sub_links.fetch("Connected"))).to include("environment" => "production", "release" => "9.9")
   end
+
+  it "keeps seven days of evidence when following Events' Connected link" do
+    allow(ProjectCorrelationPolicy).to receive(:instance_enabled?).and_return(true)
+    project.update!(cross_project_correlations_enabled: true)
+    peer = create(:project, :ruby, user: owner, cross_project_correlations_enabled: true)
+    ProjectLink.create!(source_project: project, target_project: peer, created_by: owner,
+                        environment_pairs: [ { "source" => "production", "target" => "production" } ])
+
+    get activity_project_path(project, period: "7d", environment: "production")
+    get sub_links.fetch("Connected")
+
+    expect(response).to have_http_status(:ok)
+    report = controller.instance_variable_get(:@report)
+    expect(Time.iso8601(report[:to]) - Time.iso8601(report[:from])).to eq(7.days.to_i)
+  end
+
+  it "names time windows that Connected cannot preserve" do
+    allow(ProjectCorrelationPolicy).to receive(:instance_enabled?).and_return(true)
+    project.update!(cross_project_correlations_enabled: true)
+    peer = create(:project, :ruby, user: owner, cross_project_correlations_enabled: true)
+    ProjectLink.create!(source_project: project, target_project: peer, created_by: owner,
+                        environment_pairs: [ { "source" => "production", "target" => "production" } ])
+
+    get activity_project_path(project, period: "30d")
+
+    link = Nokogiri::HTML.parse(response.body).css("nav[aria-label='Explore views'] a").find { |candidate| candidate.text.include?("Connected") }
+    expect(link.at_css(".sr-only").text).to include("window does not carry over to this view")
+    expect(query_of(link["href"])).not_to have_key("from")
+  end
 end

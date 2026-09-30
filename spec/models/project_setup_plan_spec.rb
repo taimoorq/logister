@@ -133,6 +133,23 @@ RSpec.describe ProjectSetupPlan do
       expect(plan_for(project).item(:teammates).state).to eq(:complete)
     end
 
+    it "honors a skip of a failing optional integration until evidence completes it" do
+      android = create(:project, :android, user: owner)
+      setting = create(:project_integration_setting, project: android, provider: "google_play", enabled: true,
+                       external_project_id: "com.acme.shop", credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+                       last_imported_at: 2.days.ago,
+                       metadata: { "last_error" => { "message" => "denied", "at" => Time.current.utc.iso8601 } })
+      expect(plan_for(android).item(:google_play).state).to eq(:failed)
+
+      android.setup_steps.create!(key: "google_play", decided_by_user: owner)
+      plan = plan_for(android)
+      expect(plan.item(:google_play).state).to eq(:skipped)
+      expect(plan.attention_item).to be_nil
+
+      setting.update!(metadata: {}, last_imported_at: Time.current)
+      expect(plan_for(android).item(:google_play).state).to eq(:complete)
+    end
+
     it "rejects skipping a required or personal step" do
       expect(project.setup_steps.build(key: "first_event")).not_to be_valid
       expect(project.setup_steps.build(key: "alerts")).not_to be_valid

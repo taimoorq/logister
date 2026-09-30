@@ -58,4 +58,28 @@ RSpec.describe ProjectTelemetryScope do
     expect(scope.to_h).to eq(window: "24h")
     expect(scope.project_for(:insights).params).to eq(window: "24h")
   end
+
+  { "1h" => 1.hour, "6h" => 6.hours, "24h" => 24.hours, "7d" => 7.days }.each do |window, duration|
+    it "preserves #{window} as an absolute Connected time range" do
+      freeze_time do
+        scope = described_class.from(project: create(:project), source: { window:, environment: "staging", release: "1.2" })
+        projection = scope.project_for(:connections)
+
+        expect(projection.params).to eq(environment: "staging", release: "1.2",
+                                       from: (Time.current - duration).iso8601(6), to: Time.current.iso8601(6))
+        expect(projection.dropped).to be_empty
+      end
+    end
+  end
+
+  it "reports unsupported Connected filters while retaining supported dimensions" do
+    scope = described_class.from(project: create(:project, :ios), source: {
+      window: "30d", environment: "production", release: "1.2", build_number: "42",
+      distribution: "testflight", source: "metrickit", platform: "ios"
+    })
+    projection = scope.project_for(:connections)
+
+    expect(projection.params).to eq(environment: "production", release: "1.2", build_number: "42")
+    expect(projection.dropped).to contain_exactly(:window, :distribution, :source, :platform)
+  end
 end
