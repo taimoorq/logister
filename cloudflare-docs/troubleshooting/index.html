@@ -4,20 +4,20 @@
     <meta charset="utf-8">
     <title>Troubleshooting | Logister</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
+    <meta name="description" content="Troubleshoot a self-hosted Logister install, including empty Issues lists, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://logister.org/docs/troubleshooting/">
     <meta property="og:site_name" content="Logister">
     <meta property="og:title" content="Troubleshooting | Logister">
-    <meta property="og:description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
+    <meta property="og:description" content="Troubleshoot a self-hosted Logister install, including empty Issues lists, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://logister.org/docs/troubleshooting/">
     <meta property="og:image" content="https://logister.org/docs/assets/logister-logo.webp">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Troubleshooting | Logister">
-    <meta name="twitter:description" content="Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
+    <meta name="twitter:description" content="Troubleshoot a self-hosted Logister install, including empty Issues lists, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.">
     <meta name="twitter:image" content="https://logister.org/docs/assets/logister-logo.webp">
-    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/troubleshooting/#article","headline":"Troubleshoot Logister.","name":"Troubleshooting | Logister","url":"https://logister.org/docs/troubleshooting/","description":"Troubleshoot a self-hosted Logister install, including empty inboxes, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error monitoring"},{"@type":"Thing","name":"Event ingestion troubleshooting"},{"@type":"Thing","name":"Sidekiq troubleshooting"},{"@type":"Thing","name":"ClickHouse readiness"},{"@type":"Thing","name":"SMTP delivery"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Troubleshooting","item":"https://logister.org/docs/troubleshooting/"}]}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://logister.org/docs/#organization","name":"Logister","url":"https://logister.org/","sameAs":["https://github.com/taimoorq/logister"]},{"@type":"TechArticle","@id":"https://logister.org/docs/troubleshooting/#article","headline":"Troubleshoot Logister.","name":"Troubleshooting | Logister","url":"https://logister.org/docs/troubleshooting/","description":"Troubleshoot a self-hosted Logister install, including empty Issues lists, rejected ingest events, rate limits, Sidekiq workers, email delivery, ClickHouse readiness, and archive exports.","publisher":{"@id":"https://logister.org/docs/#organization"},"author":{"@id":"https://logister.org/docs/#organization"},"about":[{"@type":"Thing","name":"Self-hosted error monitoring"},{"@type":"Thing","name":"Event ingestion troubleshooting"},{"@type":"Thing","name":"Sidekiq troubleshooting"},{"@type":"Thing","name":"ClickHouse readiness"},{"@type":"Thing","name":"SMTP delivery"}],"audience":{"@type":"Audience","audienceType":"Developers and operators"},"proficiencyLevel":"Intermediate","inLanguage":"en-US"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Documentation","item":"https://logister.org/docs/"},{"@type":"ListItem","position":2,"name":"Troubleshooting","item":"https://logister.org/docs/troubleshooting/"}]}]}</script>
     <link rel="alternate" type="text/plain" href="/docs/llms.txt" title="LLMs">
     <link rel="icon" href="/docs/assets/icon.png" type="image/png">
     <link rel="icon" href="/docs/assets/icon.svg" type="image/svg+xml">
@@ -83,7 +83,7 @@
             <div class="sidebar-group">
               <p class="sidebar-label">On this page</p>
               <a href="#quick-checks">Quick checks</a>
-              <a href="#empty-inbox">Empty inbox</a>
+              <a href="#empty-inbox">Nothing in Issues</a>
               <a href="#rejected-events">Rejected events</a>
               <a href="#background-jobs">Background jobs</a>
               <a href="#email">Email</a>
@@ -121,17 +121,17 @@
                 <li>Open <code>/up</code>. If it fails, fix the web process, database connection, or deploy health first.</li>
                 <li>For an unclaimed instance, confirm <code>RAILS_ENV</code>, <code>RAILS_MASTER_KEY</code>, <code>DATABASE_URL</code>, and <code>LOGISTER_SETUP_TOKEN</code>. After claim, inspect effective values and environment overrides under <strong>Admin → Installation</strong>.</li>
                 <li>Confirm one web process and one Sidekiq worker process are running from the same release image or source revision.</li>
-                <li>Create a project, generate a fresh API key, and keep the token available for one direct test request.</li>
+                <li>Create a project, create an API key on its setup path, and keep the token available for one direct test request.</li>
                 <li>Look at Rails and worker logs for request IDs, validation errors, authentication failures, and job errors around the same timestamp.</li>
               </ol>
               <div class="note tip"><h4>Start from a fresh token</h4><p>If a project was archived and restored, old active tokens were revoked during archive. Generate a new API key before testing ingestion again.</p></div>
             </section>
 
             <section id="empty-inbox" class="section">
-              <p class="eyebrow">Empty inbox</p>
+              <p class="eyebrow">Nothing in Issues</p>
               <h2>First decide whether the event is being accepted.</h2>
               <p>
-                An empty inbox can mean the app never received the event, the token was rejected, the payload failed validation, the event type was not <code>error</code>, or the event landed in Activity, Insights, Performance, or Monitors instead of the error inbox.
+                An empty Issues list can mean the app never received the event, the token was rejected, the payload failed validation, the event type was not <code>error</code>, or the event landed in Explore › Events, Explore › Charts, Performance, or Monitors instead of Issues. While a project is still waiting for data, the <strong>First event</strong> step of its setup path (<code>Settings &gt; Setup</code>) checks for any accepted event on its own and lists the usual causes when nothing arrives.
               </p>
               <div class="code-block">
                 <div class="code-head">
@@ -155,7 +155,7 @@
   }'</code></pre>
               </div>
               <p>
-                A successful write returns <code>201 Created</code> with an accepted status and an id. If it is accepted but the inbox still looks empty, check the project you sent to, the selected status filter, search terms, environment or release filters, archived project views, and whether the event was grouped into an existing issue.
+                A successful write returns <code>201 Created</code> with an accepted status and an id. If it is accepted but Issues still looks empty, check the project you sent to, the selected status filter, search terms, environment or release filters, archived project views, and whether the event was grouped into an existing issue.
               </p>
             </section>
 
@@ -241,7 +241,7 @@
               <p>
                 A synced GitHub repository is not enough by itself. Source lookup needs a connected project repository mapping, the right runtime path prefix, the right repository source root, and a branch or commit ref that contains the file.
               </p>
-              <table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Configured repo, but source file not found</td><td>Read the attempted repository, path, ref, and reason. A path like <code>app/app/controllers/...</code> usually means the source root or runtime prefix is duplicating a path segment.</td></tr><tr><td>No repositories available</td><td>Install or link the GitHub App installation, accept permission changes, then click Sync repositories.</td></tr><tr><td>No source repository mapping</td><td>Click Connect for the synced repository in project settings.</td></tr></tbody></table>
+              <table><thead><tr><th>Symptom</th><th>Check</th></tr></thead><tbody><tr><td>Configured repo, but source file not found</td><td>Read the attempted repository, path, ref, and reason. A path like <code>app/app/controllers/...</code> usually means the source root or runtime prefix is duplicating a path segment.</td></tr><tr><td>No repositories available</td><td>Install or link the GitHub App installation, accept permission changes, then click Sync repositories.</td></tr><tr><td>No source repository mapping</td><td>Click Connect for the synced repository in the project's Settings › Integrations.</td></tr></tbody></table>
               <p><a href="/docs/github-app/source-lookup/">Read source lookup diagnostics</a> for the focused checklist.</p>
             </section>
 

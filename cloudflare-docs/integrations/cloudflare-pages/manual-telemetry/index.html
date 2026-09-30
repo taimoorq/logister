@@ -60,7 +60,7 @@
       }
     }
   }'</code></pre></div>
-              <p>Keep <code>platform</code>, <code>service</code>, <code>deployment_id</code>, and <code>branch</code> stable. Use <code>context.value</code> and <code>context.unit</code> for numeric Cloudflare Pages metrics so Insights can chart the value instead of only counting events.</p>
+              <p>Keep <code>platform</code>, <code>service</code>, <code>deployment_id</code>, and <code>branch</code> stable. Use <code>context.value</code> and <code>context.unit</code> for numeric Cloudflare Pages metrics so Charts can plot the value instead of only counting events.</p>
             </section>
             <section id="deployment" class="section">
               <p class="eyebrow">Deployment example</p>
@@ -83,12 +83,12 @@
             <section id="verify" class="section">
               <p class="eyebrow">Verification</p>
               <h2>Confirm one Pages signal before sending more.</h2>
-              <ol><li>Run the metric request and confirm the HTTP response is <code>201 Created</code>.</li><li>Open the Cloudflare Pages project in Logister.</li><li>Open Events, filter to <code>metric</code>, and look for <code>cloudflare.deployment_build_ms</code>.</li><li>Open Insights and check the recent stream for the same service, branch, and environment.</li><li>If you sent a deployment record, open Deployments and confirm the release appears there too.</li></ol>
+              <ol><li>Run the metric request and confirm the HTTP response is <code>201 Created</code>.</li><li>Open the Cloudflare Pages project in Logister.</li><li>Open Events, filter to <code>metric</code>, and look for <code>cloudflare.deployment_build_ms</code>.</li><li>Open Explore › Charts and check the recent stream for the same service, branch, and environment.</li><li>If you sent a deployment record, open Deployments and confirm the release appears there too.</li></ol>
             </section>
             <section id="troubleshooting" class="section">
               <p class="eyebrow">Troubleshooting</p>
               <h2>Most missing events are token, URL, or payload problems.</h2>
-              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td><code>401 Unauthorized</code></td><td>The API key is missing, wrong, revoked, or belongs to a different project.</td></tr><tr><td><code>422 Unprocessable Entity</code></td><td>The payload is missing the <code>event</code> or <code>deployment</code> root key, event type, message, or required field.</td></tr><tr><td><code>429 Too Many Requests</code></td><td>The project token hit a rate limit. Read the <code>Retry-After</code> header before retrying.</td></tr><tr><td>Request succeeds but Issues is empty</td><td>Metrics and deployments do not appear in Issues. Check Explore › Events, Explore › Charts, or Releases › Deployments.</td></tr><tr><td>Insights filters are empty</td><td>Send stable <code>environment</code>, <code>release</code>, <code>service</code>, and low-cardinality context values.</td></tr></tbody></table>
+              <table><thead><tr><th>Symptom</th><th>What to check</th></tr></thead><tbody><tr><td><code>401 Unauthorized</code></td><td>The API key is missing, wrong, revoked, or belongs to a different project.</td></tr><tr><td><code>422 Unprocessable Entity</code></td><td>The payload is missing the <code>event</code> or <code>deployment</code> root key, event type, message, or required field.</td></tr><tr><td><code>429 Too Many Requests</code></td><td>The project token hit a rate limit. Read the <code>Retry-After</code> header before retrying.</td></tr><tr><td>Request succeeds but Issues is empty</td><td>Metrics and deployments do not appear in Issues. Check Explore › Events, Explore › Charts, or Releases › Deployments.</td></tr><tr><td>Chart filters are empty</td><td>Send stable <code>environment</code>, <code>release</code>, <code>service</code>, and low-cardinality context values.</td></tr></tbody></table>
               <p>Use the <a href="/docs/http-api/#responses">HTTP API response reference</a> for exact status codes and <a href="/docs/troubleshooting/">troubleshooting</a> for deeper ingestion checks.</p>
             </section>
           </article>

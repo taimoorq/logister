@@ -136,7 +136,7 @@
                 <li>Run the web process with <code>./bin/thrust ./bin/rails server</code>.</li>
                 <li>Open <code>/setup</code>, enter the one-time token, and create the first administrator. Remove <code>LOGISTER_SETUP_TOKEN</code> from the environment after the claim succeeds.</li>
                 <li>Follow <strong>Admin → Installation</strong> through General and Redis &amp; jobs. Save the Redis URL, restart web and worker processes when prompted, start Sidekiq with <code>bundle exec sidekiq -C config/sidekiq.yml</code>, then rerun the check until both Redis and a registered worker pass.</li>
-                <li>Complete onboarding, verify <code>/up</code>, create a project and API key, and send one test event to the inbox.</li>
+                <li>Complete onboarding, verify <code>/up</code>, create a project and API key, and send one test event to the project.</li>
                 <li>Add SMTP, ClickHouse, S3-compatible archive storage, GitHub App access, Turnstile, public analytics, or self-observability from the remaining Installation pages only when the install needs them.</li>
               </ol>
               <div class="note tip"><h4>Keep it boring first</h4><p>A first production install does not need every optional service. Start with web, worker, PostgreSQL, Redis, HTTPS, and backups; add the rest when your operating model actually needs them.</p></div>
@@ -379,7 +379,7 @@ bin/dev</code></pre>
 Background jobs can start
 Project creation works
 API key creation works
-A test event appears in the project inbox</code></pre>
+A test event appears in the project's Issues</code></pre>
               </div>
             </section>
           </article>

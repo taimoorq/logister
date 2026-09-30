@@ -2,6 +2,18 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v4.0.0 - 2026-09-29
+
+### Release
+
+- Mark the redesigned project experience as the 4.0 major release: shared project navigation, dedicated Issues, Releases, Explore and Settings views, guided project creation and setup, and the triage walkthrough.
+- Carry forward the dashboard, release-health, setup and archive query improvements shipped in v3.9.0.
+
+### Upgrade Notes
+
+- This major version marks the UI milestone already available in v3.9.0. It introduces no additional runtime behavior, schema migration or historical backfill compared with v3.9.0; upgrades from earlier versions should still run the normal database migration step.
+- Existing telemetry ingestion and CLI wire contracts remain compatible. Companion packages retain their independent versions and the existing release targets; 4.0.0 requires no additional SDK or CLI changes.
+
 ## v3.9.0 - 2026-09-29
 
 ### Added

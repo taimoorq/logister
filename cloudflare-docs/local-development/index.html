@@ -65,7 +65,7 @@ bin/dev</code></pre></div>
             </section>
             <section id="seed-data" class="section">
               <p class="eyebrow">Seed data</p>
-              <h2>Load development-only sample data when you want a realistic inbox.</h2>
+              <h2>Load development-only sample data when you want a realistic Issues list.</h2>
               <div class="code-block"><div class="code-head"><span class="code-language">shell</span><button class="copy-button" data-copy-button data-copy-target="#seed-code">Copy</button></div><pre><code id="seed-code">bin/rails db:seed</code></pre></div>
               <ul><li>Three confirmed users: <code>alice</code>, <code>bob</code>, and <code>carol</code></li><li>Projects with shared memberships</li><li>Active and revoked API keys</li><li>Events across <code>error</code>, <code>metric</code>, <code>transaction</code>, <code>log</code>, and <code>check_in</code></li><li>Error groups in multiple states</li><li>Check-in monitor examples for <code>ok</code>, <code>missed</code>, and <code>error</code></li></ul>
               <div class="output-block"><div class="output-head"><span class="output-label">Demo credentials</span></div><pre><code>alice@example.com / password123
@@ -89,7 +89,7 @@ bin/rails db:prepare</code></pre></div>
 You can sign in with a seeded account
 Projects index renders sample projects
 Redis-backed background features start without errors
-A seeded event appears in a project inbox</code></pre></div>
+A seeded event appears in a project's Issues</code></pre></div>
             </section>
           </article>
         </div>

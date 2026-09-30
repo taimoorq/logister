@@ -98,12 +98,12 @@
                         target: "_blank",
                         rel: "noopener noreferrer",
                         class: "screenshot-fullsize-link",
-                        aria: { label: full_size_screenshot_label.call("project inbox") } do %>
+                        aria: { label: full_size_screenshot_label.call("project issues") } do %>
               <%= image_tag inbox_path,
-                            alt: "Logister inbox detail view screenshot",
+                            alt: "Logister Issues view with issue detail",
                             class: "hero-shot",
                             width: 1800,
-                            height: 950,
+                            height: 1116,
                             srcset: responsive_screenshot_srcset.call(inbox_path, 1800),
                             sizes: card_screenshot_sizes,
                             loading: "lazy",

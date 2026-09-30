@@ -68,7 +68,7 @@ RSpec.describe "Project overview", type: :request do
         expect(timeline).to be_present
         chart = timeline.at_css(".project-insights-chart-main[role='img']")
         expect(chart).to be_present
-        expect(timeline.at_css("a[href='#{insights_project_path(project)}']").text).to eq("Insights")
+        expect(timeline.at_css("a[href='#{insights_project_path(project)}']").text).to eq("Open charts")
         expect(document.text).to include("Telemetry timeline", "Counts, durations, and custom values in the current scope")
         expect(document.text).to include("Add chart series")
         expect(document.text).to include("Issues", "Error groups")

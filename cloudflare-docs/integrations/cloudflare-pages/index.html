@@ -43,7 +43,7 @@
               <p class="eyebrow">Before you start</p>
               <h2>Use this project type for a Pages site, not a server runtime.</h2>
               <p>Create a Cloudflare Pages project in Logister when the monitored surface is the Pages deployment itself: deploy records, build duration, branch, traffic counters, worker or function logs, and site-level checks. If your Pages site also has a separate Node, Ruby, Python, .NET, Android, or iOS backend, create a separate Logister project for that runtime.</p>
-              <table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Cloudflare Pages project in Logister</td><td>Keeps Pages telemetry separate from app-server telemetry.</td></tr><tr><td>Project API token</td><td>Authenticates manual HTTP events from CI, scripts, Workers, or Pages Functions.</td></tr><tr><td>Stable service name</td><td>Lets Insights and Events group values for the site, such as <code>marketing-site</code>.</td></tr><tr><td>Release or deployment ID</td><td>Connects traffic and build signals to the Pages deployment you are reviewing.</td></tr></tbody></table>
+              <table><thead><tr><th>What you need</th><th>Why it matters</th></tr></thead><tbody><tr><td>Cloudflare Pages project in Logister</td><td>Keeps Pages telemetry separate from app-server telemetry.</td></tr><tr><td>Project API token</td><td>Authenticates manual HTTP events from CI, scripts, Workers, or Pages Functions.</td></tr><tr><td>Stable service name</td><td>Lets Events and Charts group values for the site, such as <code>marketing-site</code>.</td></tr><tr><td>Release or deployment ID</td><td>Connects traffic and build signals to the Pages deployment you are reviewing.</td></tr></tbody></table>
             </section>
             <section id="status" class="section">
               <p class="eyebrow">Current status</p>
@@ -61,7 +61,7 @@
             </section>
             <section id="success" class="section">
               <p class="eyebrow">Verification</p>
-              <h2>A working Pages project shows manual signals in Events and Insights.</h2>
+              <h2>A working Pages project shows manual signals in Explore › Events and Explore › Charts.</h2>
               <ol><li>Send one metric from the manual telemetry guide.</li><li>Open the project Events page and filter to <code>metric</code>.</li><li>Open Explore › Charts and use the <code>24h</code> window to confirm the event appears in the recent stream.</li><li>If you sent a deployment record, open Deployments and confirm the release, environment, branch, and commit match the Pages deploy.</li></ol>
             </section>
             <section id="next" class="section">

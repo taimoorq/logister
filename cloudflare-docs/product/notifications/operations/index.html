@@ -41,13 +41,13 @@
             <section class="section">
               <p class="eyebrow">Related setup</p>
               <h2>Operational notices explain changes around the project.</h2>
-              <p>Use these when someone should know about deploys, intake health, limits, or cleanup failures without watching every error group. If a deployment summary is missing, confirm the deployment appears for the project. If a retention notice is missing, confirm the Data tab has the retention or archive setting enabled.</p>
+              <p>Use these when someone should know about deploys, intake health, limits, or cleanup failures without watching every error group. If a deployment summary is missing, confirm the deployment appears in the project's Releases section. If a retention notice is missing, confirm <code>Settings &gt; Data</code> has the retention or archive setting enabled.</p>
               <p>Read <a href="/docs/http-api/#deployments">deployment records</a> or <a href="/docs/product/data-retention/">data retention</a> next.</p>
             </section>
             <section class="section">
               <p class="eyebrow">Verify</p>
               <h2>Trigger the operational event you want to hear about.</h2>
-              <ol><li>For deployment summaries, enable the setting, send or record one deployment, then confirm it appears on the project Releases › Deployments page.</li><li>For retention and archive failures, verify the Data tab has retention or archive settings enabled before expecting a notice.</li><li>For intake and quota warnings, check the project has recent ingest activity and that the warning condition actually happened.</li><li>If the project state is correct but no email arrives, use the setup requirements page to check project access, caps, quiet hours, SMTP, and Sidekiq.</li></ol>
+              <ol><li>For deployment summaries, enable the setting, send or record one deployment, then confirm it appears on the project Releases › Deployments page.</li><li>For retention and archive failures, verify <code>Settings &gt; Data</code> has retention or archive settings enabled before expecting a notice.</li><li>For intake and quota warnings, check the project has recent ingest activity and that the warning condition actually happened.</li><li>If the project state is correct but no email arrives, use the setup requirements page to check project access, caps, quiet hours, SMTP, and Sidekiq.</li></ol>
             </section>
             <section class="section">
               <p class="eyebrow">Troubleshooting</p>

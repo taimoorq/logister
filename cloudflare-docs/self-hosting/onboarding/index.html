@@ -124,7 +124,7 @@
                 <li>Claim the first administrator at <code>/setup</code>, then remove the one-time setup token.</li>
                 <li>Complete the General and Redis &amp; jobs checks. Restart web and worker processes when prompted.</li>
                 <li>Skip every optional service you do not need yet, then complete installation.</li>
-                <li>Create a project and API key, send one test event, and confirm it appears in the inbox.</li>
+                <li>Create a project and API key, send one test event, and confirm the project's First event step shows it.</li>
               </ol>
               <div class="note tip"><h4>Progress survives restarts</h4><p>Logister stores onboarding progress, skipped sections, successful check fingerprints, and a redacted change history in PostgreSQL. A restart or interrupted setup does not force the administrator to begin again.</p></div>
             </section>
@@ -215,7 +215,7 @@
                 <a class="doc-link" href="/docs/product/notifications/setup/"><strong>Send account and project mail</strong><span>Open <code>/admin/installation/email</code>. Stop when one direct and one queued test message arrive.</span></a>
                 <a class="doc-link" href="/docs/clickhouse/"><strong>Move analytics work off PostgreSQL</strong><span>Open <code>/admin/installation/clickhouse</code>. Use dual write for backfill and verification, then switch to read preferred; dual write alone does not move dashboard reads.</span></a>
                 <a class="doc-link" href="/docs/product/data-retention/archive-storage/"><strong>Archive telemetry before pruning it</strong><span>Open <code>/admin/installation/archive-storage</code>. Stop when a temporary object can be written, read, and deleted.</span></a>
-                <a class="doc-link" href="/docs/github-app/"><strong>Show private source during triage</strong><span>Open <code>/admin/installation/github</code>. Verify the App identity, then link repositories from project settings.</span></a>
+                <a class="doc-link" href="/docs/github-app/"><strong>Show private source during triage</strong><span>Open <code>/admin/installation/github</code>. Verify the App identity, then link repositories from the project's Settings › Integrations.</span></a>
                 <a class="doc-link" href="/docs/deployment/#env-reference"><strong>Protect public auth and tune ingest limits</strong><span>Open <code>/admin/installation/authentication</code>. Validate keys and limits, restart, then complete a real Turnstile challenge.</span></a>
                 <a class="doc-link" href="/docs/deployment/#consent-banners"><strong>Add consent-aware public analytics</strong><span>Open <code>/admin/installation/public-site</code>. Stop when the public URLs and consent prerequisites validate.</span></a>
                 <a class="doc-link" href="/docs/deployment/#env-reference"><strong>Monitor Logister itself</strong><span>Open <code>/admin/installation/observability</code>. Validate the endpoint and sampling ranges, then send sample telemetry.</span></a>
@@ -261,7 +261,7 @@
                 <li>Confirm <code>GET /up</code> returns <code>200</code>.</li>
                 <li>Confirm General and Redis &amp; jobs remain Verified after the final restart.</li>
                 <li>Create one project and one project API key.</li>
-                <li>Send a test event from an SDK or the <a href="/docs/http-api/">HTTP API</a> and confirm it appears in the project inbox.</li>
+                <li>Send a test event from an SDK or the <a href="/docs/http-api/">HTTP API</a> and confirm it appears in the project's Issues.</li>
                 <li>If email is configured, confirm both the direct and queued test messages arrive.</li>
                 <li>If archive storage is configured, verify its temporary-object check and then configure a project retention policy.</li>
                 <li>If ClickHouse is configured, confirm <code>/health/clickhouse</code> reports ready, <code>clickhouse_mode</code> is <code>read_preferred</code>, and the coverage gate has passed before relying on ClickHouse-backed dashboard analytics.</li>

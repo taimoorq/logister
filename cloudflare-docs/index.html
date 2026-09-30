@@ -91,9 +91,10 @@
             <div class="sidebar-group">
               <p class="sidebar-label">Usage</p>
               <a href="/docs/getting-started/">Getting started</a>
+              <a href="/docs/product/#setup">Guided setup</a>
               <a href="/docs/product/#triage">Triage errors</a>
               <a href="/docs/request-correlation/">Connected projects</a>
-              <a href="/docs/product/#insights">Project Insights</a>
+              <a href="/docs/product/#insights">Charts</a>
               <a href="/docs/product/#monitors">Check-in monitors</a>
               <a href="/docs/product/notifications/">Notifications</a>
               <a href="/docs/product/data-retention/">Data retention</a>
@@ -160,7 +161,7 @@
               <div class="doc-link-list">
                 <a class="doc-link" href="/docs/product/">
                   <strong>What Logister does</strong>
-                  <span>The user-focused tour of projects, dashboard, inbox, Insights, event details, monitors, notifications, sharing, and self-hosted operations.</span>
+                  <span>The user-focused tour of projects, guided setup, the dashboard, Issues, charts, event details, monitors, notifications, sharing, and self-hosted operations.</span>
                 </a>
                 <a class="doc-link" href="/docs/use-cases/self-hosted-error-monitoring/">
                   <strong>Self-hosted error monitoring</strong>
@@ -257,7 +258,7 @@
                   <tr>
                     <td>API key</td>
                     <td>A project-scoped token shown once, used by SDKs or direct HTTP clients to send events.</td>
-                    <td><a href="/docs/getting-started/#api-key">Generate an API key</a></td>
+                    <td><a href="/docs/getting-started/#api-key">Create an API key</a></td>
                   </tr>
                   <tr>
                     <td>CLI access token</td>
@@ -266,7 +267,7 @@
                   </tr>
                   <tr>
                     <td>Error group</td>
-                    <td>A grouped issue made from repeated error events so the inbox stays focused on problems, not every occurrence.</td>
+                    <td>A grouped issue made from repeated error events so Issues stays focused on problems, not every occurrence.</td>
                     <td><a href="/docs/product/#triage">Triage errors</a></td>
                   </tr>
                   <tr>
@@ -276,9 +277,14 @@
                   </tr>
                   <tr><td>Connected projects</td><td>Explicit app/backend environment mappings let authorized readers follow request evidence. Logister 3.8 adds bounded impact reports, independent release/build filters and observed deployment comparisons.</td><td><a href="/docs/request-correlation/">Connect and investigate requests</a></td></tr>
                   <tr>
-                    <td>Insights</td>
-                    <td>A project dashboard for event types, metrics, spans, recent events, environment filters, release filters, and custom dimensions.</td>
-                    <td><a href="/docs/product/#insights">Project Insights</a></td>
+                    <td>Charts (Insights)</td>
+                    <td>The Explore view that charts event types, metrics, spans, and recent events, with environment, release, and custom dimension filters.</td>
+                    <td><a href="/docs/product/#insights">Charts</a></td>
+                  </tr>
+                  <tr>
+                    <td>Setup path</td>
+                    <td>A project's setup steps for one outcome, such as starting to receive data, shown one step per screen. Steps complete themselves when Logister sees the evidence.</td>
+                    <td><a href="/docs/product/#setup">Guided setup</a></td>
                   </tr>
                   <tr>
                     <td>Check-in</td>
@@ -344,7 +350,7 @@
               <div class="doc-link-list">
                 <a class="doc-link" href="/docs/troubleshooting/">
                   <strong>Troubleshooting guide</strong>
-                  <span>Practical checks for empty inboxes, rejected events, rate limits, Sidekiq, email, ClickHouse, archive exports, and support context.</span>
+                  <span>Practical checks for empty Issues lists, rejected events, rate limits, Sidekiq, email, ClickHouse, archive exports, and support context.</span>
                 </a>
                 <a class="doc-link" href="/docs/http-api/#responses">
                   <strong>API response table</strong>

@@ -12,6 +12,7 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - Docs home: https://logister.org/docs/
 - Getting started: https://logister.org/docs/getting-started/
 - Product guide: https://logister.org/docs/product/
+- Guided setup: https://logister.org/docs/product/#setup
 - Insights guide: https://logister.org/docs/product/#insights
 - Email notifications: https://logister.org/docs/product/notifications/
 - Data retention: https://logister.org/docs/product/data-retention/
@@ -99,6 +100,8 @@ Fresh self-hosted instances are claimed at `/setup` with a one-time `LOGISTER_SE
 - Metrics reference: https://logister.org/docs/metrics/ lists supported telemetry families, built-in Insights metric keys, custom metric series, span timing segments, add-on support by runtime, accepted reporting fields, and data collection boundaries.
 - Public API limits: `/api/v1/ingest_events`, `/api/v1/check_ins`, and `/api/v1/deployments` accept 1,200 requests per minute per API token per endpoint by default; missing or invalid authentication is capped at 120 failures per minute per source IP. Limit responses use `429 Too Many Requests` with retry headers. Database-backed app administrators and break-glass admins from `LOGISTER_ADMIN_EMAILS` can set project-level overrides; project owners and shared project members cannot.
 - Insights (Explore › Charts): project-level dashboard workspace that combines Issues, Events, and Performance signals with ECharts, time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, and recent matching events. Best results come from consistent `environment`, `release`, stable custom context attributes, and numeric custom metric values in `context.value`.
+- Guided setup: each project's Settings › Setup groups setup steps by outcome (start receiving data, make issues actionable, bring in your team, extend coverage). Steps complete from observed evidence, never by hand; setup paths show one step per screen with a live check for code steps such as the first event. New projects are created in a short guided flow that hands off to that path.
+- Project navigation: every project type has the same sections (Overview, Issues, Performance, Releases, Explore with Events, Charts, Archive, and Connected views, Monitors once a monitor exists, and Settings). Android and iOS projects add Releases and Artifacts views, where R8 mappings and dSYMs are uploaded.
 - Storage and retention: PostgreSQL remains the primary system of record; optional ClickHouse stores a secondary raw event/span analytics copy and one-minute rollups. `dual_write` is a temporary backfill/verification mode whose supported dashboard reads remain on PostgreSQL; `read_preferred` moves supported analytics reads to ClickHouse after coverage passes. Optional S3-compatible archive storage can store compressed JSONL exports before pruning older non-error hot telemetry. Retention docs start at https://logister.org/docs/product/data-retention/.
 - Ruby SDK source: https://github.com/taimoorq/logister-ruby
 - Ruby SDK package: https://rubygems.org/gems/logister-ruby

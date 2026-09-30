@@ -72,6 +72,8 @@ bin/build-cloudflare-docs
 
 Run the first command against a restored database to review the proposed Faker project-name replacements, then run it without `DRY_RUN` before capturing. The task refuses to rewrite production without an explicit confirmation value. The optimizer writes the 360, 480, 720, and 960 pixel variants consumed by each `srcset`, strips metadata, and uses a high-efficiency WebP encode. After changing screenshots, run the final two commands so files from `app/assets/images/screenshots/public` are copied into `cloudflare-docs/assets/screenshots`, then check for missing local assets.
 
+The optimizer re-encodes every base image in its source folder, so re-running it over the whole folder degrades captures you did not change. Put only the new captures (lossless WebP, at the size the page should show) in a staging folder, run `SCREENSHOT_SOURCE=path/to/staging bin/optimize-screenshot-assets`, and copy the results into `app/assets/images/screenshots/public`. Run `bin/build-cloudflare-docs` with a UTF-8 locale (`LANG=en_US.UTF-8`); the version sync fails on characters such as `›` under a US-ASCII default. When a screenshot's size changes, update the `width`, `height`, and base `srcset` descriptor wherever it appears, including the marketing pages in `app/views/home/`.
+
 ## Page Scope And Subpages
 
 Keep each public docs page small enough that a user can understand why they are there before they start reading details. If a feature has multiple reasons a user might visit the page, make the top-level page a routing page and move the detailed instructions into subpages.

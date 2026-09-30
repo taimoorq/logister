@@ -91,10 +91,10 @@
               <a href="#project">Every setup begins with a project</a>
               <a href="#flow">Core flow</a>
               <a href="#project-type">Create a project</a>
-              <a href="#api-key">Generate an API key</a>
+              <a href="#api-key">Create an API key</a>
               <a href="#integration">Choose an integration</a>
-              <a href="#verify">Verify setup</a>
-              <a href="#insights">Open Insights</a>
+              <a href="#verify">Confirm the first event</a>
+              <a href="#insights">Open Charts</a>
             </div>
           </aside>
 
@@ -142,7 +142,7 @@
               <h2>How data moves into Logister.</h2>
               <ol>
                 <li>Create a project for the app you want to monitor.</li>
-                <li>Generate an API key for that project.</li>
+                <li>Create an API key on the project&#39;s setup path.</li>
                 <li>Send events to <code>/api/v1/ingest_events</code> or check-ins to <code>/api/v1/check_ins</code>.</li>
                 <li>Review errors, performance data, activity, and monitors in the project pages.</li>
               </ol>
@@ -154,17 +154,14 @@
             <section id="project-type" class="section">
               <p class="eyebrow">Create a project</p>
               <h2>Choose the integration type that matches your app.</h2>
-              <div class="media-pair">
-                <div class="media-pair-content">
-                  <p>Create one project per monitored app or service. The new project screen sets the app identity, the integration that will send the first event, and the data retention policy before telemetry starts flowing.</p>
-                  <ul>
-                    <li>Use a clear app or service name that teammates will recognize in alerts and dashboards.</li>
-                    <li>Choose the runtime or Manual / HTTP API path that will send the first event.</li>
-                    <li>Set retention before the project starts collecting production telemetry.</li>
-                  </ul>
-                </div>
-                <figure class="screenshot-figure is-narrow"><img src="/docs/assets/screenshots/projects-new.webp" srcset="/docs/assets/screenshots/projects-new-360.webp 360w, /docs/assets/screenshots/projects-new-480.webp 480w, /docs/assets/screenshots/projects-new-720.webp 720w, /docs/assets/screenshots/projects-new-960.webp 960w, /docs/assets/screenshots/projects-new.webp 1800w" sizes="(max-width: 760px) calc(100vw - 2rem), 480px" alt="Logister new project form with app name, description, integration type choices, and data retention controls." width="1800" height="1371" loading="lazy" decoding="async"><figcaption>Create the project, pick the integration path, and choose the data lifecycle in one flow.</figcaption></figure>
-              </div>
+              <p>Create one project per monitored app or service. Choose <strong>New project</strong> and work through four short steps: <strong>Platform</strong>, <strong>Name and description</strong>, <strong>Data retention</strong>, and <strong>Connect</strong>, which continues as the project's own setup path. Nothing is saved until you choose <strong>Create project</strong> on the retention step.</p>
+              <ul>
+                <li>Choose the runtime or Manual / HTTP API path that will send the first event. The name step previews the setup path that platform leads to.</li>
+                <li>Use a clear app or service name that teammates will recognize in alerts and dashboards.</li>
+                <li>Set retention before the project starts collecting production telemetry.</li>
+                <li>Prefer one page? Choose <strong>Use the quick form</strong> on the first step. Both create the same project.</li>
+              </ul>
+              <figure class="screenshot-figure"><img src="/docs/assets/screenshots/projects-new.webp" srcset="/docs/assets/screenshots/projects-new-360.webp 360w, /docs/assets/screenshots/projects-new-480.webp 480w, /docs/assets/screenshots/projects-new-720.webp 720w, /docs/assets/screenshots/projects-new-960.webp 960w, /docs/assets/screenshots/projects-new.webp 1800w" sizes="(max-width: 760px) calc(100vw - 2rem), (max-width: 1200px) calc(100vw - 20rem), 1350px" alt="Logister create-project flow on the Platform step, with integration choices and the four steps listed on the left." width="1800" height="1000" loading="lazy" decoding="async"><figcaption>The first step picks the platform. The steps on the left show what comes next, ending in the project's setup path.</figcaption></figure>
               <table>
                 <thead>
                   <tr>
@@ -206,16 +203,18 @@
             </section>
 
             <section id="api-key" class="section">
-              <p class="eyebrow">Generate an API key</p>
+              <p class="eyebrow">Create an API key</p>
               <h2>Create the token your app will use.</h2>
               <p>
-                API keys are generated per project from project settings. The token is shown once at creation time,
-                so copy it into your environment or secret manager right away. Archived projects cannot generate new
-                tokens, and archiving a project disables active tokens for that project.
+                Right after you create a project, Logister opens its setup path at the <strong>API key</strong> step. Create the
+                key there, or later from <code>Settings &gt; Setup</code>, where the project&#39;s keys are listed and can be revoked.
+                The token is shown once at creation time, so copy it into your environment or secret manager right away.
+                Android and iOS projects use short-lived mobile tokens that your backend issues instead; their setup path
+                starts with that step. Archived projects cannot create new tokens, and archiving a project disables its active tokens.
               </p>
               <div class="note warn">
                 <h4>Important</h4>
-                <p>The token is not shown again after creation. Store it before you leave the settings page. If you restore an archived project and want it to send events again, generate a fresh token.</p>
+                <p>The token is not shown again after creation. Store it before you leave the page. If you restore an archived project and want it to send events again, generate a fresh token.</p>
               </div>
             </section>
 
@@ -281,22 +280,23 @@
             </section>
 
             <section id="verify" class="section">
-              <p class="eyebrow">Verify setup</p>
-              <h2>Confirm that your project is ready for ingestion.</h2>
+              <p class="eyebrow">Confirm the first event</p>
+              <h2>Let the setup path tell you when the first event arrives.</h2>
+              <p>The next step on the setup path is <strong>First event</strong>. It shows the integration guide for your platform next to a live check. Send one test event and leave the page open: the check notices the event on its own, shows what arrived, and unlocks <strong>Continue</strong>. It keeps checking for about ten minutes, and <strong>Check again</strong> checks immediately. When the event arrives, the project header changes to <strong>Live</strong>.</p>
+              <figure class="screenshot-figure"><img src="/docs/assets/screenshots/project-setup-first-event.webp" srcset="/docs/assets/screenshots/project-setup-first-event-360.webp 360w, /docs/assets/screenshots/project-setup-first-event-480.webp 480w, /docs/assets/screenshots/project-setup-first-event-720.webp 720w, /docs/assets/screenshots/project-setup-first-event-960.webp 960w, /docs/assets/screenshots/project-setup-first-event.webp 1800w" sizes="(max-width: 760px) calc(100vw - 2rem), (max-width: 1200px) calc(100vw - 20rem), 1350px" alt="Logister setup path on the First event step, with the integration guide and a live check waiting for the first event." width="1800" height="1000" loading="lazy" decoding="async"><figcaption>If nothing arrives, the panel lists the usual causes: a wrong or revoked key, a request that never reached this Logister host, or a key from a different project.</figcaption></figure>
               <div class="output-block">
                 <div class="output-head"><span class="output-label">Setup checklist</span></div>
-                <pre><code>Project created
-Integration type selected
-API key generated and copied once
-Destination guide chosen
+                <pre><code>Project created with the right platform
+API key created and stored (mobile: token endpoint on your backend)
+Integration guide chosen
 Base URL for your Logister instance confirmed
-One test event visible in the project inbox or activity feed
+First event step shows the event, and the project header says Live
 Explore › Charts shows the event in the summary, timeline, or recent stream
-Check-in visible on the monitors page if you are instrumenting scheduled work</code></pre>
+Monitors tab appears after the first check-in, if you instrument scheduled work</code></pre>
               </div>
               <div class="note tip">
                 <h4>Next step</h4>
-                <p>Once those items are done, move into the Ruby, .NET, Python, JavaScript, Android, iOS, CFML, or Manual / HTTP API guide and send one test event first.</p>
+                <p>Once the project is live, continue the setup path to connect a source repository and record deployments, or open <code>Settings &gt; Setup</code> at any time to see what is left. The Ruby, .NET, Python, JavaScript, Android, iOS, CFML, and Manual / HTTP API guides cover each step in detail.</p>
               </div>
             </section>
 
@@ -313,7 +313,7 @@ Check-in visible on the monitors page if you are instrumenting scheduled work</c
                 <li>If custom attribute filters are not useful, add stable top-level context keys such as <code>service</code>, <code>region</code>, <code>queue</code>, <code>route</code>, or <code>tenant_tier</code>.</li>
                 <li>If custom metric value charts are missing, send numeric metric values in <code>context.value</code> with a stable metric name.</li>
               </ul>
-              <p><a href="/docs/product/#insights">Read the Insights guide</a> for dashboard recipes, or use the <a href="/docs/metrics/">metrics reference</a> for supported telemetry, add-on coverage, reporting fields, and data collection boundaries.</p>
+              <p><a href="/docs/product/#insights">Read the Charts guide</a> for dashboard recipes, or use the <a href="/docs/metrics/">metrics reference</a> for supported telemetry, add-on coverage, reporting fields, and data collection boundaries.</p>
             </section>
           </article>
         </div>

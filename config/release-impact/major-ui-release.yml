@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: major-ui-release
+release_version: 4.0.0
+summary: Designate the redesigned project navigation and guided setup as the 4.0 UI
+  milestone; synchronize release metadata without changing wire contracts.
+backend:
+  bump: major
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: d2a02c0002eb2ab9f5432b53e95e8b60caa65a90614e87471b78fc40b24cf56e
+  telemetry_ingest: d880f2b9289a8a21ac2b5cc5de55e7015a6e6b4643e24e0a9ae9e46105c2f97e
+  integration_discovery: 1368f342ebdcd138a92f8c1aeb8b2e365547c113a0872805473045115c2987cf
+consumers:
+  logister-cli:
+    bump: none
+    reason: Only backend release and OpenAPI version metadata advance to 4.0.0; CLI
+      endpoints and response shapes remain compatible with the existing release target.
+  logister-ruby:
+    bump: none
+    reason: The major version marks the app UI milestone; telemetry payloads, authentication
+      and setup requirements remain compatible with the existing SDK release target.
+  logister-js:
+    bump: none
+    reason: The major version marks the app UI milestone; telemetry payloads, authentication
+      and setup requirements remain compatible with the existing SDK release target.
+  logister-python:
+    bump: none
+    reason: The major version marks the app UI milestone; telemetry payloads, authentication
+      and setup requirements remain compatible with the existing SDK release target.
+  logister-dotnet:
+    bump: none
+    reason: The major version marks the app UI milestone; telemetry payloads, authentication
+      and setup requirements remain compatible with the existing SDK release target.
+  logister-android:
+    bump: none
+    reason: The major version marks the app UI milestone; telemetry payloads, authentication
+      and setup requirements remain compatible with the existing SDK release target.
+  logister-ios:
+    bump: none
+    reason: The major version marks the app UI milestone; telemetry payloads, authentication
+      and setup requirements remain compatible with the existing SDK release target.

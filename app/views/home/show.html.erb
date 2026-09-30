@@ -20,7 +20,7 @@
         "https://github.com/taimoorq/logister/pkgs/container/logister",
         "https://hub.docker.com/r/taimoorq/logister"
       ],
-      "softwareVersion" => "3.8.0",
+      "softwareVersion" => "4.0.0",
       "keywords" => "open source error monitoring, self-hosted bug tracking, Bugsnag alternative, Bugzilla alternative, Sentry alternative, application observability, Rails error tracking, Docker self hosting",
       "sameAs" => [
         "https://github.com/taimoorq/logister",
@@ -101,21 +101,21 @@
     },
     {
       path: project_home_path,
-      alt: "Logister project home showing a telemetry timeline and project health summaries",
+      alt: "Logister project Overview showing a telemetry timeline and project health summaries",
       width: 1800,
-      height: 730,
+      height: 840,
       label: "project home"
     },
     {
       path: inbox_path,
-      alt: "Logister project inbox with search, assignee filters, and stacktrace detail",
+      alt: "Logister project Issues view with search, assignee filters, and stacktrace detail",
       width: 1800,
-      height: 950,
-      label: "inbox"
+      height: 1116,
+      label: "issues"
     },
     {
       path: insights_path,
-      alt: "Logister project insights timeline and recent event stream",
+      alt: "Logister project Charts view with a telemetry timeline and recent event stream",
       width: 1800,
       height: 1000,
       label: "insights"
@@ -124,14 +124,14 @@
       path: notifications_path,
       alt: "Logister notification settings organized by alert purpose",
       width: 1800,
-      height: 920,
+      height: 1000,
       label: "notifications"
     },
     {
       path: retention_path,
       alt: "Logister Data settings showing a saved retention summary and Archive Center overview",
       width: 1800,
-      height: 1000,
+      height: 1128,
       label: "retention"
     }
   ]
@@ -192,7 +192,7 @@
                             alt: "",
                             class: "hero-shot",
                             width: 1800,
-                            height: 730,
+                            height: 840,
                             srcset: responsive_screenshot_srcset.call(project_home_path, 1800),
                             sizes: "(max-width: 900px) 45vw, 22vw",
                             loading: "lazy",

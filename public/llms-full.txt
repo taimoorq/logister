@@ -18,6 +18,7 @@ The screenshot-backed onboarding and add-on guide is https://logister.org/docs/s
 - Supports optional project-scoped GitHub App source integration for private repository source excerpts, CODEOWNERS hints, explicit repository connections, deployment links, and GitHub issue creation when Issues write permission is granted.
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
+- Guides project setup from observed evidence: Settings › Setup groups steps by outcome (start receiving data, make issues actionable, bring in your team, extend coverage), and setup paths walk one step per screen with a live first-event check. Every project type shares the same sections: Overview, Issues, Performance, Releases, Explore, Monitors, and Settings.
 - Provides CLI read access for terminal workflows, scripts, and AI-assisted debugging through user-scoped CLI access tokens.
 - Provides project performance views with transactions, database metrics, release health, and span-backed request load breakdowns.
 - Sends purpose-based project notifications through SMTP, commonly Amazon SES: new or reopened error groups, milestones, single-error volume, project spikes, latency alerts, monitor alerts, workflow routing, digests, release summaries, usage warnings, and retention/archive failures.

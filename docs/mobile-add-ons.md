@@ -14,7 +14,7 @@ and dashboards are shaped for the selected platform.
 ## Before You Start
 
 1. Create a Logister project with type `Android app` or `iOS app`.
-2. Create a server project API key in the project settings page.
+2. Create a server project API key in **Settings → Setup** for the project.
 3. Store that server key only in your trusted backend or CI/CD environment.
 4. Add a backend endpoint that mints short-lived mobile ingest tokens with
    `POST /api/v1/mobile_ingest_tokens`.
@@ -216,9 +216,9 @@ corresponding pseudonymous identifiers were collected; missing data is shown as
 not collected rather than zero.
 
 For minified builds, upload the release variant's exact `mapping.txt` with its
-package name and version code. The paginated **Artifacts** page shows inventory,
-observed-build coverage, and recovery actions; Settings shows only the latest
-summary. Mapping files are private and project-scoped. The issue detail says
+package name and version code from **Releases → Artifacts**. That paginated
+page is where managers upload and where everyone sees inventory, observed-build
+coverage, and recovery actions; Settings → Integrations only links to it. Mapping files are private and project-scoped. The issue detail says
 **Mapping missing** when no matching build artifact exists.
 
 Trusted CI can automate the upload with a separate, expiring CLI token that has
@@ -394,7 +394,7 @@ The project has two independent production workflows:
 
 | Workflow | What it does | What to verify |
 | --- | --- | --- |
-| dSYM coverage | Stores zipped dSYMs in private archive storage, verifies exact binary UUID/architecture manifests, and resolves eligible stored frames on an Apple-toolchain worker without mutating raw evidence. Inventory and coverage live on **Artifacts**. | `UUID verified` proves artifact eligibility. Per-event `Symbolicated`, `Partial`, or `Failed` states prove the separate address-resolution step. `Verification blocked` means the worker lacks Apple tooling. Raw addresses remain visible in every state. |
+| dSYM coverage | Stores zipped dSYMs in private archive storage, verifies exact binary UUID/architecture manifests, and resolves eligible stored frames on an Apple-toolchain worker without mutating raw evidence. Upload, inventory, and coverage live on **Releases → Artifacts**. | `UUID verified` proves artifact eligibility. Per-event `Symbolicated`, `Partial`, or `Failed` states prove the separate address-resolution step. `Verification blocked` means the worker lacks Apple tooling. Raw addresses remain visible in every state. |
 | App Store Connect | Uses an issuer ID, key ID, bundle ID, and a private-key environment-variable reference to fetch Apple's iOS power/performance report on a 15-minute sweep or manual sync. | Last success, selected app, report availability, freshness, and the last bounded error appear in settings. |
 
 App Store aggregates remain separate from SDK and MetricKit event counts. Do
