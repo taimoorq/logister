@@ -5,28 +5,27 @@ module IngestEventReporting
     def released_error_groups(project, lookback: 30.days, limit: 6)
       since = lookback.is_a?(ActiveSupport::Duration) ? lookback.ago : lookback
       release_sql = Arel.sql("context->>'release'")
+      error_count = arel_table[:id].count.filter(arel_table[:event_type].eq(event_types.fetch("error")))
+      # Discover releases and count their telemetry in the same bounded scan.
+      # Counting again without the lookback touched every retained partition.
       releases = released.where(project: project)
                          .where("occurred_at >= ?", since)
                          .group(release_sql)
-                         .maximum(:occurred_at)
-                         .sort_by { |_rel, seen_at| seen_at || Time.zone.at(0) }
-                         .reverse
-                         .first(limit)
+                         .order(Arel.sql("MAX(occurred_at) DESC"), release_sql)
+                         .limit(limit)
+                         .pluck(release_sql, Arel.sql("MAX(occurred_at)"), Arel.sql("COUNT(*)"), error_count)
       return [] if releases.empty?
 
       release_names = releases.map(&:first)
-      events_scope = where(project: project).for_release(release_names)
-      total_events_by_release = grouped_count(events_scope, release_sql)
-      error_events_by_release = grouped_count(events_scope.where(event_type: event_types[:error]), release_sql)
       introduced_issues_by_release = grouped_count(project.error_groups.where(introduced_in_release: release_names), :introduced_in_release)
       regressed_issues_by_release = grouped_count(project.error_groups.where(regressed_in_release: release_names), :regressed_in_release)
 
-      releases.map do |release_name, last_seen_at|
+      releases.map do |release_name, last_seen_at, total_events, error_events|
         {
           release: release_name,
           last_seen_at: last_seen_at,
-          total_events: total_events_by_release.fetch(release_name, 0),
-          error_events: error_events_by_release.fetch(release_name, 0),
+          total_events: total_events,
+          error_events: error_events,
           introduced_issues: introduced_issues_by_release.fetch(release_name, 0),
           regressed_issues: regressed_issues_by_release.fetch(release_name, 0)
         }

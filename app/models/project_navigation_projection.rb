@@ -10,11 +10,10 @@
 #
 # The page being viewed is always kept so direct visits and bookmarks resolve.
 class ProjectNavigationProjection
-  attr_reader :project, :capability_snapshot
+  attr_reader :project
 
-  def initialize(project:, capability_snapshot:)
+  def initialize(project:)
     @project = project
-    @capability_snapshot = capability_snapshot
   end
 
   def resolve(pages, current_page_key: nil)
@@ -38,7 +37,9 @@ class ProjectNavigationProjection
   end
 
   def check_ins_configured?
-    capability_snapshot.status(:check_ins).state == :configured
+    ProjectReadCache.fetch(project, :navigation_check_ins, shared: true) do
+      project.check_in_monitors.exists?
+    end
   end
 
   def deployments_recorded?

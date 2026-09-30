@@ -4,6 +4,8 @@ class ProjectDeploymentsController < ApplicationController
   include ProjectScope
 
   LIMIT = 100
+  RELEASE_HEALTH_CACHE_TTL = 1.minute
+  RELEASE_HEALTH_LOOKBACK = 45.days
 
   before_action :authenticate_user!
   before_action :set_accessible_project
@@ -29,7 +31,10 @@ class ProjectDeploymentsController < ApplicationController
   # Introduced and regressed issues by release, loaded as its own frame so the
   # deployments list never waits on it.
   def release_health
-    @release_cards = IngestEvent.released_error_groups(@project, lookback: 45.days, limit: 6)
+    @release_cards = safe_cache_fetch(
+      [ "release_health_window_v1", @project.cache_key_with_version ],
+      expires_in: RELEASE_HEALTH_CACHE_TTL
+    ) { IngestEvent.released_error_groups(@project, lookback: RELEASE_HEALTH_LOOKBACK, limit: 6) }
 
     render partial: "project_deployments/release_health"
   end

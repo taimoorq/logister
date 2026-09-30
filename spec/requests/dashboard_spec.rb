@@ -8,6 +8,34 @@ RSpec.describe "Dashboard", type: :request do
     context "when signed in" do
       before { sign_in users(:one) }
 
+      it "keeps summary entries across wall-clock buckets until their TTL expires" do
+        allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+        travel_to Time.zone.local(2026, 9, 30, 12, 0, 29) do
+          expect(Dashboard).to receive(:summary_for).once.and_call_original
+          get dashboard_path
+          travel 2.seconds
+          get dashboard_path
+          expect(response).to have_http_status(:success)
+        end
+      end
+
+      it "finds projects without receipts without sorting through each project's partitions" do
+        received = create(:project, user: users(:one))
+        empty = create(:project, user: users(:one))
+        unrelated = create(:project)
+        create(:ingest_event, project: received, occurred_at: 1.year.ago, created_at: 1.year.ago)
+        result = nil
+
+        queries = capture_sql do
+          result = DashboardController.new.projects_needing_setup([ received, empty ])
+        end
+
+        expect(result).to eq([ empty ])
+        expect(result).not_to include(unrelated)
+        expect(queries.sole).to include("NOT (EXISTS")
+        expect(queries.sole).not_to match(/ORDER BY|MAX\(|created_at/)
+      end
+
       it "returns success" do
         get dashboard_path
         expect(response).to have_http_status(:success)

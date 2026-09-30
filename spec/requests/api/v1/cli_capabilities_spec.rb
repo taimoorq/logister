@@ -5,6 +5,8 @@ require "rails_helper"
 RSpec.describe "Api::V1::Cli::Capabilities", type: :request do
   describe "GET /api/v1/cli/capabilities" do
     it "returns public CLI compatibility metadata without authentication" do
+      version = Rails.root.join("VERSION").read.strip
+      contract_version = YAML.safe_load_file(Rails.root.join("docs/openapi.yaml")).fetch("info").fetch("version")
       get "/api/v1/cli/capabilities"
 
       expect(response).to have_http_status(:ok)
@@ -13,8 +15,8 @@ RSpec.describe "Api::V1::Cli::Capabilities", type: :request do
       body = response.parsed_body
       expect(body).to include(
         "server" => "logister",
-        "server_version" => "3.8.0",
-        "api_contract_version" => "3.8.0",
+        "server_version" => version,
+        "api_contract_version" => contract_version,
         "minimum_cli_version" => "0.1.0",
         "recommended_cli_version" => "1.1.0"
       )

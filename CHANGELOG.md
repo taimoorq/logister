@@ -2,6 +2,30 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v3.9.0 - 2026-09-29
+
+### Added
+
+- Organize project navigation into shared sections with dedicated Issues, Releases, Explore and Settings views. Show optional destinations when the project has relevant evidence.
+- Guide project setup through evidence-backed steps, verification, optional-step skipping, and a cached setup indicator.
+
+### Improved
+
+- Aggregate dashboard signals in one telemetry scan and find projects needing setup with indexed receipt-existence checks.
+- Calculate release event counts in one lookback scan and cache release-health panels for one minute. Event counts now cover the labelled last 45 days; introduced/regressed issue counts continue to cover retained history.
+- Load mobile navigation and targeted setup checks without unrelated payload, session, mapping or symbol queries. Preserve cache entries across time buckets and avoid repeating failed database computations.
+- Capture archive insert fences with indexed source-table maxima, preserving tenant, time, type, delivery-protection and late-insert checks during bounded enumeration.
+
+### Fixed
+
+- Allow optional setup steps to be skipped while preserving completed evidence, and carry supported telemetry time windows into connected-impact links.
+
+### Upgrade Notes
+
+- No schema migration or historical backfill. Existing telemetry and CLI wire contracts remain compatible; this release adds no SDK changes beyond the previously planned 3.8 release set.
+- This version includes the navigation/setup changes merged after v3.8.0 was published. Publish a new immutable v3.9.0 artifact rather than moving the existing tag.
+- Query reductions do not replace database I/O capacity and ClickHouse coverage checks. See [the performance investigation](docs/page-query-performance.md) for production observations and validation steps.
+
 ## v3.8.0 - 2026-09-28
 
 ### Added

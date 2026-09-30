@@ -108,7 +108,7 @@ module ProjectsControllerData
   end
 
   def cached_project_stats(project_ids)
-    cache_key = [ "projects_stats", current_user.id, project_ids, cache_time_bucket(self.class::PROJECT_STATS_CACHE_TTL) ]
+    cache_key = [ "projects_stats", current_user.id, project_ids ]
     safe_cache_fetch(cache_key, expires_in: self.class::PROJECT_STATS_CACHE_TTL) { Project.stats_for(project_ids) }
   end
 
@@ -128,7 +128,7 @@ module ProjectsControllerData
 
   def project_dashboard_metrics(project)
     safe_cache_fetch(
-      [ "project", project.id, "dashboard_metrics", cache_time_bucket(self.class::PROJECT_DASHBOARD_CACHE_TTL) ],
+      [ "project", project.id, "dashboard_metrics" ],
       expires_in: self.class::PROJECT_DASHBOARD_CACHE_TTL
     ) do
       since = 24.hours.ago

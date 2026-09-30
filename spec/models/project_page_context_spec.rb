@@ -141,6 +141,17 @@ RSpec.describe ProjectPageContext do
   end
 
   describe "Monitors" do
+    it "resolves mobile navigation without reading telemetry or artifact coverage" do
+      project = create(:project, :ios)
+      viewer = project.user
+      queries = capture_sql do
+        described_class.for(project: project, viewer: viewer, request_path: routes.project_path(project))
+      end
+
+      expect(queries.join("\n")).not_to match(/error_occurrences|ingest_events|apple_symbol_artifacts|project_integration_settings/)
+      expect(queries.grep(/check_in_monitors/).sole).to match(/SELECT 1 AS one.*LIMIT/)
+    end
+
     it "appears for every type once a check-in monitor exists, and stays reachable by direct visit" do
       %i[ruby android].each do |kind|
         project = create(:project, kind)

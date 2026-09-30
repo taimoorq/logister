@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Logister Public Ingestion API
-  version: "3.8.0"
+  version: "3.9.0"
   summary: Send telemetry to Logister and build authorized read-only CLI clients.
   description: |
     Logister's public API accepts project-scoped telemetry over HTTP. Use the

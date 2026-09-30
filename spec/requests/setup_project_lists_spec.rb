@@ -84,7 +84,7 @@ RSpec.describe "Setup cues on project lists", type: :request do
       expect(response.body).not_to include("Someone Elses Project")
     end
 
-    it "costs one extra indexed query on the overview tab" do
+    it "uses one receipt-existence query on the overview tab" do
       create_list(:project, 3, :ruby, user: owner)
       get dashboard_path
       with_panel = capture_sql { get dashboard_path }
@@ -94,7 +94,10 @@ RSpec.describe "Setup cues on project lists", type: :request do
       without_panel = capture_sql { get dashboard_path }
 
       expect(with_panel.size - without_panel.size).to be_between(-1, 1)
-      expect(with_panel.grep(/latest_events/).size).to eq(1)
+      setup_queries = with_panel.grep(/NOT \(EXISTS .*FROM "ingest_events"/)
+      expect(setup_queries.size).to eq(1)
+      expect(setup_queries.sole).to include('"ingest_events"."project_id" = "projects"."id"')
+      expect(setup_queries.sole).not_to match(/ORDER BY|MAX\(/)
     end
   end
 end

@@ -13,7 +13,7 @@ class DashboardController < ApplicationController
     project_ids = @projects.map(&:id)
 
     summary = safe_cache_fetch(
-      [ "dashboard_summary", current_user.id, @dashboard_tab, project_ids, cache_time_bucket(DASHBOARD_CACHE_TTL) ],
+      [ "dashboard_summary", current_user.id, @dashboard_tab, project_ids ],
       expires_in: DASHBOARD_CACHE_TTL
     ) { Dashboard.summary_for(project_ids, viewer: current_user, **dashboard_summary_options) }
 
@@ -43,13 +43,14 @@ class DashboardController < ApplicationController
     end
   end
 
-  # Active projects that have never received data. One indexed lookup per
-  # project (the same one the project cards use), and only on the overview tab.
+  # Only existence matters here. Looking up the latest receipt probes every
+  # time partition for every project, even when an older receipt is enough.
   def projects_needing_setup(projects)
     return [] if projects.empty?
 
-    received = ProjectStats.latest_received_at_by_project(projects.map(&:id))
-    projects.reject { |project| received.key?(project.id) }.first(5)
+    received = IngestEvent.where(IngestEvent.arel_table[:project_id].eq(Project.arel_table[:id])).arel.exists
+    missing_ids = Project.where(id: projects.map(&:id)).where(received.not).pluck(:id)
+    projects.select { |project| missing_ids.include?(project.id) }.first(5)
   end
 
   def explorer
@@ -57,7 +58,7 @@ class DashboardController < ApplicationController
     project_ids = projects.map(&:id)
     filters = dashboard_explorer_filters(project_ids)
     explorer = safe_cache_fetch(
-      [ "dashboard_explorer", current_user.id, project_ids, filters, cache_time_bucket(DASHBOARD_CACHE_TTL) ],
+      [ "dashboard_explorer", current_user.id, project_ids, filters ],
       expires_in: DASHBOARD_CACHE_TTL
     ) { Dashboard.explorer_for(project_ids, **filters) }
 

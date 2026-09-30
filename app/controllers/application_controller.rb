@@ -57,10 +57,21 @@ class ApplicationController < ActionController::Base
   end
 
   def safe_cache_fetch(key, expires_in:, race_condition_ttl: 5.seconds, &block)
-    Rails.cache.fetch(key, expires_in: expires_in, race_condition_ttl: race_condition_ttl, &block)
+    computing = false
+    computed = false
+    result = nil
+    Rails.cache.fetch(key, expires_in: expires_in, race_condition_ttl: race_condition_ttl) do
+      computing = true
+      result = block.call
+      computing = false
+      computed = true
+      result
+    end
   rescue StandardError => e
+    raise if computing
+
     Rails.logger.warn("cache fetch failed key=#{key.inspect}: #{e.class} #{e.message}")
-    block.call
+    computed ? result : block.call
   end
 
   def cache_time_bucket(duration)
