@@ -7,7 +7,6 @@ module ProjectCapabilityLoaders
       symbol_observed_at = project.apple_symbol_artifacts.usable.maximum(:created_at)
       symbol_counts = dimension_counts("symbolication_status")
       app_store_setting = project.integration_settings.find_by(provider: ProjectIntegrationSetting::PROVIDERS.fetch(:app_store_connect))
-      check_in_observed_at = project.check_in_monitors.maximum(Arel.sql("COALESCE(last_check_in_at, created_at)"))
 
       {
         session_health: capability_status(
@@ -26,13 +25,7 @@ module ProjectCapabilityLoaders
           action_key: :upload_apple_symbols
         ),
         distribution_store: distribution_status(:distribution_store, app_store_setting, label: "App Store Connect"),
-        check_ins: capability_status(
-          :check_ins,
-          check_in_observed_at ? :configured : :unconfigured,
-          observed_at: check_in_observed_at,
-          reason: check_in_observed_at ? "At least one app check-in has been observed." : "No app check-in has been observed.",
-          action_key: :configure_mobile_check_ins
-        )
+        check_ins: check_ins_status(action_key: :configure_mobile_check_ins, subject: "app")
       }.freeze
     end
 

@@ -37,9 +37,19 @@ class DashboardController < ApplicationController
 
     if @dashboard_tab == "overview"
       load_overview_dashboard_data(summary)
+      @projects_needing_setup = projects_needing_setup(@projects)
     else
       load_projects_dashboard_data(summary)
     end
+  end
+
+  # Active projects that have never received data. One indexed lookup per
+  # project (the same one the project cards use), and only on the overview tab.
+  def projects_needing_setup(projects)
+    return [] if projects.empty?
+
+    received = ProjectStats.latest_received_at_by_project(projects.map(&:id))
+    projects.reject { |project| received.key?(project.id) }.first(5)
   end
 
   def explorer

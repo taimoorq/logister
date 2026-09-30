@@ -1,4 +1,6 @@
 class ProjectLinksController < ApplicationController
+  include SetupWizardReturn
+  include ProjectSettingsContext
   include ProjectScope
   before_action :authenticate_user!
   before_action :set_managed_project
@@ -7,15 +9,17 @@ class ProjectLinksController < ApplicationController
     @connection = build_connection
     @connection.peer # Reject inaccessible or stale project choices before rendering.
     load_links
+    load_settings_navigation
   end
 
   def create
     @connection = build_connection
     if @connection.save
-      redirect_to project_project_links_path(@project, direction: @connection.direction), status: :see_other,
+      redirect_to (setup_return_path || project_project_links_path(@project, direction: @connection.direction)), status: :see_other,
         notice: "#{@connection.source.name} is now linked to #{@connection.target.name}."
     else
       load_links
+      load_settings_navigation
       render :index, status: :unprocessable_content
     end
   end
@@ -31,6 +35,14 @@ class ProjectLinksController < ApplicationController
   end
 
   private
+
+  # Connections sits in the settings navigation, so the page shows it.
+  def load_settings_navigation
+    @settings_section = "connections"
+    navigation = ProjectSettingsNavigation.new(project: @project, user: current_user, app_admin: admin_user?, requested_section: "connections")
+    @settings_sections = navigation.sections
+  end
+
 
   def build_connection
     attributes = params.permit(:direction, :peer_project_uuid, :source_environment, :target_environment,

@@ -7,7 +7,7 @@ RSpec.describe ProjectSettingsNavigation, type: :model do
     project = create(:project, user: users(:one))
     navigation = described_class.new(project: project, user: users(:one), requested_section: "integrations")
 
-    expect(navigation.sections.keys).to eq(%w[general notifications team integrations data danger])
+    expect(navigation.sections.keys).to eq(%w[general notifications team integrations connections data danger])
     expect(navigation.selected_section).to eq("integrations")
   end
 
@@ -16,7 +16,7 @@ RSpec.describe ProjectSettingsNavigation, type: :model do
     create(:project_membership, project: project, user: users(:two), role: :admin)
     navigation = described_class.new(project: project, user: users(:two), requested_section: "danger")
 
-    expect(navigation.sections.keys).to eq(%w[general notifications team integrations data])
+    expect(navigation.sections.keys).to eq(%w[general notifications team integrations connections data])
     expect(navigation.selected_section).to eq("general")
   end
 

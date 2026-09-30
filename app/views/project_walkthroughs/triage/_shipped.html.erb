@@ -1,0 +1,42 @@
+<%# locals: (project:, group:, event:, deployment_context:, walkthrough:, next_step:, step_path:, other_groups: nil, assignable_users: nil) %>
+<% deployment = deployment_context&.deployment %>
+<% experience = project.integration_definition.default_experience_key %>
+<% has_deployments_step = ProjectSetupCatalog.steps_for(experience).any? { |step| step.key == :deployments } %>
+<p class="wz-lead">If an issue started right after a deploy, the release is the first suspect.</p>
+
+<section class="wz-panel" aria-labelledby="walkthrough-shipped-title">
+  <% if deployment %>
+    <h2 id="walkthrough-shipped-title">Release <%= deployment.release %></h2>
+    <p>
+      <%= deployment.repository_full_name %> · <%= deployment.environment %> ·
+      deployed <%= local_time_tag(deployment.deployed_at || deployment.created_at) %>
+    </p>
+    <p class="font-semibold" style="color: var(--app-text)">
+      <% if deployment_context.started_after && deployment_context.minutes_after %>
+        This issue was first seen <%= pluralize(deployment_context.minutes_after, "minute") %> after that deploy.
+      <% else %>
+        This issue was first seen before that deploy, so it is unlikely to have come from it.
+      <% end %>
+      <%= deployment_context.exact_release? ? "The issue reports this exact release." : "Matched by time, not by release name." %>
+    </p>
+    <% if deployment.compare_url(deployment_context.previous_deployment).present? %>
+      <%= link_to "Compare with the previous deploy", deployment.compare_url(deployment_context.previous_deployment), target: "_blank", rel: "noopener noreferrer", class: "mt-3 inline-block text-sm font-semibold" %>
+    <% end %>
+  <% else %>
+    <h2 id="walkthrough-shipped-title">No deploy to compare with</h2>
+    <p>
+      <% if group.introduced_in_release.present? %>
+        This issue was first seen in release <strong><%= group.introduced_in_release %></strong>, but no deployment is recorded for it.
+      <% else %>
+        Logister has no deployment recorded for this project, so it cannot tell whether a release caused this issue.
+      <% end %>
+    </p>
+    <div class="mt-3 flex flex-wrap gap-3">
+      <% if has_deployments_step %>
+        <%= link_to "Record deployments", setup_step_project_path(project, group: "actionable", step: "deployments"), class: "btn-ghost" %>
+      <% elsif project.integration_android? || project.integration_ios? %>
+        <%= link_to "See observed builds", releases_project_path(project), class: "btn-ghost" %>
+      <% end %>
+    </div>
+  <% end %>
+</section>

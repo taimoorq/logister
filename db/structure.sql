@@ -1885,6 +1885,41 @@ ALTER SEQUENCE public.project_retention_runs_id_seq OWNED BY public.project_rete
 
 
 --
+-- Name: project_setup_steps; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.project_setup_steps (
+    id bigint NOT NULL,
+    project_id bigint NOT NULL,
+    key character varying NOT NULL,
+    status character varying DEFAULT 'skipped'::character varying NOT NULL,
+    decided_by_user_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT project_setup_steps_known_status CHECK (((status)::text = 'skipped'::text))
+);
+
+
+--
+-- Name: project_setup_steps_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.project_setup_steps_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: project_setup_steps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.project_setup_steps_id_seq OWNED BY public.project_setup_steps.id;
+
+
+--
 -- Name: project_source_repositories; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2831,6 +2866,13 @@ ALTER TABLE ONLY public.project_retention_runs ALTER COLUMN id SET DEFAULT nextv
 
 
 --
+-- Name: project_setup_steps id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_setup_steps ALTER COLUMN id SET DEFAULT nextval('public.project_setup_steps_id_seq'::regclass);
+
+
+--
 -- Name: project_source_repositories id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3343,6 +3385,14 @@ ALTER TABLE ONLY public.project_retention_policies
 
 ALTER TABLE ONLY public.project_retention_runs
     ADD CONSTRAINT project_retention_runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: project_setup_steps project_setup_steps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_setup_steps
+    ADD CONSTRAINT project_setup_steps_pkey PRIMARY KEY (id);
 
 
 --
@@ -5961,6 +6011,27 @@ CREATE UNIQUE INDEX index_project_retention_policies_on_project_id ON public.pro
 --
 
 CREATE UNIQUE INDEX index_project_retention_runs_on_run_key ON public.project_retention_runs USING btree (run_key);
+
+
+--
+-- Name: index_project_setup_steps_on_decided_by_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_setup_steps_on_decided_by_user_id ON public.project_setup_steps USING btree (decided_by_user_id);
+
+
+--
+-- Name: index_project_setup_steps_on_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_project_setup_steps_on_project_id ON public.project_setup_steps USING btree (project_id);
+
+
+--
+-- Name: index_project_setup_steps_unique_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_project_setup_steps_unique_key ON public.project_setup_steps USING btree (project_id, key);
 
 
 --
@@ -12799,6 +12870,14 @@ ALTER TABLE ONLY public.project_retention_runs
 
 
 --
+-- Name: project_setup_steps fk_rails_1573e4d309; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_setup_steps
+    ADD CONSTRAINT fk_rails_1573e4d309 FOREIGN KEY (project_id) REFERENCES public.projects(id) ON DELETE CASCADE;
+
+
+--
 -- Name: project_memberships fk_rails_18b611e244; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12828,6 +12907,14 @@ ALTER TABLE ONLY public.telemetry_archives
 
 ALTER TABLE ONLY public.telemetry_deliveries
     ADD CONSTRAINT fk_rails_1e5e533db7 FOREIGN KEY (telemetry_outbox_event_id) REFERENCES public.telemetry_outbox_events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: project_setup_steps fk_rails_1ea24c9aa7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.project_setup_steps
+    ADD CONSTRAINT fk_rails_1ea24c9aa7 FOREIGN KEY (decided_by_user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -13365,6 +13452,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260929120000'),
 ('20260925120000'),
 ('20260924121000'),
 ('20260924120000'),

@@ -1,0 +1,21 @@
+<article class="settings-panel lg:col-span-2" id="android-mappings">
+  <div>
+    <p class="dashboard-kicker">Source & mappings</p>
+    <h2 class="text-base font-bold text-slate-900 mb-2">R8 / ProGuard mappings</h2>
+    <p class="text-slate-600 text-sm">Mappings are private, scoped to the Android package and version code, and used only to retrace matching issue frames.</p>
+    <%= link_to "Open artifact inventory and build coverage", artifacts_project_path(@project), class: "mt-2 inline-block text-sm font-semibold text-blue-700 hover:text-blue-800" %>
+  </div>
+
+  <% if @project_manager %>
+    <%= render "projects/android_mapping_upload_form" %>
+  <% end %>
+
+  <div class="mt-5 space-y-2">
+    <% if @android_mapping_files.any? %>
+      <%= render partial: "projects/android_mapping", collection: @android_mapping_files, as: :mapping %>
+      <% if @android_mapping_count > @android_mapping_files.size %><p class="text-xs text-slate-500">Showing the latest <%= @android_mapping_files.size %> of <%= @android_mapping_count %>. Use Artifacts for the paginated inventory.</p><% end %>
+    <% else %>
+      <p class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">No R8 mappings uploaded. Release-build issues will show Mapping missing until a matching artifact is available.</p>
+    <% end %>
+  </div>
+</article>

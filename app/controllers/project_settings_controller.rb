@@ -8,6 +8,9 @@ class ProjectSettingsController < ApplicationController
   before_action :set_settings_project
 
   def show
+    # Connections is its own page, listed in the settings navigation.
+    return redirect_to(project_project_links_path(@project)) if params[:section] == "connections" && @project.managed_by?(current_user)
+
     if legacy_archive_search_path?
       redirect_to archives_project_path(@project, legacy_archive_search_params)
       return

@@ -8,7 +8,7 @@
         before adding optional telemetry.
       </p>
 
-      <details class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <details class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4" <%= "open" if local_assigns[:expanded] %>>
         <summary class="cursor-pointer text-sm font-semibold text-slate-900">Examples and package links</summary>
         <div class="mt-4">
       <% if @project.integration_cfml? %>
@@ -18,7 +18,7 @@
             <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>Wrap <code>cfhttp</code> in a small <code>LogisterClient.cfc</code>.</li>
               <li>Capture one controlled exception from <code>Application.cfc.onError()</code>.</li>
-              <li>Verify the grouped issue in the inbox before adding transactions or metrics.</li>
+              <li>Verify the grouped issue in Issues before adding transactions or metrics.</li>
             </ul>
           </div>
 
@@ -253,7 +253,7 @@ const client = new LogisterClient({
               <li>Install <code>org.logister:logister-android</code> from Maven Central through Gradle.</li>
               <li>Issue short-lived mobile ingest tokens from your backend.</li>
               <li>Configure the SDK with a <code>LogisterTokenProvider</code>; never ship the project API key.</li>
-              <li>Send one handled test error with release/build metadata, then verify its Java/Kotlin frames in the stability inbox.</li>
+              <li>Send one handled test error with release/build metadata, then verify its Java/Kotlin frames in Issues.</li>
               <li>Use the safe type-and-stacktrace policy, a bounded durable queue, and session-bound queue cleanup before enabling automatic crash capture.</li>
             </ul>
           </div>

@@ -75,6 +75,8 @@
           </tbody>
         </table>
       <% end %>
+    <% elsif (prompt = project_setup_prompt(@project, steps: %i[check_ins])) %>
+      <%= prompt %>
     <% else %>
       <p class="text-slate-600 text-sm">
         No check-ins yet. Send one heartbeat to

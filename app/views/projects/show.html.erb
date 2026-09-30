@@ -18,6 +18,7 @@
 <% request_span_count = @request_span_count_last_24h.to_i %>
 <% performance_events_count = transaction_count + db_query_count + request_span_count %>
 <% error_rate_percent = (@transaction_stats.fetch(:error_rate, 0.0).to_f * 100.0).round(1) %>
+<%= project_setup_prompt(@project, steps: %i[first_event], css: "mb-6") %>
 
 <section class="space-y-6">
   <section class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]"
@@ -43,7 +44,7 @@
       <section aria-label="Project error groups summary">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="dashboard-kicker">Inbox</p>
+            <p class="dashboard-kicker">Issues</p>
             <h2 class="text-lg font-bold text-slate-900">Error groups</h2>
           </div>
           <span class="project-overview-icon <%= dashboard_metric_state_class(open_errors_count) %>"><%= app_icon(:warning, css: "w-5 h-5") %></span>
@@ -70,7 +71,7 @@
 
         <%= link_to inbox_project_path(@project), class: "mt-4 inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 no-underline hover:bg-slate-50" do %>
           <%= app_icon(:folder_open, css: "w-4 h-4") %>
-          <span>Open inbox</span>
+          <span>Open issues</span>
         <% end %>
       </section>
 

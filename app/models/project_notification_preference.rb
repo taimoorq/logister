@@ -47,6 +47,14 @@ class ProjectNotificationPreference < ApplicationRecord
     digest_frequency.in?(%w[daily weekly])
   end
 
+  # True when any alert or digest would reach this person by email.
+  def delivers_any_alert?
+    first_occurrence_enabled? || regression_enabled? || frequent_error_enabled? || milestone_alerts_enabled? ||
+      monitor_alerts_enabled? || project_spike_enabled? || performance_alerts_enabled? ||
+      mobile_health_notifications_enabled? || release_notifications_enabled? ||
+      workflow_mode != "off" || digest_enabled?
+  end
+
   def immediate_email_enabled_for?(kind, error_group: nil, metadata: {}, now: Time.current)
     return false if quiet_hours_active?(now)
 

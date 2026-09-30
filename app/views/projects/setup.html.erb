@@ -1,5 +1,7 @@
 <% tour_group = "project-setup" %>
-<% experience = project_experience(@project) %>
+<% plan = @setup_plan %>
+<% next_item = plan.next_item %>
+<% requirements = plan.groups.group_by(&:requirement) %>
 
 <%= render layout: "shared/product_tour_frame", locals: { tour_group: tour_group } do %>
 
@@ -8,68 +10,112 @@
 <section class="settings-page">
   <%= render "projects/settings_nav" %>
 
-  <section class="settings-panel"
-           <%= tag.attributes(data: product_tour_step_data(tour_group, :checklist)) %>>
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div>
-        <p class="dashboard-kicker">Setup</p>
-        <h2 class="text-lg font-bold text-slate-900">Connect this project</h2>
-        <p class="mt-1 text-sm text-slate-600"><%= experience.setup_intro %></p>
-      </div>
-      <%= link_to project_integration_docs_label(@project),
-                  project_integration_docs_path(@project),
-                  target: "_blank",
-                  rel: "noopener noreferrer",
-                  class: "btn-ghost inline-flex items-center gap-2" %>
-    </div>
+  <div class="setup-hub-layout">
+    <div class="setup-hub" <%= tag.attributes(data: product_tour_step_data(tour_group, :checklist)) %>>
+      <header class="setup-hub-header">
+        <div>
+          <h2>Setup</h2>
+          <p>Grouped by what each step unlocks. Steps complete themselves when Logister sees the evidence.</p>
+        </div>
+        <ul class="setup-hub-counts" aria-label="Setup progress">
+          <% { required: "badge-ok", recommended: "badge-info", optional: "badge-neutral" }.each do |requirement, badge| %>
+            <% groups = requirements[requirement] %>
+            <% next if groups.blank? %>
+            <li class="setup-badge <%= badge %>">
+              <%= requirement.to_s.capitalize %> <%= groups.sum(&:done_count) %>/<%= groups.sum(&:total) %>
+            </li>
+          <% end %>
+        </ul>
+      </header>
 
-    <% setup_stages = {
-      connect: ["Connect", "Create the credential boundary the client needs."],
-      verify_delivery: ["Verify delivery", "Prove that one real receipt arrived with trustworthy app context."],
-      improve_evidence: ["Improve evidence", "Add correlation and artifacts that make issues actionable."],
-      external_sources: ["External sources", "Connect optional provider data without blending its freshness or denominator into SDK evidence."]
-    } %>
-    <% steps_by_stage = @setup_steps.group_by(&:stage) %>
-    <div class="mt-5 space-y-5">
-      <% setup_stages.each do |stage_key, (stage_label, stage_description)| %>
-        <% steps = steps_by_stage.fetch(stage_key, []) %>
-        <% next if steps.empty? %>
-        <section aria-labelledby="setup-stage-<%= stage_key %>">
-          <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-            <h3 id="setup-stage-<%= stage_key %>" class="text-sm font-bold text-slate-900"><%= stage_label %></h3>
-            <p class="text-xs text-slate-500"><%= stage_description %></p>
+      <section class="setup-next" aria-labelledby="setup-next-title">
+        <% if next_item %>
+          <div>
+            <p class="setup-kicker"><%= next_item.step.group.required? ? "Next step to go live" : "Recommended next step" %></p>
+            <h3 id="setup-next-title"><%= next_item.label %></h3>
+            <p><%= next_item.summary %></p>
+            <p class="setup-next-owner">
+              <span class="setup-owner"><%= app_icon(:account, css: "h-3.5 w-3.5") %><%= next_item.owner_label %></span>
+              <span class="setup-owner"><%= next_item.action.kind == :guide ? "Done in your code or CI" : "Done in Logister" %></span>
+            </p>
           </div>
-          <div class="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <% steps.each do |step| %>
-              <% state_classes = {
-                complete: "border-emerald-200 bg-emerald-50",
-                partial: "border-amber-200 bg-amber-50",
-                stale: "border-amber-200 bg-amber-50",
-                blocked: "border-rose-200 bg-rose-50",
-                failed: "border-rose-200 bg-rose-50",
-                not_applicable: "border-slate-200 bg-slate-50",
-                pending: "border-slate-200 bg-slate-50"
-              } %>
-              <article class="rounded-lg border <%= state_classes.fetch(step.state) %> p-4" data-setup-state="<%= step.state %>">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="flex min-w-0 items-center gap-2">
-                    <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600">
-                      <%= app_icon(step.icon, css: "h-3.5 w-3.5") %>
-                    </span>
-                    <strong class="text-sm font-semibold text-slate-900"><%= step.label %></strong>
-                  </div>
-                  <span class="text-[10px] font-bold uppercase tracking-wide text-slate-600"><%= step.state_label %></span>
-                </div>
-                <p class="mt-2 text-xs text-slate-600"><%= step.detail %></p>
-              </article>
-            <% end %>
+          <%= link_to next_item.action.label, next_item.action.path, class: "btn-primary setup-next-action" %>
+        <% elsif plan.live? %>
+          <div>
+            <p class="setup-kicker">All set</p>
+            <h3 id="setup-next-title">Nothing left to set up right now</h3>
+            <p>
+              <%= @project.name %> is live, and no recommended step needs you.
+              Anything waiting on your Logister admin is listed below.
+            </p>
           </div>
-        </section>
+        <% else %>
+          <div>
+            <p class="setup-kicker">Waiting</p>
+            <h3 id="setup-next-title">The next required step needs someone else</h3>
+            <p>Finish what is marked below, or ask the person named on the step.</p>
+          </div>
+        <% end %>
+      </section>
+
+      <% plan.groups.each_with_index do |group, index| %>
+        <% heading = "#{index + 1} · #{group.label}" %>
+        <% if group.complete? %>
+          <details class="setup-group setup-group-complete" id="group-<%= group.key %>">
+            <summary>
+              <span class="setup-marker setup-marker-complete"><%= app_icon(:check, css: "h-3.5 w-3.5") %></span>
+              <span class="setup-group-title"><%= heading %></span>
+              <span class="setup-badge badge-ok">Complete</span>
+              <span class="setup-group-count"><%= group.done_count %> of <%= group.total %></span>
+            </summary>
+            <ul class="setup-items">
+              <% group.items.each do |item| %>
+                <%= render "projects/setup_item", item: item, plan: plan, project: @project, next_item: next_item %>
+              <% end %>
+            </ul>
+          </details>
+        <% else %>
+          <section class="setup-group" id="group-<%= group.key %>" aria-labelledby="group-title-<%= group.key %>">
+            <header class="setup-group-header">
+              <h3 id="group-title-<%= group.key %>" class="setup-group-title"><%= heading %></h3>
+              <span class="setup-badge <%= { required: 'badge-ok', recommended: 'badge-info', optional: 'badge-neutral' }.fetch(group.requirement) %>"><%= group.requirement_label %></span>
+              <span class="setup-group-count"><%= group.done_count %> of <%= group.total %> done</span>
+              <%= link_to "Open path", setup_group_project_path(@project, group: group.key), class: "btn-ghost btn-sm ml-auto" %>
+            </header>
+            <ul class="setup-items">
+              <% group.items.each do |item| %>
+                <%= render "projects/setup_item", item: item, plan: plan, project: @project, next_item: next_item %>
+              <% end %>
+            </ul>
+          </section>
+        <% end %>
       <% end %>
     </div>
-  </section>
 
-  <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <aside class="setup-legend" aria-labelledby="setup-legend-title">
+      <p class="setup-kicker">Who does each step</p>
+      <h3 id="setup-legend-title" class="sr-only">Step owners</h3>
+      <dl>
+        <div>
+          <dt>You, Project manager</dt>
+          <dd>Done here in Logister. The step opens the form.</dd>
+        </div>
+        <div>
+          <dt>Your code, Your CI</dt>
+          <dd>Done in your app or pipeline. Logister confirms it when the evidence arrives.</dd>
+        </div>
+        <div>
+          <dt>Logister admin</dt>
+          <dd>Needs an instance setting. Admins get a direct link; everyone else can copy it.</dd>
+        </div>
+      </dl>
+      <p class="setup-legend-docs">
+        <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer" %>
+      </p>
+    </aside>
+  </div>
+
+  <section class="grid grid-cols-1 gap-6 lg:grid-cols-2" aria-label="Credentials and guides">
     <%= render "projects/setup_api_keys", tour_group: tour_group %>
     <%= render "projects/setup_ingest_endpoint", tour_group: tour_group %>
     <% if @self_monitoring_status.linked? %>

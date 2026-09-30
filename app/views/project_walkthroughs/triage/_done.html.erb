@@ -1,0 +1,23 @@
+<%# locals: (project:, group:, event:, walkthrough:, next_step:, step_path:, other_groups: nil, deployment_context: nil, assignable_users: nil) %>
+<% assignee = group.assignee %>
+<p class="wz-lead">Here is where <strong style="color: var(--app-text)"><%= group.title %></strong> stands now.</p>
+
+<section class="wz-panel wz-panel-success" aria-labelledby="walkthrough-done-title">
+  <h2 id="walkthrough-done-title">What changed</h2>
+  <ul class="mt-2 flex list-none flex-col gap-2 p-0 text-sm">
+    <li>
+      <strong>Status:</strong>
+      <%= group.unresolved? ? "Still open." : "Marked #{group.status}." %>
+    </li>
+    <li>
+      <strong>Owner:</strong>
+      <%= assignee ? "Assigned to #{assignee.name.presence || assignee.email}." : "Nobody is assigned yet." %>
+    </li>
+  </ul>
+  <div class="mt-4 flex flex-wrap gap-3">
+    <%= link_to "Open this issue", inbox_project_path(project, group_uuid: group.uuid), class: "btn-ghost" %>
+    <% if project.error_groups.open.where.not(id: group.id).exists? %>
+      <%= link_to "Triage another issue", walkthrough_project_path(project, key: walkthrough.key), class: "btn-ghost" %>
+    <% end %>
+  </div>
+</section>

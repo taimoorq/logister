@@ -11,7 +11,7 @@ en:
         project_navigation:
           order: 2
           title: "Project navigation"
-          tour: "Use Home for the overview, Inbox for triage, Events and Performance for telemetry, and Setup or Settings for configuration."
+          tour: "Use Overview for health, Issues for triage, Performance and Releases for what is slow or shipped, Explore to search events and charts, and Settings for setup and configuration."
       dashboard:
         overview:
           order: 1

@@ -1,0 +1,69 @@
+<% content_for :title, "#{@step.title} · #{@walkthrough.title} · #{@project.name}" %>
+<% position = @walkthrough.steps.index(@step) %>
+<% rail = @walkthrough.rail_steps %>
+<% step_path = ->(step) { walkthrough_step_project_path(@project, key: @walkthrough.key, step: step.key, group_uuid: @group.uuid) } %>
+
+<div class="wz-shell">
+  <nav class="wz-rail" aria-label="Steps in this walkthrough">
+    <div>
+      <p class="setup-kicker">Walkthrough · <%= rail.size %> steps</p>
+      <p class="wz-rail-title"><%= @walkthrough.title %></p>
+      <p class="wz-lead">Uses this project's real issue. What you do here really happens.</p>
+    </div>
+
+    <ol class="wz-steps">
+      <% rail.each_with_index do |rail_step, index| %>
+        <li class="wz-step" <%= tag.attributes(aria: { current: ("step" if rail_step == @step) }) %>>
+          <span class="setup-marker <%= index < position ? 'setup-marker-complete' : '' %>">
+            <% if index < position %><%= app_icon(:check, css: "h-3.5 w-3.5") %><span class="sr-only">Done</span><% else %><%= index + 1 %><% end %>
+          </span>
+          <div>
+            <%= link_to rail_step.title, step_path.call(rail_step) %>
+            <p class="wz-step-sub"><%= rail_step.summary %></p>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+
+    <p class="wz-upnext">
+      Run this again from the <strong>?</strong> menu on Issues.
+    </p>
+  </nav>
+
+  <section class="wz-main" aria-labelledby="wz-step-title">
+    <div class="wz-main-body">
+      <% if @step.key == :done %>
+        <p class="setup-kicker">Finished</p>
+      <% else %>
+        <p class="setup-kicker">Step <%= position + 1 %> of <%= rail.size %></p>
+      <% end %>
+      <h1 id="wz-step-title"><%= @step.title %></h1>
+
+      <%= render "project_walkthroughs/#{@walkthrough.key}/#{@step.key}",
+                 project: @project, group: @group, event: @event, walkthrough: @walkthrough,
+                 next_step: @next_step, step_path: step_path,
+                 other_groups: @other_groups, deployment_context: @deployment_context, assignable_users: @assignable_users %>
+    </div>
+
+    <footer class="wz-footer">
+      <div>
+        <% if @previous_step %>
+          <%= link_to "Back", step_path.call(@previous_step), class: "btn-ghost" %>
+        <% else %>
+          <%= link_to "Exit walkthrough", inbox_project_path(@project, group_uuid: @group.uuid), class: "btn-ghost" %>
+        <% end %>
+      </div>
+      <div class="wz-footer-right">
+        <% case @step.key %>
+        <% when :read, :shipped %>
+          <%= link_to "Continue: #{@next_step.title}", step_path.call(@next_step), class: "btn-primary" %>
+        <% when :owner, :close %>
+          <span class="wz-footer-hint">Choose above, or move on without changing anything.</span>
+          <%= link_to "Skip this step", step_path.call(@next_step), class: "setup-link-button" %>
+        <% when :done %>
+          <%= link_to "Back to Issues", inbox_project_path(@project), class: "btn-primary" %>
+        <% end %>
+      </div>
+    </footer>
+  </section>
+</div>

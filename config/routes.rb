@@ -80,12 +80,23 @@ Rails.application.routes.draw do
     end
   end
 
+  get "projects/new/quick", to: "projects#quick", as: :new_project_quick
+  get "projects/new/:step", to: "project_creation_steps#show", as: :new_project_step,
+      constraints: { step: Regexp.union(ProjectCreationWizard::CREATION_STEPS) }
+
   resources :projects, only: [ :index, :show, :new, :create, :edit, :update, :destroy ], param: :uuid do
     member do
       get :inbox
       patch :archive
       patch :restore
       get :setup, to: "project_setup#show"
+      get :setup_chip, to: "project_setup_chips#show"
+      get "walkthroughs/:key", to: "project_walkthroughs#index", as: :walkthrough
+      get "walkthroughs/:key/:step", to: "project_walkthroughs#show", as: :walkthrough_step
+      setup_groups = Regexp.union(ProjectSetupCatalog::GROUPS.map { |group| group.key.to_s })
+      get "setup/:group", to: "project_setup_steps#index", as: :setup_group, constraints: { group: setup_groups }
+      get "setup/:group/:step", to: "project_setup_steps#show", as: :setup_step, constraints: { group: setup_groups }
+      get "setup/:group/:step/verification", to: "project_setup_steps#verification", as: :setup_step_verification, constraints: { group: setup_groups }
       get :settings, to: "project_settings#show"
       patch :correlation_setting, to: "project_links#update"
       get "insights/data", to: "project_insights#data", as: :insights_data
@@ -95,10 +106,10 @@ Rails.application.routes.draw do
       get :artifacts, to: "project_artifacts#index"
       get "performance/request-breakdown", to: "project_performance#request_breakdown", as: :performance_request_breakdown
       get "performance/database-load", to: "project_performance#database_load", as: :performance_database_load
-      get "performance/release-health", to: "project_performance#release_health", as: :performance_release_health
       get "performance/transactions", to: "project_performance#transactions", as: :performance_transactions
       get :monitors, to: "project_monitors#show"
       get :deployments, to: "project_deployments#index"
+      get "deployments/release-health", to: "project_deployments#release_health", as: :deployments_release_health
       get :activity, to: "project_activity#show"
       get :connections, to: "project_connections#index"
       get :archives, to: "project_archives#show"
@@ -106,6 +117,7 @@ Rails.application.routes.draw do
     resources :project_links, only: [ :index, :create, :destroy ], param: :uuid
     resources :requests, only: :show, controller: "project_requests", param: :uuid
     resources :api_keys, only: [ :create, :destroy ], param: :uuid
+    resources :setup_skips, only: [ :create, :destroy ], controller: "project_setup_skips", param: :key
     resources :project_memberships, only: [ :create, :update, :destroy ], param: :uuid
     resources :source_repositories, only: [ :create, :update, :destroy ], controller: "project_source_repositories", param: :uuid
     post "github/installations/:uuid/sync", to: "github/installations#sync", as: :github_installation_sync

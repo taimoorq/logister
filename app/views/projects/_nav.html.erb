@@ -1,40 +1,32 @@
 <%# locals: (page_context:, tour_group: nil) %>
+<% navigation = page_context.navigation %>
 
-<nav class="project-section-nav"
+<nav class="project-tabs"
      aria-label="Project sections"
      <%= tag.attributes(data: product_tour_step_data(tour_group, :project_navigation)) if tour_group.present? %>>
-  <% page_context.navigation.primary_pages.each do |page| %>
-    <% active = page_context.active?(page) %>
-    <%= link_to page_context.path_for(page),
-                title: page.description,
-                class: "project-section-nav-link #{active ? 'is-active' : ''}",
-                aria: { current: ("page" if active) } do %>
-      <%= app_icon(page.icon_key, css: "h-3.5 w-3.5 shrink-0") %>
-      <span><%= page.label %></span>
+  <% navigation.tabs.each do |tab| %>
+    <% current = navigation.current?(tab) %>
+    <%= link_to page_context.path_for(tab.entry_page),
+                title: tab.entry_page.description,
+                class: class_names("project-tab", "project-tab-pinned": tab.pinned?),
+                aria: { current: ("page" if current) } do %>
+      <%= app_icon(tab.icon_key, css: "h-4 w-4 shrink-0") %>
+      <span><%= tab.label %></span>
     <% end %>
   <% end %>
-
-  <% if page_context.navigation.secondary_pages.any? %>
-    <details class="project-nav-menu relative shrink-0">
-      <summary class="project-nav-menu-summary project-section-nav-link <%= 'is-active' if page_context.navigation.secondary_active? %>">
-        <span>More</span>
-        <%= app_icon(:chevron_down, css: "h-3.5 w-3.5 shrink-0") %>
-      </summary>
-      <div class="project-nav-menu-panel absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
-        <% page_context.navigation.secondary_pages.group_by(&:menu_group).each do |group, pages| %>
-          <p class="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 first:pt-0"><%= group %></p>
-          <% pages.each do |page| %>
-            <% active = page_context.active?(page) %>
-            <%= link_to page_context.path_for(page),
-                      title: page.description,
-                      class: "flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 #{active ? 'bg-blue-700 text-white shadow-sm hover:bg-blue-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}",
-                      aria: { current: ("page" if active) } do %>
-              <%= app_icon(page.icon_key, css: "h-3.5 w-3.5 shrink-0") %>
-              <span><%= page.label %></span>
-            <% end %>
-          <% end %>
-        <% end %>
-      </div>
-    </details>
-  <% end %>
 </nav>
+
+<% if navigation.views.any? %>
+  <nav class="project-subnav" aria-label="<%= navigation.current_section_label %> views">
+    <% navigation.views.each do |view| %>
+      <% view_path, dropped = project_view_link(page_context, view) %>
+      <%= link_to view_path,
+                  title: view.description,
+                  class: "project-subnav-link",
+                  aria: { current: ("page" if navigation.view_current?(view)) } do %>
+        <%= view.view_label %>
+        <% if dropped.any? %><span class="sr-only">. <%= dropped.to_sentence.tr("_", " ") %> does not carry over to this view.</span><% end %>
+      <% end %>
+    <% end %>
+  </nav>
+<% end %>

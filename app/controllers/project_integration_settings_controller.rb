@@ -1,6 +1,7 @@
 class ProjectIntegrationSettingsController < ApplicationController
   include ProjectScope
   include ProjectSettingsContext
+  include SetupWizardReturn
 
   before_action :authenticate_user!
   before_action :set_managed_project
@@ -14,12 +15,14 @@ class ProjectIntegrationSettingsController < ApplicationController
     @integration_setting.assign_attributes(integration_setting_params)
 
     if @integration_setting.save
-      redirect_to settings_project_path(@project, section: "integrations", anchor: integration_anchor),
+      redirect_to (setup_return_path || settings_project_path(@project, section: "integrations", anchor: integration_anchor)),
                   notice: "#{@integration_setting.provider.humanize} settings updated."
     else
       @cloudflare_integration_setting = @integration_setting if @integration_setting.provider_cloudflare_pages?
       @google_play_integration_setting = @integration_setting if @integration_setting.provider_google_play?
       @app_store_connect_integration_setting = @integration_setting if @integration_setting.provider_app_store_connect?
+      return if render_setup_return_with_errors(@integration_setting.errors.full_messages.to_sentence)
+
       @settings_section = "integrations"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content
@@ -33,7 +36,7 @@ class ProjectIntegrationSettingsController < ApplicationController
     label = provider == "app_store_connect" ? "App Store Connect" : "Google Play"
 
     unless setting.configured?
-      redirect_to settings_project_path(@project, section: "integrations", anchor: anchor), alert: "Configure #{label} credentials before importing."
+      redirect_to (setup_return_path || settings_project_path(@project, section: "integrations", anchor: anchor)), alert: "Configure #{label} credentials before importing."
       return
     end
 
@@ -42,7 +45,7 @@ class ProjectIntegrationSettingsController < ApplicationController
     else
       GooglePlayImportJob.perform_later(setting.id)
     end
-    redirect_to settings_project_path(@project, section: "integrations", anchor: anchor), notice: "#{label} import queued."
+    redirect_to (setup_return_path || settings_project_path(@project, section: "integrations", anchor: anchor)), notice: "#{label} import queued."
   end
 
   private

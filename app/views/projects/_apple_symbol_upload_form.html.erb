@@ -1,0 +1,10 @@
+<%= form_with model: [@project, @apple_symbol_artifact], multipart: true, data: setup_form_data, class: "mt-5 grid grid-cols-1 gap-4 md:grid-cols-3" do |form| %>
+  <%= setup_return_field %>
+  <div><%= form.label :app_identifier, "Bundle identifier", class: "form-label" %><%= form.text_field :app_identifier, placeholder: "com.acme.shop", class: "form-input", required: true %></div>
+  <div><%= form.label :version_name, "Version", class: "form-label" %><%= form.text_field :version_name, placeholder: "4.2.0", class: "form-input" %></div>
+  <div><%= form.label :version_code, "Build", class: "form-label" %><%= form.text_field :version_code, placeholder: "310", class: "form-input", required: true %></div>
+  <div class="md:col-span-2"><%= form.label :binary_uuid, "Binary UUID", class: "form-label" %><%= form.text_field :binary_uuid, placeholder: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE", class: "form-input", required: true %></div>
+  <div><%= form.label :architecture, "Architecture", class: "form-label" %><%= form.select :architecture, AppleSymbolArtifact::ARCHITECTURES.map { |value| [value, value] }, {}, class: "form-input" %></div>
+  <div class="md:col-span-2"><%= form.label :upload, "Zipped dSYM", class: "form-label" %><%= form.file_field :upload, accept: ".zip,application/zip", class: "form-input", required: true %><p class="mt-1 text-xs text-slate-500">Maximum <%= AppleSymbolArtifact::MAX_BYTES / 1.megabyte %> MB. Upload immediately after archive/export so UUIDs stay tied to the exact build.</p></div>
+  <div class="flex items-end justify-end"><%= form.submit "Upload dSYM", class: "btn btn-primary" %></div>
+<% end %>

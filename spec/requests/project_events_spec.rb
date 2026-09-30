@@ -12,6 +12,27 @@ RSpec.describe "Project events", type: :request do
     end
   end
 
+  describe "a Turbo Frame the page does not own" do
+    before { sign_in users(:one) }
+
+    it "never returns a mismatched inbox or detail fragment" do
+      project = create(:project, user: users(:one), integration_kind: "ruby")
+      api_key = create(:api_key, project: project, user: users(:one))
+      event = create(:ingest_event, project: project, api_key: api_key, event_type: :error, level: "error")
+      ErrorGroupingService.call(event)
+
+      get project_events_path(project), headers: { "Turbo-Frame" => "wrong_inbox" }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to be_blank
+
+      get project_event_path(project, event), headers: { "Turbo-Frame" => "wrong_detail" }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to be_blank
+    end
+  end
+
   describe "GET /projects/:project_uuid/events/:uuid" do
     context "when owner" do
       before { sign_in users(:one) }
@@ -28,7 +49,7 @@ RSpec.describe "Project events", type: :request do
 
         expect(header["data-project-kind"]).to eq(projects(:one).integration_kind)
         expect(header["data-project-page"]).to eq("error_event")
-        expect(navigation.at_css("a[aria-current='page']").text.strip).to eq("Inbox")
+        expect(navigation.at_css("a[aria-current='page']").text.strip).to eq("Issues")
       end
 
       it "uses the event timestamp hint when present" do
@@ -79,7 +100,8 @@ RSpec.describe "Project events", type: :request do
           expect(response).to have_http_status(:success)
           document = Nokogiri::HTML.parse(response.body)
           expect(document.at_css(".project-command-panel")["data-project-page"]).to eq("activity_event")
-          expect(document.at_css("nav[aria-label='Project sections'] a[aria-current='page']").text.strip).to eq("Activity")
+          expect(document.at_css("nav[aria-label='Project sections'] a[aria-current='page']").text.strip).to eq("Explore")
+          expect(document.at_css("nav[aria-label='Explore views'] a[aria-current='page']").text.strip).to eq("Events")
           expect(document.at_css("nav[aria-label='Event details']")).to be_present
           expect(document.at_css(".event-group-card")).to be_nil
           expect(document.text).to include("Activity event", "Back to activity", "#{event_type.to_s.humanize} data")

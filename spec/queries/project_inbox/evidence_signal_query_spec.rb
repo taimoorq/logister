@@ -8,12 +8,12 @@ RSpec.describe ProjectInbox::EvidenceSignalQuery do
   let(:api_key) { create(:api_key, project:, user: project.user) }
 
   def insert_occurrences(group, times:, precision: "exact", installations: [], sessions: [], session_ages: [])
+    event_ids = insert_events(project:, api_key:, times:)
     rows = times.each_with_index.map do |occurred_at, index|
-      event = create(:ingest_event, project:, api_key:, occurred_at:)
       {
         uuid: SecureRandom.uuid,
         error_group_id: group.id,
-        ingest_event_id: event.id,
+        ingest_event_id: event_ids.fetch(index),
         occurred_at:,
         ingest_event_occurred_at: occurred_at,
         installation_hash: installations[index],

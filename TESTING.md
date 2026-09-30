@@ -50,3 +50,15 @@ Requires PostgreSQL and Redis for the test environment (same as development). En
 - **Services and presenters**: Event ingestor → ClickHouse payload mapping, error grouping, project event presenters, request context extraction, and language-specific stack/log rendering.
 - **Jobs**: `ClickhouseIngestJob`, first-occurrence project error alerts, digest scheduling, digest delivery, and archived-project skips.
 - **System specs**: Keep these focused on critical browser behavior such as auth, navigation/dropdowns, and representative Hotwire flows. Prefer request specs for the full Turbo Stream matrix.
+
+## Conventions that keep the suite small and fast
+
+- **Access rules live in one place.** `spec/requests/routes_protection_spec.rb` builds its list of project routes from the router. It checks that every `/projects/:uuid/...` route sends a signed-out visitor to sign in and answers someone with no access with a 404, and that a viewer can open every read-only page. A new project route is covered automatically. Do not add a per-page "requires authentication" or "returns 404 for another user's project" example. Keep an example only when it asserts more, such as a record that must not change.
+- **One request spec per page or controller**, named for what it renders (`project_performance_spec.rb`, `project_monitors_spec.rb`), not one large file per resource.
+- **Shell and contract checks run once per page.** `spec/requests/project_page_contract_spec.rb` renders every page for every project type. Do not re-check the header, tab bar, or current tab in feature specs.
+- **Bulk data uses `insert_events`** (`spec/support/bulk_records.rb`) when the number of rows is the point. A factory per row is slow, and each event built by default also builds its own API key.
+- **Query counts use `capture_sql`** (`spec/support/sql_capture.rb`), not a hand-written `sql.active_record` subscriber, unless a spec needs to filter on the SQL text or its binds.
+- **Factories are linted as a whole.** `spec/models/factory_bot_spec.rb` builds every factory and trait, so a broken trait fails one example. Keep only behavior examples there, such as how a factory links records.
+- **Repeated examples that differ only by data are generated from a table** (`{ "python" => [...] }.each`), so each row stays a separate example with its own name.
+- **Browser specs cover only what needs a browser**: timers, focus, Stimulus lifecycle, and layout. Server-rendered content belongs in a request spec.
+- **Test errors render like production.** `config.consider_all_requests_local` is `false` in `config/environments/test.rb`, so a 404 renders the static page and not the developer exception page. That cost about 70ms per 404 across the suite.

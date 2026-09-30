@@ -183,6 +183,9 @@
                  params: @activity_filters,
                  page_label: "events" %>
     <% else %>
+      <% unless @activity_filters_active || @activity_has_any_events %>
+        <%= project_setup_prompt(@project, steps: %i[first_event first_diagnostic], css: "mb-4") %>
+      <% end %>
       <p class="text-slate-600 text-sm">
         <% if @activity_filters_active %>
           No events match these filters.

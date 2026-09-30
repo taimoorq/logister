@@ -1,4 +1,5 @@
 class ErrorGroupAssignmentsController < ApplicationController
+  include WalkthroughReturn
   include ProjectEventDetailData
   include ProjectInboxData
 
@@ -34,7 +35,14 @@ class ErrorGroupAssignmentsController < ApplicationController
     @group = @project.error_groups.find_by!(uuid: group_uuid)
   end
 
+  def assignment_notice
+    assignee = @group.reload.assignee
+    assignee ? "Assigned to #{assignee.name.presence || assignee.email}." : "Assignment cleared."
+  end
+
   def respond_with_assignment
+    return redirect_to(walkthrough_return_path, notice: assignment_notice, status: :see_other) if walkthrough_return_path
+
     filter = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     query = params[:q].to_s.strip
     assignee = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)

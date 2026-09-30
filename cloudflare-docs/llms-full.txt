@@ -19,7 +19,7 @@ The screenshot-backed onboarding and add-on guide is https://logister.org/docs/s
 - Lets project users assign grouped errors to teammates, filter by assignee, mark fixed, ignore, archive, reopen, and inspect occurrence history.
 - Provides cross-app dashboard exploration with server-backed aggregate endpoints.
 - Provides CLI read access for terminal workflows, scripts, and AI-assisted debugging through user-scoped CLI access tokens.
-- Provides a project Insights tab that combines Inbox, Activity, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event type breakdowns, metric series, and recent matching events.
+- Provides project Insights (Explore › Charts) that combines Issues, Events, and Performance signals into live ECharts views with time windows, live refresh, environment and release filters, custom attribute filters, metric catalog selection, summary cards, event type breakdowns, metric series, and recent matching events.
 - Sends purpose-based project notifications through SMTP, commonly Amazon SES: new or reopened error groups, milestones, single-error volume, project spikes, latency alerts, monitor alerts, workflow routing, digests, release summaries, usage warnings, and retention/archive failures.
 - Supports configurable hot-data retention, optional S3-compatible archive writes, Archive Center coverage, and archive search for older telemetry before pruning high-volume non-error rows from PostgreSQL.
 - Supports active and archived project workflows. Archived projects remain accessible but are hidden from active dashboards and have active API tokens revoked.

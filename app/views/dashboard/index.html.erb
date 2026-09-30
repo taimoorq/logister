@@ -41,6 +41,28 @@
 
   <% if @dashboard_tab == "overview" %>
   <div id="dashboard-tab-overview" class="dashboard-overview-layout" role="tabpanel" aria-label="Overview">
+  <% if @projects_needing_setup.present? %>
+    <section class="dashboard-setup-panel" aria-labelledby="dashboard-setup-title" data-dashboard-setup>
+      <header>
+        <h2 id="dashboard-setup-title">Finish setting up</h2>
+        <span class="setup-badge badge-warn"><%= pluralize(@projects_needing_setup.size, "project") %> waiting for data</span>
+      </header>
+      <ul>
+        <% @projects_needing_setup.each do |project| %>
+          <li>
+            <%= link_to project_path(project), class: "dashboard-setup-project" do %>
+              <%= project_integration_icon(project) %>
+              <span>
+                <strong><%= project.name %></strong>
+                <span><%= project.integration_label %> · nothing received yet</span>
+              </span>
+            <% end %>
+            <%= link_to "Continue setup", setup_project_path(project), class: "btn-primary btn-sm" %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
   <section class="dashboard-priority-grid"
            data-controller="dashboard-attention"
            data-dashboard-attention-active-value="error"

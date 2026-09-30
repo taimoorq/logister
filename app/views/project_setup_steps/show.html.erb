@@ -1,0 +1,77 @@
+<% content_for :title, "#{@item.label} · Setup · #{@project.name}" %>
+<% group_position = @plan.groups.index(@group) %>
+<% following_group = @plan.groups[group_position + 1] if group_position %>
+
+<div class="wz-shell">
+  <nav class="wz-rail" aria-label="Steps in this setup path">
+    <div>
+      <p class="setup-kicker">Setup path · <%= @group.requirement_label %></p>
+      <p class="wz-rail-title"><%= @group.label %></p>
+      <p class="wz-lead"><%= @group.summary %></p>
+    </div>
+
+    <ol class="wz-steps">
+      <% @group.items.each do |step_item| %>
+        <li class="wz-step" <%= tag.attributes(aria: { current: ("step" if step_item.equal?(@item)) }) %>>
+          <span class="setup-marker setup-marker-<%= step_item.state %>">
+            <% marker_icon = { complete: :check, blocked: :lock, failed: :warning, stale: :warning, partial: :warning }[step_item.state] %>
+            <% if marker_icon %><%= app_icon(marker_icon, css: "h-3.5 w-3.5") %><% end %>
+            <span class="sr-only"><%= step_item.state_label %></span>
+          </span>
+          <div>
+            <%= link_to step_item.label, setup_step_project_path(@project, group: @group.key, step: step_item.key) %>
+            <p class="wz-step-sub"><%= step_item.owner_label %> · <%= step_item.state_label %></p>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+
+    <% if following_group %>
+      <div class="wz-upnext">
+        <p class="setup-kicker">Up next</p>
+        <strong><%= following_group.label %></strong>
+        <span><%= following_group.items.map(&:label).to_sentence(two_words_connector: " · ", last_word_connector: " · ") %></span>
+      </div>
+    <% end %>
+
+    <p class="wz-upnext">
+      Stuck?
+      <%= link_to project_integration_docs_label(@project), project_integration_docs_path(@project), target: "_blank", rel: "noopener noreferrer", class: "font-semibold" %>
+    </p>
+  </nav>
+
+  <section class="wz-main" aria-labelledby="wz-step-title">
+    <div class="wz-main-body">
+      <p class="setup-kicker">Step <%= @step_index + 1 %> of <%= @group.total %> · <%= @item.owner_label %></p>
+      <h1 id="wz-step-title"><%= @item.label %></h1>
+      <p class="wz-lead"><%= @item.summary %></p>
+
+      <% if @item.done? %>
+        <div class="wz-done" role="status">
+          <%= app_icon(:check, css: "mt-0.5 h-4 w-4 shrink-0") %>
+          <div>
+            <p class="font-semibold"><%= @item.skipped ? "Marked as not needed" : "This step is complete" %></p>
+            <p><%= @item.evidence %></p>
+          </div>
+        </div>
+      <% end %>
+
+      <% case @wizard_kind %>
+      <% when :embedded %>
+        <%= render "project_setup_steps/embedded", item: @item %>
+      <% when :guide %>
+        <%= render "project_setup_steps/guide", project: @project, group: @group, item: @item, verification: verification_locals, self_monitoring_status: @self_monitoring_status %>
+      <% when :handoff %>
+        <%= render "project_setup_steps/handoff", project: @project, item: @item, setup_return: @setup_return %>
+      <% when :dependency_blocked %>
+        <%= render "project_setup_steps/dependency_blocked", project: @project, plan: @plan, item: @item %>
+      <% when :instance_blocked %>
+        <%= render "project_setup_steps/instance_blocked", item: @item %>
+      <% when :ask %>
+        <%= render "project_setup_steps/ask", item: @item %>
+      <% end %>
+    </div>
+
+    <%= render "project_setup_steps/footer", project: @project, plan: @plan, item: @item, previous_item: @previous_item, next_item: @next_item %>
+  </section>
+</div>

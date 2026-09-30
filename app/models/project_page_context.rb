@@ -6,7 +6,8 @@ class ProjectPageContext
               :integration_definition,
               :experience_definition,
               :navigation,
-              :request_path
+              :request_path,
+              :settings_only
 
   def self.for(project:, viewer:, request_path:, app_admin: false, page_key: nil)
     new(project: project, viewer: viewer, request_path: request_path, app_admin: app_admin, page_key: page_key)
@@ -19,9 +20,9 @@ class ProjectPageContext
     @integration_definition = project.integration_definition
     @experience_definition = ProjectExperience.definition_for(project.integration_kind)
 
-    pages = ProjectPagePolicy.new(project: project, viewer: viewer, app_admin: app_admin)
-                             .resolve(experience_definition.pages)
-                             .sort_by(&:order)
+    policy = ProjectPagePolicy.new(project: project, viewer: viewer, app_admin: app_admin)
+    @settings_only = policy.settings_only?
+    pages = policy.resolve(experience_definition.pages).sort_by(&:order)
     current_page_key = if page_key
       page_key.to_sym
     else
@@ -29,22 +30,23 @@ class ProjectPageContext
         page.route_key && ProjectPageRoutes.path_for(page.route_key, project) == request_path
       end&.key
     end
-    if project.persisted? && (project.integration_android? || project.integration_ios?)
+    if project.persisted?
       @capability_snapshot = ProjectCapabilitySnapshot.for(project)
       pages = ProjectNavigationProjection.new(project: project, capability_snapshot: @capability_snapshot)
                                          .resolve(pages, current_page_key: current_page_key)
                                          .sort_by(&:order)
     end
     current_page = pages.find { |page| page.key == current_page_key }
-    @navigation = ResolvedNavigation.new(
-      primary_pages: pages.select(&:primary?),
-      secondary_pages: pages.select(&:secondary?),
-      current_page: current_page
-    )
+    @navigation = ResolvedNavigation.new(tabs: build_tabs(pages), current_page: current_page)
   end
 
   def page
     navigation.current_page
+  end
+
+  # The setup chip needs a project member who can open Setup.
+  def setup_chip?
+    viewer.present? && !settings_only && project.persisted? && !project.archived? && !project.purge_pending?
   end
 
   def capability_snapshot
@@ -58,6 +60,17 @@ class ProjectPageContext
   end
 
   def active?(page_definition)
-    page == page_definition || page&.active_parent_key == page_definition.key
+    page&.key == page_definition.key
+  end
+
+  private
+
+  def build_tabs(pages)
+    ProjectNavSection::ALL.filter_map do |section|
+      section_pages = pages.select { |candidate| candidate.section_key == section.key }
+      next unless section_pages.any? { |candidate| !candidate.hidden? }
+
+      ResolvedNavigation::Tab.new(section: section, pages: section_pages.freeze)
+    end
   end
 end

@@ -15,11 +15,13 @@ class ProjectPagePolicy
     pages.select { |page| page.key == :settings }.freeze
   end
 
-  private
-
+  # An application admin who is not a member of the project can reach its
+  # settings only, so nothing that needs project access (setup, data) applies.
   def settings_only?
     app_admin && !project_accessible_to_viewer?
   end
+
+  private
 
   def project_accessible_to_viewer?
     return false unless viewer

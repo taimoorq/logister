@@ -1,0 +1,25 @@
+<%= form_with model: @project, url: projects_path, method: :post do |f| %>
+  <%= hidden_field_tag :wizard, "1" %>
+  <div class="wz-main-body">
+    <p class="setup-kicker">Step 3 of 4 · <%= @project.name %></p>
+    <h1 id="wz-step-title">How long should Logister keep data?</h1>
+    <p class="wz-lead">Set the data lifecycle before the first event arrives. You can change it later in Settings.</p>
+
+    <div class="wz-columns">
+      <div class="max-w-xl">
+        <%= render "projects/retention_fields", f: f %>
+        <%= project_creation_carry_fields(@carried, owns: %w[retention_policy_attributes]) %>
+      </div>
+      <%= render "project_creation_steps/preview", project: @project %>
+    </div>
+  </div>
+
+  <footer class="wz-footer">
+    <%= link_to "Back", new_project_step_path("details", Rack::Utils.parse_nested_query(@carried.to_query)), class: "btn-ghost" %>
+    <div class="wz-footer-right">
+      <%= f.button class: "btn-primary inline-flex items-center gap-2" do %>
+        <%= app_icon(:upload) %><span>Create project</span>
+      <% end %>
+    </div>
+  </footer>
+<% end %>

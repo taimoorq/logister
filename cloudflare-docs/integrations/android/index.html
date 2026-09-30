@@ -146,8 +146,8 @@ client.checkInAsync("daily-sync", "ok") {
             <section id="privacy" class="section"><p class="eyebrow">Privacy defaults</p><h2>Keep Android instrumentation explicit and bounded.</h2><p>Sessions, the rotating installation pseudonym, breadcrumbs, the uncaught-exception handler, historical app exits, and offline delivery are disabled until enabled with an <code>Application</code>. Automatic crashes use <code>TYPE_AND_STACKTRACE</code> by default, which omits throwable messages and cause chains. Historical exits omit Android's raw description. The SDK never reads Android ID, advertising ID, IMEI, or a hardware serial.</p><ul><li>Do not send API tokens, authorization headers, cookies, payment data, medical data, or raw request/response bodies.</li><li>Automatic crashes are synchronously persisted before the previous Android crash handler runs and therefore require <code>offlineQueue</code>.</li><li>Keep breadcrumb capacity and offline queue event, byte, and age limits bounded.</li><li>Flush after authentication and call <code>clearSessionBoundQueuedEvents()</code> during logout or account replacement.</li><li>Use the app's privacy review before enabling installation tracking or sending user IDs, raw URLs, or custom breadcrumb data.</li></ul></section>
             <section id="verify" class="section"><p class="eyebrow">Verification</p><h2>Confirm one event from the app before widening instrumentation.</h2><div class="output-block"><div class="output-head"><span class="output-label">Checklist</span></div><pre><code>Gradle resolves org.logister:logister-android
 client can send one captureMessageAsync call
-Activity page shows the Android log event
-Inbox shows a test exception when captureExceptionAsync is called
+Events page shows the Android log event
+Issues shows a test exception when captureExceptionAsync is called
 Insights can filter by environment, release, service, or screen_name
 Performance shows transactions or spans after timing events arrive
 Event detail shows source context when repository and commitSha are configured

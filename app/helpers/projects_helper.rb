@@ -11,6 +11,110 @@ module ProjectsHelper
     )
   end
 
+  # Setup guidance for a page that has nothing to show yet. Pass a `section` to
+  # use every step that fills it, or `steps` for the few that matter to this
+  # page. Returns nil once those steps are done, so callers keep their own copy.
+  def project_setup_prompt(project, section: nil, steps: nil, css: nil)
+    plan = if steps
+      ProjectSetupPlan.for_steps(project, steps, viewer: current_user)
+    else
+      ProjectSetupPlan.for_section(project, section, viewer: current_user)
+    end
+    item = plan.prompt_item(only: steps)
+    return unless item
+
+    render partial: "projects/setup_prompt", locals: { project: project, item: item, plan: plan, css: css }
+  end
+
+  # What a handed-off step says and where it goes; the page it opens shows a way
+  # back (see `setup_return_step`).
+  def setup_handoff(project, item, setup_return)
+    case item.key
+    when :linked_projects
+      {
+        title: "Link an app and its backend",
+        body: "Choose the project on the other side. Logister then lets you follow one failed request across both. Linking never changes who can open either project.",
+        action: "Open project links",
+        path: project_project_links_path(project, setup_return: setup_return)
+      }
+    when :archive_exports
+      {
+        title: "Review archive exports",
+        body: "Archive exports write retained telemetry to archive storage before it is deleted. Retention settings control when a run starts.",
+        action: "Open data retention",
+        path: settings_project_path(project, section: "data", anchor: "retention", setup_return: setup_return)
+      }
+    else
+      raise ArgumentError, "No handoff for setup step #{item.key}"
+    end
+  end
+
+  # Values chosen in earlier creation steps, carried forward as hidden fields.
+  # `owns` names the fields this step edits itself, so they are not repeated.
+  def project_creation_carry_fields(carried, owns:)
+    fields = carried.reject { |name, _value| owns.any? { |field| name.start_with?("project[#{field}") } }
+    safe_join(fields.map { |name, value| hidden_field_tag(name, value, id: nil) })
+  end
+
+  # A slim way back to the setup path for pages a step hands off to. Only shown
+  # for a step this project's setup actually contains.
+  def setup_return_step(project)
+    group, step = params[:setup_return].to_s.split("/", 2)
+    return if group.blank? || step.blank?
+
+    experience = project.integration_definition.default_experience_key
+    definition = ProjectSetupCatalog.steps_for(experience).find { |candidate| candidate.group_key.to_s == group && candidate.key.to_s == step }
+    return unless definition
+
+    { group: ProjectSetupCatalog.group(definition.group_key), step: definition }
+  end
+
+  # Forms shared with Settings carry this when they are shown inside a setup
+  # wizard step, so the controller returns to the step instead of Settings.
+  def setup_return_field
+    hidden_field_tag(:setup_return, @setup_return) if @setup_return.present?
+  end
+
+  # A wizard form stays a normal Turbo form (progress, busy state, no full reload)
+  # but targets the whole page, so the step re-renders with what just changed. An
+  # embedded form can sit inside a Frame of its own, and without this only that
+  # Frame would update while the step's Continue and completion state went stale.
+  def setup_form_data
+    @setup_return.present? ? { turbo_frame: "_top" } : {}
+  end
+
+  # The link for a section view. Inside Explore, Events, Charts and Connected share
+  # one scope (time window, environment, release, and build for mobile), so it is
+  # carried to the view you switch to rather than reset. Returns the path and the
+  # scope that could not carry over, if any.
+  def project_view_link(page_context, view)
+    path = page_context.path_for(view)
+    return [ path, [] ] unless page_context.navigation.current_tab&.key == :explore
+
+    scope = ProjectTelemetryScope.from(project: page_context.project, source: request.query_parameters)
+    params, dropped = case view.key
+    when :activity
+      projection = scope.project_for(:activity)
+      [ projection.params, projection.dropped ]
+    when :insights
+      projection = scope.project_for(:insights)
+      [ projection.params, projection.dropped ]
+    when :connections
+      [ { environment: scope.environment, release: scope.release, build_number: scope.build_number }.compact, [] ]
+    else
+      [ {}, [] ]
+    end
+
+    [ params.present? ? "#{path}?#{params.to_query}" : path, dropped ]
+  end
+
+  # Where the project menu sends you for another project: the same section you
+  # are in now (Issues stays Issues), or the overview outside a project.
+  def project_switch_path(project)
+    section = content_for(:project_section).presence
+    section ? ProjectPageRoutes.section_path(project, section) : project_path(project)
+  end
+
   def project_integration_picker_choices
     ProjectIntegrationDefinition.all_for_picker.map do |definition|
       {

@@ -1,8 +1,9 @@
 <%= render "projects/header" %>
-<div class="space-y-6">
+<div class="settings-page">
+  <%= render "projects/settings_nav" %>
   <section class="settings-panel space-y-4" aria-labelledby="connected-projects-title">
     <div>
-      <h1 id="connected-projects-title" class="text-xl font-bold text-slate-900">Connected projects</h1>
+      <h2 id="connected-projects-title" class="text-xl font-bold text-slate-900">Connected projects</h2>
       <p class="mt-2 text-sm text-slate-600">Link your mobile apps and backend so you can follow a failed request across projects.</p>
     </div>
     <%= form_with url: correlation_setting_project_path(@project), method: :patch, class: "flex flex-wrap items-center gap-3" do |form| %>
@@ -42,6 +43,7 @@
     <% else %>
       <%= form_with url: project_project_links_path(@project), method: :get, class: "max-w-2xl space-y-4" do |form| %>
         <%= form.hidden_field :direction, value: @connection.direction %>
+        <%= hidden_field_tag :setup_return, params[:setup_return] if params[:setup_return].present? %>
         <div>
           <p class="form-label"><%= @connection.incoming? ? "Backend receiving requests" : "App sending requests" %></p>
           <p class="text-sm font-semibold text-slate-900 break-words"><%= @connection.label(@project) %></p>

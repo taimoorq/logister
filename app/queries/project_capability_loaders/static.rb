@@ -9,8 +9,10 @@ module ProjectCapabilityLoaders
       @project = project
     end
 
+    # Check-ins are observable for every project type, so navigation and setup
+    # share one rule. Mobile loaders add their own richer statuses on top.
     def call
-      {}.freeze
+      { check_ins: check_ins_status }.freeze
     end
 
     private
@@ -23,6 +25,23 @@ module ProjectCapabilityLoaders
         observed_at: observed_at,
         evidence_count: evidence_count,
         reason: reason,
+        action_key: action_key
+      )
+    end
+
+    def check_in_observed_at
+      ProjectReadCache.fetch(project, :check_in_observed_at, shared: true) do
+        project.check_in_monitors.maximum(Arel.sql("COALESCE(last_check_in_at, created_at)"))
+      end
+    end
+
+    def check_ins_status(action_key: :configure_check_ins, subject: "project")
+      observed_at = check_in_observed_at
+      capability_status(
+        :check_ins,
+        observed_at ? :configured : :unconfigured,
+        observed_at: observed_at,
+        reason: observed_at ? "At least one #{subject} check-in has been observed." : "No #{subject} check-in has been observed.",
         action_key: action_key
       )
     end

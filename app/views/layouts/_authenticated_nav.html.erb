@@ -34,7 +34,7 @@
         <% notifications = nav_notifications %>
         <%= link_to dashboard_path, class: "nav-link inline-flex items-center gap-2 py-2 px-3 rounded-md text-sm font-medium #{current_page?(dashboard_path) ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white'}" do %>
           <%= app_icon(:dashboard, css: "w-4 h-4") %>
-          <span>Overview</span>
+          <span>Dashboard</span>
         <% end %>
         <details class="nav-project-menu">
           <summary class="nav-project-summary <%= projects_nav_active ? 'bg-blue-800/70 text-white' : 'text-blue-100 hover:bg-blue-900/60 hover:text-white' %>">
@@ -48,7 +48,7 @@
             <div class="nav-project-list" aria-label="Active projects">
               <% if nav_active_projects.any? %>
                 <% nav_active_projects.each do |project| %>
-                  <%= link_to project_path(project), class: "nav-link nav-project-item" do %>
+                  <%= link_to project_switch_path(project), class: "nav-link nav-project-item" do %>
                     <%= project_integration_icon(project) %>
                     <span class="nav-project-item-copy">
                       <span class="nav-project-item-title"><%= project.name %></span>

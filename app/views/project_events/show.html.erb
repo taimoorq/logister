@@ -123,7 +123,7 @@
           <% end %>
           <%= link_to inbox_project_path(@project, group_uuid: @group.uuid, filter: @group.status == "unresolved" ? "unresolved" : @group.status),
                       class: "btn btn-ghost btn-sm inline-flex items-center gap-1.5" do %>
-            <%= app_icon(:folder_open, css: "w-3.5 h-3.5") %><span>View all in inbox</span>
+            <%= app_icon(:folder_open, css: "w-3.5 h-3.5") %><span>View all issues</span>
           <% end %>
         </div>
       </div>
@@ -132,7 +132,7 @@
         <p class="kicker">Error group</p>
         <p class="text-slate-600 text-sm">This event has not been grouped yet.</p>
         <%= link_to inbox_project_path(@project), class: "btn-ghost btn-sm mt-2 inline-flex items-center gap-1.5" do %>
-          <%= app_icon(:arrow_left, css: "w-3.5 h-3.5") %><span>Back to inbox</span>
+          <%= app_icon(:arrow_left, css: "w-3.5 h-3.5") %><span>Back to issues</span>
         <% end %>
       </div>
     <% else %>

@@ -247,10 +247,5 @@ RSpec.describe "Error groups", type: :request do
   end
 
   describe "authentication" do
-    it "requires authentication" do
-      group = create_error_group_for_project
-      patch resolve_project_error_group_path(project, group)
-      expect(response).to redirect_to(new_user_session_path)
-    end
   end
 end

@@ -1,6 +1,7 @@
 class ProjectSourceRepositoriesController < ApplicationController
   include ProjectScope
   include ProjectSettingsContext
+  include SetupWizardReturn
 
   before_action :authenticate_user!
   before_action :set_managed_project
@@ -13,7 +14,7 @@ class ProjectSourceRepositoriesController < ApplicationController
     if result.rejected?
       render_settings_with_errors
     elsif @source_repository_form.save
-      redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
+      redirect_to (setup_return_path || settings_project_path(@project, section: "integrations", anchor: "source-repositories")),
                   notice: "Source repository connected."
     else
       render_settings_with_errors
@@ -31,7 +32,7 @@ class ProjectSourceRepositoriesController < ApplicationController
     if result.rejected?
       render_settings_with_errors
     elsif @source_repository.save
-      redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
+      redirect_to (setup_return_path || settings_project_path(@project, section: "integrations", anchor: "source-repositories")),
                   notice: "Source repository updated."
     else
       render_settings_with_errors
@@ -66,6 +67,8 @@ class ProjectSourceRepositoriesController < ApplicationController
 
   def render_settings_with_errors
     @source_repository_form ||= @project.source_repositories.new(provider: ProjectSourceRepository::PROVIDERS[:github])
+    return if render_setup_return_with_errors(@source_repository_form.errors.full_messages.to_sentence.presence || "The repository could not be connected.")
+
     @settings_section = "integrations"
     load_project_settings_context
     render "projects/settings", status: :unprocessable_content

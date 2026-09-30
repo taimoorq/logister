@@ -1,0 +1,36 @@
+<%# locals: (project:, item:, plan:, css: nil) %>
+<% action = item.action %>
+<section class="<%= class_names("setup-next", "setup-prompt", css) %>"
+         aria-labelledby="setup-prompt-title-<%= item.key %>"
+         data-setup-prompt="<%= item.key %>"
+         data-setup-state="<%= item.state %>">
+  <div>
+    <p class="setup-kicker">Setup · <%= item.step.group.label %></p>
+    <h3 id="setup-prompt-title-<%= item.key %>"><%= item.label %></h3>
+    <p><%= item.summary %></p>
+    <% if item.evidence.present? && item.evidence != item.summary %>
+      <p class="setup-prompt-status"><span class="sr-only">Current status: </span><%= item.evidence %></p>
+    <% end %>
+    <% if action&.kind == :ask && action.note.present? %>
+      <p class="setup-item-note"><%= action.note %></p>
+    <% end %>
+    <p class="setup-next-owner">
+      <span class="setup-owner"><%= app_icon(:account, css: "h-3.5 w-3.5") %><%= item.owner_label %></span>
+      <% if action&.kind == :form || action&.kind == :guide %>
+        <span class="setup-owner"><%= action.kind == :guide ? "Done in your code or CI" : "Done in Logister" %></span>
+      <% end %>
+    </p>
+  </div>
+  <div class="setup-prompt-actions">
+    <% if action&.path.present? %>
+      <%= link_to action.label, action.path, class: "btn-primary setup-next-action" %>
+    <% elsif action&.copy_path.present? %>
+      <div data-controller="copy" data-copy-text-value="<%= request.base_url + action.copy_path %>">
+        <button type="button" class="btn-ghost" data-action="copy#copy">
+          <span data-copy-target="buttonLabel">Copy link for admin</span>
+        </button>
+      </div>
+    <% end %>
+    <%= link_to "View all setup", setup_project_path(project), class: "setup-link-button" %>
+  </div>
+</section>

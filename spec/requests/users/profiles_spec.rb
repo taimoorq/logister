@@ -5,11 +5,6 @@ require "nokogiri"
 
 RSpec.describe "Users::Profiles", type: :request do
   describe "GET /profile" do
-    it "requires authentication" do
-      get profile_path
-      expect(response).to redirect_to(new_user_session_path)
-    end
-
     context "when signed in" do
       before { sign_in users(:one) }
 

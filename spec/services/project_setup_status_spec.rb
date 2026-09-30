@@ -8,7 +8,10 @@ RSpec.describe ProjectSetupStatus do
     statuses = nil
     queries = capture_sql { statuses = described_class.new(project).call }
 
-    expect(statuses.keys).to contain_exactly(:active_api_key, :has_events, :source_repository, :deployments)
+    expect(statuses.keys).to contain_exactly(
+      :active_api_key, :has_events, :source_repository, :deployments,
+      :performance, :teammates, :project_links, :check_ins, :archive_exports
+    )
     expect(queries.join("\n")).not_to match(/error_occurrences|mobile_ingest_tokens|apple_symbol_artifacts|android_mapping_files/)
   end
 
@@ -54,5 +57,55 @@ RSpec.describe ProjectSetupStatus do
 
     setting.update!(metadata: { "last_error" => { "message" => "permission denied", "at" => Time.current.utc.iso8601 } })
     expect(described_class.new(project).call.fetch(:google_play).state).to eq(:failed)
+  end
+
+  describe "performance evidence" do
+    let(:project) { create(:project, :ruby) }
+    let(:api_key) { create(:api_key, project: project, user: project.user) }
+
+    it "is unconfigured until a transaction or span has been received recently" do
+      expect(described_class.new(project).call.fetch(:performance).state).to eq(:unconfigured)
+
+      create(:ingest_event, :transaction, project: project, api_key: api_key, occurred_at: 2.hours.ago)
+      expect(described_class.new(project).call.fetch(:performance).state).to eq(:configured)
+    end
+
+    it "ignores transactions older than the window" do
+      create(:ingest_event, :transaction, project: project, api_key: api_key, occurred_at: 45.days.ago)
+
+      expect(described_class.new(project).call.fetch(:performance).state).to eq(:unconfigured)
+    end
+
+    it "counts spans as instrumentation" do
+      create(:trace_span, project: project, started_at: 1.hour.ago) if FactoryBot.factories.registered?(:trace_span)
+
+      expect(described_class.new(project).call.fetch(:performance).state).to eq(:configured) if TraceSpan.where(project: project).exists?
+    end
+
+    it "asks the database for a single index probe rather than scanning the window" do
+      project # create the project outside the measured block
+      queries = capture_sql { described_class.new(project).call(keys: [ :performance ]) }.grep(/ingest_events|trace_spans/)
+
+      expect(queries.size).to eq(2)
+      expect(queries.first).to match(/ORDER BY "ingest_events"\."occurred_at" DESC LIMIT/)
+      expect(queries.last).to match(/ORDER BY "trace_spans"\."started_at" DESC LIMIT/)
+      expect(queries.join("\n")).not_to match(/MAX\(/i)
+    end
+  end
+
+  it "reports teammates from membership evidence" do
+    project = create(:project, :ruby)
+    expect(described_class.new(project).call(keys: [ :teammates ]).fetch(:teammates).state).to eq(:unconfigured)
+
+    create(:project_membership, project: project, user: create(:user))
+    status = described_class.new(project).call(keys: [ :teammates ]).fetch(:teammates)
+    expect(status.state).to eq(:configured)
+    expect(status.reason).to eq("1 teammate can open this project.")
+  end
+
+  it "only loads the evidence it was asked for" do
+    project = create(:project, :ruby)
+
+    expect(described_class.new(project).call(keys: [ :has_events ]).keys).to eq([ :has_events ])
   end
 end

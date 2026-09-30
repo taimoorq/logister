@@ -1,0 +1,18 @@
+<%= form_with model: @project, url: new_project_step_path("details"), method: :get, scope: :project do |f| %>
+  <div class="wz-main-body">
+    <p class="setup-kicker">Step 1 of 4</p>
+    <h1 id="wz-step-title">What are you monitoring?</h1>
+    <p class="wz-lead">This picks the setup path and the evidence each section shows. Every project gets the same sections.</p>
+
+    <%= render "projects/integration_picker", f: f %>
+    <%= project_creation_carry_fields(@carried, owns: %w[integration_kind]) %>
+  </div>
+
+  <footer class="wz-footer">
+    <%= link_to "Cancel", projects_path, class: "btn-ghost" %>
+    <div class="wz-footer-right">
+      <%= link_to "Prefer one page? Use the quick form", new_project_quick_path, class: "setup-link-button" %>
+      <button type="submit" class="btn-primary">Continue: Name and description</button>
+    </div>
+  </footer>
+<% end %>

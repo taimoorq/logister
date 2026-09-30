@@ -4,7 +4,6 @@ class ProjectPerformanceController < ApplicationController
   FRAME_IDS = {
     request_breakdown: "performance_request_breakdown",
     database_load: "performance_database_load",
-    release_health: "performance_release_health",
     transactions: "performance_transactions"
   }.freeze
 
@@ -36,12 +35,6 @@ class ProjectPerformanceController < ApplicationController
     @db_stats = IngestEvent.db_stats_from_events(@db_query_events)
 
     render partial: "projects/performance_database_load"
-  end
-
-  def release_health
-    @release_cards = IngestEvent.released_error_groups(@project, lookback: 45.days, limit: 6)
-
-    render partial: "projects/performance_release_health"
   end
 
   def transactions

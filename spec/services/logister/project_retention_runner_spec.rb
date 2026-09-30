@@ -179,12 +179,14 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
   end
 
   it "deletes an archive-sized reference batch without recursive Arel conditions" do
-    old_events = create_list(:ingest_event, 1_000, :log, project: project, occurred_at: now - 45.days)
+    api_key = create(:api_key, project: project, user: project.user)
+    old_event_ids = insert_events(project: project, api_key: api_key, times: Array.new(1_000) { now - 45.days }, event_type: :log, level: "info")
 
     result = described_class.new(project: project, policy: policy, batch_size: 1_000, now: now).call
 
+    expect(old_event_ids.size).to eq(1_000)
     expect(result[:deleted][:hot_events]).to eq(1_000)
-    expect(IngestEvent.where(id: old_events.map(&:id)).count).to eq(0)
+    expect(IngestEvent.where(id: old_event_ids).count).to eq(0)
   end
 
   it "prunes closed error groups only after their retention window" do

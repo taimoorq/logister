@@ -1,5 +1,6 @@
 class ProjectMembershipsController < ApplicationController
   include ProjectScope
+  include SetupWizardReturn
 
   before_action :authenticate_user!
   before_action :set_project
@@ -17,6 +18,8 @@ class ProjectMembershipsController < ApplicationController
     membership = @project.project_memberships.new(user: user, role: membership_role)
 
     if membership.save
+      return redirect_to(setup_return_path, notice: "Project shared with #{user.email}.", status: :see_other) if setup_return_path
+
       respond_to do |format|
         format.turbo_stream do
           render turbo_stream: [
@@ -101,6 +104,8 @@ class ProjectMembershipsController < ApplicationController
   end
 
   def respond_with_membership_error(message)
+    return redirect_to(setup_return_path, alert: message, status: :see_other) if setup_return_path
+
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace("project_membership_message",

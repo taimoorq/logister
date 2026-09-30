@@ -4,18 +4,18 @@ require "rails_helper"
 require "nokogiri"
 
 RSpec.describe "Project page contract", type: :request do
-  PAGE_PATHS = {
-    overview: ->(project) { project_path(project) },
-    inbox: ->(project) { inbox_project_path(project) },
-    activity: ->(project) { activity_project_path(project) },
-    insights: ->(project) { insights_project_path(project) },
-    performance: ->(project) { performance_project_path(project) },
-    monitors: ->(project) { monitors_project_path(project) },
-    deployments: ->(project) { deployments_project_path(project) },
-    archives: ->(project) { archives_project_path(project) },
-    setup: ->(project) { setup_project_path(project) },
-    settings: ->(project) { settings_project_path(project) },
-    edit: ->(project) { edit_project_path(project) }
+  # page => [the tab it belongs to, how to reach it]
+  PAGES = {
+    overview: [ "Overview", ->(project) { project_path(project) } ],
+    inbox: [ "Issues", ->(project) { inbox_project_path(project) } ],
+    activity: [ "Explore", ->(project) { activity_project_path(project) } ],
+    insights: [ "Explore", ->(project) { insights_project_path(project) } ],
+    performance: [ "Performance", ->(project) { performance_project_path(project) } ],
+    monitors: [ "Monitors", ->(project) { monitors_project_path(project) } ],
+    deployments: [ "Releases", ->(project) { deployments_project_path(project) } ],
+    archives: [ "Explore", ->(project) { archives_project_path(project) } ],
+    setup: [ "Settings", ->(project) { setup_project_path(project) } ],
+    settings: [ "Settings", ->(project) { settings_project_path(project) } ]
   }.freeze
 
   before { sign_in users(:one) }
@@ -25,7 +25,7 @@ RSpec.describe "Project page contract", type: :request do
       project = create(:project, user: users(:one), integration_kind: kind)
       expected_experience = ProjectIntegrationDefinition.fetch(kind).default_experience_key.to_s
 
-      PAGE_PATHS.each do |page_key, path_builder|
+      PAGES.each do |page_key, (tab, path_builder)|
         get instance_exec(project, &path_builder)
 
         aggregate_failures("#{kind} #{page_key}") do
@@ -34,13 +34,17 @@ RSpec.describe "Project page contract", type: :request do
           document = Nokogiri::HTML.parse(response.body)
           header = document.at_css(".project-command-panel")
           navigation = document.at_css("nav[aria-label='Project sections']")
+          current = navigation.css("a[aria-current='page']")
 
           expect(header).to be_present
           expect(header["data-project-kind"]).to eq(kind)
           expect(header["data-project-experience"]).to eq(expected_experience)
+          expect(header["data-project-experience-version"]).to eq(ProjectExperience.definition_for(kind).version.to_s)
           expect(header["data-project-page"]).to eq(page_key.to_s)
           expect(navigation).to be_present
-          expect(navigation.css("a[aria-current='page']").size).to eq(1)
+          expect(current.size).to eq(1)
+          expect(current.first.text.strip).to eq(tab)
+          expect(response.body).to include("turbo-frame id=\"project_inbox\"", "data-project-integration=\"#{kind}\"") if page_key == :inbox
         end
       end
     end

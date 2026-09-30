@@ -1,6 +1,7 @@
 class ProjectNotificationPreferencesController < ApplicationController
   include ProjectScope
   include ProjectSettingsContext
+  include SetupWizardReturn
 
   skip_before_action :verify_authenticity_token, only: :unsubscribe
   before_action :authenticate_user!, only: :update
@@ -13,8 +14,10 @@ class ProjectNotificationPreferencesController < ApplicationController
     if @notification_preference.update(notification_preference_params)
       redirect_options = { section: "notifications" }
       redirect_options[:notification_path] = notification_path unless notification_path == DEFAULT_NOTIFICATION_PATH
-      redirect_to settings_project_path(@project, redirect_options), notice: "Email notification settings updated."
+      redirect_to (setup_return_path || settings_project_path(@project, redirect_options)), notice: "Email notification settings updated."
     else
+      return if render_setup_return_with_errors(@notification_preference.errors.full_messages.to_sentence)
+
       @settings_section = "notifications"
       load_project_settings_context
       render "projects/settings", status: :unprocessable_content

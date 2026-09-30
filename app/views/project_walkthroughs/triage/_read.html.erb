@@ -1,0 +1,37 @@
+<%# locals: (project:, group:, event:, other_groups:, walkthrough:, next_step:, step_path:, deployment_context: nil, assignable_users: nil) %>
+<% context = event&.context.is_a?(Hash) ? event.context : {} %>
+<p class="wz-lead">Start with what broke, how often, and where it happens. The stack trace and request context are on the issue itself.</p>
+
+<section class="wz-panel" aria-labelledby="walkthrough-issue-title">
+  <p class="setup-kicker">Issue · <%= group.status.humanize %></p>
+  <h2 id="walkthrough-issue-title"><%= group.title %></h2>
+  <% if group.subtitle.present? %><p><%= group.subtitle %></p><% end %>
+  <dl class="wz-facts">
+    <div><dt>Occurrences</dt><dd><%= number_with_delimiter(group.occurrence_count) %></dd></div>
+    <div><dt>First seen</dt><dd><%= group.first_seen_at ? local_time_tag(group.first_seen_at) : "Unknown" %></dd></div>
+    <div><dt>Last seen</dt><dd><%= group.last_seen_at ? local_time_tag(group.last_seen_at) : "Unknown" %></dd></div>
+    <div><dt>Release</dt><dd><%= group.last_seen_release.presence || "Not reported" %></dd></div>
+    <% if context["environment"].present? %><div><dt>Environment</dt><dd><%= context["environment"] %></dd></div><% end %>
+  </dl>
+</section>
+
+<section class="wz-panel" aria-labelledby="walkthrough-look-title">
+  <h2 id="walkthrough-look-title">What to look at</h2>
+  <ul class="mt-2 flex list-none flex-col gap-2 p-0 text-sm" style="color: var(--app-muted)">
+    <li><strong style="color: var(--app-text)">The top application frame</strong> in the stack trace names the file and line.</li>
+    <li><strong style="color: var(--app-text)">Request context</strong> shows the route or job, and the request ID to search logs with.</li>
+    <li><strong style="color: var(--app-text)">Occurrences</strong> show whether it is one bad input or many people.</li>
+  </ul>
+  <%= link_to "Open this issue in Issues", inbox_project_path(project, group_uuid: group.uuid), target: "_blank", rel: "noopener noreferrer", class: "mt-3 inline-block text-sm font-semibold" %>
+</section>
+
+<% if other_groups.any? %>
+  <details class="wz-panel">
+    <summary class="cursor-pointer text-sm font-semibold">Use a different issue</summary>
+    <ul class="mt-3 flex list-none flex-col gap-2 p-0 text-sm">
+      <% other_groups.each do |other| %>
+        <li><%= link_to other.title, walkthrough_step_project_path(project, key: walkthrough.key, step: :read, group_uuid: other.uuid), class: "font-semibold" %></li>
+      <% end %>
+    </ul>
+  </details>
+<% end %>

@@ -57,3 +57,63 @@ RSpec.describe "Project deployments", type: :request do
     expect(response.body).not_to include("web-2026.06.18")
   end
 end
+
+RSpec.describe "Release health on Releases", type: :request do
+  let(:owner) { users(:one) }
+  let(:project) { create(:project, :ruby, user: owner) }
+  let(:frame_headers) { { "Turbo-Frame" => "release_health" } }
+
+  before { sign_in owner }
+
+  it "loads release health on the Releases page for a server project, and no longer on Performance" do
+    get deployments_project_path(project)
+
+    frame = Nokogiri::HTML.parse(response.body).at_css("turbo-frame#release_health")
+    expect(frame["src"]).to eq(deployments_release_health_project_path(project))
+    expect(frame["loading"]).to eq("lazy")
+
+    get performance_project_path(project)
+    expect(response.body).not_to include("release_health")
+  end
+
+  it "leaves release health off a mobile project, whose Releases page shows observed builds" do
+    get deployments_project_path(create(:project, :ios, user: owner))
+
+    expect(Nokogiri::HTML.parse(response.body).at_css("turbo-frame#release_health")).to be_nil
+  end
+
+  it "answers the frame with the release cards it finds" do
+    api_key = create(:api_key, project: project, user: owner)
+    create(:ingest_event, project: project, api_key: api_key, event_type: :error, level: "error",
+                          message: "Boom", context: { release: "1.4.2" })
+
+    get deployments_release_health_project_path(project), headers: frame_headers
+
+    expect(response).to have_http_status(:success)
+    document = Nokogiri::HTML.parse(response.body)
+    expect(document.at_css("turbo-frame#release_health")).to be_present
+    expect(document.text).to include("Release health", "1.4.2")
+  end
+
+  it "renders an empty frame when nothing has been released" do
+    get deployments_release_health_project_path(project), headers: frame_headers
+
+    document = Nokogiri::HTML.parse(response.body)
+    expect(document.at_css("turbo-frame#release_health")).to be_present
+    expect(document.text.strip).to be_empty
+  end
+
+  it "sends a direct visit, or a request for another frame, to the page that hosts it" do
+    get deployments_release_health_project_path(project)
+    expect(response).to redirect_to(deployments_project_path(project, anchor: "release_health"))
+
+    get deployments_release_health_project_path(project), headers: { "Turbo-Frame" => "other_frame" }
+    expect(response).to redirect_to(deployments_project_path(project, anchor: "release_health"))
+  end
+
+  it "is only for people who can open the project" do
+    get deployments_release_health_project_path(create(:project, :ruby)), headers: frame_headers
+
+    expect(response).to have_http_status(:not_found)
+  end
+end

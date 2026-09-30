@@ -1,4 +1,4 @@
-<%= render "projects/header" unless turbo_frame_request? %>
+<%= render "projects/header", page_key: :correlations unless turbo_frame_request? %>
 <%= turbo_frame_tag "related_requests" do %>
   <section class="connection-evidence card" aria-labelledby="related-requests-title">
     <header class="connection-evidence-header">

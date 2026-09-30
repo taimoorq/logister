@@ -153,8 +153,8 @@ try await client.checkIn(
             <section id="privacy" class="section"><p class="eyebrow">Privacy defaults</p><h2>Do not turn device identity or raw errors into monitoring context.</h2><p>The SDK recursively removes common IDFA, IDFV, serial, and hardware-identifier aliases before encoding an event. Rails repeats the same normalization at ingestion. This is a guardrail, not a substitute for reviewing custom context.</p><ul><li>Use <code>typeAndStacktrace</code> for handled errors unless raw error text has completed a privacy review.</li><li>Use <code>platformContextPolicy: .minimized</code> when exact model, locale, architecture, and OS build are not needed.</li><li>MetricKit safe mode omits raw payloads and termination reasons while retaining bounded frames and stable codes.</li><li>Do not send API tokens, authorization headers, cookies, payment data, medical data, raw request/response bodies, IDFA, or raw IDFV.</li><li>Use an app-generated rotating pseudonym only when affected-installation impact is necessary, and hash it before capture.</li><li>Keep breadcrumbs bounded and free of typed input, raw URLs, query values, and user content.</li></ul></section>
             <section id="verify" class="section"><p class="eyebrow">Verification</p><h2>Confirm one event from the app before widening instrumentation.</h2><div class="output-block"><div class="output-head"><span class="output-label">Checklist</span></div><pre><code>Swift Package Manager resolves the Logister product
 client can send one captureMessage call
-Activity page shows the iOS log event
-Inbox shows a test exception when captureException is called
+Events page shows the iOS log event
+Issues shows a test exception when captureException is called
 Insights can filter by environment, release, service, or screen_name
 Performance shows transactions or spans after timing events arrive
 Event detail shows source context when repository and commitSHA are configured

@@ -1,0 +1,20 @@
+<%# locals: (item:) %>
+<%# The forms below are the same partials Settings renders; they read their data from the controller. %>
+<% case item.key %>
+<% when :api_key %>
+  <%= render "projects/setup_api_keys", tour_group: "project-setup" %>
+<% when :teammates %>
+  <%= render "projects/settings_team", tour_group: "project-settings" %>
+<% when :alerts %>
+  <%= render "project_setup_steps/alerts_form", project: @project, preference: @notification_preference %>
+<% when :source_repo %>
+  <%= render "projects/source_repositories_panel" %>
+<% when :mapping %>
+  <%= render "projects/android_mappings_panel" %>
+<% when :symbols %>
+  <%= render "projects/apple_symbols_panel" %>
+<% when :google_play %>
+  <%= render "projects/google_play_panel" %>
+<% when :app_store %>
+  <%= render "projects/app_store_panel" %>
+<% end %>

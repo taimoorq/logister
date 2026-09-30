@@ -1,0 +1,75 @@
+<%# locals: (project:, group:, item:, receipt:, next_item:, live:, attempt:, max_attempts:, interval:) %>
+<% first_event = %i[first_event first_diagnostic].include?(item.key) %>
+<% minutes = (max_attempts.times.sum { |n| ProjectSetupStepsController.verification_interval(n) } / 60_000.0).round %>
+<%# Only status text is rendered while waiting, so each refresh can replace it
+    without moving keyboard focus. Links appear only once polling has stopped. %>
+<%= turbo_frame_tag "setup_step_verification" do %>
+  <% if item.done? %>
+    <section class="wz-panel wz-panel-success" data-verification="complete">
+      <p class="sr-only" role="status"><%= first_event ? "First event received." : "#{item.label} verified." %></p>
+      <div class="flex items-center gap-2.5">
+        <span class="setup-marker setup-marker-complete"><%= app_icon(:check, css: "h-3.5 w-3.5") %></span>
+        <h2><%= first_event ? "First event received" : "Verified" %></h2>
+      </div>
+      <% if receipt %>
+        <div class="wz-receipt">
+          <p class="!mt-0 flex items-center gap-2">
+            <span class="setup-badge badge-neutral"><%= receipt[:event_type] %></span>
+            <strong class="text-sm" style="color: var(--app-text)"><%= receipt[:message] %></strong>
+          </p>
+          <p><%= [ receipt[:environment], (receipt[:release] && "release #{receipt[:release]}"), "received #{time_ago_in_words(receipt[:received_at])} ago" ].compact.join(" · ") %></p>
+        </div>
+        <%= link_to "Open it in Issues", inbox_project_path(project), class: "mt-3 inline-block text-sm font-semibold", data: { turbo_frame: "_top" } %>
+      <% else %>
+        <p><%= item.evidence %></p>
+      <% end %>
+      <p class="mt-4 border-t pt-3 font-semibold" style="border-color: var(--app-border); color: var(--app-success-700)">
+        <%= live ? "#{project.name} is live." : "Step complete." %>
+      </p>
+      <div class="mt-3">
+        <% if next_item %>
+          <%= link_to "Continue: #{next_item.label}", setup_step_project_path(project, group: next_item.group_key, step: next_item.key), class: "btn-primary", data: { turbo_frame: "_top" } %>
+        <% else %>
+          <%= link_to "Finish setup", setup_project_path(project), class: "btn-primary", data: { turbo_frame: "_top" } %>
+        <% end %>
+      </div>
+    </section>
+  <% elsif attempt >= max_attempts %>
+    <section class="wz-panel" data-verification="stopped">
+      <p class="sr-only" role="status">Stopped checking.</p>
+      <h2>Stopped checking</h2>
+      <p>Nothing arrived in about <%= minutes %> minutes. Send it again from your code, then choose Check again.</p>
+      <p class="text-xs">Last checked <%= local_time_tag(Time.current, format: :long) %></p>
+    </section>
+  <% else %>
+    <section class="wz-panel"
+             data-verification="waiting"
+             data-controller="frame-refresh"
+             data-action="turbo:before-fetch-response@document->frame-refresh#responded turbo:fetch-request-error@document->frame-refresh#failed"
+             data-frame-refresh-url-value="<%= setup_step_verification_project_path(project, group: group.key, step: item.key) %>"
+             data-frame-refresh-attempt-value="<%= attempt %>"
+             data-frame-refresh-max-value="<%= max_attempts %>"
+             data-frame-refresh-interval-value="<%= interval %>">
+      <div class="flex items-center gap-2.5">
+        <span class="wz-pulse" aria-hidden="true"></span>
+        <h2><%= first_event ? "Waiting for #{project.name}" : "Waiting for evidence" %></h2>
+      </div>
+      <p><%= item.evidence %></p>
+      <p class="text-xs">
+        Last checked <%= local_time_tag(Time.current, format: :long) %>.
+        Checking again in <%= interval / 1000 %> seconds, for about <%= minutes %> minutes in all.
+      </p>
+
+      <% if first_event %>
+        <div class="wz-troubleshoot">
+          <p class="!mt-0 font-semibold" style="color: var(--app-text)">Not arriving?</p>
+          <ul>
+            <li><strong>401 in your logs:</strong> the key is wrong or was revoked.</li>
+            <li><strong>No request at all:</strong> check that the endpoint reaches this Logister host.</li>
+            <li><strong>A different project:</strong> each project has its own key.</li>
+          </ul>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>

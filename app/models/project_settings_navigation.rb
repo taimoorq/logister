@@ -6,6 +6,7 @@ class ProjectSettingsNavigation
     "notifications" => "Notifications",
     "team" => "Team",
     "integrations" => "Integrations",
+    "connections" => "Connections",
     "data" => "Data",
     "danger" => "Danger",
     "admin" => "Admin"
@@ -34,7 +35,7 @@ class ProjectSettingsNavigation
 
   def section_keys
     keys = %w[general notifications]
-    keys += %w[team integrations data] if project.managed_by?(user)
+    keys += %w[team integrations connections data] if project.managed_by?(user)
     keys << "danger" if project.owned_by?(user)
     keys << "admin" if app_admin?
     keys

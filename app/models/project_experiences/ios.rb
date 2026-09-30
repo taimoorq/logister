@@ -80,25 +80,6 @@ module ProjectExperiences
       ProjectEvents::IosEventPresenter.new(event)
     end
 
-    def setup_intro
-      "Verify one real SDK diagnostic and its app/build context, then add the optional correlation, MetricKit, symbol, and App Store sources needed for production triage."
-    end
-
-    def setup_steps(status:, manager:)
-      [
-        setup_step(:mobile_token, "Mobile token", :key, status[:mobile_token], manager ? "Issue a short-lived mobile ingest token." : "Ask an admin to configure the token issuer.", stage: :connect),
-        setup_step(:first_event, "First diagnostic", :events, status[:has_events], "Send a reported error from the Apple app.", stage: :verify_delivery),
-        setup_step(:app_build, "App & build", :deployments, status[:app_build_metadata], "Capture bundle identifier, version, and build number.", stage: :verify_delivery),
-        setup_step(:sessions, "Sessions", :account, status[:sessions], "Add opt-in session correlation before using session health metrics."),
-        setup_step(:installations, "Installations", :account, status[:installations], "Send only a rotating random installation hash; never IDFA or raw IDFV."),
-        setup_step(:breadcrumbs, "Breadcrumbs", :events, status[:breadcrumbs], "Attach a bounded app trail to explain what preceded an issue."),
-        setup_step(:metrickit, "MetricKit", :warning, status[:metric_kit], "Enable the opt-in subscriber for crash, hang, excessive-CPU, excessive-disk-write, and slow-launch diagnostics."),
-        setup_step(:source_repo, "Source repo", :source_code, status[:source_repository], "Connect GitHub for source-aware frames."),
-        setup_step(:symbols, "dSYM coverage", :source_code, status[:apple_symbols], "Upload exact UUID/architecture symbols for address-only production frames."),
-        setup_step(:app_store, "App Store", :external, status[:app_store], "Connect App Store reporting as a separate, freshness-labelled source.", stage: :external_sources)
-      ]
-    end
-
     def setup_ingest_example
       {
         event: {

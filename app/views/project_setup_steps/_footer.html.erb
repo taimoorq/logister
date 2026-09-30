@@ -1,0 +1,25 @@
+<%# locals: (project:, plan:, item:, previous_item:, next_item:) %>
+<% continue_label = next_item ? "Continue: #{next_item.label}" : "Finish setup" %>
+<% continue_path = next_item ? setup_step_project_path(project, group: next_item.group_key, step: next_item.key) : setup_project_path(project) %>
+<footer class="wz-footer">
+  <div>
+    <% if previous_item %>
+      <%= link_to "Back", setup_step_project_path(project, group: previous_item.group_key, step: previous_item.key), class: "btn-ghost" %>
+    <% else %>
+      <%= link_to "Back to setup", setup_project_path(project), class: "btn-ghost" %>
+    <% end %>
+  </div>
+
+  <div class="wz-footer-right">
+    <% if item.skippable && !item.done? && plan.manager? %>
+      <%= button_to "Skip for now", project_setup_skips_path(project, key: item.key, wizard: 1), method: :post, class: "setup-link-button" %>
+    <% end %>
+
+    <% if item.done? %>
+      <%= link_to continue_label, continue_path, class: "btn-primary" %>
+    <% else %>
+      <span class="wz-footer-hint" id="continue-hint">Unlocks when this step is complete.</span>
+      <button type="button" class="btn-primary" disabled aria-disabled="true" aria-describedby="continue-hint"><%= continue_label %></button>
+    <% end %>
+  </div>
+</footer>

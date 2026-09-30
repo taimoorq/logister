@@ -3,6 +3,7 @@
 <% highlight_navigation = local_assigns.fetch(:highlight_navigation, false) %>
 <% page_context = project_page_context(@project, page_key: local_assigns[:page_key]) %>
 <% section_label = page_context.page&.header_label || "Project" %>
+<% content_for :project_section, page_context.navigation.current_tab&.key.to_s %>
 <% header_data = {
   project_kind: page_context.integration_definition.key,
   project_experience: page_context.experience_definition.key,
@@ -31,11 +32,29 @@
     </div>
 
     <div class="project-command-actions">
-      <%= render "projects/nav", page_context: page_context, tour_group: (highlight_navigation ? tour_group : nil) %>
-      <%= tour_help_button if tour_group.present? %>
+      <% if page_context.setup_chip? %>
+        <%= turbo_frame_tag "setup_chip", src: setup_chip_project_path(@project), class: "setup-chip-frame" do %>
+          <span class="setup-chip setup-chip-loading" aria-hidden="true"></span>
+          <noscript><%= link_to "Setup", setup_project_path(@project), class: "setup-chip-action" %></noscript>
+        <% end %>
+      <% end %>
+      <%= render "projects/help_menu", project: @project, page_context: page_context, tour_group: tour_group %>
     </div>
   </div>
+
+  <%= render "projects/nav", page_context: page_context, tour_group: (highlight_navigation ? tour_group : nil) %>
 </header>
+
+<% setup_return = setup_return_step(@project) %>
+<% if setup_return %>
+  <div class="setup-return-banner" role="note" data-setup-return>
+    <p>
+      <strong>Setup · <%= setup_return[:group].label %></strong>
+      <span><%= setup_return[:step].label %></span>
+    </p>
+    <%= link_to "Back to setup", setup_step_project_path(@project, group: setup_return[:group].key, step: setup_return[:step].key), class: "btn-primary btn-sm" %>
+  </div>
+<% end %>
 
 <%= render "projects/archived_notice",
            project: @project,

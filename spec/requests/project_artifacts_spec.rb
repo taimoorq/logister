@@ -55,3 +55,80 @@ RSpec.describe "Project artifacts", type: :request do
     expect(response).to have_http_status(:not_found)
   end
 end
+
+RSpec.describe "Uploading build artifacts from Releases", type: :request do
+  let(:owner) { users(:one) }
+
+  def document
+    Nokogiri::HTML.parse(response.body)
+  end
+
+  before { sign_in owner }
+
+  it "lets a manager upload an R8 mapping on the Artifacts page" do
+    project = create(:project, :android, user: owner)
+
+    get artifacts_project_path(project)
+
+    card = document.at_css("#upload-artifact")
+    expect(card.at_css("h3").text).to eq("Upload an R8 mapping")
+    form = card.at_css("form[action='#{project_android_mapping_files_path(project)}']")
+    expect(form.at_css("input[type='file'][name='android_mapping_file[upload]']")).to be_present
+    expect(form.at_css("input[name='setup_return']")).to be_nil
+    expect(document.at_css("a.btn-primary[href='#upload-artifact']").text).to eq("Upload a mapping")
+  end
+
+  it "lets a manager upload a dSYM archive on the Artifacts page" do
+    project = create(:project, :ios, user: owner)
+
+    get artifacts_project_path(project)
+
+    card = document.at_css("#upload-artifact")
+    expect(card.at_css("h3").text).to eq("Upload a dSYM archive")
+    expect(card.at_css("form[action='#{project_apple_symbol_artifacts_path(project)}'] input[name='apple_symbol_artifact[binary_uuid]']")).to be_present
+  end
+
+  it "shows a member who cannot manage the project the inventory, without an upload form" do
+    project = create(:project, :android)
+    viewer = create(:user)
+    create(:project_membership, project: project, user: viewer, role: :viewer)
+    sign_out owner
+    sign_in viewer
+
+    get artifacts_project_path(project)
+
+    expect(response).to have_http_status(:success)
+    expect(document.at_css("#upload-artifact")).to be_nil
+    expect(document.text).to include("Manager access required").or include("Artifact inventory")
+  end
+
+  it "leaves a pointer in Settings instead of a second upload form" do
+    android = create(:project, :android, user: owner)
+    get settings_project_path(android, section: "integrations")
+    expect(document.at_css("#android-mappings a").text).to include("Releases › Artifacts")
+    expect(document.at_css("form[action='#{project_android_mapping_files_path(android)}']")).to be_nil
+
+    ios = create(:project, :ios, user: owner)
+    get settings_project_path(ios, section: "integrations")
+    expect(document.at_css("#apple-symbols a")["href"]).to eq(artifacts_project_path(ios))
+    expect(document.at_css("form[action='#{project_apple_symbol_artifacts_path(ios)}']")).to be_nil
+  end
+
+  it "sends a failed mapping upload back to the upload form" do
+    project = create(:project, :android, user: owner)
+
+    post project_android_mapping_files_path(project), params: { android_mapping_file: { package_name: "", version_code: "" } }
+
+    expect(response).to redirect_to(artifacts_project_path(project, anchor: "upload-artifact"))
+    expect(flash[:alert]).to be_present
+  end
+
+  it "still offers the same upload inside the setup path" do
+    project = create(:project, :android, user: owner)
+
+    get setup_step_project_path(project, group: "actionable", step: "mapping")
+
+    form = document.at_css("form[action='#{project_android_mapping_files_path(project)}']")
+    expect(form.at_css("input[name='setup_return'][value='actionable/mapping']")).to be_present
+  end
+end
