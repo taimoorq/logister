@@ -7,6 +7,16 @@ RSpec.describe ErrorGroupImpactSummary do
   let(:api_key) { create(:api_key, project: project, user: project.user) }
   let(:group) { create(:error_group, project: project, occurrence_count: 3) }
 
+  def insert_occurrences(group, count:, dimensions:)
+    times = Array.new(count) { |index| (index + 1).minutes.ago }
+    event_ids = insert_events(project:, api_key:, times:)
+    ErrorOccurrence.insert_all!(
+      event_ids.zip(times).map do |event_id, occurred_at|
+        { error_group_id: group.id, ingest_event_id: event_id, ingest_event_occurred_at: occurred_at, occurred_at:, dimensions: }
+      end
+    )
+  end
+
   before do
     [
       [ "install-a", "session-a", "1.4.0+42", "Pixel 8", "15", 3.days.ago ],
@@ -59,16 +69,8 @@ RSpec.describe ErrorGroupImpactSummary do
   it "calls a cohort over-indexed only with a material issue share and a sufficient project baseline" do
     hotspot_group = create(:error_group, project: project, occurrence_count: 10)
     baseline_group = create(:error_group, project: project, occurrence_count: 90)
-    10.times do |index|
-      occurred_at = (index + 1).minutes.ago
-      event = create(:ingest_event, project:, api_key:, occurred_at:)
-      create(:error_occurrence, error_group: hotspot_group, ingest_event: event, occurred_at:, dimensions: { "device_model" => "Pixel Fold", "os_version" => "16" })
-    end
-    90.times do |index|
-      occurred_at = (index + 1).minutes.ago
-      event = create(:ingest_event, project:, api_key:, occurred_at:)
-      create(:error_occurrence, error_group: baseline_group, ingest_event: event, occurred_at:, dimensions: { "device_model" => "Galaxy S24", "os_version" => "15" })
-    end
+    insert_occurrences(hotspot_group, count: 10, dimensions: { "device_model" => "Pixel Fold", "os_version" => "16" })
+    insert_occurrences(baseline_group, count: 90, dimensions: { "device_model" => "Galaxy S24", "os_version" => "15" })
     baseline_scope = ErrorOccurrence.joins(:error_group).where(error_groups: { project_id: project.id })
 
     summary = described_class.for_group(

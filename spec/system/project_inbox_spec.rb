@@ -44,7 +44,7 @@ RSpec.describe "Project inbox", type: :system do
     expect(page).to have_no_css(".inbox-workbench-sidebar")
 
     within(".inbox-filter-bar") do
-      expect(page).to have_field("Search inbox")
+      expect(page).to have_field("Search issues")
       expect(page).to have_link("Open")
       expect(page).to have_link("Introduced today")
       expect(page).to have_link("Resolved")

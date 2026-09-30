@@ -1,0 +1,54 @@
+<%# locals: (project:, page_context:, tour_group: nil) %>
+<% section_key = page_context.navigation.current_tab&.key %>
+<% walkthroughs = section_key ? Walkthrough.for_section(section_key) : [] %>
+<div class="help-menu"
+     data-controller="disclosure"
+     data-action="click@document->disclosure#closeOutside keydown.esc@document->disclosure#closeOnEscape turbo:before-cache@document->disclosure#close">
+  <details data-disclosure-target="details">
+    <summary class="help-menu-summary" aria-label="Help and walkthroughs">
+      <span aria-hidden="true">?</span>
+    </summary>
+
+    <div class="help-menu-panel">
+      <% if walkthroughs.any? %>
+        <p class="help-menu-heading">Walkthroughs for <%= page_context.navigation.current_section_label %></p>
+        <ul>
+          <% walkthroughs.each do |walkthrough| %>
+            <li>
+              <% if walkthrough.available_for?(project) %>
+                <%= link_to walkthrough_project_path(project, key: walkthrough.key), class: "help-menu-item" do %>
+                  <strong><%= walkthrough.title %></strong>
+                  <span><%= walkthrough.rail_steps.size %> steps · on this project's own data</span>
+                <% end %>
+              <% else %>
+                <span class="help-menu-item help-menu-item-off" aria-disabled="true">
+                  <strong><%= walkthrough.title %></strong>
+                  <span>Needs <%= walkthrough.needs %> first</span>
+                </span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <p class="help-menu-heading">On this page</p>
+      <ul>
+        <% if tour_group.present? %>
+          <li>
+            <button type="button" class="help-menu-item" data-tour-ignore="true"
+                    data-action="click->product-tour#start click->disclosure#close">
+              <strong>Show page tips</strong>
+              <span>A short tour of what is on this page</span>
+            </button>
+          </li>
+        <% end %>
+        <li>
+          <%= link_to project_integration_docs_path(project), target: "_blank", rel: "noopener noreferrer", class: "help-menu-item" do %>
+            <strong><%= project_integration_docs_label(project) %></strong>
+            <span>Opens in a new tab</span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+  </details>
+</div>

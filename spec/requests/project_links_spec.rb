@@ -54,6 +54,8 @@ RSpec.describe "Project connections form", type: :request do
       post project_project_links_path(android), params: connection_params(backend)
     }.not_to change(ProjectLink, :count)
     expect(response).to have_http_status(:unprocessable_content)
+    settings_nav = Nokogiri::HTML(response.body).at_css("nav[aria-label='Project settings sections']")
+    expect(settings_nav.at_css("a[aria-current='page']").text.strip).to eq("Connections")
     expect(response.body).to include("Choose a backend project to receive requests from the mobile app.")
   end
 
@@ -119,5 +121,63 @@ RSpec.describe "Project connections form", type: :request do
       post project_project_links_path(backend), params: connection_params(android, source_environment: "", direction: "sideways")
     }.not_to change(ProjectLink, :count)
     expect(response).to have_http_status(:unprocessable_content)
+  end
+end
+
+RSpec.describe "Connections in Settings", type: :request do
+  let(:owner) { users(:one) }
+  let(:project) { create(:project, :ruby, user: owner) }
+
+  def document
+    Nokogiri::HTML.parse(response.body)
+  end
+
+  before { sign_in owner }
+
+  it "lists Connections in the settings navigation, and marks it current on its own page" do
+    get project_project_links_path(project)
+
+    nav = document.at_css("nav[aria-label='Project settings sections']")
+    expect(nav.css("a").map { |link| link.text.strip }).to eq(%w[Setup General Notifications Team Integrations Connections Data Danger])
+    expect(nav.at_css("a[aria-current='page']").text.strip).to eq("Connections")
+    expect(nav.at_css("a[aria-current='page']")["href"]).to eq(project_project_links_path(project))
+    expect(document.at_css("nav[aria-label='Project sections'] a[aria-current='page']").text.strip).to eq("Settings")
+  end
+
+  it "links to it from every other settings section" do
+    get settings_project_path(project, section: "team")
+
+    expect(document.at_css("nav[aria-label='Project settings sections'] a[href='#{project_project_links_path(project)}']").text.strip).to eq("Connections")
+  end
+
+  it "no longer repeats a pointer to it inside Integrations" do
+    get settings_project_path(project, section: "integrations")
+
+    expect(document.text).not_to include("Manage connected projects")
+  end
+
+  it "opens the page for the old settings section name" do
+    get settings_project_path(project, section: "connections")
+
+    expect(response).to redirect_to(project_project_links_path(project))
+  end
+
+  it "does not offer Connections to a member who cannot manage the project" do
+    viewer = create(:user)
+    create(:project_membership, project: project, user: viewer, role: :viewer)
+    sign_out owner
+    sign_in viewer
+
+    get settings_project_path(project, section: "general")
+    expect(document.at_css("nav[aria-label='Project settings sections']").text).not_to include("Connections")
+
+    get project_project_links_path(project)
+    expect(response).to have_http_status(:not_found)
+  end
+
+  it "has one page heading, the project's" do
+    get project_project_links_path(project)
+
+    expect(document.css("h1").size).to eq(1)
   end
 end

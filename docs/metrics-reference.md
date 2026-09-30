@@ -110,7 +110,7 @@ Use this section when you are building or reviewing an integration and want to k
 
 | View | Data it uses | Best fields to send |
 | --- | --- | --- |
-| Inbox | Error events and grouped error occurrences. | `event_type`, `message`, `level`, `fingerprint`, exception context, `environment`, `release`, request context. |
+| Issues | Error events and grouped error occurrences. | `event_type`, `message`, `level`, `fingerprint`, exception context, `environment`, `release`, request context. |
 | Event detail | Raw event context, runtime presenters, occurrences, and related logs. | Request method/path/URL, stack trace or exception data, trace/request/session/user IDs, safe custom context. |
 | Activity | Logs, metrics, transactions, and check-ins. | Clear `message`, `level`, `environment`, `release`, and app-specific context. |
 | Performance | Transactions, `db.query` metrics, trace spans, and release context. | `transaction_name`, `duration_ms`, `status`, route, `db.query` duration metrics, span trace fields. |
@@ -128,7 +128,7 @@ Logister can store whatever structured context an integration sends, so integrat
 
 ## Insights Metrics
 
-These are the built-in chart series available in project Insights.
+These are the built-in chart series available in Explore › Charts.
 
 | Metric key | Unit | What it means | Useful for |
 | --- | --- | --- | --- |

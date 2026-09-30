@@ -1,0 +1,52 @@
+<%# locals: (item:, plan:, project:, next_item:) %>
+<% action = item.action %>
+<% marker_icon = { complete: :check, blocked: :lock, failed: :warning, stale: :warning, partial: :warning }[item.state] %>
+<li class="setup-item"
+    id="step-<%= item.key %>"
+    data-setup-state="<%= item.state %>"
+    data-setup-owner="<%= item.owner %>">
+  <span class="setup-marker setup-marker-<%= item.state %>">
+    <% if marker_icon %>
+      <%= app_icon(marker_icon, css: "h-3.5 w-3.5") %>
+    <% elsif item.skipped %>
+      <%= app_icon(:x, css: "h-3.5 w-3.5") %>
+    <% end %>
+    <span class="sr-only"><%= item.state_label %></span>
+  </span>
+
+  <div class="setup-item-body">
+    <p class="setup-item-title">
+      <%= item.label %>
+      <% if %i[blocked failed stale partial skipped].include?(item.state) %>
+        <span class="setup-badge badge-<%= { blocked: 'warn', failed: 'bad', stale: 'warn', partial: 'warn', skipped: 'neutral' }.fetch(item.state) %>"><%= item.state_label %></span>
+      <% end %>
+    </p>
+    <p class="setup-item-evidence"><%= item.evidence %></p>
+    <% if action&.kind == :ask && action.note.present? %>
+      <p class="setup-item-note"><%= action.note %></p>
+    <% end %>
+  </div>
+
+  <span class="setup-owner setup-item-owner"><%= item.owner_label %></span>
+
+  <div class="setup-item-actions">
+    <% if action&.path.present? %>
+      <%= link_to action.label, action.path,
+                  class: item.equal?(next_item) ? "btn-primary btn-sm" : "btn-ghost btn-sm" %>
+    <% elsif action&.copy_path.present? %>
+      <div data-controller="copy" data-copy-text-value="<%= request.base_url + action.copy_path %>">
+        <button type="button" class="btn-ghost btn-sm" data-action="copy#copy">
+          <span data-copy-target="buttonLabel">Copy link for admin</span>
+        </button>
+      </div>
+    <% end %>
+
+    <% if plan.manager? && item.skippable %>
+      <% if item.skipped %>
+        <%= button_to "Undo", project_setup_skip_path(project, item.key), method: :delete, class: "setup-link-button" %>
+      <% elsif item.state == :pending || item.instance_blocked? %>
+        <%= button_to "Not needed", project_setup_skips_path(project, key: item.key), method: :post, class: "setup-link-button" %>
+      <% end %>
+    <% end %>
+  </div>
+</li>

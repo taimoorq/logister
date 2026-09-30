@@ -5,6 +5,10 @@
 
 <%= render "projects/header", tour_group: tour_group %>
 
+<% if @counts.fetch(:all, 0).to_i.zero? %>
+  <%= project_setup_prompt(@project, steps: %i[first_event first_diagnostic], css: "mb-6") %>
+<% end %>
+
 <div class="inbox-workbench min-w-0"
      data-controller="inbox"
      data-project-integration="<%= @project.integration_kind %>"
@@ -23,7 +27,7 @@
         <%= f.hidden_field :assignee, value: @assignee_filter, data: { inbox_target: "assigneeField" } %>
         <%= f.hidden_field :sort, value: @sort %>
         <%= profile_filter_hidden_fields(f, @profile_filters) %>
-        <%= f.label :q, "Search inbox", class: "kicker inbox-filter-search-label" %>
+        <%= f.label :q, "Search issues", class: "kicker inbox-filter-search-label" %>
         <%= f.search_field :q, value: @query, placeholder: experience.search_placeholder,
                            class: "form-input inbox-filter-search-input",
                            data: { action: "input->inbox#debouncedSearch", inbox_target: "searchInput" } %>
@@ -94,7 +98,7 @@
 
       <%= link_to "All projects", project_collection_path(@project), class: "inbox-filter-projects-link" %>
       <%= render "projects/feature_settings_action",
-                 label: "Inbox notifications",
+                 label: "Issue alerts",
                  path: settings_project_path(@project, section: "notifications", notification_path: "errors", anchor: "error-triage-alerts"),
                  description: "Configure error triage notifications",
                  css: "md:ml-auto" %>

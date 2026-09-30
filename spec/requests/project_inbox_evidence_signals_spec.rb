@@ -10,13 +10,10 @@ RSpec.describe "Project inbox evidence signals", type: :request do
     api_key = create(:api_key, project:, user: project.user)
     group = create(:error_group, project:, created_at: 3.days.ago, updated_at: 3.days.ago)
     times = Array.new(5) { now - 30.hours } + Array.new(10) { now - 2.hours }
-    times.each do |occurred_at|
-      event = create(
-        :ingest_event,
-        project:,
-        api_key:,
-        occurred_at:,
-        context: {
+    event_ids = insert_events(
+      project:, api_key:, times:,
+      context: lambda do |occurred_at|
+        {
           "platform" => "android",
           "error" => { "mechanism" => "unhandled_exception" },
           "exception" => { "type" => "java.lang.IllegalStateException", "stacktrace" => [] },
@@ -25,16 +22,13 @@ RSpec.describe "Project inbox evidence signals", type: :request do
             "time" => { "precision" => "exact", "occurred_at" => occurred_at.iso8601 }
           }
         }
-      )
-      create(
-        :error_occurrence,
-        error_group: group,
-        ingest_event: event,
-        occurred_at:,
-        ingest_event_occurred_at: occurred_at,
-        dimensions: { "time_precision" => "exact" }
-      )
-    end
+      end
+    )
+    ErrorOccurrence.insert_all!(
+      event_ids.zip(times).map do |event_id, occurred_at|
+        { error_group_id: group.id, ingest_event_id: event_id, occurred_at:, ingest_event_occurred_at: occurred_at, dimensions: { "time_precision" => "exact" } }
+      end
+    )
 
     get inbox_project_path(project, group_uuid: group.uuid)
 

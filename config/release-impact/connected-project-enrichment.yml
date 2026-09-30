@@ -2,8 +2,8 @@
 schema_version: 1
 id: connected-project-enrichment
 release_version: 3.8.0
-summary: Enrich connected requests, bounded impact reports, notifications and exports
-  with authorized evidence.
+summary: Enrich connected requests, impact reports and exports; reorganize project
+  navigation and setup without additional client contract changes.
 backend:
   bump: minor
   compatibility: expand
@@ -15,33 +15,33 @@ contracts:
 contract_sha256:
   cli_api: 14ec60dbf1baa77d2ff8a38d066cf76340a9b13dcf972c8d684af9129b1380a3
   telemetry_ingest: 33357b6d881dbe6449a812546d9ab0b0da422a86083c9343481fe654c1da5267
-  integration_discovery: df475b8570c7a974591111aa22f927683d4740127977d57352d0adbabe5ee55b
+  integration_discovery: 446763d808ef553a334f0461cfeea1852675afd331abd1075bce756ce932c9c3
 consumers:
   logister-ruby:
     bump: none
     reason: Existing request context remains compatible; no additional Ruby SDK change
-      is needed for enriched reads.
+      is needed for enriched reads, navigation or guided setup.
   logister-js:
     bump: none
     reason: Existing request context remains compatible; no additional JavaScript
-      SDK change is needed for enriched reads.
+      SDK change is needed for enriched reads, navigation or guided setup.
   logister-python:
     bump: none
     reason: Existing request context remains compatible; no additional Python SDK
-      change is needed for enriched reads.
+      change is needed for enriched reads, navigation or guided setup.
   logister-dotnet:
     bump: none
     reason: Existing request context remains compatible; no additional .NET SDK change
-      is needed for enriched reads.
+      is needed for enriched reads, navigation or guided setup.
   logister-android:
     bump: patch
     reason: Add optional HTTP outcome and duration-scope metadata and capture pre-network
-      OkHttp failures.
+      OkHttp failures. Navigation and guided setup require no further SDK changes.
   logister-ios:
     bump: patch
     reason: Add optional HTTP outcome and duration-scope metadata without changing
-      URLSession response handling.
+      URLSession response handling. Navigation and guided setup require no further SDK changes.
   logister-cli:
     bump: patch
     reason: Review the additive 3.8 API contract and display HTTP outcome and duration
-      in related-request output.
+      in related-request output. Navigation and guided setup require no further CLI changes.

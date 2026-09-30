@@ -1,5 +1,6 @@
 class ApiKeysController < ApplicationController
   include ProjectScope
+  include SetupWizardReturn
 
   before_action :authenticate_user!
   before_action :set_project
@@ -9,6 +10,11 @@ class ApiKeysController < ApplicationController
     api_key.user = current_user
 
     if api_key.save
+      if setup_return_path
+        flash[:new_api_key_token] = api_key.plain_token
+        return redirect_to(setup_return_path, notice: "API key created. Copy it now; it will not be shown again.", status: :see_other)
+      end
+
       respond_to do |format|
         format.turbo_stream do
           token = api_key.plain_token
@@ -24,6 +30,8 @@ class ApiKeysController < ApplicationController
         end
       end
     else
+      return redirect_to(setup_return_path, alert: api_key.errors.full_messages.to_sentence, status: :see_other) if setup_return_path
+
       respond_to do |format|
         format.turbo_stream { render turbo_stream: turbo_stream.replace("api_key_new_token", partial: "api_keys/error_message", locals: { message: api_key.errors.full_messages.to_sentence }, method: :morph), status: :unprocessable_content }
         format.html { redirect_to setup_project_path(@project, anchor: "api-keys"), alert: api_key.errors.full_messages.to_sentence }

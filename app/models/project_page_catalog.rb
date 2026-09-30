@@ -3,29 +3,25 @@
 class ProjectPageCatalog
   BASE_ATTRIBUTES = BasePages::ATTRIBUTES
 
+  # Mobile projects keep the shared sections. Only the evidence vocabulary and a
+  # few extra Releases views differ.
   MOBILE_OVERRIDES = {
     inbox: {
-      label: "Stability",
-      header_label: "Project stability",
       description: "Crashes, hangs, terminations, and reported errors"
     }.freeze,
     activity: {
-      label: "Activity",
-      header_label: "Project activity",
       description: "Non-error telemetry and app activity"
     }.freeze,
     performance: {
-      label: "App health",
       header_label: "Project app health",
       description: "Responsiveness, resource use, and app-supplied performance"
     }.freeze,
     monitors: {
-      label: "Check-ins",
-      header_label: "Project check-ins",
-      description: "Background work and heartbeat status",
-      navigation_group: :secondary,
-      menu_group: "Project tools",
-      order: 65
+      description: "Background work and heartbeat status"
+    }.freeze,
+    deployments: {
+      view_label: "Deploy records",
+      description: "Deploy records reported by CI alongside observed app builds"
     }.freeze
   }.freeze
 
@@ -33,28 +29,24 @@ class ProjectPageCatalog
     {
       key: :releases,
       route_key: :releases,
-      active_parent_key: nil,
+      section_key: :releases,
+      view_label: "Releases",
       label: "Releases",
       header_label: "Project releases",
       description: "Observed app builds, channels, stability, and artifact coverage",
       icon_key: :deployments,
-      navigation_group: :primary,
-      menu_group: nil,
-      order: 55,
-      core: true
+      order: 39
     }.freeze,
     {
       key: :artifacts,
       route_key: :artifacts,
-      active_parent_key: nil,
+      section_key: :releases,
+      view_label: "Artifacts",
       label: "Artifacts",
       header_label: "Project artifacts",
       description: "Build artifacts and observed-build coverage",
       icon_key: :source_code,
-      navigation_group: :secondary,
-      menu_group: "Build & source",
-      order: 75,
-      core: true
+      order: 40
     }.freeze
   ].freeze
 
@@ -88,16 +80,17 @@ class ProjectPageCatalog
       raise ArgumentError, "Duplicate project page orders for #{experience_key}: #{duplicate_orders.join(', ')}" if duplicate_orders.any?
 
       pages.each do |page|
-        raise ArgumentError, "Project page #{page.key} has an unknown navigation group" unless ProjectPageDefinition::NAVIGATION_GROUPS.include?(page.navigation_group)
+        raise ArgumentError, "Project page #{page.key} has an unknown section" unless ProjectNavSection.key?(page.section_key)
         if page.route_key
           ProjectPageRoutes.validate!(page.route_key)
         elsif !page.hidden?
           raise ArgumentError, "Navigable project page #{page.key} must have a route"
         end
-        next if page.active_parent_key.nil? || pages.any? { |candidate| candidate.key == page.active_parent_key }
-
-        raise ArgumentError, "Project page #{page.key} references an unknown active parent"
+        raise ArgumentError, "Hidden project page #{page.key} cannot be a section view" if page.hidden? && page.view_label.present?
       end
+
+      missing = ProjectNavSection::ALL.reject { |section| pages.any? { |page| page.section_key == section.key && !page.hidden? } }
+      raise ArgumentError, "Project sections without a navigable page for #{experience_key}: #{missing.map(&:key).join(', ')}" if missing.any?
 
       true
     end

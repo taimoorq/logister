@@ -42,12 +42,7 @@ RSpec.describe ProjectIntegrationDefinition do
   end
 
   it "reads static integration and experience definitions without querying the database" do
-    queries = []
-    callback = lambda do |_name, _start, _finish, _id, payload|
-      queries << payload[:sql] unless %w[SCHEMA TRANSACTION].include?(payload[:name])
-    end
-
-    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+    queries = capture_sql do
       described_class.all_for_picker.each do |integration|
         ProjectExperienceDefinition.fetch(integration.default_experience_key)
       end

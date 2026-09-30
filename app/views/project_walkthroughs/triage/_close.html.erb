@@ -1,0 +1,24 @@
+<%# locals: (project:, group:, event:, next_step:, walkthrough:, step_path:, other_groups: nil, deployment_context: nil, assignable_users: nil) %>
+<% done_return = "#{walkthrough.key}/done" %>
+<p class="wz-lead">This changes the issue for everyone on the project. You can reopen it any time from Issues.</p>
+
+<section class="wz-panel" aria-labelledby="walkthrough-close-title">
+  <p class="setup-kicker">Issue · <%= group.status.humanize %></p>
+  <h2 id="walkthrough-close-title"><%= group.title %></h2>
+
+  <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div class="rounded-lg border p-4" style="border-color: var(--app-border)">
+      <h3 class="text-sm font-bold">Mark as fixed</h3>
+      <p>Moves it out of open issues and records that it was resolved. Use it once the fix has shipped.</p>
+      <%= button_to "Mark as fixed", resolve_project_error_group_path(project, group), method: :patch, params: { walkthrough_return: done_return },
+                    form: { data: { turbo_frame: "_top" }, class: "mt-3" }, class: "btn-primary" %>
+    </div>
+    <div class="rounded-lg border p-4" style="border-color: var(--app-border)">
+      <h3 class="text-sm font-bold">Ignore</h3>
+      <p>Moves it out of open issues without claiming it is fixed. Use it for noise you have decided not to act on.</p>
+      <%= button_to "Ignore", ignore_project_error_group_path(project, group), method: :patch, params: { walkthrough_return: done_return },
+                    form: { data: { turbo_frame: "_top" }, class: "mt-3" }, class: "btn-ghost" %>
+    </div>
+  </div>
+  <p class="mt-4">Not ready to decide? Leave it open and finish. Nothing changes.</p>
+</section>

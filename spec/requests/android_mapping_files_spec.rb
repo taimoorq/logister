@@ -25,9 +25,9 @@ RSpec.describe "Android mapping files", type: :request do
     mapping = project.android_mapping_files.sole
     expect(mapping).to have_attributes(package_name: "com.acme.shop", version_code: "42")
     expect(mapping.content).to include("CartStore")
-    expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "android-mappings"))
+    expect(response).to redirect_to(artifacts_project_path(project))
 
-    get settings_project_path(project, section: "integrations")
+    get artifacts_project_path(project)
     expect(response.body).to include("android_mapping.txt", mapping.checksum_sha256.first(12))
     expect(response.body).not_to include("com.acme.shop.storage.CartStore -&gt; a")
   end

@@ -43,6 +43,7 @@ class Project < ApplicationRecord
   has_many :error_groups, dependent: :destroy
   has_many :check_in_monitors, dependent: :destroy
   has_many :project_memberships, dependent: :destroy
+  has_many :setup_steps, class_name: "ProjectSetupStep", dependent: :destroy
   has_many :project_notification_preferences, dependent: :destroy
   has_many :integration_settings, class_name: "ProjectIntegrationSetting", dependent: :destroy
   has_many :android_mapping_files, dependent: :destroy

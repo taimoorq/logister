@@ -29,6 +29,13 @@
           <%= render "shared/widgets/line_chart", points: trend, accessible_label: "Last 7 days telemetry receipt trend" %>
         </div>
 
+        <% if latest_received_at.blank? && !project.archived? %>
+          <%= link_to setup_project_path(project), class: "project-card-setup", data: { project_setup_cue: true } do %>
+            <span class="setup-badge badge-warn">Setup needed</span>
+            <span>Nothing has been received yet. Finish setup</span>
+          <% end %>
+        <% end %>
+
         <div class="project-card-footer">
           <div class="project-card-footer-item">
             <span class="project-card-footer-label">Latest receipt</span>

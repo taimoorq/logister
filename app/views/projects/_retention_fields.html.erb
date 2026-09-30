@@ -1,0 +1,53 @@
+<%# locals: (f:, tour_group: nil) %>
+<fieldset class="border-t border-slate-200 pt-5"
+          <%= tag.attributes(data: product_tour_step_data(tour_group, :retention_policy)) if tour_group.present? %>>
+  <legend class="form-label">Data retention</legend>
+  <p class="text-slate-500 text-xs mb-3">
+    Set the data lifecycle before sending the first event.
+  </p>
+
+  <%= f.fields_for :retention_policy do |retention_fields| %>
+    <% retention_policy = retention_fields.object %>
+
+    <% if retention_policy.errors.any? %>
+      <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+        <%= retention_policy.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div>
+        <%= retention_fields.label :hot_retention_days, "Event retention", class: "form-label" %>
+        <%= retention_fields.select :hot_retention_days,
+                                    options_for_select(retention_day_options, retention_policy.hot_retention_days),
+                                    {},
+                                    required: true,
+                                    class: "form-input" %>
+        <p class="mt-1 text-xs text-slate-500">Activity events, diagnostics, metrics, transactions, and check-ins.</p>
+      </div>
+
+      <div>
+        <%= retention_fields.label :trace_retention_days, "Trace retention", class: "form-label" %>
+        <%= retention_fields.select :trace_retention_days,
+                                    options_for_select(retention_day_options, retention_policy.trace_retention_days),
+                                    {},
+                                    required: true,
+                                    class: "form-input" %>
+        <p class="mt-1 text-xs text-slate-500">Trace/span and explicitly captured performance evidence.</p>
+      </div>
+
+      <div>
+        <%= retention_fields.label :error_retention_days, "Closed error retention", class: "form-label" %>
+        <%= retention_fields.select :error_retention_days,
+                                    options_for_select(retention_day_options(include_forever: true), retention_policy.error_retention_days),
+                                    {},
+                                    class: "form-input" %>
+        <p class="mt-1 text-xs text-slate-500">Resolved, muted, or archived stability issues.</p>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <%= render "projects/retention_archive_controls", form: retention_fields %>
+    </div>
+  <% end %>
+</fieldset>

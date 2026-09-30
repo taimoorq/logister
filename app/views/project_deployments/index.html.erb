@@ -131,6 +131,8 @@
           Showing the newest <%= @deployments.size %> matching deployments.
         </p>
       <% end %>
+    <% elsif !@deployment_filters_active && (prompt = project_setup_prompt(@project, steps: %i[deployments])) %>
+      <%= prompt %>
     <% else %>
       <p class="text-sm text-slate-600">
         <% if @deployment_filters_active %>
@@ -141,6 +143,10 @@
       </p>
     <% end %>
   </section>
+
+  <% unless @project.integration_android? || @project.integration_ios? %>
+    <%= turbo_frame_tag "release_health", src: deployments_release_health_project_path(@project), loading: :lazy %>
+  <% end %>
 </section>
 
 <% end %>

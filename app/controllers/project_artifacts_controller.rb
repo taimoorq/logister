@@ -2,6 +2,7 @@
 
 class ProjectArtifactsController < ApplicationController
   include ProjectScope
+  include ProjectSettingsContext
 
   before_action :authenticate_user!
   before_action :set_accessible_project
@@ -11,6 +12,8 @@ class ProjectArtifactsController < ApplicationController
     @artifact_page = [ params[:page].to_i, 1 ].max
     @artifact_index = ProjectMobileArtifactIndex.new(@project, page: @artifact_page).call
     @can_manage_artifacts = @project.managed_by?(current_user)
+    @project_manager = @can_manage_artifacts
+    load_artifact_upload_context if @can_manage_artifacts
 
     render "projects/artifacts"
   end

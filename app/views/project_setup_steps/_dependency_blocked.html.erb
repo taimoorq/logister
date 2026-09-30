@@ -1,0 +1,11 @@
+<%# locals: (project:, plan:, item:) %>
+<% waiting_on = item.step.depends_on.map { |key| plan.item(key) }.compact.find { |dependency| !dependency.done? } %>
+<section class="wz-panel" data-wizard-blocked="dependency">
+  <h2>Finish <%= waiting_on&.label&.downcase || "the previous step" %> first</h2>
+  <p><%= item.label %> can only be checked once <%= waiting_on&.label&.downcase || "the previous step" %> is done.</p>
+  <% if waiting_on %>
+    <div class="mt-4">
+      <%= link_to "Go to #{waiting_on.label}", setup_step_project_path(project, group: waiting_on.group_key, step: waiting_on.key), class: "btn-primary" %>
+    </div>
+  <% end %>
+</section>

@@ -43,9 +43,9 @@ RSpec.describe "Apple symbol artifacts", type: :request do
       filename: "AcmeShop.dSYM.zip"
     )
     expect(artifact.storage_key).to include("apple-symbols", "project=#{project.uuid}")
-    expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "apple-symbols"))
+    expect(response).to redirect_to(artifacts_project_path(project))
 
-    get settings_project_path(project, section: "integrations")
+    get artifacts_project_path(project)
     expect(response.body).to include("AcmeShop.dSYM.zip", artifact.binary_uuid, "Uploaded")
     expect(response.body).not_to include("private-symbol-fixture")
 

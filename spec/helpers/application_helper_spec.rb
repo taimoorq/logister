@@ -144,43 +144,22 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(fragment.at_css("path")).to be_nil
     end
 
-    it "renders project integration icons through the Streamline map" do
-      project = Project.new(integration_kind: "dotnet")
-      fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(project))
+    {
+      "dotnet" => [ "project-dotnet", nil ],
+      "http_api" => [ "external", "Manual / HTTP API" ],
+      "cloudflare_pages" => [ "external", "Cloudflare Pages" ],
+      "android" => [ "projects", "Android app" ],
+      "ios" => [ "projects", "iOS app" ]
+    }.each do |kind, (symbol, title)|
+      it "renders the #{kind} project icon through the Streamline map" do
+        fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(Project.new(integration_kind: kind)))
+        icon = fragment.at_css(".project-type-icon-#{kind}")
 
-      expect(fragment.at_css(".project-type-icon-dotnet")).to be_present
-      expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-project-dotnet\z})
-      expect(fragment.text.strip).to be_empty
-    end
-
-    it "renders the HTTP API integration icon" do
-      project = Project.new(integration_kind: "http_api")
-      fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(project))
-
-      expect(fragment.at_css(".project-type-icon-http_api")).to be_present
-      expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-external\z})
-      expect(fragment.at_css(".project-type-icon-http_api")["title"]).to eq("Manual / HTTP API")
-    end
-
-    it "renders the Cloudflare Pages integration icon" do
-      project = Project.new(integration_kind: "cloudflare_pages")
-      fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(project))
-
-      expect(fragment.at_css(".project-type-icon-cloudflare_pages")).to be_present
-      expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-external\z})
-      expect(fragment.at_css(".project-type-icon-cloudflare_pages")["title"]).to eq("Cloudflare Pages")
-    end
-
-    it "renders the mobile app integration icons" do
-      android_fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(Project.new(integration_kind: "android")))
-      ios_fragment = Nokogiri::HTML.fragment(helper.project_integration_icon(Project.new(integration_kind: "ios")))
-
-      expect(android_fragment.at_css(".project-type-icon-android")).to be_present
-      expect(android_fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-projects\z})
-      expect(android_fragment.at_css(".project-type-icon-android")["title"]).to eq("Android app")
-      expect(ios_fragment.at_css(".project-type-icon-ios")).to be_present
-      expect(ios_fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-projects\z})
-      expect(ios_fragment.at_css(".project-type-icon-ios")["title"]).to eq("iOS app")
+        expect(icon).to be_present
+        expect(fragment.at_css("use")["href"]).to match(%r{streamline-freehand(?:-[a-f0-9]+)?\.svg#streamline-#{symbol}\z})
+        expect(icon["title"]).to eq(title) if title
+        expect(fragment.text.strip).to be_empty
+      end
     end
   end
 

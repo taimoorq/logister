@@ -74,33 +74,5 @@ module ProjectExperiences
     def section(key, label)
       DetailSection.new(key: key, label: label, partial: DETAIL_PARTIALS.fetch(key))
     end
-
-    def setup_step(key, label, icon, status, detail, stage: :improve_evidence, action_key: nil)
-      SetupStep.new(
-        key:,
-        label:,
-        icon:,
-        state: setup_state(status),
-        stage:,
-        detail: status.respond_to?(:reason) && status.reason.present? ? status.reason : detail,
-        action_key: status.respond_to?(:action_key) ? status.action_key : action_key
-      )
-    end
-
-    def setup_state(status)
-      return status ? :complete : :pending unless status.respond_to?(:state)
-
-      {
-        available: :complete,
-        configured: :complete,
-        partial: :partial,
-        stale: :stale,
-        blocked: :blocked,
-        failed: :failed,
-        not_applicable: :not_applicable,
-        unsupported: :not_applicable,
-        unconfigured: :pending
-      }.fetch(status.state, :pending)
-    end
   end
 end

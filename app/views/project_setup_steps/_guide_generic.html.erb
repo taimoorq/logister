@@ -1,0 +1,17 @@
+<%# locals: (project:, item:) %>
+<section class="wz-panel">
+  <h2>What Logister looks for</h2>
+  <p><%= item.summary %></p>
+  <% if item.evidence.present? && item.evidence != item.summary %>
+    <p class="font-semibold" style="color: var(--app-text)"><span class="sr-only">Current status: </span><%= item.evidence %></p>
+  <% end %>
+
+  <h3 class="mt-5">Where to set it up</h3>
+  <ul class="mt-2 flex list-none flex-col gap-2 p-0 text-sm">
+    <li><%= link_to project_integration_docs_label(project), project_integration_docs_path(project), target: "_blank", rel: "noopener noreferrer", class: "font-semibold" %></li>
+    <% if %i[deployments check_ins].include?(item.key) %>
+      <li><%= link_to "HTTP API reference", docs_site_url(:http_api), target: "_blank", rel: "noopener noreferrer", class: "font-semibold" %></li>
+    <% end %>
+  </ul>
+  <p>This step is done in your own code or CI. This page confirms it when the evidence reaches Logister.</p>
+</section>

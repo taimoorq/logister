@@ -2,6 +2,7 @@
 
 class AppleSymbolArtifactsController < ApplicationController
   include ProjectScope
+  include SetupWizardReturn
 
   before_action :authenticate_user!
   before_action :set_managed_project
@@ -15,10 +16,10 @@ class AppleSymbolArtifactsController < ApplicationController
       attributes: artifact_params.except(:upload),
       upload: artifact_params[:upload]
     ).call
-    redirect_to settings_project_path(@project, section: "integrations", anchor: "apple-symbols"),
+    redirect_to (setup_return_path || artifacts_project_path(@project)),
                 notice: "dSYM archive uploaded for build #{artifact.version_code}; UUID verification was queued."
   rescue ActiveRecord::RecordInvalid, AppleSymbols::ArtifactUploader::Error => error
-    redirect_to settings_project_path(@project, section: "integrations", anchor: "apple-symbols"), alert: error.message
+    redirect_to (setup_return_path || artifacts_project_path(@project, anchor: "upload-artifact")), alert: error.message
   end
 
   def process_artifact
@@ -48,8 +49,6 @@ class AppleSymbolArtifactsController < ApplicationController
   end
 
   def artifact_return_path
-    return artifacts_project_path(@project) if params[:return_to] == "artifacts"
-
-    settings_project_path(@project, section: "integrations", anchor: "apple-symbols")
+    artifacts_project_path(@project)
   end
 end

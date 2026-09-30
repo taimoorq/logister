@@ -1,0 +1,9 @@
+<%= form_with model: [@project, @android_mapping_file], url: project_android_mapping_files_path(@project), class: "mt-5 grid grid-cols-1 gap-4 md:grid-cols-2", multipart: true, data: setup_form_data do |form| %>
+  <%= setup_return_field %>
+  <div><%= form.label :package_name, class: "form-label" %><%= form.text_field :package_name, placeholder: "com.acme.shop", required: true, class: "form-input" %></div>
+  <div><%= form.label :version_code, "Version code", class: "form-label" %><%= form.text_field :version_code, placeholder: "42", required: true, class: "form-input" %></div>
+  <div><%= form.label :version_name, "Version name", class: "form-label" %><%= form.text_field :version_name, placeholder: "1.4.0", class: "form-input" %></div>
+  <div><%= form.label :release, class: "form-label" %><%= form.text_field :release, placeholder: "1.4.0+42", class: "form-input" %></div>
+  <div class="md:col-span-2"><%= form.label :upload, "mapping.txt", class: "form-label" %><%= form.file_field :upload, accept: ".txt,text/plain", required: true, class: "form-input" %><p class="mt-1 text-xs text-slate-500">Maximum 20 MB. Upload the exact mapping produced for this version code.</p></div>
+  <div class="md:col-span-2 flex justify-end"><%= form.submit "Upload mapping", class: "btn btn-primary" %></div>
+<% end %>

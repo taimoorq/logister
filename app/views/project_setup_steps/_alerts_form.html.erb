@@ -1,0 +1,38 @@
+<%# locals: (project:, preference:) %>
+<%= form_with model: preference,
+              url: project_notification_preference_path(project),
+              method: :patch,
+              data: setup_form_data,
+              class: "wz-panel" do |form| %>
+  <%= setup_return_field %>
+  <h2>Choose what reaches you</h2>
+  <p>These are your own alerts for <%= project.name %>. You can fine-tune thresholds and filters later in Settings.</p>
+
+  <fieldset class="mt-4 flex flex-col gap-3">
+    <legend class="sr-only">Alerts by email</legend>
+    <label class="flex items-start gap-3">
+      <%= form.check_box :first_occurrence_enabled, class: "form-checkbox mt-1" %>
+      <span><strong class="block text-sm">A new kind of error appears</strong><span class="text-[13px]" style="color: var(--app-muted)">Sent the first time an error is grouped.</span></span>
+    </label>
+    <label class="flex items-start gap-3">
+      <%= form.check_box :regression_enabled, class: "form-checkbox mt-1" %>
+      <span><strong class="block text-sm">A resolved error comes back</strong><span class="text-[13px]" style="color: var(--app-muted)">Sent when an issue you closed reappears.</span></span>
+    </label>
+    <label class="flex items-start gap-3">
+      <%= form.check_box :monitor_alerts_enabled, class: "form-checkbox mt-1" %>
+      <span><strong class="block text-sm">A scheduled job misses its check-in</strong><span class="text-[13px]" style="color: var(--app-muted)">Only applies once monitors are reporting.</span></span>
+    </label>
+  </fieldset>
+
+  <div class="mt-4 max-w-xs">
+    <%= form.label :digest_frequency, "Summary email", class: "form-label" %>
+    <%= form.select :digest_frequency,
+                    options_for_select([ [ "No summary", "none" ], [ "Daily", "daily" ], [ "Weekly", "weekly" ] ], preference.digest_frequency),
+                    {},
+                    class: "form-input" %>
+  </div>
+
+  <div class="mt-5">
+    <%= form.submit "Save my alerts", class: "btn-primary" %>
+  </div>
+<% end %>

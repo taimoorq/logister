@@ -1,0 +1,17 @@
+<%# locals: (item:) %>
+<% action = item.action %>
+<section class="wz-panel" data-wizard-blocked="instance">
+  <h2>This needs your Logister admin</h2>
+  <p><%= item.evidence %></p>
+  <p>Nobody on this project can set this up. It is an instance setting.</p>
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <% if action&.path.present? %>
+      <%= link_to action.label, action.path, class: "btn-primary" %>
+    <% elsif action&.copy_path.present? %>
+      <div data-controller="copy" data-copy-text-value="<%= request.base_url + action.copy_path %>">
+        <button type="button" class="btn-primary" data-action="copy#copy"><span data-copy-target="buttonLabel">Copy link for admin</span></button>
+      </div>
+    <% end %>
+    <% if action&.note.present? %><p class="!mt-0"><%= action.note %></p><% end %>
+  </div>
+</section>

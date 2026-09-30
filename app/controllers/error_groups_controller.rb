@@ -1,4 +1,5 @@
 class ErrorGroupsController < ApplicationController
+  include WalkthroughReturn
   include ProjectInboxData
 
   before_action :authenticate_user!
@@ -92,7 +93,13 @@ class ErrorGroupsController < ApplicationController
     )
   end
 
+  def status_notice
+    "Marked #{@group.reload.status}."
+  end
+
   def respond_with_stream
+    return redirect_to(walkthrough_return_path, notice: status_notice, status: :see_other) if walkthrough_return_path
+
     filter  = params[:filter].presence_in(ProjectInboxData::INBOX_FILTERS) || "unresolved"
     query   = params[:q].to_s.strip
     assignee = normalize_inbox_assignee_filter(@project, params[:assignee], viewer: current_user)

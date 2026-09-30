@@ -1,0 +1,28 @@
+<%# locals: (project:, group:, event:, assignable_users:, walkthrough:, next_step:, step_path:, other_groups: nil, deployment_context: nil) %>
+<% current = group.assignee %>
+<p class="wz-lead">An owner makes the issue someone's job. Assigned issues show up under My assignments on that person's dashboard, and in the assignee filter on Issues.</p>
+
+<%= form_with url: project_error_group_assignment_path(project, group), method: :patch, data: { turbo_frame: "_top" }, class: "wz-panel" do |form| %>
+  <%= hidden_field_tag :walkthrough_return, "#{walkthrough.key}/close" %>
+  <p class="setup-kicker">Issue</p>
+  <h2><%= group.title %></h2>
+  <p>Currently: <strong style="color: var(--app-text)"><%= current ? (current.name.presence || current.email) : "Unassigned" %></strong></p>
+
+  <fieldset class="mt-4 flex flex-col gap-2">
+    <legend class="form-label">Assign to</legend>
+    <label class="flex items-center gap-3 rounded-lg border px-3.5 py-3" style="border-color: var(--app-control-border)">
+      <%= radio_button_tag :assigned_user_id, "", current.nil?, class: "form-radio" %>
+      <span class="text-sm font-semibold">Nobody yet</span>
+    </label>
+    <% assignable_users.each do |user| %>
+      <label class="flex items-center gap-3 rounded-lg border px-3.5 py-3" style="border-color: var(--app-control-border)">
+        <%= radio_button_tag :assigned_user_id, user.uuid, current == user, class: "form-radio" %>
+        <span class="text-sm font-semibold"><%= inbox_assignee_label(project, current_user, user) %></span>
+      </label>
+    <% end %>
+  </fieldset>
+
+  <div class="mt-4">
+    <%= form.submit "Save assignment", class: "btn-primary" %>
+  </div>
+<% end %>

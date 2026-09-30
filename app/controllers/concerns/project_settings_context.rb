@@ -75,19 +75,13 @@ module ProjectSettingsContext
         project: @project,
         provider: ProjectIntegrationSetting::PROVIDERS[:google_play]
       )
-      @android_mapping_count = @project.android_mapping_files.count
-      @android_mapping_files = @project.android_mapping_files.recent_first.limit(5).to_a
-      @android_mapping_file = @project.android_mapping_files.new
+      load_artifact_upload_context
     end
     @app_store_connect_integration_setting ||= ProjectIntegrationSetting.for(
       project: @project,
       provider: ProjectIntegrationSetting::PROVIDERS[:app_store_connect]
     ) if @project.integration_ios?
-    if @project.integration_ios?
-      @apple_symbol_artifact_count = @project.apple_symbol_artifacts.count
-      @apple_symbol_artifacts = @project.apple_symbol_artifacts.recent_first.limit(5).to_a
-      @apple_symbol_artifact = @project.apple_symbol_artifacts.new
-    end
+    load_artifact_upload_context if @project.integration_ios?
     @source_repositories = @project.source_repositories
                                    .includes(:github_installation, github_repository: :github_installation)
                                    .order(:provider, :full_name)
@@ -175,6 +169,20 @@ module ProjectSettingsContext
       period_seconds: Project.default_public_api_rate_limit_period_seconds,
       auth_failure_requests: Project.default_public_api_auth_failure_rate_limit_requests
     }
+  end
+
+  # The forms and recent uploads for the build artifacts a mobile project needs:
+  # R8 mappings for Android, dSYM archives for iOS.
+  def load_artifact_upload_context
+    if @project.integration_android?
+      @android_mapping_count = @project.android_mapping_files.count
+      @android_mapping_files = @project.android_mapping_files.recent_first.limit(5).to_a
+      @android_mapping_file = @project.android_mapping_files.new
+    elsif @project.integration_ios?
+      @apple_symbol_artifact_count = @project.apple_symbol_artifacts.count
+      @apple_symbol_artifacts = @project.apple_symbol_artifacts.recent_first.limit(5).to_a
+      @apple_symbol_artifact = @project.apple_symbol_artifacts.new
+    end
   end
 
   def ensure_project_settings_navigation

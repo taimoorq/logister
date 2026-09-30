@@ -32,12 +32,7 @@ RSpec.describe ProjectExperience do
   end
 
   it "keeps product support query-free even for mobile profiles" do
-    queries = []
-    callback = lambda do |_name, _start, _finish, _id, payload|
-      queries << payload[:sql] unless %w[SCHEMA TRANSACTION].include?(payload[:name])
-    end
-
-    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+    queries = capture_sql do
       %w[android ios].each do |kind|
         profile = described_class.for(Project.new(integration_kind: kind))
         expect(profile.capabilities).to include(:mobile, :session_health, :distribution_store)

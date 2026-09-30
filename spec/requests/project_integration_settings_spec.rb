@@ -226,9 +226,9 @@ RSpec.describe "Project integration settings", type: :request do
         "Google Play Developer Reporting",
         "Play metrics remain separate from Logister SDK impact",
         "No external metrics have been imported",
-        "R8 / ProGuard mappings",
-        "No R8 mappings uploaded"
+        "R8 / ProGuard mappings"
       )
+      expect(Nokogiri::HTML.parse(response.body).at_css("#android-mappings a")["href"]).to eq(artifacts_project_path(project))
     end
 
     it "shows the reusable App Store Connect boundary for iOS projects" do
@@ -238,7 +238,8 @@ RSpec.describe "Project integration settings", type: :request do
       get settings_project_path(project, section: "integrations")
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include("App Store Connect", "APP_STORE_CONNECT_PRIVATE_KEY", "dSYM coverage", "No dSYM artifacts uploaded", "No App Store metrics imported")
+      expect(response.body).to include("App Store Connect", "APP_STORE_CONNECT_PRIVATE_KEY", "dSYM coverage", "No App Store metrics imported")
+      expect(Nokogiri::HTML.parse(response.body).at_css("#apple-symbols a")["href"]).to eq(artifacts_project_path(project))
     end
 
     it "shows archived mobile integrations as read-only while retaining forensic artifacts" do
@@ -251,7 +252,11 @@ RSpec.describe "Project integration settings", type: :request do
       expect(document.text).to include("Live integrations are paused", "Existing source links and private build artifacts remain available")
       expect(document.at_css("input[name='project_integration_setting[external_project_id]']")[:disabled]).to eq("disabled")
       expect(document.text).not_to include("Sync App Store metrics")
-      expect(document.at_css("input[type='submit'][value='Upload dSYM']")).to be_present
+      expect(document.at_css("input[type='submit'][value='Upload dSYM']")).to be_nil
+
+      get artifacts_project_path(project)
+
+      expect(Nokogiri::HTML.parse(response.body).at_css("#upload-artifact input[type='submit'][value='Upload dSYM']")).to be_present
     end
   end
 end

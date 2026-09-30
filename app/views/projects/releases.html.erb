@@ -43,7 +43,9 @@
     </article>
   </section>
 
-  <% if @release_index.releases.empty? %>
+  <% if @release_index.releases.empty? && (prompt = project_setup_prompt(@project, steps: %i[release app_build])) %>
+    <%= prompt %>
+  <% elsif @release_index.releases.empty? %>
     <section class="dashboard-panel" aria-label="No observed mobile builds">
       <h3 class="text-base font-bold text-slate-900">No build evidence received yet</h3>
       <p class="mt-2 text-sm text-slate-600">Send a real diagnostic with app version and build metadata. A row with unknown build data will remain visible rather than being assigned to the current uploader build.</p>

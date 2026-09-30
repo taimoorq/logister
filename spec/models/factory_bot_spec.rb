@@ -3,11 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "FactoryBot coverage", type: :model do
-  it "builds projects for each supported integration" do
-    expect(build(:project, :ruby)).to be_valid
-    expect(build(:project, :python)).to be_valid
-    expect(build(:project, :javascript)).to be_valid
-    expect(build(:project, :cfml)).to be_valid
+  it "builds a valid record from every factory and every trait" do
+    expect { FactoryBot.lint(traits: true, strategy: :build) }.not_to raise_error
   end
 
   it "builds an api key tied to the project owner by default" do
@@ -15,14 +12,6 @@ RSpec.describe "FactoryBot coverage", type: :model do
     api_key = create(:api_key, project: project)
 
     expect(api_key.user).to eq(project.user)
-  end
-
-  it "builds the main ingest event variants" do
-    expect(build(:ingest_event)).to be_valid
-    expect(build(:ingest_event, :metric)).to be_valid
-    expect(build(:ingest_event, :transaction)).to be_valid
-    expect(build(:ingest_event, :log)).to be_valid
-    expect(build(:ingest_event, :check_in)).to be_valid
   end
 
   it "creates grouped error data" do

@@ -1,0 +1,23 @@
+<%# locals: (project:, group:, item:, verification:, self_monitoring_status: nil) %>
+<% integration_guide_steps = %i[mobile_token first_event first_diagnostic release app_build] %>
+<div class="wz-columns">
+  <div class="min-w-0">
+    <% if integration_guide_steps.include?(item.key) && self_monitoring_status&.linked? %>
+      <%= render "projects/setup_self_monitoring_guide", status: self_monitoring_status, tour_group: "project-setup" %>
+    <% elsif integration_guide_steps.include?(item.key) %>
+      <%= render "projects/setup_integration_guide", tour_group: "project-setup", expanded: true %>
+    <% else %>
+      <%= render "project_setup_steps/guide_generic", project: project, item: item %>
+    <% end %>
+  </div>
+
+  <div>
+    <%# Only status text lives inside the polled frame. Controls stay outside it, so
+        a refresh never takes focus away from a link the person has tabbed to. %>
+    <%= render partial: "project_setup_steps/verification", locals: verification %>
+    <%= link_to "Check again",
+                setup_step_verification_project_path(project, group: group.key, step: item.key, attempt: 0),
+                class: "btn-ghost mt-3 inline-flex w-full justify-center",
+                data: { turbo_frame: "setup_step_verification" } %>
+  </div>
+</div>

@@ -267,12 +267,12 @@ RSpec.describe "iOS project experience", type: :request do
 
     expect(response).to have_http_status(:success)
     expect(response.body).to include(
-      "Connect",
-      "Verify delivery",
-      "Improve evidence",
-      "External sources",
+      "Start receiving data",
+      "Make issues actionable",
+      "Bring in your team",
+      "Extend coverage",
       "First diagnostic",
-      "App &amp; build",
+      "App and build",
       "Sessions",
       "Installations",
       "Breadcrumbs",

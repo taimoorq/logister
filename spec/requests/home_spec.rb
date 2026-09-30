@@ -93,75 +93,19 @@ RSpec.describe "Home", type: :request do
     end
   end
 
-  describe "GET /docs" do
-    it "redirects to the external docs site" do
-      get "/docs"
+  describe "the /docs paths" do
+    [
+      "", "product", "metrics", "api-reference", "cli",
+      "integrations/javascript", "integrations/python", "integrations/dotnet"
+    ].each do |page|
+      path = "/docs/#{page}".chomp("/")
 
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/")
-    end
-  end
+      it "permanently redirects #{path} to the external docs site" do
+        get path
 
-  describe "GET /docs/product" do
-    it "redirects to the external product guide docs page" do
-      get "/docs/product"
-
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/product/")
-    end
-  end
-
-  describe "GET /docs/metrics" do
-    it "redirects to the external metrics reference docs page" do
-      get "/docs/metrics"
-
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/metrics/")
-    end
-  end
-
-  describe "GET /docs/api-reference" do
-    it "redirects to the external API reference docs page" do
-      get "/docs/api-reference"
-
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/api-reference/")
-    end
-  end
-
-  describe "GET /docs/cli" do
-    it "redirects to the external CLI docs page" do
-      get "/docs/cli"
-
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/cli/")
-    end
-  end
-
-  describe "GET /docs/integrations/javascript" do
-    it "redirects to the external JavaScript integration docs page" do
-      get "/docs/integrations/javascript"
-
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/integrations/javascript/")
-    end
-  end
-
-  describe "GET /docs/integrations/python" do
-    it "redirects to the external Python integration docs page" do
-      get "/docs/integrations/python"
-
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/integrations/python/")
-    end
-  end
-
-  describe "GET /docs/integrations/dotnet" do
-    it "redirects to the external .NET integration docs page" do
-      get "/docs/integrations/dotnet"
-
-      expect(response).to have_http_status(:moved_permanently)
-      expect(response).to redirect_to("https://logister.org/docs/integrations/dotnet/")
+        expect(response).to have_http_status(:moved_permanently)
+        expect(response).to redirect_to("https://logister.org#{path}/")
+      end
     end
   end
 

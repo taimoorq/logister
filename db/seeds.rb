@@ -913,9 +913,13 @@ module Seeds
       level: level,
       message: message,
       fingerprint: fingerprint,
-      occurred_at: occurred_at,
       context: context
     )
+    # A seeded event keeps the time it was first given. Its error group,
+    # occurrences, and monitor point at (id, occurred_at), so moving it on a
+    # re-run is rejected by those foreign keys. `bin/rails db:reset` refreshes
+    # the age of the sample data.
+    event.occurred_at = occurred_at if created
     event.save!
 
     if created || (event.error? && event.error_group_id.nil?)

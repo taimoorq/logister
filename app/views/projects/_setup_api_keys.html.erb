@@ -9,7 +9,8 @@
               API tokens are disabled while this project is archived. Restore the project before generating a new token.
             </div>
           <% else %>
-            <%= form_with model: [@project, ApiKey.new] do |f| %>
+            <%= form_with model: [@project, ApiKey.new], data: setup_form_data do |f| %>
+              <%= setup_return_field %>
               <div class="space-y-3 mb-4">
                 <%= f.label :name, "Key label", class: "form-label" %>
                 <%= f.text_field :name, required: true, placeholder: "production", class: "form-input" %>

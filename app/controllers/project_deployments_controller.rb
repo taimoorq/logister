@@ -7,6 +7,7 @@ class ProjectDeploymentsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :set_accessible_project
+  before_action :require_release_health_frame, only: :release_health
 
   def index
     @deployment_filters = normalized_filters
@@ -25,7 +26,22 @@ class ProjectDeploymentsController < ApplicationController
     render "project_deployments/index"
   end
 
+  # Introduced and regressed issues by release, loaded as its own frame so the
+  # deployments list never waits on it.
+  def release_health
+    @release_cards = IngestEvent.released_error_groups(@project, lookback: 45.days, limit: 6)
+
+    render partial: "project_deployments/release_health"
+  end
+
   private
+
+  # A direct visit lands on the page that hosts the frame.
+  def require_release_health_frame
+    return if turbo_frame_request? && request.headers["Turbo-Frame"] == "release_health"
+
+    redirect_to deployments_project_path(@project, anchor: "release_health")
+  end
 
   def filtered_deployments
     filters = @deployment_filters

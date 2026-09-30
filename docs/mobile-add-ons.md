@@ -425,7 +425,7 @@ views work across platforms:
 
 | Event family | Logister view | Mobile use |
 | --- | --- | --- |
-| `error` | Inbox and event detail | Exceptions, crashes, and fatal states |
+| `error` | Issues and event detail | Exceptions, crashes, and fatal states |
 | `log` | Activity and event detail | Breadcrumbs, warnings, and app lifecycle notes |
 | `metric` | Insights and activity | Counters, gauges, screen metrics, and platform measurements |
 | `transaction` | Performance and Insights | Screen loads, app starts, jobs, and long-running tasks |

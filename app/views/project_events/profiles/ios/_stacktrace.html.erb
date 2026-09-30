@@ -62,7 +62,7 @@
         Symbol artifacts do not apply to this diagnostic evidence.
       <% end %>
     </span>
-    <%= link_to "Review symbol coverage", settings_project_path(project, section: "integrations", anchor: "apple-symbols"), class: "inline-link", data: { turbo_frame: "_top" } %>
+    <%= link_to "Review symbol coverage", artifacts_project_path(project), class: "inline-link", data: { turbo_frame: "_top" } %>
   </div>
 
   <% if termination.any? %>

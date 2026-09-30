@@ -1,0 +1,33 @@
+<%# locals: (project:, summary:) %>
+<%= turbo_frame_tag "setup_chip" do %>
+  <% focus = summary.focus %>
+  <% case summary.state %>
+  <% when :attention %>
+    <% attention = summary.attention %>
+    <span class="setup-chip setup-chip-attention" data-setup-chip="attention">
+      <%= app_icon(:warning, css: "h-3.5 w-3.5") %>
+      <span><%= attention.chip_label %></span>
+      <%= link_to "Fix", setup_project_path(project, anchor: "step-#{attention.key}"), class: "setup-chip-action", data: { turbo_frame: "_top" } %>
+    </span>
+  <% when :incomplete %>
+    <span class="setup-chip setup-chip-wait" data-setup-chip="incomplete">
+      <span class="setup-chip-ring" aria-hidden="true"></span>
+      <span><%= focus&.chip_label || "Setup in progress" %></span>
+      <%= link_to focus ? "Continue setup" : "View setup",
+                  setup_project_path(project, anchor: (focus ? "step-#{focus.key}" : nil)),
+                  class: "setup-chip-action setup-chip-action-primary",
+                  data: { turbo_frame: "_top" } %>
+    </span>
+  <% when :live_with_steps %>
+    <span class="setup-chip setup-chip-live" data-setup-chip="live_with_steps">
+      <span class="setup-chip-dot" aria-hidden="true"></span>
+      <span>Live</span>
+      <%= link_to "#{pluralize(summary.open_recommended, 'setup step')}", setup_project_path(project), class: "setup-chip-action", data: { turbo_frame: "_top" } %>
+    </span>
+  <% else %>
+    <span class="setup-chip setup-chip-live setup-chip-quiet" data-setup-chip="live">
+      <span class="setup-chip-dot" aria-hidden="true"></span>
+      <span>Live</span>
+    </span>
+  <% end %>
+<% end %>

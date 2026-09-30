@@ -9,6 +9,8 @@
 <% else %>
 
 <section class="space-y-6">
+  <%= project_setup_prompt(@project, steps: %i[performance]) %>
+
   <section class="rounded-xl bg-white border border-slate-200 shadow-sm p-5"
            <%= tag.attributes(data: product_tour_step_data(tour_group, :instrumentation_help)) %>>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -45,10 +47,6 @@
 
   <%= turbo_frame_tag "performance_database_load",
                       src: performance_database_load_project_path(@project),
-                      loading: :lazy %>
-
-  <%= turbo_frame_tag "performance_release_health",
-                      src: performance_release_health_project_path(@project),
                       loading: :lazy %>
 
   <%= turbo_frame_tag "performance_transactions",

@@ -5,15 +5,8 @@ require "rails_helper"
 RSpec.describe ProjectCapabilitySnapshot do
   it "reports unsupported capabilities without querying dynamic evidence for server projects" do
     project = build(:project, :ruby)
-    queries = []
-    callback = lambda do |_name, _start, _finish, _id, payload|
-      queries << payload[:sql] unless %w[SCHEMA TRANSACTION].include?(payload[:name])
-    end
-
     snapshot = nil
-    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
-      snapshot = described_class.for(project)
-    end
+    queries = capture_sql { snapshot = described_class.for(project) }
 
     expect(snapshot.status(:symbol_artifacts).state).to eq(:unsupported)
     expect(snapshot.status(:symbol_artifacts)).to be_frozen

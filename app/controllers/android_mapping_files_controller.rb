@@ -2,6 +2,7 @@
 
 class AndroidMappingFilesController < ApplicationController
   include ProjectScope
+  include SetupWizardReturn
 
   before_action :authenticate_user!
   before_action :set_managed_project
@@ -15,9 +16,9 @@ class AndroidMappingFilesController < ApplicationController
 
     if mapping.save
       MobileArtifactCoverageRefreshJob.perform_later(@project.id, "android")
-      redirect_to settings_project_path(@project, section: "integrations", anchor: "android-mappings"), notice: "R8 mapping uploaded for build #{mapping.version_code}."
+      redirect_to (setup_return_path || artifacts_project_path(@project)), notice: "R8 mapping uploaded for build #{mapping.version_code}."
     else
-      redirect_to settings_project_path(@project, section: "integrations", anchor: "android-mappings"), alert: mapping.errors.full_messages.to_sentence
+      redirect_to (setup_return_path || artifacts_project_path(@project, anchor: "upload-artifact")), alert: mapping.errors.full_messages.to_sentence
     end
   end
 
@@ -43,8 +44,6 @@ class AndroidMappingFilesController < ApplicationController
   end
 
   def artifact_return_path
-    return artifacts_project_path(@project) if params[:return_to] == "artifacts"
-
-    settings_project_path(@project, section: "integrations", anchor: "android-mappings")
+    artifacts_project_path(@project)
   end
 end

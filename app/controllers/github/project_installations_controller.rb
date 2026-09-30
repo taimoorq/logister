@@ -3,6 +3,7 @@
 module Github
   class ProjectInstallationsController < ApplicationController
     include ProjectScope
+    include SetupWizardReturn
 
     before_action :authenticate_user!
     before_action :set_managed_project
@@ -13,7 +14,7 @@ module Github
         link.linked_by = current_user
       end
 
-      redirect_to settings_project_path(@project, section: "integrations", anchor: "source-repositories"),
+      redirect_to (setup_return_path || settings_project_path(@project, section: "integrations", anchor: "source-repositories")),
                   notice: "#{installation.account_login} GitHub App installation linked to this project."
     end
 

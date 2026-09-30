@@ -9,6 +9,7 @@ class ProjectsController < ApplicationController
   include ProjectScope
   include ProjectsControllerData
   include Projects::Creation
+  include ProjectSettingsContext
 
   before_action :authenticate_user!
   before_action :set_accessible_project, only: [ :show, :inbox ]
@@ -54,14 +55,18 @@ class ProjectsController < ApplicationController
     render_project_inbox
   end
 
+  # Editing lives in Settings › General; this stays for old links and bookmarks.
   def edit
+    redirect_to settings_project_path(@project, section: "general"), status: :moved_permanently
   end
 
   def update
     if @project.update(project_update_params)
       redirect_to settings_project_path(@project, section: "general"), notice: "Project updated."
     else
-      render :edit, status: :unprocessable_content
+      @settings_section = "general"
+      load_project_settings_context
+      render "projects/settings", status: :unprocessable_content
     end
   end
 

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%= render "layouts/head", theme: :authenticated %>
+
+  <body class="wz-body"
+        data-controller="local-time"
+        data-action="turbo:load@document->local-time#formatAll turbo:frame-load@document->local-time#formatAll">
+    <header class="wz-bar">
+      <div class="wz-context">
+        <%= image_tag "logister-logo-light.svg", alt: "Logister", class: "h-6 w-auto shrink-0", width: 232, height: 48 %>
+        <span class="wz-divider" aria-hidden="true"></span>
+        <span class="truncate"><%= @wizard_frame.context %></span>
+        <span class="wz-context-muted truncate"><%= @wizard_frame.detail %></span>
+      </div>
+      <%= link_to @wizard_frame.exit_label, @wizard_frame.exit_path, class: "wz-exit" %>
+    </header>
+
+    <div class="wz-progress"
+         role="progressbar"
+         aria-label="<%= @wizard_frame.progress_label %>"
+         aria-valuemin="0"
+         aria-valuemax="<%= @wizard_frame.total %>"
+         aria-valuenow="<%= @wizard_frame.done %>"
+         aria-valuetext="<%= @wizard_frame.done %> of <%= @wizard_frame.total %> steps done">
+      <div style="width: <%= @wizard_frame.percent %>%;"></div>
+    </div>
+
+    <main class="wz-page">
+      <% if notice %>
+        <div class="wz-flash wz-flash-notice" role="status" data-turbo-temporary><%= notice %></div>
+      <% end %>
+      <% if alert %>
+        <div class="wz-flash wz-flash-alert" role="alert" data-turbo-temporary><%= alert %></div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+
+    <%= render "layouts/cookie_consent" %>
+  </body>
+</html>

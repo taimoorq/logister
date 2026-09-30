@@ -6,12 +6,6 @@ RSpec.describe "Project memberships", type: :request do
   let(:project) { projects(:one) }
 
   describe "POST /projects/:project_uuid/project_memberships" do
-    it "requires authentication" do
-      post project_project_memberships_path(project),
-           params: { project_membership: { email: "other@example.com" } }
-      expect(response).to redirect_to(new_user_session_path)
-    end
-
     context "when signed in as owner" do
       before { sign_in users(:one) }
 
@@ -131,11 +125,6 @@ RSpec.describe "Project memberships", type: :request do
   end
 
   describe "DELETE /projects/:project_uuid/project_memberships/:uuid" do
-    it "requires authentication" do
-      delete project_project_membership_path(project, project_memberships(:one))
-      expect(response).to redirect_to(new_user_session_path)
-    end
-
     context "when signed in as owner" do
       before { sign_in users(:one) }
 

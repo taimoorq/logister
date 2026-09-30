@@ -1,7 +1,8 @@
       <article class="settings-panel"
                <%= tag.attributes(data: product_tour_step_data(tour_group, :access)) %>>
         <h2 class="text-base font-bold text-slate-900 mb-3">Project access</h2>
-        <%= form_with model: [@project, ProjectMembership.new] do |f| %>
+        <%= form_with model: [@project, ProjectMembership.new], data: setup_form_data do |f| %>
+          <%= setup_return_field %>
           <div class="grid grid-cols-1 gap-3 mb-4 md:grid-cols-3">
             <div class="md:col-span-2">
               <%= f.label :email, "Invite by email", class: "form-label" %>

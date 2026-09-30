@@ -1,5 +1,6 @@
 <%= form_with url: project_project_links_path(@project), class: "space-y-5" do |form| %>
   <%= form.hidden_field :direction, value: @connection.direction %>
+  <%= hidden_field_tag :setup_return, params[:setup_return] if params[:setup_return].present? %>
   <%= form.hidden_field :peer_project_uuid, value: @connection.peer_project_uuid %>
   <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2" aria-label="Connection to create">
     <p class="text-sm font-semibold text-slate-900 break-words"><%= @connection.source.name %> sends requests to <%= @connection.target.name %>.</p>

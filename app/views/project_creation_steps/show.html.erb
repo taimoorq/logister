@@ -1,0 +1,49 @@
+<% steps = ProjectCreationWizard::CREATION_STEPS %>
+<% position = steps.index(@creation_step) %>
+<% label, sub = ProjectCreationWizard::CREATION_STEP_LABELS.fetch(@creation_step) %>
+<% content_for :title, "New project · #{label}" %>
+<% carried_query = Rack::Utils.parse_nested_query(@carried.to_query) %>
+<% reachable = ->(step) { step != "retention" || @project.name.present? } %>
+
+<div class="wz-shell">
+  <nav class="wz-rail" aria-label="Steps to create a project">
+    <div>
+      <p class="setup-kicker">Create a project</p>
+      <p class="wz-rail-title">One project per app</p>
+      <p class="wz-lead">A service, a site, an Android package, or an Apple bundle, with its own data policy.</p>
+    </div>
+
+    <ol class="wz-steps">
+      <% steps.each_with_index do |step, index| %>
+        <% step_label, step_sub = ProjectCreationWizard::CREATION_STEP_LABELS.fetch(step) %>
+        <li class="wz-step" <%= tag.attributes(aria: { current: ("step" if step == @creation_step) }) %>>
+          <span class="setup-marker <%= index < position ? 'setup-marker-complete' : '' %>">
+            <% if index < position %><%= app_icon(:check, css: "h-3.5 w-3.5") %><span class="sr-only">Done</span><% else %><%= index + 1 %><% end %>
+          </span>
+          <div>
+            <% if index <= position || reachable.call(step) %>
+              <%= link_to step_label, new_project_step_path(step, carried_query) %>
+            <% else %>
+              <span class="text-sm font-semibold leading-6"><%= step_label %></span>
+            <% end %>
+            <p class="wz-step-sub"><%= step_sub %></p>
+          </div>
+        </li>
+      <% end %>
+      <li class="wz-step">
+        <span class="setup-marker"><%= steps.size + 1 %></span>
+        <div>
+          <span class="text-sm font-semibold leading-6">Connect</span>
+          <p class="wz-step-sub">Continues as the project's setup path</p>
+        </div>
+      </li>
+    </ol>
+  </nav>
+
+  <section class="wz-main" aria-labelledby="wz-step-title">
+    <% if @project.errors.any? %>
+      <div class="wz-flash wz-flash-alert !mx-0" role="alert"><%= @project.errors.full_messages.to_sentence %></div>
+    <% end %>
+    <%= render "project_creation_steps/#{@creation_step}" %>
+  </section>
+</div>

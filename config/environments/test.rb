@@ -21,8 +21,9 @@ Rails.application.configure do
   config.assets.output_path = Rails.root.join("tmp/assets/test")
   config.assets.manifest_path = Rails.root.join("tmp/assets/test/.manifest.json")
 
-  # Show full error reports.
-  config.consider_all_requests_local = true
+  # Answer errors the way production does (the static error pages). Rendering the
+  # developer exception page for every 404 in a request spec costs ~70ms each.
+  config.consider_all_requests_local = false
   config.cache_store = :null_store
 
   # Render exception templates for rescuable exceptions and raise for other exceptions.

@@ -240,11 +240,6 @@ RSpec.describe "Routes", type: :routing do
         action: "database_load",
         uuid: "abc"
       )
-      expect(get: "/projects/abc/performance/release-health").to route_to(
-        controller: "project_performance",
-        action: "release_health",
-        uuid: "abc"
-      )
       expect(get: "/projects/abc/performance/transactions").to route_to(
         controller: "project_performance",
         action: "transactions",
@@ -258,6 +253,15 @@ RSpec.describe "Routes", type: :routing do
         action: "show",
         uuid: "abc"
       )
+    end
+
+    it "routes GET /projects/:uuid/deployments/release-health to project_deployments#release_health" do
+      expect(get: "/projects/abc/deployments/release-health").to route_to(
+        controller: "project_deployments",
+        action: "release_health",
+        uuid: "abc"
+      )
+      expect(get: "/projects/abc/performance/release-health").not_to be_routable
     end
 
     it "routes GET /projects/:uuid/deployments to project_deployments#index" do

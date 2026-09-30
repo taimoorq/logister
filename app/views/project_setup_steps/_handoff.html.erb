@@ -1,0 +1,11 @@
+<%# locals: (project:, item:, setup_return:) %>
+<% handoff = setup_handoff(project, item, setup_return) %>
+<section class="wz-panel">
+  <h2><%= handoff[:title] %></h2>
+  <p><%= handoff[:body] %></p>
+  <p class="font-semibold" style="color: var(--app-text)"><span class="sr-only">Current status: </span><%= item.evidence %></p>
+  <div class="mt-4">
+    <%= link_to handoff[:action], handoff[:path], class: "btn-primary" %>
+  </div>
+  <p class="mt-3">You will come back here with one click from the next page.</p>
+</section>

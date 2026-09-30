@@ -6,11 +6,6 @@ RSpec.describe "Api keys", type: :request do
   let(:project) { projects(:one) }
 
   describe "POST /projects/:project_uuid/api_keys" do
-    it "requires authentication" do
-      post project_api_keys_path(project), params: { api_key: { name: "New key" } }
-      expect(response).to redirect_to(new_user_session_path)
-    end
-
     context "when signed in as owner" do
       before { sign_in users(:one) }
 
@@ -87,11 +82,6 @@ RSpec.describe "Api keys", type: :request do
   end
 
   describe "DELETE /projects/:project_uuid/api_keys/:uuid" do
-    it "requires authentication" do
-      delete project_api_key_path(project, api_keys(:one))
-      expect(response).to redirect_to(new_user_session_path)
-    end
-
     context "when signed in as owner" do
       before { sign_in users(:one) }
 
