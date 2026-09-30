@@ -6,17 +6,19 @@ require "tmpdir"
 
 RSpec.describe Logister::ReleaseIdentity do
   it "derives one version, release note, and digest set from public sources" do
+    version = Rails.root.join("VERSION").read.strip
+    release_heading = Rails.root.join("CHANGELOG.md").read.lines.find { |line| line.start_with?("## ") }.strip
     identity = described_class.new(repo_root: Rails.root).validate!
 
     expect(identity).to have_attributes(
-      version: "3.8.0",
-      tag: "v3.8.0",
-      release_date: "2026-09-28",
+      version: version,
+      tag: "v#{version}",
+      release_date: release_heading.split(" - ").last,
       prerelease: false,
       make_latest: true
     )
-    expect(identity.release_notes).to start_with("## v3.8.0 - 2026-09-28")
-    expect(identity.release_notes).not_to include("## v3.5")
+    expect(identity.release_notes).to start_with(release_heading)
+    expect(identity.release_notes.scan(/^## /).size).to eq(1)
     expect(identity.contract_sha256.keys).to contain_exactly("cli_api", "telemetry_ingest", "integration_discovery")
     expect(identity.contract_sha256.values).to all(match(/\A[0-9a-f]{64}\z/))
   end
