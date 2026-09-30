@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: project-page-query-performance
+release_version: 3.9.0
+summary: Release guided setup and shared navigation; reduce page aggregation and archive
+  fence reads without changing ingestion or CLI wire contracts.
+backend:
+  bump: minor
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+- integration_discovery
+contract_sha256:
+  cli_api: 25fcec6827f70f53124530367d56bbf7002ecffdd8735a6b80c79aca936190c7
+  telemetry_ingest: 778315d59a3118373f9a4ff57697280045bd056e240c26bbfc64ed645d5db88f
+  integration_discovery: 446763d808ef553a334f0461cfeea1852675afd331abd1075bce756ce932c9c3
+consumers:
+  logister-cli:
+    bump: none
+    reason: Navigation, setup and query optimizations are backend-only; no additional
+      client change beyond the existing 3.8 release plan is required.
+  logister-ruby:
+    bump: none
+    reason: Navigation, setup and query optimizations are backend-only; no additional
+      client change beyond the existing 3.8 release plan is required.
+  logister-js:
+    bump: none
+    reason: Navigation, setup and query optimizations are backend-only; no additional
+      client change beyond the existing 3.8 release plan is required.
+  logister-python:
+    bump: none
+    reason: Navigation, setup and query optimizations are backend-only; no additional
+      client change beyond the existing 3.8 release plan is required.
+  logister-dotnet:
+    bump: none
+    reason: Navigation, setup and query optimizations are backend-only; no additional
+      client change beyond the existing 3.8 release plan is required.
+  logister-android:
+    bump: none
+    reason: Navigation, setup and query optimizations are backend-only; no additional
+      client change beyond the existing 3.8 release plan is required.
+  logister-ios:
+    bump: none
+    reason: Navigation, setup and query optimizations are backend-only; no additional
+      client change beyond the existing 3.8 release plan is required.

@@ -211,24 +211,8 @@ class Dashboard
   end
   private_class_method :explorer_days_for
 
-  def self.event_type_counts(relation)
-    counts = relation.group(:event_type).count
-
-    EVENT_TYPE_ORDER.index_with do |event_type|
-      counts[event_type].to_i + counts[IngestEvent.event_types[event_type]].to_i
-    end
-  end
-  private_class_method :event_type_counts
-
   def self.dashboard_event_rollup(project_ids, relation, since:, to:)
-    postgres = -> {
-      {
-        event_type_counts: event_type_counts(relation),
-        active_project_ids: relation.distinct.pluck(:project_id),
-        activity_event_counts: relation.where.not(event_type: IngestEvent.event_types[:error]).group(:project_id).count,
-        latest_event_at_by_project: relation.group(:project_id).maximum(:occurred_at)
-      }
-    }
+    postgres = -> { postgres_event_rollup(relation) }
     read = Logister::ClickhouseReadRouter.call(
       project_ids:,
       signals: EVENT_TYPE_ORDER,
@@ -240,6 +224,27 @@ class Dashboard
     read.payload.merge(analytics: read.diagnostics)
   end
   private_class_method :dashboard_event_rollup
+
+  def self.postgres_event_rollup(relation)
+    result = {
+      event_type_counts: EVENT_TYPE_ORDER.index_with { 0 },
+      active_project_ids: [],
+      activity_event_counts: Hash.new(0),
+      latest_event_at_by_project: {}
+    }
+    relation.group(:project_id, :event_type)
+      .pluck(:project_id, :event_type, Arel.sql("COUNT(*)"), Arel.sql("MAX(occurred_at)"))
+      .each do |project_id, event_type, count, latest_at|
+        type = event_type_name(event_type)
+        result[:event_type_counts][type] += count
+        result[:activity_event_counts][project_id] += count unless type == "error"
+        previous = result[:latest_event_at_by_project][project_id]
+        result[:latest_event_at_by_project][project_id] = [ previous, latest_at ].compact.max
+      end
+    result[:active_project_ids] = result[:latest_event_at_by_project].keys
+    result
+  end
+  private_class_method :postgres_event_rollup
 
   def self.postgres_explorer_payload(relation, open_error_group_counts)
     {

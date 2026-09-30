@@ -7,6 +7,30 @@ RSpec.describe Dashboard, type: :model do
   let(:project_ids) { user.accessible_projects.pluck(:id) }
 
   describe ".summary_for" do
+    it "derives project and event signals in one bounded telemetry aggregate" do
+      project = create(:project)
+      other = create(:project)
+      quiet = create(:project)
+      key = create(:api_key, project: project, user: project.user)
+      latest = Time.current.change(usec: 0)
+      create(:ingest_event, project: project, api_key: key, event_type: :error, occurred_at: latest)
+      create(:ingest_event, project: project, api_key: key, event_type: :log, occurred_at: latest - 1.minute)
+      create(:ingest_event, project: project, api_key: key, event_type: :log, occurred_at: 2.days.ago)
+      create(:ingest_event, project: other, event_type: :metric, occurred_at: latest)
+      summary = nil
+
+      queries = capture_sql do
+        summary = described_class.summary_for([ project.id, quiet.id ], include_context_events: false)
+      end
+
+      expect(summary[:events_last_24h]).to eq(2)
+      expect(summary[:events_by_type_last_24h]).to include("error" => 1, "log" => 1, "metric" => 0)
+      expect(summary[:active_project_ids_last_24h]).to eq([ project.id ])
+      expect(summary[:project_stats][project.id]).to include(activity_events: 1, latest_event_at: latest)
+      expect(summary[:project_stats][quiet.id]).to include(activity_events: 0, latest_event_at: nil)
+      expect(queries.grep(/FROM "ingest_events"/).size).to eq(1)
+    end
+
     it "returns empty_summary when project_ids blank" do
       expect(described_class.summary_for([])).to eq(Dashboard.empty_summary)
       expect(described_class.summary_for(nil)).to eq(Dashboard.empty_summary)

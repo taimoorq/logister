@@ -103,6 +103,19 @@ RSpec.describe "Release health on Releases", type: :request do
     expect(document.text.strip).to be_empty
   end
 
+  it "shares the release aggregate across frame requests and refreshes after expiry" do
+    allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+    project
+    freeze_time do
+      expect(IngestEvent).to receive(:released_error_groups).with(project, lookback: 45.days, limit: 6).twice.and_return([])
+      get deployments_release_health_project_path(project), headers: frame_headers
+      get deployments_release_health_project_path(project), headers: frame_headers
+      travel 1.minute + 6.seconds
+      get deployments_release_health_project_path(project), headers: frame_headers
+      expect(response).to have_http_status(:success)
+    end
+  end
+
   it "sends a direct visit, or a request for another frame, to the page that hosts it" do
     get deployments_release_health_project_path(project)
     expect(response).to redirect_to(deployments_project_path(project, anchor: "release_health"))

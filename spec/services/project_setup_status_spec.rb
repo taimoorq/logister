@@ -108,4 +108,30 @@ RSpec.describe ProjectSetupStatus do
 
     expect(described_class.new(project).call(keys: [ :has_events ]).keys).to eq([ :has_events ])
   end
+
+  it "checks a mobile receipt without loading payloads or unrelated capabilities" do
+    project = create(:project, :ios)
+    event = create(:ingest_event, project: project, occurred_at: 60.days.ago)
+    statuses = nil
+
+    queries = capture_sql { statuses = described_class.new(project).call(keys: [ :has_events ]) }
+
+    expect(statuses.fetch(:has_events).observed_at).to be_within(1.second).of(event.created_at)
+    expect(queries.size).to eq(1)
+    expect(queries.sole).to match(/SELECT "ingest_events"\."created_at".*ORDER BY.*LIMIT/)
+    expect(queries.sole).not_to include("context")
+  end
+
+  it "does not query telemetry when only mobile check-in configuration is requested" do
+    project = create(:project, :android)
+    create(:check_in_monitor, project: project)
+
+    queries = capture_sql do
+      status = described_class.new(project).call(keys: [ :check_ins ]).fetch(:check_ins)
+      expect(status.state).to eq(:configured)
+      expect(status.action_key).to eq(:configure_mobile_check_ins)
+    end
+
+    expect(queries.join("\n")).not_to match(/error_occurrences|ingest_events|android_mapping_files|project_integration_settings/)
+  end
 end

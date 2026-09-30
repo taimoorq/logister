@@ -192,6 +192,25 @@ RSpec.describe IngestEvent, type: :model do
   end
 
   describe ".released_error_groups" do
+    it "counts only the lookback in one telemetry scan, orders and limits releases, and isolates projects" do
+      project = create(:project)
+      api_key = create(:api_key, project: project, user: project.user)
+      create(:ingest_event, project: project, api_key: api_key, event_type: :error, occurred_at: 60.days.ago, context: { release: "current" })
+      create(:ingest_event, project: project, api_key: api_key, event_type: :log, occurred_at: 1.minute.ago, context: { release: "current" })
+      create(:ingest_event, project: project, api_key: api_key, event_type: :error, occurred_at: 2.minutes.ago, context: { release: "current" })
+      create(:ingest_event, project: project, api_key: api_key, event_type: :log, occurred_at: 1.day.ago, context: { release: "older" })
+      create(:ingest_event, context: { release: "other-project" })
+      releases = nil
+
+      queries = capture_sql { releases = described_class.released_error_groups(project, lookback: 45.days, limit: 1) }
+
+      expect(releases.size).to eq(1)
+      expect(releases.sole).to include(release: "current", total_events: 2, error_events: 1)
+      telemetry_queries = queries.grep(/FROM "ingest_events"/)
+      expect(telemetry_queries.size).to eq(1)
+      expect(telemetry_queries.sole).to include("occurred_at >=", "LIMIT")
+    end
+
     it "returns release summaries with grouped event and issue counts" do
       user = create(:user)
       project = create(:project, user: user)

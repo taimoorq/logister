@@ -90,7 +90,12 @@ module Logister
     end
 
     def create_manifest!
-      @sequence_upper_bound = relation.maximum(:id)
+      # This is only a fence against later inserts, not the archive selection.
+      # MAX on the filtered relation rechecks delivery protection for the entire
+      # retention range. The primary-key maximum uses bounded index probes;
+      # relation still applies every tenant, time, type, and delivery predicate
+      # when enumerating the manifest's actual source records.
+      @sequence_upper_bound = model.maximum(:id)
       @project.telemetry_archives.create!(
         project_retention_run: @project_retention_run,
         record_type: @record_type,

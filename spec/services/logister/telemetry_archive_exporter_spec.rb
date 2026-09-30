@@ -63,7 +63,7 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     expect(archive).to be_verified
     expect(archive.expected_rows).to eq(1)
     expect(archive.verified_rows).to eq(1)
-    expect(archive.lifecycle_metadata.fetch("sequence_upper_bound")).to eq(event.id)
+    expect(archive.lifecycle_metadata.fetch("sequence_upper_bound")).to eq(IngestEvent.maximum(:id))
     expect(archive.checksum_sha256).to match(/\A[0-9a-f]{64}\z/)
     expect(archive.object_records.sole.normalized_source_references).to eq([
       { "id" => event.id, "timestamp" => event.occurred_at.utc.iso8601(6) }
@@ -143,6 +143,53 @@ RSpec.describe Logister::TelemetryArchiveExporter, type: :model do
     )
     expect(row.dig("derived_evidence", 0)).not_to have_key("processing_error")
     expect(event).to be_persisted
+  end
+
+  it "uses an unfiltered index fence while keeping tenant, time and type selection on enumeration" do
+    project = create(:project)
+    event = create(:ingest_event, :log, project: project, occurred_at: 2.days.ago)
+    create(:ingest_event, :log, project: project, occurred_at: Time.current)
+    create(:ingest_event, :transaction, project: project, occurred_at: 2.days.ago)
+    other = create(:ingest_event, :log, id: IngestEvent.maximum(:id) + 1, occurred_at: 2.days.ago)
+    storage = FakeArchiveStorage.new
+    result = nil
+
+    queries = capture_sql do
+      result = described_class.new(
+        record_type: "ingest_events", project: project, before: 1.day.ago,
+        event_types: [ "log" ], protect_incomplete_deliveries: true, storage_service: storage
+      ).call
+    end
+
+    expect(result[:rows]).to eq(1)
+    archive = project.telemetry_archives.sole
+    expect(archive.lifecycle_metadata.fetch("sequence_upper_bound")).to eq(other.id)
+    expect(archive.object_records.sole.normalized_source_references.pluck("id")).to eq([ event.id ])
+    fence_query = queries.grep(/SELECT MAX\("ingest_events"\."id"\)/).sole
+    expect(fence_query).not_to match(/WHERE|telemetry_outbox|telemetry_deliveries/)
+    expect(queries.grep(/SELECT "ingest_events"\.\*/).join("\n")).to include("retention_delivery", "project_id", "event_type", "occurred_at")
+  end
+
+  it "excludes an older-dated insert arriving after the manifest fence" do
+    project = create(:project)
+    originals = create_list(:ingest_event, 2, project: project, occurred_at: 2.days.ago)
+    fence = IngestEvent.maximum(:id)
+    storage = FakeArchiveStorage.new
+    late = nil
+    allow(storage).to receive(:upload).and_wrap_original do |upload, *args, **kwargs|
+      upload.call(*args, **kwargs)
+      late ||= create(:ingest_event, project: project, id: fence + 1, occurred_at: 3.days.ago)
+    end
+
+    result = described_class.new(
+      record_type: "ingest_events", project: project, before: 1.day.ago,
+      batch_size: 1, storage_service: storage
+    ).call
+
+    expect(result[:rows]).to eq(2)
+    archived_ids = project.telemetry_archives.sole.object_records.flat_map { |object| object.normalized_source_references.pluck("id") }
+    expect(archived_ids).to match_array(originals.map(&:id))
+    expect(archived_ids).not_to include(late.id)
   end
 
   it "supports dry runs without uploading" do

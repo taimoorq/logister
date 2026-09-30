@@ -31,8 +31,7 @@ class ProjectPageContext
       end&.key
     end
     if project.persisted?
-      @capability_snapshot = ProjectCapabilitySnapshot.for(project)
-      pages = ProjectNavigationProjection.new(project: project, capability_snapshot: @capability_snapshot)
+      pages = ProjectNavigationProjection.new(project: project)
                                          .resolve(pages, current_page_key: current_page_key)
                                          .sort_by(&:order)
     end

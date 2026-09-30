@@ -12,7 +12,11 @@ module ProjectCapabilityLoaders
     # Check-ins are observable for every project type, so navigation and setup
     # share one rule. Mobile loaders add their own richer statuses on top.
     def call
-      { check_ins: check_ins_status }.freeze
+      mobile = project.integration_android? || project.integration_ios?
+      { check_ins: check_ins_status(
+        action_key: mobile ? :configure_mobile_check_ins : :configure_check_ins,
+        subject: mobile ? "app" : "project"
+      ) }.freeze
     end
 
     private
