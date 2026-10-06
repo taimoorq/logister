@@ -8,9 +8,11 @@ CI.run do
   step "Security: Gem audit", "bin/bundler-audit"
   step "Security: Importmap vulnerability audit", "bin/importmap audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
-  step "Tests: RSpec", "bundle exec rspec"
+  step "Tests: RSpec", "bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'"
+  step "Tests: JavaScript", "node --test spec/javascript/*_test.js"
   step "Tests: Seeds", "env RAILS_ENV=test bin/rails db:seed:replant"
 
+  step "Tests: System assets", "env RAILS_ENV=test bin/rails tailwindcss:build"
   step "Tests: System", "bundle exec rspec spec/system"
 
   # Optional: set a green GitHub commit status to unblock PR merge.

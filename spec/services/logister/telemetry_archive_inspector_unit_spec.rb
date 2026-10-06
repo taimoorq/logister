@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "spec_helper"
-require_relative "../../../config/environment"
+require "rails_helper"
 require "digest"
 require "json"
 require "stringio"

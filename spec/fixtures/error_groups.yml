@@ -3,6 +3,7 @@
 system_primary_group:
   project: system_inbox
   latest_event_id: <%= ActiveRecord::FixtureSet.identify(:system_primary_error) %>
+  latest_event_occurred_at: 2026-02-14 21:55:30
   fingerprint: system-primary-error
   title: Primary inbox error
   subtitle: RuntimeError
@@ -16,6 +17,7 @@ system_primary_group:
 system_secondary_group:
   project: system_inbox
   latest_event_id: <%= ActiveRecord::FixtureSet.identify(:system_secondary_error) %>
+  latest_event_occurred_at: 2026-02-14 21:45:30
   fingerprint: system-secondary-error
   title: Secondary inbox error
   subtitle: RuntimeError

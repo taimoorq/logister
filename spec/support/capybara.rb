@@ -28,5 +28,8 @@ RSpec.configure do |config|
   config.before(:each, type: :system) do
     driven_by :logister_selenium_chrome_headless
     page.current_window.resize_to(1400, 1400)
+    # Selenium reuses the browser between examples; console assertions should
+    # only see this example's messages, including resource errors.
+    page.driver.browser.logs.get(:browser)
   end
 end

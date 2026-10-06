@@ -23,10 +23,12 @@ RSpec.describe "Redis role integration", type: :job do
   end
 
   before do
-    skip "REDIS_URL is required for the live Redis integration spec" unless redis_url
-    skip "Redis is not reachable" unless redis.ping == "PONG"
-  rescue Redis::BaseError
-    skip "Redis is not reachable"
+    unless redis_url
+      raise "CI requires REDIS_URL for the live Redis integration spec" if ENV["CI"].present?
+
+      skip "REDIS_URL is required for the live Redis integration spec"
+    end
+    expect(redis.ping).to eq("PONG")
   end
 
   after do

@@ -3,12 +3,23 @@ require "rails_helper"
 RSpec.describe "Correlation PostgreSQL / ClickHouse parity" do
   # Explicit disposable endpoint only; never use the application's configured server.
   it "executes canonical matching and deduplicated occurrence queries on ClickHouse" do
-    skip "Set LOGISTER_TEST_CLICKHOUSE_URL to a disposable schema-v2 ClickHouse" unless ENV["LOGISTER_TEST_CLICKHOUSE_URL"]
+    url = ENV["LOGISTER_TEST_CLICKHOUSE_URL"].presence
+    unless url
+      raise "CI requires LOGISTER_TEST_CLICKHOUSE_URL" if ENV["CI"].present?
+
+      skip "Set LOGISTER_TEST_CLICKHOUSE_URL to a disposable schema-v2 ClickHouse"
+    end
     config = Rails.configuration.x.logister.dup
-    config.clickhouse_url = ENV.fetch("LOGISTER_TEST_CLICKHOUSE_URL")
-    config.clickhouse_username = "default"
-    config.clickhouse_password = ""
+    config.clickhouse_url = url
+    database = "correlation_test_#{SecureRandom.hex(8)}"
+    config.clickhouse_database = database
+    config.clickhouse_events_table = "events_raw"
+    config.clickhouse_spans_table = "spans_raw"
+    config.clickhouse_username = ENV.fetch("LOGISTER_TEST_CLICKHOUSE_USERNAME", "default")
+    config.clickhouse_password = ENV.fetch("LOGISTER_TEST_CLICKHOUSE_PASSWORD", "")
     client = Logister::ClickhouseClient.new(config:, force_enabled: true)
+    schema = Rails.root.join("docs/clickhouse_schema.sql").read.gsub(/\blogister\b/, database)
+    client.load_schema!(schema)
     user = create(:user)
     project = create(:project, user:, cross_project_correlations_enabled: true)
     trace = SecureRandom.hex(16)
@@ -41,6 +52,7 @@ RSpec.describe "Correlation PostgreSQL / ClickHouse parity" do
       expect(client.select_rows!(sql).first.fetch("value").presence).to eq(CorrelationContext.new(context).matchable("trace_id"))
     end
   ensure
+    client&.execute!("DROP DATABASE IF EXISTS #{database} SYNC") if database
     client&.close
   end
 end

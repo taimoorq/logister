@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "spec_helper"
-require_relative "../../../config/environment"
+require "rails_helper"
 
 RSpec.describe "Project purge external adapters" do
   FakePurge = Struct.new(:source_project_id, :project_uuid, :configuration_snapshot, keyword_init: true)

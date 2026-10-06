@@ -10,8 +10,12 @@ RSpec.describe "Telemetry crash recovery against real stores", type: :model do
   self.use_transactional_tests = false
 
   it "recovers a killed worker after external success, preserving exact bytes, logical facts and PG progress" do
-    url = ENV["RECOVERY_CLICKHOUSE_URL"]
-    skip "Set RECOVERY_CLICKHOUSE_URL to an isolated local ClickHouse test server" if url.blank?
+    url = ENV["RECOVERY_CLICKHOUSE_URL"].presence
+    unless url
+      raise "CI requires RECOVERY_CLICKHOUSE_URL" if ENV["CI"].present?
+
+      skip "Set RECOVERY_CLICKHOUSE_URL to an isolated local ClickHouse test server"
+    end
     raise "Recovery ClickHouse must be local" unless URI(url).host.in?(%w[localhost 127.0.0.1 ::1])
 
     Dir.mktmpdir("logister-telemetry-recovery") do |directory|

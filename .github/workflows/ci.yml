@@ -180,9 +180,13 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           REDIS_URL: redis://localhost:6379/15
           RECOVERY_CLICKHOUSE_URL: http://127.0.0.1:8123
+          LOGISTER_TEST_CLICKHOUSE_URL: http://127.0.0.1:8123
+          LOGISTER_TEST_CLICKHOUSE_USERNAME: logister_test
+          LOGISTER_TEST_CLICKHOUSE_PASSWORD: test-only
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: |
           bin/rails db:test:prepare
+          node --test spec/javascript/*_test.js
           bundle exec rspec --exclude-pattern 'spec/system/**/*_spec.rb'
 
   system-test:

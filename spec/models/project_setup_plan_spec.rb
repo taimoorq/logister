@@ -209,8 +209,7 @@ RSpec.describe ProjectSetupPlan do
     end
 
     it "keeps evidence that already exists even when the instance service is later missing" do
-      repo = create(:project_source_repository, project: project) if FactoryBot.factories.registered?(:project_source_repository)
-      skip "no source repository factory" unless repo
+      create(:project_source_repository, project: project)
       allow(Logister::GithubAppConfig).to receive(:configured?).and_return(false)
 
       expect(plan_for(project).item(:source_repo).state).to eq(:complete)
