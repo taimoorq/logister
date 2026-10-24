@@ -41,8 +41,8 @@ module Github
       [
         "## Logister error",
         "",
-        "- Project: #{project.name}",
-        "- Error: #{group.title}",
+        "- Project: #{inline_code(project.name)}",
+        "- Error: #{inline_code(group.title)}",
         "- Status: #{group.status}",
         "- Occurrences: #{group.occurrence_count}",
         "- Fingerprint: #{inline_code(group.fingerprint)}",
@@ -68,31 +68,39 @@ module Github
       return if deployment.blank?
 
       parts = [
-        inline_code(deployment.release),
+        deployment.release,
         deployment.environment,
         deployment.repository_full_name,
         deployment.short_commit_sha
-      ].compact_blank
+      ].compact_blank.map { |part| inline_code(part) }
 
       "- Deployment: #{parts.join(' · ')}"
     end
 
     def source_line
       source_url = source_excerpt.is_a?(Hash) ? source_excerpt[:source_url].presence || source_excerpt["source_url"].presence : nil
+      source_url = ExternalLinkParser.allowed_web_url(source_url) if source_url.present?
       return if source_url.blank?
 
-      "- Source: #{source_url}"
+      "- Source: <#{source_url}>"
     end
 
     def logister_line
       return if logister_url.blank?
 
-      "- Logister: #{logister_url}"
+      "- Logister: <#{logister_url}>"
     end
 
+    # Renders untrusted text as one CommonMark code span: a single line, fenced by a
+    # backtick run longer than any run inside it, so no Markdown, HTML, links, or
+    # mentions in the value take effect.
     def inline_code(value)
-      escaped = value.to_s.gsub(INLINE_CODE_DELIMITER, "\\#{INLINE_CODE_DELIMITER}")
-      INLINE_CODE_DELIMITER + escaped + INLINE_CODE_DELIMITER
+      text = value.to_s.squish.presence || " "
+      longest_run = text.scan(/`+/).map(&:length).max.to_i
+      fence = INLINE_CODE_DELIMITER * (longest_run + 1)
+      padding = text.start_with?(INLINE_CODE_DELIMITER) || text.end_with?(INLINE_CODE_DELIMITER) ? " " : ""
+
+      "#{fence}#{padding}#{text}#{padding}#{fence}"
     end
   end
 end

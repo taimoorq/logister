@@ -12,6 +12,11 @@ module Github
       new(url: url, web_url: web_url).call
     end
 
+    # Returns the URL when it is an https link on an allowed GitHub web host, otherwise nil.
+    def self.allowed_web_url(url, web_url: Logister::GithubAppConfig.web_url)
+      new(url: url, web_url: web_url).allowed_web_url
+    end
+
     def initialize(url:, web_url:)
       @url = url
       @web_url = web_url
@@ -37,6 +42,16 @@ module Github
         external_id: number,
         title: title_for(repository_full_name, link_type, number)
       )
+    rescue URI::InvalidURIError
+      nil
+    end
+
+    def allowed_web_url
+      uri = URI.parse(url.to_s.strip)
+      return unless uri.is_a?(URI::HTTPS) && uri.host.present? && uri.userinfo.blank?
+      return unless allowed_hosts.include?(uri.host.downcase)
+
+      uri.to_s
     rescue URI::InvalidURIError
       nil
     end

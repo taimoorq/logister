@@ -34,14 +34,17 @@ module Logister
         InstanceConfiguration.value("github.app_slug").to_s.strip.presence
       end
 
-      def install_url(state: nil)
+      # Pass the user starting the install so the URL carries a signed Github::SetupState;
+      # the setup callback refuses to claim installations without one.
+      def install_url(user: nil, project: nil)
         base_url = InstanceConfiguration.value("github.install_url").to_s.strip.presence ||
           (app_slug.present? ? "#{web_url}/apps/#{app_slug}/installations/new" : nil)
         return if base_url.blank?
 
         uri = URI(base_url)
         query = URI.decode_www_form(uri.query.to_s)
-        query << [ "state", state ] if state.present?
+        query.reject! { |key, _value| key == "state" }
+        query << [ "state", Github::SetupState.generate(user: user, project: project) ] if user.present?
         uri.query = query.presence&.then { |pairs| URI.encode_www_form(pairs) }
         uri.to_s
       rescue URI::InvalidURIError

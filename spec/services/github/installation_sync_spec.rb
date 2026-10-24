@@ -32,7 +32,8 @@ RSpec.describe Github::InstallationSync do
 
     result = described_class.new(app_client: app_client, repositories_client: repositories_client).from_setup(
       installation_id: "123",
-      installed_by: user
+      installed_by: user,
+      state_verified: true
     )
 
     expect(result.status).to eq(:synced)
@@ -46,6 +47,55 @@ RSpec.describe Github::InstallationSync do
       full_name: "acme/storefront",
       default_branch: "main"
     )
+  end
+
+  describe "setup ownership" do
+    let(:app_client) { instance_double(Github::AppClient, installation: installation_payload) }
+    let(:repositories_client) { instance_double(Github::InstallationRepositoriesClient, list: [ repository_payload ]) }
+    let(:sync) { described_class.new(app_client: app_client, repositories_client: repositories_client) }
+
+    it "refuses to reassign an installation owned by another user, even with a verified state" do
+      owner = create(:user)
+      installation = create(:github_installation, installation_id: 123, installed_by: owner)
+
+      expect {
+        sync.from_setup(installation_id: "123", installed_by: create(:user), state_verified: true)
+      }.to raise_error(described_class::OwnershipError)
+
+      expect(installation.reload.installed_by).to eq(owner)
+      expect(app_client).not_to have_received(:installation)
+    end
+
+    it "requires a verified state to claim a new or webhook-created installation" do
+      create(:github_installation, installation_id: 123, installed_by: nil)
+
+      expect {
+        sync.from_setup(installation_id: "123", installed_by: create(:user))
+      }.to raise_error(described_class::OwnershipError)
+    end
+
+    it "claims an unowned installation with a verified state" do
+      installation = create(:github_installation, installation_id: 123, installed_by: nil)
+      user = create(:user)
+
+      result = sync.from_setup(installation_id: "123", installed_by: user, state_verified: true)
+
+      expect(result.installation).to eq(installation)
+      expect(installation.reload.installed_by).to eq(user)
+    end
+
+    it "keeps the owner when webhooks update the installation" do
+      owner = create(:user)
+      installation = create(:github_installation, installation_id: 123, installed_by: owner)
+
+      described_class.from_webhook(
+        event: "installation",
+        payload: { "action" => "new_permissions_accepted", "installation" => installation_payload, "repositories" => [ repository_payload ] },
+        repositories_client: repositories_client
+      )
+
+      expect(installation.reload.installed_by).to eq(owner)
+    end
   end
 
   it "marks removed repositories inactive and stores added repositories" do
