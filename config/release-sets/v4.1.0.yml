@@ -13,7 +13,7 @@ components:
     target_version: 0.6.0
     bump: minor
     release_required: true
-    reason: Security hardening from the October 2026 review. Default redaction, SQL breadcrumbs
+    reason: Security hardening from the October 2026 security sweep. Default redaction, SQL breadcrumbs
       off by default, per-request user scope, and middleware failure isolation. Rolls up the
       published 0.5.x line from the verified catalog baseline.
     channels:
@@ -25,7 +25,7 @@ components:
     target_version: 0.6.0
     bump: minor
     release_required: true
-    reason: Security hardening from the October 2026 review. No unhandled rejections or console
+    reason: Security hardening from the October 2026 security sweep. No unhandled rejections or console
       exceptions from capture, a bounded batched queue, and default redaction. Rolls up the
       published 0.5.0 from the verified catalog baseline.
     channels:
@@ -37,7 +37,7 @@ components:
     target_version: 0.6.0
     bump: minor
     release_required: true
-    reason: Security hardening from the October 2026 review. Integrations never raise into the
+    reason: Security hardening from the October 2026 security sweep. Integrations never raise into the
       host app, non-blocking FastAPI delivery, a logging recursion guard, and default redaction.
       Rolls up the published 0.5.0 from the verified catalog baseline.
     channels:
@@ -49,7 +49,7 @@ components:
     target_version: 0.5.0
     bump: minor
     release_required: true
-    reason: Security hardening from the October 2026 review. A value sanitizer, cycle-safe
+    reason: Security hardening from the October 2026 security sweep. A value sanitizer, cycle-safe
       normalization, background delivery and an explicit base URL. Rolls up the published 0.4.0
       from the verified catalog baseline.
     channels:
@@ -62,7 +62,7 @@ components:
     target_version: 0.7.0
     bump: minor
     release_required: true
-    reason: Security hardening from the October 2026 review. Envelope budgets that respect the
+    reason: Security hardening from the October 2026 security sweep. Envelope budgets that respect the
       server limits without crashing the host app, default redaction, and crash persistence that
       no longer waits on the network. Rolls up the published 0.6.x line.
     channels:
@@ -74,7 +74,7 @@ components:
     target_version: 0.7.0
     bump: minor
     release_required: true
-    reason: Security hardening from the October 2026 review. MetricKit crashes kept within server
+    reason: Security hardening from the October 2026 security sweep. MetricKit crashes kept within server
       limits, default redaction, a dedicated transport with timeouts, and safer exception detail.
       Rolls up the published 0.6.x line.
     channels:
@@ -86,7 +86,7 @@ components:
     target_version: 1.3.0
     bump: minor
     release_required: true
-    reason: Security hardening from the October 2026 review. Value-pattern redaction, origin-pinned
+    reason: Security hardening from the October 2026 security sweep. Value-pattern redaction, origin-pinned
       device verification URLs and a narrower --token flag. Rolls up the unpublished 1.2.x line.
     channels:
     - npm
