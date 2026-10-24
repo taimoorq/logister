@@ -53,7 +53,7 @@ module Github
     end
 
     def source_excerpt_param
-      url = params[:source_url].to_s.strip.presence
+      url = Github::ExternalLinkParser.allowed_web_url(params[:source_url]) if params[:source_url].present?
       url ? { source_url: url } : nil
     end
 
