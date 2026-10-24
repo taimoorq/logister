@@ -10,13 +10,13 @@
     <!-- Google Analytics -->
     <!-- Google tag (gtag.js) -->
     <script type="text/plain" data-cookie-consent="<%= analytics_cookie_consent_category %>" async src="https://www.googletagmanager.com/gtag/js?id=<%= google_tag_id %>"></script>
-    <script type="text/plain" data-cookie-consent="<%= analytics_cookie_consent_category %>">
+    <%= javascript_tag type: "text/plain", data: { cookie_consent: analytics_cookie_consent_category }, nonce: true do %>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
       gtag('config', '<%= google_tag_id %>');
-    </script>
+    <% end %>
     <!-- end of Google Analytics-->
   <% end %>
 
