@@ -86,6 +86,7 @@
               <a href="#empty-inbox">Nothing in Issues</a>
               <a href="#rejected-events">Rejected events</a>
               <a href="#background-jobs">Background jobs</a>
+              <a href="#access">Sign-in and access</a>
               <a href="#email">Email</a>
               <a href="#source-lookup">GitHub source lookup</a>
               <a href="#clickhouse">ClickHouse</a>
@@ -218,6 +219,26 @@
               </ul>
             </section>
 
+            <section id="access" class="section">
+              <p class="eyebrow">Sign-in and access</p>
+              <h2>Check host settings, account lockout, and CLI approvals.</h2>
+              <p>
+                These checks cover pages that refuse to load, people who cannot sign in, and CLI logins waiting for approval.
+              </p>
+              <table>
+                <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
+                <tbody>
+                  <tr><td>Every page returns <code>403 Blocked hosts</code></td><td>The request <code>Host</code> is not the host in <code>LOGISTER_PUBLIC_URL</code>. Add other names your proxy forwards, such as an internal hostname, to <code>LOGISTER_ALLOWED_HOSTS</code> and restart the web process.</td></tr><tr><td>The browser console shows <code>Refused to load the script</code> or <code>Content-Security-Policy</code> errors</td><td>A script is not on the allowed list. Check that the Probo <strong>Banner script URL</strong> in <strong>Admin → Installation → Public site</strong> is a full <code>https://</code> address. While you investigate, <code>LOGISTER_CSP_REPORT_ONLY=1</code> reports violations without blocking them.</td></tr><tr><td>A user cannot sign in with the right password</td><td>After 10 failed attempts the account locks for one hour and Logister emails an unlock link. The sign-in form still says the email or password is invalid. Wait an hour, use the emailed link, or request a new one at <code>/users/unlock/new</code>.</td></tr><tr><td>Users are signed out after a break</td><td>Idle sessions end after <code>LOGISTER_SESSION_TIMEOUT_MINUTES</code> (default <code>120</code>). Sessions started with <strong>Remember me</strong> do not time out.</td></tr><tr><td>No project alerts</td><td>Confirm the user's notification path, worker health, quiet hours, hourly limits, and that the event created the configured alert condition.</td></tr>
+                  <tr><td>A user cannot sign in after several attempts</td><td>The account locks for one hour after 10 failed sign-ins. The user can wait, or open <strong>Unlock account</strong> on the sign-in page and follow the emailed link. Sign-in errors do not say that an account is locked, so check the unlock email first.</td></tr>
+                  <tr><td>A user is asked to sign in again after a break</td><td>Idle sessions end after <code>LOGISTER_SESSION_TIMEOUT_MINUTES</code> (default 120). Sessions started with <strong>Remember me</strong> stay signed in.</td></tr>
+                  <tr><td>The sign-up page says sign-up is unavailable</td><td>Check <strong>Admin → Installation → Authentication → Account sign-up</strong> or <code>LOGISTER_REGISTRATION_MODE</code>. With allowed domains, the email domain must be listed exactly; subdomains are listed separately.</td></tr>
+                  <tr><td>The CLI keeps waiting after <code>logister auth login</code></td><td>Open the verification page, choose at least one project, and press <strong>Approve</strong>. The page shows when and from which IP address the login started. Deny any request you did not start yourself.</td></tr>
+                  <tr><td><code>/health/release</code> or <code>/health/clickhouse</code> returns 401</td><td>Send <code>Authorization: Bearer</code> with the value of <code>LOGISTER_HEALTH_TOKEN</code>, or open the page while signed in as an application admin. Use <code>/up</code> for platform health checks.</td></tr>
+                </tbody>
+              </table>
+              <p><a href="/docs/deployment/#security">Read security and access settings</a> for the variables behind these checks.</p>
+            </section>
+
             <section id="email" class="section">
               <p class="eyebrow">Email</p>
               <h2>Check SMTP, sender identity, and worker delivery.</h2>
@@ -228,7 +249,6 @@
                 <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
                 <tbody>
                   <tr><td>No auth mail</td><td>Confirm SMTP host, port, username, password, TLS/SSL mode, sender address, and provider-side domain verification.</td></tr>
-                  <tr><td>Every page returns <code>403 Blocked hosts</code></td><td>The request <code>Host</code> is not the host in <code>LOGISTER_PUBLIC_URL</code>. Add other names your proxy forwards, such as an internal hostname, to <code>LOGISTER_ALLOWED_HOSTS</code> and restart the web process.</td></tr><tr><td>The browser console shows <code>Refused to load the script</code> or <code>Content-Security-Policy</code> errors</td><td>A script is not on the allowed list. Check that the Probo <strong>Banner script URL</strong> in <strong>Admin → Installation → Public site</strong> is a full <code>https://</code> address. While you investigate, <code>LOGISTER_CSP_REPORT_ONLY=1</code> reports violations without blocking them.</td></tr><tr><td>A user cannot sign in with the right password</td><td>After 10 failed attempts the account locks for one hour and Logister emails an unlock link. The sign-in form still says the email or password is invalid. Wait an hour, use the emailed link, or request a new one at <code>/users/unlock/new</code>.</td></tr><tr><td>Users are signed out after a break</td><td>Idle sessions end after <code>LOGISTER_SESSION_TIMEOUT_MINUTES</code> (default <code>120</code>). Sessions started with <strong>Remember me</strong> do not time out.</td></tr><tr><td>No project alerts</td><td>Confirm the user's notification path, worker health, quiet hours, hourly limits, and that the event created the configured alert condition.</td></tr>
                   <tr><td>No digests</td><td>Confirm recurring jobs are scheduled, Sidekiq is running, and the selected daily or weekly cadence has elapsed.</td></tr>
                 </tbody>
               </table>

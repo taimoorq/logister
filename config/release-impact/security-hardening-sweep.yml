@@ -2,8 +2,7 @@
 schema_version: 1
 id: security-hardening-sweep
 release_version: 4.1.0
-summary: Security hardening from the October 2026 adversarial review across web authentication,
-  GitHub setup, telemetry rendering, rate limiting, instance configuration, and every client package.
+summary: Security fixes and hardening across the backend and every client package.
 backend:
   bump: minor
   compatibility: compatible

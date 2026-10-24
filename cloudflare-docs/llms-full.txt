@@ -111,6 +111,18 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - Recommended setup order: provision PostgreSQL and a Rails web process; set `RAILS_ENV`, `RAILS_MASTER_KEY`, `DATABASE_URL`, and a one-time `LOGISTER_SETUP_TOKEN`; run `./bin/release`; claim `/setup`; remove the token; configure and verify Redis plus a registered Sidekiq process under Admin → Installation; complete onboarding; then add optional services.
 - Admin onboarding and add-on configuration: https://logister.org/docs/self-hosting/onboarding/
 
+## Security And Access
+
+- Logister sends a Content-Security-Policy and a Permissions-Policy. `LOGISTER_CSP_REPORT_ONLY=1` switches the policy to report-only while diagnosing a blocked script.
+- Setting `LOGISTER_PUBLIC_URL` or `LOGISTER_ALLOWED_HOSTS` turns on host checks; other hostnames return 403 except `/up`. `LOGISTER_TRUSTED_PROXIES` adds proxy addresses allowed to report the client IP.
+- `/health/release` and `/health/clickhouse` need an application admin session or `Authorization: Bearer` with `LOGISTER_HEALTH_TOKEN`. `/up` is public.
+- Accounts lock after 10 failed sign-ins and unlock after one hour or through the emailed unlock link. New and changed passwords need 12 characters. Idle sessions end after `LOGISTER_SESSION_TIMEOUT_MINUTES` (default 120) unless started with Remember me.
+- Admins choose a sign-up policy (open, allowed email domains, or closed) in Admin → Installation → Authentication or with `LOGISTER_REGISTRATION_MODE` and `LOGISTER_REGISTRATION_ALLOWED_DOMAINS`.
+- Project integration credentials are environment variables named `LOGISTER_INTEGRATION_*` or listed in `LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST`.
+- The project roles are Member and Admin; the owner manages the project. Member was previously labelled Viewer and can triage issues.
+- CLI logins are approved in the browser by choosing at least one project and pressing Approve; the page shows when and from which IP address the login started.
+- Settings reference: https://logister.org/docs/deployment/#security. Upgrade steps: https://logister.org/docs/deployment/#upgrading-4-1.
+
 ## Storage And Retention
 
 - PostgreSQL remains the primary system of record for the product UI.
@@ -218,3 +230,5 @@ From 3.6.11, LOGISTER_BOUNDED_PROJECTOR=true separately coalesces native wake hi
 Logister 3.6.14 reuses monitor/watermark identities and reports legacy-backup retention deferrals without dropping protected data. The independently prepared Ruby SDK 0.4.2 adds safe delivery counters, an isolated observer and bounded async shutdown. Verify artifact publication before upgrading consumers; published install references follow the verified ecosystem catalog.
 
 Logister 3.8 enriches explicitly connected projects with HTTP outcomes, duration scope, app builds/device details, issue ownership and exact request navigation. Connected impact reports from overview, inbox, activity, performance, releases and deployments inspect up to 500 recent anchor records over at most seven days; peer counts include matches only. Installation/session counts stay per mobile project and depend on retained identity evidence. Partial coverage is explicit; missing evidence is not success and deployment comparisons do not prove cause. Error JSON can optionally include the latest occurrence's related evidence, and existing error emails resolve up to five related records under recipient permissions. Android/iOS 0.6.1 and CLI 1.2.1 are enrichment release targets, not publication receipts. Setup and limits: https://logister.org/docs/request-correlation/.
+
+Logister 4.1 is a security release; self-hosted instances should upgrade. It adds the settings under Security And Access. The matching companion packages are logister-ruby 0.6.0, logister-js 0.6.0, logister-python 0.6.0, Logister for .NET 0.5.0, logister-android 0.7.0, logister-ios 0.7.0, and logister-cli 1.3.0. They redact sensitive keys, credential-like values, and sensitive URL query parameters by default, make client IP capture opt-in, and never raise telemetry failures into the host application. .NET now requires an explicit BaseUrl, and the iOS and Android SDKs default exception detail to type and stack trace. Each integration guide has upgrade notes.
