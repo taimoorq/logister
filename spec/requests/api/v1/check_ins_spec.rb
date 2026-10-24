@@ -169,6 +169,71 @@ RSpec.describe "Api::V1::CheckIns", type: :request do
         )
       )
     end
+
+    it "accepts slugs used by the SDKs and docs" do
+      [ "nightly-reconcile", "billing_sync.v2", "queue:emails", "eu/west Nightly import (daily)" ].each do |slug|
+        post api_v1_check_ins_path, params: { check_in: { slug: slug } }, as: :json, headers: auth_headers
+
+        expect(response).to have_http_status(:created), "expected #{slug.inspect} to be accepted"
+      end
+    end
+
+    it "returns 422 for slugs longer than 200 characters without storing an event" do
+      expect {
+        post api_v1_check_ins_path, params: { check_in: { slug: "a" * 201 } }, as: :json, headers: auth_headers
+      }.not_to change(IngestEvent, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"]).to include("Slug is too long (maximum is 200 characters)")
+    end
+
+    it "returns 422 for slugs with markup or control characters" do
+      [ "<script>alert(1)</script>", "job\nname", "-leading-dash" ].each do |slug|
+        expect {
+          post api_v1_check_ins_path, params: { check_in: { slug: slug } }, as: :json, headers: auth_headers
+        }.not_to change(IngestEvent, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["errors"].first).to start_with("Slug must start with a letter or number")
+      end
+    end
+
+    it "returns 422 for new slugs once the project reaches the monitor cap" do
+      stub_const("CheckInMonitor::MAX_MONITORS_PER_PROJECT", 2)
+      project = api_keys(:one).project
+      create(:check_in_monitor, project: project, slug: "existing-job", environment: "production")
+      create(:check_in_monitor, project: project, slug: "other-job", environment: "production")
+
+      expect {
+        post api_v1_check_ins_path,
+             params: { check_in: { slug: "brand-new-job", environment: "production" } },
+             as: :json,
+             headers: auth_headers
+      }.not_to change(IngestEvent, :count)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["errors"].first).to include("limit of 2 check-in monitors")
+
+      post api_v1_check_ins_path,
+           params: { check_in: { slug: "existing-job", environment: "production" } },
+           as: :json,
+           headers: auth_headers
+      expect(response).to have_http_status(:created)
+    end
+
+    it "returns 422 instead of 500 when the check-in envelope is a non-pair array" do
+      post api_v1_check_ins_path, params: { check_in: [ 1, 2 ] }, as: :json, headers: auth_headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body).to eq("errors" => [ "check_in must be a JSON object" ])
+    end
+
+    it "rejects check-ins for projects with a pending purge" do
+      api_keys(:one).project.update_column(:purge_requested_at, Time.current)
+
+      post api_v1_check_ins_path, params: { check_in: { slug: "nightly-job" } }, as: :json, headers: auth_headers
+
+      expect(response).to have_http_status(:unauthorized)
+    end
   end
 
   def outbox_for(record)

@@ -75,6 +75,11 @@ RSpec.describe ApiKey, type: :model do
       projects(:one).update!(archived_at: Time.current)
       expect(ApiKey.authenticate("test-token-one")).to be_nil
     end
+
+    it "returns nil when the project has a pending purge" do
+      projects(:one).update_column(:purge_requested_at, Time.current)
+      expect(ApiKey.authenticate("test-token-one")).to be_nil
+    end
   end
 
   describe "#revoke!" do

@@ -48,6 +48,71 @@ RSpec.describe "Api::V1::Deployments", type: :request do
       )
     end
 
+    it "drops javascript: and off-host deployment URLs and keeps inferred GitHub links" do
+      post api_v1_deployments_path,
+           params: {
+             deployment: {
+               release: "2026.06.18",
+               repository: "acme/storefront",
+               commit_sha: "abc1234",
+               pull_request_number: "42",
+               pull_request_url: "javascript:alert(document.domain)",
+               release_tag: "v1",
+               release_url: "https://evil.example/releases/v1",
+               compare_url: "JAVASCRIPT:alert(1)",
+               workflow_run_url: "//evil.example/run",
+               deployment_url: "https://github.com.evil.example/deploy"
+             }
+           },
+           as: :json,
+           headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      metadata = ProjectDeployment.find_by!(uuid: response.parsed_body["id"]).metadata
+      expect(metadata).to include(
+        "pull_request_url" => "https://github.com/acme/storefront/pull/42",
+        "release_url" => "https://github.com/acme/storefront/releases/tag/v1"
+      )
+      expect(metadata.keys).not_to include("compare_url", "workflow_run_url", "deployment_url")
+    end
+
+    it "drops pull request numbers that would rewrite the GitHub path" do
+      post api_v1_deployments_path,
+           params: {
+             deployment: {
+               release: "2026.06.18",
+               repository: "acme/storefront",
+               commit_sha: "abc1234",
+               pull_request_number: "../../evil/repo"
+             }
+           },
+           as: :json,
+           headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      deployment = ProjectDeployment.find_by!(uuid: response.parsed_body["id"])
+      expect(deployment.pull_request_url).to be_nil
+      expect(deployment.metadata).not_to have_key("pull_request_number")
+    end
+
+    it "returns 422 instead of 500 when the deployment envelope is a non-pair array" do
+      post api_v1_deployments_path, params: { deployment: [ "release" ] }, as: :json, headers: auth_headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body).to eq("errors" => [ "deployment must be a JSON object" ])
+    end
+
+    it "rejects deployments for projects with a pending purge" do
+      project.update_column(:purge_requested_at, Time.current)
+
+      post api_v1_deployments_path,
+           params: { deployment: { release: "2026.06.18", repository: "acme/storefront", commit_sha: "abc1234" } },
+           as: :json,
+           headers: auth_headers
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
     it "accepts uppercase deployment envelopes" do
       post api_v1_deployments_path,
            params: {

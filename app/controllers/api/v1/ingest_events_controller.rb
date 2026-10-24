@@ -1,5 +1,6 @@
 class Api::V1::IngestEventsController < ApplicationController
   include ClientSubmissionMonitoring
+  include Api::V1::TelemetryEnvelopeErrors
   include Api::V1::IngestEventBatches
 
   skip_before_action :verify_authenticity_token

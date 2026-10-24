@@ -2,6 +2,7 @@
 
 class Api::V1::DeploymentsController < ApplicationController
   include ClientSubmissionMonitoring
+  include Api::V1::TelemetryEnvelopeErrors
 
   skip_before_action :verify_authenticity_token
   skip_before_action :require_modern_browser, raise: false
@@ -28,11 +29,9 @@ class Api::V1::DeploymentsController < ApplicationController
 
   def deployment_payload
     raw_deployment = fetch_deployment_payload
-    unless raw_deployment.respond_to?(:to_unsafe_h) || raw_deployment.respond_to?(:to_h)
-      raise ActionController::ParameterMissing.new(:deployment)
-    end
+    raise ActionController::ParameterMissing.new(:deployment) unless TelemetryEnvelope.hash_like?(raw_deployment)
 
-    deployment_hash = raw_deployment.respond_to?(:to_unsafe_h) ? raw_deployment.to_unsafe_h : raw_deployment.to_h
+    deployment_hash = TelemetryEnvelope.to_hash(raw_deployment, key: :deployment)
     deployment_hash.each_with_object({}) do |(key, value), attrs|
       attrs[key.to_s.underscore.downcase] = normalize_nested_payload(value)
     end
@@ -47,9 +46,9 @@ class Api::V1::DeploymentsController < ApplicationController
   end
 
   def deployment_payload_candidate?(candidate)
-    return false unless candidate.respond_to?(:to_unsafe_h) || candidate.respond_to?(:to_h)
+    return false unless TelemetryEnvelope.hash_like?(candidate)
 
-    candidate_hash = candidate.respond_to?(:to_unsafe_h) ? candidate.to_unsafe_h : candidate.to_h
+    candidate_hash = TelemetryEnvelope.to_hash(candidate, key: :deployment)
     normalized_keys = candidate_hash.keys.map { |key| key.to_s.underscore.downcase }
     (normalized_keys & %w[release environment repository repo github_repository commit_sha sha branch deployed_at]).any?
   end

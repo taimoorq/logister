@@ -116,6 +116,92 @@ RSpec.describe ProjectDeploymentIndexer do
     )
   end
 
+  it "drops deployment URLs that are not GitHub http(s) links and falls back to inferred URLs" do
+    project = create(:project)
+    create(:project_source_repository, project: project, full_name: "acme/storefront")
+
+    result = described_class.from_payload(
+      project: project,
+      payload: {
+        release: "2026.06.18",
+        repository: "acme/storefront",
+        commit_sha: "def5678",
+        pull_request_number: 42,
+        pull_request_url: "javascript:alert(document.domain)",
+        release_tag: "v2026.06.18",
+        release_url: "https://evil.example/acme/storefront/releases/tag/v2026.06.18",
+        compare_url: "https://github.com.evil.example/acme/storefront/compare/a...b",
+        workflow_run_url: "https://user@evil.example/actions",
+        deployment_url: "data:text/html,<script>alert(1)</script>"
+      }
+    )
+
+    expect(result).to be_indexed
+    metadata = result.deployment.metadata
+    expect(metadata).to include(
+      "pull_request_url" => "https://github.com/acme/storefront/pull/42",
+      "release_url" => "https://github.com/acme/storefront/releases/tag/v2026.06.18"
+    )
+    expect(metadata.keys).not_to include("compare_url", "workflow_run_url", "deployment_url")
+  end
+
+  it "accepts URLs on the configured GitHub Enterprise web host" do
+    allow(Logister::GithubAppConfig).to receive(:web_url).and_return("https://github.internal")
+    project = create(:project)
+
+    result = described_class.from_payload(
+      project: project,
+      payload: {
+        release: "2026.06.18",
+        repository: "acme/storefront",
+        commit_sha: "def5678",
+        workflow_run_url: "https://github.internal/acme/storefront/actions/runs/1",
+        deployment_url: "http://github.com/acme/storefront/deployments"
+      }
+    )
+
+    expect(result.deployment.metadata).to include(
+      "workflow_run_url" => "https://github.internal/acme/storefront/actions/runs/1",
+      "deployment_url" => "http://github.com/acme/storefront/deployments"
+    )
+  end
+
+  it "drops pull request numbers that are not plain digits" do
+    project = create(:project)
+
+    result = described_class.from_payload(
+      project: project,
+      payload: {
+        release: "2026.06.18",
+        repository: "acme/storefront",
+        commit_sha: "def5678",
+        pull_request_number: "../../evil/repo"
+      }
+    )
+
+    expect(result).to be_indexed
+    expect(result.deployment.metadata.keys).not_to include("pull_request_number", "pull_request_url")
+  end
+
+  it "drops unsafe URLs from event context before indexing telemetry deployments" do
+    project = create(:project)
+    create(:project_source_repository, project: project, full_name: "acme/storefront")
+    event = create(:ingest_event, project: project, context: {
+      "release" => "2026.06.18",
+      "repository" => "acme/storefront",
+      "commit_sha" => "abc1234",
+      "pull_request_url" => "javascript:alert(1)",
+      "release_url" => "https://phish.example/login",
+      "github" => { "workflow_run_url" => "javascript:alert(2)" }
+    })
+
+    result = described_class.from_event(event)
+
+    expect(result).to be_indexed
+    expect(result.deployment.metadata.values.map(&:to_s)).to all(satisfy { |value| !value.match?(/javascript:|phish\.example/) })
+    expect(result.deployment.metadata).not_to have_key("workflow_run_url")
+  end
+
   it "returns validation errors for incomplete deployment API payloads" do
     result = described_class.from_payload(project: create(:project), payload: { release: "2026.06.18" })
 
