@@ -17,7 +17,7 @@
 
         <div>
           <%= f.label :password, "New password", class: "form-label" %>
-          <span class="text-slate-500 text-sm">(leave blank to keep current)</span>
+          <span class="text-slate-500 text-sm">(<%= resource_class.password_length.min %> characters minimum; leave blank to keep current)</span>
           <%= f.password_field :password, autocomplete: "new-password", class: "form-input mt-1" %>
         </div>
 

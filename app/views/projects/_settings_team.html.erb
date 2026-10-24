@@ -13,7 +13,9 @@
               <%= f.select :role,
                            options_for_select(ProjectMembership.role_options, "viewer"),
                            {},
-                           class: "form-input" %>
+                           class: "form-input",
+                           aria: { describedby: "project_membership_role_help" } %>
+              <p id="project_membership_role_help" class="mt-1 text-xs text-slate-500">Members view and triage issues. Admins also manage API keys, team access, and integrations.</p>
             </div>
           </div>
           <%= f.submit "Share project", class: "btn-primary" %>

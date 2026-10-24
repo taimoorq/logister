@@ -1,0 +1,13 @@
+<% content_for :title, "Unsubscribed" %>
+<% content_for :meta_robots, "noindex, nofollow" %>
+
+<section class="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+  <h1 class="auth-form-title">You're unsubscribed</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Logister will no longer email you about <strong class="text-slate-900"><%= @preference.project.name %></strong>.
+    You can turn notifications back on from the project's notification settings.
+  </p>
+  <p class="mt-4 text-sm">
+    <%= link_to "Open notification settings", settings_project_path(@preference.project, section: "notifications"), class: "font-semibold" %>
+  </p>
+</section>

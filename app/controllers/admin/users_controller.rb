@@ -60,9 +60,18 @@ class Admin::UsersController < Admin::BaseController
       return
     end
 
+    if Installation.where(claimed_by_user_id: @user.id).exists?
+      redirect_to admin_user_path(@user),
+                  alert: "#{@user.email} claimed this installation during first-run setup and cannot be deleted."
+      return
+    end
+
     deleted_email = @user.email
     @user.destroy!
     redirect_to admin_users_path, notice: "User #{deleted_email} was deleted."
+  rescue ActiveRecord::InvalidForeignKey
+    redirect_to admin_user_path(@user),
+                alert: "#{@user.email} is still referenced by records they created, such as a GitHub App installation or uploaded symbol files, so the account cannot be deleted yet."
   end
 
   private

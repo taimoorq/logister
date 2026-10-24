@@ -8,7 +8,7 @@
     <% if action&.path.present? %>
       <%= link_to action.label, action.path, class: "btn-primary" %>
     <% elsif action&.copy_path.present? %>
-      <div data-controller="copy" data-copy-text-value="<%= request.base_url + action.copy_path %>">
+      <div data-controller="copy" data-copy-text-value="<%= absolute_url_for(action.copy_path) %>">
         <button type="button" class="btn-primary" data-action="copy#copy"><span data-copy-target="buttonLabel">Copy link for admin</span></button>
       </div>
     <% end %>

@@ -19,8 +19,8 @@ RSpec.describe "Instance setup", type: :request do
         user: {
           name: "First Operator",
           email: "operator@example.com",
-          password: "password123",
-          password_confirmation: "password123"
+          password: "password1234",
+          password_confirmation: "password1234"
         }
       }
     end.to change(User, :count).by(1)
@@ -43,8 +43,8 @@ RSpec.describe "Instance setup", type: :request do
       setup_token: "incorrect",
       user: {
         email: "attacker@example.com",
-        password: "password123",
-        password_confirmation: "password123"
+        password: "password1234",
+        password_confirmation: "password1234"
       }
     }
 

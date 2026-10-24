@@ -1,5 +1,6 @@
 require "active_support/core_ext/integer/time"
 require "uri"
+require_relative "../../lib/logister/request_origin_configuration"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -97,12 +98,20 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Enable DNS rebinding protection and other `Host` header attacks once the
+  # operator names the public host: LOGISTER_PUBLIC_URL plus any comma-separated
+  # LOGISTER_ALLOWED_HOSTS. Left open when neither is set so a fresh install can
+  # still reach first-run setup on whatever host serves it.
+  allowed_hosts = Logister::RequestOriginConfiguration.allowed_hosts
+  if allowed_hosts.any?
+    config.hosts.concat(allowed_hosts)
+    # Skip DNS rebinding protection for the default health check endpoint.
+    config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  end
+
+  # Loopback and private networks are always trusted to set X-Forwarded-For;
+  # LOGISTER_TRUSTED_PROXIES adds IPs or CIDR ranges such as a CDN in front of
+  # the platform proxy. Never expose Puma directly to clients.
+  trusted_proxies = Logister::RequestOriginConfiguration.trusted_proxies
+  config.action_dispatch.trusted_proxies = trusted_proxies if trusted_proxies
 end

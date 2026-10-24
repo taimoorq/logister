@@ -1,0 +1,29 @@
+<% content_for :title, "Unlock Account" %>
+<% content_for :meta_description, "Request a new Logister account unlock email after too many failed sign-in attempts." %>
+<% content_for :canonical_path, new_user_unlock_path %>
+<% content_for :meta_robots, "noindex, follow" %>
+
+<%= render "devise/shared/auth_shell",
+           title: "Unlock your account",
+           subtitle: "Accounts lock for an hour after 10 failed sign-in attempts. We email an unlock link when that happens; request a fresh one here." do %>
+  <h2 class="auth-form-title">Resend unlock instructions</h2>
+
+  <%= form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post, data: { turbo: false } }) do |f| %>
+    <div class="space-y-4">
+      <div>
+        <%= f.label :email, class: "form-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "form-input" %>
+      </div>
+
+      <div>
+        <%= render "devise/shared/turnstile" %>
+      </div>
+
+      <div class="pt-2">
+        <%= f.submit "Resend unlock instructions", class: "btn-primary w-full" %>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render "devise/shared/links" %>
+<% end %>

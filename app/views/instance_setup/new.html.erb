@@ -52,7 +52,7 @@
             </div>
             <div>
               <%= form.label :password, class: "form-label" %>
-              <%= form.password_field :password, autocomplete: "new-password", required: true, minlength: 6, class: "form-input" %>
+              <%= form.password_field :password, autocomplete: "new-password", required: true, minlength: User.password_length.min, class: "form-input" %>
             </div>
             <div>
               <%= form.label :password_confirmation, class: "form-label" %>

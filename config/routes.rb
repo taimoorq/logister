@@ -5,12 +5,22 @@ Rails.application.routes.draw do
     end
   end
 
-  devise_for :users, controllers: {
+  devise_for :users, skip: :registrations, controllers: {
     sessions: "users/sessions",
-    registrations: "users/registrations",
     passwords: "users/passwords",
-    confirmations: "users/confirmations"
+    confirmations: "users/confirmations",
+    unlocks: "users/unlocks"
   }
+  # Devise's registration routes without DELETE /users: self-service account
+  # deletion has no UI and cannot remove an owner's projects or the installation
+  # claimant. Admins delete accounts from Admin -> Users.
+  devise_scope :user do
+    get "users/cancel", to: "users/registrations#cancel", as: :cancel_user_registration
+    get "users/sign_up", to: "users/registrations#new", as: :new_user_registration
+    get "users/edit", to: "users/registrations#edit", as: :edit_user_registration
+    match "users", to: "users/registrations#update", via: [ :patch, :put ], as: :user_registration
+    post "users", to: "users/registrations#create", as: nil
+  end
   root "home#show"
   get "setup", to: "instance_setup#new", as: :instance_setup
   post "setup", to: "instance_setup#create"
@@ -37,7 +47,7 @@ Rails.application.routes.draw do
   get "privacy", to: "home#privacy"
   get "cookies", to: "home#cookies"
   get "terms", to: "home#terms"
-  get "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#unsubscribe", as: :unsubscribe_notification_preferences
+  get "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#confirm_unsubscribe", as: :unsubscribe_notification_preferences
   post "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#unsubscribe"
 
   get "dashboard", to: "dashboard#index"

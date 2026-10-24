@@ -84,8 +84,8 @@ RSpec.describe "Admin::Users", type: :request do
     it "confirms unconfirmed user" do
       user = User.create!(
         email: "pending@example.com",
-        password: "password123",
-        password_confirmation: "password123",
+        password: "password1234",
+        password_confirmation: "password1234",
         confirmation_token: "pending-token",
         confirmation_sent_at: Time.current
       )
@@ -104,8 +104,8 @@ RSpec.describe "Admin::Users", type: :request do
     it "enqueues confirmation email and redirects" do
       user = User.create!(
         email: "pending2@example.com",
-        password: "password123",
-        password_confirmation: "password123",
+        password: "password1234",
+        password_confirmation: "password1234",
         confirmation_token: "pending-token-2",
         confirmation_sent_at: Time.current
       )
@@ -141,6 +141,31 @@ RSpec.describe "Admin::Users", type: :request do
       }.to change(User, :count).by(-1)
 
       expect(response).to redirect_to(admin_users_path)
+    end
+
+    it "refuses to delete the user who claimed the installation" do
+      sign_in users(:one)
+      target = create(:user)
+      Installation.current.update!(claimed_by_user: target, claimed_at: Time.current)
+
+      expect {
+        delete admin_user_path(target)
+      }.not_to change(User, :count)
+
+      expect(response).to redirect_to(admin_user_path(target))
+      expect(flash[:alert]).to include("claimed this installation")
+    end
+
+    it "refuses instead of failing when other records still reference the user" do
+      sign_in users(:one)
+      target = create(:user)
+      allow_any_instance_of(User).to receive(:destroy!).and_raise(ActiveRecord::InvalidForeignKey)
+
+      delete admin_user_path(target)
+
+      expect(response).to redirect_to(admin_user_path(target))
+      expect(flash[:alert]).to include("cannot be deleted yet")
+      expect(User.exists?(target.id)).to be(true)
     end
 
     it "does not allow admin to delete themselves" do

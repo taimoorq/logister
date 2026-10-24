@@ -233,6 +233,28 @@ RSpec.describe "Project notification preferences", type: :request do
     end
   end
 
+  describe "GET /notification_preferences/unsubscribe/:token" do
+    it "asks for confirmation without changing anything" do
+      preference = create(:project_notification_preference, :daily)
+      token = preference.unsubscribe_token
+
+      get unsubscribe_notification_preferences_path(token: token)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Stop email notifications?", preference.project.name)
+      expect(response.body).to include(%(action="#{unsubscribe_notification_preferences_path(token: token)}"))
+      expect(preference.reload.first_occurrence_enabled).to be true
+      expect(preference.digest_frequency).to eq("daily")
+    end
+
+    it "explains an invalid link" do
+      get unsubscribe_notification_preferences_path(token: "not-a-token")
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).to include("This unsubscribe link is no longer valid")
+    end
+  end
+
   describe "POST /notification_preferences/unsubscribe/:token" do
     it "disables project email notifications without requiring a signed-in user" do
       preference = create(:project_notification_preference, :daily)
@@ -240,10 +262,57 @@ RSpec.describe "Project notification preferences", type: :request do
       post unsubscribe_notification_preferences_path(token: preference.unsubscribe_token)
 
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include("You're unsubscribed")
       expect(preference.reload.first_occurrence_enabled).to be false
       expect(preference.regression_enabled).to be false
       expect(preference.monitor_alerts_enabled).to be false
       expect(preference.digest_frequency).to eq("none")
+    end
+
+    it "accepts an RFC 8058 one-click POST without a CSRF token even when forgery protection is on" do
+      preference = create(:project_notification_preference, :daily)
+      allow_any_instance_of(ActionController::Base).to receive(:protect_against_forgery?).and_return(true)
+
+      post unsubscribe_notification_preferences_path(token: preference.unsubscribe_token),
+           params: "List-Unsubscribe=One-Click",
+           headers: { "CONTENT_TYPE" => "application/x-www-form-urlencoded" }
+
+      expect(response).to have_http_status(:ok)
+      expect(preference.reload.digest_frequency).to eq("none")
+    end
+
+    it "keeps working for links sent before tokens expired" do
+      preference = create(:project_notification_preference, :daily)
+      legacy_token = preference.signed_id(purpose: :notification_unsubscribe)
+
+      travel 1.year do
+        post unsubscribe_notification_preferences_path(token: legacy_token)
+      end
+
+      expect(response).to have_http_status(:ok)
+      expect(preference.reload.digest_frequency).to eq("none")
+    end
+
+    it "rejects a new link after 60 days without changing anything" do
+      preference = create(:project_notification_preference, :daily)
+      token = preference.unsubscribe_token
+
+      travel 61.days do
+        post unsubscribe_notification_preferences_path(token: token)
+      end
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).to include("This unsubscribe link is no longer valid")
+      expect(preference.reload.digest_frequency).to eq("daily")
+    end
+
+    it "does not unsubscribe with a token minted for another purpose" do
+      preference = create(:project_notification_preference, :daily)
+
+      post unsubscribe_notification_preferences_path(token: preference.signed_id(purpose: :something_else))
+
+      expect(response).to have_http_status(:not_found)
+      expect(preference.reload.digest_frequency).to eq("daily")
     end
   end
 end

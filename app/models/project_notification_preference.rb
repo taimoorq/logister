@@ -4,6 +4,7 @@ class ProjectNotificationPreference < ApplicationRecord
   FILTER_ALL = "all"
   STATUS_FILTERS = %w[all unresolved closed].freeze
   LATE_ARRIVAL_POLICIES = %w[notify_on_receipt exact_time_only].freeze
+  UNSUBSCRIBE_TOKEN_TTL = 60.days
   MIN_THRESHOLD = 1
   MAX_THRESHOLD = 1_000_000
 
@@ -111,8 +112,14 @@ class ProjectNotificationPreference < ApplicationRecord
     end
   end
 
+  # Links in already-sent emails carry tokens without an expiry; those keep
+  # working. New links expire so an old forwarded email cannot be replayed forever.
   def unsubscribe_token
-    signed_id(purpose: :notification_unsubscribe)
+    signed_id(purpose: :notification_unsubscribe, expires_in: UNSUBSCRIBE_TOKEN_TTL)
+  end
+
+  def self.find_by_unsubscribe_token(token)
+    find_signed(token.to_s, purpose: :notification_unsubscribe)
   end
 
   def unsubscribe_from_project_email!

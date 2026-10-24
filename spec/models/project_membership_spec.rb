@@ -38,7 +38,7 @@ RSpec.describe ProjectMembership, type: :model do
   describe ".role_options" do
     it "returns labeled role options for forms" do
       expect(described_class.role_options).to eq([
-        [ "Viewer", "viewer" ],
+        [ "Member", "viewer" ],
         [ "Admin", "admin" ]
       ])
     end

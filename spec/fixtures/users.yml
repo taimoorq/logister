@@ -1,9 +1,9 @@
 one:
   email: one@example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password1234") %>
   confirmed_at: <%= Time.current %>
 
 two:
   email: two@example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password1234") %>
   confirmed_at: <%= Time.current %>

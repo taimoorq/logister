@@ -24,9 +24,9 @@ module Seeds
 
     puts "[seeds] Development sample data created/updated."
     puts "[seeds] Sign in with:"
-    puts "  - alice@example.com / password123"
-    puts "  - bob@example.com / password123"
-    puts "  - carol@example.com / password123"
+    puts "  - alice@example.com / password1234"
+    puts "  - bob@example.com / password1234"
+    puts "  - carol@example.com / password1234"
   end
 
   def seed_users
@@ -869,8 +869,8 @@ module Seeds
     user = User.find_or_initialize_by(email: email)
     user.assign_attributes(
       name: name,
-      password: "password123",
-      password_confirmation: "password123",
+      password: "password1234",
+      password_confirmation: "password1234",
       confirmed_at: user.confirmed_at || Time.current,
       confirmation_token: nil,
       confirmation_sent_at: nil,

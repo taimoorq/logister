@@ -118,7 +118,7 @@ Troubleshooting lives at https://logister.org/docs/troubleshooting/. It covers q
 - `dual_write` is a temporary schema/backfill/coverage state. It writes to ClickHouse but keeps supported dashboard analytics on PostgreSQL, so it does not speed up slow overview graphs.
 - `read_preferred` keeps PostgreSQL as the product system of record while moving supported analytics reads to ClickHouse, with PostgreSQL fallback when a ClickHouse query fails.
 - ClickHouse readiness requires the event table, span table, one-minute rollup tables, materialized views from `docs/clickhouse_schema.sql`, and matching stable-window event coverage before read cutover.
-- `/health/clickhouse` reports connectivity, schema readiness, and `clickhouse_mode`. A `200` response with `dual_write` does not mean dashboard reads use ClickHouse.
+- `/health/clickhouse` reports connectivity, schema readiness, and `clickhouse_mode` to an application admin session or a `LOGISTER_HEALTH_TOKEN` bearer token; `/up` is the public liveness probe. A `200` response with `dual_write` does not mean dashboard reads use ClickHouse.
 - The legacy `LOGISTER_CLICKHOUSE_ENABLED=true` setting selects only `dual_write`; use `LOGISTER_CLICKHOUSE_MODE=read_preferred` after coverage passes.
 - ClickHouse write failures are reported through `logister-ruby` as throttled error events when Logister self-observability is configured.
 - Data retention docs are split by task: overview, Archive Center paths, policy choices, archive storage, and durable retention jobs at https://logister.org/docs/product/data-retention/.
