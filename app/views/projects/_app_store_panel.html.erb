@@ -21,6 +21,9 @@
                 class: "mt-5 space-y-5" do |form| %>
     <%= setup_return_field %>
     <%= form.hidden_field :provider, value: ProjectIntegrationSetting::PROVIDERS[:app_store_connect] %>
+    <% if @app_store_connect_integration_setting.errors.any? %>
+      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert"><%= @app_store_connect_integration_setting.errors.full_messages.to_sentence %></div>
+    <% end %>
     <label class="flex items-start gap-3">
       <%= form.check_box :enabled, class: "form-checkbox mt-1", disabled: !@integration_changes_allowed %>
       <span><span class="block text-sm font-semibold text-slate-900">Enable App Store Connect reporting</span><span class="block text-sm text-slate-600">Credentials stay in the host secret store; Logister saves references only.</span></span>
@@ -29,7 +32,7 @@
       <div><%= form.label :external_project_id, "Bundle identifier", class: "form-label" %><%= form.text_field :external_project_id, placeholder: "com.acme.shop", class: "form-input", disabled: !@integration_changes_allowed %></div>
       <div><%= form.label :account_id, "Issuer ID", class: "form-label" %><%= form.text_field :account_id, placeholder: "69a6de7e-...", class: "form-input", disabled: !@integration_changes_allowed %></div>
       <div><%= form.label :external_project_name, "Key ID", class: "form-label" %><%= form.text_field :external_project_name, placeholder: "ABC123DEFG", class: "form-input", disabled: !@integration_changes_allowed %></div>
-      <div><%= form.label :credential_reference, "Private-key environment variable", class: "form-label" %><%= form.text_field :credential_reference, placeholder: "APP_STORE_CONNECT_PRIVATE_KEY", class: "form-input", disabled: !@integration_changes_allowed %><p class="mt-1 text-xs text-slate-500">Store the <code>.p8</code> contents in this environment variable. Never paste the key into Logister.</p></div>
+      <div><%= form.label :credential_reference, "Private-key environment variable", class: "form-label" %><%= form.text_field :credential_reference, placeholder: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_KEY", class: "form-input", disabled: !@integration_changes_allowed %><p class="mt-1 text-xs text-slate-500">Store the <code>.p8</code> contents in an environment variable whose name starts with <code>LOGISTER_INTEGRATION_</code>, or one your operator lists in <code>LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST</code>. Never paste the key into Logister.</p></div>
     </div>
     <% if @integration_changes_allowed %><div class="flex justify-end"><%= form.submit "Save App Store Connect settings", class: "btn btn-primary" %></div><% end %>
   <% end %>

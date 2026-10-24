@@ -22,6 +22,7 @@ class ProjectIntegrationSetting < ApplicationRecord
             presence: true,
             if: -> { provider_app_store_connect? && enabled? }
   validate :provider_matches_project_integration
+  validate :credential_reference_allowed, if: :environment_credential_check_required?
 
   scope :enabled, -> { where(enabled: true) }
   scope :cloudflare_pages, -> { where(provider: PROVIDERS[:cloudflare_pages]) }
@@ -111,6 +112,20 @@ class ProjectIntegrationSetting < ApplicationRecord
     self.external_project_name = external_project_name.to_s.strip.presence
     self.credential_reference = credential_reference.to_s.strip.presence
     self.metadata = metadata.is_a?(Hash) ? metadata : {}
+  end
+
+  # Google Play and App Store Connect read credential_reference from ENV.
+  # Disabled settings with an unchanged legacy name can still be saved.
+  def environment_credential_check_required?
+    (provider_google_play? || provider_app_store_connect?) &&
+      credential_reference.present? &&
+      (enabled? || will_save_change_to_credential_reference?)
+  end
+
+  def credential_reference_allowed
+    return if IntegrationCredentialReference.allowed?(credential_reference)
+
+    errors.add(:credential_reference, IntegrationCredentialReference.requirement_message)
   end
 
   def provider_matches_project_integration

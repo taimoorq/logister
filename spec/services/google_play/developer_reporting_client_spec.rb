@@ -86,6 +86,7 @@ RSpec.describe GooglePlay::DeveloperReportingClient do
       expect(error).not_to be_retryable
       expect(error.classification).to eq("credentials")
       expect(error.message).not_to include("play-token")
+      expect(error.message).not_to include("PLAY_CREDENTIALS is not configured")
     }
   end
 

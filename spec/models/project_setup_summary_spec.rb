@@ -63,7 +63,7 @@ RSpec.describe ProjectSetupSummary do
     project = create(:project, :android)
     setting = create(
       :project_integration_setting, project: project, provider: "google_play", enabled: true,
-      external_project_id: "com.acme.shop", credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+      external_project_id: "com.acme.shop", credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS",
       last_imported_at: 2.days.ago
     )
     setting.update!(metadata: { "last_error" => { "message" => "denied", "at" => Time.current.utc.iso8601 } })

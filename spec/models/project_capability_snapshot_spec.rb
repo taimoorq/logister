@@ -22,7 +22,7 @@ RSpec.describe ProjectCapabilitySnapshot do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.shop",
-      credential_reference: "GOOGLE_PLAY_SERVICE_ACCOUNT"
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_SERVICE_ACCOUNT"
     )
 
     snapshot = described_class.for(project)
@@ -48,7 +48,7 @@ RSpec.describe ProjectCapabilitySnapshot do
       account_id: "issuer-id",
       external_project_id: "123456789",
       external_project_name: "Acme Shop",
-      credential_reference: "APP_STORE_CONNECT_KEY"
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_KEY"
     )
 
     snapshot = described_class.for(project)

@@ -17,7 +17,7 @@ RSpec.describe GooglePlayImportSweepJob, type: :job do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.shop",
-      credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS",
       last_imported_at: 30.minutes.ago
     )
     create(
@@ -26,7 +26,7 @@ RSpec.describe GooglePlayImportSweepJob, type: :job do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.fresh",
-      credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS",
       last_imported_at: 5.minutes.ago
     )
     archived = create(:project, :android, archived_at: 1.hour.ago)
@@ -36,7 +36,7 @@ RSpec.describe GooglePlayImportSweepJob, type: :job do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.archived",
-      credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS"
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS"
     )
 
     described_class.perform_now(Time.current.iso8601)
@@ -55,7 +55,7 @@ RSpec.describe GooglePlayImportSweepJob, type: :job do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.shop",
-      credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS"
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS"
     )
     setting.claim_import_schedule!(now: Time.current)
 

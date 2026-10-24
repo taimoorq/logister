@@ -48,8 +48,8 @@ module AppStoreConnect
       retry_after = response["Retry-After"].presence
       message = "#{message}; retry after #{retry_after} seconds" if retry_after
       raise Error, "App Store Connect request failed (#{response.code}): #{message}"
-    rescue JSON::ParserError => error
-      raise Error, "App Store Connect returned invalid JSON: #{error.message}"
+    rescue JSON::ParserError
+      raise Error, "App Store Connect returned invalid JSON."
     end
 
     def credential_resolver

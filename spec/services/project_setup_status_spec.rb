@@ -47,7 +47,7 @@ RSpec.describe ProjectSetupStatus do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.shop",
-      credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS"
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS"
     )
 
     expect(described_class.new(project).call.fetch(:google_play).state).to eq(:partial)

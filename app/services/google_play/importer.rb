@@ -37,7 +37,7 @@ module GooglePlay
       reporting
     rescue StandardError => error
       error_details = {
-        "message" => error.message.to_s.first(500),
+        "message" => stored_error_message(error),
         "at" => Time.current.utc.iso8601
       }
       if error.respond_to?(:classification)
@@ -56,6 +56,17 @@ module GooglePlay
     private
 
     attr_reader :setting, :client
+
+    # Only messages written for display are stored; anything else may carry
+    # parser or environment text, so it is reduced to its class name.
+    def stored_error_message(error)
+      case error
+      when DeveloperReportingClient::Error, IntegrationCredentialReference::Error
+        error.message.to_s.first(500)
+      else
+        "Google Play import failed (#{error.class.name})."
+      end
+    end
 
     def track_allowlist
       @track_allowlist ||= Array(setting.metadata["track_allowlist"]).compact_blank.map(&:downcase).uniq
