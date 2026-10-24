@@ -6,14 +6,22 @@ module ClientSubmissions
   class RateLimiter
     GLOBAL_IP_KINDS = %w[pre_auth auth_failure].freeze
 
-    Result = Data.define(:limited, :limit, :remaining, :reset_at, :retry_after, :window_seconds, :count) do
+    Result = Data.define(:limited, :limit, :remaining, :reset_at, :retry_after, :window_seconds, :count, :unavailable) do
+      def initialize(unavailable: false, **attributes)
+        super
+      end
+
       def limited?
         limited
       end
+
+      def unavailable?
+        unavailable
+      end
     end
 
-    def initialize(cache: nil)
-      @cache = cache || Rails.application.config.x.logister.rate_limit_cache || Rails.cache
+    def initialize(cache: nil, counter: nil)
+      @counter = counter || Logister::RateLimitCounter.new(store: cache)
     end
 
     def check(identity:, kind:, endpoint:, limit:, period:, amount: 1)
@@ -29,8 +37,13 @@ module ClientSubmissions
       now = Time.current
       window_started_at = now.to_i / period * period
       reset_at = window_started_at + period
-      count = rate_limit_count(kind, endpoint, identity, window_started_at, period, amount)
-      return nil unless count
+      count = counter.increment(
+        rate_limit_cache_key(kind, endpoint, identity, window_started_at),
+        amount: amount,
+        expires_in: period + 5,
+        kind: kind
+      )
+      return unavailable_result(limit, reset_at, period) unless count
 
       Result.new(
         limited: count > limit,
@@ -41,22 +54,25 @@ module ClientSubmissions
         window_seconds: period,
         count: count
       )
-    rescue StandardError => error
-      Rails.logger.warn("public API rate limiting skipped: #{error.class} #{error.message}")
-      nil
     end
 
     private
 
-    attr_reader :cache
+    attr_reader :counter
 
-    def rate_limit_count(kind, endpoint, identity, window_started_at, period, amount)
-      cache_key = rate_limit_cache_key(kind, endpoint, identity, window_started_at)
-      count = cache.increment(cache_key, amount, expires_in: period + 5)
-      return count if count
-
-      cache.write(cache_key, amount, expires_in: period + 5)
-      amount
+    # Neither the shared store nor the in-process fallback could count this
+    # request. Reject it rather than letting the quota become unlimited.
+    def unavailable_result(limit, reset_at, period)
+      Result.new(
+        limited: true,
+        limit: limit,
+        remaining: 0,
+        reset_at: reset_at,
+        retry_after: retry_after(reset_at),
+        window_seconds: period,
+        count: nil,
+        unavailable: true
+      )
     end
 
     def rate_limit_cache_key(kind, endpoint, identity, window_started_at)

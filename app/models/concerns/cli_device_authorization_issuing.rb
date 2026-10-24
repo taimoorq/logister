@@ -1,18 +1,20 @@
 # frozen_string_literal: true
 
 module CliDeviceAuthorizationIssuing
-  def issue!(client_name:, requested_scopes: CliAccessToken::READ_SCOPES, expires_in: CliDeviceAuthorization::DEFAULT_EXPIRES_IN)
+  def issue!(client_name:, requested_scopes: CliAccessToken::READ_SCOPES, expires_in: CliDeviceAuthorization::DEFAULT_EXPIRES_IN, requested_ip: nil)
     device_code = SecureRandom.urlsafe_base64(48)
     user_code = unique_user_code
-
-    create!(
+    attributes = {
       device_code_digest: digest(device_code),
       user_code_digest: digest(normalize_user_code(user_code)),
       user_code_display: user_code,
       client_name: client_name,
       requested_scopes: requested_scopes,
       expires_at: expires_in.from_now
-    ).tap do |authorization|
+    }
+    attributes[:requested_ip] = requested_ip.to_s.first(64).presence if column_names.include?("requested_ip")
+
+    create!(attributes).tap do |authorization|
       authorization.instance_variable_set(:@plain_device_code, device_code)
     end
   end
@@ -45,7 +47,8 @@ module CliDeviceAuthorizationIssuing
   end
 
   def generated_user_code
-    chars = Array.new(8) { CliDeviceAuthorization::USER_CODE_ALPHABET.sample }.join
+    alphabet = CliDeviceAuthorization::USER_CODE_ALPHABET
+    chars = Array.new(8) { alphabet[SecureRandom.random_number(alphabet.length)] }.join
     "#{chars.first(4)}-#{chars.last(4)}"
   end
 end

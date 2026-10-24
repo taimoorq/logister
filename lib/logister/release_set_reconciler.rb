@@ -186,6 +186,9 @@ module Logister
 
     def reconcile_cli_distributions(metadata, version)
       tarball_url = metadata.dig("dist", "tarball")
+      # Only download the canonical registry tarball; npm metadata must not
+      # steer the reconciler to another host or package.
+      raise "CLI npm tarball URL is not canonical" unless tarball_url == cli_npm_tarball_url(version)
       expected_sha1 = metadata.dig("dist", "shasum")
       tarball = fetch(tarball_url)
       raise "CLI npm tarball SHA-1 mismatch" unless Digest::SHA1.hexdigest(tarball) == expected_sha1
@@ -203,6 +206,10 @@ module Logister
         raise "Scoop checksum mismatch" unless manifest["hash"] == sha256
         true
       end
+    end
+
+    def cli_npm_tarball_url(version)
+      "https://registry.npmjs.org/logister-cli/-/logister-cli-#{version}.tgz"
     end
 
     def github_release(component, repository, tag)

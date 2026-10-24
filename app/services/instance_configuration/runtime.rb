@@ -94,8 +94,11 @@ module InstanceConfiguration
         read_timeout: 2,
         write_timeout: 2,
         reconnect_attempts: 2,
+        # Re-raise so Logister::RateLimitCounter switches to its in-process
+        # fallback instead of reading the swallowed error as "not limited".
         error_handler: lambda do |method:, returning:, exception:|
           Rails.logger.warn("Redis rate-limit error in #{Rails.env}: #{method} => #{returning.inspect} (#{exception.class})")
+          raise exception
         end
       )
     end

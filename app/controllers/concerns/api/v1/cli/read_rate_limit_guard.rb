@@ -25,6 +25,7 @@ module Api::V1::Cli::ReadRateLimitGuard
       namespace: "pre_auth",
       limit:,
       period:,
+      kind: "cli_pre_auth",
       message: "Too many CLI authentication attempts. Retry after the current window."
     )
   end
@@ -39,17 +40,18 @@ module Api::V1::Cli::ReadRateLimitGuard
       namespace: "authenticated",
       limit:,
       period:,
+      kind: "cli_read",
       message: "Too many CLI read requests. Retry after the current window."
     )
   end
 
-  def enforce_cli_rate_limit(identity:, namespace:, limit:, period:, message:)
+  def enforce_cli_rate_limit(identity:, namespace:, limit:, period:, kind:, message:)
     now = Time.current.to_i
     reset_at = ((now / period) + 1) * period
     identity_digest = Digest::SHA256.hexdigest(identity)
     key = [ "logister", "cli_read_rate_limit", "v2", namespace, period, reset_at, identity_digest ].join(":")
-    count = increment_cli_read_rate_limit(key, expires_in: reset_at - now + 5)
-    return unless count
+    # A nil count means no store could count the request, so fail closed.
+    count = Logister::RateLimitCounter.new.increment(key, expires_in: reset_at - now + 5, kind:) || (limit + 1)
 
     remaining = [ limit - count, 0 ].max
     response.set_header("X-RateLimit-Limit", limit.to_s)
@@ -70,13 +72,5 @@ module Api::V1::Cli::ReadRateLimitGuard
   def configured_cli_rate_limit(name, fallback, max:)
     value = Integer(ENV.fetch(name, fallback.to_s), exception: false)
     value&.between?(1, max) ? value : fallback
-  end
-
-  def increment_cli_read_rate_limit(key, expires_in:)
-    cache = Rails.application.config.x.logister.rate_limit_cache || Rails.cache
-    cache.increment(key, 1, expires_in:) || cache.write(key, 1, expires_in:).then { 1 }
-  rescue StandardError => error
-    Rails.logger.warn("CLI read rate limiting skipped: #{error.class} #{error.message}")
-    nil
   end
 end

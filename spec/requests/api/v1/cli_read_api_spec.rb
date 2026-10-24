@@ -90,31 +90,37 @@ RSpec.describe "Api::V1::Cli read API", type: :request do
       expect(keys.join).not_to include(cli_token.plain_token)
     end
 
-    it "fails open when the CLI read rate-limit cache is unavailable" do
-      cache = Class.new do
-        def increment(*)
-          raise "cache unavailable"
-        end
-      end.new
-      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(cache)
+    it "keeps limiting CLI reads through the in-process fallback when the rate-limit store is unavailable" do
+      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(unavailable_rate_limit_store)
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("LOGISTER_CLI_READ_RATE_LIMIT_REQUESTS", "600").and_return("1")
 
       get "/api/v1/cli/projects", headers: headers
-
       expect(response).to have_http_status(:ok)
+
+      get "/api/v1/cli/projects", headers: headers
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.parsed_body["code"]).to eq("rate_limited")
     end
 
-    it "fails open before authentication when the CLI pre-auth cache is unavailable" do
-      cache = Class.new do
-        def increment(*)
-          raise "cache unavailable"
-        end
-      end.new
-      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(cache)
+    it "keeps the CLI pre-auth guard working through the fallback when the rate-limit store is unavailable" do
+      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(unavailable_rate_limit_store)
       expect(CliAccessToken).to receive(:authenticate).once.and_call_original
 
       get "/api/v1/cli/projects", headers: { "Authorization" => "Bearer invalid" }
 
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "fails closed before the CLI token lookup when no rate-limit store can count" do
+      allow(Rails.application.config.x.logister).to receive(:rate_limit_cache).and_return(unavailable_rate_limit_store)
+      break_rate_limit_fallback_store!
+      expect(CliAccessToken).not_to receive(:authenticate)
+
+      get "/api/v1/cli/projects", headers: headers
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(response.headers["Retry-After"].to_i).to be_positive
     end
 
     it "returns a sanitized service-unavailable response when PostgreSQL cancels a CLI query" do
