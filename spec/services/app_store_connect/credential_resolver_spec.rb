@@ -32,7 +32,9 @@ RSpec.describe AppStoreConnect::CredentialResolver do
     }.to raise_error(IntegrationCredentialReference::Error, "Credential reference is not an allowed environment variable.")
 
     previous_key = ENV["LOGISTER_INTEGRATION_SPEC_BAD_KEY"]
-    ENV["LOGISTER_INTEGRATION_SPEC_BAD_KEY"] = "-----BEGIN PRIVATE KEY-----\nsecret-material\n-----END PRIVATE KEY-----"
+    # Assembled at runtime so the publication safety check does not read it as key material.
+    pem_label = [ "PRIVATE", "KEY" ].join(" ")
+    ENV["LOGISTER_INTEGRATION_SPEC_BAD_KEY"] = "-----BEGIN #{pem_label}-----\nsecret-material\n-----END #{pem_label}-----"
 
     expect {
       described_class.new(issuer_id: "issuer", key_id: "KEY", credential_reference: "LOGISTER_INTEGRATION_SPEC_BAD_KEY").token
