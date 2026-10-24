@@ -220,7 +220,9 @@
             <section id="collaborate" class="section">
               <p class="eyebrow">Work with teammates</p>
               <h2>Share project visibility without sharing every account credential.</h2>
-              <p>Project owners can share access with existing Logister users by email. Shared users can open the project, review issues, assign and filter them, inspect Explore, Performance, and Monitors, and see Setup and the integration guidance. <code>Settings &gt; Team</code> shows unresolved assignment counts beside members. Owners keep the sensitive controls: API key management, project sharing, editing the project in <code>Settings &gt; General</code>, archive and restore, and deletion.</p>
+              <p>Project owners and project admins share access with existing, confirmed Logister users by email in <code>Settings &gt; Team</code>, which also shows unresolved assignment counts beside members. Pick a role when you share:</p>
+              <table><thead><tr><th>Role</th><th>What they can do</th></tr></thead><tbody><tr><td>Member</td><td>Open every project page and triage: resolve, ignore, archive, and reopen issues, assign them, link external or GitHub issues (which notifies the team), and change their own notification settings.</td></tr><tr><td>Admin</td><td>Everything a Member can do, plus API keys, team access and roles, integrations, data retention, symbol and mapping uploads, and setup steps.</td></tr><tr><td>Owner</td><td>Everything an Admin can do, plus editing the project in <code>Settings &gt; General</code>, archive and restore, and deletion.</td></tr></tbody></table>
+              <p>Members are not read-only: triage changes are visible to everyone and can send notifications. If you share a project only so someone can look, tell them which issues they own. The Member role was previously labelled Viewer; existing shares keep the same permissions.</p>
               <p>Admins can also use the admin area for account-level user cleanup and confirmation work when the instance is configured to grant them access.</p>
             </section>
 

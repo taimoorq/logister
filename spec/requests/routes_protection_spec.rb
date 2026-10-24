@@ -117,6 +117,78 @@ RSpec.describe "Routes protection", type: :request do
     end
   end
 
+  # What each membership role may change on a shared project. Members (the
+  # `viewer` enum value, labelled "Member") triage; project admins also manage
+  # keys, access, and integrations; only the owner edits, archives, or deletes.
+  # Each action runs against a fresh project so earlier actions cannot mask a 404.
+  describe "role permissions on a shared project" do
+    TRIAGE_ACTIONS = {
+      "resolve an issue" => ->(project, group) { patch resolve_project_error_group_path(project, group) },
+      "ignore an issue" => ->(project, group) { patch ignore_project_error_group_path(project, group) },
+      "archive an issue" => ->(project, group) { patch archive_project_error_group_path(project, group) },
+      "reopen an issue" => ->(project, group) { patch reopen_project_error_group_path(project, group) },
+      "assign an issue" => ->(project, group) { patch project_error_group_assignment_path(project, group), params: { assigned_user_id: project.user.uuid } },
+      "unassign an issue" => ->(project, group) { delete project_error_group_assignment_path(project, group) },
+      "link an external issue" => ->(project, group) { post project_error_group_external_links_path(project, group), params: { error_group_external_link: { url: "https://tracker.example.com/T-1" } } },
+      "change their own notification settings" => ->(project, _group) { patch project_notification_preference_path(project), params: { project_notification_preference: { digest_frequency: "daily" } } }
+    }.freeze
+
+    MANAGER_ACTIONS = {
+      "create an API key" => ->(project, _group) { post project_api_keys_path(project), params: { api_key: { name: "role check" } } },
+      "share the project" => ->(project, _group) { post project_project_memberships_path(project), params: { project_membership: { email: "nobody@example.com" } } },
+      "change data retention" => ->(project, _group) { patch project_retention_policy_path(project), params: { project_retention_policy: { mode: "default" } } },
+      "change integration settings" => ->(project, _group) { patch project_integration_setting_path(project), params: { project_integration_setting: { enabled: "0" } } },
+      "mark a setup step not needed" => ->(project, _group) { post project_setup_skips_path(project), params: { key: "linked_projects" } }
+    }.freeze
+
+    OWNER_ACTIONS = {
+      "edit the project" => ->(project, _group) { patch project_path(project), params: { project: { name: "Renamed" } } },
+      "archive the project" => ->(project, _group) { patch archive_project_path(project) },
+      "delete the project" => ->(project, _group) { delete project_path(project) }
+    }.freeze
+
+    def allowed_actions_for(role, actions)
+      actions.select do |_name, action|
+        project = create(:project)
+        group = create(:error_group, :with_occurrence, project: project)
+        member = create(:user)
+        create(:project_membership, project: project, user: member, role: role)
+        sign_in member
+
+        instance_exec(project, group, &action)
+        response.status != 404
+      end.keys
+    end
+
+    it "labels the viewer role as Member" do
+      expect(ProjectMembership.role_options).to eq([ [ "Member", "viewer" ], [ "Admin", "admin" ] ])
+    end
+
+    it "lets a Member triage issues and nothing more" do
+      expect(allowed_actions_for(:viewer, TRIAGE_ACTIONS)).to match_array(TRIAGE_ACTIONS.keys)
+      expect(allowed_actions_for(:viewer, MANAGER_ACTIONS)).to be_empty
+      expect(allowed_actions_for(:viewer, OWNER_ACTIONS)).to be_empty
+    end
+
+    it "lets an Admin triage and manage the project, but not edit, archive, or delete it" do
+      expect(allowed_actions_for(:admin, TRIAGE_ACTIONS)).to match_array(TRIAGE_ACTIONS.keys)
+      expect(allowed_actions_for(:admin, MANAGER_ACTIONS)).to match_array(MANAGER_ACTIONS.keys)
+      expect(allowed_actions_for(:admin, OWNER_ACTIONS)).to be_empty
+    end
+
+    it "makes a Member's triage change the issue" do
+      project = create(:project)
+      group = create(:error_group, :with_occurrence, project: project)
+      member = create(:user)
+      create(:project_membership, project: project, user: member, role: :viewer)
+      sign_in member
+
+      patch resolve_project_error_group_path(project, group)
+
+      expect(group.reload).to be_resolved
+    end
+  end
+
   describe "shared member permissions" do
     before { sign_in users(:two) }
 

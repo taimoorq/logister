@@ -87,4 +87,3 @@ gem "dockerfile-rails", ">= 1.7", group: :development
 gem "redis", "~> 6.0"
 
 gem "logister-ruby"
-gem "rouge"
