@@ -37,8 +37,11 @@ ingest uses the same 2 MiB wire cap plus its separate decompressed and envelope 
 | Sign up | 5 attempts per minute and 20 attempts per hour | 3 attempts per hour |
 | Password reset instructions | 5 attempts per 10 minutes | 3 attempts per 10 minutes |
 | Confirmation resend | 5 attempts per 10 minutes | 3 attempts per 10 minutes |
+| Unlock instructions resend | 5 attempts per 10 minutes | 3 attempts per 10 minutes |
 
 When a request exceeds a limit, the app returns `429 Too Many Requests` with a `Retry-After` header.
+
+Rate limits sit in front of Devise `:lockable`: an account locks for one hour after 10 failed sign-in attempts and Logister emails an unlock link. `config.paranoid` is on, so sign-in, password reset, confirmation, and unlock responses do not reveal whether an email has an account or is locked. Tests for both live in `spec/requests/users/`.
 
 ## Implementation rules
 
