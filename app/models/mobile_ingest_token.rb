@@ -36,6 +36,7 @@ class MobileIngestToken < ApplicationRecord
       .not_expired
       .joins(:project, :api_key)
       .merge(Project.active)
+      .where(projects: { purge_requested_at: nil })
       .merge(ApiKey.active)
       .includes(:project, :api_key)
       .find_by(token_digest: digest(token))

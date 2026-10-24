@@ -514,6 +514,71 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       )
     end
 
+    it "returns 422 instead of 500 when the event envelope is a non-pair array" do
+      expect {
+        post api_v1_ingest_events_path, params: { event: [ "a", "b" ] }, as: :json, headers: auth_headers
+      }.not_to change(IngestEvent, :count)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body).to eq("errors" => [ "event must be a JSON object" ])
+      expect(Logister).to have_received(:report_log).with(
+        hash_including(fingerprint: "client-submission:ingest:invalid_event_envelope")
+      )
+    end
+
+    it "returns 422 when context or evidence is a non-pair array" do
+      [ { context: [ 1, 2 ] }, { evidence: [ "x" ] } ].each do |extra|
+        post api_v1_ingest_events_path,
+             params: { event: { event_type: "error", message: "Boom" }.merge(extra) },
+             as: :json,
+             headers: auth_headers
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body["errors"].first).to match(/(context|evidence) must be a JSON object/)
+      end
+    end
+
+    it "rejects ingest for projects with a pending purge" do
+      api_keys(:one).project.update_column(:purge_requested_at, Time.current)
+
+      expect {
+        post api_v1_ingest_events_path, params: valid_payload, as: :json, headers: auth_headers
+      }.not_to change(IngestEvent, :count)
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "does not index unsafe deployment URLs from event context" do
+      project = api_keys(:one).project
+      create(:project_source_repository, project: project, full_name: "acme/storefront")
+
+      post api_v1_ingest_events_path,
+           params: {
+             event: {
+               event_type: "error",
+               message: "NoMethodError",
+               release: "2026.06.18",
+               repository: "acme/storefront",
+               commit_sha: "abc1234",
+               context: {
+                 pull_request_number: "7",
+                 pull_request_url: "javascript:alert(document.cookie)",
+                 release_url: "https://phish.example/acme/storefront",
+                 deployment_url: "https://evil.example/deploy"
+               }
+             }
+           },
+           as: :json,
+           headers: auth_headers
+      expect(response).to have_http_status(:created)
+      project_derived_intents!(IngestEvent.find_by!(uuid: response.parsed_body.fetch("id")))
+
+      metadata = ProjectDeployment.find_by!(project: project, release: "2026.06.18").metadata
+      expect(metadata).to include("pull_request_url" => "https://github.com/acme/storefront/pull/7")
+      expect(metadata).not_to have_key("deployment_url")
+      expect(metadata.values.join(" ")).not_to match(/javascript:|phish\.example|evil\.example/)
+    end
+
     it "does not inspect an unauthorized monitoring-event body for diagnostics" do
       expect_any_instance_of(Api::V1::IngestEventsController).not_to receive(:client_submission_payload_summary)
       expect_any_instance_of(Api::V1::IngestEventsController).not_to receive(:client_submission_monitoring_payload?)

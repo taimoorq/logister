@@ -16,11 +16,11 @@ class ProjectDeploymentLinks
   end
 
   def pull_request_number
-    metadata_value("pull_request_number")
+    ProjectDeploymentUrlPolicy.pull_request_number(metadata_value("pull_request_number"))
   end
 
   def pull_request_url
-    metadata_value("pull_request_url").presence || inferred_pull_request_url
+    ProjectDeploymentUrlPolicy.github_url(metadata_value("pull_request_url")) || inferred_pull_request_url
   end
 
   def pull_request_label
@@ -30,7 +30,7 @@ class ProjectDeploymentLinks
   end
 
   def release_url
-    metadata_value("release_url").presence || inferred_release_url
+    ProjectDeploymentUrlPolicy.github_url(metadata_value("release_url")) || inferred_release_url
   end
 
   def release_tag

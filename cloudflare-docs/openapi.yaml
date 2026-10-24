@@ -1592,7 +1592,11 @@ components:
               value:
                 error: Not found
     UnprocessableContent:
-      description: Envelope was present, but validation failed.
+      description: >-
+        Envelope was present, but validation failed. This includes an envelope,
+        `context`, or `evidence` value that is a JSON array instead of an object,
+        and check-in slugs that are malformed or would exceed the project's
+        check-in monitor limit.
       content:
         application/json:
           schema:
@@ -2681,7 +2685,13 @@ components:
       properties:
         slug:
           type: string
-          description: Monitor slug, such as `nightly-reconcile`.
+          maxLength: 200
+          description: >-
+            Monitor slug, such as `nightly-reconcile`. Must start with a letter
+            or number and use only letters, numbers, spaces, and
+            `. _ - : / @ # + ( ) [ ]`. Each project accepts up to 500
+            slug and environment pairs; check-ins that would create another
+            monitor past that limit return 422.
         status:
           type: string
           default: ok
@@ -2761,19 +2771,35 @@ components:
           type: string
           format: date-time
         pull_request_number:
+          description: Digits only (up to 10). Other values are dropped.
           oneOf:
             - type: string
+              pattern: "^[0-9]{1,10}$"
             - type: integer
+              minimum: 0
+              maximum: 9999999999
         pullRequestNumber:
+          description: Digits only (up to 10). Other values are dropped.
           oneOf:
             - type: string
+              pattern: "^[0-9]{1,10}$"
             - type: integer
+              minimum: 0
+              maximum: 9999999999
         pull_request_url:
           type: string
           format: uri
+          description: >-
+            Kept only when it is an http(s) URL on the configured GitHub web
+            host or github.com. Other values are dropped and Logister links the
+            inferred GitHub URL instead.
         pullRequestUrl:
           type: string
           format: uri
+          description: >-
+            Kept only when it is an http(s) URL on the configured GitHub web
+            host or github.com. Other values are dropped and Logister links the
+            inferred GitHub URL instead.
         release_tag:
           type: string
         releaseTag:
@@ -2781,18 +2807,38 @@ components:
         release_url:
           type: string
           format: uri
+          description: >-
+            Kept only when it is an http(s) URL on the configured GitHub web
+            host or github.com. Other values are dropped and Logister links the
+            inferred GitHub URL instead.
         releaseUrl:
           type: string
           format: uri
+          description: >-
+            Kept only when it is an http(s) URL on the configured GitHub web
+            host or github.com. Other values are dropped and Logister links the
+            inferred GitHub URL instead.
         compare_url:
           type: string
           format: uri
+          description: >-
+            Kept only when it is an http(s) URL on the configured GitHub web
+            host or github.com. Other values are dropped and Logister links the
+            inferred GitHub URL instead.
         workflow_run_url:
           type: string
           format: uri
+          description: >-
+            Kept only when it is an http(s) URL on the configured GitHub web
+            host or github.com. Other values are dropped and Logister links the
+            inferred GitHub URL instead.
         deployment_url:
           type: string
           format: uri
+          description: >-
+            Kept only when it is an http(s) URL on the configured GitHub web
+            host or github.com. Other values are dropped and Logister links the
+            inferred GitHub URL instead.
         github:
           type: object
           additionalProperties: true

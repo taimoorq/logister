@@ -178,13 +178,13 @@
                   </tr>
                   <tr>
                     <td><code>401</code></td>
-                    <td>The token is missing, invalid, revoked, inactive, or belongs to an archived project.</td>
+                    <td>The token is missing, invalid, revoked, inactive, or belongs to an archived project or one pending deletion.</td>
                     <td>Use <code>Authorization: Bearer &lt;token&gt;</code> or <code>X-Api-Key: &lt;token&gt;</code>, generate a fresh project token, and confirm the project is active.</td>
                   </tr>
                   <tr>
                     <td><code>422</code></td>
-                    <td>The envelope exists, but required event or span fields did not validate.</td>
-                    <td>Read the returned <code>errors</code> array. For spans, confirm <code>trace_id</code>, <code>span_id</code>, name/message, and duration fields.</td>
+                    <td>The envelope exists, but required event, span, or check-in fields did not validate, or the envelope, <code>context</code>, or <code>evidence</code> was sent as a JSON array instead of an object.</td>
+                    <td>Read the returned <code>errors</code> array. For spans, confirm <code>trace_id</code>, <code>span_id</code>, name/message, and duration fields. For check-ins, keep the slug under 200 characters, start it with a letter or number, and reuse existing slugs: a project holds up to 500 monitors, and new slugs past that limit are refused.</td>
                   </tr>
                   <tr>
                     <td><code>429</code></td>
