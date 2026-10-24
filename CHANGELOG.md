@@ -27,6 +27,7 @@ All notable changes to Logister will be documented in this file.
 - Unsubscribe links show a confirmation page before unsubscribing, and new links expire after 60 days.
 - Self-service account deletion is removed. Admins cannot delete the user who claimed the installation.
 - The "Viewer" membership role is now labelled "Member" to match what it can do.
+- Run on Ruby 4.0.9 and refresh the bundle.
 
 ### Upgrade Notes
 
