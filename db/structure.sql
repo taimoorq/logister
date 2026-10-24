@@ -2485,7 +2485,10 @@ CREATE TABLE public.users (
     unconfirmed_email character varying,
     uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying,
-    application_admin boolean DEFAULT false NOT NULL
+    application_admin boolean DEFAULT false NOT NULL,
+    failed_attempts integer DEFAULT 0 NOT NULL,
+    unlock_token character varying,
+    locked_at timestamp(6) without time zone
 );
 
 
@@ -6298,6 +6301,13 @@ CREATE INDEX index_users_on_reset_password_sent_at ON public.users USING btree (
 --
 
 CREATE UNIQUE INDEX index_users_on_reset_password_token ON public.users USING btree (reset_password_token);
+
+
+--
+-- Name: index_users_on_unlock_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_unlock_token ON public.users USING btree (unlock_token);
 
 
 --
@@ -13452,6 +13462,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261023120000'),
 ('20260929120000'),
 ('20260925120000'),
 ('20260924121000'),

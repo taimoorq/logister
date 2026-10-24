@@ -84,8 +84,8 @@ RSpec.describe "Admin::Users", type: :request do
     it "confirms unconfirmed user" do
       user = User.create!(
         email: "pending@example.com",
-        password: "password123",
-        password_confirmation: "password123",
+        password: "password1234",
+        password_confirmation: "password1234",
         confirmation_token: "pending-token",
         confirmation_sent_at: Time.current
       )
@@ -104,8 +104,8 @@ RSpec.describe "Admin::Users", type: :request do
     it "enqueues confirmation email and redirects" do
       user = User.create!(
         email: "pending2@example.com",
-        password: "password123",
-        password_confirmation: "password123",
+        password: "password1234",
+        password_confirmation: "password1234",
         confirmation_token: "pending-token-2",
         confirmation_sent_at: Time.current
       )

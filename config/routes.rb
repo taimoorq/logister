@@ -9,7 +9,8 @@ Rails.application.routes.draw do
     sessions: "users/sessions",
     registrations: "users/registrations",
     passwords: "users/passwords",
-    confirmations: "users/confirmations"
+    confirmations: "users/confirmations",
+    unlocks: "users/unlocks"
   }
   root "home#show"
   get "setup", to: "instance_setup#new", as: :instance_setup

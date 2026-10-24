@@ -13,8 +13,8 @@ RSpec.describe "Project memberships", type: :request do
         # User three must exist for email lookup
         user_three = User.create!(
           email: "three@example.com",
-          password: "password123",
-          password_confirmation: "password123",
+          password: "password1234",
+          password_confirmation: "password1234",
           confirmed_at: Time.current
         )
 
@@ -32,8 +32,8 @@ RSpec.describe "Project memberships", type: :request do
       it "creates admin memberships when requested" do
         user_three = User.create!(
           email: "admin@example.com",
-          password: "password123",
-          password_confirmation: "password123",
+          password: "password1234",
+          password_confirmation: "password1234",
           confirmed_at: Time.current
         )
 
@@ -49,7 +49,7 @@ RSpec.describe "Project memberships", type: :request do
              params: { project_membership: { email: "nobody@example.com" } }
 
         expect(response).to redirect_to(settings_project_path(project, section: "team"))
-        expect(flash[:alert]).to include("User not found")
+        expect(flash[:alert]).to include(ProjectMembershipsController::SHARE_FAILED_MESSAGE)
       end
 
       it "redirects with alert when inviting self (owner)" do
@@ -70,8 +70,8 @@ RSpec.describe "Project memberships", type: :request do
       it "creates membership and redirects when user exists" do
         user_three = User.create!(
           email: "admin-invited@example.com",
-          password: "password123",
-          password_confirmation: "password123",
+          password: "password1234",
+          password_confirmation: "password1234",
           confirmed_at: Time.current
         )
 

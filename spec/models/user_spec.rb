@@ -17,13 +17,13 @@ RSpec.describe User, type: :model do
 
   describe "validations" do
     it "validates name length at most 100" do
-      user = User.new(email: "a@b.co", password: "password123", name: "a" * 101)
+      user = User.new(email: "a@b.co", password: "password1234", name: "a" * 101)
       expect(user).not_to be_valid
       expect(user.errors[:name]).to be_present
     end
 
     it "allows blank name" do
-      user = User.new(email: "a@b.co", password: "password123", name: "")
+      user = User.new(email: "a@b.co", password: "password1234", name: "")
       user.valid?
       expect(user.errors[:name]).to be_blank
     end
@@ -31,7 +31,7 @@ RSpec.describe User, type: :model do
     it "validates presence and uniqueness of uuid" do
       user = users(:one)
       expect(user.uuid).to be_present
-      dup = User.new(email: "other@example.com", password: "password123", uuid: user.uuid)
+      dup = User.new(email: "other@example.com", password: "password1234", uuid: user.uuid)
       expect(dup).not_to be_valid
       expect(dup.errors[:uuid]).to include("has already been taken")
     end
@@ -39,7 +39,7 @@ RSpec.describe User, type: :model do
 
   describe "callbacks" do
     it "assigns uuid before validation when missing" do
-      user = User.new(email: "new@example.com", password: "password123")
+      user = User.new(email: "new@example.com", password: "password1234")
       user.valid?
       expect(user.uuid).to be_present
       expect(user.uuid).to match(/\A[0-9a-f-]{36}\z/)

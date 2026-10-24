@@ -392,7 +392,7 @@ RSpec.describe "Project setup paths", type: :request do
 
       expect(response).to redirect_to(step_path("team", "teammates"))
       follow_redirect!
-      expect(document.at_css("[role='alert']").text).to include("User not found.")
+      expect(document.at_css("[role='alert']").text).to include(ProjectMembershipsController::SHARE_FAILED_MESSAGE)
     end
 
     it "returns saved alerts to the step" do
