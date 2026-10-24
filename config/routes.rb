@@ -38,7 +38,7 @@ Rails.application.routes.draw do
   get "privacy", to: "home#privacy"
   get "cookies", to: "home#cookies"
   get "terms", to: "home#terms"
-  get "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#unsubscribe", as: :unsubscribe_notification_preferences
+  get "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#confirm_unsubscribe", as: :unsubscribe_notification_preferences
   post "notification_preferences/unsubscribe/:token", to: "project_notification_preferences#unsubscribe"
 
   get "dashboard", to: "dashboard#index"

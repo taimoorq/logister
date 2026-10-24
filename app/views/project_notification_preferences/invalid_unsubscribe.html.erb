@@ -1,0 +1,13 @@
+<% content_for :title, "Unsubscribe link expired" %>
+<% content_for :meta_robots, "noindex, nofollow" %>
+
+<section class="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+  <h1 class="auth-form-title">This unsubscribe link is no longer valid</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Unsubscribe links expire after 60 days. Use the link in a more recent notification email, or sign in and turn
+    notifications off from the project's notification settings.
+  </p>
+  <p class="mt-4 text-sm">
+    <%= link_to "Sign in", new_user_session_path, class: "font-semibold", data: { turbo: false } %>
+  </p>
+</section>
