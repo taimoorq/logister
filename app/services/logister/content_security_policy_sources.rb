@@ -16,12 +16,12 @@ module Logister
       [ "#{origin(uri)}#{uri.path.presence || "/"}" ]
     end
 
-    # The upstream banner API is only contacted by the browser when Logister is
-    # not proxying it; the proxy is same-origin and already covered by 'self'.
+    # The banner calls Logister's proxy, which the layout addresses through the
+    # canonical public URL (cross-origin when a page is served from an alternate
+    # allowed host), or the upstream API directly when proxying is off.
     def cookie_banner_api_sources
-      return [] if InstanceConfiguration.value("public_site.cookie_banner_proxy_enabled")
-
-      uri = http_uri(InstanceConfiguration.value("public_site.cookie_banner_base_url"))
+      key = InstanceConfiguration.value("public_site.cookie_banner_proxy_enabled") ? "general.public_url" : "public_site.cookie_banner_base_url"
+      uri = http_uri(InstanceConfiguration.value(key))
       uri ? [ origin(uri) ] : []
     end
 

@@ -88,16 +88,18 @@ RSpec.describe "Security headers", type: :request do
       expect(csp_directives["connect-src"]).to include("https://consent.example.com:8443")
     end
 
-    it "ignores a non-HTTP banner script URL and the upstream API while proxying" do
+    it "ignores a non-HTTP banner script URL and allows only Logister's public origin while proxying" do
       stub_instance_values(
         "public_site.cookie_banner_script_url" => "javascript:alert(1)",
         "public_site.cookie_banner_proxy_enabled" => true,
-        "public_site.cookie_banner_base_url" => "https://consent.example.com"
+        "public_site.cookie_banner_base_url" => "https://consent.example.com",
+        "general.public_url" => "https://errors.example.com"
       )
 
       get root_path
 
       expect(response.headers["Content-Security-Policy"]).not_to include("javascript:", "consent.example.com")
+      expect(csp_directives["connect-src"]).to include("https://errors.example.com")
     end
 
     it "is report-only when LOGISTER_CSP_REPORT_ONLY is set" do
