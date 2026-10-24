@@ -346,14 +346,19 @@ jobs:
       - name: Verify public runtime release identity
         env:
           HEALTH_URL: https://logister.org/health/release
+          LOGISTER_HEALTH_TOKEN: ${{ secrets.LOGISTER_HEALTH_TOKEN }}
           RELEASE_VERSION: ${{ steps.identity.outputs.version }}
           RELEASE_SHA: ${{ steps.identity.outputs.git_sha }}
           IMAGE_DIGEST: ${{ steps.canonical.outputs.digest }}
           CONTRACT_SHA256: ${{ steps.identity.outputs.contract_sha256 }}
         run: |
+          if [ -z "${LOGISTER_HEALTH_TOKEN}" ]; then
+            echo "Set the LOGISTER_HEALTH_TOKEN Actions secret to the production LOGISTER_HEALTH_TOKEN; /health/release requires it."
+            exit 1
+          fi
           verified=false
           for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
-            if curl --fail --silent --show-error --output /tmp/release-health.json "${HEALTH_URL}"; then
+            if curl --fail --silent --show-error --header "Authorization: Bearer ${LOGISTER_HEALTH_TOKEN}" --output /tmp/release-health.json "${HEALTH_URL}"; then
               if ruby -rjson -e '
                 body = JSON.parse(File.read("/tmp/release-health.json"))
                 expected_contracts = JSON.parse(ENV.fetch("CONTRACT_SHA256"))

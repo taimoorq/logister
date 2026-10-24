@@ -152,4 +152,15 @@ RSpec.describe "Account security", type: :request do
       expect(subjects).to include("Password Changed", "Email Changed")
     end
   end
+
+  describe "self-service account deletion" do
+    it "is not routable, so a signed-in user cannot delete their own account" do
+      attempt_sign_in(password: password)
+
+      delete "/users"
+
+      expect(response).to have_http_status(:not_found)
+      expect(User.exists?(user.id)).to be(true)
+    end
+  end
 end
