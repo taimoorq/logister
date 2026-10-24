@@ -9,6 +9,11 @@
   <h2 class="auth-form-title">Create account</h2>
 
   <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { data: { turbo: false } }) do |f| %>
+    <% if resource.errors.any? %>
+      <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+        <%= resource.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
     <div class="space-y-4">
       <div>
         <%= f.label :email, class: "form-label" %>

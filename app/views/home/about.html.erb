@@ -241,7 +241,9 @@
     </div>
     <div class="hero-actions">
       <%= link_to "Self-host Logister", docs_site_url(:self_hosting), target: "_blank", rel: "noopener noreferrer", class: "hero-btn hero-btn-primary" %>
-      <%= link_to "Use hosted app", new_user_registration_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
+      <% if sign_up_available? %>
+        <%= link_to "Use hosted app", new_user_registration_path, class: "hero-btn hero-btn-secondary", data: { turbo: false } %>
+      <% end %>
     </div>
   </section>
 </div>
