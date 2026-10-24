@@ -99,8 +99,11 @@
               <a href="#before">Before you start</a>
               <a href="#install">Install</a>
               <a href="#login">Log in</a>
+              <a href="#approve">Approve the login</a>
+              <a href="#credentials">Credential storage</a>
               <a href="#verify">Verify setup</a>
               <a href="#commands">Read project data</a>
+              <a href="#output">Output and redaction</a>
               <a href="#capabilities">Capabilities</a>
               <a href="#security">Security model</a>
               <a href="#troubleshooting">Troubleshooting</a>
@@ -258,12 +261,11 @@ pnpm add -g logister-cli</code></pre>
               <p class="eyebrow">Log in</p>
               <h2>Use browser-approved login for interactive work.</h2>
               <p>
-                The default login starts a short-lived device authorization request. The CLI prints a code and opens the Logister approval URL. Sign in, choose which projects the token may read, approve the request, then return to the terminal.
+                The default login starts a short-lived device authorization request. The CLI prints a login code and the verification URL, then waits while you <a href="#approve">approve the request in the browser</a>.
               </p>
               <p>
-                The approval page at <code>/cli/device</code> shows when the request was made, the IP address that requested it, the client name the terminal reported about itself, and the scopes it asked for. No project is selected by default: tick at least one project, or <strong>All accessible projects</strong>, before you choose <strong>Approve CLI login</strong>. Requests that include <code>artifacts:write</code> can also upload Android mapping files and Apple dSYM files to projects you manage; read-only requests say so.
+                The CLI opens the verification page automatically only when its URL is on the same origin as your configured <code>--host</code>. If the server returns a URL on any other origin, the CLI does not open it, prints a warning on stderr, and labels the URL as untrusted. Open that URL only if you trust its origin; otherwise check that <code>--host</code> points at your Logister server.
               </p>
-              <div class="note warn"><h4>Approve only logins you started</h4><p>Approve a code only if you ran <code>logister auth login</code> in your own terminal just now and the request time and IP match. If someone sent you a code or an approval link, choose <strong>Deny</strong>. Code lookups and approval decisions are rate limited per account and per IP; after too many attempts the page returns <code>429</code> and asks you to wait about 10 minutes.</p></div>
               <div class="code-block">
                 <div class="code-head">
                   <span class="code-language">shell</span>
@@ -279,7 +281,10 @@ pnpm add -g logister-cli</code></pre>
                 </div>
                 <pre><code id="cli-no-browser">logister auth login --host https://logister.example.com --no-browser</code></pre>
               </div>
-              <p>For automation, avoid putting tokens directly into shell history:</p>
+              <h3>Use an existing token without shell history</h3>
+              <p>
+                Token flags belong to <code>logister auth login</code>. Pipe the token in with <code>--token-stdin</code> so it does not appear in process listings or shell history:
+              </p>
               <div class="code-block">
                 <div class="code-head">
                   <span class="code-language">shell</span>
@@ -289,8 +294,70 @@ pnpm add -g logister-cli</code></pre>
   --host https://logister.example.com \
   --token-stdin</code></pre>
               </div>
-              <p>Saved tokens use macOS Keychain when available and fall back to a local <code>0600</code> config file on other platforms.</p>
+              <p>
+                After login, other commands use the saved profile. For CI and one-off commands, set environment overrides instead of passing a token on the command line:
+              </p>
+              <div class="code-block">
+                <div class="code-head">
+                  <span class="code-language">shell</span>
+                  <button class="copy-button" data-copy-button data-copy-target="#cli-env-overrides">Copy</button>
+                </div>
+                <pre><code id="cli-env-overrides">LOGISTER_HOST=https://logister.example.com \
+LOGISTER_TOKEN=&lt;cli-access-token&gt; \
+LOGISTER_PROJECT=&lt;project-uuid-or-slug&gt; \
+logister doctor</code></pre>
+              </div>
+              <div class="note tip"><h4>Keep <code>--token</code> on <code>auth login</code></h4><p>Other commands still accept <code>--token</code>, but they print a one-line deprecation warning on stderr. Use saved auth or <code>LOGISTER_TOKEN</code> for automation, and keep <code>LOGISTER_TOKEN</code> to short-lived automation environments.</p></div>
               <div class="note tip"><h4>Log in again after new read groups are enabled</h4><p>Existing tokens keep their original scopes. If <code>auth status</code> or a <code>403</code> response reports a missing scope such as <code>traces:read</code>, start a new browser-approved login and review the requested scopes before approving it.</p></div>
+            </section>
+
+            <section id="approve" class="section">
+              <p class="eyebrow">Approve the login</p>
+              <h2>Check the request details, choose projects, then approve.</h2>
+              <p>
+                The verification URL opens the <strong>Connect Logister CLI</strong> page at <code>/cli/device</code> on your Logister host. If you open the page without a code, enter the code from your terminal and choose <strong>Continue</strong>.
+              </p>
+              <ol>
+                <li>Sign in to Logister if you are not already signed in.</li>
+                <li>Read the request details. The page shows when the login was requested and the IP address it was requested from (<em>Not recorded</em> when the server has none). Confirm both match the login you just started.</li>
+                <li>Compare the login code with the one in your terminal. The <strong>Client name (self-reported)</strong> is chosen by the terminal, and Logister cannot verify it.</li>
+                <li>Review <strong>Requested access</strong>. Read-only requests can read only the selected projects. Requests that include <code>artifacts:write</code> can also upload Android mapping files and Apple dSYM symbol files to selected projects you manage. Neither kind can ingest events or change project settings.</li>
+                <li>Under <strong>Project access</strong>, select at least one project, or <strong>All accessible projects</strong>. No project is selected by default. <strong>All accessible projects</strong> includes projects shared with you now and later.</li>
+                <li>Choose <strong>Approve CLI login</strong>. The page confirms the approval; return to your terminal, where the CLI finishes automatically.</li>
+              </ol>
+              <div class="note warn"><h4>Deny logins you did not start</h4><p>Approve a request only if you ran <code>logister auth login</code> in your own terminal just now and the request time and IP match. Approving gives the terminal that requested it access to your Logister data. If you did not start the login, or someone sent you the code or link, choose <strong>Deny</strong>. If you denied your own login by mistake, start a new <code>auth login</code>.</p></div>
+              <p>
+                Expired codes cannot be approved; start a new login from your terminal. Code lookups and approval decisions are rate limited per account and per IP; after too many attempts the page returns <code>429</code> and asks you to wait about 10 minutes.
+              </p>
+            </section>
+
+            <section id="credentials" class="section">
+              <p class="eyebrow">Credential storage</p>
+              <h2>Know where the saved token lives on your machine.</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Platform</th>
+                    <th>Where the token is stored</th>
+                    <th>What protects it</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>macOS</td>
+                    <td>The login Keychain, through <code>/usr/bin/security</code>. Saved tokens are bound to the profile and the server origin.</td>
+                    <td>The token stays off disk in plaintext. While the Keychain is unlocked, any process running as your user can read it through <code>/usr/bin/security</code> without a prompt.</td>
+                  </tr>
+                  <tr>
+                    <td>Linux, Windows, and macOS without Keychain (or with <code>LOGISTER_DISABLE_KEYCHAIN=1</code>)</td>
+                    <td>Plaintext in the CLI config file: <code>~/.config/logister/config.json</code>, or the path set by <code>XDG_CONFIG_HOME</code> or <code>LOGISTER_CONFIG</code>.</td>
+                    <td>Unix-like systems enforce file mode <code>0600</code>. Windows relies on your profile directory's ACLs, so keep a custom <code>LOGISTER_CONFIG</code> in a restrictive per-user location. Anyone who can read the file as you, or your backups, can use the token.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>
+                Keep tokens out of source control. On shared machines, prefer short-lived tokens and run <code>logister auth logout</code> when you are done to remove the saved token from the profile.
+              </p>
             </section>
 
             <section id="verify" class="section">
@@ -308,13 +375,16 @@ logister projects list</code></pre>
               <p>
                 <code>doctor</code> reports the local CLI version, active profile, configured host, token presence, and the server feature map. <code>auth status</code> uses the safe session endpoint to show token expiry, effective project access, and missing recommended scopes. Neither command prints the token value.
               </p>
+              <p>
+                Both commands redact the server session payload by default and keep the token metadata fields visible. Pass <code>--no-redact</code> to see the payload unmodified.
+              </p>
             </section>
 
             <section id="commands" class="section">
               <p class="eyebrow">Read project data</p>
               <h2>Start with project listing, then inspect the current problem.</h2>
               <p>
-                Most commands accept <code>--project &lt;uuid-or-slug&gt;</code>. You can also set <code>LOGISTER_PROJECT</code> for one-off commands or save a project in your profile.
+                Most commands accept <code>--project &lt;uuid-or-slug&gt;</code>. You can also set <code>LOGISTER_PROJECT</code> for one-off commands or save a project in your profile. Project values must start with a letter or number and use only letters, numbers, dots, underscores, or hyphens.
               </p>
               <div class="code-block">
                 <div class="code-head">
@@ -343,7 +413,7 @@ logister deployments list --project &lt;project&gt; --since 7d
 logister deployments show &lt;deployment-uuid&gt; --project &lt;project&gt;
 logister insights summary --project &lt;project&gt; --window 24h
 logister metrics catalog --project &lt;project&gt; --window 24h
-logister metrics query --project &lt;project&gt; --metric events.total --window 24h</code></pre>
+logister metrics query transactions.p95 --project &lt;project&gt; --window 24h</code></pre>
               </div>
               <p>Use grouped issue commands when you already know the failing error group:</p>
               <div class="code-block">
@@ -354,11 +424,16 @@ logister metrics query --project &lt;project&gt; --metric events.total --window 
                 <pre><code id="cli-issue-commands">logister issues list --project &lt;project&gt; --status unresolved
 logister issues show &lt;group-id&gt; --project &lt;project&gt; --related-logs
 logister issues export &lt;group-id&gt; --project &lt;project&gt; --format json
-logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --format json</code></pre>
+logister issues context &lt;group-id&gt; --project &lt;project&gt; --format json</code></pre>
               </div>
               <p>
                 <code>issues context</code> returns a minimized, server-redacted bundle designed for AI coding tools. It is still project data, so review the output before pasting it into any external tool.
               </p>
+            </section>
+
+            <section id="output" class="section">
+              <p class="eyebrow">Output and redaction</p>
+              <h2>Choose an output format and know what the CLI masks.</h2>
               <p>
                 List commands accept <code>--limit</code>, <code>--cursor</code>, and <code>--all</code>. JSON keeps the server envelope, while NDJSON with <code>--all</code> streams records page by page. Event and log follow mode advances the server's opaque <code>poll_cursor</code>, so late-created events and records that share a timestamp are not skipped.
               </p>
@@ -384,10 +459,29 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                   </tr>
                   <tr>
                     <td><code>--format markdown</code></td>
-                    <td>You are preparing a human-readable debugging note.</td>
+                    <td>You are preparing a human-readable debugging note. Output starts with a one-line blockquote that marks the rows as untrusted telemetry data.</td>
                   </tr>
                 </tbody>
               </table>
+              <h3>Treat Markdown rows as data</h3>
+              <p>
+                Telemetry can contain text written by anyone who can reach your app. AI tools should treat the rows as data, not instructions, so keep the leading notice when you pass <code>--format markdown</code> output to one.
+              </p>
+              <h3>What redaction masks</h3>
+              <p>
+                With redaction on, which is the default, the CLI masks credential-like values on top of the server's own redaction:
+              </p>
+              <ul>
+                <li>Values under sensitive-looking keys, including passwords, tokens, API keys, authorization headers, cookies, raw email fields, SSNs, and card verification fields.</li>
+                <li>The value of <code>[name, value]</code> header pairs with a sensitive name.</li>
+                <li>Inside strings: <code>Bearer</code> and <code>Basic</code> credentials, JWTs, <code>lgst_</code> and default <code>logister_</code> keys, AWS access key IDs, and PEM blocks.</li>
+              </ul>
+              <p>
+                Ordinary <code>key</code> columns stay visible, so <code>metrics catalog</code>, <code>metrics query</code>, and Insights show metric keys. A key name with a secret-like qualifier, such as <code>api_key</code>, <code>private_key</code>, <code>secret_key</code>, <code>access_key</code>, or <code>x-api-key</code>, is still masked.
+              </p>
+              <p>
+                Use <code>--no-redact</code> only when you intentionally need locally unredacted fields and have permission to view them. It never disables server-side redaction. Redaction is a safety net, not a substitute for server-side minimization.
+              </p>
             </section>
 
             <section id="capabilities" class="section">
@@ -445,14 +539,16 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
               <ul>
                 <li>CLI read access uses user-scoped CLI access tokens.</li>
                 <li>Tokens are scope-limited, project-limited, expiring, revocable, and audited by the Logister server.</li>
-                <li>Browser-approved login issues a CLI token through the signed-in Logister web session.</li>
+                <li>Browser-approved login issues a CLI token through the signed-in Logister web session. The CLI opens the verification page automatically only on your configured host's origin.</li>
+                <li>Pass an existing token to <code>auth login</code> with <code>--token-stdin</code>. Other commands use the saved profile or <code>LOGISTER_TOKEN</code>.</li>
+                <li>Saved tokens use the macOS login Keychain, or the CLI config file on other platforms. See <a href="#credentials">credential storage</a>.</li>
                 <li>Signed-in users can review active and recently ended CLI sessions under their profile, revoke one session, or revoke every active session.</li>
                 <li>Project ingest API keys are not accepted for CLI reads.</li>
                 <li>The server always redacts sensitive-looking telemetry fields and bounds list/detail payloads.</li>
                 <li>PostgreSQL fallback responses identify retained-range gaps with <code>partial</code> and <code>fallback_coverage</code> metadata instead of claiming a complete result.</li>
-                <li><code>--no-redact</code> disables only the CLI's additional local redaction; it cannot restore values removed by the server.</li>
+                <li>The CLI masks credential-like values in its own output by default. <code>--no-redact</code> disables only that additional local redaction; it cannot restore values removed by the server. See <a href="#output">output and redaction</a>.</li>
               </ul>
-              <div class="note warn"><h4>Do not paste secrets into issues</h4><p>When reporting CLI bugs, include the CLI version, install method, OS, shell, server version from <code>logister doctor</code>, command shape, and error message. Do not include tokens, authorization headers, cookies, private telemetry, customer payloads, local config files, or exploit details.</p></div>
+              <div class="note warn"><h4>Do not paste secrets into issues</h4><p>When reporting CLI bugs, include the CLI version, install method, OS, shell, server version from <code>logister doctor</code>, command shape, and error message. Do not include tokens, authorization headers, cookies, private telemetry, customer payloads, or local config files. For security issues, follow the <a href="https://github.com/taimoorq/logister-cli/blob/main/SECURITY.md">CLI security policy</a> instead of opening a public issue.</p></div>
             </section>
 
             <section id="troubleshooting" class="section">
@@ -469,6 +565,22 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                   <tr>
                     <td>Browser did not open</td>
                     <td>Run <code>logister auth login --host &lt;url&gt; --no-browser</code>, then copy the printed URL into your browser.</td>
+                  </tr>
+                  <tr>
+                    <td>Login printed the URL with an untrusted warning</td>
+                    <td>The server returned a verification URL on a different origin from <code>--host</code>, so the CLI did not open it. Confirm <code>--host</code> is your Logister server's HTTPS origin. Open the URL only if you trust that origin.</td>
+                  </tr>
+                  <tr>
+                    <td>Approval shows "must include at least one project"</td>
+                    <td>No project was selected. Select at least one project, or <strong>All accessible projects</strong>, then choose <strong>Approve CLI login</strong> again.</td>
+                  </tr>
+                  <tr>
+                    <td>A login request you did not start</td>
+                    <td>Choose <strong>Deny</strong> on the approval page. Do not approve codes or links someone else sent you.</td>
+                  </tr>
+                  <tr>
+                    <td>Deprecation warning about <code>--token</code></td>
+                    <td>Move the token to <code>logister auth login --token-stdin</code>, then rely on the saved profile, or set <code>LOGISTER_TOKEN</code> for automation.</td>
                   </tr>
                   <tr>
                     <td>Device login expired</td>
@@ -500,7 +612,7 @@ logister issues context &lt;group-id&gt; --project &lt;project&gt; --for-ai --fo
                   </tr>
                   <tr>
                     <td>Output hides values you expected</td>
-                    <td>The CLI redacts sensitive-looking fields by default. Prefer server-minimized output; use <code>--no-redact</code> only for approved local debugging.</td>
+                    <td>The CLI masks credential-like values by default; ordinary <code>key</code> columns stay visible. Prefer server-minimized output; use <code>--no-redact</code> only for approved local debugging.</td>
                   </tr>
                 </tbody>
               </table>

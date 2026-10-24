@@ -64,7 +64,8 @@ end
 if versions[:ruby]
   rules.concat([
     rule("ruby sdk parity", /(`logister-ruby` v)[0-9][0-9A-Za-z.\-]*/, "\\1#{versions[:ruby]}"),
-    rule("ruby gem setup snippet", /(gem "logister-ruby", "~> )[^"]+(")/, "\\1#{versions[:ruby]}\\2")
+    # Matches both plain snippets and HTML-escaped ones (`~&gt;`) in the static docs.
+    rule("ruby gem setup snippet", /(gem "logister-ruby", "~(?:>|&gt;) )[^"]+(")/, "\\1#{versions[:ruby]}\\2")
   ])
 end
 
