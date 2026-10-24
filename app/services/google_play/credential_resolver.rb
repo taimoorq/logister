@@ -14,27 +14,27 @@ module GooglePlay
     end
 
     def access_token
-      raw = credential_value
+      raw = IntegrationCredentialReference.fetch!(reference)
       return raw unless raw.lstrip.start_with?("{")
 
-      service_account_token(JSON.parse(raw))
+      service_account_token(parse_service_account(raw))
     end
 
     private
 
     attr_reader :reference
 
-    def credential_value
-      raise ArgumentError, "credential reference must be an environment variable name" unless reference.match?(/\A[A-Z][A-Z0-9_]*\z/)
+    def parse_service_account(raw)
+      credentials = JSON.parse(raw)
+      required = credentials.is_a?(Hash) ? credentials.values_at("client_email", "private_key", "token_uri") : [ nil ]
+      raise IntegrationCredentialReference::Error.new(:unparseable) if required.any?(&:blank?)
 
-      ENV.fetch(reference) { raise ArgumentError, "credential reference #{reference} is not configured" }.to_s.strip.presence ||
-        raise(ArgumentError, "credential reference #{reference} is empty")
+      credentials
+    rescue JSON::ParserError
+      raise IntegrationCredentialReference::Error.new(:unparseable)
     end
 
     def service_account_token(credentials)
-      required = credentials.values_at("client_email", "private_key", "token_uri")
-      raise ArgumentError, "service account JSON is missing client_email, private_key, or token_uri" if required.any?(&:blank?)
-
       key = [ "google_play_access_token", reference, Digest::SHA256.hexdigest(credentials.fetch("private_key")) ]
       Rails.cache.fetch(key, expires_in: 50.minutes) { exchange_assertion(credentials) }
     end
@@ -50,14 +50,24 @@ module GooglePlay
         exp: now + 3600
       }
       signing_input = "#{encode(header.to_json)}.#{encode(claims.to_json)}"
-      signature = OpenSSL::PKey::RSA.new(credentials.fetch("private_key")).sign(OpenSSL::Digest::SHA256.new, signing_input)
+      signature = signing_key(credentials.fetch("private_key")).sign(OpenSSL::Digest::SHA256.new, signing_input)
       assertion = "#{signing_input}.#{encode(signature)}"
       uri = URI(credentials.fetch("token_uri"))
       response = Net::HTTP.post_form(uri, grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: assertion)
-      payload = JSON.parse(response.body)
-      raise "Google OAuth token exchange failed (#{response.code}): #{payload['error_description'] || payload['error']}" unless response.is_a?(Net::HTTPSuccess)
+      unless response.is_a?(Net::HTTPSuccess)
+        Rails.logger.warn("Google OAuth token exchange failed status=#{response.code}")
+        raise IntegrationCredentialReference::Error.new(:rejected)
+      end
 
-      payload.fetch("access_token")
+      JSON.parse(response.body).fetch("access_token")
+    rescue JSON::ParserError, KeyError
+      raise IntegrationCredentialReference::Error.new(:rejected)
+    end
+
+    def signing_key(pem)
+      OpenSSL::PKey::RSA.new(pem)
+    rescue OpenSSL::PKey::PKeyError
+      raise IntegrationCredentialReference::Error.new(:unparseable)
     end
 
     def encode(value)

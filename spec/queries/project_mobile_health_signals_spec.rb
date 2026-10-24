@@ -23,7 +23,7 @@ RSpec.describe ProjectMobileHealthSignals do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.shop",
-      credential_reference: "GOOGLE_PLAY_CREDENTIALS",
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_CREDENTIALS",
       last_imported_at: now - 2.days,
       metadata: { "last_error" => { "message" => "permission denied", "at" => (now - 1.hour).iso8601 } }
     )

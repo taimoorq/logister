@@ -34,7 +34,7 @@ RSpec.describe ProjectReadCache do
   it "uses cached mobile aggregates on a warm request but refreshes provider failure status" do
     create(:error_occurrence, error_group: create(:error_group, project:), dimensions: { "mapping_status" => "missing" })
     setting = create(:project_integration_setting, project:, provider: "google_play", enabled: true,
-      external_project_id: "com.acme.shop", credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS", last_imported_at: 1.minute.ago)
+      external_project_id: "com.acme.shop", credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS", last_imported_at: 1.minute.ago)
     read = -> { described_class.set(values: {}) { ProjectCapabilitySnapshot.for(project) } }
     cold = capture_sql { expect(read.call.status(:distribution_store).state).to eq(:configured) }
     setting.update!(metadata: { "last_error" => { "at" => Time.current.utc.iso8601, "message" => "denied" } })

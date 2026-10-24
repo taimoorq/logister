@@ -19,7 +19,7 @@ RSpec.describe AppStoreConnectImportSweepJob, type: :job do
       account_id: "issuer-123",
       external_project_id: "com.acme.shop",
       external_project_name: "KEY123",
-      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY",
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY",
       last_imported_at: 30.minutes.ago
     )
     create(
@@ -30,7 +30,7 @@ RSpec.describe AppStoreConnectImportSweepJob, type: :job do
       account_id: "issuer-456",
       external_project_id: "com.acme.fresh",
       external_project_name: "KEY456",
-      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY",
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY",
       last_imported_at: 5.minutes.ago
     )
 
@@ -49,7 +49,7 @@ RSpec.describe AppStoreConnectImportSweepJob, type: :job do
       account_id: "issuer-archived",
       external_project_id: "com.acme.archived",
       external_project_name: "ARCHIVED",
-      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
     )
     leased = create(
       :project_integration_setting,
@@ -59,7 +59,7 @@ RSpec.describe AppStoreConnectImportSweepJob, type: :job do
       account_id: "issuer-leased",
       external_project_id: "com.acme.leased",
       external_project_name: "LEASED",
-      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
     )
     leased.claim_import_schedule!(now: Time.current)
 
@@ -78,7 +78,7 @@ RSpec.describe AppStoreConnectImportSweepJob, type: :job do
       account_id: "issuer-123",
       external_project_id: "com.acme.shop",
       external_project_name: "KEY123",
-      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
     )
 
     described_class.perform_now(Time.current.iso8601)

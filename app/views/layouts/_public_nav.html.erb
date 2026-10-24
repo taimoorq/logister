@@ -45,9 +45,11 @@
             <%= app_icon(:account, css: "w-4 h-4") %>
             <span>Sign in</span>
           <% end %>
-          <%= link_to new_user_registration_path, class: "nav-link public-nav-cta", data: { turbo: false } do %>
-            <%= app_icon(:plus, css: "w-4 h-4") %>
-            <span>Sign up</span>
+          <% if sign_up_available? %>
+            <%= link_to new_user_registration_path, class: "nav-link public-nav-cta", data: { turbo: false } do %>
+              <%= app_icon(:plus, css: "w-4 h-4") %>
+              <span>Sign up</span>
+            <% end %>
           <% end %>
         </div>
       </div>

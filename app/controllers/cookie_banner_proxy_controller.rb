@@ -7,9 +7,33 @@ class CookieBannerProxyController < ApplicationController
 
   ALLOWED_PROXY_PATH = /\A[A-Za-z0-9._\-\/]+\z/
   REQUEST_TIMEOUT_SECONDS = 5
+  RATE_LIMIT_REQUESTS = 120
+  RATE_LIMIT_WINDOW = 1.minute
+
+  # Counts through the shared rate-limit cache; fails open if the cache is down.
+  RATE_LIMIT_STORE = Class.new do
+    def increment(cache_key, amount = 1, expires_in:)
+      cache = Rails.application.config.x.logister.rate_limit_cache || Rails.cache
+      count = cache.increment(cache_key, amount, expires_in: expires_in)
+      return count if count
+
+      cache.write(cache_key, amount, expires_in: expires_in)
+      amount
+    rescue StandardError => error
+      Rails.logger.warn("Cookie banner proxy rate limiting skipped: #{error.class}")
+      nil
+    end
+  end.new
+
+  rate_limit to: RATE_LIMIT_REQUESTS,
+             within: RATE_LIMIT_WINDOW,
+             by: -> { request.remote_ip.presence || "unknown" },
+             with: -> { render_rate_limited },
+             store: RATE_LIMIT_STORE,
+             name: "ip"
 
   def show
-    return head :not_found unless valid_proxy_path?
+    return head :not_found unless proxy_enabled? && valid_proxy_path?
 
     response = forward_probo_request
     render_probo_response(response)
@@ -45,12 +69,27 @@ class CookieBannerProxyController < ApplicationController
     end
   end
 
+  # The banner only exchanges JSON with its API, so the upstream type and cache
+  # headers are never relayed; that keeps the proxy from serving other content
+  # from this origin or letting shared caches keep consent responses.
   def render_probo_response(response)
-    headers["Cache-Control"] = response["Cache-Control"] if response["Cache-Control"].present?
+    headers["Cache-Control"] = "no-store"
+    headers["X-Content-Type-Options"] = "nosniff"
+    status = response.code.to_i
+    body = response.body.to_s
+    return head status if body.empty?
 
-    render plain: response.body.to_s,
-           status: response.code.to_i,
-           content_type: response["Content-Type"].presence || "application/json"
+    render plain: body, status: status, content_type: "application/json"
+  end
+
+  def render_rate_limited
+    headers["Retry-After"] = RATE_LIMIT_WINDOW.to_i.to_s
+    headers["Cache-Control"] = "no-store"
+    head :too_many_requests
+  end
+
+  def proxy_enabled?
+    InstanceConfiguration.value("public_site.cookie_banner_proxy_enabled")
   end
 
   def probo_upstream_uri

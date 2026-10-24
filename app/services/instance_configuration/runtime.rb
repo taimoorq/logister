@@ -53,7 +53,8 @@ module InstanceConfiguration
         user_name: InstanceConfiguration.value("email.smtp_username").presence,
         password: InstanceConfiguration.value("email.smtp_password").presence,
         authentication: :login,
-        enable_starttls_auto: InstanceConfiguration.value("email.starttls"),
+        enable_starttls: InstanceConfiguration.value("email.starttls") ? :always : false,
+        enable_starttls_auto: false,
         open_timeout: InstanceConfiguration.value("email.open_timeout"),
         read_timeout: InstanceConfiguration.value("email.read_timeout")
       }

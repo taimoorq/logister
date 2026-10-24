@@ -13,7 +13,7 @@ RSpec.describe AppStoreConnect::Importer do
       external_project_id: "com.acme.shop",
       account_id: "issuer-123",
       external_project_name: "KEY123",
-      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
     )
   end
   let(:client) do
@@ -40,5 +40,17 @@ RSpec.describe AppStoreConnect::Importer do
     expect { described_class.new(setting, client: client).call }.to raise_error(AppStoreConnect::Client::Error)
     expect(setting.reload.metadata.dig("last_error", "message")).to eq("permission denied")
     expect(setting.metadata["last_attempted_at"]).to be_present
+  end
+
+  it "stores only generic text for credential and unexpected failures" do
+    allow(client).to receive(:app_for_bundle_id).and_raise(IntegrationCredentialReference::Error.new(:unparseable))
+
+    expect { described_class.new(setting, client: client).call }.to raise_error(IntegrationCredentialReference::Error)
+    expect(setting.reload.metadata.fetch("last_error")).to include("message" => "Credential could not be parsed.", "category" => "unparseable")
+
+    allow(client).to receive(:app_for_bundle_id).and_raise(KeyError, "key not found: \"SECRET_KEY_BASE\"")
+
+    expect { described_class.new(setting, client: client).call }.to raise_error(KeyError)
+    expect(setting.reload.metadata.dig("last_error", "message")).to eq("App Store Connect import failed (KeyError).")
   end
 end

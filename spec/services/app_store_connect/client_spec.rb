@@ -8,7 +8,7 @@ RSpec.describe AppStoreConnect::Client do
       ProjectIntegrationSetting,
       account_id: "issuer-123",
       external_project_name: "KEY123",
-      credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
     )
   end
   let(:http) { instance_double(Net::HTTP) }

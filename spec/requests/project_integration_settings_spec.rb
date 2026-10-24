@@ -16,7 +16,7 @@ RSpec.describe "Project integration settings", type: :request do
             provider: "google_play",
             enabled: "1",
             external_project_id: "com.acme.shop",
-            credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS"
+            credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS"
           }
         }
       end.not_to change(ProjectIntegrationSetting, :count)
@@ -47,6 +47,24 @@ RSpec.describe "Project integration settings", type: :request do
       expect(setting.external_project_name).to eq("marketing-site")
       expect(setting.external_project_id).to eq("pages-project-id")
       expect(setting.credential_reference).to eq("CLOUDFLARE_API_TOKEN")
+    end
+
+    it "rejects a Google Play credential reference outside the integration allowlist" do
+      project = create(:project, :android, user: users(:one))
+      sign_in users(:one)
+
+      patch project_integration_setting_path(project), params: {
+        project_integration_setting: {
+          provider: "google_play",
+          enabled: "1",
+          external_project_id: "com.acme.shop",
+          credential_reference: "SECRET_KEY_BASE"
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(CGI.unescapeHTML(response.body)).to include("must name an environment variable that starts with LOGISTER_INTEGRATION_")
+      expect(ProjectIntegrationSetting.find_by(project: project, provider: "google_play")).to be_nil
     end
 
     it "renders settings with validation errors" do
@@ -115,7 +133,7 @@ RSpec.describe "Project integration settings", type: :request do
           provider: "google_play",
           enabled: "1",
           external_project_id: "com.acme.shop",
-          credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+          credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS",
           metadata: { track_allowlist: %w[internal production] }
         }
       }
@@ -137,14 +155,14 @@ RSpec.describe "Project integration settings", type: :request do
           external_project_id: "com.acme.shop",
           account_id: "issuer-123",
           external_project_name: "KEY123",
-          credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+          credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
         }
       }
 
       expect(response).to redirect_to(settings_project_path(project, section: "integrations", anchor: "app-store-connect-integration"))
       setting = project.integration_settings.find_by!(provider: "app_store_connect")
       expect(setting).to be_configured
-      expect(setting.credential_reference).to eq("APP_STORE_CONNECT_PRIVATE_KEY")
+      expect(setting.credential_reference).to eq("LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY")
     end
   end
 
@@ -159,7 +177,7 @@ RSpec.describe "Project integration settings", type: :request do
         external_project_id: "com.acme.shop",
         account_id: "issuer-123",
         external_project_name: "KEY123",
-        credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+        credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
       )
       sign_in users(:one)
 
@@ -180,7 +198,7 @@ RSpec.describe "Project integration settings", type: :request do
         external_project_id: "com.acme.shop",
         account_id: "issuer-123",
         external_project_name: "KEY123",
-        credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+        credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_PRIVATE_KEY"
       )
       sign_in users(:one)
 
@@ -238,7 +256,7 @@ RSpec.describe "Project integration settings", type: :request do
       get settings_project_path(project, section: "integrations")
 
       expect(response).to have_http_status(:success)
-      expect(response.body).to include("App Store Connect", "APP_STORE_CONNECT_PRIVATE_KEY", "dSYM coverage", "No App Store metrics imported")
+      expect(response.body).to include("App Store Connect", "LOGISTER_INTEGRATION_APP_STORE_CONNECT_KEY", "dSYM coverage", "No App Store metrics imported")
       expect(Nokogiri::HTML.parse(response.body).at_css("#apple-symbols a")["href"]).to eq(artifacts_project_path(project))
     end
 

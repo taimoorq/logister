@@ -35,8 +35,8 @@ RSpec.describe ProjectIntegrationSetting, type: :model do
       android_project = create(:project, :android)
       ios_project = create(:project, :ios)
 
-      google_play = build(:project_integration_setting, project: android_project, provider: "google_play")
-      app_store = build(:project_integration_setting, project: ios_project, provider: "app_store_connect")
+      google_play = build(:project_integration_setting, project: android_project, provider: "google_play", credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY")
+      app_store = build(:project_integration_setting, project: ios_project, provider: "app_store_connect", credential_reference: "LOGISTER_INTEGRATION_APP_STORE")
 
       expect(google_play).to be_valid
       expect(app_store).to be_valid
@@ -55,6 +55,40 @@ RSpec.describe ProjectIntegrationSetting, type: :model do
       expect(setting).not_to be_valid
       expect(setting.errors[:external_project_id]).to be_present
       expect(setting.errors[:credential_reference]).to be_present
+    end
+  end
+
+  describe "credential references" do
+    it "accepts only allowlisted environment variable names for mobile store imports" do
+      setting = build(
+        :project_integration_setting,
+        project: create(:project, :android),
+        provider: "google_play",
+        enabled: true,
+        external_project_id: "com.acme.shop",
+        credential_reference: "SECRET_KEY_BASE"
+      )
+
+      expect(setting).not_to be_valid
+      expect(setting.errors.full_messages.to_sentence).to include("LOGISTER_INTEGRATION_", "LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST")
+
+      setting.credential_reference = "LOGISTER_INTEGRATION_GOOGLE_PLAY"
+      expect(setting).to be_valid
+    end
+
+    it "lets a disabled setting with an unchanged legacy name be saved" do
+      setting = build(
+        :project_integration_setting,
+        project: create(:project, :ios),
+        provider: "app_store_connect",
+        enabled: false,
+        credential_reference: "APP_STORE_CONNECT_PRIVATE_KEY"
+      )
+      setting.save!(validate: false)
+
+      setting.external_project_id = "com.acme.app"
+
+      expect(setting).to be_valid
     end
   end
 

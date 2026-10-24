@@ -28,7 +28,7 @@ RSpec.describe ProjectSetupActions do
         provider: provider,
         enabled: true,
         external_project_id: "com.acme.shop",
-        credential_reference: "STORE_CREDENTIALS"
+        credential_reference: "LOGISTER_INTEGRATION_STORE_CREDENTIALS"
       )
       emitted = []
       collect = -> { emitted.concat(ProjectSetupStatus.new(project).call.values.map(&:action_key)) }

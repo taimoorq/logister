@@ -12,7 +12,7 @@ RSpec.describe ProjectMobileDistributionSnapshot do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.shop",
-      credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS",
       last_imported_at: fetched_at,
       metadata: {
         "reporting" => {
@@ -45,7 +45,7 @@ RSpec.describe ProjectMobileDistributionSnapshot do
       account_id: "issuer",
       external_project_id: "com.acme.shop",
       external_project_name: "KEY123",
-      credential_reference: "APP_STORE_CONNECT_KEY"
+      credential_reference: "LOGISTER_INTEGRATION_APP_STORE_CONNECT_KEY"
     )
 
     snapshot = described_class.new(project).call
