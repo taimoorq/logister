@@ -14,6 +14,14 @@ class Admin::Installation::SettingsController < Admin::BaseController
     return test if params[:operation] == "test"
 
     values = setting_values
+    candidate_check = InstanceConfiguration::CandidateCheck.call(@section.key, values: values, clear_keys: params[:clear_keys])
+    unless candidate_check.valid?
+      prepare_view(form_values: values)
+      flash.now[:alert] = candidate_check.errors.to_sentence
+      render :show, status: :unprocessable_content
+      return
+    end
+
     overrides = InstanceConfiguration.candidate_overrides(@section.key, values)
     candidate_fingerprint = InstanceConfiguration.fingerprint(@section.key, overrides: overrides)
 
@@ -50,7 +58,14 @@ class Admin::Installation::SettingsController < Admin::BaseController
     overrides = InstanceConfiguration.candidate_overrides(@section.key, values)
     effective_values = InstanceConfiguration.values_for(@section.key, overrides: overrides)
     fingerprint = InstanceConfiguration.fingerprint(@section.key, overrides: overrides)
-    @diagnostic = if unsaved_email_delivery_test?(fingerprint)
+    candidate_check = InstanceConfiguration::CandidateCheck.call(@section.key, values: values, operation: :test)
+    @diagnostic = if !candidate_check.valid?
+      InstanceConfiguration::Diagnostics::Result.new(
+        success: false,
+        summary: candidate_check.errors.to_sentence,
+        details: { "candidate_rejected" => true }
+      )
+    elsif unsaved_email_delivery_test?(fingerprint)
       InstanceConfiguration::Diagnostics::Result.new(
         success: false,
         summary: "Save these SMTP settings before sending direct and queued test messages.",
@@ -75,7 +90,7 @@ class Admin::Installation::SettingsController < Admin::BaseController
       action: @diagnostic.success? ? "test_passed" : "test_failed",
       actor: current_user,
       request_id: request.request_id,
-      details: { "section" => @section.key, "summary" => @diagnostic.summary }
+      details: { "section" => @section.key, "summary" => @diagnostic.summary, "destination_host" => candidate_check.destination_host }.compact
     )
 
     prepare_view(form_values: values)

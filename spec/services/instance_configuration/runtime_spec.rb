@@ -43,4 +43,19 @@ RSpec.describe InstanceConfiguration::Runtime, type: :model do
   ensure
     original_values&.each { |key, value| config.public_send("#{key}=", value) }
   end
+
+  it "requires STARTTLS for SMTP delivery when it is enabled" do
+    original = ActionMailer::Base.smtp_settings
+
+    described_class.apply_mailer!
+
+    expect(ActionMailer::Base.smtp_settings).to include(enable_starttls: :always, enable_starttls_auto: false)
+
+    InstanceConfiguration.save_section!("email", values: { "email.starttls" => "0" }, clear_keys: [], actor: users(:one))
+    described_class.apply_mailer!
+
+    expect(ActionMailer::Base.smtp_settings).to include(enable_starttls: false, enable_starttls_auto: false)
+  ensure
+    ActionMailer::Base.smtp_settings = original
+  end
 end
