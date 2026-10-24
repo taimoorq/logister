@@ -29,6 +29,29 @@ legacy single-event endpoint also rejects more than 2 MiB of wire input in middl
 including chunked requests without `Content-Length`, before Rails parses JSON. Batch
 ingest uses the same 2 MiB wire cap plus its separate decompressed and envelope limits.
 
+Authentication failures are counted per source IP, and the limit can come from the project a revoked or invalid credential belonged to. Because the caller is not authenticated, those `401` and `429` responses omit the `X-RateLimit-*` headers and the `limit` and `window_seconds` body fields. They keep `Retry-After` and `retry_after`.
+
+## Rate-limit store outages
+
+Every limiter (public API pre-auth, authentication failure and accepted quotas, CLI pre-auth and read limits, CLI device authorization create and token polling, browser approval of CLI login codes, and Devise create actions) counts through `Logister::RateLimitCounter`.
+
+1. The counter increments the shared rate-limit store. The Redis `error_handler` for that store re-raises, so a Redis error is never read as "not limited".
+2. If the shared store raises or refuses the write, the counter uses a process-wide `ActiveSupport::Cache::MemoryStore` capped at 16 MiB. Limits then apply per web process instead of across the fleet, so the effective limit is roughly the configured limit times the number of web processes.
+3. If the fallback also fails, the counter returns no count and every limiter fails closed: `429 Too Many Requests` with `Retry-After`. Authenticated ingest quotas are included, so no quota becomes unlimited.
+
+Each use of the fallback logs a warning (`rate limit store unavailable for <kind>, using in-process fallback`) and emits `rate_limit_degraded.logister` through `ActiveSupport::Notifications` with `kind`, `store`, `error_class`, and `fallback` (`memory` or `none`). Alert on that event or log line; a steady stream means the rate-limit Redis role is down.
+
+## CLI device approval limits
+
+The signed-in `/cli/device` page is limited per user and per source IP over a 10-minute window:
+
+| Action | Per user | Per IP |
+|--------|----------|--------|
+| Look up a login code (`GET /cli/device?user_code=...`) | 30 | 60 |
+| Approve or deny (`POST /cli/device`) | 10 | 30 |
+
+Opening the empty code entry page is not counted. Limited requests render the code entry page with `429` and `Retry-After: 600`.
+
 ## Devise current limits
 
 | Devise action | IP limit | Email limit |
@@ -44,7 +67,7 @@ When a request exceeds a limit, the app returns `429 Too Many Requests` with a `
 
 Use `DeviseRateLimitGuard` for Devise create actions. It installs prepended controller callbacks so rate limits run before Devise authentication callbacks and before Turnstile can redirect.
 
-Counters use the rate-limit Redis store configured by `REDIS_RATE_LIMIT_URL`, with backward-compatible fallback to `REDIS_URL`. This keeps limits shared across web processes and lets operators isolate them from the general Rails cache. If the store raises an error, the limiter logs a warning and fails open so users are not locked out by a Redis outage.
+Counters use the rate-limit Redis store configured by `REDIS_RATE_LIMIT_URL`, with backward-compatible fallback to `REDIS_URL`. This keeps limits shared across web processes and lets operators isolate them from the general Rails cache. Count through `Logister::RateLimitCounter`; do not call the cache directly from a guard. See [Rate-limit store outages](#rate-limit-store-outages).
 
 Use layered identities:
 
@@ -69,7 +92,7 @@ If limits need to become operator-tunable, add named config values under `Rails.
 
 ## Testing
 
-Rate-limit behavior belongs in request specs under `spec/requests/users/`. Use an in-memory cache store in the spec so test limits are deterministic even though the test environment normally uses `:null_store`.
+Rate-limit behavior belongs in request specs under `spec/requests/users/`. Outage behavior uses the `unavailable_rate_limit_store` and `break_rate_limit_fallback_store!` helpers from `spec/support/rate_limit_counter.rb`. Use an in-memory cache store in the spec so test limits are deterministic even though the test environment normally uses `:null_store`.
 
 Coverage should verify:
 

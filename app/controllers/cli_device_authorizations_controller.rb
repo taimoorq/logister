@@ -2,6 +2,7 @@
 
 class CliDeviceAuthorizationsController < ApplicationController
   before_action :authenticate_user!
+  include CliDeviceApprovalRateLimitGuard
 
   def show
     load_authorization_context
@@ -18,6 +19,11 @@ class CliDeviceAuthorizationsController < ApplicationController
     if params[:decision] == "deny"
       @authorization.deny!
       redirect_to cli_device_authorization_path(user_code: @authorization.user_code_display), notice: "CLI login request denied."
+      return
+    end
+
+    unless params[:decision] == "approve"
+      redirect_to cli_device_authorization_path(user_code: @authorization.user_code_display), alert: "Choose Approve or Deny to answer this CLI login request."
       return
     end
 

@@ -54,6 +54,22 @@ RSpec.describe Logister::ReleaseSetReconciler do
     expect { reconciler.catalog(receipt) }.to raise_error("release set is not complete")
   end
 
+  it "refuses to download a CLI npm tarball from a non-canonical URL" do
+    rogue_url = "https://evil.example/logister-cli-1.0.0.tgz"
+    responses["https://registry.npmjs.org/logister-cli/1.0.0"] = ok_json(
+      version: "1.0.0",
+      dist: { tarball: rogue_url, shasum: Digest::SHA1.hexdigest(tarball) }
+    )
+    http = FakeHttp.new(responses)
+    allow(http).to receive(:get).and_call_original
+
+    receipt = described_class.new(repo_root: Rails.root, release_set_path: release_set_path, http: http).reconcile
+
+    expect(receipt.fetch(:status)).to eq("pending")
+    expect(receipt.fetch(:errors)).to include("logister-cli/npm: CLI npm tarball URL is not canonical")
+    expect(http).not_to have_received(:get).with(rogue_url)
+  end
+
   it "requires both Android artifacts from 0.6.0 onward" do
     version = "0.6.0"
     root = "https://repo1.maven.org/maven2/org/logister"

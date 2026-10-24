@@ -308,7 +308,7 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
              headers: { "Authorization" => "Bearer test-token-one" }
 
         expect(response).to have_http_status(:unauthorized)
-        expect(response.headers.fetch("X-RateLimit-Limit")).to eq("1")
+        expect(response.headers).not_to include("X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset")
         expect(Logister).to have_received(:report_log).with(
           message: "Client ingest rejected",
           level: "warn",
@@ -328,7 +328,9 @@ RSpec.describe "Api::V1::IngestEvents", type: :request do
       end
 
       expect(response).to have_http_status(:too_many_requests)
-      expect(response.parsed_body.fetch("limit")).to eq(1)
+      expect(response.headers["Retry-After"]).to be_present
+      expect(response.headers).not_to include("X-RateLimit-Limit")
+      expect(response.parsed_body.keys).to contain_exactly("error", "retry_after")
     end
 
     it "short-circuits a coarse IP flood before another credential lookup" do

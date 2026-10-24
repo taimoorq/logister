@@ -85,11 +85,14 @@ module ClientSubmissionMonitoring
     diagnostic_api_key = diagnostic_api_key_for(token)
     diagnostic_mobile_ingest_token = diagnostic_mobile_ingest_token_for(token)
     diagnostic_project = diagnostic_api_key&.project || diagnostic_mobile_ingest_token&.project
+    # The caller is unauthenticated, so the limit and window of the project a
+    # revoked or invalid credential belonged to must not appear in the response.
     if public_api_rate_limited?(
       identity: "ip:#{request.remote_ip.presence || 'unknown'}",
       kind: "auth_failure",
       limit: public_api_auth_failure_rate_limit_requests(diagnostic_project),
-      period: public_api_rate_limit_period_seconds(diagnostic_project)
+      period: public_api_rate_limit_period_seconds(diagnostic_project),
+      disclose_limits: false
     )
       return render_public_api_rate_limited
     end
@@ -110,7 +113,7 @@ module ClientSubmissionMonitoring
     ClientSubmissions::MobileTokenPolicy.endpoint_allowed?(client_submission_endpoint_label)
   end
 
-  def public_api_rate_limited?(identity:, kind:, limit:, period:, amount: 1)
+  def public_api_rate_limited?(identity:, kind:, limit:, period:, amount: 1, disclose_limits: true)
     result = public_api_rate_limiter.check(
       identity: identity,
       kind: kind,
@@ -121,13 +124,13 @@ module ClientSubmissionMonitoring
     )
     return false unless result
 
-    set_public_api_rate_limit_headers(result)
+    set_public_api_rate_limit_headers(result) if disclose_limits
     @public_api_rate_limit_context = {
-      limit: result.limit,
+      limit: disclose_limits ? result.limit : nil,
       remaining: result.remaining,
       reset_at: result.reset_at,
       retry_after: result.retry_after,
-      window_seconds: result.window_seconds
+      window_seconds: disclose_limits ? result.window_seconds : nil
     }
     result.limited?
   end
@@ -151,7 +154,7 @@ module ClientSubmissionMonitoring
       limit: context[:limit],
       window_seconds: context[:window_seconds],
       retry_after: context[:retry_after]
-    }, status: :too_many_requests
+    }.compact, status: :too_many_requests
   end
 
   def set_public_api_rate_limit_headers(result)

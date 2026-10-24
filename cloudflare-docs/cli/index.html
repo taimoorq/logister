@@ -260,6 +260,10 @@ pnpm add -g logister-cli</code></pre>
               <p>
                 The default login starts a short-lived device authorization request. The CLI prints a code and opens the Logister approval URL. Sign in, choose which projects the token may read, approve the request, then return to the terminal.
               </p>
+              <p>
+                The approval page at <code>/cli/device</code> shows when the request was made, the IP address that requested it, the client name the terminal reported about itself, and the scopes it asked for. No project is selected by default: tick at least one project, or <strong>All accessible projects</strong>, before you choose <strong>Approve CLI login</strong>. Requests that include <code>artifacts:write</code> can also upload Android mapping files and Apple dSYM files to projects you manage; read-only requests say so.
+              </p>
+              <div class="note warn"><h4>Approve only logins you started</h4><p>Approve a code only if you ran <code>logister auth login</code> in your own terminal just now and the request time and IP match. If someone sent you a code or an approval link, choose <strong>Deny</strong>. Code lookups and approval decisions are rate limited per account and per IP; after too many attempts the page returns <code>429</code> and asks you to wait about 10 minutes.</p></div>
               <div class="code-block">
                 <div class="code-head">
                   <span class="code-language">shell</span>

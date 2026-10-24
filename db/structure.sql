@@ -294,7 +294,8 @@ CREATE TABLE public.cli_device_authorizations (
     consumed_at timestamp(6) without time zone,
     last_polled_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    requested_ip character varying
 );
 
 
@@ -3602,7 +3603,7 @@ CREATE INDEX idx_cli_deployments_project_time_uuid ON public.project_deployments
 -- Name: idx_cli_entry_traces_project_millis_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_cli_entry_traces_project_millis_uuid ON public.trace_spans USING btree (project_id, date_trunc('milliseconds'::text, started_at) DESC, uuid DESC) WHERE ((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[]));
+CREATE INDEX idx_cli_entry_traces_project_millis_uuid ON public.trace_spans USING btree (project_id, date_trunc('milliseconds'::text, started_at) DESC, uuid DESC) WHERE ((kind)::text = ANY (ARRAY[('server'::character varying)::text, ('browser'::character varying)::text]));
 
 
 --
@@ -4701,7 +4702,7 @@ CREATE INDEX idx_projects_user_archived_name ON public.projects USING btree (use
 -- Name: idx_request_entries_project_started_uuid; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_request_entries_project_started_uuid ON public.trace_spans USING btree (project_id, started_at DESC, uuid DESC) WHERE ((kind)::text = ANY ((ARRAY['server'::character varying, 'browser'::character varying])::text[]));
+CREATE INDEX idx_request_entries_project_started_uuid ON public.trace_spans USING btree (project_id, started_at DESC, uuid DESC) WHERE ((kind)::text = ANY (ARRAY[('server'::character varying)::text, ('browser'::character varying)::text]));
 
 
 --
@@ -13452,6 +13453,7 @@ ALTER TABLE ONLY public.user_notification_dismissals
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261023200000'),
 ('20260929120000'),
 ('20260925120000'),
 ('20260924121000'),

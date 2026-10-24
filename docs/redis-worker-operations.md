@@ -9,7 +9,7 @@ Logister can run with one Redis URL and one Sidekiq process. Larger or higher-av
 | Role | Environment variable | Data behavior |
 | --- | --- | --- |
 | Rails cache | `REDIS_CACHE_URL` | Evictable; a miss recomputes data. |
-| Public and Devise rate limits | `REDIS_RATE_LIMIT_URL` | Ephemeral; failures log and fail open. |
+| Public, CLI, and Devise rate limits | `REDIS_RATE_LIMIT_URL` | Ephemeral; during an outage each web process counts in a bounded in-memory fallback and emits `rate_limit_degraded.logister`. |
 | Sidekiq jobs and recurring schedules | `REDIS_SIDEKIQ_URL` | Durable; jobs must not be evicted. |
 
 Different Redis database numbers on one server do not provide persistence, memory, failure, or eviction isolation. For a durable production topology, put `REDIS_SIDEKIQ_URL` on a separate Redis service or cluster configured with:
