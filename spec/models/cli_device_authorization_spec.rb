@@ -26,6 +26,14 @@ RSpec.describe CliDeviceAuthorization, type: :model do
     end
   end
 
+  describe ".issue! requested_ip" do
+    it "records the requesting IP" do
+      authorization = described_class.issue!(client_name: "Logister CLI", requested_ip: "203.0.113.40")
+
+      expect(authorization.reload.requested_ip).to eq("203.0.113.40")
+    end
+  end
+
   describe "#write_scopes" do
     it "lists only the requested scopes that go beyond read access" do
       read_only = build(:cli_device_authorization, requested_scopes: CliAccessToken::READ_SCOPES)

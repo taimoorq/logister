@@ -139,8 +139,6 @@ RSpec.describe "CLI device authorization", type: :request do
     end
 
     it "shows the IP that requested the device code" do
-      skip "requested_ip column is added by a separate migration" unless CliDeviceAuthorization.column_names.include?("requested_ip")
-
       post "/api/v1/cli/device_authorizations", params: { client_name: "Logister CLI" }, env: { "REMOTE_ADDR" => "198.51.100.23" }
       user_code = response.parsed_body.fetch("user_code")
 

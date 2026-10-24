@@ -4,17 +4,16 @@ module CliDeviceAuthorizationIssuing
   def issue!(client_name:, requested_scopes: CliAccessToken::READ_SCOPES, expires_in: CliDeviceAuthorization::DEFAULT_EXPIRES_IN, requested_ip: nil)
     device_code = SecureRandom.urlsafe_base64(48)
     user_code = unique_user_code
-    attributes = {
+
+    create!(
       device_code_digest: digest(device_code),
       user_code_digest: digest(normalize_user_code(user_code)),
       user_code_display: user_code,
       client_name: client_name,
       requested_scopes: requested_scopes,
+      requested_ip: requested_ip.to_s.first(64).presence,
       expires_at: expires_in.from_now
-    }
-    attributes[:requested_ip] = requested_ip.to_s.first(64).presence if column_names.include?("requested_ip")
-
-    create!(attributes).tap do |authorization|
+    ).tap do |authorization|
       authorization.instance_variable_set(:@plain_device_code, device_code)
     end
   end

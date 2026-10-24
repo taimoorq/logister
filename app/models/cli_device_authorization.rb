@@ -36,12 +36,6 @@ class CliDeviceAuthorization < ApplicationRecord
     requested_scopes - CliAccessToken::READ_SCOPES
   end
 
-  # The requested_ip column ships in a separate migration. Until it exists the
-  # approval page reports the requesting IP as not recorded.
-  def requesting_ip
-    self[:requested_ip] if has_attribute?(:requested_ip)
-  end
-
   def approve!(user:, all_projects:, allowed_project_ids:)
     with_lock do
       ensure_pending_and_current!

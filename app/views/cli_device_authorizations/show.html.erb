@@ -30,7 +30,7 @@
           <dt class="font-semibold">Requested</dt>
           <dd><%= local_time_tag(@authorization.created_at, format: :long) %></dd>
           <dt class="font-semibold">Requested from IP</dt>
-          <dd class="font-mono"><%= @authorization.requesting_ip.presence || "Not recorded" %></dd>
+          <dd class="font-mono"><%= @authorization.requested_ip.presence || "Not recorded" %></dd>
         </dl>
       </div>
 
