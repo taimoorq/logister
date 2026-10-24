@@ -43,4 +43,43 @@ RSpec.describe InstanceConfiguration::Runtime, type: :model do
   ensure
     original_values&.each { |key, value| config.public_send("#{key}=", value) }
   end
+
+  it "re-raises rate-limit store errors so limiters fall back instead of reading a swallowed error as unlimited" do
+    config = Rails.application.config.x.logister
+    original_cache = Rails.cache
+    original_rate_limit_cache = config.rate_limit_cache
+    store_options = {}
+    allow(Rails.env).to receive(:test?).and_return(false)
+    allow(ActiveSupport::Cache).to receive(:lookup_store) do |_store, options|
+      store_options[options.fetch(:namespace)] = options
+      ActiveSupport::Cache::MemoryStore.new
+    end
+
+    described_class.apply_cache!
+
+    cache_handler = store_options.find { |namespace, _| namespace.start_with?("logister:cache:") }.last.fetch(:error_handler)
+    rate_limit_handler = store_options.find { |namespace, _| namespace.start_with?("logister:rate_limit:") }.last.fetch(:error_handler)
+    error = Errno::ECONNREFUSED.new("redis down")
+
+    expect { cache_handler.call(method: :read, returning: nil, exception: error) }.not_to raise_error
+    expect { rate_limit_handler.call(method: :increment, returning: nil, exception: error) }.to raise_error(error)
+  ensure
+    Rails.cache = original_cache
+    config.rate_limit_cache = original_rate_limit_cache
+  end
+
+  it "requires STARTTLS for SMTP delivery when it is enabled" do
+    original = ActionMailer::Base.smtp_settings
+
+    described_class.apply_mailer!
+
+    expect(ActionMailer::Base.smtp_settings).to include(enable_starttls: :always, enable_starttls_auto: false)
+
+    InstanceConfiguration.save_section!("email", values: { "email.starttls" => "0" }, clear_keys: [], actor: users(:one))
+    described_class.apply_mailer!
+
+    expect(ActionMailer::Base.smtp_settings).to include(enable_starttls: false, enable_starttls_auto: false)
+  ensure
+    ActionMailer::Base.smtp_settings = original
+  end
 end

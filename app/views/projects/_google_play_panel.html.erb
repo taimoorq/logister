@@ -18,6 +18,9 @@
                 class: "mt-5 space-y-5" do |form| %>
     <%= setup_return_field %>
     <%= form.hidden_field :provider, value: ProjectIntegrationSetting::PROVIDERS[:google_play] %>
+    <% if @google_play_integration_setting.errors.any? %>
+      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert"><%= @google_play_integration_setting.errors.full_messages.to_sentence %></div>
+    <% end %>
 
     <label class="flex items-start gap-3">
       <%= form.check_box :enabled, class: "form-checkbox mt-1", disabled: !@integration_changes_allowed %>
@@ -34,8 +37,8 @@
       </div>
       <div>
         <%= form.label :credential_reference, "Credential environment variable", class: "form-label" %>
-        <%= form.text_field :credential_reference, placeholder: "GOOGLE_PLAY_REPORTING_CREDENTIALS", class: "form-input", disabled: !@integration_changes_allowed %>
-        <p class="mt-1 text-xs text-slate-500">Store service-account JSON or a short-lived OAuth token in the environment variable. Never paste the secret here.</p>
+        <%= form.text_field :credential_reference, placeholder: "LOGISTER_INTEGRATION_GOOGLE_PLAY_CREDENTIALS", class: "form-input", disabled: !@integration_changes_allowed %>
+        <p class="mt-1 text-xs text-slate-500">Store service-account JSON or a short-lived OAuth token in an environment variable whose name starts with <code>LOGISTER_INTEGRATION_</code>, or one your operator lists in <code>LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST</code>. Never paste the secret here.</p>
       </div>
     </div>
 

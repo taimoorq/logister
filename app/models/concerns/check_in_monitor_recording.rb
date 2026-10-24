@@ -3,6 +3,11 @@
 module CheckInMonitorRecording
   extend ActiveSupport::Concern
 
+  # Missed, failed, and recovered monitor alerts share one hourly budget per
+  # project so a single ingest key cannot fan out alerts across many monitors.
+  MONITOR_NOTIFICATION_LIMIT_PER_HOUR = 50
+  MONITOR_NOTIFICATION_WINDOW = 1.hour
+
   class_methods do
     def record!(project:, event:)
       payload = extract_check_in_payload(event)
@@ -13,8 +18,19 @@ module CheckInMonitorRecording
 
       CheckInMonitor.transaction(requires_new: true) do
         identity = { slug: payload[:slug], environment: payload[:environment] }
-        monitor = project.check_in_monitors.find_by(identity) ||
-          project.check_in_monitors.create_or_find_by!(identity) { |candidate| assign_event!(candidate, event, payload) }
+        monitor = project.check_in_monitors.find_by(identity)
+        unless monitor
+          admission_errors = CheckInMonitor.admission_errors(project: project, **identity)
+          if admission_errors.any?
+            Rails.logger.warn(
+              "check_in_monitor.rejected project_id=#{project.id} event_id=#{event.id} " \
+              "errors=#{admission_errors.join('; ').inspect}"
+            )
+            next
+          end
+
+          monitor = project.check_in_monitors.create_or_find_by!(identity) { |candidate| assign_event!(candidate, event, payload) }
+        end
         created = monitor.previously_new_record?
 
         monitor.with_lock do
@@ -61,7 +77,7 @@ module CheckInMonitorRecording
         end
 
         transition_id = monitor.notification_transition_id
-        intent = NotificationIntent.capture!(
+        intent = capture_monitor_notification!(
           project: project,
           kind: "monitor_missed",
           check_in_monitor: monitor,
@@ -126,7 +142,7 @@ module CheckInMonitorRecording
       transition_id = monitor.notification_transition_id
 
       if current_status == "error" && previous_status != "error"
-        NotificationIntent.capture!(
+        capture_monitor_notification!(
           project: monitor.project,
           kind: "monitor_missed",
           check_in_monitor: monitor,
@@ -142,7 +158,7 @@ module CheckInMonitorRecording
           }
         )
       elsif current_status == "ok" && previous_status.in?(%w[error missed])
-        NotificationIntent.capture!(
+        capture_monitor_notification!(
           project: monitor.project,
           kind: "monitor_recovered",
           check_in_monitor: monitor,
@@ -159,5 +175,29 @@ module CheckInMonitorRecording
       end
     end
     private :capture_status_transition_intent!
+
+    def capture_monitor_notification!(project:, dedup_key:, **attributes)
+      existing = NotificationIntent.find_by(dedup_key: dedup_key)
+      return existing if existing
+
+      if monitor_notifications_throttled?(project)
+        Rails.logger.warn(
+          "check_in_monitor.notification_throttled project_id=#{project.id} kind=#{attributes[:kind]} " \
+          "limit=#{MONITOR_NOTIFICATION_LIMIT_PER_HOUR}"
+        )
+        return nil
+      end
+
+      NotificationIntent.capture!(project: project, dedup_key: dedup_key, **attributes)
+    end
+    private :capture_monitor_notification!
+
+    def monitor_notifications_throttled?(project, now: Time.current)
+      NotificationIntent
+        .where(project: project, kind: NotificationIntent::MONITOR_KINDS)
+        .where(created_at: (now - MONITOR_NOTIFICATION_WINDOW)..)
+        .limit(MONITOR_NOTIFICATION_LIMIT_PER_HOUR)
+        .count >= MONITOR_NOTIFICATION_LIMIT_PER_HOUR
+    end
   end
 end

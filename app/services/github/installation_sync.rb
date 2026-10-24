@@ -5,11 +5,13 @@ module Github
     Result = Data.define(:status, :installation, :repositories)
 
     class Error < StandardError; end
+    class OwnershipError < Error; end
 
-    def self.from_setup(installation_id:, installed_by:, app_client: AppClient.new, repositories_client: InstallationRepositoriesClient.new)
+    def self.from_setup(installation_id:, installed_by:, state_verified: false, app_client: AppClient.new, repositories_client: InstallationRepositoriesClient.new)
       new(app_client: app_client, repositories_client: repositories_client).from_setup(
         installation_id: installation_id,
-        installed_by: installed_by
+        installed_by: installed_by,
+        state_verified: state_verified
       )
     end
 
@@ -26,8 +28,16 @@ module Github
       @repositories_client = repositories_client
     end
 
-    def from_setup(installation_id:, installed_by:)
-      payload = app_client.installation(Integer(installation_id))
+    # A setup callback may resync an installation the user already owns. Claiming a new
+    # or unowned (webhook-created) installation requires a verified SetupState, and an
+    # installation owned by another user is never reassigned.
+    def from_setup(installation_id:, installed_by:, state_verified: false)
+      raise OwnershipError, "GitHub setup requires a user" if installed_by.blank?
+
+      id = Integer(installation_id.to_s, 10)
+      authorize_setup!(GithubInstallation.find_by(installation_id: id), installed_by: installed_by, state_verified: state_verified)
+
+      payload = app_client.installation(id)
       installation = upsert_installation(payload, installed_by: installed_by)
       repositories = sync_repositories(installation, repositories_client.list(installation: installation), replace: true)
 
@@ -95,16 +105,36 @@ module Github
       Result.new(status: :synced, installation: installation, repositories: added)
     end
 
+    def authorize_setup!(installation, installed_by:, state_verified:)
+      if installation&.installed_by_id.present?
+        return if installation.installed_by_id == installed_by.id
+
+        raise OwnershipError, "GitHub installation belongs to another user"
+      end
+
+      raise OwnershipError, "GitHub setup state is missing or invalid" unless state_verified
+    end
+
     def upsert_installation(payload, installed_by: nil)
-      account = payload["account"].is_a?(Hash) ? payload["account"] : {}
       installation = GithubInstallation.find_or_initialize_by(installation_id: payload.fetch("id"))
+      return assign_installation(installation, payload, installed_by: installed_by) if installation.new_record?
+
+      installation.with_lock { assign_installation(installation, payload, installed_by: installed_by) }
+    end
+
+    def assign_installation(installation, payload, installed_by:)
+      if installed_by && installation.installed_by_id.present? && installation.installed_by_id != installed_by.id
+        raise OwnershipError, "GitHub installation belongs to another user"
+      end
+
+      account = payload["account"].is_a?(Hash) ? payload["account"] : {}
       installation.assign_attributes(
         account_login: account["login"] || payload["account_login"] || "unknown",
         account_type: account["type"] || payload["account_type"],
         repository_selection: payload["repository_selection"],
         active: true,
         suspended_at: parse_time(payload["suspended_at"]),
-        installed_by: installed_by || installation.installed_by,
+        installed_by: installation.installed_by || installed_by,
         permissions: payload["permissions"].is_a?(Hash) ? payload["permissions"] : installation.permissions,
         events: payload["events"].is_a?(Array) ? payload["events"] : installation.events
       )

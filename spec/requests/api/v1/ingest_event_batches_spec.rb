@@ -189,6 +189,17 @@ RSpec.describe "Api::V1::IngestEvent batches", type: :request do
     expect(response.parsed_body.fetch("code")).to eq("invalid_identity")
   end
 
+  it "returns 422 instead of 500 when an envelope context is a non-pair array" do
+    events = [ { uuid: SecureRandom.uuid, event_type: "error", message: "Boom", context: [ 1, 2 ] } ]
+
+    expect {
+      post batch_api_v1_ingest_events_path, params: gzip_ndjson(events), headers: auth_headers
+    }.not_to change(IngestEvent, :count)
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.parsed_body).to eq("errors" => [ "context must be a JSON object" ])
+  end
+
   it "accepts event_id-only envelopes and normalizes the response identity" do
     uuid = "88888888-8888-4888-8888-888888888888"
     headers = auth_headers.except("Content-Encoding")

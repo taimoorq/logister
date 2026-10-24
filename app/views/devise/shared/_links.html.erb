@@ -3,7 +3,7 @@
     <%= link_to "Sign in", new_session_path(resource_name), class: "auth-link", data: { turbo: false } %>
   <% end %>
 
-  <% if devise_mapping.registerable? && controller_name != "registrations" %>
+  <% if devise_mapping.registerable? && controller_name != "registrations" && sign_up_available? %>
     <%= link_to "Sign up", new_registration_path(resource_name), class: "auth-link", data: { turbo: false } %>
   <% end %>
 
@@ -13,5 +13,9 @@
 
   <% if devise_mapping.confirmable? && controller_name != "confirmations" %>
     <%= link_to "Resend confirmation", new_confirmation_path(resource_name), class: "auth-link", data: { turbo: false } %>
+  <% end %>
+
+  <% if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != "unlocks" %>
+    <%= link_to "Unlock account", new_unlock_path(resource_name), class: "auth-link", data: { turbo: false } %>
   <% end %>
 </div>

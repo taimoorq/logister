@@ -10,7 +10,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   before_action :configure_permitted_parameters
   before_action :redirect_to_instance_setup, only: [ :new, :create ]
+  before_action :enforce_registration_policy, only: [ :new, :create ]
   rescue_from RailsCloudflareTurnstile::Forbidden, with: :turnstile_failed
+
+  REGISTRATION_CLOSED_MESSAGE = "Account sign-up is not available on this instance. Ask an administrator for access."
+  DOMAIN_NOT_ALLOWED_MESSAGE = "is not on a domain that can sign up on this instance"
 
   private
 
@@ -18,6 +22,24 @@ class Users::RegistrationsController < Devise::RegistrationsController
     return unless Installation.first_admin_setup_available?
 
     redirect_to instance_setup_path, notice: "Create the first administrator to continue this self-hosted installation."
+  end
+
+  # Runs after redirect_to_instance_setup, so first-administrator setup keeps
+  # working whatever the sign-up mode is.
+  def enforce_registration_policy
+    policy = RegistrationPolicy.current
+    unless policy.sign_up_available?
+      redirect_to new_user_session_path, alert: REGISTRATION_CLOSED_MESSAGE
+      return
+    end
+    return unless action_name == "create"
+    return if policy.permits_email?(sign_up_params[:email])
+
+    build_resource(sign_up_params)
+    resource.errors.add(:email, DOMAIN_NOT_ALLOWED_MESSAGE)
+    clean_up_passwords(resource)
+    set_minimum_password_length
+    render :new, status: :unprocessable_content
   end
 
   def registration_layout

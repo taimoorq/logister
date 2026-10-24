@@ -1,4 +1,8 @@
 class ProjectMembershipsController < ApplicationController
+  # Same wording whatever the reason, so the form does not confirm which email
+  # addresses have accounts on this instance.
+  SHARE_FAILED_MESSAGE = "We couldn't share this project with that email. Check the address and make sure the person has signed up and confirmed their Logister account, then try again.".freeze
+
   include ProjectScope
   include SetupWizardReturn
 
@@ -8,8 +12,8 @@ class ProjectMembershipsController < ApplicationController
   def create
     user = User.find_by(email: membership_email.to_s.downcase)
 
-    if user.blank?
-      return respond_with_membership_error("User not found.")
+    if user.blank? || !user.confirmed?
+      return respond_with_membership_error(SHARE_FAILED_MESSAGE)
     end
     if user == @project.user
       return respond_with_membership_error("You already own this project.")

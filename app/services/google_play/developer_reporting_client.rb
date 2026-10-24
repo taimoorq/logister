@@ -123,9 +123,9 @@ module GooglePlay
       end
 
       payload
-    rescue JSON::ParserError => error
+    rescue JSON::ParserError
       raise Error.new(
-        "Google Play reporting returned invalid JSON: #{error.message}",
+        "Google Play reporting returned invalid JSON.",
         classification: "provider_response",
         retryable: true
       )
@@ -141,9 +141,12 @@ module GooglePlay
       CredentialResolver.new(credential_reference).access_token
     rescue Error
       raise
+    rescue IntegrationCredentialReference::Error => error
+      raise Error.new(error.message, classification: "credentials", retryable: false)
     rescue StandardError => error
+      Rails.logger.warn("Google Play credential resolution failed: #{error.class}")
       raise Error.new(
-        "Google Play credential resolution failed (#{error.class.name}): #{error.message.to_s.first(200)}",
+        "Google Play credential could not be resolved (#{error.class.name}).",
         classification: "credentials",
         retryable: false
       )

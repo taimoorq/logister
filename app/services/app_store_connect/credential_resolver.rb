@@ -16,7 +16,7 @@ module AppStoreConnect
     end
 
     def token
-      private_key = credential_value
+      private_key = IntegrationCredentialReference.fetch!(credential_reference)
       cache_key = [ "app_store_connect_token", issuer_id, key_id, Digest::SHA256.hexdigest(private_key) ]
       Rails.cache.fetch(cache_key, expires_in: 15.minutes) { generate_token(private_key) }
     end
@@ -25,27 +25,18 @@ module AppStoreConnect
 
     attr_reader :issuer_id, :key_id, :credential_reference
 
-    def credential_value
-      unless credential_reference.match?(/\A[A-Z][A-Z0-9_]*\z/)
-        raise ArgumentError, "credential reference must be an environment variable name"
-      end
-
-      ENV.fetch(credential_reference) { raise ArgumentError, "credential reference #{credential_reference} is not configured" }.to_s.strip.presence ||
-        raise(ArgumentError, "credential reference #{credential_reference} is empty")
-    end
-
     def generate_token(private_key)
       now = Time.current.to_i
       header = { alg: "ES256", kid: key_id, typ: "JWT" }
       claims = { iss: issuer_id, iat: now, exp: now + TOKEN_LIFETIME.to_i, aud: AUDIENCE }
       signing_input = "#{encode(header.to_json)}.#{encode(claims.to_json)}"
       key = OpenSSL::PKey.read(private_key)
-      raise ArgumentError, "App Store Connect private key must be an EC key" unless key.is_a?(OpenSSL::PKey::EC)
+      raise IntegrationCredentialReference::Error.new(:unparseable) unless key.is_a?(OpenSSL::PKey::EC)
 
       der_signature = key.sign(OpenSSL::Digest::SHA256.new, signing_input)
       "#{signing_input}.#{encode(jwt_signature(der_signature))}"
-    rescue OpenSSL::PKey::PKeyError, OpenSSL::ASN1::ASN1Error => error
-      raise ArgumentError, "App Store Connect private key is invalid: #{error.message}"
+    rescue OpenSSL::PKey::PKeyError, OpenSSL::ASN1::ASN1Error
+      raise IntegrationCredentialReference::Error.new(:unparseable)
     end
 
     def jwt_signature(der_signature)

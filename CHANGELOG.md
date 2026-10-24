@@ -2,6 +2,41 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v4.1.0 - 2026-10-23
+
+### Security
+
+- Bind GitHub App setup callbacks to the user who started the install with a signed, one-hour `state`. An installation that already belongs to another user is never reassigned, and an unowned webhook-created installation can only be claimed with a valid state.
+- Keep deployment links from telemetry to http(s) URLs on the configured GitHub host or github.com, both when stored and when rendered. Pull request numbers must be numeric.
+- Escape error titles, project names and source links in GitHub issue bodies.
+- Enforce a nonce-based Content-Security-Policy and send `Permissions-Policy`. Set `LOGISTER_CSP_REPORT_ONLY=1` to switch to report-only.
+- Restrict request hosts to `LOGISTER_PUBLIC_URL` plus `LOGISTER_ALLOWED_HOSTS` when either is set, and accept extra proxies through `LOGISTER_TRUSTED_PROXIES`.
+- Count rate limits in a bounded per-process store when Redis is unavailable, and reject security-sensitive requests if neither store can count. Rate-limit responses for revoked credentials no longer reveal the original project's limits.
+- Generate CLI device user codes with `SecureRandom`, rate-limit code lookups and approvals, require an explicit Approve, leave projects unselected by default, and show the requesting IP.
+- Require secrets to be re-entered before an admin connection test sends them to a changed host, require STARTTLS when it is enabled, and refuse password-bearing `http://` ClickHouse URLs outside loopback.
+- Limit integration credential references to `LOGISTER_INTEGRATION_*` variables or names listed in `LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST`, and stop showing provider or parser error text.
+- Serve cookie-banner proxy responses as JSON with `no-store`, honour the proxy setting, and rate-limit the proxy.
+- Validate check-in slugs (up to 200 characters), cap monitors per project, and throttle new-monitor alerts. Reject ingest for projects awaiting purge and return 422 for malformed event arrays.
+
+### Changed
+
+- Passwords must be at least 12 characters for new and changed passwords. Accounts lock after 10 failed sign-ins and unlock after one hour or by email. Idle sessions end after `LOGISTER_SESSION_TIMEOUT_MINUTES` (default 120) unless "Remember me" was used.
+- Sign-in, password reset and confirmation responses no longer reveal whether an email has an account. Users receive email when their password or email changes.
+- Add an instance sign-up policy: open (default), allowed email domains, or closed.
+- `/health/clickhouse` and `/health/release` require an admin session or the `LOGISTER_HEALTH_TOKEN` bearer token. `/up` stays public.
+- Unsubscribe links show a confirmation page before unsubscribing, and new links expire after 60 days.
+- Self-service account deletion is removed. Admins cannot delete the user who claimed the installation.
+- The "Viewer" membership role is now labelled "Member" to match what it can do.
+- Run on Ruby 4.0.9 and refresh the bundle.
+
+### Upgrade Notes
+
+- Run database migrations: this release adds lockable columns to `users` and a requested IP column to CLI device authorizations.
+- Set `LOGISTER_HEALTH_TOKEN` in your environment before relying on `/health/*` from monitoring or deploy scripts.
+- If `LOGISTER_PUBLIC_URL` is set, requests for any other hostname now return 403. Add extra hostnames to `LOGISTER_ALLOWED_HOSTS`.
+- Rename project integration credential variables to the `LOGISTER_INTEGRATION_` prefix, or list the existing names in `LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST`.
+- Companion packages ship matching security releases: logister-ruby 0.6.0, logister-js 0.6.0, logister-python 0.6.0, Logister for .NET 0.5.0, logister-android 0.7.0, logister-ios 0.7.0 and logister-cli 1.3.0. The ingest and CLI contracts stay compatible with earlier package versions.
+
 ## v4.0.0 - 2026-09-29
 
 ### Release

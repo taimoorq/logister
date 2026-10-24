@@ -87,6 +87,29 @@ RSpec.describe "Error group external links", type: :request do
       )
       expect(link.metadata).to include("source" => "github_api", "body" => "Issue body")
     end
+
+    it "passes only https GitHub source URLs to the issue creator" do
+      repository = create(:project_source_repository, project: project, full_name: "acme/storefront")
+      result = Github::IssueCreator::Result.new(
+        html_url: "https://github.com/acme/storefront/issues/43",
+        number: 43,
+        title: "[System Inbox] Primary Error",
+        body: "Issue body",
+        repository_full_name: "acme/storefront"
+      )
+      allow(Github::IssueCreator).to receive(:call).and_return(result)
+      github_source = "https://github.com/acme/storefront/blob/main/app/models/order.rb#L12"
+
+      post project_error_group_github_issue_path(project, group),
+           params: { repository_uuid: repository.uuid, source_url: github_source }
+      post project_error_group_github_issue_path(project, group),
+           params: { repository_uuid: repository.uuid, source_url: "https://evil.example/phish" }
+      post project_error_group_github_issue_path(project, group),
+           params: { repository_uuid: repository.uuid, source_url: "javascript:alert(1)" }
+
+      expect(Github::IssueCreator).to have_received(:call).with(hash_including(source_excerpt: { source_url: github_source })).once
+      expect(Github::IssueCreator).to have_received(:call).with(hash_including(source_excerpt: nil)).twice
+    end
   end
 
   describe "DELETE /projects/:project_uuid/error_groups/:error_group_uuid/external_links/:uuid" do

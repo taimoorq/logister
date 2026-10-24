@@ -35,7 +35,7 @@ module AppStoreConnect
         setting.update_columns(
           metadata: setting.metadata.merge(
             "last_attempted_at" => attempted_at.utc.iso8601,
-            "last_error" => { "message" => error.message.to_s.first(2_000), "at" => attempted_at.utc.iso8601 }
+            "last_error" => { "message" => stored_error_message(error), "at" => attempted_at.utc.iso8601, "category" => error_category(error) }.compact
           ),
           updated_at: attempted_at
         )
@@ -46,5 +46,20 @@ module AppStoreConnect
     private
 
     attr_reader :setting, :client
+
+    # Only messages written for display are stored; anything else may carry
+    # parser or environment text, so it is reduced to its class name.
+    def stored_error_message(error)
+      case error
+      when Client::Error, IntegrationCredentialReference::Error
+        error.message.to_s.first(2_000)
+      else
+        "App Store Connect import failed (#{error.class.name})."
+      end
+    end
+
+    def error_category(error)
+      error.category.to_s if error.is_a?(IntegrationCredentialReference::Error)
+    end
   end
 end

@@ -11,7 +11,7 @@ RSpec.describe GooglePlay::Importer do
       provider: "google_play",
       enabled: true,
       external_project_id: "com.acme.shop",
-      credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS"
+      credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS"
     )
   end
   let(:client) do
@@ -89,5 +89,17 @@ RSpec.describe GooglePlay::Importer do
       "retryable" => true,
       "retry_after_seconds" => 120
     )
+  end
+
+  it "stores only generic text for unexpected and credential failures" do
+    allow(client).to receive(:release_filter_options).and_raise(JSON::ParserError, "unexpected token at 'secret-material'")
+
+    expect { described_class.new(setting, client: client).call }.to raise_error(JSON::ParserError)
+    expect(setting.reload.metadata.dig("last_error", "message")).to eq("Google Play import failed (JSON::ParserError).")
+
+    allow(client).to receive(:release_filter_options).and_raise(IntegrationCredentialReference::Error.new(:not_configured))
+
+    expect { described_class.new(setting, client: client).call }.to raise_error(IntegrationCredentialReference::Error)
+    expect(setting.reload.metadata.dig("last_error", "message")).to eq("Credential is not configured.")
   end
 end

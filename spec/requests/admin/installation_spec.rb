@@ -213,6 +213,98 @@ RSpec.describe "Admin installation", type: :request do
     expect(response.body).to include("Save these SMTP settings")
   end
 
+  it "refuses to test a changed SMTP server with the saved password and audits the candidate host" do
+    InstanceConfiguration.save_section!(
+      "email",
+      values: { "email.smtp_address" => "smtp.example.com", "email.smtp_password" => "saved-password" },
+      clear_keys: [],
+      actor: admin
+    )
+    expect(InstanceConfiguration::Diagnostics).not_to receive(:call)
+
+    patch admin_test_installation_section_path("email"), params: {
+      settings: { "email.smtp_address" => "smtp.attacker.test", "email.smtp_password" => "" }
+    }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("Re-enter SMTP password")
+    audit = InstanceSettingChange.where(key: "section.email").last
+    expect(audit).to have_attributes(action: "test_failed")
+    expect(audit.details).to include("destination_host" => "smtp.attacker.test")
+    expect(audit.details.to_json).not_to include("saved-password")
+  end
+
+  it "tests a changed SMTP server once the password is re-entered" do
+    InstanceConfiguration.save_section!(
+      "email",
+      values: { "email.smtp_address" => "smtp.example.com", "email.smtp_password" => "saved-password" },
+      clear_keys: [],
+      actor: admin
+    )
+    result = InstanceConfiguration::Diagnostics::Result.new(success: true, summary: "SMTP authentication succeeded.", details: {})
+    expect(InstanceConfiguration::Diagnostics).to receive(:call) do |_section, values:, **|
+      expect(values).to include("email.smtp_address" => "smtp.new.example.com", "email.smtp_password" => "new-password")
+      result
+    end
+
+    patch admin_test_installation_section_path("email"), params: {
+      settings: { "email.smtp_address" => "smtp.new.example.com", "email.smtp_password" => "new-password" }
+    }
+
+    expect(response).to have_http_status(:ok)
+    expect(InstanceSettingChange.where(key: "section.email").last.details).to include("destination_host" => "smtp.new.example.com")
+  end
+
+  it "refuses to save a changed destination that would reuse a saved secret" do
+    InstanceConfiguration.save_section!(
+      "clickhouse",
+      values: { "clickhouse.url" => "https://clickhouse.example.com", "clickhouse.password" => "saved-password" },
+      clear_keys: [],
+      actor: admin
+    )
+
+    patch admin_installation_section_path("clickhouse"), params: {
+      settings: { "clickhouse.url" => "https://clickhouse.attacker.test", "clickhouse.password" => "" }
+    }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("Re-enter Runtime password")
+    expect(InstanceConfiguration.value("clickhouse.url")).to eq("https://clickhouse.example.com")
+  end
+
+  it "refuses to test plain HTTP ClickHouse with a password on a remote host" do
+    expect(InstanceConfiguration::Diagnostics).not_to receive(:call)
+
+    patch admin_test_installation_section_path("clickhouse"), params: {
+      settings: {
+        "clickhouse.mode" => "dual_write",
+        "clickhouse.url" => "http://clickhouse.example.com:8123",
+        "clickhouse.password" => "typed-password"
+      }
+    }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("Use an https:// ClickHouse endpoint")
+    expect(InstanceSettingChange.where(key: "section.clickhouse").last.details).to include("destination_host" => "clickhouse.example.com")
+  end
+
+  it "validates URL settings when they are saved" do
+    patch admin_installation_section_path("public-site"), params: {
+      settings: { "public_site.cookie_banner_script_url" => "javascript:alert(1)" }
+    }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(response.body).to include("Banner script URL must be an http:// or https:// URL with a host.")
+    expect(InstanceSetting.find_by(key: "public_site.cookie_banner_script_url")).to be_nil
+
+    patch admin_installation_section_path("general"), params: {
+      settings: { "general.docs_url" => "//evil.example/docs" }
+    }
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(InstanceSetting.find_by(key: "general.docs_url")).to be_nil
+  end
+
   it "explains that dual write does not move dashboard reads to ClickHouse" do
     get admin_installation_section_path("clickhouse")
 

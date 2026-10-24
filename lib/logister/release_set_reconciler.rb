@@ -13,8 +13,9 @@ module Logister
     class HttpClient
       MAX_REDIRECTS = 4
 
-      def initialize(github_token: ENV["GITHUB_TOKEN"])
+      def initialize(github_token: ENV["GITHUB_TOKEN"], health_token: ENV["LOGISTER_HEALTH_TOKEN"])
         @github_token = github_token.to_s
+        @health_token = health_token.to_s
       end
 
       def get(url, redirects: MAX_REDIRECTS)
@@ -24,6 +25,7 @@ module Logister
         request = Net::HTTP::Get.new(uri)
         request["Accept"] = "application/vnd.github+json" if uri.host == "api.github.com"
         request["Authorization"] = "Bearer #{@github_token}" if uri.host == "api.github.com" && !@github_token.empty?
+        request["Authorization"] = "Bearer #{@health_token}" if health_report?(uri) && !@health_token.empty?
         request["User-Agent"] = "Logister public release-set reconciler"
         response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 10, read_timeout: 20) do |http|
           http.request(request)
@@ -34,6 +36,13 @@ module Logister
         end
 
         [ response.code.to_i, response.body.to_s ]
+      end
+
+      private
+
+      # /health/* needs the production LOGISTER_HEALTH_TOKEN; never send it elsewhere.
+      def health_report?(uri)
+        uri.scheme == "https" && uri.host == "logister.org" && uri.path.start_with?("/health/")
       end
     end
 
@@ -186,6 +195,9 @@ module Logister
 
     def reconcile_cli_distributions(metadata, version)
       tarball_url = metadata.dig("dist", "tarball")
+      # Only download the canonical registry tarball; npm metadata must not
+      # steer the reconciler to another host or package.
+      raise "CLI npm tarball URL is not canonical" unless tarball_url == cli_npm_tarball_url(version)
       expected_sha1 = metadata.dig("dist", "shasum")
       tarball = fetch(tarball_url)
       raise "CLI npm tarball SHA-1 mismatch" unless Digest::SHA1.hexdigest(tarball) == expected_sha1
@@ -203,6 +215,10 @@ module Logister
         raise "Scoop checksum mismatch" unless manifest["hash"] == sha256
         true
       end
+    end
+
+    def cli_npm_tarball_url(version)
+      "https://registry.npmjs.org/logister-cli/-/logister-cli-#{version}.tgz"
     end
 
     def github_release(component, repository, tag)

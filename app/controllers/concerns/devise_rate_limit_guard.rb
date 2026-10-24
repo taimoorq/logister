@@ -5,20 +5,6 @@ module DeviseRateLimitGuard
 
   RATE_LIMIT_MESSAGE = "Too many attempts. Please wait a few minutes and try again."
 
-  RAILS_CACHE_STORE = Class.new do
-    def increment(cache_key, amount = 1, expires_in:)
-      cache = Rails.application.config.x.logister.rate_limit_cache || Rails.cache
-      count = cache.increment(cache_key, amount, expires_in: expires_in)
-      return count if count
-
-      cache.write(cache_key, amount, expires_in: expires_in)
-      amount
-    rescue StandardError => error
-      Rails.logger.warn("Devise rate limiting skipped: #{error.class} #{error.message}")
-      nil
-    end
-  end.new
-
   class_methods do
     def rate_limit_devise_create(to:, within:, by:, name:)
       prepend_before_action only: :create do
@@ -51,8 +37,9 @@ module DeviseRateLimitGuard
   def enforce_devise_rate_limit(to:, within:, by:, name:, scope:)
     identity = by.is_a?(Symbol) ? send(by) : instance_exec(&by)
     cache_key = devise_rate_limit_cache_key(scope, name, identity)
-    count = DeviseRateLimitGuard::RAILS_CACHE_STORE.increment(cache_key, 1, expires_in: within)
-    return unless count && count > to
+    # A nil count means no store could count the attempt, so fail closed.
+    count = Logister::RateLimitCounter.new.increment(cache_key, expires_in: within, kind: "devise_#{name}")
+    return if count && count <= to
 
     ActiveSupport::Notifications.instrument(
       "rate_limit.action_controller",

@@ -9,7 +9,8 @@ class Api::V1::Cli::DeviceAuthorizationsController < ApplicationController
   def create
     authorization = CliDeviceAuthorization.issue!(
       client_name: client_name_param,
-      requested_scopes: requested_scopes
+      requested_scopes: requested_scopes,
+      requested_ip: request.remote_ip
     )
 
     render json: {

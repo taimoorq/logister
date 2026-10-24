@@ -4,7 +4,7 @@ module InstanceConfiguration
   class Registry
     Definition = Struct.new(
       :key, :section, :label, :env_key, :type, :default, :secret, :restart_required,
-      :help, :placeholder, :options, keyword_init: true
+      :help, :placeholder, :options, :sent_to, keyword_init: true
     ) do
       def secret?
         secret == true
@@ -12,6 +12,12 @@ module InstanceConfiguration
 
       def restart_required?
         restart_required == true
+      end
+
+      # Setting keys that decide where this secret is sent. A saved secret is
+      # never reused after one of them changes; the admin must re-enter it.
+      def destination_keys
+        Array(sent_to)
       end
     end
 
@@ -32,7 +38,7 @@ module InstanceConfiguration
       Section.new(key: "clickhouse", label: "ClickHouse", description: "Optional analytics copy with a guarded dashboard-read cutover.", required: false),
       Section.new(key: "archive_storage", label: "Archive storage", description: "Local or S3-compatible telemetry archives.", required: false),
       Section.new(key: "github", label: "GitHub App", description: "Private source lookup, repository sync, and issue creation.", required: false),
-      Section.new(key: "authentication", label: "Authentication", description: "Bot protection and global public API rate limits.", required: false),
+      Section.new(key: "authentication", label: "Authentication", description: "Sign-up policy, bot protection, and global public API rate limits.", required: false),
       Section.new(key: "public_site", label: "Public site", description: "Documentation, consent banner, and analytics settings.", required: false),
       Section.new(key: "observability", label: "Observability", description: "Self-monitoring and release update checks.", required: false)
     ].freeze
@@ -53,9 +59,9 @@ module InstanceConfiguration
       Definition.new(key: "email.smtp_port", section: "email", label: "SMTP port", env_key: "SES_SMTP_PORT", type: :integer, default: 587, help: "Usually 587 with STARTTLS.", placeholder: "587"),
       Definition.new(key: "email.smtp_domain", section: "email", label: "SMTP domain", env_key: "SES_SMTP_DOMAIN", type: :string, default: "logister.org", help: "HELO domain sent to the SMTP server.", placeholder: "example.com"),
       Definition.new(key: "email.smtp_username", section: "email", label: "SMTP username", env_key: "SES_SMTP_USERNAME", type: :string, default: nil, help: "SMTP credential username.", placeholder: "SMTP username"),
-      Definition.new(key: "email.smtp_password", section: "email", label: "SMTP password", env_key: "SES_SMTP_PASSWORD", type: :secret, default: nil, secret: true, help: "Stored encrypted and never displayed after saving.", placeholder: "SMTP password"),
+      Definition.new(key: "email.smtp_password", section: "email", label: "SMTP password", env_key: "SES_SMTP_PASSWORD", type: :secret, default: nil, secret: true, help: "Stored encrypted and never displayed after saving.", placeholder: "SMTP password", sent_to: %w[email.smtp_address email.smtp_port email.ses_region email.starttls]),
       Definition.new(key: "email.ses_region", section: "email", label: "SES region", env_key: "SES_REGION", type: :string, default: "us-east-1", help: "Used to derive the SES SMTP hostname when no server is supplied.", placeholder: "us-east-1"),
-      Definition.new(key: "email.starttls", section: "email", label: "Enable STARTTLS", env_key: "SES_SMTP_ENABLE_STARTTLS_AUTO", type: :boolean, default: true, help: "Upgrade the SMTP connection with TLS when the server supports it."),
+      Definition.new(key: "email.starttls", section: "email", label: "Require STARTTLS", env_key: "SES_SMTP_ENABLE_STARTTLS_AUTO", type: :boolean, default: true, help: "Require TLS through STARTTLS before credentials are sent. Delivery fails if the server does not offer STARTTLS; turn this off only for a trusted local relay."),
       Definition.new(key: "email.open_timeout", section: "email", label: "Open timeout (seconds)", env_key: "SES_SMTP_OPEN_TIMEOUT", type: :integer, default: 5, help: "Maximum time allowed to open the SMTP connection.", placeholder: "5"),
       Definition.new(key: "email.read_timeout", section: "email", label: "Read timeout (seconds)", env_key: "SES_SMTP_READ_TIMEOUT", type: :integer, default: 5, help: "Maximum time allowed for an SMTP response.", placeholder: "5"),
       Definition.new(key: "email.configuration_set", section: "email", label: "SES configuration set", env_key: "SES_CONFIGURATION_SET", type: :string, default: nil, help: "Optional Amazon SES delivery metrics configuration set.", placeholder: "logister-production"),
@@ -66,16 +72,16 @@ module InstanceConfiguration
       Definition.new(key: "clickhouse.events_table", section: "clickhouse", label: "Events table", env_key: "LOGISTER_CLICKHOUSE_EVENTS_TABLE", type: :string, default: "events_raw", help: "Raw event table name.", placeholder: "events_raw"),
       Definition.new(key: "clickhouse.spans_table", section: "clickhouse", label: "Spans table", env_key: "LOGISTER_CLICKHOUSE_SPANS_TABLE", type: :string, default: "spans_raw", help: "Raw span table name.", placeholder: "spans_raw"),
       Definition.new(key: "clickhouse.username", section: "clickhouse", label: "Runtime username", env_key: "LOGISTER_CLICKHOUSE_USERNAME", type: :string, default: "default", help: "Least-privilege account for inserts and analytics queries.", placeholder: "default"),
-      Definition.new(key: "clickhouse.password", section: "clickhouse", label: "Runtime password", env_key: "LOGISTER_CLICKHOUSE_PASSWORD", type: :secret, default: nil, secret: true, help: "Stored encrypted and never displayed after saving.", placeholder: "ClickHouse password"),
+      Definition.new(key: "clickhouse.password", section: "clickhouse", label: "Runtime password", env_key: "LOGISTER_CLICKHOUSE_PASSWORD", type: :secret, default: nil, secret: true, help: "Stored encrypted and never displayed after saving.", placeholder: "ClickHouse password", sent_to: %w[clickhouse.url]),
       Definition.new(key: "clickhouse.migration_username", section: "clickhouse", label: "Schema username", env_key: "LOGISTER_CLICKHOUSE_MIGRATION_USERNAME", type: :string, default: nil, help: "Optional DDL account used for schema repair.", placeholder: "logister_schema"),
-      Definition.new(key: "clickhouse.migration_password", section: "clickhouse", label: "Schema password", env_key: "LOGISTER_CLICKHOUSE_MIGRATION_PASSWORD", type: :secret, default: nil, secret: true, help: "Optional DDL credential, stored encrypted.", placeholder: "Schema password"),
+      Definition.new(key: "clickhouse.migration_password", section: "clickhouse", label: "Schema password", env_key: "LOGISTER_CLICKHOUSE_MIGRATION_PASSWORD", type: :secret, default: nil, secret: true, help: "Optional DDL credential, stored encrypted.", placeholder: "Schema password", sent_to: %w[clickhouse.url]),
       Definition.new(key: "clickhouse.failure_throttle_seconds", section: "clickhouse", label: "Failure report throttle", env_key: "LOGISTER_CLICKHOUSE_FAILURE_THROTTLE_SECONDS", type: :integer, default: 60, help: "Minimum seconds between self-monitoring reports for a ClickHouse outage.", placeholder: "60"),
       Definition.new(key: "clickhouse.circuit_failure_threshold", section: "clickhouse", label: "Circuit failure threshold", env_key: "LOGISTER_CLICKHOUSE_CIRCUIT_FAILURE_THRESHOLD", type: :integer, default: 5, help: "Consecutive transient failures before ClickHouse requests are temporarily stopped.", placeholder: "5"),
       Definition.new(key: "clickhouse.circuit_open_seconds", section: "clickhouse", label: "Circuit open interval", env_key: "LOGISTER_CLICKHOUSE_CIRCUIT_OPEN_SECONDS", type: :integer, default: 30, help: "Seconds to wait before allowing one half-open ClickHouse probe.", placeholder: "30"),
 
       Definition.new(key: "archive_storage.service", section: "archive_storage", label: "Archive service", env_key: "LOGISTER_ARCHIVE_STORAGE_SERVICE", type: :select, default: "local", restart_required: true, help: "Keep archives on local storage or write them to S3-compatible object storage.", options: [ [ "Local disk", "local" ], [ "S3 compatible", "s3" ] ]),
       Definition.new(key: "archive_storage.access_key_id", section: "archive_storage", label: "Access key ID", env_key: "AWS_ACCESS_KEY_ID", type: :string, default: nil, help: "Least-privilege access key for the archive bucket.", placeholder: "Access key ID"),
-      Definition.new(key: "archive_storage.secret_access_key", section: "archive_storage", label: "Secret access key", env_key: "AWS_SECRET_ACCESS_KEY", type: :secret, default: nil, secret: true, help: "Stored encrypted and never displayed after saving.", placeholder: "Secret access key"),
+      Definition.new(key: "archive_storage.secret_access_key", section: "archive_storage", label: "Secret access key", env_key: "AWS_SECRET_ACCESS_KEY", type: :secret, default: nil, secret: true, help: "Stored encrypted and never displayed after saving.", placeholder: "Secret access key", sent_to: %w[archive_storage.endpoint]),
       Definition.new(key: "archive_storage.region", section: "archive_storage", label: "Region", env_key: "AWS_REGION", type: :string, default: "us-east-1", help: "S3 region.", placeholder: "us-east-1"),
       Definition.new(key: "archive_storage.bucket", section: "archive_storage", label: "Bucket", env_key: "AWS_S3_BUCKET", type: :string, default: nil, help: "Private bucket used for telemetry archives.", placeholder: "logister-archives"),
       Definition.new(key: "archive_storage.endpoint", section: "archive_storage", label: "Custom endpoint", env_key: "AWS_S3_ENDPOINT", type: :url, default: nil, help: "Optional endpoint for an S3-compatible provider.", placeholder: "https://s3.example.com"),
@@ -83,7 +89,7 @@ module InstanceConfiguration
       Definition.new(key: "archive_storage.prefix", section: "archive_storage", label: "Archive prefix", env_key: "LOGISTER_ARCHIVE_PREFIX", type: :string, default: "telemetry", help: "Object key prefix for exported telemetry.", placeholder: "telemetry"),
 
       Definition.new(key: "github.app_id", section: "github", label: "App ID", env_key: "LOGISTER_GITHUB_APP_ID", type: :string, default: nil, help: "Numeric GitHub App identifier.", placeholder: "123456"),
-      Definition.new(key: "github.private_key", section: "github", label: "Private key", env_key: "LOGISTER_GITHUB_APP_PRIVATE_KEY", type: :textarea_secret, default: nil, secret: true, help: "PEM private key for App authentication.", placeholder: "-----BEGIN RSA PRIVATE KEY-----"),
+      Definition.new(key: "github.private_key", section: "github", label: "Private key", env_key: "LOGISTER_GITHUB_APP_PRIVATE_KEY", type: :textarea_secret, default: nil, secret: true, help: "PEM private key for App authentication.", placeholder: "-----BEGIN RSA PRIVATE KEY-----", sent_to: %w[github.api_url]),
       Definition.new(key: "github.webhook_secret", section: "github", label: "Webhook secret", env_key: "LOGISTER_GITHUB_WEBHOOK_SECRET", type: :secret, default: nil, secret: true, help: "Secret used to verify GitHub webhook signatures.", placeholder: "Webhook secret"),
       Definition.new(key: "github.app_slug", section: "github", label: "App slug", env_key: "LOGISTER_GITHUB_APP_SLUG", type: :string, default: nil, help: "GitHub App slug used to build the installation URL.", placeholder: "your-logister-app"),
       Definition.new(key: "github.install_url", section: "github", label: "Install URL", env_key: "LOGISTER_GITHUB_APP_INSTALL_URL", type: :url, default: nil, help: "Optional explicit GitHub App installation URL.", placeholder: "https://github.com/apps/your-app/installations/new"),
@@ -92,6 +98,8 @@ module InstanceConfiguration
       Definition.new(key: "github.api_version", section: "github", label: "API version", env_key: "LOGISTER_GITHUB_API_VERSION", type: :string, default: "2026-03-10", help: "Version sent in GitHub API requests.", placeholder: "2026-03-10"),
       Definition.new(key: "github.stateless_s2s_token", section: "github", label: "Stateless S2S token override", env_key: "LOGISTER_GITHUB_STATELESS_S2S_TOKEN", type: :select, default: "", help: "Optional GitHub rollout override. Leave automatic unless diagnosing a token issue.", options: [ [ "Automatic", "" ], [ "Enabled", "enabled" ], [ "Disabled", "disabled" ] ]),
 
+      Definition.new(key: "authentication.registration_mode", section: "authentication", label: "Account sign-up", env_key: "LOGISTER_REGISTRATION_MODE", type: :select, default: "open", help: "Who may create an account from the public sign-up page. First-administrator setup always works.", options: [ [ "Open to anyone", "open" ], [ "Allowed email domains only", "allowed_domains" ], [ "Closed", "closed" ] ]),
+      Definition.new(key: "authentication.registration_allowed_domains", section: "authentication", label: "Allowed sign-up domains", env_key: "LOGISTER_REGISTRATION_ALLOWED_DOMAINS", type: :string, default: nil, help: "Comma-separated email domains accepted when sign-up is limited to allowed domains. Subdomains must be listed separately.", placeholder: "example.com, example.org"),
       Definition.new(key: "authentication.turnstile_enabled", section: "authentication", label: "Enable Turnstile", env_key: "LOGISTER_TURNSTILE_ENABLED", type: :boolean, default: false, restart_required: true, help: "Require Cloudflare Turnstile on public Devise forms."),
       Definition.new(key: "authentication.turnstile_site_key", section: "authentication", label: "Turnstile site key", env_key: "LOGISTER_TURNSTILE_SITE_KEY", type: :string, default: nil, restart_required: true, help: "Public site key rendered on account forms.", placeholder: "Site key"),
       Definition.new(key: "authentication.turnstile_secret_key", section: "authentication", label: "Turnstile secret key", env_key: "LOGISTER_TURNSTILE_SECRET_KEY", type: :secret, default: nil, secret: true, restart_required: true, help: "Secret used for server-side verification.", placeholder: "Secret key"),
@@ -111,7 +119,7 @@ module InstanceConfiguration
       Definition.new(key: "public_site.cookie_banner_position", section: "public_site", label: "Banner position", env_key: "PROBO_COOKIE_BANNER_POSITION", type: :select, default: "bottom-left", help: "Location of the consent control.", options: [ [ "Bottom left", "bottom-left" ], [ "Bottom right", "bottom-right" ] ]),
       Definition.new(key: "public_site.analytics_cookie_category", section: "public_site", label: "Analytics consent category", env_key: "LOGISTER_ANALYTICS_COOKIE_CATEGORY", type: :string, default: "analytics", help: "Probo category slug that permits analytics scripts.", placeholder: "analytics"),
 
-      Definition.new(key: "observability.api_key", section: "observability", label: "Self-monitoring API key", env_key: "LOGISTER_API_KEY", type: :secret, default: nil, secret: true, restart_required: true, help: "Project API key used by this Logister instance to report its own telemetry.", placeholder: "Project API key"),
+      Definition.new(key: "observability.api_key", section: "observability", label: "Self-monitoring API key", env_key: "LOGISTER_API_KEY", type: :secret, default: nil, secret: true, restart_required: true, help: "Project API key used by this Logister instance to report its own telemetry.", placeholder: "Project API key", sent_to: %w[observability.endpoint]),
       Definition.new(key: "observability.endpoint", section: "observability", label: "Event endpoint", env_key: "LOGISTER_ENDPOINT", type: :url, default: "https://logister.org/api/v1/ingest_events", restart_required: true, help: "Ingestion endpoint for this instance's own telemetry.", placeholder: "https://errors.example.com/api/v1/ingest_events"),
       Definition.new(key: "observability.update_checks_enabled", section: "observability", label: "Check for releases", env_key: "LOGISTER_UPDATE_CHECKS_ENABLED", type: :boolean, default: true, help: "Check GitHub daily for a newer Logister release."),
       Definition.new(key: "observability.release_repository", section: "observability", label: "Release repository", env_key: "LOGISTER_RELEASE_REPOSITORY", type: :string, default: "taimoorq/logister", help: "GitHub repository used for update checks.", placeholder: "owner/repository"),

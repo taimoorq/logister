@@ -90,7 +90,7 @@ module ProjectSettingsContext
       enabled: true
     )
     @github_app_configured = Logister::GithubAppConfig.configured?
-    @github_app_install_url = Logister::GithubAppConfig.install_url(state: @project.uuid) if @project_manager
+    @github_app_install_url = Logister::GithubAppConfig.install_url(user: current_user, project: @project) if @project_manager
     @github_setup_url = github_setup_url
     @github_webhook_url = github_webhooks_url
     @github_app_diagnostics = Github::ConfigurationDiagnostics.call(

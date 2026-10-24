@@ -96,7 +96,8 @@ module InstanceConfiguration
       smtp = Net::SMTP.new(smtp_address, fetch("email.smtp_port"))
       smtp.open_timeout = fetch("email.open_timeout")
       smtp.read_timeout = fetch("email.read_timeout")
-      smtp.enable_starttls_auto if fetch("email.starttls")
+      # A configured STARTTLS upgrade is mandatory so credentials never fall back to plaintext.
+      smtp.enable_starttls if fetch("email.starttls")
       smtp.start(
         fetch("email.smtp_domain"),
         fetch("email.smtp_username").presence,
@@ -110,8 +111,14 @@ module InstanceConfiguration
         InstallationMailer.configuration_test(@test_recipient, delivery: "queued").deliver_later
       end
 
-      summary = @test_recipient ? "SMTP connected; direct and queued test messages were submitted." : "SMTP authentication and TLS negotiation succeeded."
-      Result.new(success: true, summary: summary, details: { "smtp" => "reachable", "test_messages" => @test_recipient ? 2 : 0 })
+      summary = if @test_recipient
+        "SMTP connected; direct and queued test messages were submitted."
+      elsif fetch("email.starttls")
+        "SMTP authentication and the required STARTTLS upgrade succeeded."
+      else
+        "SMTP authentication succeeded without TLS."
+      end
+      Result.new(success: true, summary: summary, details: { "smtp" => "reachable", "starttls" => fetch("email.starttls") ? "required" : "disabled", "test_messages" => @test_recipient ? 2 : 0 })
     ensure
       smtp&.finish if smtp&.started?
     end
@@ -184,9 +191,16 @@ module InstanceConfiguration
         authentication.public_api_auth_failure_rate_limit_requests
       ].to_h { |key| [ key, fetch(key).to_i ] }
       limits_valid = limits.values.all?(&:positive?)
-      valid = keys_valid && limits_valid
+      registration = RegistrationPolicy.new(
+        mode: fetch("authentication.registration_mode"),
+        allowed_domains: fetch("authentication.registration_allowed_domains")
+      )
+      registration_valid = !registration.allowed_domains? || registration.sign_up_available?
+      valid = keys_valid && limits_valid && registration_valid
       summary = if !keys_valid
         "Both Turnstile keys are required when protection is enabled."
+      elsif !registration_valid
+        "Add at least one allowed sign-up domain, or choose another sign-up mode."
       elsif !limits_valid
         "Public API rate limits and the window must be positive integers."
       elsif enabled
@@ -197,7 +211,13 @@ module InstanceConfiguration
       Result.new(
         success: valid,
         summary: summary,
-        details: { "turnstile_enabled" => enabled, "keys_present" => keys_valid, "api_limits_valid" => limits_valid }
+        details: {
+          "turnstile_enabled" => enabled,
+          "keys_present" => keys_valid,
+          "api_limits_valid" => limits_valid,
+          "registration_mode" => registration.mode,
+          "registration_allowed_domain_count" => registration.allowed_domains.size
+        }
       )
     end
 

@@ -1,0 +1,19 @@
+<% content_for :title, "Unsubscribe" %>
+<% content_for :meta_robots, "noindex, nofollow" %>
+
+<section class="mx-auto max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+  <h1 class="auth-form-title">Stop email notifications?</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    This turns off every Logister email notification and digest for
+    <strong class="text-slate-900"><%= @preference.project.name %></strong> sent to this address.
+    Other projects are not affected.
+  </p>
+
+  <%= button_to "Unsubscribe", unsubscribe_notification_preferences_path(token: params[:token]), method: :post, class: "btn-primary mt-6 w-full", form: { data: { turbo: false } } %>
+
+  <p class="mt-4 text-sm text-slate-600">
+    Want fewer emails instead?
+    <%= link_to "Change notification settings", settings_project_path(@preference.project, section: "notifications"), class: "font-semibold" %>
+    after signing in.
+  </p>
+</section>

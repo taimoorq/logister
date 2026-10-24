@@ -79,4 +79,29 @@ RSpec.describe ClientSubmissions::RateLimiter, type: :model do
     expect(first_failure).not_to be_limited
     expect(first_failure.count).to eq(1)
   end
+
+  it "keeps limiting through the in-process fallback when the shared store raises" do
+    limiter = described_class.new(cache: unavailable_rate_limit_store)
+
+    first = limiter.check(identity: "ip:203.0.113.9", kind: "auth_failure", endpoint: "ingest", limit: 1, period: 60)
+    second = limiter.check(identity: "ip:203.0.113.9", kind: "auth_failure", endpoint: "ingest", limit: 1, period: 60)
+
+    expect(first).not_to be_limited
+    expect(second).to be_limited
+    expect(second).not_to be_unavailable
+  end
+
+  it "fails closed for every kind, including authenticated quotas, when no store can count" do
+    break_rate_limit_fallback_store!
+    limiter = described_class.new(cache: unavailable_rate_limit_store)
+
+    %w[pre_auth auth_failure accepted].each do |kind|
+      result = limiter.check(identity: "api-key", kind: kind, endpoint: "ingest", limit: 100, period: 60)
+
+      expect(result).to be_limited
+      expect(result).to be_unavailable
+      expect(result.remaining).to eq(0)
+      expect(result.retry_after).to be_between(1, 60)
+    end
+  end
 end

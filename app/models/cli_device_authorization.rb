@@ -32,6 +32,10 @@ class CliDeviceAuthorization < ApplicationRecord
     expires_at.present? && expires_at <= Time.current
   end
 
+  def write_scopes
+    requested_scopes - CliAccessToken::READ_SCOPES
+  end
+
   def approve!(user:, all_projects:, allowed_project_ids:)
     with_lock do
       ensure_pending_and_current!

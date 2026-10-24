@@ -122,6 +122,9 @@
 
             <% if entry.secret? %>
               <p class="mt-2 text-xs text-slate-500"><%= entry.saved? ? "An encrypted fallback is saved. Leave blank to keep it." : "No encrypted fallback is saved." %></p>
+              <% if entry.definition.destination_keys.any? %>
+                <p class="mt-1 text-xs text-slate-500">Re-enter it when you change <%= entry.definition.destination_keys.map { |key| InstanceConfiguration::Registry.definition!(key).label }.to_sentence %>.</p>
+              <% end %>
             <% end %>
 
             <% if entry.saved? %>

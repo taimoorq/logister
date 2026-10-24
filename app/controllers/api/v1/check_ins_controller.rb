@@ -1,5 +1,6 @@
 class Api::V1::CheckInsController < ApplicationController
   include ClientSubmissionMonitoring
+  include Api::V1::TelemetryEnvelopeErrors
 
   skip_before_action :verify_authenticity_token
   skip_before_action :require_modern_browser, raise: false
@@ -22,6 +23,7 @@ class Api::V1::CheckInsController < ApplicationController
       event_type: "check_in",
       context: context
     )
+    return unless admit_check_in_monitor!(slug: monitor_payload[:slug], context: context)
 
     result = IngestEventPersistence.new(
       project: @api_key.project,
@@ -77,6 +79,22 @@ class Api::V1::CheckInsController < ApplicationController
     }
   end
 
+  # Mirrors the identity CheckInMonitor.record! derives in the projector, so
+  # malformed slugs and slugs past the per-project cap are refused up front.
+  def admit_check_in_monitor!(slug:, context:)
+    environment = (context[:environment] || context["environment"]).to_s.strip.presence || "production"
+    errors = CheckInMonitor.admission_errors(project: @api_key.project, slug: slug, environment: environment)
+    return true if errors.empty?
+
+    report_client_submission_failure(
+      reason: "invalid_check_in",
+      status: :unprocessable_content,
+      errors: errors
+    )
+    render json: { errors: errors }, status: :unprocessable_content
+    false
+  end
+
   def default_check_in_environment
     mobile_ingest_token? ? nil : Rails.env
   end
@@ -90,20 +108,18 @@ class Api::V1::CheckInsController < ApplicationController
   end
 
   def check_in_payload_candidate?(candidate)
-    return false unless candidate.respond_to?(:to_unsafe_h) || candidate.respond_to?(:to_h)
+    return false unless TelemetryEnvelope.hash_like?(candidate)
 
-    candidate_hash = candidate.respond_to?(:to_unsafe_h) ? candidate.to_unsafe_h : candidate.to_h
+    candidate_hash = TelemetryEnvelope.to_hash(candidate, key: :check_in)
     normalized_keys = candidate_hash.keys.map { |key| key.to_s.underscore.downcase }
     (normalized_keys & %w[slug status occurred_at environment release expected_interval_seconds duration_ms trace_id request_id uuid event_id]).any?
   end
 
   def normalized_check_in_payload
     raw_check_in = fetch_check_in_payload
-    unless raw_check_in.respond_to?(:to_unsafe_h) || raw_check_in.respond_to?(:to_h)
-      raise ActionController::ParameterMissing.new(:check_in)
-    end
+    raise ActionController::ParameterMissing.new(:check_in) unless TelemetryEnvelope.hash_like?(raw_check_in)
 
-    check_in_hash = raw_check_in.respond_to?(:to_unsafe_h) ? raw_check_in.to_unsafe_h : raw_check_in.to_h
+    check_in_hash = TelemetryEnvelope.to_hash(raw_check_in, key: :check_in)
     normalized = check_in_hash.each_with_object({}) do |(key, value), attrs|
       attrs[key.to_s.underscore.downcase] = value
     end

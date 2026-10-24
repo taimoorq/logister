@@ -44,6 +44,7 @@
               <h2>Delivery settings control immediate mail.</h2>
               <table><thead><tr><th>Control</th><th>Meaning</th></tr></thead><tbody><tr><td>Hourly immediate email limit</td><td>Maximum immediate emails per notification type each hour. Use this to prevent a noisy project from flooding one inbox. <code>0</code> blocks immediate emails.</td></tr><tr><td>Quiet hours</td><td>Pause immediate emails between the selected local hours. Use this for overnight or focus-time suppression.</td></tr></tbody></table>
               <p>Quiet hours do not suppress digest emails; digests use their own schedule. If someone still gets a digest during quiet hours, check the digest send hour instead of the quiet-hours fields.</p>
+              <p>Every notification email carries a <code>List-Unsubscribe</code> header, so mail apps show an unsubscribe action. Opening the link shows a confirmation page; choosing <strong>Unsubscribe</strong> (or the mail app's one-click unsubscribe) turns off every email notification and digest for that project for that user. Links expire after 60 days and older links show an explanation instead; turn notifications back on from <code>Settings &gt; Notifications</code>.</p>
             </section>
             <section class="section">
               <p class="eyebrow">Verify</p>

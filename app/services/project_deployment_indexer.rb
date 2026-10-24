@@ -262,20 +262,24 @@ class ProjectDeploymentIndexer
   def github_metadata(repository_full_name)
     {}.tap do |values|
       values["pull_request_number"] = pull_request_number
-      values["pull_request_url"] = first_value(PULL_REQUEST_URL_PATHS).to_s.strip.presence || inferred_pull_request_url(repository_full_name, values["pull_request_number"])
+      values["pull_request_url"] = github_url(PULL_REQUEST_URL_PATHS) || inferred_pull_request_url(repository_full_name, values["pull_request_number"])
       values["release_tag"] = first_value(RELEASE_TAG_PATHS).to_s.strip.presence
-      values["release_url"] = first_value(RELEASE_URL_PATHS).to_s.strip.presence || inferred_release_url(repository_full_name, values["release_tag"])
+      values["release_url"] = github_url(RELEASE_URL_PATHS) || inferred_release_url(repository_full_name, values["release_tag"])
       URL_METADATA_PATHS.each do |key, paths|
-        values[key] = first_value(paths).to_s.strip.presence
+        values[key] = github_url(paths)
       end
     end
   end
 
   def pull_request_number
-    explicit = first_value(PULL_REQUEST_NUMBER_PATHS).to_s.strip.presence
-    return explicit if explicit.present?
+    explicit = first_value(PULL_REQUEST_NUMBER_PATHS)
+    return ProjectDeploymentUrlPolicy.pull_request_number(explicit) if explicit.present?
 
-    first_value(BRANCH_PATHS).to_s.match(%r{\Arefs/pull/(\d+)/})&.[](1)
+    ProjectDeploymentUrlPolicy.pull_request_number(first_value(BRANCH_PATHS).to_s.match(%r{\Arefs/pull/(\d+)/})&.[](1))
+  end
+
+  def github_url(paths)
+    ProjectDeploymentUrlPolicy.github_url(first_value(paths))
   end
 
   def inferred_pull_request_url(repository_full_name, number)

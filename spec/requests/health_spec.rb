@@ -3,14 +3,67 @@
 require "rails_helper"
 
 RSpec.describe "Health", type: :request do
+  let(:health_headers) { { "Authorization" => "Bearer health-token-for-specs" } }
+
   around do |example|
     config = Rails.configuration.x.logister
     original_mode = config.clickhouse_mode
     original_enabled = config.clickhouse_enabled
+    original_token = ENV["LOGISTER_HEALTH_TOKEN"]
+    ENV["LOGISTER_HEALTH_TOKEN"] = "health-token-for-specs"
     example.run
   ensure
     config.clickhouse_mode = original_mode
     config.clickhouse_enabled = original_enabled
+    ENV["LOGISTER_HEALTH_TOKEN"] = original_token
+  end
+
+  describe "access" do
+    %w[/health/release /health/clickhouse].each do |path|
+      it "refuses #{path} without credentials" do
+        get path
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.headers["WWW-Authenticate"]).to start_with("Bearer")
+        expect(response.body).not_to include("version", "database", "clickhouse")
+      end
+
+      it "refuses #{path} with the wrong token" do
+        get path, headers: { "Authorization" => "Bearer nope" }
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "refuses #{path} to a signed-in user who is not an application admin" do
+        sign_in create(:user)
+
+        get path
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "refuses #{path} with any token when LOGISTER_HEALTH_TOKEN is unset" do
+        ENV.delete("LOGISTER_HEALTH_TOKEN")
+
+        get path, headers: { "Authorization" => "Bearer " }
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "allows #{path} for an application admin session" do
+        sign_in create(:user, application_admin: true)
+
+        get path
+
+        expect(response).not_to have_http_status(:unauthorized)
+      end
+    end
+
+    it "keeps the liveness probe public" do
+      get "/up"
+
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "GET /health/release" do
@@ -30,7 +83,7 @@ RSpec.describe "Health", type: :request do
 
     it "returns the public packaged release and contract identity" do
       packaged_version = Rails.root.join("VERSION").read.strip
-      get "/health/release"
+      get "/health/release", headers: health_headers
 
       expect(response).to have_http_status(:ok)
       expect(response.headers["Cache-Control"]).to include("no-cache")
@@ -48,7 +101,7 @@ RSpec.describe "Health", type: :request do
     it "fails closed when configured deployment metadata disagrees with the package" do
       ENV["LOGISTER_RELEASE"] = "v9.9"
 
-      get "/health/release"
+      get "/health/release", headers: health_headers
 
       expect(response).to have_http_status(:service_unavailable)
       expect(response.parsed_body).to include(
@@ -66,7 +119,7 @@ RSpec.describe "Health", type: :request do
       end
 
       it "returns 200 with status disabled" do
-        get "/health/clickhouse"
+        get "/health/clickhouse", headers: health_headers
         expect(response).to have_http_status(:ok)
         body = response.parsed_body
         expect(body["status"]).to eq("disabled")
@@ -90,7 +143,7 @@ RSpec.describe "Health", type: :request do
       end
 
       it "returns 200 with status ok" do
-        get "/health/clickhouse"
+        get "/health/clickhouse", headers: health_headers
         expect(response).to have_http_status(:ok)
         body = response.parsed_body
         expect(body["status"]).to eq("ok")
@@ -121,7 +174,7 @@ RSpec.describe "Health", type: :request do
       end
 
       it "returns 503 with status degraded" do
-        get "/health/clickhouse"
+        get "/health/clickhouse", headers: health_headers
         expect(response).to have_http_status(:service_unavailable)
         body = response.parsed_body
         expect(body["status"]).to eq("degraded")

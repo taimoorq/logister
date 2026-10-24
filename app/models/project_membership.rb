@@ -1,6 +1,6 @@
 class ProjectMembership < ApplicationRecord
   ROLE_LABELS = {
-    "viewer" => "Viewer",
+    "viewer" => "Member",
     "admin" => "Admin"
   }.freeze
 

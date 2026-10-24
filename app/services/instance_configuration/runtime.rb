@@ -53,7 +53,8 @@ module InstanceConfiguration
         user_name: InstanceConfiguration.value("email.smtp_username").presence,
         password: InstanceConfiguration.value("email.smtp_password").presence,
         authentication: :login,
-        enable_starttls_auto: InstanceConfiguration.value("email.starttls"),
+        enable_starttls: InstanceConfiguration.value("email.starttls") ? :always : false,
+        enable_starttls_auto: false,
         open_timeout: InstanceConfiguration.value("email.open_timeout"),
         read_timeout: InstanceConfiguration.value("email.read_timeout")
       }
@@ -94,8 +95,11 @@ module InstanceConfiguration
         read_timeout: 2,
         write_timeout: 2,
         reconnect_attempts: 2,
+        # Re-raise so Logister::RateLimitCounter switches to its in-process
+        # fallback instead of reading the swallowed error as "not limited".
         error_handler: lambda do |method:, returning:, exception:|
           Rails.logger.warn("Redis rate-limit error in #{Rails.env}: #{method} => #{returning.inspect} (#{exception.class})")
+          raise exception
         end
       )
     end

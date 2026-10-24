@@ -1,0 +1,47 @@
+---
+schema_version: 1
+id: security-hardening-sweep
+release_version: 4.1.0
+summary: Security hardening from the October 2026 adversarial review across web authentication,
+  GitHub setup, telemetry rendering, rate limiting, instance configuration, and every client package.
+backend:
+  bump: minor
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- integration_discovery
+- telemetry_ingest
+contract_sha256:
+  cli_api: 77deea389acb49c33f481c6ec83a172bc29d689a843c4109f15d7066aff4020a
+  integration_discovery: 1368f342ebdcd138a92f8c1aeb8b2e365547c113a0872805473045115c2987cf
+  telemetry_ingest: 90f14864012a5f99d5dc1b864a015efcf4ac85dd222d8ed53f47e21b10fba051
+consumers:
+  logister-cli:
+    bump: minor
+    reason: Value-pattern redaction, origin-pinned device verification URLs, a narrower --token
+      flag and stricter project identifiers. Existing CLI endpoints and response shapes stay compatible.
+  logister-ruby:
+    bump: minor
+    reason: Default redaction for headers, URLs and context, SQL breadcrumbs off by default, per-request
+      user scope, and failure isolation in the Rack middleware. Ingest payloads stay compatible.
+  logister-js:
+    bump: minor
+    reason: No unhandled rejections or console exceptions from capture, a bounded batched queue,
+      and default redaction. Ingest payloads stay compatible.
+  logister-python:
+    bump: minor
+    reason: Integrations never raise into the host app, a non-blocking FastAPI path, a logging
+      recursion guard, and default redaction. Ingest payloads stay compatible.
+  logister-dotnet:
+    bump: minor
+    reason: A value sanitizer, cycle-safe normalization, background delivery off the request path,
+      and an explicit base URL requirement. Ingest payloads stay compatible.
+  logister-android:
+    bump: minor
+    reason: Envelope budgets that respect the server's 512-key limit without crashing the host app,
+      default redaction, and crash persistence that no longer waits on the network.
+  logister-ios:
+    bump: minor
+    reason: Envelope budgets that keep MetricKit crashes within the server's 512-key limit, default
+      redaction, a dedicated transport with timeouts, and safer exception detail.

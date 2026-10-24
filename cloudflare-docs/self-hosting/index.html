@@ -163,7 +163,7 @@
               <p class="eyebrow">Prerequisites</p>
               <h2>What you need before booting the app.</h2>
               <ul>
-                <li>Ruby <code>4.0.7</code></li>
+                <li>Ruby <code>4.0.9</code></li>
                 <li>PostgreSQL <code>&gt;= 14</code></li>
                 <li>Redis <code>&gt;= 7</code></li>
                 <li>Optional ClickHouse if you want a dedicated analytics store</li>
@@ -365,7 +365,7 @@ bin/dev</code></pre>
                   <tr><td>Single-node trial</td><td>Evaluation, internal demos, and low-volume installs</td><td>One web process, PostgreSQL, Redis, and one worker. Keep backups on for the database.</td></tr>
                   <tr><td>Small production install</td><td>A team monitoring a few services</td><td>Managed PostgreSQL, managed Redis, one or more web processes, one Sidekiq worker, SMTP if users need account emails.</td></tr>
                   <tr><td>Growing event volume</td><td>More apps, more logs, or heavier performance/event analysis</td><td>Scale web and worker processes separately, raise <code>SIDEKIQ_CONCURRENCY</code> carefully, monitor PostgreSQL size, archive older telemetry to S3-compatible storage before pruning, then add ClickHouse when analytics volume justifies it.</td></tr>
-                  <tr><td>Public self-hosted instance</td><td>Multi-user deployments exposed to the internet</td><td>HTTPS termination, SMTP, Turnstile, admin email allow-list, backups, log retention, and health checks for <code>/up</code> and <code>/health/clickhouse</code> if ClickHouse is enabled.</td></tr>
+                  <tr><td>Public self-hosted instance</td><td>Multi-user deployments exposed to the internet</td><td>HTTPS termination, SMTP, Turnstile, admin email allow-list, backups, log retention, and health checks for <code>/up</code> (public) and <code>/health/clickhouse</code> if ClickHouse is enabled (send <code>Authorization: Bearer $LOGISTER_HEALTH_TOKEN</code>), <code>LOGISTER_PUBLIC_URL</code> set so host checks are on, and the Rails port reachable only through your proxy.</td></tr>
                 </tbody>
               </table>
             </section>

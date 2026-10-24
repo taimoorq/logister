@@ -150,6 +150,50 @@ RSpec.describe CheckInMonitor, type: :model do
       expect(NotificationIntent.where(project: project)).to be_empty
     end
 
+    it "does not create a monitor from an invalid slug falling back to the event message" do
+      event = create(:ingest_event, :check_in, project: project, api_key: api_key, message: "x" * 5_000, context: {})
+
+      expect(described_class.record!(project: project, event: event)).to be_nil
+      expect(project.check_in_monitors).to be_empty
+    end
+
+    it "does not create monitors past the per-project cap but keeps updating existing ones" do
+      stub_const("CheckInMonitor::MAX_MONITORS_PER_PROJECT", 1)
+      existing = described_class.record!(project: project, event: check_in_event(status: "ok", occurred_at: 2.minutes.ago))
+      other = create(:ingest_event, :check_in, project: project, api_key: api_key, message: "another-job")
+
+      expect(described_class.record!(project: project, event: other)).to be_nil
+      expect(described_class.record!(project: project, event: check_in_event(status: "error", occurred_at: 1.minute.ago))).to eq(existing)
+      expect(project.check_in_monitors.pluck(:slug)).to eq([ slug ])
+      expect(existing.reload.last_status).to eq("error")
+    end
+
+    it "throttles monitor alert intents per project" do
+      stub_const("CheckInMonitorRecording::MONITOR_NOTIFICATION_LIMIT_PER_HOUR", 2)
+      allow(NotificationIntent).to receive(:kick)
+
+      events = 3.times.map do |index|
+        create(:ingest_event, :check_in, project: project, api_key: api_key,
+               message: "failing-job-#{index}",
+               context: { "check_in_slug" => "failing-job-#{index}", "check_in_status" => "error" })
+      end
+      events.each { |event| described_class.record!(project: project, event: event) }
+
+      expect(project.check_in_monitors.count).to eq(3)
+      expect(NotificationIntent.where(project: project, kind: "monitor_missed").count).to eq(2)
+    end
+
+    it "throttles missed-monitor sweeps per project but still returns already captured intents" do
+      stub_const("CheckInMonitorRecording::MONITOR_NOTIFICATION_LIMIT_PER_HOUR", 1)
+      allow(NotificationIntent).to receive(:kick)
+      monitors = 2.times.map { create(:check_in_monitor, project: project, last_check_in_at: 2.hours.ago) }
+
+      first = described_class.capture_missed_notification!(monitor: monitors.first)
+      expect(first).to be_persisted
+      expect(described_class.capture_missed_notification!(monitor: monitors.last)).to be_nil
+      expect(described_class.capture_missed_notification!(monitor: monitors.first.reload)).to eq(first)
+    end
+
     def check_in_event(status:, occurred_at:)
       create(
         :ingest_event,

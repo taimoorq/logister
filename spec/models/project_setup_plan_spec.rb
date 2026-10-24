@@ -136,7 +136,7 @@ RSpec.describe ProjectSetupPlan do
     it "honors a skip of a failing optional integration until evidence completes it" do
       android = create(:project, :android, user: owner)
       setting = create(:project_integration_setting, project: android, provider: "google_play", enabled: true,
-                       external_project_id: "com.acme.shop", credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+                       external_project_id: "com.acme.shop", credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS",
                        last_imported_at: 2.days.ago,
                        metadata: { "last_error" => { "message" => "denied", "at" => Time.current.utc.iso8601 } })
       expect(plan_for(android).item(:google_play).state).to eq(:failed)
@@ -262,7 +262,7 @@ RSpec.describe ProjectSetupPlan do
       project = create(:project, :android)
       setting = create(
         :project_integration_setting, project: project, provider: "google_play", enabled: true,
-        external_project_id: "com.acme.shop", credential_reference: "GOOGLE_PLAY_REPORTING_CREDENTIALS",
+        external_project_id: "com.acme.shop", credential_reference: "LOGISTER_INTEGRATION_GOOGLE_PLAY_REPORTING_CREDENTIALS",
         last_imported_at: 2.days.ago
       )
       setting.update!(metadata: { "last_error" => { "message" => "denied", "at" => Time.current.utc.iso8601 } })

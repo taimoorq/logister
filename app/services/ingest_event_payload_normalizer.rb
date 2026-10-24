@@ -91,11 +91,9 @@ class IngestEventPayloadNormalizer
   end
 
   def normalized_event_hash(raw_event)
-    unless raw_event.respond_to?(:to_unsafe_h) || raw_event.respond_to?(:to_h)
-      raise ActionController::ParameterMissing.new(:event)
-    end
+    raise ActionController::ParameterMissing.new(:event) unless TelemetryEnvelope.hash_like?(raw_event)
 
-    event_hash = raw_event.respond_to?(:to_unsafe_h) ? raw_event.to_unsafe_h : raw_event.to_h
+    event_hash = TelemetryEnvelope.to_hash(raw_event, key: :event)
     TelemetryPayloadLimits.validate!(event_hash)
 
     event_hash.each_with_object({}) do |(key, value), normalized|
@@ -108,14 +106,7 @@ class IngestEventPayloadNormalizer
   end
 
   def normalize_context_hash(raw_context)
-    context_hash =
-      if raw_context.respond_to?(:to_unsafe_h)
-        raw_context.to_unsafe_h
-      elsif raw_context.respond_to?(:to_h)
-        raw_context.to_h
-      else
-        {}
-      end
+    context_hash = TelemetryEnvelope.to_hash(raw_context, key: :context) || {}
 
     add_normalized_context_keys(context_hash)
   end
@@ -183,10 +174,10 @@ class IngestEventPayloadNormalizer
   end
 
   def merge_submitted_evidence!(context, value)
-    return unless value.respond_to?(:to_h)
+    return unless TelemetryEnvelope.hash_like?(value)
     return if context["evidence"].is_a?(Hash)
 
-    raw = add_normalized_context_keys(value.to_h).stringify_keys
+    raw = add_normalized_context_keys(TelemetryEnvelope.to_hash(value, key: :evidence)).stringify_keys
     evidence = raw.slice(
       "source",
       "kind",

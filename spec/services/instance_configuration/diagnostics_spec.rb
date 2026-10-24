@@ -174,4 +174,26 @@ RSpec.describe InstanceConfiguration::Diagnostics, type: :model do
     delivery.mark_completed!(lease_token: delivery.lease_token, at: Time.current)
     delivery
   end
+
+  it "requires STARTTLS instead of auto-negotiating it for the SMTP check" do
+    smtp = instance_double(Net::SMTP, started?: false)
+    allow(Net::SMTP).to receive(:new).and_return(smtp)
+    allow(smtp).to receive_messages("open_timeout=": nil, "read_timeout=": nil, start: nil)
+    expect(smtp).to receive(:enable_starttls)
+    expect(smtp).not_to receive(:enable_starttls_auto)
+
+    result = described_class.call("email", values: InstanceConfiguration.values_for("email"))
+
+    expect(result).to be_success
+    expect(result.details).to include("starttls" => "required")
+  end
+
+  it "rejects allowed-domain sign-up without any domain" do
+    values = InstanceConfiguration.values_for("authentication", overrides: { "authentication.registration_mode" => "allowed_domains" })
+
+    result = described_class.call("authentication", values: values)
+
+    expect(result).not_to be_success
+    expect(result.summary).to include("allowed sign-up domain")
+  end
 end

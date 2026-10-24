@@ -1,5 +1,9 @@
+# Detailed health reports name the database, schema, release identity, and
+# image digest, so they need an application admin session or the operator's
+# LOGISTER_HEALTH_TOKEN as a bearer token. The public liveness probe is /up.
 class HealthController < ApplicationController
   skip_before_action :require_modern_browser, raise: false
+  before_action :authorize_health_report!
 
   def release
     payload = Logister::RuntimeReleaseIdentity.call
@@ -26,5 +30,20 @@ class HealthController < ApplicationController
     end
   ensure
     client&.close
+  end
+
+  private
+
+  def authorize_health_report!
+    return if health_token_valid? || current_user&.application_admin?
+
+    response.headers["WWW-Authenticate"] = %(Bearer realm="Logister health")
+    render json: { error: "unauthorized" }, status: :unauthorized
+  end
+
+  def health_token_valid?
+    expected = ENV["LOGISTER_HEALTH_TOKEN"].to_s
+    provided = request.authorization.to_s[/\ABearer (.+)\z/, 1].to_s
+    expected.present? && provided.present? && ActiveSupport::SecurityUtils.secure_compare(provided, expected)
   end
 end

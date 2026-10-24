@@ -38,4 +38,28 @@ RSpec.describe Github::ExternalLinkParser do
     expect(described_class.call("https://example.com/acme/storefront/issues/42")).to be_nil
     expect(described_class.call("https://github.com/acme/storefront/actions/runs/42")).to be_nil
   end
+
+  describe ".allowed_web_url" do
+    it "accepts https URLs on github.com or the configured web host" do
+      url = "https://github.com/acme/storefront/blob/main/app/models/order.rb#L12"
+
+      expect(described_class.allowed_web_url(url)).to eq(url)
+      expect(described_class.allowed_web_url("https://github.internal/acme/storefront", web_url: "https://github.internal")).to eq("https://github.internal/acme/storefront")
+    end
+
+    it "rejects other schemes, hosts, credentials, and malformed URLs" do
+      [
+        "http://github.com/acme/storefront",
+        "javascript:alert(1)",
+        "https://github.com.evil.example/acme/storefront",
+        "https://github.com@evil.example/acme/storefront",
+        "https://user:pass@github.com/acme/storefront",
+        "https://github.com/acme/storefront) [click](https://evil.example",
+        "",
+        nil
+      ].each do |url|
+        expect(described_class.allowed_web_url(url)).to be_nil, "expected #{url.inspect} to be rejected"
+      end
+    end
+  end
 end

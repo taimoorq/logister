@@ -9,14 +9,10 @@
   <% if analytics_enabled? && google_tag_id.present? %>
     <!-- Google Analytics -->
     <!-- Google tag (gtag.js) -->
+    <%# analytics.js bootstraps gtag() and sends page views once consent activates this
+        script. Keep it inline-free: the banner re-creates gated scripts, and browsers
+        hide nonces from the copies, so the CSP would block an inline gtag block. %>
     <script type="text/plain" data-cookie-consent="<%= analytics_cookie_consent_category %>" async src="https://www.googletagmanager.com/gtag/js?id=<%= google_tag_id %>"></script>
-    <script type="text/plain" data-cookie-consent="<%= analytics_cookie_consent_category %>">
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', '<%= google_tag_id %>');
-    </script>
     <!-- end of Google Analytics-->
   <% end %>
 

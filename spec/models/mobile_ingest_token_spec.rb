@@ -117,6 +117,13 @@ RSpec.describe MobileIngestToken, type: :model do
 
       expect(described_class.authenticate(token.plain_token)).to be_nil
     end
+
+    it "returns nil when the project has a pending purge" do
+      token = create(:mobile_ingest_token)
+      token.project.update_column(:purge_requested_at, Time.current)
+
+      expect(described_class.authenticate(token.plain_token)).to be_nil
+    end
   end
 
   describe "#touch_last_used!" do

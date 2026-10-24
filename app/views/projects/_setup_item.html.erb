@@ -34,7 +34,7 @@
       <%= link_to action.label, action.path,
                   class: item.equal?(next_item) ? "btn-primary btn-sm" : "btn-ghost btn-sm" %>
     <% elsif action&.copy_path.present? %>
-      <div data-controller="copy" data-copy-text-value="<%= request.base_url + action.copy_path %>">
+      <div data-controller="copy" data-copy-text-value="<%= absolute_url_for(action.copy_path) %>">
         <button type="button" class="btn-ghost btn-sm" data-action="copy#copy">
           <span data-copy-target="buttonLabel">Copy link for admin</span>
         </button>
