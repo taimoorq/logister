@@ -1,0 +1,95 @@
+---
+schema_version: 1
+id: backend-v4-1-0
+backend:
+  version: 4.1.0
+  tag: v4.1.0
+impact_records:
+- security-hardening-sweep
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.4.1
+    target_version: 0.6.0
+    bump: minor
+    release_required: true
+    reason: Security hardening from the October 2026 review. Default redaction, SQL breadcrumbs
+      off by default, per-request user scope, and middleware failure isolation. Rolls up the
+      published 0.5.x line from the verified catalog baseline.
+    channels:
+    - rubygems
+    - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.4.2
+    target_version: 0.6.0
+    bump: minor
+    release_required: true
+    reason: Security hardening from the October 2026 review. No unhandled rejections or console
+      exceptions from capture, a bounded batched queue, and default redaction. Rolls up the
+      published 0.5.0 from the verified catalog baseline.
+    channels:
+    - npm
+    - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.4.0
+    target_version: 0.6.0
+    bump: minor
+    release_required: true
+    reason: Security hardening from the October 2026 review. Integrations never raise into the
+      host app, non-blocking FastAPI delivery, a logging recursion guard, and default redaction.
+      Rolls up the published 0.5.0 from the verified catalog baseline.
+    channels:
+    - pypi
+    - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.3.0
+    target_version: 0.5.0
+    bump: minor
+    release_required: true
+    reason: Security hardening from the October 2026 review. A value sanitizer, cycle-safe
+      normalization, background delivery and an explicit base URL. Rolls up the published 0.4.0
+      from the verified catalog baseline.
+    channels:
+    - nuget_logister
+    - nuget_logister_aspnetcore
+    - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.5.2
+    target_version: 0.7.0
+    bump: minor
+    release_required: true
+    reason: Security hardening from the October 2026 review. Envelope budgets that respect the
+      server limits without crashing the host app, default redaction, and crash persistence that
+      no longer waits on the network. Rolls up the published 0.6.x line.
+    channels:
+    - maven_central
+    - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.5.0
+    target_version: 0.7.0
+    bump: minor
+    release_required: true
+    reason: Security hardening from the October 2026 review. MetricKit crashes kept within server
+      limits, default redaction, a dedicated transport with timeouts, and safer exception detail.
+      Rolls up the published 0.6.x line.
+    channels:
+    - swift_package_manager
+    - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.1.0
+    target_version: 1.3.0
+    bump: minor
+    release_required: true
+    reason: Security hardening from the October 2026 review. Value-pattern redaction, origin-pinned
+      device verification URLs and a narrower --token flag. Rolls up the unpublished 1.2.x line.
+    channels:
+    - npm
+    - github_release
+    - homebrew-logister
+    - scoop-logister
