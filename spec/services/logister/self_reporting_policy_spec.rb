@@ -34,7 +34,6 @@ RSpec.describe Logister::SelfReportingPolicy do
     config.environment = "test"
     client = instance_double(Logister::Client, publish: true, shutdown: nil)
     allow(Logister::Client).to receive(:new).and_return(client)
-    allow_any_instance_of(Logister::Reporter).to receive(:register_shutdown_hook)
     reporter = Logister::Reporter.new(config)
 
     reporter.report_metric(message: "db.query", value: 1)
