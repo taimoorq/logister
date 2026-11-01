@@ -76,7 +76,7 @@ Install from Maven Central:
 
 ```kotlin
 dependencies {
-    implementation("org.logister:logister-android:0.5.2")
+    implementation("org.logister:logister-android:0.7.0")
 }
 ```
 
@@ -252,7 +252,7 @@ Add the package by Git URL with Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.5.0")
+    .package(url: "https://github.com/taimoorq/logister-ios.git", from: "0.7.0")
 ]
 ```
 
@@ -473,14 +473,14 @@ For Android, check the release workflow and Maven Central:
 
 ```bash
 gh run list --repo taimoorq/logister-android --limit 5
-curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.5.2/logister-android-0.5.2.pom
+curl -sI https://repo1.maven.org/maven2/org/logister/logister-android/0.7.0/logister-android-0.7.0.pom
 curl -sL https://repo1.maven.org/maven2/org/logister/logister-android/maven-metadata.xml
 ```
 
 For iOS, check the GitHub release:
 
 ```bash
-gh release view v0.5.0 --repo taimoorq/logister-ios
+gh release view v0.7.0 --repo taimoorq/logister-ios
 ```
 
 ## Request correlation in the 3.7 release set
