@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "fileutils"
+require "open3"
+require "tmpdir"
 
 RSpec.describe Logister::ReleaseSetReconciler do
   FakeHttp = Struct.new(:responses) do
@@ -9,14 +12,24 @@ RSpec.describe Logister::ReleaseSetReconciler do
     end
   end
 
-  let(:release_set_path) { Rails.root.join("config/release-sets/v3.6.yml") }
-  let(:identity) { Logister::ReleaseIdentity.new(repo_root: Rails.root).validate! }
+  let(:repo_root) { @repo_root }
+  let(:release_set_path) { repo_root.join("config/release-sets/v3.6.yml") }
+  let(:identity) { @released_identity }
+  let(:release_sha) { @release_sha }
+
+  around do |example|
+    Dir.mktmpdir("logister-reconciler") do |directory|
+      @repo_root = Pathname(directory)
+      prepare_released_source
+      example.run
+    end
+  end
   let(:tarball) { "canonical CLI npm tarball bytes" }
   let(:tarball_url) { "https://registry.npmjs.org/logister-cli/-/logister-cli-1.0.0.tgz" }
   let(:responses) { public_responses }
 
   it "reconciles the backend and every package channel into a public receipt" do
-    reconciler = described_class.new(repo_root: Rails.root, release_set_path: release_set_path, http: FakeHttp.new(responses))
+    reconciler = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses))
     receipt = reconciler.reconcile
 
     expect(receipt).to include(status: "complete", release_set: "backend-v3-6")
@@ -34,7 +47,7 @@ RSpec.describe Logister::ReleaseSetReconciler do
 
   it "stays pending and names a missing public channel" do
     responses[maven_url] = [ 404, "" ]
-    receipt = described_class.new(repo_root: Rails.root, release_set_path: release_set_path, http: FakeHttp.new(responses)).reconcile
+    receipt = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses)).reconcile
 
     expect(receipt.fetch(:status)).to eq("pending")
     expect(receipt.fetch(:errors)).to include(match(%r{logister-android/maven_central: public endpoint returned HTTP 404}))
@@ -46,9 +59,64 @@ RSpec.describe Logister::ReleaseSetReconciler do
     )
   end
 
+  it "uses the release tag's contract after catalog documentation changes on main" do
+    guide = repo_root.join("docs/mobile-add-ons.md")
+    guide.write("#{guide.read}\nUpdated verified catalog references.\n")
+    git!("add", ".")
+    git!("commit", "-qm", "Publish catalog after release")
+    current_identity = Logister::ReleaseIdentity.new(repo_root: repo_root).validate!
+    expect(current_identity.contract_sha256).not_to eq(identity.contract_sha256)
+
+    receipt = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses)).reconcile
+
+    expect(receipt.fetch(:status)).to eq("complete")
+    expect(receipt.dig(:backend, :contract_sha256)).to eq(identity.contract_sha256)
+    expect(receipt.dig(:backend, :git_sha)).to eq(release_sha)
+  end
+
+  it "rejects a receipt and runtime using current main's hashes instead of the release tag" do
+    hashes = Logister::ReleaseIdentity.new(repo_root: repo_root).validate!.contract_sha256
+    [ receipt_url, "https://logister.org/health/release" ].each do |url|
+      payload = JSON.parse(responses.fetch(url).last)
+      responses[url] = ok_json(payload.merge("contract_sha256" => hashes))
+    end
+
+    receipt = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses)).reconcile
+
+    expect(receipt.fetch(:status)).to eq("pending")
+    expect(receipt.fetch(:errors)).to include("backend/release_receipt: receipt contract mismatch", "backend/runtime: runtime contract mismatch")
+  end
+
+  it "rejects matching receipt and runtime commits that do not match the release tag" do
+    [ receipt_url, "https://logister.org/health/release" ].each do |url|
+      payload = JSON.parse(responses.fetch(url).last)
+      responses[url] = ok_json(payload.merge("git_sha" => "b" * 40))
+    end
+
+    receipt = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses)).reconcile
+
+    expect(receipt.fetch(:status)).to eq("pending")
+    expect(receipt.fetch(:errors)).to include("backend/release_receipt: receipt Git SHA does not match release tag", "backend/runtime: runtime Git SHA mismatch")
+  end
+
+  it "fails closed when the release tag is missing" do
+    git!("tag", "--delete", "v3.6")
+    reconciler = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses))
+
+    expect { reconciler.reconcile }.to raise_error(Logister::ReleaseSet::ValidationError, /fetch release tags/)
+  end
+
+  it "rejects a tag whose source declares another version" do
+    git!("tag", "--delete", "v3.6")
+    git!("tag", "v3.6")
+    reconciler = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses))
+
+    expect { reconciler.reconcile }.to raise_error(Logister::ReleaseSet::ValidationError, /does not match its source version/)
+  end
+
   it "does not create a verified catalog from an incomplete release set" do
     responses[maven_url] = [ 404, "" ]
-    reconciler = described_class.new(repo_root: Rails.root, release_set_path: release_set_path, http: FakeHttp.new(responses))
+    reconciler = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: FakeHttp.new(responses))
     receipt = reconciler.reconcile
 
     expect { reconciler.catalog(receipt) }.to raise_error("release set is not complete")
@@ -63,7 +131,7 @@ RSpec.describe Logister::ReleaseSetReconciler do
     http = FakeHttp.new(responses)
     allow(http).to receive(:get).and_call_original
 
-    receipt = described_class.new(repo_root: Rails.root, release_set_path: release_set_path, http: http).reconcile
+    receipt = described_class.new(repo_root: repo_root, release_set_path: release_set_path, http: http).reconcile
 
     expect(receipt.fetch(:status)).to eq("pending")
     expect(receipt.fetch(:errors)).to include("logister-cli/npm: CLI npm tarball URL is not canonical")
@@ -78,11 +146,11 @@ RSpec.describe Logister::ReleaseSetReconciler do
     end
     values = urls.to_h { |url| [ url, [ 200, url.end_with?("aar") ? "PKsynthetic-archive" : "<artifactId>logister-android-okhttp</artifactId><version>0.6.0</version>" ] ] }
     values.delete(urls.last)
-    reconciler = described_class.new(repo_root: Rails.root, release_set_path:, http: FakeHttp.new(values))
+    reconciler = described_class.new(repo_root: repo_root, release_set_path:, http: FakeHttp.new(values))
     reconciler.send(:reconcile_channel, "logister-android", "maven_central", version)
     expect(reconciler.send(:errors)).to include(match(/public endpoint returned HTTP 404/))
     values[urls.last] = [ 200, "PKsynthetic-archive" ]
-    complete = described_class.new(repo_root: Rails.root, release_set_path:, http: FakeHttp.new(values))
+    complete = described_class.new(repo_root: repo_root, release_set_path:, http: FakeHttp.new(values))
     complete.send(:reconcile_channel, "logister-android", "maven_central", version)
     expect(complete.send(:errors)).to be_empty
   end
@@ -90,7 +158,6 @@ RSpec.describe Logister::ReleaseSetReconciler do
   def public_responses
     release_set = YAML.safe_load_file(release_set_path, permitted_classes: [], permitted_symbols: [], aliases: false)
     values = {}
-    receipt_url = "https://github.com/taimoorq/logister/releases/download/v3.6/release-receipt.json"
     values[github_release_url("taimoorq/logister", "v3.6")] = ok_json(
       tag_name: "v3.6",
       draft: false,
@@ -99,7 +166,7 @@ RSpec.describe Logister::ReleaseSetReconciler do
     values[receipt_url] = ok_json(
       version: "3.6",
       tag: "v3.6",
-      git_sha: "b" * 40,
+      git_sha: release_sha,
       contract_sha256: identity.contract_sha256,
       container: {
         digest: "sha256:#{"a" * 64}",
@@ -114,7 +181,7 @@ RSpec.describe Logister::ReleaseSetReconciler do
       status: "ok",
       version: "3.6",
       tag: "v3.6",
-      git_sha: "b" * 40,
+      git_sha: release_sha,
       image_digest: "sha256:#{"a" * 64}",
       contract_sha256: identity.contract_sha256,
       database: { connected: true, migrations_current: true }
@@ -150,6 +217,49 @@ RSpec.describe Logister::ReleaseSetReconciler do
 
   def github_release_url(repository, tag)
     "https://api.github.com/repos/#{repository}/releases/tags/#{tag}"
+  end
+
+  def receipt_url
+    "https://github.com/taimoorq/logister/releases/download/v3.6/release-receipt.json"
+  end
+
+  def prepare_released_source
+    ecosystem = YAML.safe_load_file(Rails.root.join("config/ecosystem.yml"))
+    release_set = YAML.safe_load_file(Rails.root.join("config/release-sets/v3.6.yml"))
+    files = %w[VERSION CHANGELOG.md config/release.yml config/ecosystem.yml config/ecosystem-versions.json config/release-sets/v3.6.yml]
+    files.concat(ecosystem.fetch("contracts").values.flat_map { |contract| contract.fetch("source_files") })
+    files.concat(release_set.fetch("impact_records").map { |id| "config/release-impact/#{id}.yml" })
+    files.uniq.each do |path|
+      FileUtils.mkdir_p(repo_root.join(path).dirname)
+      FileUtils.cp(Rails.root.join(path), repo_root.join(path))
+    end
+    repo_root.join("VERSION").write("3.6\n")
+    repo_root.join("CHANGELOG.md").write("# Changelog\n\n## v3.6 - 2026-08-09\n\n- Public release.\n")
+    openapi = YAML.safe_load_file(repo_root.join("docs/openapi.yaml"))
+    openapi.fetch("info")["version"] = "3.6"
+    repo_root.join("docs/openapi.yaml").write(YAML.dump(openapi))
+
+    git!("init", "-q")
+    git!("config", "user.name", "Release Test")
+    git!("config", "user.email", "release-test@example.invalid")
+    git!("add", ".")
+    git!("-c", "commit.gpgsign=false", "commit", "-qm", "Released backend")
+    git!("-c", "tag.gpgsign=false", "tag", "--annotate", "v3.6", "--message", "Released backend")
+    @release_sha = git!("rev-parse", "HEAD").strip
+    @released_identity = Logister::ReleaseIdentity.new(repo_root: repo_root).validate!
+
+    %w[VERSION CHANGELOG.md docs/openapi.yaml].each do |path|
+      FileUtils.cp(Rails.root.join(path), repo_root.join(path))
+    end
+    git!("add", ".")
+    git!("-c", "commit.gpgsign=false", "commit", "-qm", "Advance current source")
+  end
+
+  def git!(*arguments)
+    output, error, status = Open3.capture3("git", "-C", repo_root.to_s, *arguments)
+    raise error unless status.success?
+
+    output
   end
 
   def maven_url

@@ -3,7 +3,9 @@
 require "digest"
 require "json"
 require "net/http"
+require "open3"
 require "pathname"
+require "tmpdir"
 require "uri"
 require_relative "release_identity"
 require_relative "release_set"
@@ -56,8 +58,8 @@ module Logister
 
     def reconcile
       release_set = ReleaseSet.new(repo_root: repo_root, release_set_path: release_set_path).validate!
-      identity = ReleaseIdentity.new(repo_root: repo_root).validate!
-      reconcile_backend(release_set, identity)
+      identity, release_sha = released_backend_identity(release_set)
+      reconcile_backend(release_set, identity, release_sha)
       release_set.fetch("components").each { |id, component| reconcile_component(id, component) }
 
       {
@@ -97,7 +99,37 @@ module Logister
 
     attr_reader :repo_root, :release_set_path, :http, :checks, :errors
 
-    def reconcile_backend(release_set, identity)
+    def released_backend_identity(release_set)
+      tag = release_set.dig("backend", "tag")
+      sha, status = Open3.capture2("git", "-C", repo_root.to_s, "rev-parse", "--verify", "refs/tags/#{tag}^{commit}", err: File::NULL)
+      unless status.success? && sha.strip.match?(ReleaseIdentity::GIT_SHA_PATTERN)
+        raise ReleaseSet::ValidationError, [ "Backend release tag #{tag} is unavailable; fetch release tags before reconciliation." ]
+      end
+      sha = sha.strip
+
+      # Catalog publication changes discovery docs on main after deployment.
+      # Compare the public release with its immutable source, never today's tree.
+      Dir.mktmpdir("logister-released-backend") do |directory|
+        statuses = Open3.pipeline(
+          [ "git", "-C", repo_root.to_s, "archive", "--format=tar", sha ],
+          [ "tar", "-xf", "-", "-C", directory ]
+        )
+        unless statuses.all?(&:success?)
+          raise ReleaseSet::ValidationError, [ "Unable to read backend release source #{sha}." ]
+        end
+
+        identity = ReleaseIdentity.new(repo_root: directory).validate!
+        unless identity.tag == tag && identity.version == release_set.dig("backend", "version")
+          raise ReleaseSet::ValidationError, [ "Backend release tag #{tag} does not match its source version." ]
+        end
+
+        [ identity, sha ]
+      end
+    rescue ReleaseIdentity::ValidationError => e
+      raise ReleaseSet::ValidationError, e.errors
+    end
+
+    def reconcile_backend(release_set, identity, release_sha)
       version = release_set.dig("backend", "version")
       tag = release_set.dig("backend", "tag")
       release = github_release("backend", "taimoorq/logister", tag)
@@ -114,6 +146,7 @@ module Logister
         raise "receipt contract mismatch" unless receipt["contract_sha256"] == identity.contract_sha256
         git_sha = receipt["git_sha"]
         raise "receipt Git SHA is invalid" unless git_sha.to_s.match?(ReleaseIdentity::GIT_SHA_PATTERN)
+        raise "receipt Git SHA does not match release tag" unless git_sha == release_sha
         digest = receipt.dig("container", "digest")
         raise "receipt container digest is invalid" unless digest.to_s.match?(/\Asha256:[0-9a-f]{64}\z/)
         registries = receipt.dig("container", "registries")
@@ -133,8 +166,8 @@ module Logister
         runtime = JSON.parse(body)
         raise "runtime version mismatch" unless runtime["status"] == "ok" && runtime["version"] == version && runtime["tag"] == tag
         raise "runtime contract mismatch" unless runtime["contract_sha256"] == identity.contract_sha256
+        raise "runtime Git SHA mismatch" unless runtime["git_sha"] == release_sha
         if @backend_evidence
-          raise "runtime Git SHA mismatch" unless runtime["git_sha"] == @backend_evidence.fetch(:git_sha)
           raise "runtime image digest mismatch" unless runtime["image_digest"] == @backend_evidence.dig(:container, "digest")
         end
         raise "runtime migration verification failed" unless runtime["database"] == { "connected" => true, "migrations_current" => true }
