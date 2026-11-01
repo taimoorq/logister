@@ -116,23 +116,66 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          bin/check-release-impact --all
           cp /tmp/ecosystem-versions.json config/ecosystem-versions.json
           bin/sync-doc-versions
           scripts/publication-safety-check.sh
           bin/sync-doc-versions --check
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Validate catalog update paths
+      - name: Refresh catalog release-impact evidence
         if: steps.catalog.outputs.changed == 'true'
+        env:
+          RELEASE_SET_PATH: ${{ steps.release_set.outputs.path }}
         run: |
           set -euo pipefail
-          changed="$(git diff --name-only)"
-          invalid="$(printf '%s\n' "${changed}" | grep -Ev '^(config/ecosystem-versions\.json|README\.md|public/llms(-full)?\.txt|docs/(mobile-add-ons\.md|openapi\.ya?ml)|app/services/logister/cli_capabilities\.rb|spec/requests/api/v1/cli_capabilities_spec\.rb|app/views/.*\.erb|cloudflare-docs/.*\.(html|txt))$' || true)"
-          if [ -n "${invalid}" ]; then
-            echo "Catalog sync attempted to modify unsupported files:"
-            echo "${invalid}"
-            exit 1
-          fi
+          ruby <<'RUBY'
+          require "yaml"
+          require_relative "./lib/logister/release_impact"
+
+          version = File.read("VERSION").strip
+          ecosystem = YAML.safe_load_file("config/ecosystem.yml")
+          release_set = YAML.safe_load_file(ENV.fetch("RELEASE_SET_PATH"))
+          digest = Logister::ReleaseImpact.contract_digest(
+            repo_root: Dir.pwd,
+            paths: ecosystem.fetch("contracts").fetch("integration_discovery").fetch("source_files")
+          )
+          release_set.fetch("impact_records").each do |id|
+            abort "Invalid release-impact record id" unless id.match?(Logister::ReleaseImpact::IMPACT_ID_PATTERN)
+            path = "config/release-impact/#{id}.yml"
+            record = YAML.safe_load_file(path)
+            abort "Catalog evidence must belong to the current source version" unless record.fetch("release_version") == version
+            next unless record.fetch("contracts").include?("integration_discovery")
+            next if record.fetch("contract_sha256").fetch("integration_discovery") == digest
+
+            record.fetch("contract_sha256")["integration_discovery"] = digest
+            File.write(path, YAML.dump(record))
+          end
+          RUBY
+          bin/check-release-impact --all
+
+      - name: Validate catalog update paths
+        if: steps.catalog.outputs.changed == 'true'
+        env:
+          RELEASE_SET_PATH: ${{ steps.release_set.outputs.path }}
+        run: |
+          set -euo pipefail
+          ruby <<'RUBY'
+          require "yaml"
+          allowed = %r{\A(config/ecosystem-versions\.json|README\.md|public/llms(-full)?\.txt|docs/(mobile-add-ons\.md|openapi\.ya?ml)|app/services/logister/cli_capabilities\.rb|spec/requests/api/v1/cli_capabilities_spec\.rb|app/views/.*\.erb|cloudflare-docs/.*\.(html|txt))\z}
+          release_set = YAML.safe_load_file(ENV.fetch("RELEASE_SET_PATH"))
+          impact_paths = release_set.fetch("impact_records").map do |id|
+            abort "Invalid release-impact record id" unless id.match?(/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/)
+            "config/release-impact/#{id}.yml"
+          end
+          changed = IO.popen([ "git", "diff", "--name-only", "-z" ], &:read).split("\0")
+          abort "Unable to inspect catalog changes" unless $?.success?
+          invalid = changed.reject { |path| path.match?(allowed) || impact_paths.include?(path) }
+          unless invalid.empty?
+            warn "Catalog sync attempted to modify unsupported files:"
+            abort invalid.join("\n")
+          end
+          RUBY
 
       - name: Open or update verified catalog pull request
         if: steps.catalog.outputs.changed == 'true'
