@@ -33,6 +33,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -121,23 +122,30 @@ jobs:
           bin/sync-doc-versions --check
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
+      - name: Validate catalog update paths
+        if: steps.catalog.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only)"
+          invalid="$(printf '%s\n' "${changed}" | grep -Ev '^(config/ecosystem-versions\.json|README\.md|public/llms(-full)?\.txt|docs/(mobile-add-ons\.md|openapi\.ya?ml)|app/services/logister/cli_capabilities\.rb|spec/requests/api/v1/cli_capabilities_spec\.rb|app/views/.*\.erb|cloudflare-docs/.*\.(html|txt))$' || true)"
+          if [ -n "${invalid}" ]; then
+            echo "Catalog sync attempted to modify unsupported files:"
+            echo "${invalid}"
+            exit 1
+          fi
+
       - name: Open or update verified catalog pull request
         if: steps.catalog.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.LOGISTER_CATALOG_BOT_TOKEN }}
           RELEASE_TAG: ${{ steps.release_set.outputs.tag }}
         run: |
+          set -euo pipefail
           if [ -z "${GH_TOKEN}" ]; then
             echo "Verified catalog updates require the dedicated catalog bot credential."
             exit 1
           fi
           changed="$(git diff --name-only)"
-          invalid="$(printf '%s\n' "${changed}" | grep -Ev '^(config/ecosystem-versions\.json|README\.md|public/llms(-full)?\.txt|docs/(mobile-add-ons|openapi)\.ya?ml|app/services/logister/cli_capabilities\.rb|spec/requests/api/v1/cli_capabilities_spec\.rb|app/views/.*\.erb|cloudflare-docs/.*\.(html|txt))$' || true)"
-          if [ -n "${invalid}" ]; then
-            echo "Catalog sync attempted to modify unsupported files:"
-            echo "${invalid}"
-            exit 1
-          fi
           branch="bot/release-catalog-${RELEASE_TAG}"
           git config user.name "logister-release-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
