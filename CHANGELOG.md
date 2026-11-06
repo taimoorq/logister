@@ -2,6 +2,24 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v4.1.1 - 2026-11-06
+
+### Fixed
+
+- Archive-before-delete retention now deletes old telemetry for large projects. A run used to stop after its first 25 archive objects, mark itself complete without verifying them, and delete nothing, and the next run archived the same rows again. Runs now continue until every archive is verified and its rows are deleted, and they finish archives that earlier runs left incomplete.
+
+### Improved
+
+- Archive a large retention backlog in manifests of up to `LOGISTER_RETENTION_MAX_OBJECTS_PER_MANIFEST` objects (default 100), so rows are deleted chunk by chunk and each attempt costs the same.
+- Drop empty monthly `ingest_events` partitions once they are older than every project's retention window. Expired partitions that still hold a few rows are listed by `bin/rails logister:postgres:partitioning:expired` and can be compacted with `logister:postgres:partitioning:compact[PARTITION]`.
+- Delete a telemetry source's outbox and delivery rows when retention deletes the source. Idempotency keys still answer retried requests for 120 days.
+
+### Upgrade Notes
+
+- No migration or configuration change is required. SDKs and CLI clients remain compatible, and no add-on release is required.
+- The first retention run after upgrading can take hours for projects with a large archive-before-delete backlog. Follow it in **Project settings → Data → Archive Center**.
+- Deleted rows do not return disk space on their own. After retention catches up, compact expired partitions in a quiet window and clear older outbox and delivery rows with `bin/rails logister:telemetry:prune_retired_ledger`. Both tasks default to a dry run; see `docs/telemetry-storage-retention.md`.
+
 ## v4.1.0 - 2026-10-23
 
 ### Security
