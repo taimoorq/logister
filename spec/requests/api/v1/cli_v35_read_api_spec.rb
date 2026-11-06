@@ -441,11 +441,14 @@ RSpec.describe "Api::V1::Cli v3.5 read API", type: :request do
     it "reuses the shared dashboard cache and rejects unknown attributes" do
       allow(ProjectInsights).to receive(:dashboard_for).and_call_original
 
-      2.times do
-        get "/api/v1/cli/projects/#{project.uuid}/insights",
-            params: { window: "1h", metric: [ "events.total" ] },
-            headers: headers
-        expect(response).to have_http_status(:ok)
+      # The cache key includes a 30-second time bucket; keep both requests in one.
+      freeze_time do
+        2.times do
+          get "/api/v1/cli/projects/#{project.uuid}/insights",
+              params: { window: "1h", metric: [ "events.total" ] },
+              headers: headers
+          expect(response).to have_http_status(:ok)
+        end
       end
       expect(ProjectInsights).to have_received(:dashboard_for).once
 
