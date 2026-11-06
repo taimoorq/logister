@@ -1,0 +1,39 @@
+---
+schema_version: 1
+id: retention-bounds-postgres-storage
+release_version: 4.1.0
+summary: Finish archive-first retention across bounded continuations, retire expired
+  ingest partitions, and prune ledger rows of retired sources without changing ingest.
+backend:
+  bump: none
+  compatibility: compatible
+  activation: immediate
+contracts:
+- telemetry_ingest
+contract_sha256:
+  telemetry_ingest: 90f14864012a5f99d5dc1b864a015efcf4ac85dd222d8ed53f47e21b10fba051
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-js:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-python:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-dotnet:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-android:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, evidence,
+      and duplicate retries stay compatible.
+  logister-ios:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, evidence,
+      and duplicate retries stay compatible.
