@@ -14,9 +14,7 @@ RSpec.describe "Triage walkthrough", type: :system do
 
   before do
     create(:project_membership, project: project, user: teammate, role: :viewer)
-    visit rails_health_check_path
-    page.execute_script('window.localStorage.setItem("tg_tours_complete", "project-errors")')
-    sign_in owner
+    sign_in_with_completed_tours(owner, "project-errors")
   end
 
   it "walks through an issue, and the choices really change it" do

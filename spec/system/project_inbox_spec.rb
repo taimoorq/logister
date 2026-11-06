@@ -6,11 +6,7 @@ RSpec.describe "Project inbox", type: :system do
   include ActionView::RecordIdentifier
 
   def sign_in_user
-    visit rails_health_check_path
-    page.execute_script(<<~JS)
-      window.localStorage.setItem("tg_tours_complete", "project-errors");
-    JS
-    sign_in users(:one)
+    sign_in_with_completed_tours(users(:one), "project-errors")
   end
 
   it "updates the detail pane through Turbo when opening a different inbox row" do
