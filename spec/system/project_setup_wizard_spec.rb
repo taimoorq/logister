@@ -13,9 +13,7 @@ RSpec.describe "Project setup wizard", type: :system do
   let(:step_path) { setup_step_project_path(project, group: "receive_data", step: "first_event") }
 
   def sign_in_user
-    visit rails_health_check_path
-    page.execute_script('window.localStorage.setItem("tg_tours_complete", "project-setup")')
-    sign_in owner
+    sign_in_with_completed_tours(owner, "project-setup")
   end
 
   # Counts server-side hits on the live-check endpoint.
