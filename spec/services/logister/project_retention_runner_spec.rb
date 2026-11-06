@@ -150,6 +150,29 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     protected_records.each { |record, _delivery| expect(idempotency_key_for(record).reload).to be_source_retired }
   end
 
+  it "drops the outbox and deliveries of a retired source but keeps its idempotency key" do
+    retired_event = create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
+    retired_span = create(:trace_span, project: project, started_at: now - 45.days)
+    pending_event = create(:ingest_event, :log, project: project, occurred_at: now - 45.days)
+    recent_event = create(:ingest_event, :log, project: project, occurred_at: now - 5.days)
+    retired_deliveries = [ create_delivery(retired_event, status: "completed"), create_delivery(retired_span, status: "completed") ]
+    pending_delivery = create_delivery(pending_event, status: "pending")
+    recent_delivery = create_delivery(recent_event, status: "completed")
+
+    described_class.new(project: project, policy: policy, now: now).call
+
+    [ retired_event, retired_span ].each do |record|
+      key = idempotency_key_for(record)
+      expect(key).to be_source_retired
+      expect(key.telemetry_outbox_event).to be_nil
+    end
+    expect(TelemetryDelivery.where(id: retired_deliveries.map(&:id))).to be_empty
+    expect(TelemetryOutboxEvent.exists?(pending_delivery.telemetry_outbox_event_id)).to be(true)
+    expect(pending_delivery.reload).to be_pending
+    expect(TelemetryOutboxEvent.exists?(recent_delivery.telemetry_outbox_event_id)).to be(true)
+    expect(recent_delivery.reload).to be_completed
+  end
+
   it "keeps a closed error group and its event until the event delivery completes" do
     group = create(
       :error_group,
@@ -265,6 +288,30 @@ RSpec.describe Logister::ProjectRetentionRunner, type: :model do
     expect(project.telemetry_archives.completed).to all(have_attributes(source_deleted_at: be_present))
     expect(storage.uploads.map { |upload| upload.fetch(:key) }).to all(include("project=#{project.uuid}"))
     expect(policy.reload.last_archive_run_at.to_i).to eq(now.to_i)
+  end
+
+  it "requires a continuation while the archive manifest is still enumerating" do
+    storage = FakeRetentionArchiveStorage.new
+    policy.update!(archive_enabled: true, archive_before_delete: true)
+    events = create_list(:ingest_event, 3, :metric, project: project, occurred_at: now - 45.days)
+
+    result = described_class.new(
+      project: project,
+      policy: policy,
+      storage_service: storage,
+      batch_size: 1,
+      archive_object_limit: 1,
+      cleanup_object_limit: 1,
+      now: now
+    ).call
+
+    archive = project.telemetry_archives.find_by!(scope: "hot_events")
+    expect(archive.object_record_scope.count).to eq(1)
+    expect(archive).not_to be_verified
+    expect(result[:continuation_required]).to be(true)
+    expect(result[:deleted]).to eq({})
+    expect(IngestEvent.where(id: events.map(&:id)).count).to eq(3)
+    expect(policy.reload.last_retention_run_at).to be_nil
   end
 
   it "separates deterministic cutoff time from archive cleanup audit time" do

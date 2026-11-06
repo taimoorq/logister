@@ -67,6 +67,40 @@ namespace :logister do
         )
         puts JSON.pretty_generate(result)
       end
+
+      desc "List monthly ingest_events partitions past every project's retention window"
+      task expired: :environment do
+        puts JSON.pretty_generate(Logister::IngestEventsPartitioning.new.expired_partitions)
+      end
+
+      desc "Drop empty expired ingest_events partitions. Defaults to dry run. Use CONFIRM=retire DRY_RUN=false to apply."
+      task retire_expired: :environment do
+        dry_run = ActiveModel::Type::Boolean.new.cast(ENV.fetch("DRY_RUN", "true"))
+        abort "Refusing to retire partitions without CONFIRM=retire" if !dry_run && ENV["CONFIRM"] != "retire"
+
+        result = Logister::IngestEventsPartitioning.new.retire_expired_partitions(
+          dry_run: dry_run,
+          lock_timeout: ENV.fetch("LOCK_TIMEOUT", Logister::IngestEventsPartitioning::RETIREMENT_LOCK_TIMEOUT)
+        )
+        puts JSON.pretty_generate(result)
+      end
+
+      desc "VACUUM FULL one expired ingest_events partition. Defaults to dry run. Use CONFIRM=compact DRY_RUN=false to apply."
+      task :compact, [ :partition ] => :environment do |_task, args|
+        partition = args[:partition].presence || ENV["PARTITION"].presence
+        abort "Pass the partition name, for example ingest_events_partitioned_2026_05" unless partition
+
+        dry_run = ActiveModel::Type::Boolean.new.cast(ENV.fetch("DRY_RUN", "true"))
+        abort "Refusing to compact without CONFIRM=compact" if !dry_run && ENV["CONFIRM"] != "compact"
+
+        result = Logister::IngestEventsPartitioning.new.compact_partition(
+          partition,
+          dry_run: dry_run,
+          lock_timeout: ENV.fetch("LOCK_TIMEOUT", "5s"),
+          statement_timeout: ENV.fetch("STATEMENT_TIMEOUT", "30min")
+        )
+        puts JSON.pretty_generate(result)
+      end
     end
   end
 end

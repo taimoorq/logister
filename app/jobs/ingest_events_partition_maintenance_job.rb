@@ -11,11 +11,25 @@ class IngestEventsPartitionMaintenanceJob < ApplicationJob
   )
 
   def perform
-    result = Logister::IngestEventsPartitioning.new.ensure_future_partitions
+    partitioning = Logister::IngestEventsPartitioning.new
+    result = partitioning.ensure_future_partitions
     if result.fetch(:blocked_partitions).any?
       Rails.logger.warn(
         "ingest event partition maintenance blocked by default rows: #{result.fetch(:blocked_partitions).to_json}"
       )
+    end
+
+    retirement = partitioning.retire_expired_partitions
+    if retirement.fetch(:retired_partitions).any?
+      Rails.logger.info(
+        "ingest event partition maintenance retired expired partitions: #{retirement.fetch(:retired_partitions).to_json}"
+      )
+    end
+
+    candidates = partitioning.compaction_candidates
+    if candidates.any?
+      summary = candidates.map { |partition| partition.slice(:name, :total_bytes, :estimated_reclaimable_bytes) }
+      Rails.logger.warn("ingest event partitions need operator compaction: #{summary.to_json}")
     end
   ensure
     reschedule_sidekiq_recurring_job

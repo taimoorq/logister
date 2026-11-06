@@ -1,0 +1,46 @@
+---
+schema_version: 1
+id: retention-bounds-postgres-storage
+release_version: 4.1.0
+summary: Finish archive-first retention across bounded continuations, retire expired
+  ingest partitions, and prune ledger rows of retired sources without changing ingest
+  or CLI contracts.
+backend:
+  bump: none
+  compatibility: compatible
+  activation: immediate
+contracts:
+- cli_api
+- telemetry_ingest
+contract_sha256:
+  cli_api: 77deea389acb49c33f481c6ec83a172bc29d689a843c4109f15d7066aff4020a
+  telemetry_ingest: 90f14864012a5f99d5dc1b864a015efcf4ac85dd222d8ed53f47e21b10fba051
+consumers:
+  logister-ruby:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-js:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-python:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-dotnet:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, responses,
+      and duplicate retries stay compatible.
+  logister-android:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, evidence,
+      and duplicate retries stay compatible.
+  logister-ios:
+    bump: none
+    reason: Retention, partition, and ledger pruning are internal; ingest payloads, evidence,
+      and duplicate retries stay compatible.
+  logister-cli:
+    bump: none
+    reason: Only a CLI read API spec was made deterministic; CLI endpoints and response
+      shapes are unchanged.

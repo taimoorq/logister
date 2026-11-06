@@ -12,6 +12,75 @@ module Logister
       ).call
     end
 
+    # Once retention deletes a source, its outbox row and deliveries have no
+    # further use: delivery repair and replay both need the source, and a
+    # retried request is answered from the idempotency key's acceptance
+    # metadata. The key itself stays until its 120-day expiry. Deleting the
+    # outbox row cascades to its deliveries. The caller must hold the key,
+    # outbox, and delivery row locks, in that order.
+    def self.prune_retired_outbox!(key_ids)
+      key_ids = Array(key_ids).compact
+      return 0 if key_ids.empty?
+
+      TelemetryOutboxEvent.where(telemetry_idempotency_key_id: key_ids)
+                          .where(retired_key_predicate)
+                          .where(replay_requirement.arel.exists.not)
+                          .delete_all
+    end
+
+    # Bounded sweep for outbox rows whose source was retired before retention
+    # began pruning them inline. Pass the returned next_after_id to continue.
+    def self.prune_retired_backlog(limit:, after_id: 0, batch_size: DEFAULT_BATCH_SIZE, dry_run: true)
+      limit = Integer(limit)
+      batch_size = batch_size.to_i.clamp(1, 5_000)
+      cursor = Integer(after_id.presence || 0)
+      scanned = 0
+      pruned = 0
+
+      while scanned < limit
+        rows = TelemetryOutboxEvent.where(retired_key_predicate)
+                                   .where("telemetry_outbox_events.id > ?", cursor)
+                                   .order(:id)
+                                   .limit([ batch_size, limit - scanned ].min)
+                                   .pluck(:id, :telemetry_idempotency_key_id)
+        break if rows.empty?
+
+        scanned += rows.size
+        cursor = rows.last.first
+        key_ids = rows.map(&:last)
+        pruned += if dry_run
+          TelemetryOutboxEvent.where(id: rows.map(&:first)).where(replay_requirement.arel.exists.not).count
+        else
+          prune_locked_backlog_batch(key_ids, rows.map(&:first))
+        end
+      end
+
+      { dry_run: dry_run, scanned_outbox_events: scanned, pruned_outbox_events: pruned, next_after_id: cursor }
+    end
+
+    def self.prune_locked_backlog_batch(key_ids, outbox_ids)
+      TelemetryIdempotencyKey.transaction do
+        TelemetryIdempotencyKey.where(id: key_ids).order(:id).lock.load
+        TelemetryOutboxEvent.where(id: outbox_ids).order(:id).lock.load
+        TelemetryDelivery.where(telemetry_outbox_event_id: outbox_ids).order(:id).lock.load
+        prune_retired_outbox!(key_ids)
+      end
+    end
+    private_class_method :prune_locked_backlog_batch
+
+    def self.retired_key_predicate
+      TelemetryIdempotencyKey.where(TelemetryIdempotencyKey.arel_table[:id].eq(TelemetryOutboxEvent.arel_table[:telemetry_idempotency_key_id]))
+                             .source_retired
+                             .arel.exists
+    end
+    private_class_method :retired_key_predicate
+
+    def self.replay_requirement
+      TelemetryDelivery.where(TelemetryDelivery.arel_table[:telemetry_outbox_event_id].eq(TelemetryOutboxEvent.arel_table[:id]))
+                       .required_for_replay
+    end
+    private_class_method :replay_requirement
+
     def initialize(expired_before:, batch_size:, watermarks_before:)
       @expired_before = expired_before
       @batch_size = batch_size.to_i.clamp(1, 5_000)

@@ -46,6 +46,28 @@ Transient ClickHouse failures open a cache-backed circuit after the configured t
 
 `IngestEventsPartitionMaintenanceJob` runs daily on the `maintenance` queue and idempotently creates the configured future monthly `ingest_events` partitions. PostgreSQL sends uncovered timestamps to the default partition instead of failing ingestion. The Redis & jobs diagnostic reports default-partition row counts grouped by month, earliest/latest timestamps, and whether the partition is drain-ready. If a target month contains default rows, automatic creation is intentionally blocked until an operator moves those rows; this avoids an unsafe implicit table rewrite during routine maintenance.
 
+### Retiring expired months
+
+Retention deletes rows, but a past month's partition keeps its disk space: new events go to the current month, so the freed space is never reused. A monthly partition is *expired* once its whole range is older than the longest hot-event retention window of any project (at least the 30-day default), plus one day.
+
+The same daily job detaches and drops an expired partition when it is empty. It takes a short `ACCESS EXCLUSIVE` lock on `ingest_events` (2-second lock timeout), rechecks that the partition is empty while holding it, and skips the month until the next run if the lock is busy. `DETACH PARTITION` also refuses a partition that error occurrences, error groups, or check-in monitors still reference.
+
+Expired months usually are not empty. Error events stay while their group is open, and closed groups are kept forever unless the project sets an error retention window. The job logs `ingest event partitions need operator compaction` when an expired partition looks mostly empty (estimated reclaimable space of at least 256 MB). List expired partitions and the recommended action (`drop`, `compact`, `keep`, or `wait_for_retention` while a retention run is still active and may delete more rows from those months):
+
+```sh
+bin/rails logister:postgres:partitioning:expired
+```
+
+Compaction runs `VACUUM (FULL, ANALYZE)` on one partition. It writes a copy of only the live rows, so it needs free disk space for that copy and its indexes. While it reads the old file, it holds an `ACCESS EXCLUSIVE` lock on that partition. Queries that cannot rule out the month (for example lookups by error group or foreign-key checks for new error occurrences) wait until it finishes. Run it in a quiet window, one partition at a time, after retention has finished deleting from that month:
+
+```sh
+bin/rails "logister:postgres:partitioning:compact[ingest_events_partitioned_2026_05]"
+DRY_RUN=false CONFIRM=compact LOCK_TIMEOUT=5s STATEMENT_TIMEOUT=30min \
+  bin/rails "logister:postgres:partitioning:compact[ingest_events_partitioned_2026_05]"
+```
+
+The first command is a dry run that prints the partition size and estimated reclaimable bytes. The task refuses partitions that are not expired. Plan one compaction per month in the maintenance window, because each month leaves a sparse partition behind once retention catches up.
+
 ## PostgreSQL analytical transition runbook
 
 ClickHouse ownership does not authorize an application migration to drop PostgreSQL indexes or source rows. Treat each reduction as a separately approved production operation with an observation window, a recorded recreation command, and a rollback threshold.
@@ -107,7 +129,16 @@ These are initial hosted-service targets after 30 consecutive days of complete w
 | Check-in observation | 30 days | Monitor derivation complete and missed/error history verified; ClickHouse `check_in` hours complete |
 | Trace span | 72 hours | Performance root/child mapping equivalence; ClickHouse `span` hours complete |
 
-Keep idempotency/outbox identities and their immutable acceptance metadata for their separate 120-day retry horizon even when the hot source buffer is shorter, and retain projection watermarks for at least the longest user-query and reconciliation window. Retention locks each idempotency key, outbox, delivery set, and source in order; source deletion commits with `source_retired_at`, so a later retry can return its accepted identifiers while delivery repair refuses to create work that requires a deleted source. If an incomplete delivery approaches the source-retention boundary, alert and pause deletion rather than converting it into a missing-source terminal failure.
+Keep idempotency keys and their immutable acceptance metadata for their separate 120-day retry horizon even when the hot source buffer is shorter, and retain projection watermarks for at least the longest user-query and reconciliation window. Retention locks each idempotency key, outbox, delivery set, and source in order; source deletion commits with `source_retired_at`, so a later retry can return its accepted identifiers from the key's acceptance metadata while delivery repair refuses to create work that requires a deleted source. In the same transaction, retention deletes the source's outbox row and its deliveries, which are complete by then, so these two tables follow the hot source buffer instead of the 120-day key horizon. An outbox row whose delivery batch still needs replay is kept.
+
+Sources retired before this pruning existed keep their outbox and delivery rows until their key expires. Remove them sooner with the bounded backlog task. Each run handles at most `LIMIT` outbox rows (default 100,000) and prints `next_after_id`; pass it as `AFTER_ID` to continue:
+
+```sh
+bin/rails logister:telemetry:prune_retired_ledger
+DRY_RUN=false CONFIRM=prune_retired LIMIT=100000 AFTER_ID=0 bin/rails logister:telemetry:prune_retired_ledger
+```
+
+Deleted rows free space inside these tables for new rows. The files do not shrink, but the tables stop growing until new rows have used that space. If an incomplete delivery approaches the source-retention boundary, alert and pause deletion rather than converting it into a missing-source terminal failure.
 
 ### `trace_spans` decision
 
@@ -261,9 +292,25 @@ different value:
 | Setting | Default | Behavior |
 | --- | ---: | --- |
 | `LOGISTER_RETENTION_OBJECTS_PER_ATTEMPT` | 25 | Maximum upload, verification, or cleanup objects advanced by one job attempt. |
+| `LOGISTER_RETENTION_MAX_OBJECTS_PER_MANIFEST` | 100 | Objects in one archive manifest. A larger backlog is archived, verified, and deleted as a series of manifests within the same run. |
 | `LOGISTER_RETENTION_STALE_SECONDS` | 900 | Heartbeat age after which recovery fences a running attempt. |
 | `LOGISTER_RETENTION_MAX_FAILURES` | 10 | Retry failures before the run becomes terminal. |
 | `LOGISTER_RETENTION_ENQUEUE_CLAIM_SECONDS` | 300 | Duplicate-enqueue suppression window for recovery. |
+
+A run continues, one bounded attempt after another, until every manifest it
+started is verified and its sources are cleaned up. A backlog is never limited
+to one attempt's objects per day. Every verification and cleanup attempt
+re-checksums its whole manifest, so the manifest cap keeps attempt cost flat
+for a large backlog. Each manifest after the first in a run starts after the
+previous manifest's last source ID.
+
+Releases before this change could mark a run `completed` while its manifest was
+still enumerating. In that case the objects stayed unverified and nothing was
+deleted, and each later run uploaded a new copy of the same first rows. A run
+now resumes unfinished manifests owned by completed, cancelled, or superseded
+runs, newest first, and records `adopted_from_retention_run_id` in the
+manifest's lifecycle metadata. Manifests owned by a failed run are left for
+investigation.
 
 Alert on an `archives` queue age that grows across recovery sweeps, a stale
 running heartbeat, any terminal run failure, verified archives awaiting source

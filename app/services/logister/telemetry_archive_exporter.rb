@@ -30,7 +30,8 @@ module Logister
                    prefix: InstanceConfiguration.value("archive_storage.prefix"),
                    storage_service: nil, dry_run: false, scope: nil, archive: nil,
                    selection: nil, protect_incomplete_deliveries: nil,
-                   object_limit: nil, write_fence: nil, project_retention_run: nil)
+                   object_limit: nil, write_fence: nil, project_retention_run: nil,
+                   max_objects: nil, after_source_id: nil)
       @record_type = record_type.to_s
       @before = before
       @after = after
@@ -51,6 +52,11 @@ module Logister
         ActiveModel::Type::Boolean.new.cast(protect_incomplete_deliveries)
       end
       @object_limit = object_limit.to_i if object_limit.to_i.positive?
+      # max_objects caps one manifest. Enumeration then stops and the manifest is
+      # verified on its own; the caller starts the next one after source_max_id.
+      max_objects = archive&.lifecycle_metadata&.dig("max_objects") if max_objects.nil?
+      @max_objects = max_objects.to_i if max_objects.to_i.positive?
+      @after_source_id = Integer(after_source_id) if after_source_id.present?
       @objects_processed = 0
       @write_fence = write_fence
       @project_retention_run = project_retention_run || archive&.project_retention_run
@@ -119,6 +125,8 @@ module Logister
           "selection" => @selection,
           "protect_incomplete_deliveries" => @protect_incomplete_deliveries,
           "sequence_upper_bound" => @sequence_upper_bound,
+          "after_source_id" => @after_source_id,
+          "max_objects" => @max_objects,
           "selection_created_at" => Time.current.utc.iso8601(6),
           "enumeration_complete" => false,
           "storage_locator" => @storage_locator
@@ -169,8 +177,10 @@ module Logister
     def enumerate_and_upload_remaining!
       sequence = @archive.object_record_scope.maximum(:sequence).to_i
       sequence += 1 if @archive.object_record_scope.exists?
+      object_count = @archive.object_record_scope.count
       remaining_relation.in_batches(of: @batch_size) do |batch_relation|
         break unless object_budget_available?
+        break if manifest_full?(object_count)
 
         records = batch_relation.order(:id).to_a
         next if records.empty?
@@ -180,9 +190,22 @@ module Logister
         upload_object_record!(object_record, records, payload: payload)
         consume_object_budget!
         sequence += 1
+        object_count += 1
       end
 
-      update_lifecycle_metadata!("enumeration_complete" => true) unless remaining_relation.exists?
+      if !remaining_relation.exists?
+        update_lifecycle_metadata!("enumeration_complete" => true)
+      elsif manifest_full?(object_count)
+        update_lifecycle_metadata!(
+          "enumeration_complete" => true,
+          "enumeration_truncated" => true,
+          "max_objects" => @max_objects
+        )
+      end
+    end
+
+    def manifest_full?(object_count)
+      @max_objects.present? && object_count >= @max_objects
     end
 
     def build_object_record!(records, sequence, payload:)
@@ -330,11 +353,20 @@ module Logister
       end
       upper_bound = sequence_upper_bound
       result = result.where("#{model.table_name}.id <= ?", upper_bound) if upper_bound
+      lower_bound = source_lower_bound
+      result = result.where("#{model.table_name}.id > ?", lower_bound) if lower_bound
       result
     end
 
     def sequence_upper_bound
       @archive&.lifecycle_metadata&.dig("sequence_upper_bound") || @sequence_upper_bound
+    end
+
+    # Part of the selection, so a resumed manifest keeps its creation-time value.
+    def source_lower_bound
+      return @archive.lifecycle_metadata&.dig("after_source_id") if @archive&.persisted?
+
+      @after_source_id
     end
 
     def apply_selection(result)
@@ -608,6 +640,7 @@ module Logister
         source_reference_count: @archive.expected_rows,
         verified: @archive.verified?,
         continuation_required: !@archive.verified?,
+        enumeration_truncated: @archive.lifecycle_metadata&.dig("enumeration_truncated") == true,
         objects_processed_this_attempt: @objects_processed,
         dry_run: false
       }
