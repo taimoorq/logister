@@ -222,6 +222,185 @@ RSpec.describe Logister::ProjectRetentionRunRunner, type: :model do
     expect(storage.uploads.size).to eq(1)
   end
 
+  it "keeps a run open until a manifest larger than one attempt is verified and its sources deleted" do
+    stub_const("Logister::ProjectRetentionRunRunner::DEFAULT_OBJECTS_PER_ATTEMPT", 1)
+    stub_const("Logister::ProjectRetentionRunner::DEFAULT_BATCH_SIZE", 1)
+    project = create(:project)
+    policy = create(
+      :project_retention_policy,
+      project: project,
+      hot_retention_days: 30,
+      trace_retention_days: 30,
+      archive_enabled: true,
+      archive_before_delete: true
+    )
+    events = create_list(:ingest_event, 3, :metric, project: project, occurred_at: now - 45.days)
+    durable_run = Logister::ProjectRetentionRunCoordinator.create_or_find!(
+      project: project,
+      scheduled_for: now,
+      dry_run: false,
+      trigger_kind: "scheduled"
+    ).run
+    durable_run.update!(available_at: now)
+    storage = DurableRetentionArchiveStorage.new
+
+    actions = run_until_complete(durable_run, storage)
+
+    archive = durable_run.telemetry_archives.find_by!(scope: "hot_events")
+    expect(actions.first).to eq(:continue)
+    expect(actions.last).to eq(:complete)
+    expect(archive).to be_verified
+    expect(archive.object_record_scope.count).to eq(3)
+    expect(archive.source_deleted_at).to be_present
+    expect(IngestEvent.where(id: events.map(&:id))).to be_empty
+    expect(storage.uploads.size).to eq(3)
+    final = durable_run.reload.result
+    expect(final.fetch("deleted").fetch("hot_events", 0) + final.fetch("recovered_deletions").fetch("hot_events", 0)).to eq(3)
+    expect(policy.reload.last_archive_run_at).to be_present
+  end
+
+  { "one object per attempt" => 1, "a whole manifest per attempt" => 25 }.each do |budget_label, objects_per_attempt|
+    it "archives a backlog as capped manifests and deletes each chunk first with #{budget_label}" do
+      stub_const("Logister::ProjectRetentionRunRunner::DEFAULT_OBJECTS_PER_ATTEMPT", objects_per_attempt)
+      stub_const("Logister::ProjectRetentionRunRunner::DEFAULT_OBJECTS_PER_MANIFEST", 2)
+      stub_const("Logister::ProjectRetentionRunner::DEFAULT_BATCH_SIZE", 1)
+      project = create(:project)
+      create(
+        :project_retention_policy,
+        project: project,
+        hot_retention_days: 30,
+        trace_retention_days: 30,
+        archive_enabled: true,
+        archive_before_delete: true
+      )
+      events = create_list(:ingest_event, 5, :metric, project: project, occurred_at: now - 45.days).sort_by(&:id)
+      durable_run = Logister::ProjectRetentionRunCoordinator.create_or_find!(
+        project: project,
+        scheduled_for: now,
+        dry_run: false,
+        trigger_kind: "scheduled"
+      ).run
+      durable_run.update!(available_at: now)
+      storage = DurableRetentionArchiveStorage.new
+      remaining_when_second_manifest_started = nil
+      allow(Logister::TelemetryArchiveExporter).to receive(:new).and_wrap_original do |original, **arguments|
+        if arguments[:after_source_id] && remaining_when_second_manifest_started.nil?
+          remaining_when_second_manifest_started = IngestEvent.where(id: events.map(&:id)).count
+        end
+        original.call(**arguments)
+      end
+
+      actions = run_until_complete(durable_run, storage)
+
+      manifests = durable_run.telemetry_archives.where(scope: "hot_events").order(:id).to_a
+      expect(actions.last).to eq(:complete)
+      expect(manifests.map { |archive| archive.object_record_scope.count }).to eq([ 2, 2, 1 ])
+      expect(manifests).to all(be_verified)
+      expect(manifests).to all(have_attributes(source_deleted_at: be_present))
+      expect(manifests.map { |archive| archive.lifecycle_metadata["after_source_id"] }).to eq(
+        [ nil, manifests[0].source_max_id, manifests[1].source_max_id ]
+      )
+      expect(manifests.map { |archive| archive.lifecycle_metadata["enumeration_truncated"] == true }).to eq([ true, true, false ])
+      expect(remaining_when_second_manifest_started).to eq(3)
+      expect(IngestEvent.where(id: events.map(&:id))).to be_empty
+      expect(storage.uploads.size).to eq(5)
+    end
+  end
+
+  it "resumes a manifest stranded by an earlier completed run instead of uploading a duplicate" do
+    stub_const("Logister::ProjectRetentionRunRunner::DEFAULT_OBJECTS_PER_ATTEMPT", 1)
+    stub_const("Logister::ProjectRetentionRunner::DEFAULT_BATCH_SIZE", 1)
+    project = create(:project)
+    create(
+      :project_retention_policy,
+      project: project,
+      hot_retention_days: 30,
+      trace_retention_days: 30,
+      archive_enabled: true,
+      archive_before_delete: true
+    )
+    events = create_list(:ingest_event, 3, :metric, project: project, occurred_at: now - 45.days)
+    storage = DurableRetentionArchiveStorage.new
+    earlier_run = create(
+      :project_retention_run,
+      project: project,
+      scheduled_for: now - 1.day,
+      status: "completed",
+      completed_at: now - 1.day
+    )
+    stranded = Logister::TelemetryArchiveExporter.new(
+      record_type: "ingest_events",
+      scope: "hot_events",
+      project: project,
+      before: now - 31.days,
+      event_types: Logister::ProjectRetentionRunner::HOT_EVENT_TYPES,
+      batch_size: 1,
+      storage_service: storage,
+      object_limit: 1,
+      project_retention_run: earlier_run
+    ).call
+    stranded_archive = TelemetryArchive.find(stranded.fetch(:archive_id))
+    expect(stranded_archive).not_to be_verified
+
+    durable_run = Logister::ProjectRetentionRunCoordinator.create_or_find!(
+      project: project,
+      scheduled_for: now,
+      dry_run: false,
+      trigger_kind: "scheduled"
+    ).run
+    durable_run.update!(available_at: now)
+
+    actions = run_until_complete(durable_run, storage)
+
+    expect(actions.last).to eq(:complete)
+    expect(project.telemetry_archives.where(scope: "hot_events").pluck(:id)).to eq([ stranded_archive.id ])
+    expect(stranded_archive.reload).to be_verified
+    expect(stranded_archive.project_retention_run_id).to eq(durable_run.id)
+    expect(stranded_archive.lifecycle_metadata).to include("adopted_from_retention_run_id" => earlier_run.id)
+    expect(stranded_archive.source_deleted_at).to be_present
+    expect(IngestEvent.where(id: events.map(&:id))).to be_empty
+    expect(storage.uploads.size).to eq(3)
+  end
+
+  it "leaves a manifest owned by a failed run for investigation" do
+    project = create(:project)
+    create(
+      :project_retention_policy,
+      project: project,
+      hot_retention_days: 30,
+      trace_retention_days: 30,
+      archive_enabled: true,
+      archive_before_delete: true
+    )
+    create(:ingest_event, :metric, project: project, occurred_at: now - 45.days)
+    storage = DurableRetentionArchiveStorage.new
+    failed_run = create(:project_retention_run, project: project, scheduled_for: now - 1.day, status: "failed")
+    preserved = Logister::TelemetryArchiveExporter.new(
+      record_type: "ingest_events",
+      scope: "hot_events",
+      project: project,
+      before: now - 31.days,
+      event_types: Logister::ProjectRetentionRunner::HOT_EVENT_TYPES,
+      storage_service: storage,
+      object_limit: 1,
+      project_retention_run: failed_run
+    ).call
+    preserved_archive = TelemetryArchive.find(preserved.fetch(:archive_id))
+    preserved_archive.update_columns(status: "failed", error_message: "checksum mismatch")
+
+    durable_run = Logister::ProjectRetentionRunCoordinator.create_or_find!(
+      project: project,
+      scheduled_for: now,
+      dry_run: false,
+      trigger_kind: "scheduled"
+    ).run
+    durable_run.update!(available_at: now)
+    run_until_complete(durable_run, storage)
+
+    expect(preserved_archive.reload).to have_attributes(status: "failed", project_retention_run_id: failed_run.id)
+    expect(durable_run.telemetry_archives.where(scope: "hot_events").sole).to be_verified
+  end
+
   it "adopts an unlinked resumable v2 manifest instead of restarting it" do
     stub_const("Logister::ProjectRetentionRunRunner::DEFAULT_OBJECTS_PER_ATTEMPT", 1)
     project = create(:project)
@@ -263,5 +442,19 @@ RSpec.describe Logister::ProjectRetentionRunRunner, type: :model do
     expect(archive.source_deleted_at).to be_present
     expect(IngestEvent.exists?(event.id)).to be(false)
     expect(storage.uploads.size).to eq(1)
+  end
+
+  def run_until_complete(durable_run, storage, max_attempts: 40)
+    actions = []
+    max_attempts.times do |index|
+      outcome = described_class.new(
+        run: durable_run.reload,
+        storage_service: storage,
+        now: now + index * 2.seconds
+      ).call
+      actions << outcome.fetch(:action)
+      break if outcome.fetch(:action).in?(%i[complete failed])
+    end
+    actions
   end
 end

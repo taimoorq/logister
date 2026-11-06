@@ -7,6 +7,10 @@ module Logister
     class LeaseLost < StandardError; end
 
     DEFAULT_OBJECTS_PER_ATTEMPT = 25
+    # Every verification and cleanup attempt re-checksums the whole manifest, so
+    # an uncapped manifest for a large backlog makes each attempt slower than
+    # the last. Capped manifests are verified and deleted one chunk at a time.
+    DEFAULT_OBJECTS_PER_MANIFEST = 100
     DEFAULT_MAX_FAILURES = 10
     CONTINUATION_DELAY = 1.second
 
@@ -43,6 +47,7 @@ module Logister
         run: @run,
         archive_object_limit: objects_per_attempt,
         cleanup_object_limit: objects_per_attempt,
+        manifest_object_limit: objects_per_manifest,
         write_fence: method(:assert_current_attempt!),
         storage_service: @storage_service,
         cutoff_snapshot: @run.cutoff_snapshot,
@@ -275,6 +280,10 @@ module Logister
 
     def objects_per_attempt
       positive_integer_env("LOGISTER_RETENTION_OBJECTS_PER_ATTEMPT", DEFAULT_OBJECTS_PER_ATTEMPT)
+    end
+
+    def objects_per_manifest
+      positive_integer_env("LOGISTER_RETENTION_MAX_OBJECTS_PER_MANIFEST", DEFAULT_OBJECTS_PER_MANIFEST)
     end
 
     def max_failures

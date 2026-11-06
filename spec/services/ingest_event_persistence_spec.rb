@@ -113,6 +113,27 @@ RSpec.describe IngestEventPersistence, type: :model do
       .to raise_error(TelemetryOutboxEvent::SourceRetired, /archive replay/)
   end
 
+  it "accepts a retry from the idempotency key alone after retention pruned the outbox" do
+    Rails.configuration.x.logister.clickhouse_mode = "disabled"
+    Rails.configuration.x.logister.clickhouse_enabled = false
+    log_attributes = attributes.merge(event_type: :log)
+    first = described_class.new(project: project, api_key: api_key, attributes: log_attributes).call
+    key = first.outbox_event.telemetry_idempotency_key
+    key.update!(source_retired_at: Time.current)
+    IngestEvent.for_partition_reference(id: first.event.id, occurred_at: first.event.occurred_at).delete_all
+    expect(Logister::TelemetryLedgerCleanup.prune_retired_outbox!([ key.id ])).to eq(1)
+
+    expect do
+      duplicate = described_class.new(project: project, api_key: api_key, attributes: log_attributes).call
+
+      expect(duplicate).to be_duplicate
+      expect(duplicate.event).to be_a(TelemetryAcceptanceTombstone)
+      expect(duplicate.event).to have_attributes(uuid: first.event.uuid, id: first.event.id)
+      expect(duplicate.event.accepted_at).to be_present
+      expect(duplicate.outbox_event).to be_nil
+    end.not_to change { [ IngestEvent.count, TelemetryOutboxEvent.count, TelemetryDelivery.count ] }
+  end
+
   it "reports an identity conflict when a ledger source disappears without retirement" do
     Rails.configuration.x.logister.clickhouse_mode = "disabled"
     Rails.configuration.x.logister.clickhouse_enabled = false

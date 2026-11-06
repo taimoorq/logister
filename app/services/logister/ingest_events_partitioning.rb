@@ -18,6 +18,20 @@ module Logister
 
     DEFAULT_BATCH_SIZE = 10_000
     DEFAULT_FUTURE_PARTITION_MONTHS = 12
+    # A partition is expired once its whole month is older than the longest
+    # hot-event retention window, plus this margin.
+    EXPIRY_MARGIN = 1.day
+    RETIREMENT_LOCK_TIMEOUT = "2s"
+    RETIREMENT_STATEMENT_TIMEOUT = "30s"
+    # Autovacuum truncates an empty heap, so a larger one may still be
+    # unvacuumed or hold rows; checking it under the parent lock would be slow.
+    RETIREMENT_MAX_HEAP_BYTES = 8.megabytes
+    COMPACTION_MIN_RECLAIMABLE_BYTES = 256.megabytes
+    # Generous per-row allowance (heap, TOAST, and index entries) for the
+    # live-size estimate used to rank compaction candidates.
+    ESTIMATED_BYTES_PER_LIVE_ROW = 2.kilobytes
+    MONTHLY_PARTITION_PATTERN = /\Apublic\.ingest_events_partitioned_\d{4}_\d{2}\z/
+    PARTITION_BOUND_PATTERN = /FROM \('([^']+)'\) TO \('([^']+)'\)/
     SOURCE_TABLE = "public.ingest_events"
     SHADOW_TABLE = "public.ingest_events_partitioned"
     BACKUP_TABLE = "public.ingest_events_unpartitioned_backup"
@@ -186,6 +200,92 @@ module Logister
       }
     end
 
+    # Monthly partitions whose whole range is older than every project's
+    # hot-event cutoff. Retention deletes rows but never returns a partition's
+    # disk space, and error events for open or retained groups can stay in an
+    # expired month indefinitely. Empty partitions are dropped; sparse ones are
+    # reported for an operator-approved compaction.
+    def expired_partitions(now: Time.current)
+      return [] unless post_cutover?
+
+      boundary = expiry_boundary(now)
+      retention_active = ProjectRetentionRun.active.where(dry_run: false).exists?
+      monthly_partition_stats.filter_map do |partition|
+        next unless partition.fetch(:to) <= boundary
+
+        partition.merge(
+          expired_before: boundary.iso8601,
+          recommended_action: expired_partition_action(partition, retention_active: retention_active)
+        )
+      end
+    end
+
+    def retire_expired_partitions(now: Time.current, dry_run: false, lock_timeout: RETIREMENT_LOCK_TIMEOUT)
+      retired = []
+      skipped = []
+
+      expired_partitions(now: now).each do |partition|
+        name = partition.fetch(:name)
+        unless partition.fetch(:recommended_action) == "drop"
+          skipped << { partition: name, reason: "rows_present", estimated_live_rows: partition.fetch(:estimated_live_rows) }
+          next
+        end
+        if dry_run
+          retired << { partition: name, month: partition.fetch(:month), dry_run: true }
+          next
+        end
+
+        outcome = retire_partition(name, lock_timeout: lock_timeout)
+        if outcome == :retired
+          retired << { partition: name, month: partition.fetch(:month), total_bytes: partition.fetch(:total_bytes) }
+        else
+          skipped << { partition: name, reason: outcome.to_s }
+        end
+      end
+
+      { dry_run: dry_run, retired_partitions: retired, skipped_partitions: skipped }
+    end
+
+    def compaction_candidates(now: Time.current)
+      expired_partitions(now: now).select { |partition| partition.fetch(:recommended_action) == "compact" }
+    end
+
+    # VACUUM FULL rewrites only the live rows, but holds an ACCESS EXCLUSIVE
+    # lock on the partition while it reads the whole old heap. Queries that
+    # cannot prune this month wait during the rewrite, so this stays an
+    # operator action for a quiet window.
+    def compact_partition(partition_name, now: Time.current, dry_run: true, lock_timeout: "5s",
+                          statement_timeout: "30min")
+      name = qualified_partition_name(partition_name)
+      partition = expired_partitions(now: now).find { |candidate| candidate.fetch(:name) == name }
+      unless partition
+        raise CutoverError, "#{name} is not a monthly ingest_events partition past every project's retention window"
+      end
+
+      plan = partition.slice(
+        :name, :month, :total_bytes, :estimated_live_rows, :estimated_reclaimable_bytes, :recommended_action
+      )
+      return plan.merge(dry_run: true) if dry_run
+
+      started_at = monotonic_time
+      begin
+        execute "SET lock_timeout = #{connection.quote(lock_timeout)}"
+        execute "SET statement_timeout = #{connection.quote(statement_timeout)}"
+        execute "VACUUM (FULL, ANALYZE) #{name}"
+      ensure
+        execute "RESET lock_timeout"
+        execute "RESET statement_timeout"
+      end
+      after = monthly_partition_stats.find { |candidate| candidate.fetch(:name) == name }
+
+      plan.merge(
+        dry_run: false,
+        elapsed_seconds: elapsed_seconds(started_at),
+        total_bytes_after: after&.fetch(:total_bytes),
+        reclaimed_bytes: after ? [ partition.fetch(:total_bytes) - after.fetch(:total_bytes), 0 ].max : nil
+      )
+    end
+
     def backfill(from: nil, to: nil, batch_size: DEFAULT_BATCH_SIZE, dry_run: true)
       raise CutoverError, "Partition backfill is unavailable after cutover" unless table_exists?(SHADOW_TABLE)
 
@@ -264,6 +364,94 @@ module Logister
         partitioned_tables: partition_maintenance_tables,
         default_partitions: default_partition_diagnostics
       }
+    end
+
+    def post_cutover?
+      partitioned_table?(SOURCE_TABLE) && !table_exists?(SHADOW_TABLE)
+    end
+
+    # Projects without a policy row receive the default window, so the default
+    # is always part of the maximum.
+    def expiry_boundary(now)
+      longest = [
+        ProjectRetentionPolicy.maximum(:hot_retention_days),
+        ProjectRetentionPolicy::DEFAULT_HOT_RETENTION_DAYS
+      ].compact.max
+      (now - longest.days - EXPIRY_MARGIN).utc
+    end
+
+    # Compacting while a retention run is still deleting from an expired month
+    # would leave new dead space behind, so the recommendation waits for it.
+    def expired_partition_action(partition, retention_active:)
+      if partition.fetch(:estimated_live_rows).zero? && partition.fetch(:heap_bytes) <= RETIREMENT_MAX_HEAP_BYTES
+        "drop"
+      elsif partition.fetch(:estimated_reclaimable_bytes) < COMPACTION_MIN_RECLAIMABLE_BYTES
+        "keep"
+      elsif retention_active
+        "wait_for_retention"
+      else
+        "compact"
+      end
+    end
+
+    def monthly_partition_stats
+      connection.select_all(<<~SQL.squish).to_a.filter_map { |row| monthly_partition_entry(row) }
+        SELECT child.oid::regclass::text AS name,
+               pg_get_expr(child.relpartbound, child.oid) AS bound,
+               pg_relation_size(child.oid) AS heap_bytes,
+               pg_total_relation_size(child.oid) AS total_bytes,
+               GREATEST(COALESCE(stats.n_live_tup, 0), child.reltuples, 0)::bigint AS estimated_live_rows
+        FROM pg_inherits
+        JOIN pg_class child ON child.oid = pg_inherits.inhrelid
+        LEFT JOIN pg_stat_user_tables stats ON stats.relid = child.oid
+        WHERE pg_inherits.inhparent = #{connection.quote(SOURCE_TABLE)}::regclass
+        ORDER BY 1
+      SQL
+    end
+
+    def monthly_partition_entry(row)
+      name = qualified_partition_name(row.fetch("name"))
+      bounds = row.fetch("bound").to_s.match(PARTITION_BOUND_PATTERN)
+      return unless name.match?(MONTHLY_PARTITION_PATTERN) && bounds
+
+      from = Time.find_zone("UTC").parse(bounds[1])
+      total_bytes = row.fetch("total_bytes").to_i
+      live_rows = row.fetch("estimated_live_rows").to_i
+      {
+        name: name,
+        month: from.strftime("%Y-%m"),
+        from: from,
+        to: Time.find_zone("UTC").parse(bounds[2]),
+        heap_bytes: row.fetch("heap_bytes").to_i,
+        total_bytes: total_bytes,
+        estimated_live_rows: live_rows,
+        estimated_reclaimable_bytes: [ total_bytes - (live_rows * ESTIMATED_BYTES_PER_LIVE_ROW), 0 ].max
+      }
+    end
+
+    def qualified_partition_name(name)
+      name = name.to_s
+      name.include?(".") ? name : "public.#{name}"
+    end
+
+    # The parent lock makes the emptiness check and the detach atomic with
+    # respect to late inserts, which route through the parent. DETACH also
+    # refuses to proceed while a foreign key still references a row in the
+    # partition.
+    def retire_partition(name, lock_timeout:)
+      connection.transaction(requires_new: true) do
+        select_value("SELECT 1 FROM pg_advisory_xact_lock(hashtext('logister:ingest_events_partition_maintenance'))")
+        execute "SET LOCAL lock_timeout = #{connection.quote(lock_timeout)}"
+        execute "SET LOCAL statement_timeout = #{connection.quote(RETIREMENT_STATEMENT_TIMEOUT)}"
+        execute "LOCK TABLE ONLY #{SOURCE_TABLE} IN ACCESS EXCLUSIVE MODE"
+        next :rows_present if select_value("SELECT EXISTS (SELECT 1 FROM #{name})")
+
+        execute "ALTER TABLE #{SOURCE_TABLE} DETACH PARTITION #{name}"
+        execute "DROP TABLE #{name}"
+        :retired
+      end
+    rescue ActiveRecord::LockWaitTimeout, ActiveRecord::QueryCanceled
+      :lock_unavailable
     end
 
     def cutover_status

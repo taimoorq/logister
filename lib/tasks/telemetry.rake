@@ -83,5 +83,20 @@ namespace :logister do
 
       puts JSON.pretty_generate(results)
     end
+
+    desc "Drop outbox and delivery rows of retired sources in one bounded batch. Defaults to dry run. " \
+         "Use DRY_RUN=false CONFIRM=prune_retired to delete; pass AFTER_ID from the previous run to continue."
+    task prune_retired_ledger: :environment do
+      dry_run = ActiveModel::Type::Boolean.new.cast(ENV.fetch("DRY_RUN", "true"))
+      abort "Refusing to prune without CONFIRM=prune_retired" if !dry_run && ENV["CONFIRM"] != "prune_retired"
+
+      result = Logister::TelemetryLedgerCleanup.prune_retired_backlog(
+        limit: ENV.fetch("LIMIT", 100_000),
+        after_id: ENV.fetch("AFTER_ID", 0),
+        batch_size: ENV.fetch("BATCH_SIZE", Logister::TelemetryLedgerCleanup::DEFAULT_BATCH_SIZE),
+        dry_run: dry_run
+      )
+      puts JSON.pretty_generate(result)
+    end
   end
 end

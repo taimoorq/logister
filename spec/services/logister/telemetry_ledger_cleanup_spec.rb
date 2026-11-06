@@ -61,6 +61,32 @@ RSpec.describe Logister::TelemetryLedgerCleanup, type: :model do
     expect(TelemetryProjectionWatermark.exists?(active_watermark.id)).to be(true)
   end
 
+  it "prunes the retired outbox backlog in bounded, resumable batches" do
+    retired = Array.new(3) do
+      key, delivery = ledger(status: :completed)
+      key.update!(source_retired_at: now)
+      [ key, delivery ]
+    end
+    failed_key, failed_delivery = ledger(status: :terminal_failed)
+    failed_key.update!(source_retired_at: now)
+    _live_key, live_delivery = ledger(status: :completed)
+    kept_outbox_ids = [ failed_delivery, live_delivery ].map(&:telemetry_outbox_event_id)
+    retired_outbox_ids = retired.map { |_key, delivery| delivery.telemetry_outbox_event_id }
+
+    preview = described_class.prune_retired_backlog(limit: 10, dry_run: true)
+    first = described_class.prune_retired_backlog(limit: 2, batch_size: 1, dry_run: false)
+    rest = described_class.prune_retired_backlog(limit: 10, after_id: first.fetch(:next_after_id), dry_run: false)
+
+    expect(preview).to include(scanned_outbox_events: 4, pruned_outbox_events: 3)
+    expect(TelemetryOutboxEvent.where(id: retired_outbox_ids)).to be_empty
+    expect(first).to include(scanned_outbox_events: 2, pruned_outbox_events: 2)
+    expect(rest).to include(pruned_outbox_events: 1)
+    expect(TelemetryDelivery.where(id: retired.map(&:last).map(&:id))).to be_empty
+    expect(TelemetryIdempotencyKey.where(id: retired.map(&:first).map(&:id)).count).to eq(3)
+    expect(TelemetryOutboxEvent.where(id: kept_outbox_ids).count).to eq(2)
+    expect(failed_delivery.reload).to be_terminal_failed
+  end
+
   def ledger(status:)
     event = create(:ingest_event, :metric, occurred_at: now)
     key = TelemetryIdempotencyKey.create!(

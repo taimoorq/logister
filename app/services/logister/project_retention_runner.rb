@@ -6,10 +6,16 @@ module Logister
     HOT_EVENT_TYPES = IngestEvent.event_types.keys.excluding("error").freeze
     CANDIDATE_COUNT_KEYS = %w[hot_events trace_spans closed_error_groups].freeze
     PROTECTION_COUNT_KEYS = %w[hot_events trace_spans error_events].freeze
+    # Unfinished manifests owned by a run that ended without failing are
+    # resumed. Older releases completed runs while their manifest was still
+    # enumerating, and each later run then started a duplicate manifest.
+    # Manifests owned by a failed run stay put for investigation.
+    ADOPTABLE_RUN_STATUSES = %w[completed cancelled superseded].freeze
+    ADOPTABLE_ARCHIVE_STATUSES = %w[pending uploading verifying].freeze
 
     def initialize(project:, policy: nil, batch_size: DEFAULT_BATCH_SIZE, storage_service: nil, dry_run: false,
                    now: Time.current, run: nil, archive_object_limit: nil, cleanup_object_limit: nil,
-                   write_fence: nil, cutoff_snapshot: nil, clock: nil)
+                   write_fence: nil, cutoff_snapshot: nil, clock: nil, manifest_object_limit: nil)
       @project = project
       @batch_size = batch_size.to_i.positive? ? batch_size.to_i : DEFAULT_BATCH_SIZE
       @storage_service = storage_service
@@ -20,6 +26,7 @@ module Logister
       @run = run
       @archive_object_limit = archive_object_limit.to_i if archive_object_limit.to_i.positive?
       @cleanup_object_limit = cleanup_object_limit.to_i if cleanup_object_limit.to_i.positive?
+      @manifest_object_limit = manifest_object_limit.to_i if manifest_object_limit.to_i.positive?
       @cleanup_objects_processed = 0
       @write_fence = write_fence
       @cutoff_snapshot = cutoff_snapshot.to_h.stringify_keys
@@ -71,6 +78,9 @@ module Logister
         return continuation_result(result) if @continuation_required
         accumulate_count!(result[:deleted], :error_events, delete_current_archive_sources(:error_events))
         return continuation_result(result) if @continuation_required
+        # A manifest that stopped at the object cap leaves older rows for the
+        # next manifest in this run.
+        return continuation_result(result) if @current_archives.values.any? { |archive| truncated_manifest?(archive) }
       else
         accumulate_count!(result[:deleted], :hot_events, delete_events(hot_event_scope))
         accumulate_count!(result[:deleted], :trace_spans, delete_trace_spans(trace_span_scope))
@@ -191,12 +201,19 @@ module Logister
       return unless before
 
       retry_archive = retryable_archive_for(scope)
+      start_after_id = nil
+      if retry_archive.nil? && !@dry_run
+        start_after_id = next_manifest_start_after(scope, before)
+        return if start_after_id == :covered
+      end
+
       archive_result = if retry_archive && !@dry_run
-        retry_archive.update!(project_retention_run: @run) if @run && retry_archive.project_retention_run_id.nil?
+        adopt_archive!(retry_archive)
         TelemetryArchiveRetry.new(
           archive: retry_archive,
           storage_service: @storage_service,
           object_limit: @archive_object_limit,
+          max_objects: @manifest_object_limit,
           write_fence: @write_fence,
           project_retention_run: @run
         ).call
@@ -214,6 +231,8 @@ module Logister
           storage_service: @storage_service,
           dry_run: @dry_run,
           object_limit: @archive_object_limit,
+          max_objects: @manifest_object_limit,
+          after_source_id: start_after_id,
           write_fence: @write_fence,
           project_retention_run: @run
         ).call
@@ -221,19 +240,25 @@ module Logister
 
       archive_summary = archive_result.merge(scope: scope)
       result[:archives] << archive_summary
-      if !@dry_run && archive_result.fetch(:rows).positive?
-        unless archive_result.fetch(:verified)
-          if archive_result.fetch(:continuation_required, false)
-            @continuation_required = true
-            return
-          end
+      return if @dry_run
 
-          raise TelemetryArchiveExporter::Error, "Archive manifest was not verified"
+      # A manifest reports its row total only after enumeration finishes, so an
+      # unfinished manifest has rows == 0. Check the continuation before the
+      # row count; otherwise the run completes with an unverified manifest and
+      # the next run starts a duplicate one, so nothing is ever deleted.
+      unless archive_result.fetch(:verified)
+        if archive_result.fetch(:continuation_required, false)
+          @continuation_required = true
+          return
         end
+        return if archive_result[:archive_id].blank?
 
-        @current_archives[scope.to_sym] = @project.telemetry_archives.find(archive_result.fetch(:archive_id))
-        @policy.update!(last_archive_run_at: current_time)
+        raise TelemetryArchiveExporter::Error, "Archive manifest was not verified"
       end
+      return unless archive_result.fetch(:rows).positive?
+
+      @current_archives[scope.to_sym] = @project.telemetry_archives.find(archive_result.fetch(:archive_id))
+      @policy.update!(last_archive_run_at: current_time)
     rescue TelemetryArchiveExporter::Error => e
       record_archive_failure!(scope, record_type, before, nil, e) unless @dry_run || e.archive
       notify_archive_failure(scope, record_type, before, nil, e) unless @dry_run
@@ -262,13 +287,53 @@ module Logister
     end
 
     def retryable_archive_for(scope)
-      @project.telemetry_archives
-              .resumable
-              .where(scope: scope.to_s, source_deleted_at: nil)
-              .where("manifest_version >= 2")
-              .then { |scope| @run ? scope.where(project_retention_run_id: [ nil, @run.id ]) : scope }
-              .recent_first
-              .first
+      candidates = @project.telemetry_archives
+                           .resumable
+                           .where(scope: scope.to_s, source_deleted_at: nil)
+                           .where("manifest_version >= 2")
+      if @run
+        ended_runs = ProjectRetentionRun.where(project_id: @project.id, status: ADOPTABLE_RUN_STATUSES).select(:id)
+        candidates = candidates.where(project_retention_run_id: [ nil, @run.id ]).or(
+          candidates.where(status: ADOPTABLE_ARCHIVE_STATUSES, project_retention_run_id: ended_runs)
+        )
+      end
+      candidates.recent_first.first
+    end
+
+    # Within one run, the manifests for a scope cover increasing id ranges. A
+    # manifest that stopped at the object cap hands off after its last source
+    # id; one that reached the end of its selection covers the scope for the
+    # rest of the run, so rows it could not delete are not archived again.
+    def next_manifest_start_after(scope, before)
+      return unless @run
+
+      latest = @project.telemetry_archives
+                       .verified
+                       .where(project_retention_run_id: @run.id, scope: scope.to_s)
+                       .where("manifest_version >= 2")
+                       .where("before_at >= ?", before)
+                       .order(source_max_id: :desc, id: :desc)
+                       .first
+      return unless latest
+      return :covered unless truncated_manifest?(latest)
+
+      latest.source_max_id
+    end
+
+    def truncated_manifest?(archive)
+      archive.lifecycle_metadata.is_a?(Hash) && archive.lifecycle_metadata["enumeration_truncated"] == true
+    end
+
+    def adopt_archive!(archive)
+      return unless @run
+      return if archive.project_retention_run_id == @run.id
+
+      metadata = archive.lifecycle_metadata.is_a?(Hash) ? archive.lifecycle_metadata.dup : {}
+      if archive.project_retention_run_id
+        metadata["adopted_from_retention_run_id"] = archive.project_retention_run_id
+        metadata["adopted_at"] = current_time.utc.iso8601(6)
+      end
+      archive.update!(project_retention_run: @run, lifecycle_metadata: metadata)
     end
 
     def cleanup_verified_archive_sources
@@ -761,6 +826,8 @@ module Logister
       TelemetryIdempotencyKey.where(id: retired_keys.map(&:id), source_retired_at: nil)
                              .update_all(source_retired_at: retired_at, updated_at: retired_at)
       retired_keys.each { |key| key.source_retired_at ||= retired_at }
+      # with_locked_delivery_state already holds the key, outbox, and delivery locks.
+      TelemetryLedgerCleanup.prune_retired_outbox!(retired_keys.map(&:id))
     end
 
     def ensure_exact_source_deletion!(record_type, expected, deleted)
