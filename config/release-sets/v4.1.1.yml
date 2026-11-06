@@ -1,0 +1,96 @@
+---
+schema_version: 1
+id: backend-v4-1-1
+backend:
+  version: 4.1.1
+  tag: v4.1.1
+impact_records:
+- retention-bounds-postgres-storage
+components:
+  logister-ruby:
+    repository: taimoorq/logister-ruby
+    baseline_version: 0.6.0
+    target_version: 0.6.0
+    bump: none
+    release_required: false
+    reason: >-
+      Retention, partition, and ledger pruning are internal; Ruby SDK ingestion payloads and responses
+      are unchanged, so no gem update is required.
+    channels:
+    - rubygems
+    - github_release
+  logister-js:
+    repository: taimoorq/logister-js
+    baseline_version: 0.6.0
+    target_version: 0.6.0
+    bump: none
+    release_required: false
+    reason: >-
+      Retention, partition, and ledger pruning are internal; JavaScript SDK ingestion payloads and responses
+      are unchanged, so no npm update is required.
+    channels:
+    - npm
+    - github_release
+  logister-python:
+    repository: taimoorq/logister-python
+    baseline_version: 0.6.0
+    target_version: 0.6.0
+    bump: none
+    release_required: false
+    reason: >-
+      Retention, partition, and ledger pruning are internal; Python SDK ingestion payloads and responses
+      are unchanged, so no PyPI update is required.
+    channels:
+    - pypi
+    - github_release
+  logister-dotnet:
+    repository: taimoorq/logister-dotnet
+    baseline_version: 0.5.0
+    target_version: 0.5.0
+    bump: none
+    release_required: false
+    reason: >-
+      Retention, partition, and ledger pruning are internal; .NET SDK ingestion payloads and responses
+      are unchanged, so no NuGet update is required.
+    channels:
+    - nuget_logister
+    - nuget_logister_aspnetcore
+    - github_release
+  logister-android:
+    repository: taimoorq/logister-android
+    baseline_version: 0.7.0
+    target_version: 0.7.0
+    bump: none
+    release_required: false
+    reason: >-
+      Retention, partition, and ledger pruning are internal; Android ingestion and evidence contracts
+      are unchanged, so no library update is required.
+    channels:
+    - maven_central
+    - github_release
+  logister-ios:
+    repository: taimoorq/logister-ios
+    baseline_version: 0.7.0
+    target_version: 0.7.0
+    bump: none
+    release_required: false
+    reason: >-
+      Retention, partition, and ledger pruning are internal; iOS ingestion and evidence contracts are
+      unchanged, so no package update is required.
+    channels:
+    - swift_package_manager
+    - github_release
+  logister-cli:
+    repository: taimoorq/logister-cli
+    baseline_version: 1.3.0
+    target_version: 1.3.0
+    bump: none
+    release_required: false
+    reason: >-
+      CLI endpoints and response shapes are unchanged; only the backend release identity advances, so
+      no CLI update is required.
+    channels:
+    - npm
+    - github_release
+    - homebrew-logister
+    - scoop-logister

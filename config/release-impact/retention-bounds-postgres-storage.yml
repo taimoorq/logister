@@ -1,20 +1,20 @@
 ---
 schema_version: 1
 id: retention-bounds-postgres-storage
-release_version: 4.1.0
+release_version: 4.1.1
 summary: Finish archive-first retention across bounded continuations, retire expired
   ingest partitions, and prune ledger rows of retired sources without changing ingest
   or CLI contracts.
 backend:
-  bump: none
+  bump: patch
   compatibility: compatible
   activation: immediate
 contracts:
 - cli_api
 - telemetry_ingest
 contract_sha256:
-  cli_api: 77deea389acb49c33f481c6ec83a172bc29d689a843c4109f15d7066aff4020a
-  telemetry_ingest: 90f14864012a5f99d5dc1b864a015efcf4ac85dd222d8ed53f47e21b10fba051
+  cli_api: 449ed2a2b3012aad62eb6f3a2afc6055c1937a8a9b177be7ee88a42f9e4c694d
+  telemetry_ingest: 3da41f7f697c2b8577e2eb2958683364a25b99790340779cd0e95527b2efcdcb
 consumers:
   logister-ruby:
     bump: none
@@ -42,5 +42,5 @@ consumers:
       and duplicate retries stay compatible.
   logister-cli:
     bump: none
-    reason: Only a CLI read API spec was made deterministic; CLI endpoints and response
-      shapes are unchanged.
+    reason: CLI endpoints and response shapes are unchanged; only the backend release
+      identity advances.
