@@ -7,6 +7,12 @@ Capybara.register_driver :logister_selenium_chrome_headless do |app|
   options.add_argument("--headless=new")
   options.add_argument("--disable-site-isolation-trials")
   options.add_argument("--window-size=1400,1400")
+  # Turbo wraps each navigation in a view transition unless the browser prefers
+  # reduced motion. While a transition runs, its ::view-transition overlay sits
+  # over the page and receives every click, so a click sent right after a page
+  # changes can land on <html> instead of the link and be lost. Reduced motion
+  # turns the transitions off and runs the app's reduced-motion styles.
+  options.add_argument("--force-prefers-reduced-motion")
 
   configured_path = ENV["CHROMEDRIVER_PATH"].to_s.strip
   cached_drivers = Dir.glob(File.expand_path("~/.cache/selenium/chromedriver/**/*/chromedriver")).select do |path|
