@@ -47,7 +47,7 @@ All notable changes to Logister will be documented in this file.
 - Project integration credentials must be environment variables named `LOGISTER_INTEGRATION_*` or listed in `LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST`. Integration status messages use general categories.
 - Connection tests in **Admin → Installation** ask for the password again when you change the server address. SMTP requires STARTTLS when it is turned on.
 - Check-in monitor slugs are limited to 200 characters, and each project has a monitor limit. Projects scheduled for deletion stop accepting telemetry.
-- Run on Ruby 4.0.9 and refresh the bundle.
+- Run on Ruby 4.0.10 and refresh the bundle.
 
 ### Upgrade Notes
 
