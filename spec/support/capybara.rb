@@ -30,6 +30,32 @@ Capybara.register_driver :logister_selenium_chrome_headless do |app|
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options, service: service)
 end
 
+# Capybara 3.40.0 ends every Chrome session reset with
+# Storage.clearDataForOrigin(origin: "*"). Chrome 158 validates that origin and
+# answers "invalid argument: * is not a valid URL", which fails every system
+# spec in teardown. Until a Capybara release stops sending the wildcard
+# (teamcapybara/capybara#2865), do the same clearing with calls every Chrome
+# accepts: drop all cookies, then clear the remaining storage types for the
+# app server's origin. A spec that writes storage on another origin has to
+# clear it itself. This never runs once Capybara stops sending "*", so it can
+# be deleted after upgrading.
+module LogisterChromeResetWithoutWildcardOrigin
+  private
+
+  def execute_cdp(cmd, params = {})
+    return super unless cmd == "Storage.clearDataForOrigin" && params[:origin] == "*"
+
+    storage_types = params[:storageTypes].to_s.split(",")
+    super("Network.clearBrowserCookies") if storage_types.delete("cookies")
+
+    origin = session&.server&.base_url
+    return if origin.blank? || storage_types.empty?
+
+    super(cmd, params.merge(origin: origin, storageTypes: storage_types.join(",")))
+  end
+end
+Capybara::Selenium::Driver::ChromeDriver.prepend(LogisterChromeResetWithoutWildcardOrigin)
+
 RSpec.configure do |config|
   config.before(:each, type: :system) do
     driven_by :logister_selenium_chrome_headless
