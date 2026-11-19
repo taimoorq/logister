@@ -2,6 +2,18 @@
 
 All notable changes to Logister will be documented in this file.
 
+## v4.1.2 - 2026-11-19
+
+### Changed
+
+- Run on Ruby 4.0.10. The container image, `.ruby-version` and `Gemfile` all pin it.
+- Refresh the gem bundle, including Puma 8.1.2, Thruster 0.1.28 and the AWS SDK, and the npm build dependencies.
+
+### Upgrade Notes
+
+- No migration or configuration change is required. SDKs and CLI clients remain compatible, and no add-on release is required.
+- If you run Logister from source instead of the container image, install Ruby 4.0.10 and run `bundle install` before restarting.
+
 ## v4.1.1 - 2026-11-06
 
 ### Fixed
@@ -47,7 +59,7 @@ All notable changes to Logister will be documented in this file.
 - Project integration credentials must be environment variables named `LOGISTER_INTEGRATION_*` or listed in `LOGISTER_INTEGRATION_CREDENTIAL_ENV_ALLOWLIST`. Integration status messages use general categories.
 - Connection tests in **Admin → Installation** ask for the password again when you change the server address. SMTP requires STARTTLS when it is turned on.
 - Check-in monitor slugs are limited to 200 characters, and each project has a monitor limit. Projects scheduled for deletion stop accepting telemetry.
-- Run on Ruby 4.0.10 and refresh the bundle.
+- Run on Ruby 4.0.9 and refresh the bundle.
 
 ### Upgrade Notes
 
